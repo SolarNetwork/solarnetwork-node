@@ -115,6 +115,7 @@ import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
+import net.solarnetwork.node.settings.SettingsFilter;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
@@ -763,6 +764,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void exportSettingsCSV(Writer out) throws IOException {
+		exportSettingsCSV(null, out);
+	}
+
+	@Override
+	public void exportSettingsCSV(SettingsFilter filter, Writer out) throws IOException {
 		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
 		final List<IOException> errors = new ArrayList<>(1);
 		final CellProcessor[] processors = new CellProcessor[] {
@@ -778,13 +784,34 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 						return 0;
 					}
-				}, new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT) };
+				}, new org.supercsv.cellprocessor.Optional(
+						new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT)) };
+		final String providerFilter = (filter != null && filter.getProviderKey() != null
+				? filter.getProviderKey() + "."
+				: null);
+		final String instanceFilter = (providerFilter != null && filter.getInstanceKey() != null
+				? providerFilter + filter.getInstanceKey()
+				: null);
+		final String instanceFactoryFilter = (instanceFilter != null ? providerFilter + "FACTORY"
+				: null);
 		try {
 			writer.writeHeader(CSV_HEADERS);
 			settingDao.batchProcess(new BatchCallback<Setting>() {
 
 				@Override
 				public BatchCallbackResult handle(Setting domainObject) {
+					// check for instance filter, then provider filter
+					if ( instanceFilter != null && !(domainObject.getKey().equals(instanceFilter)
+							|| (domainObject.getKey().equals(instanceFactoryFilter))
+									&& domainObject.getType().equals(filter.getInstanceKey())) ) {
+						return BatchCallbackResult.CONTINUE;
+					} else if ( providerFilter != null
+							&& !(domainObject.getKey().startsWith(providerFilter)
+									&& domainObject.getKey().length() > providerFilter.length()
+									&& !domainObject.getKey().substring(providerFilter.length())
+											.contains(".")) ) {
+						return BatchCallbackResult.CONTINUE;
+					}
 					try {
 						writer.write(domainObject, CSV_HEADERS, processors);
 					} catch ( IOException e ) {

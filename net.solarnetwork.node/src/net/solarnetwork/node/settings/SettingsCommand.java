@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingsCommand.java - Mar 18, 2012 3:37:02 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,11 +31,11 @@ import java.util.regex.Pattern;
 
 /**
  * Edit settings command object.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class SettingsCommand implements SettingsUpdates {
+public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 
 	private String providerKey;
 	private String instanceKey;
@@ -46,7 +46,7 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@code values} property will be created automatically.
 	 * </p>
@@ -57,12 +57,12 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Construct with a "forced" setting.
-	 * 
+	 *
 	 * <p>
 	 * This can be useful when configuring an instance from a factory, where the
 	 * instance only has default settings (and thus no instance settings).
 	 * </p>
-	 * 
+	 *
 	 * @param force
 	 *        {@literal true} to force updating the setting
 	 */
@@ -73,7 +73,7 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param values
 	 *        the values, or {@literal null} to have a list created
 	 *        automatically
@@ -84,7 +84,7 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param values
 	 *        the values, or {@literal null} to have a list created
 	 *        automatically
@@ -126,7 +126,7 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Get the values.
-	 * 
+	 *
 	 * @return the values
 	 */
 	public List<SettingValueBean> getValues() {
@@ -135,7 +135,7 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Set the values.
-	 * 
+	 *
 	 * @param values
 	 *        the values to set
 	 */
@@ -143,18 +143,14 @@ public class SettingsCommand implements SettingsUpdates {
 		this.values = values;
 	}
 
-	/**
-	 * Get the provider key.
-	 * 
-	 * @return the provider key
-	 */
+	@Override
 	public String getProviderKey() {
 		return providerKey;
 	}
 
 	/**
 	 * Set the provider key.
-	 * 
+	 *
 	 * @param providerKey
 	 *        the provider key
 	 */
@@ -162,18 +158,14 @@ public class SettingsCommand implements SettingsUpdates {
 		this.providerKey = providerKey;
 	}
 
-	/**
-	 * Get the instance key.
-	 * 
-	 * @return the instance key
-	 */
+	@Override
 	public String getInstanceKey() {
 		return instanceKey;
 	}
 
 	/**
 	 * Set the instance key.
-	 * 
+	 *
 	 * @param instanceKey
 	 *        the instance key to set
 	 */
@@ -184,7 +176,7 @@ public class SettingsCommand implements SettingsUpdates {
 	/**
 	 * Get the flag indicating if the update command should be forced, even if
 	 * there are no setting values.
-	 * 
+	 *
 	 * @return {@literal true} if the update should be forced
 	 * @since 1.1
 	 */
@@ -195,7 +187,7 @@ public class SettingsCommand implements SettingsUpdates {
 	/**
 	 * Set a flag indicating if the update command should be forced, even if
 	 * there are no setting values.
-	 * 
+	 *
 	 * @param force
 	 *        {@literal true} if the update should be forced
 	 * @since 1.1

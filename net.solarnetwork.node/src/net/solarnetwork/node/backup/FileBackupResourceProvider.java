@@ -1,21 +1,21 @@
 /* ==================================================================
  * FileBackupResourceProvider.java - Mar 28, 2013 8:42:37 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -46,15 +46,16 @@ import net.solarnetwork.node.Constants;
 /**
  * {@link BackupResourceProvider} for node files, such as installed application
  * bundle JARs.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	private String rootPath = System.getProperty(Constants.SYSTEM_PROP_NODE_HOME, "");
 	private String[] resourceDirectories = new String[] { "app/main" };
 	private String fileNamePattern = "\\.jar$";
+	private boolean defaultShouldRestore = true;
 	private MessageSource messageSource;
 
 	/** A class-level logger. */
@@ -204,7 +205,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			name = ms.getMessage("title", null, name, locale);
 			desc = ms.getMessage("desc", null, desc, locale);
 		}
-		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc, defaultShouldRestore);
 	}
 
 	@Override
@@ -214,7 +215,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Set the {@code resourceDirectories} property as a comma-delimited string.
-	 * 
+	 *
 	 * @param list
 	 *        a comma-delimited list of paths
 	 */
@@ -225,7 +226,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	/**
 	 * Get a comma-delimited string of the configured
 	 * {@code resourceDirectories} property.
-	 * 
+	 *
 	 * @return a comma-delimited list of paths
 	 */
 	public String getResourceDirs() {
@@ -234,7 +235,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Get the root path.
-	 * 
+	 *
 	 * @return the root path
 	 */
 	public String getRootPath() {
@@ -243,14 +244,14 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Set the root path from which {@code resourceDirectories} are relative to.
-	 * 
+	 *
 	 * <p>
 	 * If not provided, the system property
 	 * {@link net.solarnetwork.node.Constants#SYSTEM_PROP_NODE_HOME} will be
 	 * used, and if that isn't set then the runtime working directory will be
 	 * used.
 	 * </p>
-	 * 
+	 *
 	 * @param rootPath
 	 *        the root path to use
 	 */
@@ -261,7 +262,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	/**
 	 * Get an array of directory paths, relative to {@code rootPath}, to look
 	 * for files to include in the backup.
-	 * 
+	 *
 	 * @return the paths to use
 	 */
 	public String[] getResourceDirectories() {
@@ -271,7 +272,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	/**
 	 * Set an array of directory paths, relative to {@code rootPath}, to look
 	 * for files to include in the backup.
-	 * 
+	 *
 	 * @param bundlePaths
 	 *        the paths to use; defaults to {@literal [app/main]}
 	 */
@@ -281,7 +282,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Get the file name patter.
-	 * 
+	 *
 	 * @return the pattern to use
 	 */
 	public String getFileNamePattern() {
@@ -291,11 +292,11 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	/**
 	 * Set a regexp used to match against files found in the
 	 * {@code resourceDirectories}.
-	 * 
+	 *
 	 * <p>
 	 * Only files matching this expression are included in the backup.
 	 * </p>
-	 * 
+	 *
 	 * @param fileNamePattern
 	 *        the pattern to use; defaults to {@literal \.jar$}
 	 */
@@ -305,7 +306,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Set the {@link MessageSource} to resolve localized messages with.
-	 * 
+	 *
 	 * @param messageSource
 	 *        The message source.
 	 */
@@ -315,11 +316,44 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Get the configured {@link MessageSource}.
-	 * 
+	 *
 	 * @return the message source
 	 */
 	public MessageSource getMessageSource() {
 		return messageSource;
+	}
+
+	/**
+	 * Get the "should restore" default setting.
+	 *
+	 * <p>
+	 * This flag indicates to the backup interface if the resources provided by
+	 * this service should be enabled for restore by default.
+	 * </p>
+	 *
+	 * @return {@literal true} if the resources provided by this service should
+	 *         be selected for restore by default; defaults to {@literal true}
+	 * @since 1.3
+	 */
+	public boolean isDefaultShouldRestore() {
+		return defaultShouldRestore;
+	}
+
+	/**
+	 * Get the "should restore" default setting.
+	 *
+	 * <p>
+	 * This flag indicates to the backup interface if the resources provided by
+	 * this service should be enabled for restore by default.
+	 * </p>
+	 *
+	 * @param defaultShouldRestore
+	 *        {@literal true} if the resources provided by this service should
+	 *        be selected for restore by default
+	 * @since 1.3
+	 */
+	public void setDefaultShouldRestore(boolean defaultShouldRestore) {
+		this.defaultShouldRestore = defaultShouldRestore;
 	}
 
 }

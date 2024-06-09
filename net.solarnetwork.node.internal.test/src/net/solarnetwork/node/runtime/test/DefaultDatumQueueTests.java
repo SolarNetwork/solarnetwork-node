@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultDatumQueueTests.java - 24/08/2021 6:08:27 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,8 +24,12 @@ package net.solarnetwork.node.runtime.test;
 
 import static java.lang.String.format;
 import static java.lang.Thread.sleep;
+import static java.util.Collections.emptyMap;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.same;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -58,6 +62,7 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesContainer;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -71,9 +76,9 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultDatumQueue}.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
@@ -83,6 +88,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	private EventAdmin eventAdmin;
 	private Consumer<NodeDatum> consumer;
 	private Consumer<NodeDatum> directConsumer;
+	private DatumFilterService filter;
 	private DefaultDatumQueue queue;
 	private Throwable datumProcessortException;
 
@@ -93,6 +99,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 		consumer = EasyMock.createMock(Consumer.class);
 		directConsumer = EasyMock.createMock(Consumer.class);
+		filter = EasyMock.createMock(DatumFilterService.class);
 		queue = new DefaultDatumQueue(datumDao, new StaticOptionalService<>(eventAdmin),
 				new StaticOptionalService<>(directConsumer));
 		queue.setStartupDelayMs(0);
@@ -108,11 +115,11 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 			datumProcessortException.printStackTrace();
 			fail("Datum processor threw exception: " + datumProcessortException);
 		}
-		EasyMock.verify(datumDao, consumer, eventAdmin, directConsumer);
+		EasyMock.verify(datumDao, consumer, eventAdmin, directConsumer, filter);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumDao, consumer, eventAdmin, directConsumer);
+		EasyMock.replay(datumDao, consumer, eventAdmin, directConsumer, filter);
 	}
 
 	@Override
@@ -126,17 +133,20 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 	private void assertCapturedAcquiredEvents(List<Event> events, int index, NodeDatum expectedCaptured,
 			NodeDatum expectedAcquired) {
-		assertThat("Two events posted for datum", events.size(), greaterThanOrEqualTo(index + 2));
+		assertThat("Expected event count posted for datum", events.size(),
+				greaterThanOrEqualTo(index + 1 + (expectedAcquired != null ? 1 : 0)));
 		assertThat(format("Event %d is DATUM_CAPTURED", index), events.get(index).getTopic(),
 				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
 		assertThat(format("Event %d datum", index),
 				events.get(index).getProperty(DatumEvents.DATUM_PROPERTY),
 				sameInstance(expectedCaptured));
-		assertThat(format("Event %d is DATUM_ACQUIRED", index + 1), events.get(index + 1).getTopic(),
-				is(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED));
-		assertThat(format("Event %d datum", index + 1),
-				events.get(index + 1).getProperty(DatumEvents.DATUM_PROPERTY),
-				sameInstance(expectedAcquired));
+		if ( expectedAcquired != null ) {
+			assertThat(format("Event %d is DATUM_ACQUIRED", index + 1), events.get(index + 1).getTopic(),
+					is(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED));
+			assertThat(format("Event %d datum", index + 1),
+					events.get(index + 1).getProperty(DatumEvents.DATUM_PROPERTY),
+					sameInstance(expectedAcquired));
+		}
 	}
 
 	@Test
@@ -711,6 +721,148 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 2, datum2);
+	}
+
+	@Test
+	public void filter_datum() throws InterruptedException {
+		// GIVEN
+		queue.setDatumFilterService(new StaticOptionalService<>(filter));
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		final DatumSamples filterSamples = new DatumSamples();
+		filterSamples.putInstantaneousSampleValue("foo", 321);
+		Capture<Map<String, Object>> filterParametersCaptor = Capture.newInstance();
+		expect(filter.filter(same(datum), same(datum.getSamples()), capture(filterParametersCaptor)))
+				.andReturn(filterSamples);
+
+		Capture<NodeDatum> filteredDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.accept(capture(filteredDatumCaptor));
+		datumDao.storeDatum(capture(filteredDatumCaptor));
+		consumer.accept(capture(filteredDatumCaptor));
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("One datum recorded as processed",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
+		assertThat("One datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		List<NodeDatum> filteredDatumList = filteredDatumCaptor.getValues();
+		assertThat("Filtered datum passed to all output methods", filteredDatumList, hasSize(3));
+
+		assertThat("Provided filter parameters is empty", filterParametersCaptor.getValue(),
+				is(equalTo(emptyMap())));
+
+		NodeDatum filteredDatum = filteredDatumList.get(0);
+		assertThat("Same filtered datum passed to DAO", filteredDatumList.get(1),
+				is(sameInstance(filteredDatum)));
+		assertThat("Same filtered datum passed to consumer", filteredDatumList.get(2),
+				is(sameInstance(filteredDatum)));
+
+		assertThat("Persisted datum ID from input datum", filteredDatum, is(equalTo(datum)));
+
+		// capture offered event, persist filtered event
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, filteredDatum);
+	}
+
+	@Test
+	public void filter_datum_eliminated() throws InterruptedException {
+		// GIVEN
+		queue.setDatumFilterService(new StaticOptionalService<>(filter));
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		final DatumSamples filterSamples = new DatumSamples();
+		filterSamples.putInstantaneousSampleValue("foo", 321);
+		Capture<Map<String, Object>> filterParametersCaptor = Capture.newInstance();
+		expect(filter.filter(same(datum), same(datum.getSamples()), capture(filterParametersCaptor)))
+				.andReturn(null);
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(1);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("One datum recorded as processed",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
+		assertThat("No datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(0L));
+
+		assertThat("Provided filter parameters is empty", filterParametersCaptor.getValue(),
+				is(equalTo(emptyMap())));
+
+		// capture offered event, no persist filtered event
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, null);
+	}
+
+	@Test
+	public void filter_datum_newDatumProduced() throws InterruptedException {
+		// GIVEN
+		queue.setDatumFilterService(new StaticOptionalService<>(filter));
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		final SimpleDatum filterOutput = SimpleDatum.nodeDatum(TEST_SOURCE_ID,
+				datum.getTimestamp().truncatedTo(ChronoUnit.HOURS).minus(1, ChronoUnit.HOURS),
+				new DatumSamples());
+		filterOutput.putSampleValue(DatumSamplesType.Instantaneous, "foo", 321);
+		Capture<Map<String, Object>> filterParametersCaptor = Capture.newInstance();
+		expect(filter.filter(same(datum), same(datum.getSamples()), capture(filterParametersCaptor)))
+				.andReturn(filterOutput);
+
+		Capture<NodeDatum> filteredDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.accept(capture(filteredDatumCaptor));
+		datumDao.storeDatum(capture(filteredDatumCaptor));
+		consumer.accept(capture(filteredDatumCaptor));
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("One datum recorded as processed",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
+		assertThat("One datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		assertThat("Provided filter parameters is empty", filterParametersCaptor.getValue(),
+				is(equalTo(emptyMap())));
+
+		List<NodeDatum> filteredDatumList = filteredDatumCaptor.getValues();
+		assertThat("Filtered datum passed to all output methods", filteredDatumList, hasSize(3));
+
+		NodeDatum filteredDatum = filteredDatumList.get(0);
+		assertThat("Same filtered datum passed to DAO", filteredDatumList.get(1),
+				is(sameInstance(filteredDatum)));
+		assertThat("Same filtered datum passed to consumer", filteredDatumList.get(2),
+				is(sameInstance(filteredDatum)));
+
+		assertThat("Persisted datum ID from filter output", filteredDatum, is(equalTo(filterOutput)));
+
+		// capture offered event, persist filtered event
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, filteredDatum);
 	}
 
 }

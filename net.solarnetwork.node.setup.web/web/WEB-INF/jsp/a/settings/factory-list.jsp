@@ -35,6 +35,16 @@
 							</fmt:message>
 						</button>
 					</div>
+					<div class="col-auto">
+						<a type="button" class="btn btn-secondary text-nowrap" href="<setup:url value='/a/settings/exportFactory'/>?uid=${factory.factoryUid}"
+							title="<fmt:message key='settings.factory.downloadSettings.caption'/>">
+							<i class="bi bi-file-arrow-down"></i>
+							<fmt:message key='settings.factory.downloadSettings.label'>
+								<fmt:param>${fn:length(providers)}</fmt:param>
+								<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+							</fmt:message>
+						</a>
+					</div>
 				</c:if>
 				<div class="col-auto">
 					<button type="button" class="btn btn-primary text-nowrap" id="add" data-bs-toggle="modal" data-bs-target="#add-component-instance-modal">

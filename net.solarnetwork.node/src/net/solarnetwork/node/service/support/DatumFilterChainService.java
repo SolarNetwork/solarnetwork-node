@@ -1,21 +1,21 @@
 /* ==================================================================
  * GeneralDatumSamplesTransformChain.java - 9/05/2021 3:39:09 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -44,16 +44,16 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
 
 /**
  * A configurable chain of transformer services.
- * 
+ *
  * <p>
  * If a {@code staticService} is configured then it will be applied
  * <em>first</em>. Then the {@code transformUids} will be iterated over and the
  * first matching service found for each value in {@code transformServices} will
  * be applied.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -72,11 +72,11 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@code configurableUid} property will be set to {@literal true}.
 	 * </p>
-	 * 
+	 *
 	 * @param settingUid
 	 *        the {@link SettingSpecifierProvider#getSettingUid()} value to use
 	 * @param transformServices
@@ -91,7 +91,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingUid
 	 *        the {@link SettingSpecifierProvider#getSettingUid()} value to use
 	 * @param transformServices
@@ -110,7 +110,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingUid
 	 *        the {@link SettingSpecifierProvider#getSettingUid()} value to use
 	 * @param transformServices
@@ -247,23 +247,28 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		}
 		Map<String, Object> p = parameters;
 		DatumSamplesOperations out = samples;
+		Datum outDatum = datum;
 		if ( staticService != null ) {
 			if ( p == null ) {
 				p = new HashMap<>(8);
 			}
-			out = staticService.filter(datum, out, parameters);
+			out = staticService.filter(outDatum, out, parameters);
 			if ( out == null ) {
 				incrementStats(start, samples, out);
 				return null;
+			} else if ( out instanceof Datum ) {
+				outDatum = (Datum) out;
 			}
 		}
 		if ( ignoreTransformUids ) {
 			if ( transformServices != null ) {
 				for ( DatumFilterService s : transformServices ) {
-					out = s.filter(datum, out, parameters);
+					out = s.filter(outDatum, out, parameters);
 					if ( out == null ) {
 						incrementStats(start, samples, out);
 						return null;
+					} else if ( out instanceof Datum ) {
+						outDatum = (Datum) out;
 					}
 				}
 			}
@@ -282,21 +287,30 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 					if ( p == null ) {
 						p = new HashMap<>(8);
 					}
-					out = s.filter(datum, out, p);
+					out = s.filter(outDatum, out, p);
 					if ( out == null ) {
 						incrementStats(start, samples, out);
 						return null;
+					} else if ( out instanceof Datum ) {
+						outDatum = (Datum) out;
 					}
 				}
 			}
 		}
 		incrementStats(start, samples, out);
+		if ( outDatum != datum ) {
+			// this is a way for filters to provide a new datum timestamp, by returning a full Datum
+			Datum outDatumCopy = outDatum.copyWithSamples(out);
+			if ( outDatumCopy instanceof DatumSamplesOperations ) {
+				out = (DatumSamplesOperations) outDatumCopy;
+			}
+		}
 		return out;
 	}
 
 	/**
 	 * Get the transform UIDs to use.
-	 * 
+	 *
 	 * @return the transform UIDs.
 	 */
 	public String[] getTransformUids() {
@@ -305,12 +319,12 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the transform UIDs to use.
-	 * 
+	 *
 	 * <p>
 	 * This list defines the {@link DatumFilterService} instances to apply, from
 	 * the list of available services.
 	 * </p>
-	 * 
+	 *
 	 * @param transformUids
 	 *        the UIDs to set
 	 */
@@ -320,7 +334,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the transform UIDs count.
-	 * 
+	 *
 	 * @return the number of UIDs to support
 	 */
 	public int getTransformUidsCount() {
@@ -330,7 +344,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the transform UIDs count.
-	 * 
+	 *
 	 * @param count
 	 *        the number of UIDs to support
 	 */
@@ -340,13 +354,13 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the sample transformers to use.
-	 * 
+	 *
 	 * <p>
 	 * These are not applied by this class. Rather, if this is set then a
 	 * read-only setting will be included in {@link #getSettingSpecifiers()}
 	 * that lists the configured filters.
 	 * </p>
-	 * 
+	 *
 	 * @param alternateDatumFilterServices
 	 *        the transformers to use
 	 */
@@ -356,7 +370,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the ignore {@code transformUids} flag.
-	 * 
+	 *
 	 * @return {@literal true} to always apply all available filters in the
 	 *         {@code transformServices} property; defaults to {@literal false}
 	 * @since 1.2
@@ -367,7 +381,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the ignore {@code transformUids} flag.
-	 * 
+	 *
 	 * @param ignoreTransformUids
 	 *        {@literal true} to always apply all available filters in the
 	 *        {@code transformServices} property

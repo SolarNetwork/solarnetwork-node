@@ -24,6 +24,7 @@ Each filter configuration contains the following overall settings:
 | Source ID             | The source ID(s) to filter. |
 | Required Mode         | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
 | Required Tag          | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
+| Sample Duration       | A duration in seconds to collect samples within before generating an averaged output. Overrides the **Sample Count** setting. |
 | Sample Count          | The number of samples to average over. |
 | Decimal Scale         | A maximum number of digits after the decimal point to round to. Set to`0` to round to whole numbers. |
 | Property Excludes     | A list of property names to exclude. |

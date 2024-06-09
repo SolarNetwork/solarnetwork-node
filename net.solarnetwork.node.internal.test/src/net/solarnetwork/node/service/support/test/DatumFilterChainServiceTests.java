@@ -1,29 +1,35 @@
 /* ==================================================================
  * GeneralDatumSamplesTransformChainTests.java - 29/07/2021 6:31:13 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.service.support.test;
 
+import static java.util.Collections.emptyMap;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.same;
+import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -38,8 +44,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
@@ -48,9 +57,9 @@ import net.solarnetwork.service.DatumFilterService;
 
 /**
  * Test cases for the {@link DatumFilterChainService} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DatumFilterChainServiceTests {
 
@@ -249,6 +258,126 @@ public class DatumFilterChainServiceTests {
 
 		assertThat("2nd transform not invoked because of thrown exception", result2,
 				is(sameInstance(s2)));
+	}
+
+	@Test
+	public void nodeDatumReturned() {
+		// GIVEN
+		DatumFilterService xform = EasyMock.createMock(DatumFilterService.class);
+		expect(xform.getUid()).andReturn(TEST_UID).anyTimes();
+
+		xforms.add(xform);
+		chain.setTransformUids(new String[] { TEST_UID });
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter returns NodeDatum instance
+		SimpleDatum outDatum = d.copyWithId(
+				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
+		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
+		expect(xform.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum);
+
+		// WHEN
+		replayAll();
+		replay(xform);
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		// THEN
+		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
+		NodeDatum out = (NodeDatum) result;
+		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
+		assertThat("Datum ID from filter output", out, is(equalTo(outDatum)));
+		assertThat("Datum samples from filter output", out.asSampleOperations(),
+				is(equalTo(outDatum.getSamples())));
+
+		verify(xform);
+	}
+
+	@Test
+	public void nodeDatumReturned_multiFilters_firstOnly() {
+		// GIVEN
+		DatumFilterService xform1 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform1.getUid()).andReturn(TEST_UID).anyTimes();
+
+		DatumFilterService xform2 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform2.getUid()).andReturn(TEST_UID2).anyTimes();
+
+		xforms.add(xform1);
+		xforms.add(xform2);
+		chain.setTransformUids(new String[] { TEST_UID, TEST_UID2 });
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter returns NodeDatum instance
+		SimpleDatum outDatum = d.copyWithId(
+				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
+		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
+		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum);
+
+		// second filter does not return NodeDatum instance
+		DatumSamples out2 = new DatumSamples(outDatum.getSamples());
+		out2.putStatusSampleValue("bim", "bam");
+		expect(xform2.filter(same(outDatum), same(outDatum), eq(emptyMap()))).andReturn(out2);
+
+		// WHEN
+		replayAll();
+		replay(xform1, xform2);
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		// THEN
+		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
+		NodeDatum out = (NodeDatum) result;
+		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
+		assertThat("Datum ID from filter output", out, is(equalTo(outDatum)));
+		assertThat("Datum samples from 2nd filter output", out.asSampleOperations(), is(equalTo(out2)));
+
+		verify(xform1, xform2);
+	}
+
+	@Test
+	public void nodeDatumReturned_multiFilters_both() {
+		// GIVEN
+		DatumFilterService xform1 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform1.getUid()).andReturn(TEST_UID).anyTimes();
+
+		DatumFilterService xform2 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform2.getUid()).andReturn(TEST_UID2).anyTimes();
+
+		xforms.add(xform1);
+		xforms.add(xform2);
+		chain.setTransformUids(new String[] { TEST_UID, TEST_UID2 });
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter returns NodeDatum instance
+		SimpleDatum outDatum = d.copyWithId(
+				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
+		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
+		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum);
+
+		// second filter also returns NodeDatum instance
+		SimpleDatum outDatum2 = d.copyWithId(DatumId.nodeId(d.getObjectId(), d.getSourceId(),
+				outDatum.getTimestamp().plusSeconds(1)));
+		outDatum2.putSampleValue(DatumSamplesType.Status, "bim", "bam");
+		expect(xform2.filter(same(outDatum), same(outDatum), eq(emptyMap()))).andReturn(outDatum2);
+
+		// WHEN
+		replayAll();
+		replay(xform1, xform2);
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		// THEN
+		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
+		NodeDatum out = (NodeDatum) result;
+		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
+		assertThat("Datum ID from 2nd filter output", out, is(equalTo(outDatum2)));
+		assertThat("Datum samples from 2nd filter output", out.asSampleOperations(),
+				is(equalTo(outDatum2.getSamples())));
+
+		verify(xform1, xform2);
 	}
 
 }

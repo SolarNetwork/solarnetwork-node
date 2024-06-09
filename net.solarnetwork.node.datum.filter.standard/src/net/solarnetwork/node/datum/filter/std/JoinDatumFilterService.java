@@ -1,21 +1,21 @@
 /* ==================================================================
  * JoinDatumFilterService.java - 17/02/2022 8:35:38 AM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,7 +54,7 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Datum filter service that joins multiple datum into a new datum stream.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -83,7 +83,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the datum queue
 	 */
@@ -150,7 +150,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Return an array with the property mapping value an optional regular
 	 * expression parameter values.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to find the property source mapping for
 	 * @return the mapping data, or {@literal null}
@@ -222,7 +222,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the source coalesce threshold.
-	 * 
+	 *
 	 * @return the threshold; defaults to {@link #DEFAULT_COALESCE_THRESHOLD}
 	 */
 	public int getCoalesceThreshold() {
@@ -230,6 +230,8 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	/**
+	 * Set the source coalesce threshold.
+	 *
 	 * @param coalesceThreshold
 	 *        the coalesceThreshold to set
 	 */
@@ -239,7 +241,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the "swallow input" mode.
-	 * 
+	 *
 	 * @return {@literal true} if input datum should be discarded after merging
 	 *         their properties into the output stream, {@literal false} to
 	 *         leave input datum unchanged; defaults to
@@ -251,7 +253,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the "swallow input" mode.
-	 * 
+	 *
 	 * @param swallowInput
 	 *        {@literal true} if input datum should be discarded after merging
 	 *        their properties into the output stream, {@literal false} to leave
@@ -263,7 +265,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the property source mappings.
-	 * 
+	 *
 	 * @return the mappings, or {@literal null}
 	 */
 	public PatternKeyValuePair[] getPropertySourceMappings() {
@@ -272,7 +274,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the property source mappings.
-	 * 
+	 *
 	 * @param propertySourceMappings
 	 *        the mappings to set
 	 */
@@ -282,7 +284,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the number of configured property source mappings.
-	 * 
+	 *
 	 * @return the number of property source mappings
 	 */
 	public int getPropertySourceMappingsCount() {
@@ -292,7 +294,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the number of configured property source mappings.
-	 * 
+	 *
 	 * @param count
 	 *        the number of mappings to set
 	 */
@@ -303,7 +305,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the generated datum source ID.
-	 * 
+	 *
 	 * @return the source ID to use for generated datum
 	 */
 	public String getOutputSourceId() {
@@ -312,7 +314,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the generated datum source ID.
-	 * 
+	 *
 	 * @param outputSourceId
 	 *        the source ID to use for generated datum
 	 */
