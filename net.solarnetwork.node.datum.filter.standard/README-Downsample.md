@@ -11,7 +11,7 @@ Once installed, a new **Downsample Datum Filter** component will appear on the
 **Settings > Datum Filter** page on your SolarNode. Click on the **Manage** button to configure 
 filters.
 
-![Downsample filter settings](docs/solarnode-downsample-filter-settings.png)
+<img alt="Downsample filter settings" src="docs/solarnode-downsample-filter-settings@2x.png" width="934">
 
 # Settings
 
@@ -24,8 +24,8 @@ Each filter configuration contains the following overall settings:
 | Source ID             | The source ID(s) to filter. |
 | Required Mode         | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
 | Required Tag          | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
-| Sample Duration       | A duration in seconds to collect samples within before generating an averaged output. Overrides the **Sample Count** setting. |
 | Sample Count          | The number of samples to average over. |
+| Sample Duration       | A duration in seconds to collect samples within before generating an averaged output. Overrides the **Sample Count** setting. |
 | Decimal Scale         | A maximum number of digits after the decimal point to round to. Set to`0` to round to whole numbers. |
 | Property Excludes     | A list of property names to exclude. |
 | Min Property Template | A string format to use for computed minimum property values. Use `%s` as the placeholder for the original property name, e.g. `%s_min`. |

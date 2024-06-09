@@ -47,6 +47,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -119,6 +120,7 @@ import net.solarnetwork.node.settings.SettingsFilter;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
+import net.solarnetwork.node.settings.SettingsUpdates.Change;
 import net.solarnetwork.node.setup.SetupSettings;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
@@ -179,7 +181,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<>();
 	private final Map<String, SettingResourceHandler> handlers = new ConcurrentSkipListMap<>();
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private static final Logger log = LoggerFactory.getLogger(CASettingsService.class);
+	private static final Logger AUDIT_LOG = LoggerFactory.getLogger(AUDIT_LOG_NAME);
 
 	/**
 	 * Constructor.
@@ -246,7 +249,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 											factoryPid, key, cmd != null ? cmd.getValues().size() : 0,
 											msg);
 								}
-								applySettingsUpdates(cmd, factoryPid, key, true, conf);
+								applySettingsUpdates(cmd, factoryPid, key, true, conf, false);
 							} catch ( IOException | InvalidSyntaxException e ) {
 								throw new RuntimeException(e);
 							}
@@ -332,7 +335,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				log.info("Component [{}] registered with {} custom settings: {}", pid,
 						cmd != null ? cmd.getValues().size() : 0, msg);
 			}
-			applySettingsUpdates(cmd, pid, factoryInstanceKey, true);
+			applySettingsUpdates(cmd, pid, factoryInstanceKey, true, false);
 		}
 	}
 
@@ -451,13 +454,14 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void updateSettings(SettingsCommand command) {
-		updateSettings(command, false);
+		updateSettings(command, false, true);
 	}
 
-	private void updateSettings(final SettingsCommand command, final boolean configurationOnly) {
+	private void updateSettings(final SettingsCommand command, final boolean configurationOnly,
+			boolean audit) {
 		if ( command.getProviderKey() != null ) {
 			applySettingsUpdates(command, command.getProviderKey(), command.getInstanceKey(),
-					configurationOnly);
+					configurationOnly, audit);
 			return;
 		}
 		// group all updates by provider+instance, to reduce the number of CA updates
@@ -474,7 +478,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					log.info("Updating component [{}] settings: {}", cmd.getProviderKey(), msg);
 				}
 			}
-			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), configurationOnly);
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), configurationOnly,
+					audit);
 		}
 	}
 
@@ -548,24 +553,61 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 *        {@literal true} to only update the associated Configuration Admin
 	 *        {@link Configuration}, {@literal false} to also persist the
 	 *        updates via {@link SettingDao}
+	 * @param audit
+	 *        {@literal true} if the change should be audited
 	 */
 	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
-			final String instanceKey, final boolean configurationOnly) {
+			final String instanceKey, final boolean configurationOnly, boolean audit) {
 		if ( updates == null || providerKey == null || providerKey.isEmpty()
 				|| !(updates.hasSettingKeyPatternsToClean() || updates.hasSettingValueUpdates()) ) {
 			return;
 		}
 		try {
 			Configuration conf = getConfiguration(providerKey, instanceKey);
-			applySettingsUpdates(updates, providerKey, instanceKey, configurationOnly, conf);
+			applySettingsUpdates(updates, providerKey, instanceKey, configurationOnly, conf, audit);
 		} catch ( InvalidSyntaxException | IOException e ) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
-			final String instanceKey, final boolean configurationOnly, Configuration conf)
-			throws IOException {
+			final String instanceKey, final boolean configurationOnly, Configuration conf,
+			final boolean audit) throws IOException {
+		if ( audit && AUDIT_LOG.isInfoEnabled() ) {
+			StringBuilder buf = new StringBuilder();
+			buf.append("Updating settings for factory [").append(providerKey).append(']');
+			if ( instanceKey != null ) {
+				buf.append(" instance [").append(instanceKey).append(']');
+			}
+			buf.append(": {");
+			if ( updates.hasSettingKeyPatternsToClean() ) {
+				buf.append("cleanPatterns: [");
+				int i = 0;
+				for ( Pattern p : updates.getSettingKeyPatternsToClean() ) {
+					if ( i++ > 0 ) {
+						buf.append(", ");
+					}
+					buf.append(p.pattern());
+				}
+				buf.append(']');
+			}
+			if ( updates.hasSettingValueUpdates() ) {
+				if ( updates.hasSettingKeyPatternsToClean() ) {
+					buf.append(", ");
+				}
+				buf.append("updates: [");
+				int i = 0;
+				for ( Change c : updates.getSettingValueUpdates() ) {
+					if ( i++ > 0 ) {
+						buf.append(", ");
+					}
+					buf.append(c.getKey()).append("=").append(c.getValue());
+				}
+				buf.append(']');
+			}
+			buf.append("}");
+			AUDIT_LOG.info(buf.toString());
+		}
 		String settingKey = providerKey;
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
 			settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
@@ -694,6 +736,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void deleteProviderFactoryInstance(String factoryUid, String instanceUid) {
+		AUDIT_LOG.info("Delete factory [{}] instance [{}]", factoryUid, instanceUid);
 		synchronized ( factories ) {
 			// delete factory reference
 			settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
@@ -713,6 +756,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void resetProviderFactoryInstance(String factoryUid, String instanceUid) {
+		AUDIT_LOG.info("Reset factory [{}] instance [{}]", factoryUid, instanceUid);
 		synchronized ( factories ) {
 			deleteProviderFactoryInstance(factoryUid, instanceUid);
 
@@ -735,11 +779,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void disableProviderFactoryInstance(String factoryUid, String instanceUid) {
+		AUDIT_LOG.info("Disable factory [{}] instance [{}]", factoryUid, instanceUid);
 		settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
 	}
 
 	@Override
 	public void enableProviderFactoryInstance(String factoryUid, String instanceUid) {
+		AUDIT_LOG.info("Enable factory [{}] instance [{}]", factoryUid, instanceUid);
 		settingDao.storeSetting(getFactorySettingKey(factoryUid), instanceUid, instanceUid);
 		try {
 			Configuration conf = getConfiguration(factoryUid, instanceUid);
@@ -769,6 +815,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void exportSettingsCSV(SettingsFilter filter, Writer out) throws IOException {
+		AUDIT_LOG.info("Export settings CSV; filter [{}]", filter != null ? filter : "");
 		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
 		final List<IOException> errors = new ArrayList<>(1);
 		final CellProcessor[] processors = new CellProcessor[] {
@@ -881,6 +928,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	@Override
 	public void importSettingsCSV(final Reader in, final SettingsImportOptions options)
 			throws IOException {
+		AUDIT_LOG.info("Import settings with options [{}]", options != null ? options : "");
 		// TODO: need a better way to organize settings into "do not restore" category
 		synchronized ( factories ) {
 			final Pattern allowed = Pattern.compile("^(?!solarnode).*", Pattern.CASE_INSENSITIVE);
@@ -1025,7 +1073,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			cmd.getValues().add(bean);
 		}
 		if ( cmd.getValues().size() > 0 ) {
-			updateSettings(cmd, true);
+			updateSettings(cmd, true, true);
 		}
 	}
 
@@ -1163,6 +1211,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			if ( name == null ) {
 				name = String.valueOf(i);
 			}
+			AUDIT_LOG.info("Import setting resource for handler [{}] instance [{}] key [{}]: {}",
+					handlerKey, instanceKey, settingKey, name);
 			Path out = rsrcDir.resolve(name);
 			File outFile = out.toFile();
 			try {
@@ -1188,7 +1238,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		// apply any updates returned by the handler
 		List<SettingsCommand> groupedUpdates = orderedUpdateGroups(updates, handlerKey, instanceKey);
 		for ( SettingsCommand cmd : groupedUpdates ) {
-			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), false);
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), false, true);
 		}
 	}
 
@@ -1198,7 +1248,6 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		if ( resources == null ) {
 			return;
 		}
-
 		Path rsrcDir = getSettingResourcePersistencePath(handlerKey, instanceKey, settingKey);
 		if ( !Files.exists(rsrcDir) ) {
 			return;
@@ -1210,6 +1259,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			if ( name == null ) {
 				name = String.valueOf(i);
 			}
+			AUDIT_LOG.info("Delete setting resource for handler [{}] instance [{}] key [{}]: {}",
+					handlerKey, instanceKey, settingKey, name);
 			Path out = rsrcDir.resolve(name);
 			try {
 				if ( Files.exists(out) ) {
@@ -1257,6 +1308,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 		final File f = new File(dir, BACKUP_FILENAME_PREFIX + backupDateKey + '.' + BACKUP_FILENAME_EXT);
 		log.info("Backing up settings to {}", f.getPath());
+		AUDIT_LOG.info("Backup settings to {}", f);
 		Writer writer = null;
 		try {
 			writer = new BufferedWriter(new FileWriter(f));
@@ -1371,6 +1423,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	@Override
 	public boolean restoreBackupResource(BackupResource resource) {
 		String backupPath = resource.getBackupPath();
+		if ( AUDIT_LOG.isInfoEnabled() ) {
+			AUDIT_LOG.info("Restore backup [{}] resource [{}]",
+					Instant.ofEpochMilli(resource.getModificationDate()), backupPath);
+		}
 		if ( BACKUP_RESOURCE_SETTINGS_CSV.equalsIgnoreCase(backupPath) ) {
 			try {
 				// TODO: need a better way to organize settings into "do not restore" category
@@ -1496,6 +1552,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			final String[] values = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_VALUE);
 			final String[] flagValues = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_FLAGS);
 			if ( keys != null && types != null && keys.length <= types.length ) {
+				AUDIT_LOG.info("{} instruction with {} updates", TOPIC_UPDATE_SETTING, keys.length);
 				List<Setting> added = new ArrayList<>(2);
 				try {
 					for ( int i = 0; i < keys.length; i++ ) {
