@@ -64,6 +64,13 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 
 	private OperationalModeTransformConfig[] expressionConfigs;
 
+	/**
+	 * Constructor.
+	 */
+	public OperationalModeDatumFilterService() {
+		super();
+	}
+
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {

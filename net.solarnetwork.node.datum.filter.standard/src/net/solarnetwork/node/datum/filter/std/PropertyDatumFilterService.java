@@ -1,21 +1,21 @@
 /* ==================================================================
  * PropertyDatumFilterService.java - 28/10/2016 3:00:56 PM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -52,13 +52,13 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * {@link DatumFilterService} that can filter out sample properties based on
  * simple matching rules.
- * 
+ *
  * <p>
  * If all properties of a datum are filtered out of a datum then
  * {@link #filter(Datum, DatumSamplesOperations, Map)} will return
  * {@literal null}.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.3
  * @since 2.0
@@ -74,6 +74,13 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 	private String[] excludes;
 
 	private Pattern[] excludePatterns;
+
+	/**
+	 * Constructor.
+	 */
+	public PropertyDatumFilterService() {
+		super();
+	}
 
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
@@ -270,7 +277,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the property include configurations.
-	 * 
+	 *
 	 * @return The property include configurations.
 	 */
 	public PropertyFilterConfig[] getPropIncludes() {
@@ -279,7 +286,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Set an array of property include configurations.
-	 * 
+	 *
 	 * @param propIncludes
 	 *        The property include configurations.
 	 */
@@ -289,7 +296,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code propIncludes} elements.
-	 * 
+	 *
 	 * @return The number of {@code propIncludes} elements.
 	 */
 	public int getPropIncludesCount() {
@@ -299,12 +306,12 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Adjust the number of configured {@code propIncludes} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link PropertyFilterConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propIncludes} elements.
 	 */
@@ -315,7 +322,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the array of property exclude expressions.
-	 * 
+	 *
 	 * @return The property exclude expressions.
 	 */
 	public String[] getExcludes() {
@@ -324,7 +331,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Set an array of property exclude expressions.
-	 * 
+	 *
 	 * @param excludeExpressions
 	 *        The property patterns to exclude.
 	 */
@@ -334,7 +341,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code excludes} elements.
-	 * 
+	 *
 	 * @return The number of {@code excludes} elements.
 	 */
 	public int getExcludesCount() {
@@ -345,7 +352,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
 	 * added element values will be {@literal null}.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code excludes} elements.
 	 */
@@ -355,7 +362,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * The setting UID to use.
-	 * 
+	 *
 	 * @param settingUid
 	 *        the setting UID
 	 */

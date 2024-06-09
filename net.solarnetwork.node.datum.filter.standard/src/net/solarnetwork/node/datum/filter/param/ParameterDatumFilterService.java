@@ -62,6 +62,13 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 
 	private ExpressionConfig[] expressionConfigs;
 
+	/**
+	 * Constructor.
+	 */
+	public ParameterDatumFilterService() {
+		super();
+	}
+
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
