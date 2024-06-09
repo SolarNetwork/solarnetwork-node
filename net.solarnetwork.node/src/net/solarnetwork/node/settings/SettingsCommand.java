@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * Edit settings command object.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 
@@ -122,6 +122,30 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	@Override
 	public Iterable<? extends Change> getSettingValueUpdates() {
 		return getValues();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SettingsCommand{");
+		if ( providerKey != null ) {
+			builder.append("providerKey=");
+			builder.append(providerKey);
+			builder.append(", ");
+		}
+		if ( instanceKey != null ) {
+			builder.append("instanceKey=");
+			builder.append(instanceKey);
+			builder.append(", ");
+		}
+		builder.append("force=");
+		builder.append(force);
+		builder.append(", hasSettingKeyPatternsToClean=");
+		builder.append(hasSettingKeyPatternsToClean());
+		builder.append(", hasSettingValueUpdates=");
+		builder.append(hasSettingValueUpdates());
+		builder.append("}");
+		return builder.toString();
 	}
 
 	/**

@@ -44,7 +44,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  * @since 2.0
  */
 public interface SettingsService {
@@ -63,6 +63,13 @@ public interface SettingsService {
 	 * @since 1.4
 	 */
 	String DEFAULT_SETTING_RESOURCE_DIR = "conf/rsrc";
+
+	/**
+	 * A name to use for settings audit logging.
+	 *
+	 * @since 2.5
+	 */
+	String AUDIT_LOG_NAME = "net.solarnetwork.node.settings.AUDIT";
 
 	/**
 	 * Get the path to the setting resource directory.
