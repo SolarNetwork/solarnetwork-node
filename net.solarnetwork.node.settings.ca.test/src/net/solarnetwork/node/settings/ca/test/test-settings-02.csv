@@ -1,0 +1,5 @@
+key,type,value,flags,modified
+foo,,bar,,2021-10-29 19:00:00
+#bim,bam,pow,,2021-10-29 19:00:00
+#del,crash,,,2021-10-29 19:00:00
+bim,bam,yowza,,2021-10-29 19:00:00

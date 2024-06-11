@@ -23,6 +23,7 @@
 package net.solarnetwork.node.settings.ca;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
@@ -64,7 +65,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,6 +91,7 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.supercsv.cellprocessor.ConvertNullTo;
 import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.comment.CommentStartsWith;
 import org.supercsv.io.CsvBeanReader;
 import org.supercsv.io.CsvBeanWriter;
 import org.supercsv.io.ICsvBeanReader;
@@ -136,7 +141,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -151,8 +156,12 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	public static final Pattern INSTANCE_UID_ALLOWED = Pattern
 			.compile("[\\p{IsAlphabetic}\\p{IsDigit}_/ -]{1,32}");
 
-	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
-			.getName() + ".FACTORY_INSTANCE_KEY";
+	/**
+	 * The internal configuration property used to store a factory instance key.
+	 */
+	public static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class.getName()
+			+ ".FACTORY_INSTANCE_KEY";
+
 	private static final String SETTING_LAST_BACKUP_DATE = "solarnode.settings.lastBackupDate";
 	private static final String BACKUP_DATE_FORMAT = "yyyy-MM-dd-HHmmss";
 	private static final String BACKUP_FILENAME_PREFIX = "settings_";
@@ -160,7 +169,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private static final Pattern BACKUP_FILENAME_PATTERN = Pattern.compile('^' + BACKUP_FILENAME_PREFIX
 			+ "(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\." + BACKUP_FILENAME_EXT + "$");
 	private static final int DEFAULT_BACKUP_MAX_COUNT = 5;
-	private static final String FACTORY_SETTING_KEY_SUFFIX = ".FACTORY";
+
+	/**
+	 * The internal settings key suffix for "factory instance" setting.
+	 */
+	public static final String FACTORY_SETTING_KEY_SUFFIX = ".FACTORY";
 
 	// a CA PID pattern so that only these are attempted to be restored
 	private static final Pattern CA_PID_PATTERN = Pattern.compile("^[a-zA-Z0-9.]+$");
@@ -231,6 +244,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				}
 			}
 
+			if ( instanceKeys.isEmpty() ) {
+				return;
+			}
+
 			final TaskExecutor executor = getTaskExecutor();
 			Runnable task = new Runnable() {
 
@@ -297,6 +314,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	public void onBind(SettingSpecifierProvider provider, Map<String, ?> properties) {
 		log.debug("Bind called on {} with props {}", provider, properties);
 		final String pid = provider.getSettingUid();
+		if ( pid == null ) {
+			return;
+		}
 
 		boolean factoryFound = false;
 		String factoryInstanceKey = null;
@@ -826,10 +846,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					@Override
 					public Object execute(Object value, CsvContext ctx) {
 						Set<SettingFlag> set = (Set<SettingFlag>) value;
-						if ( set != null ) {
+						if ( set != null && !set.isEmpty() ) {
 							return SettingFlag.maskForSet(set);
 						}
-						return 0;
+						return "";
 					}
 				}, new org.supercsv.cellprocessor.Optional(
 						new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT)) };
@@ -841,6 +861,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				: null);
 		final String instanceFactoryFilter = (instanceFilter != null ? providerFilter + "FACTORY"
 				: null);
+		final SortedMap<String, SortedMap<String, Setting>> instanceSettings = new TreeMap<>();
+		final List<Setting> instanceFactorySettings = new ArrayList<>();
 		try {
 			writer.writeHeader(CSV_HEADERS);
 			settingDao.batchProcess(new BatchCallback<Setting>() {
@@ -859,6 +881,20 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 											.contains(".")) ) {
 						return BatchCallbackResult.CONTINUE;
 					}
+					if ( providerFilter != null && domainObject.getKey().startsWith(providerFilter)
+							&& domainObject.getKey().length() > providerFilter.length() ) {
+						// stash setting for later export, after we augment with default settings
+						String instanceId = domainObject.getKey().substring(providerFilter.length());
+						if ( !instanceId.contains(".") ) {
+							if ( domainObject.getKey().endsWith(FACTORY_SETTING_KEY_SUFFIX) ) {
+								instanceFactorySettings.add(domainObject);
+							} else {
+								instanceSettings.computeIfAbsent(instanceId, k -> new TreeMap<>())
+										.put(domainObject.getType(), domainObject);
+							}
+							return BatchCallbackResult.CONTINUE;
+						}
+					}
 					try {
 						writer.write(domainObject, CSV_HEADERS, processors);
 					} catch ( IOException e ) {
@@ -868,6 +904,43 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					return BatchCallbackResult.CONTINUE;
 				}
 			}, new BasicBatchOptions("Export Settings"));
+			// if we stashed instance settings, augment them now with default setting values if we can
+			if ( !instanceSettings.isEmpty() ) {
+				final Map<String, FactorySettingSpecifierProvider> factorySettingProviders = (providerFilter != null
+						? getProvidersForFactory(filter.getProviderKey())
+						: Collections.emptyMap());
+				for ( Entry<String, SortedMap<String, Setting>> e : instanceSettings.entrySet() ) {
+					SortedMap<String, Setting> settingMap = e.getValue();
+					FactorySettingSpecifierProvider provider = factorySettingProviders.get(e.getKey());
+					if ( provider != null ) {
+						for ( SettingSpecifier s : provider.getSettingSpecifiers() ) {
+							if ( s instanceof KeyedSettingSpecifier<?> ) {
+								KeyedSettingSpecifier<?> ks = (KeyedSettingSpecifier<?>) s;
+								if ( !settingMap.containsKey(ks.getKey()) ) {
+									// augment with default setting value (commented key)
+									Object defaultValue = ks.getDefaultValue();
+									Setting defaultSetting = new Setting(
+											'#' + getFactoryInstanceSettingKey(filter.getProviderKey(),
+													e.getKey()),
+											ks.getKey(),
+											defaultValue != null ? defaultValue.toString() : null,
+											emptySet());
+									settingMap.put(ks.getKey(), defaultSetting);
+								}
+							}
+						}
+					}
+					for ( Setting s : settingMap.values() ) {
+						writer.write(s, CSV_HEADERS, processors);
+					}
+				}
+			}
+			if ( instanceFactorySettings != null ) {
+				// add factory settings last so grouped at end
+				for ( Setting s : instanceFactorySettings ) {
+					writer.write(s, CSV_HEADERS, processors);
+				}
+			}
 			if ( errors.size() > 0 ) {
 				throw errors.get(0);
 			}
@@ -954,7 +1027,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
-		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
+		final CsvPreference prefs = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
+				.skipComments(new CommentStartsWith("#")).build();
+		final ICsvBeanReader reader = new CsvBeanReader(in, prefs);
 		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null,
 				new CellProcessor() {
 
@@ -968,7 +1043,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 						return set;
 					}
-				}, new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT) };
+				}, new org.supercsv.cellprocessor.Optional(
+						new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT)) };
 		reader.getHeader(true);
 		final List<Setting> importedSettings = new ArrayList<>();
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {

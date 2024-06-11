@@ -1,5 +1,5 @@
 key,type,value,flags,modified
-com.example.bar.1,c,cc,0,
-com.example.bar.2,d,dd,0,
-com.example.bar.FACTORY,1,1,0,
-com.example.bar.FACTORY,2,2,0,
+com.example.bar.1,c,cc,,
+com.example.bar.2,d,dd,,
+com.example.bar.FACTORY,1,1,,
+com.example.bar.FACTORY,2,2,,
