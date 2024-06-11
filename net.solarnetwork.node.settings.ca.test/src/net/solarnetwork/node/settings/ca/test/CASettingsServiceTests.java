@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.ca.test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -45,6 +46,8 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.osgi.framework.Constants.SERVICE_PID;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -59,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
+import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -97,7 +101,10 @@ import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.CollectionUtils;
 
 /**
@@ -557,7 +564,7 @@ public class CASettingsServiceTests {
 		// WHEN
 		replayAll();
 		try (BufferedReader r = new BufferedReader(
-				new InputStreamReader(getClass().getResourceAsStream("test-settings.csv"), "UTF-8"))) {
+				new InputStreamReader(getClass().getResourceAsStream("test-settings.csv"), UTF_8))) {
 			service.importSettingsCSV(r);
 		}
 
@@ -572,6 +579,205 @@ public class CASettingsServiceTests {
 				hasProperty("key", equalTo("bim")),
 				hasProperty("type", equalTo("bam")),
 				hasProperty("value", equalTo("pow"))));
+		// @formatter:on
+	}
+
+	@Test
+	public void importCsv_withComments() throws IOException {
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		txManager.commit(tx);
+
+		// handle "bim" CA configurations update ("foo" is skipped)
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("bim", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps);
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
+		config.update(capture(configPropsUpdatesCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-02.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted 'foo' and 'bim' setting values, skipping comments",
+				settingCaptor.getValues(), hasSize(2));
+		// @formatter:off
+		assertThat("Persisted 'foo' setting", settingCaptor.getValues().get(0), allOf(
+				hasProperty("key", equalTo("foo")),
+				hasProperty("type", equalTo("")),
+				hasProperty("value", equalTo("bar"))));
+		assertThat("Persisted 'bim' setting", settingCaptor.getValues().get(1), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("bam")),
+				hasProperty("value", equalTo("yowza"))));
+		// @formatter:on
+	}
+
+	@Test
+	public void importCsv_withEmptyModifiedDate() throws IOException {
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		txManager.commit(tx);
+
+		// handle "bim" CA configurations update ("foo" is skipped)
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("bim", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps);
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
+		config.update(capture(configPropsUpdatesCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-03.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted 'foo' and 'bim' setting values, skipping comments",
+				settingCaptor.getValues(), hasSize(2));
+		// @formatter:off
+		assertThat("Persisted 'foo' setting", settingCaptor.getValues().get(0), allOf(
+				hasProperty("key", equalTo("foo")),
+				hasProperty("type", equalTo("")),
+				hasProperty("value", equalTo("bar"))));
+		assertThat("Persisted 'bim' setting", settingCaptor.getValues().get(1), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("bam")),
+				hasProperty("value", equalTo("pow"))));
+		// @formatter:on
+	}
+
+	@Test
+	public void importCsv_withEmptyFlagsAndModifiedDate() throws IOException {
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		txManager.commit(tx);
+
+		// handle "bim" CA configurations update ("foo" is skipped)
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("bim", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps);
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
+		config.update(capture(configPropsUpdatesCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-04.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted 'foo' and 'bim' setting values, skipping comments",
+				settingCaptor.getValues(), hasSize(2));
+		// @formatter:off
+		assertThat("Persisted 'foo' setting", settingCaptor.getValues().get(0), allOf(
+				hasProperty("key", equalTo("foo")),
+				hasProperty("type", equalTo("")),
+				hasProperty("value", equalTo("bar")),
+				hasProperty("flags", equalTo(emptySet()))));
+		assertThat("Persisted 'bim' setting", settingCaptor.getValues().get(1), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("bam")),
+				hasProperty("value", equalTo("pow")),
+				hasProperty("flags", nullValue())));
+		// @formatter:on
+	}
+
+	@Test
+	public void importCsv_flags() throws IOException {
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		txManager.commit(tx);
+
+		// handle "bim" CA configurations update
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("bim", null)).andReturn(config).atLeastOnce();
+		expect(config.getProperties()).andReturn(configProps).atLeastOnce();
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
+		config.update(capture(configPropsUpdatesCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-05.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted 'foo' and 'bim' setting values, skipping comments",
+				settingCaptor.getValues(), hasSize(2));
+		// @formatter:off
+		assertThat("Persisted 'bim.foo' setting", settingCaptor.getValues().get(0), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("foo")),
+				hasProperty("value", equalTo("bar")),
+				hasProperty("flags", equalTo(EnumSet.of(
+						Setting.SettingFlag.IgnoreModificationDate)))));
+		assertThat("Persisted 'bim.bam' setting", settingCaptor.getValues().get(1), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("bam")),
+				hasProperty("value", equalTo("pow")),
+				hasProperty("flags", equalTo(EnumSet.of(
+						Setting.SettingFlag.IgnoreModificationDate,
+						Setting.SettingFlag.Volatile)))));
 		// @formatter:on
 	}
 
@@ -839,6 +1045,107 @@ public class CASettingsServiceTests {
 		String result = out.toString();
 		String expected = FileCopyUtils.copyToString(new InputStreamReader(
 				getClass().getResourceAsStream("test-export-02.csv"), StandardCharsets.UTF_8));
+		assertThat("All results exported", result, is(equalTo(expected)));
+	}
+
+	private SettingSpecifierProviderFactory expectAddFactory(String factoryUid) throws Exception {
+		SettingSpecifierProviderFactory factory = EasyMock
+				.createMock(SettingSpecifierProviderFactory.class);
+		mocks.add(factory);
+		expect(factory.getFactoryUid()).andReturn(factoryUid).anyTimes();
+
+		// look up factory instance settings (none found)
+		expect(dao.getSettingValues(factoryUid + CASettingsService.FACTORY_SETTING_KEY_SUFFIX))
+				.andReturn(emptyList());
+
+		return factory;
+	}
+
+	private SettingSpecifierProvider expectAddSettingsProvider(String factoryUid, String instanceIdent,
+			String pid) throws Exception {
+		SettingSpecifierProvider provider = EasyMock.createMock(SettingSpecifierProvider.class);
+		mocks.add(provider);
+		expect(provider.getSettingUid()).andReturn(factoryUid).anyTimes();
+
+		final Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+		expect(ca.getConfiguration(pid, null)).andReturn(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		configProps.put(CASettingsService.OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceIdent);
+		expect(config.getProperties()).andReturn(configProps);
+
+		expect(dao.getSettingValues(factoryUid + "." + instanceIdent)).andReturn(emptyList());
+
+		return provider;
+	}
+
+	@Test
+	public void export_filterByProvider_withDefaults() throws Exception {
+		// GIVEN
+		final String i1 = "com.example.foo";
+		final String i2 = "com.example.bar";
+		final String key1 = i1 + ".1";
+		final String key2 = i2 + ".1";
+		final String key3 = i2 + ".2";
+
+		SettingSpecifierProviderFactory f1 = expectAddFactory(i1);
+		SettingSpecifierProviderFactory f2 = expectAddFactory(i2);
+
+		final String p1i1_pid = UUID.randomUUID().toString();
+		final String p2i1_pid = UUID.randomUUID().toString();
+		final String p2i2_pid = UUID.randomUUID().toString();
+		SettingSpecifierProvider p1i1 = expectAddSettingsProvider(i1, "1", p1i1_pid);
+		SettingSpecifierProvider p2i1 = expectAddSettingsProvider(i2, "1", p2i1_pid);
+		SettingSpecifierProvider p2i2 = expectAddSettingsProvider(i2, "2", p2i2_pid);
+
+		// @formatter:off
+		List<SettingSpecifier> p2Settigns = Arrays.asList(
+				new BasicTextFieldSettingSpecifier("a", "a default"),
+				new BasicTextFieldSettingSpecifier("b", null),
+				new BasicTextFieldSettingSpecifier("c", "c default"),
+				new BasicTextFieldSettingSpecifier("c", null)
+		);
+		expect(p2i1.getSettingSpecifiers()).andReturn(p2Settigns).atLeastOnce();
+		expect(p2i2.getSettingSpecifiers()).andReturn(p2Settigns).atLeastOnce();
+
+		final Setting[] data = {
+				new Setting(key1, "a", "aa", emptySet()),
+				new Setting(key1, "b", "bb", emptySet()),
+				new Setting(i1+".FACTORY", "1", "1", emptySet()),
+				new Setting(key2, "c", "cc", emptySet()),
+				new Setting(key3, "d", "dd", emptySet()),
+				new Setting(i2+".FACTORY", "1", "1", emptySet()),
+				new Setting(i2+".FACTORY", "2", "2", emptySet()),
+		};
+		// @formatter:on
+		expect(dao.batchProcess(assertWith((BatchableDao.BatchCallback<Setting> cb) -> {
+			for ( int i = 0; i < data.length; i++ ) {
+				assertThat("Continue processing", cb.handle(data[i]),
+						is(equalTo(BatchableDao.BatchCallbackResult.CONTINUE)));
+			}
+		}), anyObject())).andReturn(null);
+
+		// WHEN
+		replayAll();
+
+		// add factories
+		service.onBindFactory(f1, emptyMap());
+		service.onBindFactory(f2, emptyMap());
+
+		// add providers
+		service.onBind(p1i1, singletonMap(SERVICE_PID, p1i1_pid));
+		service.onBind(p2i1, singletonMap(SERVICE_PID, p2i1_pid));
+		service.onBind(p2i2, singletonMap(SERVICE_PID, p2i2_pid));
+
+		StringWriter out = new StringWriter();
+		SettingsCommand filter = new SettingsCommand();
+		filter.setProviderKey(i2);
+		service.exportSettingsCSV(filter, out);
+
+		String result = out.toString();
+		String expected = FileCopyUtils.copyToString(new InputStreamReader(
+				getClass().getResourceAsStream("test-export-02a.csv"), StandardCharsets.UTF_8));
 		assertThat("All results exported", result, is(equalTo(expected)));
 	}
 
