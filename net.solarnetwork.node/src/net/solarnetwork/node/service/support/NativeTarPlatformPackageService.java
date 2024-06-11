@@ -1,21 +1,21 @@
 /* ==================================================================
  * NativeTarPlatformPackageService.java - 22/05/2019 4:27:43 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -43,9 +43,9 @@ import net.solarnetwork.service.ProgressListener;
 /**
  * {@link PlatformPackageService} that extracts tar archives using the host's
  * native {@code tar} program.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class NativeTarPlatformPackageService extends BasePlatformPackageService {
@@ -64,7 +64,7 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	/**
 	 * The default value of the {@code tarCommand} property.
-	 * 
+	 *
 	 * <p>
 	 * The tar command is expected to print the names of the files as it
 	 * extracts them, which is usually done with a {@literal -v} argument.
@@ -99,7 +99,7 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	/**
 	 * Create a new task.
-	 * 
+	 *
 	 * @param <T>
 	 *        the task type
 	 * @param archive
@@ -174,30 +174,22 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 	@Override
 	public Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter,
 			Boolean installedFilter) {
-		CompletableFuture<Iterable<PlatformPackage>> f = new CompletableFuture<>();
-		f.complete(Collections.emptyList());
-		return f;
+		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
 	@Override
 	public Future<Iterable<PlatformPackage>> listUpgradableNamedPackages() {
-		CompletableFuture<Iterable<PlatformPackage>> f = new CompletableFuture<>();
-		f.complete(Collections.emptyList());
-		return f;
+		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
 	@Override
 	public Future<Boolean> refreshNamedPackages() {
-		CompletableFuture<Boolean> f = new CompletableFuture<>();
-		f.complete(true);
-		return f;
+		return CompletableFuture.completedFuture(true);
 	}
 
 	@Override
 	public Future<Boolean> cleanup() {
-		CompletableFuture<Boolean> f = new CompletableFuture<>();
-		f.complete(true);
-		return f;
+		return CompletableFuture.completedFuture(true);
 	}
 
 	@Override
@@ -220,12 +212,12 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	/**
 	 * Set the command and arguments to use for extracting tar resources.
-	 * 
+	 *
 	 * <p>
 	 * The arguments support {@literal __SOURCE_FILE__} and
 	 * {@literal __DEST_DIR__} placeholders that will be replaced by the input
 	 * tar file path and the value of the {@code destinationPath} property.
-	 * 
+	 *
 	 * @param tarCommand
 	 *        the OS tar command to use
 	 */
