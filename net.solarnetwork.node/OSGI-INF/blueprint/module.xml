@@ -102,6 +102,9 @@
 
 	<reference-list id="nodeControlProviders" availability="optional"
 		interface="net.solarnetwork.node.service.NodeControlProvider"/>
+		
+	<reference-list id="platformPackageServices" availability="optional"
+		interface="net.solarnetwork.node.service.PlatformPackageService"/>
 
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.service.ObjectMapperService">
@@ -632,6 +635,22 @@
 		</bean>
 	</service>
 	
+	<!-- 
+		Node Packages Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SystemConfiguration</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleNodePackagesService">
+			<argument ref="platformPackageServices"/>
+		</bean>
+	</service>
+
 	<!-- 
 		Datum Expression Service
 	 -->
