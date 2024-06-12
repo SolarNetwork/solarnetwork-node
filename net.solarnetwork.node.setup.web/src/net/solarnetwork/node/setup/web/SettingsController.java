@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.web;
 
 import static java.lang.String.format;
 import static java.util.Collections.sort;
+import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
@@ -64,6 +65,7 @@ import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -99,7 +101,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.5
+ * @version 2.6
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -116,6 +118,7 @@ public class SettingsController {
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
+	private static final String VIEW_REDIRECT_SETTINGS = "redirect:/a/settings";
 
 	private static final SearchFilter NOT_DATUM_FILTER = SearchFilter
 			.forLDAPSearchFilterString("(!(role=datum-filter))");
@@ -147,6 +150,22 @@ public class SettingsController {
 	 */
 	public SettingsController() {
 		super();
+	}
+
+	/**
+	 * Handle a {@link RuntimeException}.
+	 *
+	 * @param request
+	 *        the current HTTP request
+	 * @param e
+	 *        the exception
+	 * @return the view name (redirect to settings)
+	 */
+	@ExceptionHandler(RuntimeException.class)
+	public String handleRuntimeException(HttpServletRequest request, RuntimeException e) {
+		log.error("RuntimeException in {} controller", getClass().getSimpleName(), e);
+		setupSessionError(request, "error.unexpected", e.getMessage());
+		return VIEW_REDIRECT_SETTINGS;
 	}
 
 	/**
@@ -719,7 +738,7 @@ public class SettingsController {
 			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");
 			service.importSettingsCSV(reader);
 		}
-		return "redirect:/a/settings";
+		return VIEW_REDIRECT_SETTINGS;
 	}
 
 	/**

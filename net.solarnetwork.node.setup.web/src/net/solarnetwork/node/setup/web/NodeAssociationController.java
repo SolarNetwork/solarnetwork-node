@@ -1,27 +1,28 @@
 /* ==================================================================
  * NodeAssociationController.java - Sep 6, 2011 1:34:13 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,10 +76,10 @@ import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller used to associate a node with a SolarNet account.
- * 
+ *
  * @author maxieduncan
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -107,7 +108,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * The model attribute for a {@link UserProfile} instance.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String KEY_USER = "user";
@@ -115,7 +116,7 @@ public class NodeAssociationController extends BaseSetupController {
 	/**
 	 * The model attribute for a list of {@link SettingSpecifierProvider}
 	 * instances.
-	 * 
+	 *
 	 * @since 1.7
 	 */
 	public static final String KEY_PROVIDERS = "providers";
@@ -158,7 +159,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * A model attribute to signal to the UI that the node is not associated.
-	 * 
+	 *
 	 * @return {@code true}
 	 */
 	@ModelAttribute(binding = false, name = KEY_NEEDS_ASSOCIATION)
@@ -168,7 +169,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Node association entry point.
-	 * 
+	 *
 	 * @param model
 	 *        the model
 	 * @return the view name
@@ -204,7 +205,7 @@ public class NodeAssociationController extends BaseSetupController {
 	/**
 	 * Decode the invitation code, and present the decoded information for the
 	 * user to verify.
-	 * 
+	 *
 	 * @param command
 	 *        the command
 	 * @param errors
@@ -235,7 +236,7 @@ public class NodeAssociationController extends BaseSetupController {
 	/**
 	 * Decodes the supplied verification code storing the details for the user
 	 * to validation.
-	 * 
+	 *
 	 * @param command
 	 *        the associate comment, used only for reporting errors
 	 * @param errors
@@ -276,7 +277,7 @@ public class NodeAssociationController extends BaseSetupController {
 	/**
 	 * Confirms the node association with the SolarNet server supplied in the
 	 * verification code.
-	 * 
+	 *
 	 * @param command
 	 *        the associate comment, used only for reporting errors
 	 * @param errors
@@ -345,7 +346,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Restore from backup.
-	 * 
+	 *
 	 * @param model
 	 *        the model
 	 * @return the result view name
@@ -381,7 +382,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Configure settings.
-	 * 
+	 *
 	 * @param cmd
 	 *        the settings to configure
 	 * @return the result
@@ -398,7 +399,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Choose a backup to restore.
-	 * 
+	 *
 	 * @param key
 	 *        the backup key
 	 * @param request
@@ -414,14 +415,13 @@ public class NodeAssociationController extends BaseSetupController {
 			request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
 			return PAGE_RESTORE_FROM_BACKUP;
 		}
-		request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
-		request.getSession(true).setAttribute("errorMessageParam0", "Backup not imported");
+		setupSessionError(request, "node.setup.restore.error.unknown", "Backup not found");
 		return "redirect:/associate";
 	}
 
 	/**
 	 * Import a backup.
-	 * 
+	 *
 	 * @param file
 	 *        the backup to import
 	 * @param request
@@ -435,8 +435,7 @@ public class NodeAssociationController extends BaseSetupController {
 			throws IOException {
 		final BackupManager manager = backupManagerTracker.service();
 		if ( manager == null ) {
-			request.getSession(true).setAttribute("errorMessageKey",
-					"node.setup.restore.error.noBackupManager");
+			setupSessionError(request, "node.setup.restore.error.noBackupManager");
 			return "redirect:/associate";
 		}
 		Map<String, String> props = new HashMap<String, String>();
@@ -448,8 +447,7 @@ public class NodeAssociationController extends BaseSetupController {
 				request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
 				return PAGE_RESTORE_FROM_BACKUP;
 			}
-			request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
-			request.getSession(true).setAttribute("errorMessageParam0", "Backup not imported");
+			setupSessionError(request, "node.setup.restore.error.unknown", "Backup not imported");
 			return "redirect:/associate";
 		} catch ( Exception e ) {
 			log.error("Exception restoring backup archive", e);
@@ -457,8 +455,7 @@ public class NodeAssociationController extends BaseSetupController {
 			while ( root.getCause() != null ) {
 				root = root.getCause();
 			}
-			request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
-			request.getSession(true).setAttribute("errorMessageParam0", root.getMessage());
+			setupSessionError(request, "node.setup.restore.error.unknown", root.getMessage());
 			return "redirect:/associate";
 		}
 
@@ -466,7 +463,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * View an imported backup.
-	 * 
+	 *
 	 * @param locale
 	 *        the locale
 	 * @param request
@@ -502,7 +499,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Restore a backup.
-	 * 
+	 *
 	 * @param options
 	 *        the options
 	 * @param locale
@@ -540,7 +537,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Set the PKI service.
-	 * 
+	 *
 	 * @param pkiService
 	 *        the service to set
 	 */
@@ -550,7 +547,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Set the backup manager service.
-	 * 
+	 *
 	 * @param backupManagerTracker
 	 *        the service to set
 	 */
@@ -560,7 +557,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Set the network URLs.
-	 * 
+	 *
 	 * @param networkURLs
 	 *        the network URLs to set
 	 */
@@ -570,7 +567,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/**
 	 * Set the setting provider collection.
-	 * 
+	 *
 	 * @param settingProviders
 	 *        the providers to set
 	 * @since 1.7
