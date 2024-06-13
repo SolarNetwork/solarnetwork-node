@@ -1,21 +1,21 @@
 /* ==================================================================
  * AbstractBatchableJdbcDao.java - Nov 5, 2012 11:12:42 AM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -44,7 +44,7 @@ import net.solarnetwork.node.dao.BatchableDao;
 
 /**
  * Base class for {@link BatchableDao} implementations.
- * 
+ *
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
@@ -66,8 +66,15 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
+	 * Constructor.
+	 */
+	public AbstractBatchableJdbcDao() {
+		super();
+	}
+
+	/**
 	 * Get the SQL statement to use for batch processing.
-	 * 
+	 *
 	 * @param options
 	 *        the requested batch options
 	 * @return the SQL query
@@ -76,7 +83,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Get an entity from the current row in a ResultSet for batch processing.
-	 * 
+	 *
 	 * @param options
 	 *        the requested batch options
 	 * @param resultSet
@@ -92,12 +99,12 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Update the current row in a ResulSet for batch processing.
-	 * 
+	 *
 	 * <p>
 	 * The {@link ResultSet#updateRow()} method should <strong>not</strong> be
 	 * called within this method.
 	 * </p>
-	 * 
+	 *
 	 * @param options
 	 *        the requested batch options
 	 * @param resultSet
@@ -189,7 +196,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Load a classpath SQL resource into a string.
-	 * 
+	 *
 	 * @param classPathResource
 	 *        the classpath resource to load as a SQL string
 	 * @return the SQL
@@ -203,7 +210,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Load a SQL resource into a String.
-	 * 
+	 *
 	 * @param resource
 	 *        the SQL resource to load
 	 * @return the SQL
@@ -217,7 +224,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	/**
 	 * Get batch SQL statements, split into multiple statements on the
 	 * {@literal ;} character.
-	 * 
+	 *
 	 * @param sqlResource
 	 *        the SQL resource to load
 	 * @return split SQL
@@ -230,7 +237,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Get the transaction template.
-	 * 
+	 *
 	 * @return the template
 	 */
 	public TransactionTemplate getTransactionTemplate() {
@@ -239,7 +246,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Set the transaction template.
-	 * 
+	 *
 	 * @param transactionTemplate
 	 *        the template to set
 	 */
@@ -250,7 +257,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	/**
 	 * Set a SQL fragment to append to SQL statements where an updatable result
 	 * set is desired.
-	 * 
+	 *
 	 * @return the SQL suffix, or {@literal null} if not desired
 	 * @since 1.4
 	 */
@@ -261,12 +268,12 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	/**
 	 * Set a SQL fragment to append to SQL statements where an updatable result
 	 * set is desired.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
 	 * included at the beginning. Set to {@literal null} to disable.
 	 * </p>
-	 * 
+	 *
 	 * @param sqlForUpdateSuffix
 	 *        the suffix to set
 	 * @since 1.4
@@ -277,7 +284,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Get a SQL resource prefix.
-	 * 
+	 *
 	 * @return the prefix
 	 * @since 1.5
 	 */
@@ -287,7 +294,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	/**
 	 * Set a SQL resource prefix.
-	 * 
+	 *
 	 * @param sqlResourcePrefix
 	 *        the prefix to set
 	 * @since 1.5

@@ -1,23 +1,23 @@
 /* ===================================================================
  * DatabaseSetup.java
- * 
+ *
  * Created Dec 1, 2009 1:21:24 PM
- * 
+ *
  * Copyright 2007-2009 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ===================================================================
  */
@@ -39,27 +39,27 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * Class to initialize a database for first-time use by a Solar Node.
- * 
+ *
  * <p>
  * The {@link DatabaseSetup#init()} method should be called once during
  * application startup, before any other JDBC-based DAOs attempt to initialize
  * or access the database.
  * </p>
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>dataSource</dt>
  * <dd>The DataSource to use for accessing the database with.</dd>
- * 
+ *
  * <dt>initSqlResource</dt>
  * <dd>A Resource to a SQL script that will initialize the database for the
  * first time, when it is not found to exist already. Defaults to a
  * classpath-relative resource named {@link #DEFAULT_INIT_SQL_RESOURCE}.</dd>
  * </dl>
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -82,6 +82,13 @@ public class DatabaseSetup {
 			DatabaseSetup.class);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 */
+	public DatabaseSetup() {
+		super();
+	}
 
 	/**
 	 * Check for the existence of the database, and if not found create and
@@ -148,6 +155,8 @@ public class DatabaseSetup {
 	}
 
 	/**
+	 * Get the data source.
+	 *
 	 * @return the dataSource
 	 */
 	public DataSource getDataSource() {
@@ -155,6 +164,8 @@ public class DatabaseSetup {
 	}
 
 	/**
+	 * Set the data source.
+	 *
 	 * @param dataSource
 	 *        the dataSource to set
 	 */
@@ -163,6 +174,8 @@ public class DatabaseSetup {
 	}
 
 	/**
+	 * Get the initializing SQL resource.
+	 *
 	 * @return the initSqlResource
 	 */
 	public Resource getInitSqlResource() {
@@ -170,6 +183,8 @@ public class DatabaseSetup {
 	}
 
 	/**
+	 * Set the initializing SQL resource.
+	 *
 	 * @param initSqlResource
 	 *        the initSqlResource to set
 	 */

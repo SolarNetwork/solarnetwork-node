@@ -1,21 +1,21 @@
 /* ==================================================================
  * BaseJdbcGenericDao.java - 7/02/2020 9:58:53 am
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -45,7 +45,11 @@ import net.solarnetwork.domain.SortDescriptor;
 
 /**
  * Base implementation of {@link GenericDao} for SolarNode using JDBC.
- * 
+ *
+ * @param <T>
+ *        the entity type
+ * @param <K>
+ *        the primary key type
  * @author matt
  * @version 2.1
  */
@@ -98,7 +102,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param objectType
 	 *        the entity type
 	 * @param keyType
@@ -126,7 +130,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	/**
 	 * Init with an an entity name and table version, deriving various names
 	 * based on conventions.
-	 * 
+	 *
 	 * @param objectType
 	 *        the entity type
 	 * @param keyType
@@ -161,7 +165,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get the key type.
-	 * 
+	 *
 	 * @return the type, never {@literal null}
 	 */
 	public Class<? extends K> getKeyType() {
@@ -170,7 +174,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get the default row mapper.
-	 * 
+	 *
 	 * @return The row mapper.
 	 */
 	protected RowMapper<T> getRowMapper() {
@@ -205,12 +209,12 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Post an entity event.
-	 * 
+	 *
 	 * <p>
 	 * The {@link #getEventAdmin()} service must be available for the event to
 	 * be posted.
 	 * </p>
-	 * 
+	 *
 	 * @param id
 	 *        the entity ID
 	 * @param entity
@@ -240,11 +244,11 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get the first returned query result.
-	 * 
+	 *
 	 * <p>
 	 * The {@link #getRowMapper()} will be used to map the results.
 	 * </p>
-	 * 
+	 *
 	 * @param sql
 	 *        the SQL to execute
 	 * @param parameters
@@ -258,13 +262,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get an argument list for a primary key.
-	 * 
+	 *
 	 * <p>
 	 * This method handles {@link java.util.UUID} values as a pair of
 	 * {@code Long} arguments for the most and least significant bits. All other
 	 * keys are returned as a single argument list as-is.
 	 * </p>
-	 * 
+	 *
 	 * @param id
 	 *        the primary key
 	 * @return the arguments
@@ -284,12 +288,12 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get the SQL to use for a query with optional sort descriptors applied.
-	 * 
+	 *
 	 * <p>
 	 * This method will call {@link #sqlOrderClauses(String, List)} and if that
 	 * returns any values, {@link #applySqlOrderClauses(String, List)}.
 	 * </p>
-	 * 
+	 *
 	 * @param classPathResource
 	 *        the base SQL resource to load
 	 * @param sorts
@@ -308,19 +312,19 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	/**
 	 * Get a list of SQL {@literal ORDER BY} clause values to apply for a given
 	 * query and sort descriptors.
-	 * 
+	 *
 	 * <p>
 	 * The returned array should contain just the clause values, like
 	 * {@literal my_id DESC}.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method handles the sort keys defined in {@link StandardSortKey} by
 	 * generating order clauses that are named after the enumeration values
 	 * themselves. Extending classes can override this method to support more
 	 * keys, or override this behaviour.
 	 * </p>
-	 * 
+	 *
 	 * @param classPathResource
 	 *        the SQL resource the order clauses is to be applied to
 	 * @param sorts
@@ -352,14 +356,14 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Apply a list of SQL order clauses to a SQL statement.
-	 * 
+	 *
 	 * <p>
 	 * This method looks for the last {@literal ORDER BY} in {@code sql}, and
 	 * replaces it with a newly generated order clause derived from the
 	 * {@code orderClauses} list. If no {@literal ORDER BY} is found, it will be
 	 * appended along with the generated order clause.
 	 * </p>
-	 * 
+	 *
 	 * @param sql
 	 *        the SQL
 	 * @param orderClauses
@@ -391,7 +395,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get a single SQL order clause for a given column and direction.
-	 * 
+	 *
 	 * @param columnName
 	 *        the column name
 	 * @param descending
@@ -414,7 +418,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Set an {@link Instant} as a timestamp statement parameter.
-	 * 
+	 *
 	 * @param stmt
 	 *        the statement
 	 * @param parameterIndex
@@ -436,7 +440,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get an {@link Instant} from a timestamp result set column.
-	 * 
+	 *
 	 * @param rs
 	 *        the result set
 	 * @param columnIndex
@@ -452,7 +456,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Set a {@link UUID} as a pair of long statement parameters.
-	 * 
+	 *
 	 * @param stmt
 	 *        the statement
 	 * @param parameterIndex
@@ -471,7 +475,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/**
 	 * Get a {@link UUID} from a pair of long result set columns.
-	 * 
+	 *
 	 * @param rs
 	 *        the result set
 	 * @param columnIndex
