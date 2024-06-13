@@ -1,21 +1,21 @@
 /* ==================================================================
  * JsonHttpClientSupport.java - Oct 6, 2014 12:35:03 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -38,23 +38,23 @@ import net.solarnetwork.service.RemoteServiceException;
 
 /**
  * An abstract class to support HTTP based services that use JSON.
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>compress</dt>
  * <dd>Flag to compress the HTTP body content, defaults to
  * {@literal false}.</dd>
- * 
+ *
  * <dt>objectMapper</dt>
  * <dd>The {@link ObjectMapper} to marshall/unmarshall objects to/from JSON
  * with.</dd>
  * </dl>
- * 
+ *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
@@ -73,7 +73,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Perform a JSON HTTP request.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to make the request to
 	 * @param method
@@ -91,7 +91,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Perform a JSON HTTP request.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to make the request to
 	 * @param method
@@ -134,7 +134,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Perform a JSON GET HTTP request.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to GET
 	 * @return the HTTP response InputStream
@@ -147,7 +147,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Perform a JSON GET HTTP request.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to GET
 	 * @param connectionCustomizer
@@ -165,7 +165,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Perform a JSON POST HTTP request.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to POST
 	 * @param data
@@ -180,7 +180,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Perform a JSON POST HTTP request.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to POST
 	 * @param data
@@ -201,7 +201,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	/**
 	 * Parse a standard {@code Response} HTTP response and return the
 	 * {@code data} object as the provided type.
-	 * 
+	 *
 	 * @param <T>
 	 *        the element type
 	 * @param in
@@ -247,7 +247,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	/**
 	 * Parse a standard {@code Response} HTTP response and return the
 	 * {@code data} array as a collection of objects of the provided type.
-	 * 
+	 *
 	 * @param <T>
 	 *        the collection element type
 	 * @param in
@@ -296,7 +296,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	/**
 	 * Parse a standard {@code Response} HTTP response and return the
 	 * {@code data.results} array as objects of the provided type.
-	 * 
+	 *
 	 * @param <T>
 	 *        the collection element type
 	 * @param in
@@ -347,7 +347,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Test for a successful standard {@code Response} HTTP response.
-	 * 
+	 *
 	 * @param in
 	 *        the InputStream to read, which will be closed before returning
 	 *        from this method
@@ -365,9 +365,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 					return;
 				}
 			}
-			throw new RemoteServiceException(
-					"Server response not successful: " + root.get("message") == null ? "(no message)"
-							: root.get("message").asText());
+			throw new RemoteServiceException("Server response not successful: "
+					+ (root.get("message") == null ? "(no message)" : root.get("message").asText()));
 		} finally {
 			if ( in != null ) {
 				in.close();
@@ -377,7 +376,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Get the JSON mapper.
-	 * 
+	 *
 	 * @return the mapper
 	 */
 	public final ObjectMapper getObjectMapper() {
@@ -386,7 +385,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Set the JSON mapper.
-	 * 
+	 *
 	 * @param objectMapper
 	 *        the mapper
 	 */
@@ -396,7 +395,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Get the compress flag.
-	 * 
+	 *
 	 * @return {@literal true} to compress HTTP body content with gzip
 	 */
 	public final boolean isCompress() {
@@ -405,7 +404,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Set the compress flag.
-	 * 
+	 *
 	 * @param compress
 	 *        {@literal true} to compress HTTP body content with gzip
 	 */
