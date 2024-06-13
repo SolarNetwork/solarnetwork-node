@@ -4,14 +4,14 @@ Bundle-Name: Node Unit Test Support
 Bundle-Description: Testing support for SolarNode plugins.
 Bundle-SymbolicName: net.solarnetwork.node.test
 Automatic-Module-Name: net.solarnetwork.node.test
-Bundle-Version: 1.16.0
+Bundle-Version: 1.16.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
  net.solarnetwork.node.test;version="1.9.0"
 Import-Package: 
- com.zaxxer.hikari;version="[3.3,5.0)",
- com.zaxxer.hikari.pool;version="[3.3,5.0)",
+ com.zaxxer.hikari;version="[3.3,6.0)",
+ com.zaxxer.hikari.pool;version="[3.3,6.0)",
  javax.sql,
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.node.dao;version="[2.0,3.0)",
