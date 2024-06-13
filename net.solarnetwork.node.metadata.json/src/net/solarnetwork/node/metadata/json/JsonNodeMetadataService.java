@@ -46,7 +46,7 @@ import net.solarnetwork.util.CachedResult;
  * JSON based web service implementation of {@link NodeMetadataService}.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.7
  */
 public class JsonNodeMetadataService extends JsonHttpClientSupport implements NodeMetadataService,
@@ -114,7 +114,11 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 
 		CachedResult<GeneralDatumMetadata> cached = this.cachedMetadata;
 		if ( cached != null && cached.isValid() ) {
-			cached.getResult().merge(localMetadata, true);
+			if ( cached.getResult() != null ) {
+				cached.getResult().merge(localMetadata, true);
+			} else if ( cacheSeconds > 0 ) {
+				this.cachedMetadata = new CachedResult<>(newMeta, cacheSeconds, TimeUnit.SECONDS);
+			}
 		}
 	}
 
@@ -153,8 +157,7 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 			final InputStream in = jsonGET(url);
 			GeneralDatumMetadata meta = extractResponseData(in, GeneralDatumMetadata.class);
 			if ( cacheSeconds > 0 ) {
-				this.cachedMetadata = new CachedResult<GeneralDatumMetadata>(meta, cacheSeconds,
-						TimeUnit.SECONDS);
+				this.cachedMetadata = new CachedResult<>(meta, cacheSeconds, TimeUnit.SECONDS);
 			}
 			return meta;
 		} catch ( IOException e ) {
