@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -35,6 +36,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.easymock.EasyMock;
@@ -51,7 +53,7 @@ import net.solarnetwork.node.service.IdentityService;
  * Test cases for the {@link JsonNodeMetadataService} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 
@@ -266,6 +268,50 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 		assertThat("Property meta stuff -> c", meta.getInfoInteger("stuff", "c"), equalTo(42));
 		assertThat("Property meta wham -> bam", meta.getInfoString("wham", "bam"),
 				equalTo("thankyoumam"));
+	}
+
+	@Test
+	public void addMetadata_notCached_noneExists() throws Exception {
+		// GIVEN
+		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
+		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
+
+		AtomicInteger counter = new AtomicInteger();
+
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertThat("Request path", request.getPathInfo(), equalTo("/api/v1/sec/nodes/meta"));
+				final int reqNum = counter.getAndIncrement();
+				assertThat("No more than 2 requets made", reqNum, is(lessThan(3)));
+				if ( reqNum == 0 ) {
+					assertThat("Request 1 method", request.getMethod(), equalTo("GET"));
+					respondWithJsonResource(response, "node-meta-03.json");
+				} else if ( reqNum == 1 ) {
+					assertThat("Request 2 method", request.getMethod(), equalTo("POST"));
+					String body = FileCopyUtils.copyToString(
+							new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8));
+					assertThat("Body is updated metadata", body,
+							is(equalTo("{\"m\":{\"foo\":\"bar\"}}")));
+					respondWithJson(response, "{\"success\":true}");
+				}
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// WHEN
+		replayAll();
+		GeneralDatumMetadata newMeta = new GeneralDatumMetadata();
+		newMeta.putInfoValue("foo", "bar");
+		service.addNodeMetadata(newMeta);
+
+		// THEN
+		assertThat("API called", counter.get(), is(equalTo(2)));
 	}
 
 }

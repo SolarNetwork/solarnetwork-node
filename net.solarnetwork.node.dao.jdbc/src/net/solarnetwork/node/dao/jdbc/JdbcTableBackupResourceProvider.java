@@ -1,21 +1,21 @@
 /* ==================================================================
  * JdbcTableBackupResourceProvider.java - 6/10/2016 7:11:28 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -64,9 +63,9 @@ import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 
 /**
  * Backup support for JDBC tables.
- * 
+ *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
@@ -83,12 +82,12 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * This will default to a backup provider key of
 	 * {@literal net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider}.
 	 * </p>
-	 * 
+	 *
 	 * @param jdbcTemplate
 	 *        The JDBC template to use.
 	 * @param transactionTemplate
@@ -104,7 +103,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param key
 	 *        the backup provider key to use
 	 * @param jdbcTemplate
@@ -301,10 +300,9 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		final Map<String, ColumnCsvMetaData> columnMetaData = JdbcUtils
 				.columnCsvMetaDataForDatabaseMetaData(con.getMetaData(), tableName);
 		final String sql = JdbcUtils.insertSqlForColumnCsvMetaData(tableName, columnMetaData);
-		final PreparedStatement ps = con.prepareStatement(sql);
 		Reader in;
 		PreparedStatementCsvReader reader = null;
-		try {
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			in = new InputStreamReader(resource.getInputStream());
 			reader = new PreparedStatementCsvReader(in, CsvPreference.STANDARD_PREFERENCE);
 			String[] header = reader.getHeader(true);
@@ -321,7 +319,6 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 				try {
 					ps.executeUpdate();
 				} catch ( SQLException e ) {
-
 					DataAccessException dae = jdbcTemplate.getExceptionTranslator().translate("Load CSV",
 							sql, e);
 					if ( dae instanceof DataIntegrityViolationException ) {
@@ -333,8 +330,13 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 					}
 				}
 			}
+			return true;
+		} catch ( SQLException e ) {
+			log.error("SQL error restoring resource [{}] to table [{}]: {}", resource.getBackupPath(),
+					tableName, e.getMessage());
 		} catch ( IOException e ) {
-			throw new DataAccessResourceFailureException("CSV encoding error", e);
+			log.error("CSV encoding error restoring resource [{}] to table [{}]: {}",
+					resource.getBackupPath(), tableName, e.getMessage());
 		} finally {
 			if ( reader != null ) {
 				try {
@@ -343,19 +345,14 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 					// ignore
 				}
 			}
-			try {
-				ps.close();
-			} catch ( SQLException e ) {
-				// ignore
-			}
 		}
-		return true;
+		return false;
 	}
 
 	/**
 	 * Set the list of table names to back up. The names should be
 	 * fully-qualified like {@code schema.table}.
-	 * 
+	 *
 	 * @param tableNames
 	 *        The tables to back up.
 	 */
@@ -365,7 +362,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Set a {@link MessageSource} to use for resolving backup info messages.
-	 * 
+	 *
 	 * @param messageSource
 	 *        The message source to use.
 	 * @since 1.2
