@@ -29,6 +29,14 @@ Each device configuration contains the following overall settings:
 | Max Ports          | The maximum number of serial ports that can be opened at once, or `0` for no limit. |
 | Wire Logging       | Enable to support wire-level Modbus message logging. See [below](#logging) for more information. |
 
+
+## Receive timeout
+
+SolarNode polls the serial port for data, and the receive timeout affects how long SolarNode will wait for data to
+"appear" before polling again. Setting this value lower may allow SolarNode to process data that appears more quickly,
+but may cause higher CPU use as a consequence. On low-power devices that might impact the overall stability of the
+device. Be sure to test your serial settings, especially if you are connecting many serial devices to SolarNode.
+
 # Unknown serial port
 
 In case the configured serial port is not found, the plugin will log the name of all serial ports
