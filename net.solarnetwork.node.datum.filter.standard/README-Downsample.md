@@ -25,7 +25,7 @@ Each filter configuration contains the following overall settings:
 | Required Mode         | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
 | Required Tag          | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
 | Sample Count          | The number of samples to average over. |
-| Sample Duration       | A duration in seconds to collect samples within before generating an averaged output. Overrides the **Sample Count** setting. |
+| Sample Duration       | A duration in seconds to collect samples within before generating an averaged output. Overrides the **Sample Count** setting. See the [note below](#sample-duration) on how the sample times become clock-aligned. |
 | Decimal Scale         | A maximum number of digits after the decimal point to round to. Set to`0` to round to whole numbers. |
 | Property Excludes     | A list of property names to exclude. |
 | Min Property Template | A string format to use for computed minimum property values. Use `%s` as the placeholder for the original property name, e.g. `%s_min`. |
@@ -33,8 +33,13 @@ Each filter configuration contains the following overall settings:
 
 ## Settings notes
 
-<dl>
-	<dt>Source ID</dt>
-	<dd>This is a case-insensitive regular expression pattern to match against datum source ID values.
-	<b>Only</b> datum with matching source ID values will be filtered. This is required.</dd>
-</dl>
+### Source ID
+
+This is a case-insensitive regular expression pattern to match against datum source ID values.
+**Only** datum with matching source ID values will be filtered. This is required.
+
+### Sample Duration
+
+When this setting is configured, the resolved timestamp of each downsampled datum will be 
+clock-aligned based on the period configured. For example if `300` is configured, then
+the resolved timestamps would have times exactly at `00:00`, `00:05`, `00:10` and so on.
