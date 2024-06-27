@@ -172,6 +172,13 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	/** The local BACnet device. */
 	private LocalDevice localDevice;
 
+	/**
+	 * Constructor.
+	 */
+	public AbstractBacnet4jBacnetNetwork() {
+		super();
+	}
+
 	@Override
 	public void serviceDidStartup() {
 		configurationChanged(null);
