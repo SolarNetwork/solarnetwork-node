@@ -1,21 +1,21 @@
 /* ==================================================================
  * Bacnet4jBacnetNetwork.java - 1/11/2022 6:13:09 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -103,7 +103,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * Base implementation of {@link BacnetNetwork} for other implementations to
  * extend.
- * 
+ *
  * <p>
  * This implementation is designed to work with connections that are kept open
  * for long periods of time. Each connection returned from
@@ -112,9 +112,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * be automatically closed, so that clients using the connection can re-open the
  * connection with the new configuration.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 		implements BacnetNetwork, Bacnet4jNetworkOps, DeviceEventListener, SettingSpecifierProvider,
@@ -133,7 +133,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	private static final long SUBSCRIPTION_CHECK_PERIOD = 15_000L;
 
 	/** The subscription lifetime to use, in seconds. */
-	private static final UnsignedInteger SUBSCRIPTION_LIFETIME = new UnsignedInteger(120);
+	private static final UnsignedInteger DEFAULT_SUBSCRIPTION_LIFETIME = new UnsignedInteger(120);
 
 	private final AtomicInteger connectionCounter = new AtomicInteger(0);
 	private final AtomicInteger subscriptionCounter = new AtomicInteger(0);
@@ -164,12 +164,20 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	private int retries = Transport.DEFAULT_RETRIES;
 	private long startupDelay = DEFAULT_STARTUP_DELAY;
 	private String applicationSoftwareVersion;
+	private UnsignedInteger subscriptionLifetime = DEFAULT_SUBSCRIPTION_LIFETIME;
 
 	private Future<?> startupFuture;
 	private ScheduledFuture<?> subscriptionFuture;
 
 	/** The local BACnet device. */
 	private LocalDevice localDevice;
+
+	/**
+	 * Constructor.
+	 */
+	public AbstractBacnet4jBacnetNetwork() {
+		super();
+	}
 
 	@Override
 	public void serviceDidStartup() {
@@ -230,6 +238,8 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 				String.valueOf(Transport.DEFAULT_SEG_TIMEOUT)));
 		results.add(new BasicTextFieldSettingSpecifier("retries",
 				String.valueOf(Transport.DEFAULT_RETRIES)));
+		results.add(new BasicTextFieldSettingSpecifier("subscriptionLifetimeSeconds",
+				String.valueOf(DEFAULT_SUBSCRIPTION_LIFETIME.longValue())));
 		return results;
 	}
 
@@ -309,7 +319,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Create a new network instance.
-	 * 
+	 *
 	 * @return the network, or {@literal null} if the network cannot be created
 	 *         (i.e. from lack of configuration)
 	 */
@@ -335,12 +345,12 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get a description of this network.
-	 * 
+	 *
 	 * <p>
 	 * This implementation simply calls {@code toString()} on this object.
 	 * Extending classes may want to provide something more meaningful.
 	 * </p>
-	 * 
+	 *
 	 * @return a description of this network
 	 */
 	@Override
@@ -361,16 +371,12 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 		return subscriptionCounter.incrementAndGet();
 	}
 
-	private UnsignedInteger subscriptionLifetime() {
-		return SUBSCRIPTION_LIFETIME; // TODO: setting?
-	}
-
 	@Override
 	public void covSubscribe(int subscriptionId, Collection<BacnetDeviceObjectPropertyRef> refs,
 			int maxDelay) {
+		final UnsignedInteger lifetime = subscriptionLifetime;
 		final CovSubscription subscription = covSubscriptions.computeIfAbsent(subscriptionId,
-				k -> new CovSubscription(subscriptionId, localDevice, this, subscriptionLifetime()));
-		final UnsignedInteger lifetime = subscriptionLifetime();
+				k -> new CovSubscription(subscriptionId, localDevice, this, lifetime));
 		final Map<Integer, Map<ObjectIdentifier, List<CovReference>>> devRefMap = deviceReferenceMap(
 				refs);
 		synchronized ( subscription ) {
@@ -774,7 +780,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the task scheduler.
-	 * 
+	 *
 	 * @return the task scheduler
 	 */
 	public TaskScheduler getTaskScheduler() {
@@ -783,7 +789,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the task scheduler.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 */
@@ -793,7 +799,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the network timeout.
-	 * 
+	 *
 	 * @return the timeout, in milliseconds
 	 */
 	public int getTimeout() {
@@ -802,7 +808,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the network timeout.
-	 * 
+	 *
 	 * @param timeout
 	 *        the timeout to set, in milliseconds
 	 */
@@ -812,7 +818,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the network segment timeout.
-	 * 
+	 *
 	 * @return the segment timeout, in milliseconds
 	 */
 	public int getSegmentTimeout() {
@@ -821,7 +827,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the network segment timeout.
-	 * 
+	 *
 	 * @param segmentTimeout
 	 *        the segment timeout to set, in milliseconds
 	 */
@@ -831,7 +837,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the network segment window.
-	 * 
+	 *
 	 * @return the segment window
 	 */
 	public int getSegmentWindow() {
@@ -840,7 +846,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the network segment window.
-	 * 
+	 *
 	 * @param segmentWindow
 	 *        the segment window to set
 	 */
@@ -850,7 +856,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the network retry count.
-	 * 
+	 *
 	 * @return the retries
 	 */
 	public int getRetries() {
@@ -859,7 +865,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the network retry count.
-	 * 
+	 *
 	 * @param retries
 	 *        the retries to set
 	 */
@@ -869,7 +875,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the device ID.
-	 * 
+	 *
 	 * @return the device ID
 	 */
 	public int getDeviceId() {
@@ -878,7 +884,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the device ID to use.
-	 * 
+	 *
 	 * @param deviceId
 	 *        the device ID to set
 	 */
@@ -888,7 +894,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the startup delay.
-	 * 
+	 *
 	 * @return the startup delay, in milliseconds
 	 */
 	public long getStartupDelay() {
@@ -897,7 +903,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the startup delay.
-	 * 
+	 *
 	 * @param startupDelay
 	 *        the startup delay to set, in milliseconds
 	 */
@@ -907,7 +913,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the application software version.
-	 * 
+	 *
 	 * @return the application software version
 	 */
 	public String getApplicationSoftwareVersion() {
@@ -916,12 +922,33 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the application software version.
-	 * 
+	 *
 	 * @param applicationSoftwareVersion
 	 *        the application software version to set
 	 */
 	public void setApplicationSoftwareVersion(String applicationSoftwareVersion) {
 		this.applicationSoftwareVersion = applicationSoftwareVersion;
+	}
+
+	/**
+	 * Get the subscription lifetime, in seconds.
+	 *
+	 * @return the subscription lifetime seconds
+	 * @since 1.1
+	 */
+	public long getSubscriptionLifetimeSeconds() {
+		return subscriptionLifetime.longValue();
+	}
+
+	/**
+	 * Set the subscription lifetime, in seconds.
+	 *
+	 * @param subscriptionLifetimeSeconds
+	 *        the subscription lifetime seconds to set
+	 * @since 1.1
+	 */
+	public void setSubscriptionLifetimeSeconds(long subscriptionLifetimeSeconds) {
+		this.subscriptionLifetime = new UnsignedInteger(subscriptionLifetimeSeconds);
 	}
 
 }
