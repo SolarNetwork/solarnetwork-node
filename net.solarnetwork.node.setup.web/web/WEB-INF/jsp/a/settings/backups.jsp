@@ -32,7 +32,7 @@
 		</div>
 		<sec:csrfInput/>
 	</form>
-	<c:if test="${not empty settingResources}">
+	<c:if test="${not empty settingResourceList}">
 		<form class="row mt-3">
 			<label class="col-sm-4 col-md-3 col-form-label" for="settings-resource-ident">
 				<fmt:message key="settings.io.exportResource.label"/>
@@ -40,10 +40,8 @@
 			<div class="col-sm-7 col-md-8">
 				<div class="input-group">
 					<select class="form-select settings-resource-ident" id="settings-io-export-ident">
-						<c:forEach items="${settingResources}" var="e">
-							<c:forEach items="${e.value}" var="resource">
-								<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
-							</c:forEach>
+						<c:forEach items="${settingResourceList}" var="resource">
+							<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
 						</c:forEach>
 					</select>
 					<button type="button" class="btn btn-primary settings-resource-export"

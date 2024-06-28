@@ -101,7 +101,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.6
+ * @version 2.7
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -115,6 +115,7 @@ public class SettingsController {
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
 	private static final String KEY_SETTING_RESOURCES = "settingResources";
+	private static final String KEY_SETTING_RESOURCE_LIST = "settingResourceList";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
@@ -246,7 +247,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
-			model.put(KEY_SETTING_RESOURCES, settingResources(settingsService, providers));
+			populateSettingResources(settingsService, providers, model);
 		}
 		final BackupManager backupManager = backupManagerTracker.service();
 		if ( backupManager != null ) {
@@ -262,34 +263,41 @@ public class SettingsController {
 		return "backups";
 	}
 
-	private Map<String, List<SettingResourceInfo>> settingResources(SettingsService settingsService,
-			List<SettingSpecifierProvider> providers) {
+	private static final Comparator<SettingResourceInfo> SETTING_RESOURCE_SORT_BY_NAME = (o1, o2) -> {
+		return o1.getName().compareTo(o2.getName());
+	};
+
+	private void populateSettingResources(SettingsService settingsService,
+			List<SettingSpecifierProvider> providers, ModelMap model) {
+		Map<String, List<SettingResourceInfo>> info;
+		List<SettingResourceInfo> list;
 		List<SettingResourceHandler> handlers = settingsService.getSettingResourceHandlers();
 		if ( handlers == null || handlers.isEmpty() ) {
-			return Collections.emptyMap();
+			info = Collections.emptyMap();
+			list = Collections.emptyList();
+		} else {
+			info = new TreeMap<>();
+			list = new ArrayList<>(handlers.size());
+			for ( SettingResourceHandler handler : handlers ) {
+				final String handlerKey = handler.getSettingUid();
+				Collection<String> supportedKeys = handler.supportedCurrentResourceSettingKeys();
+				if ( supportedKeys == null || supportedKeys.isEmpty() ) {
+					continue;
+				}
+				for ( String settingKey : supportedKeys ) {
+					String name = displayNameForSettingResource(providers, handlerKey, settingKey);
+					info.computeIfAbsent(handlerKey, k -> new ArrayList<SettingResourceInfo>())
+							.add(new SettingResourceInfo(name, handlerKey, null, settingKey));
+				}
+			}
+			info.values().stream().forEach(l -> {
+				Collections.sort(l, SETTING_RESOURCE_SORT_BY_NAME);
+				list.addAll(l);
+			});
+			Collections.sort(list, SETTING_RESOURCE_SORT_BY_NAME);
 		}
-		Map<String, List<SettingResourceInfo>> info = new TreeMap<>();
-		for ( SettingResourceHandler handler : handlers ) {
-			final String handlerKey = handler.getSettingUid();
-			Collection<String> supportedKeys = handler.supportedCurrentResourceSettingKeys();
-			if ( supportedKeys == null || supportedKeys.isEmpty() ) {
-				continue;
-			}
-			for ( String settingKey : supportedKeys ) {
-				String name = displayNameForSettingResource(providers, handlerKey, settingKey);
-				info.computeIfAbsent(handlerKey, k -> new ArrayList<SettingResourceInfo>())
-						.add(new SettingResourceInfo(name, handlerKey, null, settingKey));
-			}
-		}
-		info.values().stream().forEach(l -> Collections.sort(l, new Comparator<SettingResourceInfo>() {
-
-			@Override
-			public int compare(SettingResourceInfo o1, SettingResourceInfo o2) {
-				return o1.getName().compareTo(o2.getName());
-			}
-
-		}));
-		return info;
+		model.put(KEY_SETTING_RESOURCES, info);
+		model.put(KEY_SETTING_RESOURCE_LIST, list);
 	}
 
 	private String displayNameForSettingResource(List<SettingSpecifierProvider> providers,
