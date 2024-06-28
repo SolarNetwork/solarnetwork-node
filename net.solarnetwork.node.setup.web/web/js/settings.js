@@ -241,7 +241,8 @@ SolarNode.Settings.addScheduleField = function(params) {
 				if ( fieldMatch ) {
 					resultExpr = fieldMatch[2] === '*' ? multiplier : Number(fieldMatch[2]) * multiplier;
 				} else {
-					resultExpr = (multiplier > 1 ? base : multiplier);
+					const isWildcard = isNaN(Number(cronMatch[cronFieldIndex]));
+					resultExpr = (isWildcard ? multiplier : base);
 				}
 			} else {
 				resultExpr = multiplier;
