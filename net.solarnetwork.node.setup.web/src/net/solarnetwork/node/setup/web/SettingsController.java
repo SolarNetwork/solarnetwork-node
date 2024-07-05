@@ -95,6 +95,7 @@ import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.settings.SettingSpecifierProviderInfo;
+import net.solarnetwork.settings.support.BasicSettingSpecifierProviderInfo;
 import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.web.domain.Response;
@@ -423,8 +424,8 @@ public class SettingsController {
 		if ( service == null ) {
 			return Result.success();
 		}
-		final List<SettingSpecifierProviderInfo> results = serviceRegistry
-				.services(SettingSpecifierProvider.class, serviceFilter, (p) -> {
+		final List<SettingSpecifierProviderInfo> results = serviceRegistry.services(serviceFilter)
+				.stream().filter((p) -> {
 					if ( p == null || !(p instanceof Identifiable) ) {
 						return false;
 					}
@@ -434,11 +435,15 @@ public class SettingsController {
 						return false;
 					}
 					return true;
-				}).stream().map((p) -> {
+				}).map((p) -> {
 					Identifiable ip = (Identifiable) p;
 					String uid = ip.getUid();
 					String groupUid = ip.getGroupUid();
-					return p.localizedInfo(locale, uid, groupUid);
+					if ( p instanceof SettingSpecifierProvider ) {
+						return ((SettingSpecifierProvider) p).localizedInfo(locale, uid, groupUid);
+					}
+					return new BasicSettingSpecifierProviderInfo(null, ip.getDisplayName(), uid,
+							groupUid);
 				}).sorted(Comparator.comparing(SettingSpecifierProviderInfo::getDisplayName,
 						String::compareToIgnoreCase))
 				.collect(Collectors.toList());
