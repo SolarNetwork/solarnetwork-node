@@ -92,7 +92,12 @@
 	<!-- DNP3 outstation component -->
 
 	<bean id="outstationMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.io.dnp3.impl.OutstationService"/>
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.dnp3.impl.OutstationService</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="delegates">
@@ -142,9 +147,10 @@
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.io.dnp3.ChannelService"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="uid" value="#{T(net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService).DEFAULT_UID}"/>
+							<entry key="uid" value=""/>
 						</map>
 					</property>
 				</bean>
