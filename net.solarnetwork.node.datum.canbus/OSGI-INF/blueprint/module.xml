@@ -153,7 +153,7 @@
 									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="Canbus Port"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>

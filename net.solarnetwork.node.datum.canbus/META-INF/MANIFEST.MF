@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Datum Source
 Bundle-Description: Collect data from a CAN bus network.
 Bundle-SymbolicName: net.solarnetwork.node.datum.canbus
-Bundle-Version: 3.0.2
+Bundle-Version: 3.0.3
 Automatic-Module-Name: net.solarnetwork.node.datum.canbus
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 

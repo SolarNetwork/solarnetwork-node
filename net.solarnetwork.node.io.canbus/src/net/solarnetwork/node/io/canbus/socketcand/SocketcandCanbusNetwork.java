@@ -1,21 +1,21 @@
 /* ==================================================================
  * SocketcandCanbusNetwork.java - 19/09/2019 4:13:04 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -59,9 +59,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * CAN bus network implementation using the socketcand server protocol.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @see <a href=
  *      "https://github.com/linux-can/socketcand">linux-can/socketcand</a>
  */
@@ -79,21 +79,21 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * The {@code captureLogPath} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String DEFAULT_CAPTURE_LOG_PATH = "var/log/canbus-{busName}-{date}.log.gz";
 
 	/**
 	 * The {@code captureInlineDate} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final boolean DEFAULT_CAPTURE_INLINE_DATE = true;
 
 	/**
 	 * The {@code captureLogGzip} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final boolean DEFAULT_CAPTURE_LOG_GZIP = true;
@@ -101,11 +101,11 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	/**
 	 * A {@literal Signal} instruction parameter for capturing all CAN bus
 	 * messages to a log file.
-	 * 
+	 *
 	 * <p>
 	 * The parameter value must be the CAN bus name to capture.
 	 * </p>
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String CANBUS_CAPTURE_SIGNAL_PARAM = "canbus-capture";
@@ -113,12 +113,12 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	/**
 	 * A {@literal Signal} instruction parameter for the capture action to
 	 * perform.
-	 * 
+	 *
 	 * <p>
 	 * The parameter value must be a {@link CanbusCaptureAction} name
 	 * (case-insensitive).
 	 * </p>
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String CANBUS_CAPTURE_ACTION_PARAM = "action";
@@ -126,33 +126,33 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	/**
 	 * A {@literal Signal} instruction parameter for a duration after which
 	 * capturing should automatically stop.
-	 * 
+	 *
 	 * <p>
 	 * The parameter value must be a valid ISO-8601 duration, for example
 	 * {@literal PT15M} for 15 minutes.
 	 * </p>
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String CANBUS_CAPTURE_DURATION_PARAM = "duration";
 
 	/**
 	 * The capture log file name placeholder for the CAN bus name.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String CANBUS_CAPTURE_BUS_NAME_PLACEHOLDER = "busName";
 
 	/**
 	 * The capture log file name for the creation date.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String CANBUS_CAPTURE_DATE_PLACEHOLDER = "date";
 
 	/**
 	 * The capture log file date placeholder format.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final DateTimeFormatter CAPTURE_DATE_PLACEHOLDER_FORMATTER;
@@ -167,7 +167,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Enumeration of CAN bus capture actions.
-	 * 
+	 *
 	 * @author matt
 	 * @since 2.1
 	 */
@@ -181,7 +181,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 		/**
 		 * Get an enum value for a string.
-		 * 
+		 *
 		 * @param value
 		 *        the string value to get the enum value for; case insensitive
 		 *        matches against enum names
@@ -250,7 +250,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param socketProvider
 	 *        the socket provider to use
 	 * @param executor
@@ -265,7 +265,6 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 		}
 		this.socketProvider = socketProvider;
 		this.executor = executor;
-		setUid(DEFAULT_UID);
 	}
 
 	@Override
@@ -299,7 +298,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(12);
-		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, ""));
+		results.addAll(basicIdentifiableSettings("", "", ""));
 		results.add(new BasicTextFieldSettingSpecifier("host", DEFAULT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 
@@ -444,7 +443,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get an existing connection used for capturing.
-	 * 
+	 *
 	 * @param busName
 	 *        the CAN bus name to get the capturing connection for
 	 * @return the connection, or {@literal null} if no capturing connection has
@@ -460,7 +459,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the host to connect to.
-	 * 
+	 *
 	 * @return the host; defaults to {@link #DEFAULT_HOST}
 	 */
 	public String getHost() {
@@ -469,7 +468,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Set the host to connect to.
-	 * 
+	 *
 	 * @param host
 	 *        the host
 	 */
@@ -479,7 +478,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the port to connect to.
-	 * 
+	 *
 	 * @return the port; defaults to {@link #DEFAULT_PORT}
 	 */
 	public int getPort() {
@@ -488,7 +487,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Set the port to connect to.
-	 * 
+	 *
 	 * @param port
 	 *        the port
 	 */
@@ -498,7 +497,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the socket provider.
-	 * 
+	 *
 	 * @return the socket provider
 	 * @since 2.1
 	 */
@@ -508,7 +507,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the debug mode log path.
-	 * 
+	 *
 	 * @return the debug log path; defaults to {@link #DEFAULT_CAPTURE_LOG}
 	 * @since 2.1
 	 */
@@ -518,12 +517,12 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Set the debug mode log path.
-	 * 
+	 *
 	 * <p>
 	 * This path accepts one string format parameter: the configured
 	 * {@link #getBusName()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param captureLogPath
 	 *        the log path to set, including one string parameter for the bus
 	 *        name
@@ -536,7 +535,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the debug "inline date" flag.
-	 * 
+	 *
 	 * @return {@literal true} if a time stamp should be included in the debug
 	 *         log output as the first field of each frame line
 	 * @since 2.1
@@ -547,7 +546,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Set the debug "include date" flag.
-	 * 
+	 *
 	 * @param captureInlineDate
 	 *        {@literal true} if a time stamp should be included in the debug
 	 *        log output as the first field of each frame line, {@literal false}
@@ -560,7 +559,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the task scheduler.
-	 * 
+	 *
 	 * @return the task scheduler
 	 * @since 2.1
 	 */
@@ -570,7 +569,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Set the task scheduler.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler
 	 * @since 2.1
@@ -581,7 +580,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Get the toggle setting for using gzip on the capture log file.
-	 * 
+	 *
 	 * @return {@literal true} if the capture log output should be compressed
 	 *         with gzip
 	 * @since 2.1
@@ -592,7 +591,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 
 	/**
 	 * Set the toggle setting for using gzip on the capture log file.
-	 * 
+	 *
 	 * @param captureLogGzip
 	 *        {@literal true} if the capture log output should be compressed
 	 *        with gzip

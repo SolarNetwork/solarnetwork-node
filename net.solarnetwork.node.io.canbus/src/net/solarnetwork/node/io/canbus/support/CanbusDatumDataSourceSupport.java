@@ -1,21 +1,21 @@
 /* ==================================================================
  * CanbusDatumDataSourceSupport.java - 24/09/2019 8:54:44 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -61,9 +61,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * A base helper class to support {@link CanbusNetwork} based
  * {@link DatumDataSource} implementations.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSupport
 		implements SettingsChangeObserver, ServiceLifecycleObserver, CanbusFrameListener {
@@ -94,7 +94,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * Get setting specifiers for the
 	 * {@literal canbusNetwork.propertyFilters['uid']} and {@literal busName}
 	 * properties.
-	 * 
+	 *
 	 * @param prefix
 	 *        the setting key prefix to use
 	 * @return list of setting specifiers
@@ -104,8 +104,8 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 			prefix = "";
 		}
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['uid']", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['uid']",
+				null, false, "(objectClass=net.solarnetwork.node.io.canbus.CanbusNetwork)"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "busName", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "reconnectDelay",
 				String.valueOf(DEFAULT_RECONNECT_DELAY)));
@@ -128,12 +128,12 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Callback after properties have been changed.
-	 * 
+	 *
 	 * <p>
 	 * This method closes the shared connection if it is open, so that it is
 	 * re-opened with the updated configuration.
 	 * </p>
-	 * 
+	 *
 	 * @param properties
 	 *        the changed properties
 	 */
@@ -160,7 +160,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/**
 	 * Completely replace all subscriptions to be applied automatically to
 	 * connections opened by this class.
-	 * 
+	 *
 	 * <p>
 	 * Any existing subscriptions will be unsubscribed. If a monitor has been
 	 * registered already via {@link #registerMonitor(CanbusFrameListener)} then
@@ -168,7 +168,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * {@link #unregisterMonitor()} is called, the subscriptions will then be
 	 * applied.
 	 * </p>
-	 * 
+	 *
 	 * @param subscriptions
 	 *        the subscriptions to apply
 	 * @throws IOException
@@ -200,7 +200,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/**
 	 * Register a subscription to be applied automatically to connections opened
 	 * by this class.
-	 * 
+	 *
 	 * @param subscription
 	 *        the subscription to register
 	 * @throws IOException
@@ -215,7 +215,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/**
 	 * Register a monitor to be applied automatically when connections are
 	 * opened by this class.
-	 * 
+	 *
 	 * @param listener
 	 *        the listener
 	 * @throws IOException
@@ -234,7 +234,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/**
 	 * Unregister a monitor previously added via
 	 * {@link #registerMonitor(CanbusFrameListener)}.
-	 * 
+	 *
 	 * @throws IOException
 	 *         if the monitor cannot be unregistered
 	 */
@@ -291,13 +291,13 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/**
 	 * Get an <b>open</b> CAN bus connection, creating and opening a new
 	 * connection if necessary.
-	 * 
+	 *
 	 * <p>
 	 * An existing shared connection is returned if possible, but should be
 	 * treated like a normal, non-shared connection by calling
 	 * {@link CanbusConnection#close()} when finished using it.
 	 * </p>
-	 * 
+	 *
 	 * @return the open connection, or {@literal null} if the connection could
 	 *         not be created
 	 */
@@ -433,7 +433,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get a {@link Unit} instance from a unit string.
-	 * 
+	 *
 	 * @param unit
 	 *        the unit string
 	 * @return the {@code Unit} instance, or {@literal null} if an instance
@@ -454,7 +454,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get a "normalized" unit for an arbitrary unit.
-	 * 
+	 *
 	 * @param unit
 	 *        the unit to normalize
 	 * @return the normalized unit, or {@literal null} if {@code unit} is
@@ -473,7 +473,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get a "normalized" amount for an arbitrary amount.
-	 * 
+	 *
 	 * @param amount
 	 *        the amount
 	 * @param unit
@@ -524,7 +524,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Format a {@link Unit} instance as a unit string.
-	 * 
+	 *
 	 * @param unit
 	 *        the unit to format
 	 * @return the formatted string, or {@literal null} if {@code unit} is
@@ -540,7 +540,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the configured CAN bus network name.
-	 * 
+	 *
 	 * @return the CAN bus network name
 	 */
 	public String canbusNetworkName() {
@@ -550,7 +550,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/**
 	 * Get the {@link CanbusNetwork} from the configured {@code canbusNetwork}
 	 * service, or {@literal null} if not available or not configured.
-	 * 
+	 *
 	 * @return the CanbusNetwork or {@literal null}
 	 */
 	protected final CanbusNetwork canbusNetwork() {
@@ -559,7 +559,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the CAN bus network.
-	 * 
+	 *
 	 * @return the network
 	 */
 	public OptionalFilterableService<CanbusNetwork> getCanbusNetwork() {
@@ -568,7 +568,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Set the CAN bus network.
-	 * 
+	 *
 	 * @param canbusNetwork
 	 *        the network
 	 */
@@ -578,7 +578,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the CAN bus network UID.
-	 * 
+	 *
 	 * @return the CAN bus network UID
 	 * @since 2.1
 	 */
@@ -588,7 +588,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Set the CAN bus network UID.
-	 * 
+	 *
 	 * @param uid
 	 *        the CAN bus network UID
 	 * @since 2.1
@@ -599,7 +599,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the CAN bus name to use.
-	 * 
+	 *
 	 * @return the CAN bus name
 	 */
 	public String getBusName() {
@@ -608,7 +608,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Set the CAN bus name to use.
-	 * 
+	 *
 	 * @param busName
 	 *        the CAN bus name
 	 * @throws IllegalArgumentException
@@ -623,7 +623,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the connection check frequency.
-	 * 
+	 *
 	 * @return the check frequency, in milliseconds; defaults to
 	 *         {@link #DEFAULT_CONNECTION_CHECK_FREQUENCY}
 	 */
@@ -633,13 +633,13 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Set the connection check frequency.
-	 * 
+	 *
 	 * <p>
 	 * A frequency at which to check that the CAN bus connection is still valid,
 	 * or {@literal 0} to disable. Requires the
 	 * {@link #setTaskScheduler(TaskScheduler)} to have been configured.
 	 * </p>
-	 * 
+	 *
 	 * @param connectionCheckFrequency
 	 *        the frequency to check for a valid connection, in milliseconds
 	 */
@@ -649,7 +649,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the measurement helper.
-	 * 
+	 *
 	 * @return the measurement helper, or {@literal null}
 	 */
 	public MeasurementHelper getMeasurementHelper() {
@@ -658,7 +658,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Set the measurement helper.
-	 * 
+	 *
 	 * @param measurementHelper
 	 *        the measurement helper to set
 	 */
@@ -668,7 +668,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get the reconnect delay.
-	 * 
+	 *
 	 * @return the delay, in milliseconds
 	 * @since 2.1
 	 */
@@ -678,7 +678,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Set the reconnect delay.
-	 * 
+	 *
 	 * @param reconnectDelay
 	 *        the delay to set, in milliseconds
 	 * @since 2.1
