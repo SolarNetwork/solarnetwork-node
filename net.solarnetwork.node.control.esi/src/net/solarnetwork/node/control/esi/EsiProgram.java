@@ -1,21 +1,21 @@
 /* ==================================================================
  * EsiProgram.java - 7/08/2019 2:45:59 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,7 +40,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * General settings for ESI program integration.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -90,11 +90,13 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		programTypeSpec.setValueTitles(programTypeTitles);
 		results.add(programTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier("resource.propertyFilters['uid']", "Main"));
+		results.add(new BasicTextFieldSettingSpecifier("resource.propertyFilters['uid']", "Main", false,
+				"(objectClass=net.solarnetwork.node.control.esi.domain.ResourceAccessor)"));
 		results.add(new BasicTitleSettingSpecifier("resourceStatus",
 				resourceStatusMessage(Locale.getDefault()), true));
 
-		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['uid']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['uid']", null, false,
+				"(objectClass=net.solarnetwork.node.control.esi.domain.PriceMapAccessor)"));
 		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['groupUid']", "Main"));
 		results.add(new BasicTitleSettingSpecifier("priceMapsStatus",
 				priceMapsStatusMessage(Locale.getDefault()), true));
@@ -175,7 +177,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Get the DER program to participate in.
-	 * 
+	 *
 	 * @return the DER program
 	 */
 	public DerProgramType getProgramType() {
@@ -184,7 +186,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Set the DER program to participate in.
-	 * 
+	 *
 	 * @param programType
 	 *        the DER program
 	 */
@@ -194,7 +196,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Get the program type as a number.
-	 * 
+	 *
 	 * @return the program type number, as in {@link DerProgramType#getNumber()}
 	 */
 	public int getProgramTypeNumber() {
@@ -204,7 +206,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Set the program type as a number.
-	 * 
+	 *
 	 * @param programType
 	 *        the program type to set, as in {@link DerProgramType#getNumber()}
 	 */
@@ -214,7 +216,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Get the resource to manage.
-	 * 
+	 *
 	 * @return the resource
 	 */
 	public OptionalFilterableService<ResourceAccessor> getResource() {
@@ -223,7 +225,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Set the resource to manage.
-	 * 
+	 *
 	 * @param resource
 	 *        the resource
 	 */
@@ -233,7 +235,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Get the price maps to support.
-	 * 
+	 *
 	 * @return the price maps
 	 */
 	public OptionalFilterableServiceCollection<PriceMapAccessor> getPriceMaps() {
@@ -242,7 +244,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	/**
 	 * Set the price maps to support.
-	 * 
+	 *
 	 * @param priceMaps
 	 *        the price maps
 	 */
