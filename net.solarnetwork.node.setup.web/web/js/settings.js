@@ -888,7 +888,7 @@ function renderSettingProviderFactoryLists(/** @type Object[] */ infos, /** @typ
 	for ( let ul of uls ) {
 		const el = $(ul);
 		for ( let info of infos ) {
-			const btn = $(`<button class="dropdown-item" type="button">${info.displayName} - ${info.uid}</button>`);
+			const btn = $(`<button class="dropdown-item" type="button">${info.displayName} - <b>${info.uid}</b></button>`);
 			btn.on('click', () => {
 				el.prevAll('input[type=text]').val(info.uid).trigger('change');
 			});
