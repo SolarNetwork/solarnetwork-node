@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingsPlaypen.java - Nov 2, 2012 4:16:05 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -70,9 +70,9 @@ import net.solarnetwork.settings.support.SettingUtils;
 
 /**
  * A test bed experiment for the settings framework.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
@@ -115,6 +115,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private Long co2LocationId;
 	private String co2SourceId;
 	private DatumLocation co2Location;
+
+	private String serviceRef;
 
 	private MessageSource messageSource;
 
@@ -178,6 +180,10 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
 		results.add(getCo2LocationSettingSpecifier());
+
+		// text service ref
+		results.add(new BasicTextFieldSettingSpecifier("serviceRef", null, false,
+				"(&(objectClass=net.solarnetwork.service.DatumFilterService)(role=user))"));
 
 		// text area (direct)
 		results.add(new BasicTextAreaSettingSpecifier("textAreaDirect", "", true));
@@ -299,7 +305,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	/**
 	 * Set the location ID and source ID as a single string value. The format of
 	 * the key is {@code locationId:sourceId}.
-	 * 
+	 *
 	 * @param key
 	 *        the location and source ID key
 	 */
@@ -320,7 +326,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	/**
 	 * Set the weather location ID and source ID as a single string value. The
 	 * format of the key is {@code locationId:sourceId}.
-	 * 
+	 *
 	 * @param key
 	 *        the location and source ID key
 	 */
@@ -341,7 +347,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	/**
 	 * Set the CO2 location ID and source ID as a single string value. The
 	 * format of the key is {@code locationId:sourceId}.
-	 * 
+	 *
 	 * @param key
 	 *        the location and source ID key
 	 */
@@ -563,7 +569,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	/**
 	 * Get the number of configured {@code listString} elements.
-	 * 
+	 *
 	 * @return The number of {@code listString} elements.
 	 */
 	public int getListStringCount() {
@@ -574,7 +580,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	/**
 	 * Adjust the number of configured {@code listString} elements. Any newly
 	 * added element values will be empty strings.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code listString} elements.
 	 */
@@ -604,7 +610,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	/**
 	 * Get the number of configured {@code listComplex} elements.
-	 * 
+	 *
 	 * @return The number of {@code listComplex} elements.
 	 */
 	public int getListComplexCount() {
@@ -615,7 +621,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	/**
 	 * Adjust the number of configured {@code listComplex} elements. Any newly
 	 * added element values will be empty strings.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code listComplex} elements.
 	 */
@@ -677,7 +683,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	/**
 	 * Get the number of configured {@code listString} elements.
-	 * 
+	 *
 	 * @return The number of {@code listString} elements.
 	 */
 	public int getTextFilesContentCount() {
@@ -688,7 +694,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	/**
 	 * Adjust the number of configured {@code textFilesContent} elements. Any
 	 * newly added element values will be empty strings.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code listString} elements.
 	 */
@@ -710,7 +716,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	/**
 	 * Get the text area direct value.
-	 * 
+	 *
 	 * @return the value
 	 * @since 2.1
 	 */
@@ -720,13 +726,34 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	/**
 	 * Set the text area direct value.
-	 * 
+	 *
 	 * @param textAreaDirect
 	 *        the value to set
 	 * @since 2.1
 	 */
 	public void setTextAreaDirect(String textAreaDirect) {
 		this.textAreaDirect = textAreaDirect;
+	}
+
+	/**
+	 * Get the service reference.
+	 *
+	 * @return the service reference
+	 * @since 2.3
+	 */
+	public final String getServiceRef() {
+		return serviceRef;
+	}
+
+	/**
+	 * Set the service reference.
+	 *
+	 * @param serviceRef
+	 *        the service reference to set
+	 * @since 2.3
+	 */
+	public final void setServiceRef(String serviceRef) {
+		this.serviceRef = serviceRef;
 	}
 
 }

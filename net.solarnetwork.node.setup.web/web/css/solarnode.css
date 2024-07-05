@@ -457,8 +457,9 @@ button.close + button.copy {
 	margin-right: 1rem;
 }
 
-.input-group input + button.copy,
-.input-group textarea + button.copy {
+.input-group input ~ .btn-outline-secondary,
+.input-group textarea ~ .btn-outline-secondary,
+.input-group .btn-outline-secondary ~ .btn-outline-secondary {
 	--bs-btn-hover-bg: inherit;
 	--bs-btn-hover-color: inherit;
 	border-left-style: none;

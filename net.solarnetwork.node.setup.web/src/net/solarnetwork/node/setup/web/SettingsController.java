@@ -54,6 +54,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,10 +91,12 @@ import net.solarnetwork.node.setup.web.support.IteratorStatus;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
+import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.SettingSpecifierProviderInfo;
 import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.web.domain.Response;
@@ -101,7 +106,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.7
+ * @version 2.9
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -145,6 +150,9 @@ public class SettingsController {
 
 	@Autowired
 	private MessageSource messageSource;
+
+	@Autowired(required = false)
+	private BundleContext bundleContext;
 
 	/**
 	 * Default constructor.
@@ -393,6 +401,57 @@ public class SettingsController {
 		}
 		return (req.getRequestURI().contains("/filters/") ? "filters-factory-settings-list"
 				: "factory-settings-list");
+	}
+
+	/**
+	 * Get a list of setting specifier provider infos for a given factory ID.
+	 *
+	 * @param factoryUid
+	 *        the UID of the setting specifier provider factory to list the
+	 *        providers for
+	 * @param locale
+	 *        the desired locale
+	 * @return the result list
+	 * @since 2.9
+	 */
+	@RequestMapping(value = "/providerInfo", method = RequestMethod.GET)
+	@ResponseBody
+	public Result<List<SettingSpecifierProviderInfo>> providerInfos(
+			@RequestParam("filter") String serviceFilter, Locale locale) {
+		if ( bundleContext == null ) {
+			return Result.success();
+		}
+		final SettingsService service = service(settingsServiceTracker);
+		if ( service == null ) {
+			return Result.success();
+		}
+		Collection<ServiceReference<SettingSpecifierProvider>> refs;
+		try {
+			refs = bundleContext.getServiceReferences(SettingSpecifierProvider.class, serviceFilter);
+		} catch ( InvalidSyntaxException e ) {
+			return Result.error("SC.0001", "Invalid service filter.",
+					new Result.ErrorDetail("filter", serviceFilter, e.getMessage()));
+		}
+		if ( refs == null || refs.isEmpty() ) {
+			return Result.success();
+		}
+		final List<SettingSpecifierProviderInfo> results = new ArrayList<>(refs.size());
+		for ( ServiceReference<SettingSpecifierProvider> ref : refs ) {
+			final SettingSpecifierProvider p = bundleContext.getService(ref);
+			if ( p == null || !(p instanceof Identifiable) ) {
+				continue;
+			}
+			Identifiable ip = (Identifiable) p;
+			String uid = ip.getUid();
+			String groupUid = ip.getGroupUid();
+			if ( uid == null || uid.isEmpty() ) {
+				continue;
+			}
+			results.add(p.localizedInfo(locale, uid, groupUid));
+		}
+		Collections.sort(results, Comparator.comparing(SettingSpecifierProviderInfo::getDisplayName,
+				String::compareToIgnoreCase));
+		return Result.success(results);
 	}
 
 	/**

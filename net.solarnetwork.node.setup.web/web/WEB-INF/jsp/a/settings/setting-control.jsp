@@ -198,6 +198,13 @@
 											</c:otherwise>
 										</c:choose>
 										/>
+									<c:if test="${not empty setting.relatedServiceFilter}">
+									  <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+									  		data-bs-toggle="dropdown" aria-expanded="false"><fmt:message key='settings.relatedServiceFilter.choose.label'/></button>
+										<ul class="dropdown-menu dropdown-menu-end setting-related-service" data-setting-related-service-filter="${setting.relatedServiceFilter}">
+											<!-- Dynamically populated -->
+										</ul>
+									</c:if>
 									<c:if test="${setting.secureTextEntry != true}">
 										<button type="button" class="btn btn-outline-secondary copy" tabindex="-1" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 									</c:if>
