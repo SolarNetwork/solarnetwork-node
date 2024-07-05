@@ -73,7 +73,7 @@ import net.solarnetwork.util.CachedResult;
  * spreadsheet style tariff metadata.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class TariffDatumFilterService extends BaseDatumFilterSupport
@@ -167,14 +167,16 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		result.add(0, new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
 		populateBaseSampleTransformSupportSettings(result);
-		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null));
+		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null, false,
+				"(objectClass=net.solarnetwork.node.service.MetadataService)"));
 		result.add(
 				new BasicTextFieldSettingSpecifier("tariffMetadataPath", DEFAULT_TARIFF_METADATA_PATH));
 		result.add(new BasicToggleSettingSpecifier("firstMatchOnly",
 				SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY));
 		result.add(new BasicTextFieldSettingSpecifier("scheduleCacheSeconds",
 				String.valueOf(DEFAULT_SCHEDULE_CACHE_SECONDS)));
-		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null));
+		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null, false,
+				"(objectClass=net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator)"));
 		result.add(new BasicTextFieldSettingSpecifier("language", null));
 		return result;
 	}
