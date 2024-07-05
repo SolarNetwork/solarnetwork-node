@@ -79,9 +79,10 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.io.gpsd.service.GpsdClientConnection"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="GPSD"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>	

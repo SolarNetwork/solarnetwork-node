@@ -1,21 +1,21 @@
 /* ==================================================================
  * GpsDatumDataSource.java - 15/11/2019 4:38:46 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -58,9 +58,9 @@ import net.solarnetwork.util.NumberUtils;
 
 /**
  * Datum data source for GPS data collected from a {@link GpsdClientConnection}.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class GpsDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
@@ -72,7 +72,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * The default {@code nodeLocationUpdateMaxLatLonErrorMeters} property
 	 * value.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final double DEFAULT_MAX_LAT_LON_ERROR_METERS = 10.0;
@@ -85,7 +85,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param client
 	 *        the client
 	 */
@@ -294,7 +294,8 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("client.propertyFilters['uid']", "GPSD"));
+		results.add(new BasicTextFieldSettingSpecifier("client.propertyFilters['uid']", null, false,
+				"(objectClass=net.solarnetwork.node.io.gpsd.service.GpsdClientConnection)"));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
@@ -348,7 +349,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the source ID to use for returned datum.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -357,7 +358,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
@@ -367,7 +368,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the location service.
-	 * 
+	 *
 	 * @return the location service
 	 * @since 1.2
 	 */
@@ -377,7 +378,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the location service.
-	 * 
+	 *
 	 * @param locationService
 	 *        the location service to set
 	 * @since 1.2
@@ -388,7 +389,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the maximum error meters allowed when publishing the node location.
-	 * 
+	 *
 	 * @return the meters
 	 * @since 1.2
 	 */
@@ -398,7 +399,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the maximum error meters allowed when publishing the node location.
-	 * 
+	 *
 	 * @param nodeLocationUpdateMaxLatLonErrorMeters
 	 *        the meters to set
 	 * @since 1.2
@@ -410,7 +411,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the update node location flag.
-	 * 
+	 *
 	 * @return {@literal true} to update the node's location based on the GPS
 	 *         coordinates received from GPSd
 	 * @since 1.2
@@ -421,7 +422,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the update node location flag.
-	 * 
+	 *
 	 * @param updateNodeLocation
 	 *        {@literal true} to update the node's location based on the GPS
 	 *        coordinates received from GPSd
@@ -429,6 +430,16 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setUpdateNodeLocation(boolean updateNodeLocation) {
 		this.updateNodeLocation = updateNodeLocation;
+	}
+
+	/**
+	 * Get the client.
+	 *
+	 * @return the client
+	 * @since 2.1
+	 */
+	public final OptionalFilterableService<GpsdClientConnection> getClient() {
+		return client;
 	}
 
 }
