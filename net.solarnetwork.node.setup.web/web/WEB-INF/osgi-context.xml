@@ -21,6 +21,8 @@
 	
 	<!-- Service References -->
 	
+	<osgi:reference id="serviceRegistry" interface="net.solarnetwork.service.ServiceRegistry"/>
+
 	<osgi:reference id="objectMapperService" 
 		interface="net.solarnetwork.service.ObjectMapperService"
 		 filter="(function=node)"/>

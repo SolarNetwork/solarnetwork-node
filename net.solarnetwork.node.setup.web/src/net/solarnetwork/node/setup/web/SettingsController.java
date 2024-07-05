@@ -54,9 +54,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,6 +90,7 @@ import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceRegistry;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
@@ -151,8 +149,8 @@ public class SettingsController {
 	@Autowired
 	private MessageSource messageSource;
 
-	@Autowired(required = false)
-	private BundleContext bundleContext;
+	@Autowired
+	private ServiceRegistry serviceRegistry;
 
 	/**
 	 * Default constructor.
@@ -418,39 +416,32 @@ public class SettingsController {
 	@ResponseBody
 	public Result<List<SettingSpecifierProviderInfo>> providerInfos(
 			@RequestParam("filter") String serviceFilter, Locale locale) {
-		if ( bundleContext == null ) {
+		if ( serviceRegistry == null ) {
 			return Result.success();
 		}
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service == null ) {
 			return Result.success();
 		}
-		Collection<ServiceReference<SettingSpecifierProvider>> refs;
-		try {
-			refs = bundleContext.getServiceReferences(SettingSpecifierProvider.class, serviceFilter);
-		} catch ( InvalidSyntaxException e ) {
-			return Result.error("SC.0001", "Invalid service filter.",
-					new Result.ErrorDetail("filter", serviceFilter, e.getMessage()));
-		}
-		if ( refs == null || refs.isEmpty() ) {
-			return Result.success();
-		}
-		final List<SettingSpecifierProviderInfo> results = new ArrayList<>(refs.size());
-		for ( ServiceReference<SettingSpecifierProvider> ref : refs ) {
-			final SettingSpecifierProvider p = bundleContext.getService(ref);
-			if ( p == null || !(p instanceof Identifiable) ) {
-				continue;
-			}
-			Identifiable ip = (Identifiable) p;
-			String uid = ip.getUid();
-			String groupUid = ip.getGroupUid();
-			if ( uid == null || uid.isEmpty() ) {
-				continue;
-			}
-			results.add(p.localizedInfo(locale, uid, groupUid));
-		}
-		Collections.sort(results, Comparator.comparing(SettingSpecifierProviderInfo::getDisplayName,
-				String::compareToIgnoreCase));
+		final List<SettingSpecifierProviderInfo> results = serviceRegistry
+				.services(SettingSpecifierProvider.class, serviceFilter, (p) -> {
+					if ( p == null || !(p instanceof Identifiable) ) {
+						return false;
+					}
+					Identifiable ip = (Identifiable) p;
+					String uid = ip.getUid();
+					if ( uid == null || uid.isEmpty() ) {
+						return false;
+					}
+					return true;
+				}).stream().map((p) -> {
+					Identifiable ip = (Identifiable) p;
+					String uid = ip.getUid();
+					String groupUid = ip.getGroupUid();
+					return p.localizedInfo(locale, uid, groupUid);
+				}).sorted(Comparator.comparing(SettingSpecifierProviderInfo::getDisplayName,
+						String::compareToIgnoreCase))
+				.collect(Collectors.toList());
 		return Result.success(results);
 	}
 
