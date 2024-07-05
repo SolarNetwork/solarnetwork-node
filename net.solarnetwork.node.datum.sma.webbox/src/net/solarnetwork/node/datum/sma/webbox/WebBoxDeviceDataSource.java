@@ -1,21 +1,21 @@
 /* ==================================================================
  * WebBoxDeviceDataSource.java - 15/09/2020 2:57:24 PM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,9 +42,9 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for a {@link WebBoxDevice}.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -65,7 +65,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param webBox
 	 *        the {@link WebBoxOperations} to use; must also implement
 	 *        {@link FilterableService}
@@ -101,8 +101,8 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("sample", sampleMessage(lastSample), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(
-				new BasicTextFieldSettingSpecifier("webBox.propertyFilters['uid']", DEFAULT_WEBBOX_UID));
+		results.add(new BasicTextFieldSettingSpecifier("webBox.propertyFilters['uid']", null, false,
+				"(objectClass=net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxOperations)"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 
@@ -171,7 +171,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the optional {@link WebBoxOperations} instance.
-	 * 
+	 *
 	 * @return the optional service, never {@literal null}
 	 */
 	public OptionalFilterableService<WebBoxOperations> getWebBox() {
@@ -180,7 +180,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -189,7 +189,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the source ID.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID
 	 */
@@ -199,7 +199,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -208,7 +208,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -218,7 +218,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the WebBox device unit ID to collect data from.
-	 * 
+	 *
 	 * @return the unit ID
 	 */
 	public Integer getUnitId() {
@@ -227,7 +227,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the WebBox device unit ID to collect data from.
-	 * 
+	 *
 	 * @param unitId
 	 *        the unit ID; must be &gt; 2
 	 */

@@ -68,9 +68,10 @@
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="uid" value="Modbus Port"/>
+							<entry key="uid" value=""/>
 						</map>
 					</property>
 				</bean>
@@ -123,7 +124,7 @@
 									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="WebBox"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>
