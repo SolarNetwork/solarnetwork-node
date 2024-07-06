@@ -1,21 +1,21 @@
 /* ==================================================================
  * ResourceStorageServiceDirectoryWatcher.java - 16/10/2019 5:28:13 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -77,9 +77,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 /**
  * Service to watch a directory for file changes, and when a change is
  * encountered then copy the file to a {@link ResourceStorageService}.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, ProgressListener<Resource> {
@@ -111,7 +111,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param storageService
 	 *        the storage service to use
 	 * @param executor
@@ -186,7 +186,8 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(4);
 		result.add(new BasicTitleSettingSpecifier("status", statusValue(Locale.getDefault()), true));
-		result.add(new BasicTextFieldSettingSpecifier("storageService.propertyFilters['uid']", ""));
+		result.add(new BasicTextFieldSettingSpecifier("storageService.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.service.ResourceStorageService)"));
 		result.add(new BasicTextFieldSettingSpecifier("path", ""));
 		result.add(new BasicTextFieldSettingSpecifier("filterValue", DEFAULT_FILTER.pattern()));
 		result.add(new BasicToggleSettingSpecifier("recursive", Boolean.FALSE));
@@ -476,7 +477,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the path to watch for changes.
-	 * 
+	 *
 	 * @return the path to watch
 	 */
 	public String getPath() {
@@ -485,7 +486,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the path to watch for changes.
-	 * 
+	 *
 	 * @param path
 	 *        the path to watch
 	 */
@@ -495,7 +496,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the recursive watch setting.
-	 * 
+	 *
 	 * @return {@literal true} to watch all sub directories within {@code path},
 	 *         {@literal false} to only watch {@code path} itself
 	 */
@@ -505,7 +506,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the recursive watch setting.
-	 * 
+	 *
 	 * @param recursive
 	 *        {@literal true} to watch all sub directories within {@code path},
 	 *        {@literal false} to only watch {@code path} itself
@@ -516,11 +517,11 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the file name filter pattern.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be saved.
 	 * </p>
-	 * 
+	 *
 	 * @return the file name filter pattern
 	 */
 	public Pattern getFilter() {
@@ -529,11 +530,11 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the file name filter pattern.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be saved.
 	 * </p>
-	 * 
+	 *
 	 * @param filter
 	 *        the file name filter pattern to use, or {@literal null} for all
 	 *        files
@@ -544,11 +545,11 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the file name filter pattern, as a string.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be saved.
 	 * </p>
-	 * 
+	 *
 	 * @return the file name filter pattern
 	 */
 	public String getFilterValue() {
@@ -558,11 +559,11 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the file name filter pattern, as a string.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be saved.
 	 * </p>
-	 * 
+	 *
 	 * @param filterValue
 	 *        the file name filter pattern to use, or {@literal null} for all
 	 *        files
@@ -581,7 +582,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the datum queue to offer generated datum to.
-	 * 
+	 *
 	 * @return the queue
 	 */
 	public OptionalService<DatumQueue> getDatumQueue() {
@@ -590,7 +591,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the datum queue to offer generated datum to.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the datum queue to set
 	 */
@@ -601,7 +602,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	/**
 	 * Get the source ID to use for datum generated in response to resource
 	 * storage events.
-	 * 
+	 *
 	 * @return the resourceStorageDatumSourceId the source ID
 	 */
 	public String getResourceStorageDatumSourceId() {
@@ -611,7 +612,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	/**
 	 * Set the source ID to use for datum generated in response to resource
 	 * storage events.
-	 * 
+	 *
 	 * @param resourceStorageDatumSourceId
 	 *        the source ID to set
 	 */
@@ -621,7 +622,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the task scheduler to handle delayed save operations with.
-	 * 
+	 *
 	 * @return the task scheduler
 	 */
 	public TaskScheduler getTaskScheduler() {
@@ -630,13 +631,13 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the task scheduler to handle delayed save operations with.
-	 * 
+	 *
 	 * <p>
 	 * This scheduler is used only if {@link #getSaveDelay()} is greater than
 	 * {@literal 0}, in which case the actual save operation is scheduled to run
 	 * after this amount of delay.
 	 * </p>
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler to use
 	 */
@@ -646,7 +647,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Get the save delay.
-	 * 
+	 *
 	 * @return the save delay, in milliseconds; defaults to
 	 *         {@link #DEFAULT_SAVE_DELAY}
 	 */
@@ -656,8 +657,8 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 	/**
 	 * Set the save delay.
-	 * 
-	 * 
+	 *
+	 *
 	 * <p>
 	 * This delay, when greater than {@literal 0} will cause save operations
 	 * triggered by file change events to be delayed by this amount of time. If
@@ -665,12 +666,12 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	 * has passed, the delay is restarted. In this way if a file is continually
 	 * being modified it will not be saved until after the modifications stop.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>Note</b> that for the delay to be used, a {@link #getTaskScheduler()}
 	 * must be available.
 	 * </p>
-	 * 
+	 *
 	 * @param saveDelay
 	 *        the delay for save operations, in milliseconds
 	 */

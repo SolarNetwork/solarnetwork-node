@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Storage Service Upload
 Bundle-Description: Watch for file changes in a directory to be copied to a Storage Service.
 Bundle-SymbolicName: net.solarnetwork.node.upload.resource
-Bundle-Version: 3.0.0
+Bundle-Version: 3.1.0
 Automatic-Module-Name: net.solarnetwork.node.upload.resource
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -14,8 +14,8 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
- net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[2.3,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[5.3,6.0)",
  org.springframework.context;version="[5.3,6.0)",
