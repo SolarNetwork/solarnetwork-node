@@ -1,21 +1,21 @@
 /* ==================================================================
  * NodeS3ResourceStorageService.java - 16/10/2019 2:17:07 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,6 +36,7 @@ import java.util.function.Function;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.common.s3.S3ResourceStorageService;
+import net.solarnetwork.common.s3.sdk.SdkS3Client;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
@@ -48,7 +49,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Adaptation of {@link S3ResourceStorageService} to work with node settings.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -61,7 +62,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param identityService
 	 *        service the identity service
 	 * @param executor
@@ -72,6 +73,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 		super();
 		this.identityService = identityService;
 		this.delegate = new S3ResourceStorageService(executor);
+		this.delegate.setS3Client(new SdkS3Client());
 		this.nodeIdPrefix = true;
 	}
 
@@ -198,7 +200,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 
 	/**
 	 * Get the configured identity service.
-	 * 
+	 *
 	 * @return the identity service, never {@literal null}
 	 */
 	public OptionalService<IdentityService> getIdentityService() {
@@ -207,7 +209,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 
 	/**
 	 * Get the delegate.
-	 * 
+	 *
 	 * @return the delegate
 	 */
 	public S3ResourceStorageService getDelegate() {
@@ -216,12 +218,12 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 
 	/**
 	 * Get the node ID prefix setting.
-	 * 
+	 *
 	 * <p>
 	 * Note this prefix is added <b>after</b> any prefix configured in
 	 * {@link S3ResourceStorageService#getObjectKeyPrefix()}.
 	 * </p>
-	 * 
+	 *
 	 * @return {@literal true} if the node ID should be included in the S3 path
 	 *         of all objects
 	 */
@@ -231,7 +233,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 
 	/**
 	 * Toggle the ndoe ID prefix setting.
-	 * 
+	 *
 	 * @param nodeIdPrefix
 	 *        {@literal true} if the node ID should be included in the S3 path
 	 *        of all objects
