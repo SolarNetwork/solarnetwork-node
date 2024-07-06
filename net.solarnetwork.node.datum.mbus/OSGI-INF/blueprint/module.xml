@@ -132,9 +132,10 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.io.mbus.MBusNetwork"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="M-Bus Port"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>	
@@ -217,9 +218,10 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.io.mbus.WMBusNetwork"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="M-Bus (Wireless) Port"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>	
