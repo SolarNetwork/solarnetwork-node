@@ -5,7 +5,7 @@ Bundle-Description: SolarNode API for the M-Bus network protocol. Another
  plugin that implements this API must be provided, for example the jMBus 
  plugin.
 Bundle-SymbolicName: net.solarnetwork.node.io.mbus
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.mbus
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -16,8 +16,8 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
- net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[2.3,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec;version="[1.11,2.0)",
  org.apache.commons.codec.binary;version="[1.11,2.0)",
