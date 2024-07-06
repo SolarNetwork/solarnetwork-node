@@ -1,21 +1,21 @@
 /* ==================================================================
  * MockMeterDataSource.java - 10/06/2015 1:28:07 pm
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,6 +29,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -51,14 +53,14 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, this
  * mock tries to simulate a AC circuit containing a resister and inductor in
  * series.
- * 
+ *
  * <p>
  * This class implements {@link SettingSpecifierProvider} and
  * {@link DatumDataSource}
  * </p>
- * 
+ *
  * @author robert
- * @version 1.5
+ * @version 1.6
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -82,7 +84,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	/**
 	 * Get a mock starting value for our meter based on the current time so the
 	 * meter back to zero each time the app restarts.
-	 * 
+	 *
 	 * @return a starting meter value
 	 */
 	private static long meterStartValue() {
@@ -101,7 +103,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	/***
 	 * Returns an {@link AcEnergyDatum} the data in the datum is the state of
 	 * the simulated circuit.
-	 * 
+	 *
 	 * @see net.solarnetwork.node.service.DatumDataSource#readCurrentDatum()
 	 * @return an {@link AcEnergyDatum}
 	 */
@@ -162,7 +164,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Calculates the values to feed the datum.
-	 * 
+	 *
 	 * @param vrms
 	 *        the voltage to use
 	 * @param f
@@ -276,7 +278,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	/**
 	 * Dependency injection of a Random instance to improve controllability if
 	 * needed eg unit testing.
-	 * 
+	 *
 	 * @param rng
 	 *        the random number generator
 	 */
@@ -292,6 +294,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	@Override
 	public String getDisplayName() {
 		return "Mock Meter";
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = getSourceId();
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptyList()
+				: Collections.singleton(sourceId));
 	}
 
 	// Puts the user configurable settings on the settings page
