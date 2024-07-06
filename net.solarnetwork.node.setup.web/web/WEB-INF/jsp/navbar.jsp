@@ -31,6 +31,7 @@
 								or navloc == 'settings-component'
 								or navloc == 'backups'
 								or navloc == 'filters'
+								or navloc == 'datum-sources'
 								or navloc == 'filters-component'
 								or navloc == 'opmodes' ? ' active' : ''}" data-bs-toggle="dropdown" role="button" aria-expanded="false">
 								<fmt:message key='link.settings'/>
@@ -40,6 +41,7 @@
 								<li><a class="dropdown-item${navloc == 'settings' ? ' active' : ''}" href="<setup:url value='/a/settings'/>"><fmt:message key='link.factories'/></a></li>
 								<li><a class="dropdown-item${navloc == 'services' ? ' active' : ''}" href="<setup:url value='/a/settings/services'/>"><fmt:message key='link.services'/></a></li>
 								<li><a class="dropdown-item${navloc == 'filters' ? ' active' : ''}" href="<setup:url value='/a/settings/filters'/>"><fmt:message key='link.filters'/></a></li>
+								<li><a class="dropdown-item${navloc == 'datum-sources' ? ' active' : ''}" href="<setup:url value='/a/datum-sources'/>"><fmt:message key='link.datum-sources'/></a></li>
 								<li><a class="dropdown-item${navloc == 'logging' ? ' active' : ''}" href="<setup:url value='/a/logging'/>"><fmt:message key='link.logging'/></a></li>
 								<li><a class="dropdown-item${navloc == 'opmodes' ? ' active' : ''}" href="<setup:url value='/a/opmodes'/>"><fmt:message key='link.opmodes'/></a></li>
 								<li><a class="dropdown-item${navloc == 'backups' ? ' active' : ''}" href="<setup:url value='/a/settings/backups'/>"><fmt:message key='link.backups'/></a></li>
