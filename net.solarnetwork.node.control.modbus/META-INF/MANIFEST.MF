@@ -4,7 +4,7 @@ Bundle-Name: Modbus Control
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus
 Automatic-Module-Name: net.solarnetwork.node.control.modbus
 Bundle-Description: Service to control arbitrary Modbus-accessible devices.
-Bundle-Version: 4.0.5
+Bundle-Version: 4.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -23,8 +23,8 @@ Import-Package:
  net.solarnetwork.node.settings.support;version="[2.0,3.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
- net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[2.3,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.aopalliance.aop;version="[1.0,2.0)",
