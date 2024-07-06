@@ -1,21 +1,21 @@
 /* ==================================================================
  * SerialDeviceDatumDataSourceSupport.java - 26/09/2017 9:56:36 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -51,11 +51,11 @@ import net.solarnetwork.util.StringUtils;
 /**
  * A base helper class to support {@link SerialNetwork} based
  * {@link DatumDataSource} implementations.
- * 
+ *
  * @param <S>
  *        the sample type
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.3
  */
 public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
@@ -66,7 +66,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get setting specifiers for the serial network UID filter.
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to add to each setting key
 	 * @param defaultUid
@@ -76,8 +76,8 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 */
 	public static List<SettingSpecifier> serialNetworkSettings(String prefix, String defaultUid) {
 		prefix = (prefix != null ? prefix : "");
-		return singletonList(
-				new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid));
+		return singletonList(new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid,
+				false, "(objectClass=net.solarnetwork.node.io.serial.SerialNetwork)"));
 	}
 
 	private final AtomicReference<S> sample;
@@ -96,7 +96,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -107,7 +107,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Test if the sample data has expired.
-	 * 
+	 *
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired() {
@@ -116,7 +116,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Test if the sample data has expired.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample to test
 	 * @return {@literal true} if the sample data has expired
@@ -135,7 +135,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	/**
 	 * Get the {@link SerialNetwork} from the configured {@code serialNetwork}
 	 * service, or {@literal null} if not available or not configured.
-	 * 
+	 *
 	 * @return SerialNetwork
 	 */
 	protected final SerialNetwork serialNetwork() {
@@ -146,7 +146,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * Read general device info and return a map of the results. See the various
 	 * {@code INFO_KEY_*} constants for information on the values returned in
 	 * the result map.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection to use
 	 * @return a map with general device information populated
@@ -157,7 +157,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get device info.
-	 * 
+	 *
 	 * @return the device info based on calling the {@link #getDeviceInfo()}
 	 *         method
 	 * @since 2.0
@@ -183,7 +183,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
 	 * slash) delimited string of the resulting values, or {@literal null} if
 	 * that method returns {@literal null}.
-	 * 
+	 *
 	 * @return info message
 	 */
 	public String getDeviceInfoMessage() {
@@ -199,7 +199,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * {@link #readDeviceInfo(SerialConnection)}. The map is cached so
 	 * subsequent calls will not attempt to read from the device. Note the
 	 * returned map cannot be modified.
-	 * 
+	 *
 	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(SerialConnection)
 	 */
@@ -229,7 +229,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * {@code serialNetwork} service, calling
 	 * {@link SerialNetwork#performAction(SerialConnectionAction)} if one can be
 	 * obtained.
-	 * 
+	 *
 	 * @param <T>
 	 *        the action result type
 	 * @param action
@@ -250,7 +250,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get the non-expired cached sample instance.
-	 * 
+	 *
 	 * @return the cached sample, or {@literal null} if the instance is not
 	 *         available or has expired
 	 */
@@ -264,7 +264,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get the cached sample data instance.
-	 * 
+	 *
 	 * @return the data, or {@literal null}
 	 */
 	public S getCachedSample() {
@@ -273,7 +273,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Set the cached sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the data to cache
 	 */
@@ -283,7 +283,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get direct access to the device info data.
-	 * 
+	 *
 	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
@@ -296,7 +296,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * read from the device to populate this data, and setting this to anything
 	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
 	 * simply return that map.
-	 * 
+	 *
 	 * @param deviceInfo
 	 *        the device info map to set
 	 */
@@ -306,7 +306,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get the configured {@link SerialNetwork}.
-	 * 
+	 *
 	 * @return the serial network
 	 */
 	public OptionalFilterableService<SerialNetwork> getSerialNetwork() {
@@ -315,7 +315,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Set the {@link SerialNetwork} to use.
-	 * 
+	 *
 	 * @param serialNetwork
 	 *        the serial network to use
 	 */
@@ -325,7 +325,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get the serial network UID.
-	 * 
+	 *
 	 * @return the serial network UID
 	 */
 	public String getSerialNetworkUid() {
@@ -334,7 +334,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Set the serial network UID.
-	 * 
+	 *
 	 * @param uid
 	 *        the serial network UID
 	 */
@@ -344,7 +344,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -353,7 +353,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -363,7 +363,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Get the source ID to use for returned datum.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -372,7 +372,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal PVI-3800}
 	 */
