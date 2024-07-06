@@ -1,21 +1,21 @@
 /* ==================================================================
  * DatumProtobufObjectCodec.java - 26/04/2021 3:20:18 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -65,7 +65,7 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Service for encoding datum into Protobuf messages.
- * 
+ *
  * <p>
  * This service supports encoding {@link Map} and {@link Datum} objects.
  * {@code Map} objects are used directly as input while {@code Datum} will use
@@ -75,14 +75,14 @@ import net.solarnetwork.util.ArrayUtils;
  * {@link ProtobufMessagePopulator#setMessageProperties(Map, boolean)} to be
  * encoded into a Protobuf message.
  * </p>
- * 
+ *
  * <p>
  * The {@link #decodeFromBytes(byte[], Map)} method always returns a
  * {@link net.solarnetwork.node.domain.datum.SimpleDatum} instance.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.ProtobufObjectCodec
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -189,7 +189,8 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = BaseIdentifiable.baseIdentifiableSettings("");
-		result.add(new BasicTextFieldSettingSpecifier("compilerServiceUidFilter", ""));
+		result.add(new BasicTextFieldSettingSpecifier("compilerServiceUidFilter", null, false,
+				"(objectClass=net.solarnetwork.common.protobuf.ProtobufCompilerService)"));
 		result.add(new BasicTextFieldSettingSpecifier("messageClassName", ""));
 		result.add(new BasicFileSettingSpecifier(RESOURCE_KEY_PROTO_FILES, null,
 				new LinkedHashSet<>(asList(".proto", "text/*")), true));
@@ -289,7 +290,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Get the proto directory path.
-	 * 
+	 *
 	 * @return the directory path, never {@literal null}; defaults to
 	 *         {@link #DEFAULT_PROTO_DIR}
 	 */
@@ -299,7 +300,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Set the proto directory path.
-	 * 
+	 *
 	 * @param protoDir
 	 *        the path to set
 	 * @throws IllegalArgumentException
@@ -314,11 +315,11 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Get the configured proto file names.
-	 * 
+	 *
 	 * <p>
 	 * These are relative to {@link #getProtoDir()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the file names
 	 */
 	public String[] getProtoFileNames() {
@@ -327,7 +328,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Set the proto file names.
-	 * 
+	 *
 	 * @param protoFileNames
 	 *        the file names to set
 	 */
@@ -337,7 +338,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public DatumFieldConfig[] getPropConfigs() {
@@ -346,7 +347,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Set the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -356,7 +357,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -366,12 +367,12 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link DatumFieldConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
