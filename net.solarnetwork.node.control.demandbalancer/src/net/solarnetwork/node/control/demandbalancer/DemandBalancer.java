@@ -86,13 +86,28 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 */
 	public static final String EVENT_TOPIC_STATISTICS = "net/solarnetwork/node/control/demandbalancer/DemandBalancer/STATISTICS";
 
+	/** The last consumption collection date stat key. */
 	public static final String STAT_LAST_CONSUMPTION_COLLECTION_DATE = "ConsumptionCollectionDate";
+
+	/** The last consumption collection error stat key. */
 	public static final String STAT_LAST_CONSUMPTION_COLLECTION_ERROR = "ConsumptionCollectionError";
+
+	/** The last power collection date stat key. */
 	public static final String STAT_LAST_POWER_COLLECTION_DATE = "PowerCollectionDate";
+
+	/** The last power collection error stat key. */
 	public static final String STAT_LAST_POWER_COLLECTION_ERROR = "PowerCollectionError";
+
+	/** The last power control collection date stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_COLLECTION_DATE = "PowerControlCollectionDate";
+
+	/** The last power control collection date stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_COLLECTION_ERROR = "PowerControlCollectionError";
+
+	/** The last power control modify date stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_MODIFY_DATE = "PowerControlModifyDate";
+
+	/** The last power control modify error stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_MODIFY_ERROR = "PowerControlModifyError";
 
 	/** The {@code collectPower} property default value. */
@@ -496,6 +511,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	// Accessors
 
+	/**
+	 * Get the power control ID.
+	 *
+	 * @return the power control ID
+	 */
 	public String getPowerControlId() {
 		return powerControlId;
 	}
@@ -516,6 +536,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 	}
 
+	/**
+	 * Get the power control.
+	 *
+	 * @return the power control
+	 */
 	public OptionalFilterableService<NodeControlProvider> getPowerControl() {
 		return powerControl;
 	}
@@ -542,6 +567,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	}
 
+	/**
+	 * Get the power data source collection.
+	 *
+	 * @return the collection
+	 */
 	public OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
 		return powerDataSource;
 	}
@@ -563,6 +593,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		this.powerDataSource = powerDataSource;
 	}
 
+	/**
+	 * Get the power maximum watts.
+	 *
+	 * @return the maximum watts
+	 */
 	public int getPowerMaximumWatts() {
 		return powerMaximumWatts;
 	}
@@ -634,10 +669,21 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		this.balanceStrategy = balanceStrategy;
 	}
 
+	/**
+	 * Set the message source.
+	 *
+	 * @param messageSource
+	 *        the message source
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Get the instruction handlers.
+	 *
+	 * @return the handlers
+	 */
 	public Collection<InstructionHandler> getInstructionHandlers() {
 		return instructionHandlers;
 	}
@@ -661,22 +707,50 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return collectPower;
 	}
 
+	/**
+	 * Set the collect power mode.
+	 *
+	 * @param collectPower
+	 *        the mode to set
+	 */
 	public void setCollectPower(boolean collectPower) {
 		this.collectPower = collectPower;
 	}
 
+	/**
+	 * Get the event admin service.
+	 *
+	 * @return the service
+	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
+	/**
+	 * Set the event admin service.
+	 *
+	 * @param eventAdmin
+	 *        the service to set
+	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
+	/**
+	 * Get the AC energy phase filter.
+	 *
+	 * @return the filter
+	 */
 	public Set<AcPhase> getAcEnergyPhaseFilter() {
 		return acEnergyPhaseFilter;
 	}
 
+	/**
+	 * Set the AC energy phase filter.
+	 *
+	 * @param acEnergyPhaseFilter
+	 *        the filter to set
+	 */
 	public void setAcEnergyPhaseFilter(Set<AcPhase> acEnergyPhaseFilter) {
 		this.acEnergyPhaseFilter = acEnergyPhaseFilter;
 	}
