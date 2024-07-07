@@ -127,34 +127,78 @@ public class MeasurementConfig {
 		return results;
 	}
 
+	/**
+	 * Get the data source UID.
+	 *
+	 * @return the UID
+	 */
 	public String getDataSourceUid() {
 		return dataSourceUid;
 	}
 
+	/**
+	 * Set the data source UID.
+	 *
+	 * @param dataSourceUid
+	 *        the UID to set
+	 */
 	public void setDataSourceUid(String dataSourceUid) {
 		this.dataSourceUid = dataSourceUid;
 	}
 
+	/**
+	 * Get the source ID.
+	 *
+	 * @return the source ID
+	 */
 	public String getSourceId() {
 		return sourceId;
 	}
 
+	/**
+	 * Set the source ID.
+	 *
+	 * @param sourceId
+	 *        the source ID to set
+	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
 
+	/**
+	 * Get the property name.
+	 *
+	 * @return the property name
+	 */
 	public String getPropertyName() {
 		return propertyName;
 	}
 
+	/**
+	 * Set the property name.
+	 *
+	 * @param propertyName
+	 *        the property name to set
+	 */
 	public void setPropertyName(String propertyName) {
 		this.propertyName = propertyName;
 	}
 
+	/**
+	 * Get the measurement type.
+	 *
+	 * @return the type
+	 */
 	public MeasurementType getType() {
 		return type;
 	}
 
+	/**
+	 * Set the measurement type.
+	 *
+	 * @param type
+	 *        the type to set
+	 */
 	public void setType(MeasurementType type) {
 		this.type = type;
 	}

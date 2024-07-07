@@ -1,21 +1,21 @@
 /* ==================================================================
  * AbstractChannelService.java - 21/02/2019 5:53:24 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -35,15 +35,16 @@ import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
  * Abstract implementation of {@link ChannelService}.
- * 
- * @param C
- *        the channel configuration
+ *
+ * @param <C>
+ *        the channel configuration type
  * @author matt
  * @version 1.1
  */
 public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 		extends BasicIdentifiable implements ChannelService, ChannelListener {
 
+	/** The default UID value. */
 	public static final String DEFAULT_UID = "DNP3 Channel";
 
 	/** A class-level logger. */
@@ -57,7 +58,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param manager
 	 *        the manager
 	 * @param config
@@ -79,7 +80,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 
 	/**
 	 * Callback after properties have been changed.
-	 * 
+	 *
 	 * @param properties
 	 *        the changed properties
 	 */
@@ -104,7 +105,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 
 	/**
 	 * Get the manager.
-	 * 
+	 *
 	 * @return the manager
 	 */
 	protected DNP3Manager getManager() {
@@ -113,7 +114,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 
 	/**
 	 * Get the configuration.
-	 * 
+	 *
 	 * @return the config
 	 */
 	public C getConfig() {
@@ -134,7 +135,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 
 	/**
 	 * Create a new channel instance using the given configuration.
-	 * 
+	 *
 	 * @param configuration
 	 *        the configuration
 	 * @return the channel
@@ -151,7 +152,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 
 	/**
 	 * Get a simple string status message.
-	 * 
+	 *
 	 * @return the message, never {@literal null}
 	 */
 	protected synchronized String getChannelStatusMessage() {

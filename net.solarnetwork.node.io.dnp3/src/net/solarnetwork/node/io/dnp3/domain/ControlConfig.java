@@ -105,26 +105,59 @@ public class ControlConfig {
 		return results;
 	}
 
+	/**
+	 * Get the control provider UID.
+	 *
+	 * @return the UID
+	 */
 	public String getControlProviderUid() {
 		return controlProviderUid;
 	}
 
+	/**
+	 * Set the control provider UID.
+	 *
+	 * @param dataSourceUid
+	 *        the UID to set
+	 */
 	public void setControlProviderUid(String dataSourceUid) {
 		this.controlProviderUid = dataSourceUid;
 	}
 
+	/**
+	 * Get the control ID.
+	 *
+	 * @return the ID
+	 */
 	public String getControlId() {
 		return controlId;
 	}
 
-	public void setControlId(String sourceId) {
-		this.controlId = sourceId;
+	/**
+	 * Set the control ID.
+	 *
+	 * @param controlId
+	 *        the ID to set
+	 */
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
 	}
 
+	/**
+	 * Get the control type.
+	 *
+	 * @return the type
+	 */
 	public ControlType getType() {
 		return type;
 	}
 
+	/**
+	 * Set the control type.
+	 *
+	 * @param type
+	 *        the type to set
+	 */
 	public void setType(ControlType type) {
 		this.type = type;
 	}
