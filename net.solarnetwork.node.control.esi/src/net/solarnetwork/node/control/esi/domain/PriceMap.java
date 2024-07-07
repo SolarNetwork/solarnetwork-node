@@ -1,21 +1,21 @@
 /* ==================================================================
  * PriceMap.java - 9/08/2019 5:31:07 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -41,7 +41,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A price map.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -71,7 +71,7 @@ public class PriceMap {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param power
 	 *        the power components
 	 * @param duration
@@ -92,7 +92,7 @@ public class PriceMap {
 
 	/**
 	 * Add settings for this class to a list.
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to use for all setting keys
 	 * @param results
@@ -110,7 +110,7 @@ public class PriceMap {
 
 	/**
 	 * Get the price map data as a Map.
-	 * 
+	 *
 	 * @return a map of the properties of this class
 	 */
 	public Map<String, Object> asMap() {
@@ -122,6 +122,11 @@ public class PriceMap {
 		return map;
 	}
 
+	/**
+	 * Create a copy of this instance.
+	 *
+	 * @return the new copy
+	 */
 	public PriceMap copy() {
 		PriceMap c = new PriceMap();
 
@@ -178,7 +183,7 @@ public class PriceMap {
 	 * Calculate the theoretical cost represented by this price map as the
 	 * apparent power multiplied by the duration (in hours) multiplied by the
 	 * apparent energy price.
-	 * 
+	 *
 	 * @return the apparent energy cost, in the configured currency units per
 	 *         volt-amp-hours (VAh)
 	 */
@@ -195,7 +200,7 @@ public class PriceMap {
 
 	/**
 	 * Get the fractional hours represented by the configured duration.
-	 * 
+	 *
 	 * @return the duration, as fractional hours
 	 */
 	public double durationHours() {
@@ -205,7 +210,7 @@ public class PriceMap {
 	/**
 	 * Get a brief informational string out of the main aspects of this price
 	 * map.
-	 * 
+	 *
 	 * @param locale
 	 *        the locale
 	 * @return the string
@@ -223,7 +228,7 @@ public class PriceMap {
 
 	/**
 	 * Get the info string in the default locale.
-	 * 
+	 *
 	 * @return the info string
 	 * @see #toInfoString(Locale)
 	 */
@@ -234,7 +239,7 @@ public class PriceMap {
 	/**
 	 * Get a detailed informational string using the default locale and standard
 	 * formatting.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 * @return the detail string
@@ -247,14 +252,14 @@ public class PriceMap {
 
 	/**
 	 * Get a detailed informational string.
-	 * 
+	 *
 	 * <p>
 	 * The resulting string will contain one line per property in this price
 	 * map. Each property will be printed using a key/unit/value format, using
 	 * {@code messageFormat} as the string format. The key unit parameters will
 	 * be strings. The value will a number.
 	 * </p>
-	 * 
+	 *
 	 * @param locale
 	 *        the locale to render messages with
 	 * @param messageSource
@@ -301,7 +306,7 @@ public class PriceMap {
 
 	/**
 	 * Get the power components.
-	 * 
+	 *
 	 * @return the power components
 	 */
 	public PowerComponents getPowerComponents() {
@@ -310,7 +315,7 @@ public class PriceMap {
 
 	/**
 	 * Set the power components.
-	 * 
+	 *
 	 * @param powerComponents
 	 *        the power components to set
 	 */
@@ -321,12 +326,12 @@ public class PriceMap {
 	/**
 	 * Get the power component details, creating a new one if it doesn't already
 	 * exist.
-	 * 
+	 *
 	 * <p>
 	 * If a new power component is created, its values will be initialized to
 	 * zero.
 	 * </p>
-	 * 
+	 *
 	 * @return the power component details
 	 */
 	public PowerComponents powerComponents() {
@@ -340,7 +345,7 @@ public class PriceMap {
 
 	/**
 	 * Get the duration of time for this price map.
-	 * 
+	 *
 	 * @return the duration
 	 */
 	public Duration getDuration() {
@@ -349,7 +354,7 @@ public class PriceMap {
 
 	/**
 	 * Set the duration of time for this price map.
-	 * 
+	 *
 	 * @param duration
 	 *        the duration to set
 	 */
@@ -359,7 +364,7 @@ public class PriceMap {
 
 	/**
 	 * Get the duration, never {@literal null}.
-	 * 
+	 *
 	 * @return the duration
 	 */
 	public Duration duration() {
@@ -372,7 +377,7 @@ public class PriceMap {
 
 	/**
 	 * Get the duration, in milliseconds
-	 * 
+	 *
 	 * @return the duration, in milliseconds
 	 */
 	public long getDurationMillis() {
@@ -382,7 +387,7 @@ public class PriceMap {
 
 	/**
 	 * Set the duration, in milliseconds.
-	 * 
+	 *
 	 * @param dur
 	 *        the duration to set, in milliseconds
 	 */
@@ -392,7 +397,7 @@ public class PriceMap {
 
 	/**
 	 * Get the response time range.
-	 * 
+	 *
 	 * @return the response time range
 	 */
 	public DurationRange getResponseTime() {
@@ -401,7 +406,7 @@ public class PriceMap {
 
 	/**
 	 * Set the response time range.
-	 * 
+	 *
 	 * @param responseTime
 	 *        the response time range to set
 	 */
@@ -412,7 +417,7 @@ public class PriceMap {
 	/**
 	 * Get the response time details, creating a new one if it doesn't already
 	 * exist.
-	 * 
+	 *
 	 * @return the response time details
 	 */
 	public DurationRange responseTime() {
@@ -426,7 +431,7 @@ public class PriceMap {
 
 	/**
 	 * Get the price components.
-	 * 
+	 *
 	 * @return the price components
 	 */
 	public PriceComponents getPriceComponents() {
@@ -435,7 +440,7 @@ public class PriceMap {
 
 	/**
 	 * Set the price components.
-	 * 
+	 *
 	 * @param priceComponents
 	 *        the price components to set
 	 */
@@ -446,12 +451,12 @@ public class PriceMap {
 	/**
 	 * Get the price component details, creating a new one if it doesn't already
 	 * exist.
-	 * 
+	 *
 	 * <p>
 	 * If a new instance is created, it will be initialized with the currency
 	 * for the default locale and zero-values for all prices.
 	 * </p>
-	 * 
+	 *
 	 * @return the price component details
 	 */
 	public PriceComponents priceComponents() {

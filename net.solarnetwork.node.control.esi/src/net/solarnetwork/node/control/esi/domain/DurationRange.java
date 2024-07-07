@@ -1,21 +1,21 @@
 /* ==================================================================
  * DurationRange.java - 7/08/2019 2:52:13 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,7 +32,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A duration range.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -50,7 +50,7 @@ public class DurationRange {
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param min
 	 *        the minimum duration
 	 * @param max
@@ -64,7 +64,7 @@ public class DurationRange {
 
 	/**
 	 * Add settings for this class to a list.
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to use for all setting keys
 	 * @param results
@@ -80,7 +80,7 @@ public class DurationRange {
 
 	/**
 	 * Get the resource characteristics data as a Map.
-	 * 
+	 *
 	 * @return a map of the properties of this class
 	 */
 	public Map<String, Object> asMap() {
@@ -92,7 +92,7 @@ public class DurationRange {
 
 	/**
 	 * Create a new duration out of second values.
-	 * 
+	 *
 	 * @param min
 	 *        the minimum value, in seconds
 	 * @param max
@@ -103,6 +103,11 @@ public class DurationRange {
 		return new DurationRange(Duration.ofSeconds(min), Duration.ofSeconds(max));
 	}
 
+	/**
+	 * Create a copy of this instance.
+	 *
+	 * @return the new copy
+	 */
 	public DurationRange copy() {
 		return new DurationRange(getMin(), getMax());
 	}
@@ -134,7 +139,7 @@ public class DurationRange {
 
 	/**
 	 * Get the minimum duration.
-	 * 
+	 *
 	 * @return the minimum duration
 	 */
 	public Duration getMin() {
@@ -143,7 +148,7 @@ public class DurationRange {
 
 	/**
 	 * Set the minimum duration.
-	 * 
+	 *
 	 * @param min
 	 *        the duration to set
 	 */
@@ -153,7 +158,7 @@ public class DurationRange {
 
 	/**
 	 * Get the minimum duration, never {@literal null}.
-	 * 
+	 *
 	 * @return the minimum duration
 	 */
 	public Duration min() {
@@ -166,7 +171,7 @@ public class DurationRange {
 
 	/**
 	 * Get the minimum duration, in milliseconds.
-	 * 
+	 *
 	 * @return the minimum duration, in milliseconds
 	 */
 	public long getMinMillis() {
@@ -176,7 +181,7 @@ public class DurationRange {
 
 	/**
 	 * Set the minimum duration, in milliseconds.
-	 * 
+	 *
 	 * @param min
 	 *        the duration to set, in milliseconds
 	 */
@@ -186,7 +191,7 @@ public class DurationRange {
 
 	/**
 	 * Get the maximum duration.
-	 * 
+	 *
 	 * @return the maximum duration
 	 */
 	public Duration getMax() {
@@ -195,7 +200,7 @@ public class DurationRange {
 
 	/**
 	 * Set the maximum duration.
-	 * 
+	 *
 	 * @param max
 	 *        the duration to set
 	 */
@@ -205,7 +210,7 @@ public class DurationRange {
 
 	/**
 	 * Get the maximum duration, never {@literal null}.
-	 * 
+	 *
 	 * @return the maximum duration
 	 */
 	public Duration max() {
@@ -218,7 +223,7 @@ public class DurationRange {
 
 	/**
 	 * Get the maximum duration, in milliseconds.
-	 * 
+	 *
 	 * @return the maximum duration, in milliseconds
 	 */
 	public long getMaxMillis() {
@@ -228,7 +233,7 @@ public class DurationRange {
 
 	/**
 	 * Set the maximum duration, in milliseconds.
-	 * 
+	 *
 	 * @param max
 	 *        the duration to set, in milliseconds
 	 */
