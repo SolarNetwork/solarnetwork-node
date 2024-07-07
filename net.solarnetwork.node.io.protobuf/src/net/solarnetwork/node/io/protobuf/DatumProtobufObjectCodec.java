@@ -100,6 +100,13 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 	private String[] protoFileNames;
 	private DatumFieldConfig[] propConfigs;
 
+	/**
+	 * Constructor.
+	 */
+	public DatumProtobufObjectCodec() {
+		super();
+	}
+
 	@Override
 	protected Map<String, ?> convertToMap(Object obj, Map<String, ?> parameters) {
 		DatumFieldConfig[] confs = getPropConfigs();
