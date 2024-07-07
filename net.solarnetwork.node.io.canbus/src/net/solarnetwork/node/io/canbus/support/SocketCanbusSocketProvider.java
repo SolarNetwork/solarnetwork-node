@@ -1,21 +1,21 @@
 /* ==================================================================
  * SocketCanbusSocketProvider.java - 23/09/2019 6:16:54 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,7 +34,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link CanbusSocketProvider} for {@link SocketCanbusSocket} instances.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -45,6 +45,13 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	private boolean socketReuseAddress = SocketCanbusSocket.DEFAULT_SOCKET_REUSE_ADDRESS;
 	private int socketLinger = SocketCanbusSocket.DEFAULT_SOCKET_LINGER;
 	private boolean socketKeepAlive = SocketCanbusSocket.DEFAULT_SOCKET_KEEP_ALIVE;
+
+	/**
+	 * Constructor.
+	 */
+	public SocketCanbusSocketProvider() {
+		super();
+	}
 
 	@Override
 	public CanbusSocket createCanbusSocket() {
@@ -97,7 +104,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	/**
 	 * Get the timeout for blocking socket operations like reading from the
 	 * socket.
-	 * 
+	 *
 	 * @return the socket timeout, in milliseconds; defaults to
 	 *         {@link SocketCanbusSocket#DEFAULT_SOCKET_TIMEOUT}
 	 */
@@ -108,7 +115,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	/**
 	 * Set the timeout for blocking socket operations like reading from the
 	 * socket.
-	 * 
+	 *
 	 * @param socketTimeout
 	 *        the socket timeout to use, in milliseconds
 	 */
@@ -118,7 +125,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Get the TCP "no delay" flag.
-	 * 
+	 *
 	 * @return {@literal true} if the TCP "no delay" option should be used;
 	 *         defaults to
 	 *         {@link SocketCanbusSocket#DEFAULT_SOCKET_TCP_NO_DELAY}
@@ -129,7 +136,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Set the TCP "no delay" flag.
-	 * 
+	 *
 	 * @param socketTcpNoDelay
 	 *        {@literal true} if the TCP "no delay" option should be used
 	 */
@@ -139,7 +146,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Get the socket "reuse address" flag.
-	 * 
+	 *
 	 * @return {@literal true} if the socket "reuse address" flag should be
 	 *         used; defaults to
 	 *         {@link SocketCanbusSocket#DEFAULT_SOCKET_REUSE_ADDRESS}
@@ -150,7 +157,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Set the socket "reuse address" flag.
-	 * 
+	 *
 	 * @param socketReuseAddress
 	 *        {@literal true} if the socket "reuse address" flag should be used
 	 */
@@ -160,7 +167,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Get the socket linger amount.
-	 * 
+	 *
 	 * @return the socket linger amount, in seconds, or {@literal 0} to disable;
 	 *         defaults to {@link SocketCanbusSocket#DEFAULT_SOCKET_LINGER}
 	 */
@@ -170,7 +177,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Set the socket linger amount.
-	 * 
+	 *
 	 * @param socketLinger
 	 *        the socket linger amount, in seconds, or {@literal 0} to disable
 	 */
@@ -180,7 +187,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Get the socket "keep alive" flag.
-	 * 
+	 *
 	 * @return {@literal true} if the socket "keep alive" flag should be used;
 	 *         defaults to {@link SocketCanbusSocket#DEFAULT_SOCKET_KEEP_ALIVE}
 	 */
@@ -190,7 +197,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 
 	/**
 	 * Set the socket "keep alive" flag.
-	 * 
+	 *
 	 * @param socketKeepAlive
 	 *        {@literal true} if the socket "keep alive" flag should be used
 	 */

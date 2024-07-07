@@ -1,21 +1,21 @@
 /* ==================================================================
  * SocketcandUtils.java - 20/09/2019 6:24:55 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -37,11 +37,15 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Utilities for dealing with the socketcand protocol.
- * 
+ *
  * @author matt
  * @version 1.0
  */
 public final class SocketcandUtils {
+
+	private SocketcandUtils() {
+		// not available
+	}
 
 	private static enum ReadState {
 		SEEK,
@@ -51,7 +55,7 @@ public final class SocketcandUtils {
 
 	/**
 	 * Read a message from a character stream.
-	 * 
+	 *
 	 * @param in
 	 *        the character stream to read from
 	 * @param buffer
@@ -143,7 +147,7 @@ public final class SocketcandUtils {
 
 	/**
 	 * Decode a list of hex-encoded strings into a byte array.
-	 * 
+	 *
 	 * @param hexData
 	 *        the hex-encoded strings
 	 * @param fromIndex
@@ -177,7 +181,7 @@ public final class SocketcandUtils {
 	/**
 	 * Encode a byte array into a list of hex-encoded strings, one string for
 	 * each individual byte.
-	 * 
+	 *
 	 * @param data
 	 *        the data to encode as hex strings
 	 * @param fromIndex
@@ -202,7 +206,7 @@ public final class SocketcandUtils {
 
 	/**
 	 * Convert up to 8 bytes into a long value.
-	 * 
+	 *
 	 * @param data
 	 *        the bytes to convert
 	 * @param offset
@@ -222,7 +226,7 @@ public final class SocketcandUtils {
 
 	/**
 	 * Convert a long into a list of hex strings.
-	 * 
+	 *
 	 * @param number
 	 *        the long to convert
 	 * @param trimEnd

@@ -508,7 +508,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	/**
 	 * Get the debug mode log path.
 	 *
-	 * @return the debug log path; defaults to {@link #DEFAULT_CAPTURE_LOG}
+	 * @return the debug log path; defaults to {@link #DEFAULT_CAPTURE_LOG_PATH}
 	 * @since 2.1
 	 */
 	public String getCaptureLogPath() {
@@ -518,19 +518,13 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	/**
 	 * Set the debug mode log path.
 	 *
-	 * <p>
-	 * This path accepts one string format parameter: the configured
-	 * {@link #getBusName()} value.
-	 * </p>
-	 *
 	 * @param captureLogPath
 	 *        the log path to set, including one string parameter for the bus
 	 *        name
-	 * @see #setDebug(boolean)
 	 * @since 2.1
 	 */
-	public void setCaptureLogPath(String debugLogPath) {
-		this.captureLogPath = debugLogPath;
+	public void setCaptureLogPath(String captureLogPath) {
+		this.captureLogPath = captureLogPath;
 	}
 
 	/**

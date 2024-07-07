@@ -91,6 +91,13 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	private ScheduledFuture<?> connectionCheckFuture;
 
 	/**
+	 * Constructor.
+	 */
+	public CanbusDatumDataSourceSupport() {
+		super();
+	}
+
+	/**
 	 * Get setting specifiers for the
 	 * {@literal canbusNetwork.propertyFilters['uid']} and {@literal busName}
 	 * properties.

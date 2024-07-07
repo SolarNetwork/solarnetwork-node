@@ -1,21 +1,21 @@
 /* ==================================================================
  * CannelloniCanbusConnection.java - 21/11/2019 11:37:27 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -58,7 +58,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 /**
  * {@link CanbusConnection} that listens for UDP packets from a Cannalloni
  * server.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -95,7 +95,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler
 	 * @param busName
@@ -107,7 +107,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler
 	 * @param busName
@@ -147,7 +147,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 		return "Cannelloni Client";
 	}
 
-	public synchronized CannelloniConnectionStatus getConnectionStatus() {
+	private synchronized CannelloniConnectionStatus getConnectionStatus() {
 		Channel c = this.channel;
 		if ( c != null ) {
 			if ( c.isActive() ) {
@@ -169,7 +169,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Call once after properties configured to initialize at a future date.
-	 * 
+	 *
 	 * @return initialization task future
 	 */
 	public Future<?> openLater() {
@@ -484,7 +484,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Get the Cannelloni host to connect to.
-	 * 
+	 *
 	 * @return the host name or IP address; defaults to {@link #DEFAULT_HOST}
 	 */
 	public String getHost() {
@@ -493,7 +493,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Get the Cannelloni port to connect to.
-	 * 
+	 *
 	 * @return the port; defaults to {@link #DEFAULT_PORT}
 	 */
 	public int getPort() {
@@ -502,7 +502,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Get the delay in seconds before an automatic reconnection is attempted.
-	 * 
+	 *
 	 * @return the seconds; defaults to {@link #DEFAULT_RECONNECT_SECONDS}
 	 */
 	public int getReconnectSeconds() {
@@ -511,7 +511,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Set the delay in seconds before an automatic reconnection is attempted.
-	 * 
+	 *
 	 * @param reconnectSeconds
 	 *        the seconds to set
 	 */
@@ -522,7 +522,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 	/**
 	 * Get the maximum number of seconds to wait for the client to gracefully
 	 * shutdown.
-	 * 
+	 *
 	 * @return the seconds; defaults to {@link #DEFAULT_SHUTDOWN_SECONDS}
 	 */
 	public int getShutdownSeconds() {
@@ -532,7 +532,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 	/**
 	 * Set the maximum number of seconds to wait for the client to gracefully
 	 * shutdown.
-	 * 
+	 *
 	 * @param shutdownSeconds
 	 *        the seconds to set
 	 */
@@ -542,7 +542,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Get the {@link EventAdmin} service.
-	 * 
+	 *
 	 * @return the EventAdmin service
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -551,7 +551,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 
 	/**
 	 * Set an {@link EventAdmin} service to use.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the EventAdmin to use
 	 */

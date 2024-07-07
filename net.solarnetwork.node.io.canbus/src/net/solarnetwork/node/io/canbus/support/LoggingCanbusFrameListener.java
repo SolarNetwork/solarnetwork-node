@@ -1,21 +1,21 @@
 /* ==================================================================
  * LoggingCanbusFrameListener.java - 8/05/2022 4:48:09 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -44,7 +44,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Listener that logs messages to a file.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.1
@@ -63,12 +63,12 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeabl
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param busName
 	 *        a busName to use for debug log messages
 	 * @param logFile
 	 *        the log file to write to
-	 * @param inlineDate
+	 * @param includeDate
 	 *        {@literal true} to include a time stamp as the first field in
 	 *        every message line
 	 * @param autoFlush
@@ -146,7 +146,7 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeabl
 
 	/**
 	 * Get the bus name.
-	 * 
+	 *
 	 * @return the bus name
 	 */
 	public String getBusName() {
@@ -155,7 +155,7 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeabl
 
 	/**
 	 * Get the configured log file.
-	 * 
+	 *
 	 * @return the logFile
 	 */
 	public Path getLogFile() {
@@ -164,7 +164,7 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeabl
 
 	/**
 	 * Get the gzip compression setting.
-	 * 
+	 *
 	 * @return {@literal true} if the output is compressed with gzip
 	 */
 	public boolean isGzip() {
