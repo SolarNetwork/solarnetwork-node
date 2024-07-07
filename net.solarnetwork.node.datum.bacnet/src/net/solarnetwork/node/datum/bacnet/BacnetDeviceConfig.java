@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetDeviceConfig.java - 4/11/2022 1:58:07 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -41,7 +41,7 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Datum data source configuration for a single BACnet device.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -49,7 +49,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * A setting type pattern for a device configuration element.
-	 * 
+	 *
 	 * <p>
 	 * The pattern has two capture groups: the device configuration index and
 	 * the device setting name.
@@ -62,8 +62,15 @@ public class BacnetDeviceConfig {
 	private BacnetPropertyConfig[] propConfigs;
 
 	/**
+	 * Constructor.
+	 */
+	public BacnetDeviceConfig() {
+		super();
+	}
+
+	/**
 	 * Get settings suitable for configuring this instance.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -97,12 +104,12 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Test if this instance represents a valid configuration.
-	 * 
+	 *
 	 * <p>
 	 * This only verifies that the configuration is complete, not that actual
 	 * BACnet device and/or properties exist for the configured values.
 	 * </p>
-	 * 
+	 *
 	 * @return {@literal true} if this instance represents a valid configuration
 	 */
 	public boolean isValid() {
@@ -120,7 +127,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Populate a setting as a device configuration value, if possible.
-	 * 
+	 *
 	 * @param config
 	 *        the overall configuration
 	 * @param setting
@@ -158,7 +165,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Generate a list of setting values.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -192,7 +199,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Get the BACnet device (instance) ID.
-	 * 
+	 *
 	 * @return the deviceId the device ID
 	 */
 	public Integer getDeviceId() {
@@ -201,7 +208,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Set the BACnet device (instance) ID.
-	 * 
+	 *
 	 * @param deviceId
 	 *        the device ID to set
 	 */
@@ -211,7 +218,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations; never {@literal null}
 	 */
 	public BacnetPropertyConfig[] getPropConfigs() {
@@ -220,7 +227,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Set the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -230,7 +237,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -240,12 +247,12 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link BacnetPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        the desired number of {@code propConfigs} elements
 	 */
@@ -256,7 +263,7 @@ public class BacnetDeviceConfig {
 
 	/**
 	 * Add a new property configuration.
-	 * 
+	 *
 	 * @param config
 	 *        the configuration to add
 	 */
