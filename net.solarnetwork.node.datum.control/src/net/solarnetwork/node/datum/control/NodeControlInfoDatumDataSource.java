@@ -1,21 +1,21 @@
 /* ==================================================================
  * SimpleNodeControlInfoDatumDataSource.java - 9/04/2021 9:00:59 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -53,9 +55,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * Data source for controls, supporting both scheduling polling and real-time
  * persisting of changes.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 		implements SettingSpecifierProvider, EventHandler, MultiDatumDataSource {
@@ -74,7 +76,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the queue
 	 * @param providers
@@ -256,9 +258,22 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 		return result;
 	}
 
+	@Override
+	public Collection<String> publishedSourceIds() {
+		Set<String> result = new TreeSet<>();
+		for ( NodeControlProvider p : providers ) {
+			List<String> controlIds = p.getAvailableControlIds();
+			if ( controlIds == null || controlIds.isEmpty() ) {
+				continue;
+			}
+			result.addAll(controlIds);
+		}
+		return result;
+	}
+
 	/**
 	 * Set an executor to use for internal tasks.
-	 * 
+	 *
 	 * @param executor
 	 *        the executor
 	 */
@@ -268,7 +283,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the control ID regular expression.
-	 * 
+	 *
 	 * @return the control ID expression, or {@literal null} for including all
 	 *         control IDs
 	 */
@@ -278,7 +293,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the control ID regular expression.
-	 * 
+	 *
 	 * @param controlIdRegex
 	 *        a pattern to match against control IDs; if defined then this datum
 	 *        will only be generated for controls with matching control ID
@@ -290,7 +305,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the control ID regular expression as a string.
-	 * 
+	 *
 	 * @return the control ID expression string, or {@literal null} for
 	 *         including all control IDs
 	 */
@@ -301,13 +316,13 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the control ID regular expression as a string.
-	 * 
+	 *
 	 * <p>
 	 * Errors compiling {@code controlIdRegex} into a {@link Pattern} will be
 	 * silently ignored, causing the regular expression to be set to
 	 * {@literal null}.
 	 * </p>
-	 * 
+	 *
 	 * @param controlIdRegex
 	 *        a pattern to match against control IDs; if defined then this datum
 	 *        will only be generated for controls with matching control ID
@@ -327,7 +342,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the control event mode.
-	 * 
+	 *
 	 * @return the mode, never {@literal null}
 	 */
 	public ControlEventMode getEventMode() {
@@ -336,7 +351,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the control event mode.
-	 * 
+	 *
 	 * @param eventMode
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
@@ -350,7 +365,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the control event mode string value.
-	 * 
+	 *
 	 * @return the mode as a string, never {@literal null}
 	 */
 	public String getEventModeValue() {
@@ -359,7 +374,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the control event mode as a string value.
-	 * 
+	 *
 	 * @param value
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
@@ -376,7 +391,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the "persist datum" queue mode.
-	 * 
+	 *
 	 * @return the mode, never {@literal null}
 	 */
 	public QueuePersistMode getPersistMode() {
@@ -385,7 +400,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the "persist datum" queue mode.
-	 * 
+	 *
 	 * @param persistMode
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_PERSIST_MODE} will be set
@@ -399,7 +414,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the datum persist mode string value.
-	 * 
+	 *
 	 * @return the mode as a string, never {@literal null}
 	 */
 	public String getPersistModeValue() {
@@ -408,7 +423,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the datum persist mode as a string value.
-	 * 
+	 *
 	 * @param value
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
