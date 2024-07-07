@@ -53,6 +53,13 @@ import net.solarnetwork.util.StringUtils;
 public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
+	 * Constructor.
+	 */
+	public SerialDeviceSupport() {
+		super();
+	}
+
+	/**
 	 * Get setting specifiers for the serial network UID filter.
 	 *
 	 * @param prefix
