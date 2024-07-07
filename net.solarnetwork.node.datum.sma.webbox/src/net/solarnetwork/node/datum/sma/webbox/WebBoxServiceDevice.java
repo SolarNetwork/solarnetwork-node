@@ -40,6 +40,13 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  */
 public class WebBoxServiceDevice extends WebBoxService implements SettingSpecifierProvider {
 
+	/**
+	 * Constructor.
+	 */
+	public WebBoxServiceDevice() {
+		super();
+	}
+
 	@Override
 	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.sma.webbox";
