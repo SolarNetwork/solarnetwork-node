@@ -1,21 +1,21 @@
 /* ==================================================================
  * MBusDatumDataSourceConfig.java - 30/09/2022 12:03:15 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,7 +28,7 @@ import net.solarnetwork.node.settings.SettingValueBean;
 
 /**
  * Overall configuration for a M-Bus data source.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 1.1
@@ -37,6 +37,13 @@ public class MBusDatumDataSourceConfig extends BaseDatumDataSourceConfig {
 
 	private Integer address;
 	private Long sampleCacheMs;
+
+	/**
+	 * Constructor.
+	 */
+	public MBusDatumDataSourceConfig() {
+		super();
+	}
 
 	@Override
 	public List<SettingValueBean> toSettingValues(String providerId) {
@@ -50,7 +57,7 @@ public class MBusDatumDataSourceConfig extends BaseDatumDataSourceConfig {
 
 	/**
 	 * Populate a setting as a configuration value, if possible.
-	 * 
+	 *
 	 * @param setting
 	 *        the setting to try to handle
 	 * @return {@literal true} if the setting was handled as a configuration
@@ -98,7 +105,7 @@ public class MBusDatumDataSourceConfig extends BaseDatumDataSourceConfig {
 
 	/**
 	 * Get the M-Bus primary address.
-	 * 
+	 *
 	 * @return the address
 	 */
 	public Integer getAddress() {
@@ -107,7 +114,7 @@ public class MBusDatumDataSourceConfig extends BaseDatumDataSourceConfig {
 
 	/**
 	 * Set the M-Bus primary address.
-	 * 
+	 *
 	 * @param address
 	 *        the address to set (1-255)
 	 */
@@ -117,7 +124,7 @@ public class MBusDatumDataSourceConfig extends BaseDatumDataSourceConfig {
 
 	/**
 	 * Get the sample cache milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public Long getSampleCacheMs() {
@@ -126,7 +133,7 @@ public class MBusDatumDataSourceConfig extends BaseDatumDataSourceConfig {
 
 	/**
 	 * Set the sample cache milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds to set
 	 */
