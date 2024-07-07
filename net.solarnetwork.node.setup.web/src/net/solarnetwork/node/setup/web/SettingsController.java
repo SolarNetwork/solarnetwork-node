@@ -403,11 +403,11 @@ public class SettingsController {
 	}
 
 	/**
-	 * Get a list of setting specifier provider infos for a given factory ID.
+	 * Get a list of setting specifier provider infos for a given service
+	 * filter.
 	 *
-	 * @param factoryUid
-	 *        the UID of the setting specifier provider factory to list the
-	 *        providers for
+	 * @param serviceFilter
+	 *        the LDAP search filter of the providers to get info for
 	 * @param locale
 	 *        the desired locale
 	 * @return the result list

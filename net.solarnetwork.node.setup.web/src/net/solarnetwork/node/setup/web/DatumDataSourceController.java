@@ -67,6 +67,9 @@ import net.solarnetwork.util.SearchFilter.LogicOperator;
 @RequestMapping("/a/datum-sources")
 public class DatumDataSourceController {
 
+	/**
+	 * The service filter to use to look up providers of source IDs at runtime.
+	 */
 	public static final String SERVICE_FILTER;
 	static {
 		Map<String, Object> p = new LinkedHashMap<>(2);
