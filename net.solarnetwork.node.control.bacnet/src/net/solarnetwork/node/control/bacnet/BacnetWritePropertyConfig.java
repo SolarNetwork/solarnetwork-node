@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetWritePropertyConfig.java - 10/11/2022 8:16:51 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,7 +47,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single control property to be set via BACnet.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -64,7 +64,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * A setting type pattern for a property configuration element.
-	 * 
+	 *
 	 * <p>
 	 * The pattern has two capture groups: the property configuration index and
 	 * the property setting name.
@@ -86,8 +86,15 @@ public class BacnetWritePropertyConfig {
 	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
 
 	/**
+	 * Constructor.
+	 */
+	public BacnetWritePropertyConfig() {
+		super();
+	}
+
+	/**
 	 * Get the settings to configure an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        the settings prefix to use
 	 * @return the settings
@@ -122,7 +129,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Test if this configuration is empty.
-	 * 
+	 *
 	 * @return {@literal true} if all properties are null
 	 */
 	public boolean isEmpty() {
@@ -133,12 +140,12 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Test if this instance has a valid configuration.
-	 * 
+	 *
 	 * <p>
 	 * This method simply verifies the minimum level of configuration is
 	 * available for the control to be used.
 	 * </p>
-	 * 
+	 *
 	 * @return {@literal true} if this configuration is valid for use
 	 */
 	public boolean isValid() {
@@ -149,7 +156,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get a reference for the configuration of this instance.
-	 * 
+	 *
 	 * @return the reference, or {@literal null} if any of the required
 	 *         configuration is missing
 	 */
@@ -167,7 +174,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Populate a setting as a property configuration value, if possible.
-	 * 
+	 *
 	 * @param config
 	 *        the control configuration
 	 * @param setting
@@ -226,7 +233,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Generate a list of setting values.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -313,7 +320,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the control ID.
-	 * 
+	 *
 	 * @return the control ID
 	 */
 	public String getControlId() {
@@ -322,7 +329,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the control ID.
-	 * 
+	 *
 	 * @param controlId
 	 *        the control ID to set
 	 */
@@ -332,7 +339,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the control data type.
-	 * 
+	 *
 	 * @return the control property type
 	 */
 	public NodeControlPropertyType getControlPropertyType() {
@@ -341,7 +348,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the control property type.
-	 * 
+	 *
 	 * @param controlPropertyType
 	 *        the control property type
 	 */
@@ -354,12 +361,12 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the control property type key.
-	 * 
+	 *
 	 * <p>
 	 * This returns the configured {@link #getControlPropertyType()}
 	 * {@link NodeControlPropertyType#getKey()} value as a string.
 	 * </p>
-	 * 
+	 *
 	 * @return the property type key
 	 */
 	public String getControlPropertyTypeKey() {
@@ -372,7 +379,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the datum property type via a key value.
-	 * 
+	 *
 	 * <p>
 	 * This uses the first character of {@code key} as a
 	 * {@link NodeControlPropertyType} key value to call
@@ -380,7 +387,7 @@ public class BacnetWritePropertyConfig {
 	 * is not recognized, then {@link #DEFAULT_CONTROL_PROPERTY_TYPE} will be
 	 * set instead.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the datum property type key to set
 	 */
@@ -399,7 +406,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the BACnet device (instance) ID.
-	 * 
+	 *
 	 * @return the deviceId the device ID
 	 */
 	public Integer getDeviceId() {
@@ -408,7 +415,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the BACnet device (instance) ID.
-	 * 
+	 *
 	 * @param deviceId
 	 *        the device ID to set
 	 */
@@ -418,7 +425,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the object type.
-	 * 
+	 *
 	 * @return the object type
 	 */
 	public Integer getObjectType() {
@@ -427,7 +434,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the object type.
-	 * 
+	 *
 	 * @param objectType
 	 *        the object type to set
 	 */
@@ -437,7 +444,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the object type as a string value.
-	 * 
+	 *
 	 * @return the object type enumeration name if supported, else the
 	 *         configured object type as a string
 	 */
@@ -452,12 +459,12 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the object type as a string value.
-	 * 
+	 *
 	 * <p>
 	 * The value can be an object type code, enumeration name, or train-case
 	 * enumeration name.
 	 * </p>
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -475,7 +482,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the object (instance) number.
-	 * 
+	 *
 	 * @return the object number
 	 */
 	public Integer getObjectNumber() {
@@ -484,7 +491,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the object (instance) number.
-	 * 
+	 *
 	 * @param objectNumber
 	 *        the object number to set
 	 */
@@ -494,7 +501,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the BACnet property ID.
-	 * 
+	 *
 	 * @return the property ID
 	 */
 	public Integer getPropertyId() {
@@ -503,7 +510,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the BACnet property ID.
-	 * 
+	 *
 	 * @param propertyId
 	 *        the property ID to set
 	 */
@@ -513,7 +520,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the property ID as a string value.
-	 * 
+	 *
 	 * @return the property type enumeration name if supported, else the
 	 *         configured object type as a string
 	 */
@@ -528,12 +535,12 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the property ID as a string value.
-	 * 
+	 *
 	 * <p>
 	 * The value can be an property ID code, enumeration name, or train-case
 	 * enumeration name.
 	 * </p>
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -547,7 +554,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the write priority.
-	 * 
+	 *
 	 * @return the priority, a value between 1-16 with 1 being the highest
 	 *         priority
 	 */
@@ -557,7 +564,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the write priority.
-	 * 
+	 *
 	 * @param priority
 	 *        the priority to set: must be a value between 1-16 with 1 being the
 	 *        highest priority, or {@literal null} to use the default priority
@@ -569,7 +576,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the unit multiplier.
-	 * 
+	 *
 	 * @return the multiplier
 	 */
 	public BigDecimal getUnitMultiplier() {
@@ -578,7 +585,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the unit multiplier.
-	 * 
+	 *
 	 * <p>
 	 * This value represents a multiplication factor to apply to values
 	 * collected for this property so that a standardized unit is captured. For
@@ -586,7 +593,7 @@ public class BacnetWritePropertyConfig {
 	 * case {@code multiplier} can be configured as {@literal .001} to convert
 	 * the value to <i>watts</i>.
 	 * </p>
-	 * 
+	 *
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
@@ -596,7 +603,7 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Get the decimal scale to round decimal numbers to.
-	 * 
+	 *
 	 * @return the decimal scale
 	 */
 	public Integer getDecimalScale() {
@@ -605,14 +612,14 @@ public class BacnetWritePropertyConfig {
 
 	/**
 	 * Set the decimal scale to round decimal numbers to.
-	 * 
+	 *
 	 * <p>
 	 * This is a <i>maximum</i> scale value that decimal values should be
 	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
 	 * applied. A scale of {@literal 0} would round all decimals to integer
 	 * values.
 	 * </p>
-	 * 
+	 *
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
