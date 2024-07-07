@@ -583,45 +583,100 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 		return result;
 	}
 
+	/**
+	 * Get the synchronize online wait milliseconds.
+	 *
+	 * @return the wait time
+	 */
 	public long getSynOnlineWaitMs() {
 		return synOnlineWaitMs;
 	}
 
+	/**
+	 * Set the synchronize online wait milliseconds.
+	 *
+	 * @param synOnlineWaitMs
+	 *        the wait time to set
+	 */
 	public void setSynOnlineWaitMs(long synOnlineWaitMs) {
 		this.synOnlineWaitMs = synOnlineWaitMs;
 	}
 
+	/**
+	 * Get the PV voltage channel name.
+	 *
+	 * @return the channel name
+	 */
 	public String getPvVoltsChannelName() {
 		return pvVoltsChannelName;
 	}
 
+	/**
+	 * Set the PV voltage channel name.
+	 *
+	 * @param pvVoltsChannelName
+	 *        the channel name to set
+	 */
 	public void setPvVoltsChannelName(String pvVoltsChannelName) {
 		this.pvVoltsChannelName = pvVoltsChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the PV current channel name.
+	 *
+	 * @return the channel name
+	 */
 	public String getPvAmpsChannelName() {
 		return pvAmpsChannelName;
 	}
 
+	/**
+	 * Set the PV current channel name.
+	 *
+	 * @param pvAmpsChannelName
+	 *        the channel name to set
+	 */
 	public void setPvAmpsChannelName(String pvAmpsChannelName) {
 		this.pvAmpsChannelName = pvAmpsChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the energy channel name.
+	 *
+	 * @return the channel name
+	 */
 	public String getkWhChannelName() {
 		return kWhChannelName;
 	}
 
+	/**
+	 * Set the energy channel name.
+	 *
+	 * @param kWhChannelName
+	 *        the channel name to set
+	 */
 	public void setkWhChannelName(String kWhChannelName) {
 		this.kWhChannelName = kWhChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the set of channel names to monitor.
+	 *
+	 * @return the channel names
+	 */
 	public Set<String> getChannelNamesToMonitor() {
 		return smaSupport.getChannelNamesToMonitor();
 	}
 
+	/**
+	 * Set the channel names to monitor.
+	 *
+	 * @param channelNamesToMonitor
+	 *        the names to set
+	 */
 	public void setChannelNamesToMonitor(Set<String> channelNamesToMonitor) {
 		smaSupport.setChannelNamesToMonitor(channelNamesToMonitor);
 	}
@@ -636,6 +691,12 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 		smaSupport.setSourceId(sourceId);
 	}
 
+	/**
+	 * Set the setting DAO.
+	 *
+	 * @param settingDao
+	 *        the DAO to set
+	 */
 	public void setSettingDao(SettingDao settingDao) {
 		smaSupport.setSettingDao(settingDao);
 	}
