@@ -40,6 +40,7 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
@@ -56,10 +57,10 @@ import net.solarnetwork.util.StringUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
-		implements DatumFilterService, SettingSpecifierProvider {
+		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
 
 	/** The template parameter name for a property name to be mapped. */
 	public static final String PROPERTY_NAME_PARAMETER_KEY = "p";
@@ -172,6 +173,13 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = getOutputSourceId();
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override

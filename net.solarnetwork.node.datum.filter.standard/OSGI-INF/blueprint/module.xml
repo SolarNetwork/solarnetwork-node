@@ -556,6 +556,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.service.DatumSourceIdProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.filter.std.join"/>
@@ -612,6 +613,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.service.DatumSourceIdProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.filter.std.split"/>
