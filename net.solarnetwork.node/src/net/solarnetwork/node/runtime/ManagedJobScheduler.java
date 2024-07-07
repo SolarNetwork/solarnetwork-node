@@ -1,21 +1,21 @@
 /* ==================================================================
  * ManagedJobScheduler.java - 13/10/2021 5:02:17 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -69,7 +69,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Service to dynamically register and schedule {@link ManagedJob} instances.
- * 
+ *
  * <p>
  * This service schedules jobs that are passed to
  * {@link #registerJob(ManagedJob, Map)} with the configured
@@ -81,7 +81,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * the {@link SettingSpecifierProvider#getSettingUid()} value provided by the
  * job will be used as a fallback. This can be useful for directly created jobs.
  * </p>
- * 
+ *
  * <p>
  * A {@link SettingSpecifierProvider} service will be registered for each
  * {@code pid}. Multiple jobs sharing the same {@code pid} are allowed. In that
@@ -90,9 +90,9 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * {@link ManagedJob#getScheduleSettingKey()} defines the setting key to use,
  * which defaults to {@literal schedule}.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ManagedJobScheduler implements ServiceLifecycleObserver, ConfigurationListener, PingTest {
 
@@ -113,7 +113,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	private long startTime = 0;
 	private ScheduledFuture<?> startupTask;
 
-	// our runtime registration database; with nested map so jobs can be bundled into 
+	// our runtime registration database; with nested map so jobs can be bundled into
 	// a single pid value, for example when a plugin registers several related jobs
 	private final Map<String, ScheduledJobs> pidMap = new HashMap<>();
 
@@ -195,6 +195,18 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			return result;
 		}
 
+		@Override
+		public <T> T unwrap(Class<T> type) {
+			T result = null;
+			for ( ScheduledJob sj : jobMap.values() ) {
+				result = sj.job.unwrap(type);
+				if ( result != null ) {
+					break;
+				}
+			}
+			return result;
+		}
+
 	}
 
 	private static final class ScheduledJob implements Runnable {
@@ -231,10 +243,15 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 
 		private void stop() {
+			stop(false);
+		}
+
+		private void stop(boolean preserveRegisteredServices) {
 			if ( future != null && !future.isDone() ) {
 				future.cancel(true);
 				log.info("Unscheduled job [{}]", identifier);
-				if ( registeredServices != null && !registeredServices.isEmpty() ) {
+				if ( !preserveRegisteredServices && registeredServices != null
+						&& !registeredServices.isEmpty() ) {
 					for ( ServiceRegistration<?> reg : registeredServices ) {
 						try {
 							reg.unregister();
@@ -312,7 +329,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param bundleContext
 	 *        the bundle context
 	 * @param taskScheduler
@@ -365,7 +382,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Register a job.
-	 * 
+	 *
 	 * @param job
 	 *        the job to register and schedule for execution
 	 * @param properties
@@ -449,7 +466,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Unregister a job.
-	 * 
+	 *
 	 * @param job
 	 *        the job to unregister and un-schedule for execution
 	 * @param properties
@@ -494,7 +511,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			return;
 		}
 
-		// even though the cron expression is also updated by ConfigurationAdmin, 
+		// even though the cron expression is also updated by ConfigurationAdmin,
 		// it can happen in a different thread so it might not be updated yet so
 		// we must extract the current value from ConfigurationAdmin
 		Dictionary<String, ?> props = null;
@@ -519,7 +536,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 					&& (oldSchedule == null || !oldSchedule.equalsIgnoreCase(newSchedule)) ) {
 				Trigger trigger = triggerForSchedule(newSchedule);
 				if ( trigger != null ) {
-					sj.stop();
+					sj.stop(true);
 					ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
 					sj.scheduled(f, newSchedule, trigger);
 				} else if ( sj.future != null ) {
@@ -589,7 +606,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Get the randomized cron flag.
-	 * 
+	 *
 	 * @return {@literal true} to randomize the second property of jobs using
 	 *         cron schedules; defaults to {@link #DEFAULT_RANDOMIZED_CRON}
 	 */
@@ -599,7 +616,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Set the randomized cron flag.
-	 * 
+	 *
 	 * @param randomizedCron
 	 *        {@literal true} to randomize the second property of jobs using
 	 *        cron schedules
@@ -610,7 +627,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Get the message source.
-	 * 
+	 *
 	 * @return the message source
 	 */
 	public MessageSource getMessageSource() {
@@ -619,7 +636,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	/**
 	 * Set the message source.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source to set
 	 */
@@ -630,7 +647,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	/**
 	 * Get the number of seconds to delay the first execution of a registered
 	 * job.
-	 * 
+	 *
 	 * @return the number of seconds to delay the first execution of a
 	 *         registered job; defaults to {@link #DEFAULT_JOB_START_DELAY_SECS}
 	 */
@@ -641,7 +658,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	/**
 	 * Set the number of seconds to delay the first execution of a registered
 	 * job.
-	 * 
+	 *
 	 * @param jobStartDelaySeconds
 	 *        the number of seconds to delay the first execution of a registered
 	 *        job

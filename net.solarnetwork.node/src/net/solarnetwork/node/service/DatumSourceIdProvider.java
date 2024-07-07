@@ -1,7 +1,7 @@
 /* ==================================================================
- * MultiDatumDataSource.java - Apr 8, 2010 7:32:57 AM
+ * DatumSourceIdProvider.java - 7/07/2024 7:05:46 am
  *
- * Copyright 2007-2010 SolarNetwork.net Dev Team
+ * Copyright 2024 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,30 +23,23 @@
 package net.solarnetwork.node.service;
 
 import java.util.Collection;
-import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.service.Identifiable;
 
 /**
- * API for collecting multiple {@link NodeDatum} objects from some device.
+ * API for a service that provides datum source IDs.
  *
  * @author matt
- * @version 2.1
+ * @version 1.0
+ * @since 3.13
  */
-public interface MultiDatumDataSource extends Identifiable, DeviceInfoProvider, DatumSourceIdProvider {
+public interface DatumSourceIdProvider extends Identifiable {
 
 	/**
-	 * Get the class supported by this DataSource.
+	 * Get the collection of source IDs produced by this datum data source.
 	 *
-	 * @return class
+	 * @return the collection of published source IDs, never {@literal null}
+	 * @since 2.1
 	 */
-	Class<? extends NodeDatum> getMultiDatumType();
-
-	/**
-	 * Read multiple values from the data source, returning as a collection of
-	 * unpersisted {@link NodeDatum} objects.
-	 *
-	 * @return Datum
-	 */
-	Collection<NodeDatum> readMultipleDatum();
+	Collection<String> publishedSourceIds();
 
 }

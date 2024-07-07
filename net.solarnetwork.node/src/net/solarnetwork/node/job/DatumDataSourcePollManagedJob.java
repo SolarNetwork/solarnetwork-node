@@ -1,21 +1,21 @@
 /* ==================================================================
  * DatumDataSourceManagedLoggerJob.java - Aug 26, 2014 2:44:36 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -53,16 +53,16 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 /**
  * Job to poll a {@link DatumDataSource} or {@link MultiDatumDataSource} for
  * datum and offer them to a {@link DatumQueue}.
- * 
+ *
  * <p>
  * The multi-datum data source will be used if configured. Otherwise the datum
  * data source will be used. This class implements
  * {@link SettingSpecifierProvider} but delegates that API to the configured
  * data source.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class DatumDataSourcePollManagedJob extends BaseIdentifiable
@@ -104,13 +104,13 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Handle service startup.
-	 * 
+	 *
 	 * <p>
 	 * This method will delegate to the configured {@code datumDataSource} or
 	 * {@code multiDatumDataSource} properties if they also implement
 	 * {@link ServiceLifecycleObserver}.
 	 * </p>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -123,13 +123,13 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Handle service shutdown.
-	 * 
+	 *
 	 * <p>
 	 * This method will delegate to the configured {@code datumDataSource} or
 	 * {@code multiDatumDataSource} properties if they also implement
 	 * {@link ServiceLifecycleObserver}.
 	 * </p>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -142,13 +142,13 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Handle configuration changes.
-	 * 
+	 *
 	 * <p>
 	 * This method will delegate to the configured {@code datumDataSource} or
 	 * {@code multiDatumDataSource} properties if they also implement
 	 * {@link SettingsChangeObserver}.
 	 * </p>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -323,9 +323,29 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		return result;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T unwrap(Class<T> type) {
+		T result = JobService.super.unwrap(type);
+		if ( result != null ) {
+			return result;
+		}
+		if ( multiDatumDataSource != null && type.isAssignableFrom(multiDatumDataSource.getClass()) ) {
+			result = (T) multiDatumDataSource;
+		} else if ( datumDataSource != null && type.isAssignableFrom(datumDataSource.getClass()) ) {
+			result = (T) datumDataSource;
+		} else {
+			SettingSpecifierProvider delegate = settingSpecifierProvider();
+			if ( delegate != null ) {
+				result = delegate.unwrap(type);
+			}
+		}
+		return result;
+	}
+
 	/**
 	 * Get the datum data source.
-	 * 
+	 *
 	 * @return the data source
 	 */
 	public DatumDataSource getDatumDataSource() {
@@ -334,7 +354,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set the datum data source.
-	 * 
+	 *
 	 * @param datumDataSource
 	 *        the data source
 	 */
@@ -344,7 +364,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Get the multi-datum data source.
-	 * 
+	 *
 	 * @return the data source
 	 */
 	public MultiDatumDataSource getMultiDatumDataSource() {
@@ -353,7 +373,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set the multi-datum data source.
-	 * 
+	 *
 	 * @param multiDatumDataSource
 	 *        the data source
 	 */
@@ -363,7 +383,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Get the datum queue.
-	 * 
+	 *
 	 * @return the queue
 	 */
 	public OptionalService<DatumQueue> getDatumQueue() {
@@ -372,7 +392,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set the datum queue.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the queue
 	 */
@@ -382,7 +402,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Get the configured {@link DatumMetadataService}.
-	 * 
+	 *
 	 * @return the service to use
 	 */
 	public OptionalService<DatumMetadataService> getDatumMetadataService() {
@@ -391,7 +411,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set a {@link DatumMetadataService} to use for managing datum metadata.
-	 * 
+	 *
 	 * @param datumMetadataService
 	 *        the service to use
 	 */

@@ -35,7 +35,7 @@ import net.solarnetwork.service.Identifiable;
  * @author matt
  * @version 2.1
  */
-public interface DatumDataSource extends Identifiable, DeviceInfoProvider {
+public interface DatumDataSource extends Identifiable, DeviceInfoProvider, DatumSourceIdProvider {
 
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a
@@ -68,9 +68,14 @@ public interface DatumDataSource extends Identifiable, DeviceInfoProvider {
 	/**
 	 * Get the collection of source IDs produced by this datum data source.
 	 *
+	 * <p>
+	 * This implementation returns an empty list.
+	 * </p>
+	 *
 	 * @return the collection of published source IDs, never {@literal null}
 	 * @since 2.1
 	 */
+	@Override
 	default Collection<String> publishedSourceIds() {
 		return Collections.emptyList();
 	}
