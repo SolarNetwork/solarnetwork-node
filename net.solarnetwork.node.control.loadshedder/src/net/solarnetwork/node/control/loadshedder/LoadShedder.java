@@ -163,6 +163,11 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		evaluatePowerLoad();
 	}
 
+	/**
+	 * Get the strategy.
+	 *
+	 * @return the strategy
+	 */
 	public LoadShedderStrategy getStrategy() {
 		if ( shedStrategy == null ) {
 			return null;
@@ -351,22 +356,50 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	// Accessors
 
+	/**
+	 * Get the consumption data source.
+	 *
+	 * @return the data source
+	 */
 	public OptionalService<DatumDataSource> getConsumptionDataSource() {
 		return consumptionDataSource;
 	}
 
+	/**
+	 * Set the consumption data source.
+	 *
+	 * @param consumptionDataSource
+	 *        the data source to set
+	 */
 	public void setConsumptionDataSource(OptionalService<DatumDataSource> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
 	}
 
+	/**
+	 * Set the message source.
+	 *
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Get the configurations.
+	 *
+	 * @return the configurations
+	 */
 	public List<LoadShedControlConfig> getConfigs() {
 		return configs;
 	}
 
+	/**
+	 * Set the configurations.
+	 *
+	 * @param configs
+	 *        the configurations to set
+	 */
 	public void setConfigs(List<LoadShedControlConfig> configs) {
 		this.configs = configs;
 	}
@@ -407,14 +440,31 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		}
 	}
 
+	/**
+	 * Set the consumption sample limit.
+	 *
+	 * @param consumptionSampleLimit
+	 *        the limit to set
+	 */
 	public void setConsumptionSampleLimit(int consumptionSampleLimit) {
 		this.consumptionSampleLimit = consumptionSampleLimit;
 	}
 
+	/**
+	 * Get the shed strategy.
+	 *
+	 * @return the strategy
+	 */
 	public OptionalService<LoadShedderStrategy> getShedStrategy() {
 		return shedStrategy;
 	}
 
+	/**
+	 * Set the shed strategy.
+	 *
+	 * @param shedStrategy
+	 *        the strategy to set
+	 */
 	public void setShedStrategy(OptionalService<LoadShedderStrategy> shedStrategy) {
 		this.shedStrategy = shedStrategy;
 	}

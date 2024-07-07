@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultLoadShedderStrategy.java - 29/06/2015 6:44:30 am
- * 
+ *
  * Copyright 2007-2015 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,7 +40,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Default implementation of {@link LoadShedderStrategy}.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -54,6 +54,9 @@ public class DefaultLoadShedderStrategy extends BasicIdentifiable
 	private int powerAverageSampleSeconds = 10;
 	private Collection<NodeControlProvider> controls = Collections.emptyList();
 
+	/**
+	 * Constructor.
+	 */
 	public DefaultLoadShedderStrategy() {
 		super();
 		setUid("Default");
@@ -270,7 +273,7 @@ public class DefaultLoadShedderStrategy extends BasicIdentifiable
 	/**
 	 * Get a list of rules that satisfy all constraints based on the current
 	 * time, sorted by priority.
-	 * 
+	 *
 	 * @param date
 	 *        The date at which to evaluate the rules.
 	 * @param rules
@@ -358,34 +361,78 @@ public class DefaultLoadShedderStrategy extends BasicIdentifiable
 
 	// Accessors
 
+	/**
+	 * Get the shed threshold watts.
+	 *
+	 * @return the threshold
+	 */
 	public int getShedThresholdWatts() {
 		return shedThresholdWatts;
 	}
 
+	/**
+	 * Set the shed threshold watts.
+	 *
+	 * @param shedThresholdWatts
+	 *        the threshold to set
+	 */
 	public void setShedThresholdWatts(int shedThresholdWatts) {
 		this.shedThresholdWatts = shedThresholdWatts;
 	}
 
+	/**
+	 * Get the limit execution monitor seconds.
+	 *
+	 * @return the seconds
+	 */
 	public int getLimitExecutionMonitorSeconds() {
 		return limitExecutionMonitorSeconds;
 	}
 
+	/**
+	 * Set the limit execution monitor seconds.
+	 *
+	 * @param limitExecutionMonitorSeconds
+	 *        the seconds to set
+	 */
 	public void setLimitExecutionMonitorSeconds(int limitExecutionMonitorSeconds) {
 		this.limitExecutionMonitorSeconds = limitExecutionMonitorSeconds;
 	}
 
+	/**
+	 * Get the controls.
+	 *
+	 * @return the controls
+	 */
 	public Collection<NodeControlProvider> getControls() {
 		return controls;
 	}
 
+	/**
+	 * Set the controls.
+	 *
+	 * @param controls
+	 *        the controls to set
+	 */
 	public void setControls(Collection<NodeControlProvider> controls) {
 		this.controls = controls;
 	}
 
+	/**
+	 * Get the power average sample seconds.
+	 *
+	 * @return the seconds
+	 */
 	public int getPowerAverageSampleSeconds() {
 		return powerAverageSampleSeconds;
 	}
 
+	/**
+	 * Set the power average sample seconds.
+	 *
+	 * @param powerAverageSampleSeconds
+	 *        the seconds to set
+	 */
 	public void setPowerAverageSampleSeconds(int powerAverageSampleSeconds) {
 		this.powerAverageSampleSeconds = powerAverageSampleSeconds;
 	}
