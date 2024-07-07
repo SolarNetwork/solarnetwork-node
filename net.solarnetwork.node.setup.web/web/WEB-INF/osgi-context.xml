@@ -152,9 +152,4 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<bean id="datumDataSources" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
-		<constructor-arg ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
-	</bean>
-	
 </beans>

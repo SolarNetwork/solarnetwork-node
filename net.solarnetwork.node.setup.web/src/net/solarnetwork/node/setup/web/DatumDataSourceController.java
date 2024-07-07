@@ -24,9 +24,16 @@ package net.solarnetwork.node.setup.web;
 
 import static java.util.Comparator.comparing;
 import static net.solarnetwork.domain.Result.success;
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -35,11 +42,19 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.service.DatumDataSource;
-import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.node.service.DatumSourceIdProvider;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceRegistry;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderInfo;
 import net.solarnetwork.settings.support.BasicSettingSpecifierProviderInfo;
-import net.solarnetwork.util.ObjectUtils;
+import net.solarnetwork.util.SearchFilter;
+import net.solarnetwork.util.SearchFilter.CompareOperator;
+import net.solarnetwork.util.SearchFilter.LogicOperator;
 
 /**
  * Web controller for datum data source support.
@@ -52,18 +67,36 @@ import net.solarnetwork.util.ObjectUtils;
 @RequestMapping("/a/datum-sources")
 public class DatumDataSourceController {
 
-	private final OptionalServiceCollection<DatumDataSource> datumDataSources;
+	public static final String SERVICE_FILTER;
+	static {
+		Map<String, Object> p = new LinkedHashMap<>(2);
+		p.put("c1",
+				new SearchFilter("objectClass", DatumDataSource.class.getName(), CompareOperator.EQUAL));
+		p.put("c2", new SearchFilter("objectClass", MultiDatumDataSource.class.getName(),
+				CompareOperator.EQUAL));
+		p.put("c3", new SearchFilter("objectClass", DatumSourceIdProvider.class.getName(),
+				CompareOperator.EQUAL));
+		SERVICE_FILTER = new SearchFilter(p, LogicOperator.OR).asLDAPSearchFilterString();
+	}
+
+	private final ServiceRegistry serviceRegistry;
+	private final OptionalService<SettingsService> settingsService;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param datumDataSources
-	 *        the datum data sources
+	 * @param serviceRegistry
+	 *        the service registry
+	 * @param settingsService
+	 *        the settings service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public DatumDataSourceController(
-			@Qualifier("datumDataSources") OptionalServiceCollection<DatumDataSource> datumDataSources) {
+	public DatumDataSourceController(ServiceRegistry serviceRegistry,
+			@Qualifier("settingsService") OptionalService<SettingsService> settingsService) {
 		super();
-		this.datumDataSources = ObjectUtils.requireNonNullArgument(datumDataSources, "datumDataSources");
+		this.serviceRegistry = requireNonNullArgument(serviceRegistry, "serviceRegistry");
+		this.settingsService = requireNonNullArgument(settingsService, "settingsService");
 	}
 
 	/**
@@ -81,12 +114,35 @@ public class DatumDataSourceController {
 	 */
 	public static class DatumDataSourceInfo {
 
+		private final String type;
+		private final String identifier;
 		private final SettingSpecifierProviderInfo info;
 		private final List<String> sourceIds;
 
-		private DatumDataSourceInfo(SettingSpecifierProviderInfo info, List<String> sourceIds) {
+		private DatumDataSourceInfo(String type, String identifier, SettingSpecifierProviderInfo info,
+				List<String> sourceIds) {
+			this.type = type;
+			this.identifier = identifier;
 			this.info = info;
 			this.sourceIds = sourceIds;
+		}
+
+		/**
+		 * Get the type.
+		 *
+		 * @return the type
+		 */
+		public final String getType() {
+			return type;
+		}
+
+		/**
+		 * Get the identifier.
+		 *
+		 * @return the identifier
+		 */
+		public final String getIdentifier() {
+			return identifier;
 		}
 
 		/**
@@ -119,19 +175,56 @@ public class DatumDataSourceController {
 	@RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public Result<List<DatumDataSourceInfo>> listDatumDataSources(Locale locale) {
-		List<DatumDataSourceInfo> results = new ArrayList<>();
-		for ( DatumDataSource ds : datumDataSources.services() ) {
-			SettingSpecifierProviderInfo info;
-			if ( ds instanceof SettingSpecifierProvider ) {
-				info = ((SettingSpecifierProvider) ds).localizedInfo(locale, ds.getUid(),
-						ds.getGroupUid());
+		final List<DatumDataSourceInfo> results = new ArrayList<>();
+
+		final SettingsService service = service(settingsService);
+		final Map<String, Map<String, FactorySettingSpecifierProvider>> settingFactories = new HashMap<>(
+				8);
+
+		for ( Object s : serviceRegistry.services(SERVICE_FILTER) ) {
+			// all services implement DatumSourceIdProvider at a minimum, so safe to cast here
+			final DatumSourceIdProvider dsp = (DatumSourceIdProvider) s;
+
+			final SettingSpecifierProviderInfo info;
+			String instanceId = null;
+
+			if ( s instanceof SettingSpecifierProvider ) {
+				info = ((SettingSpecifierProvider) s).localizedInfo(locale, dsp.getUid(),
+						dsp.getGroupUid());
+
+				if ( service != null && info.getSettingUid() != null ) {
+
+					Map<String, FactorySettingSpecifierProvider> instanceMapping = settingFactories
+							.get(info.getSettingUid());
+					if ( instanceMapping == null ) {
+						instanceMapping = service.getProvidersForFactory(info.getSettingUid());
+						if ( instanceMapping == null ) {
+							instanceMapping = Collections.emptyMap();
+						}
+						settingFactories.put(info.getSettingUid(), instanceMapping);
+					}
+					for ( Entry<String, FactorySettingSpecifierProvider> e : instanceMapping
+							.entrySet() ) {
+						DatumSourceIdProvider instanceDsp = e.getValue()
+								.unwrap(DatumSourceIdProvider.class);
+						if ( instanceDsp == dsp ) {
+							instanceId = e.getKey();
+							break;
+						}
+					}
+				}
+
 			} else {
-				info = new BasicSettingSpecifierProviderInfo(null, ds.getDisplayName(), ds.getUid(),
-						ds.getGroupUid());
+				info = new BasicSettingSpecifierProviderInfo(null, dsp.getDisplayName(), dsp.getUid(),
+						dsp.getGroupUid());
 			}
-			List<String> sourceIds = new ArrayList<>(ds.publishedSourceIds());
+			List<String> sourceIds = new ArrayList<>(dsp.publishedSourceIds());
 			sourceIds.sort(String::compareToIgnoreCase);
-			results.add(new DatumDataSourceInfo(info, sourceIds));
+
+			String type = (s instanceof DatumDataSource ? "DatumDataSource"
+					: s instanceof DatumFilterService ? "DatumFilterService" : s.getClass().getName());
+
+			results.add(new DatumDataSourceInfo(type, instanceId, info, sourceIds));
 		}
 		results.sort(comparing(d -> d.getInfo().getDisplayName(), String::compareToIgnoreCase));
 		return success(results);

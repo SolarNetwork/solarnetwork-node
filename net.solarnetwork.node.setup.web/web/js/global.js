@@ -124,6 +124,12 @@ const SolarNode = {
 		 return $("meta[name='nodeId']").attr("content");
 	 }()),
 	 
+	 /**
+	  * A case-insensitive, numeric-aware natural sort collator.
+	  * 
+	  * @type {Intl.Collator}
+	  */
+	 naturalSortCollator: new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'}),
 };
 
 /**

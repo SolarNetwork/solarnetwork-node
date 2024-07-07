@@ -11,13 +11,13 @@ SolarNode.Datum = (function() {
 	var self = {};
 
 	/**
-	 * Subscribe to the "datum created" topic.
+	 * Subscribe to the "datum captured" topic.
 	 *
 	 * @param {string} [sourceId] an optional source ID to subscribe to; if not provided all sources are subscribed
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
-	function subscribeDatumCreated(sourceId, msgHandler) {
-		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/created', sourceId);
+	function subscribeDatumCaptured(sourceId, msgHandler) {
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/captured', sourceId);
 		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
@@ -194,7 +194,7 @@ SolarNode.Datum = (function() {
 		subscribeControl : { value : subscribeControl },
 
 		subscribeDatum : { value : subscribeDatum },
-		subscribeDatumCreated : { value : subscribeDatumCreated },
+		subscribeDatumCaptured : { value : subscribeDatumCaptured },
 		subscribeDatumStored : { value : subscribeDatumStored },
 
 		datumActivityForDatum : { value : datumActivityForDatum },
