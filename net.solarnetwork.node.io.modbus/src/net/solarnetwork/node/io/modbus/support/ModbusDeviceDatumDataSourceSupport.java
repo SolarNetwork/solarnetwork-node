@@ -57,6 +57,13 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	private OptionalService<ModbusNetwork> modbusNetwork;
 
 	/**
+	 * Constructor.
+	 */
+	public ModbusDeviceDatumDataSourceSupport() {
+		super();
+	}
+
+	/**
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 *

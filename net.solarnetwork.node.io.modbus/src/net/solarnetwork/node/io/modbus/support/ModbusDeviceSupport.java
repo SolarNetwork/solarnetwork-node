@@ -72,6 +72,13 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	private OptionalFilterableService<ModbusNetwork> modbusNetwork;
 
 	/**
+	 * Constructor.
+	 */
+	public ModbusDeviceSupport() {
+		super();
+	}
+
+	/**
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 *
