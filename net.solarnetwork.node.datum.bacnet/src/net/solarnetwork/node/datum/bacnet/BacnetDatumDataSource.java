@@ -67,7 +67,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generic BACnet device datum data source.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BacnetDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver, BacnetCovHandler {
@@ -322,6 +322,13 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 			return createDatum(sourceId, refs, values);
 		}
 		return null;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	private NodeDatum createDatum(final String sourceId,
