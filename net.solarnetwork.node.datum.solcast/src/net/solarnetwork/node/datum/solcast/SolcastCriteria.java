@@ -1,21 +1,21 @@
 /* ==================================================================
  * SolcatCriteria.java - 14/10/2022 10:00:04 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,7 +28,7 @@ import java.util.Set;
 
 /**
  * Solcast common API criteria.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -43,8 +43,15 @@ public class SolcastCriteria {
 	private String arrayType;
 
 	/**
+	 * Constructor.
+	 */
+	public SolcastCriteria() {
+		super();
+	}
+
+	/**
 	 * Test if the configured criteria is valid.
-	 * 
+	 *
 	 * @return {@literal true} if the properties of this criteria are valid for
 	 *         submitting to Solcast
 	 */
@@ -55,7 +62,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the GPS latitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @return the latitude
 	 */
 	public BigDecimal getLat() {
@@ -64,7 +71,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the GPS latitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @param lat
 	 *        the latitude to set
 	 */
@@ -74,7 +81,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the GPS longitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @return the longitude
 	 */
 	public BigDecimal getLon() {
@@ -83,7 +90,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the GPS longitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @param lon
 	 *        the longitude to set
 	 */
@@ -93,7 +100,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the set of Solcast parameters to collect.
-	 * 
+	 *
 	 * @return the parameters
 	 */
 	public Set<String> getParameters() {
@@ -102,7 +109,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the set of Solcast parameters to collect.
-	 * 
+	 *
 	 * @param parameters
 	 *        the parameters to set
 	 */
@@ -112,7 +119,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the desired period.
-	 * 
+	 *
 	 * @return the period
 	 */
 	public Duration getPeriod() {
@@ -121,7 +128,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the desired period.
-	 * 
+	 *
 	 * @param period
 	 *        the period to set
 	 */
@@ -131,7 +138,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the azimuth, for GTI calculations.
-	 * 
+	 *
 	 * @return the azimuth, between -180 and 180
 	 */
 	public Integer getAzimuth() {
@@ -140,7 +147,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the azimuth, for GTI calculations.
-	 * 
+	 *
 	 * @param azimuth
 	 *        the azimuth to set, between -180 and 180
 	 */
@@ -150,7 +157,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the tilt, for GTI calculations.
-	 * 
+	 *
 	 * @return the tilt, between 0 and 90
 	 */
 	public Integer getTilt() {
@@ -159,7 +166,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the tilt, for GTI calculations.
-	 * 
+	 *
 	 * @param tilt
 	 *        the tilt to set, between 0 and 90
 	 */
@@ -169,7 +176,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Get the array type, for GTI calculations.
-	 * 
+	 *
 	 * @return the arrayType the array type, e.g {@literal fixed} or
 	 *         {@literal horizontal_single_axis}
 	 */
@@ -179,7 +186,7 @@ public class SolcastCriteria {
 
 	/**
 	 * Set the array type, for GTI calculations.
-	 * 
+	 *
 	 * @param arrayType
 	 *        the arrayType to set, e.g {@literal fixed} or
 	 *        {@literal horizontal_single_axis}

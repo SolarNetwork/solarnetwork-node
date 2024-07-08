@@ -1,21 +1,21 @@
 /* ==================================================================
  * SolcastDatumDataSource.java - 14/10/2022 10:03:00 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -53,9 +53,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Datum data source for Solcast data.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SolcastDatumDataSource extends DatumDataSourceSupport
 		implements MultiDatumDataSource, SettingSpecifierProvider {
@@ -96,7 +96,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param locationService
 	 *        the location service to use for node GPS support
 	 */
@@ -106,7 +106,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param client
 	 *        the client to use
 	 * @param locationService
@@ -118,6 +118,13 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 		this.client = requireNonNullArgument(client, "client");
 		this.locationService = requireNonNullArgument(locationService, "locationService");
 		setParametersValue(DEFAULT_PARAMETERS_VALUE);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -203,7 +210,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get a single source ID to publish datum under.
-	 * 
+	 *
 	 * @return the sourceId to use, or {@literal null} to publish individual
 	 *         sources per ping test
 	 */
@@ -213,7 +220,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set a single source ID to publish datum under.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the sourceId to use, or {@literal null} to publish individual
 	 *        sources per ping test
@@ -224,7 +231,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the node location toggle.
-	 * 
+	 *
 	 * @return {@code true} if the node's GPS coordinates should be used for the
 	 *         GPS coordinates in Solcast API calls, or {@code false} to use the
 	 *         GPS coordinates configured on this instance
@@ -235,7 +242,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the node location toggle.
-	 * 
+	 *
 	 * @param useNodeLocation
 	 *        {@code true} if the node's GPS coordinates should be used for the
 	 *        GPS coordinates in Solcast API calls, or {@code false} to use the
@@ -247,7 +254,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the GPS latitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @return the latitude
 	 */
 	public BigDecimal getLat() {
@@ -256,7 +263,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the GPS latitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @param lat
 	 *        the latitude to set
 	 */
@@ -266,7 +273,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the GPS longitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @return the longitude
 	 */
 	public BigDecimal getLon() {
@@ -275,7 +282,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the GPS longitude to use in Solcast API calls.
-	 * 
+	 *
 	 * @param lon
 	 *        the longitude to set
 	 */
@@ -285,7 +292,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the Solcast API key to use.
-	 * 
+	 *
 	 * @param apiKey
 	 *        the API key to use
 	 */
@@ -297,7 +304,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the set of Solcast parameters to collect.
-	 * 
+	 *
 	 * @return the parameters
 	 */
 	public Set<String> getParameters() {
@@ -306,7 +313,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the set of Solcast parameters to collect.
-	 * 
+	 *
 	 * @param parameters
 	 *        the parameters to set
 	 */
@@ -316,7 +323,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the comma-delimited list of Solcast parameters to collect.
-	 * 
+	 *
 	 * @return the parameters as a comma-delimited list
 	 */
 	public String getParametersValue() {
@@ -325,7 +332,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the comma-delimited list of Solcast parameters to collect.
-	 * 
+	 *
 	 * @param parameters
 	 *        the parameters to set, as a comma-delimited list
 	 */
@@ -335,7 +342,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the desired data resolution.
-	 * 
+	 *
 	 * @return the resolution
 	 */
 	public Duration getResolution() {
@@ -344,7 +351,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the desired data resolution.
-	 * 
+	 *
 	 * @param resolution
 	 *        the resolution to set
 	 */
@@ -354,7 +361,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the desired data resolution.
-	 * 
+	 *
 	 * @return the resolution
 	 */
 	public String getResolutionValue() {
@@ -363,7 +370,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the desired data resolution.
-	 * 
+	 *
 	 * @param resolution
 	 *        the resolution to set
 	 */
@@ -377,7 +384,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the azimuth, for GTI calculations.
-	 * 
+	 *
 	 * @return the azimuth, between -180 and 180
 	 */
 	public Integer getAzimuth() {
@@ -386,7 +393,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the azimuth, for GTI calculations.
-	 * 
+	 *
 	 * @param azimuth
 	 *        the azimuth to set, between -180 and 180
 	 */
@@ -396,7 +403,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the tilt, for GTI calculations.
-	 * 
+	 *
 	 * @return the tilt, between 0 and 90
 	 */
 	public Integer getTilt() {
@@ -405,7 +412,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the tilt, for GTI calculations.
-	 * 
+	 *
 	 * @param tilt
 	 *        the tilt to set, between 0 and 90
 	 */
@@ -415,7 +422,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the array type, for GTI calculations.
-	 * 
+	 *
 	 * @return the arrayType the array type, e.g {@literal fixed} or
 	 *         {@literal horizontal_single_axis}
 	 */
@@ -425,7 +432,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the array type, for GTI calculations.
-	 * 
+	 *
 	 * @param arrayType
 	 *        the arrayType to set, e.g {@literal fixed} or
 	 *        {@literal horizontal_single_axis}
