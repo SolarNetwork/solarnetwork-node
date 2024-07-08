@@ -1,21 +1,21 @@
 /* ==================================================================
  * KTLDatumDataSource.java - 23/11/2017 3:06:48 pm
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,17 +54,17 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 /**
  * {@link DatumDataSource} implementation for {@link AcDcEnergyDatum} with the
  * CSI KTL inverter.
- * 
+ *
  * @author matt
  * @author maxieduncan
- * @version 2.2
+ * @version 2.3
  */
 public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider, InstructionHandler {
 
 	/**
 	 * The {@code sampleCacheMs} property default value.
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
@@ -81,7 +81,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -129,6 +129,13 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 					modbusDeviceName(), e.getMessage());
 			return null;
 		}
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -263,7 +270,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 * @since 2.2
 	 */
@@ -273,7 +280,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
@@ -284,7 +291,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	/**
 	 * Get the inclusion toggle of phase measurement properties in collected
 	 * datum.
-	 * 
+	 *
 	 * @return {@literal true} to collect phase measurements
 	 * @since 2.2
 	 */
@@ -294,7 +301,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 
 	/**
 	 * Toggle the inclusion of phase measurement properties in collected datum.
-	 * 
+	 *
 	 * @param includePhaseMeasurements
 	 *        {@literal true} to collect phase measurements
 	 * @since 2.1
