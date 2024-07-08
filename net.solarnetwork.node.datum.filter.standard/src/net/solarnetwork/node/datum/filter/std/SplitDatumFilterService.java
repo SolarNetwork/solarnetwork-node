@@ -1,21 +1,21 @@
 /* ==================================================================
  * SplitDatumFilterService.java - 30/03/2023 6:34:37 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,10 +26,13 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -37,6 +40,7 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
@@ -49,12 +53,12 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Datum filter service that splits datum into multiple new datum streams.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SplitDatumFilterService extends BaseDatumFilterSupport
-		implements DatumFilterService, SettingSpecifierProvider {
+		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
 
 	/** The {@code swallowInput} property default value. */
 	public static final boolean DEFAULT_SWALLOW_INPUT = true;
@@ -65,7 +69,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the datum queue
 	 */
@@ -133,6 +137,23 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	@Override
+	public Collection<String> publishedSourceIds() {
+		final PatternKeyValuePair[] mappings = getPropertySourceMappings();
+		if ( mappings == null || mappings.length < 1 ) {
+			return Collections.emptySet();
+		}
+		final Set<String> sources = new TreeSet<>();
+		for ( PatternKeyValuePair mapping : mappings ) {
+			final String outputSourceId = resolvePlaceholders(mapping.getValue(), null);
+			if ( outputSourceId == null || outputSourceId.isEmpty() ) {
+				continue;
+			}
+			sources.add(outputSourceId);
+		}
+		return sources;
+	}
+
+	@Override
 	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.filter.std.split";
 	}
@@ -174,7 +195,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the "swallow input" mode.
-	 * 
+	 *
 	 * @return {@literal true} if input datum should be discarded after merging
 	 *         their properties into the output stream, {@literal false} to
 	 *         leave input datum unchanged; defaults to
@@ -186,7 +207,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the "swallow input" mode.
-	 * 
+	 *
 	 * @param swallowInput
 	 *        {@literal true} if input datum should be discarded after merging
 	 *        their properties into the output stream, {@literal false} to leave
@@ -198,7 +219,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the property source mappings.
-	 * 
+	 *
 	 * @return the mappings, or {@literal null}
 	 */
 	public PatternKeyValuePair[] getPropertySourceMappings() {
@@ -207,12 +228,12 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the property source mappings.
-	 * 
+	 *
 	 * <p>
 	 * For each pair, the pattern key is the property name(s) to match and the
 	 * associated value is the source ID to copy the property(s) to.
 	 * </p>
-	 * 
+	 *
 	 * @param propertySourceMappings
 	 *        the mappings to set
 	 */
@@ -222,7 +243,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the number of configured property source mappings.
-	 * 
+	 *
 	 * @return the number of property source mappings
 	 */
 	public int getPropertySourceMappingsCount() {
@@ -232,7 +253,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the number of configured property source mappings.
-	 * 
+	 *
 	 * @param count
 	 *        the number of mappings to set
 	 */

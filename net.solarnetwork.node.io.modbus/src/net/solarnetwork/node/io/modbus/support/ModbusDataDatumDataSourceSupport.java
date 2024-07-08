@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDataDatumDataSourceSupport.java - 30/07/2018 9:51:07 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -38,7 +38,9 @@ import net.solarnetwork.node.service.DatumDataSource;
  * A base helper class to support {@link ModbusNetwork} based
  * {@link DatumDataSource} implementations using {@link ModbusData} as a model
  * object.
- * 
+ *
+ * @param <T>
+ *        the data type
  * @author matt
  * @version 2.0
  * @since 2.9
@@ -51,7 +53,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the data
 	 */
@@ -62,7 +64,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Get an up-to-date snapshot of the device data.
-	 * 
+	 *
 	 * <p>
 	 * If the sample data has expired, or never been read, this method will
 	 * refresh it from the device by calling
@@ -71,7 +73,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 * {@link #refreshDeviceInfo(ModbusConnection, ModbusData)}. A copy of the
 	 * sample data is returned via {@link #createSampleSnapshot(ModbusData)}.
 	 * </p>
-	 * 
+	 *
 	 * @return the sample data copy
 	 * @throws IOException
 	 *         if a communication error occurs
@@ -82,7 +84,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Get an up-to-date snapshot of the device data.
-	 * 
+	 *
 	 * <p>
 	 * If the sample data has expired, or never been read, this method will
 	 * refresh it from the device by calling
@@ -91,7 +93,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 * {@link #refreshDeviceInfo(ModbusConnection, ModbusData)}. A copy of the
 	 * sample data is returned via {@link #createSampleSnapshot(ModbusData)}.
 	 * </p>
-	 * 
+	 *
 	 * @param connection
 	 *        an optional existing connection to use; otherwise a new connection
 	 *        will be acquired
@@ -134,14 +136,14 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	/**
 	 * Read device information when first attempting to communicate with the
 	 * device.
-	 * 
+	 *
 	 * <p>
 	 * This method will be called only once by {@link #getCurrentSample()},
 	 * before calling {@link #refreshDeviceData(ModbusConnection, ModbusData)}.
 	 * This implementation simply calls
 	 * {@link #refreshDeviceInfo(ModbusConnection, ModbusData)}.
 	 * </p>
-	 * 
+	 *
 	 * @param connection
 	 *        the Modbus connection
 	 * @param sample
@@ -155,7 +157,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Get the device info.
-	 * 
+	 *
 	 * @return the info
 	 * @since 1.5
 	 */
@@ -167,12 +169,12 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Refresh the device info data.
-	 * 
+	 *
 	 * <p>
 	 * This should refresh the Modbus registers that contain device information
 	 * such as the serial number, name, etc.
 	 * </p>
-	 * 
+	 *
 	 * @param connection
 	 *        the Modbus connection
 	 * @param sample
@@ -184,14 +186,14 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Refresh the device data.
-	 * 
+	 *
 	 * <p>
 	 * This should refresh the Modbus registers that contain the actual
 	 * information being captured by this class and stored in datum instances.
 	 * The {@link #getCurrentSample()} method calls this when the sample data is
 	 * expired.
 	 * </p>
-	 * 
+	 *
 	 * @param connection
 	 *        the Modbus connection
 	 * @param sample
@@ -203,12 +205,12 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Create s snapshot copy of the sample data.
-	 * 
+	 *
 	 * <p>
 	 * This implementation calls {@link ModbusData#copy()} and casts the result
 	 * to {@code T}.
 	 * </p>
-	 * 
+	 *
 	 * @param sample
 	 *        the sample to copy
 	 * @return the copy of the sample data
@@ -220,7 +222,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Test if the sample data has expired.
-	 * 
+	 *
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired() {
@@ -249,7 +251,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Get the Modbus data instance.
-	 * 
+	 *
 	 * @return the data
 	 */
 	public T getSample() {
@@ -258,7 +260,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -267,7 +269,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */

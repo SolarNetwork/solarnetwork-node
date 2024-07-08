@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetDatumDataSourceConfig.java - 9/11/2022 9:27:54 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,7 +29,7 @@ import net.solarnetwork.node.settings.SettingValueBean;
 
 /**
  * Overall configuration for a BACnet data source.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -49,8 +49,15 @@ public class BacnetDatumDataSourceConfig {
 	private final List<BacnetDeviceConfig> deviceConfigs = new ArrayList<>(8);
 
 	/**
+	 * Constructor.
+	 */
+	public BacnetDatumDataSourceConfig() {
+		super();
+	}
+
+	/**
 	 * Generate a list of setting values from this instance.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider key to use
 	 * @return the list of setting values, never {@literal null}
@@ -77,7 +84,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Populate a setting as a configuration value, if possible.
-	 * 
+	 *
 	 * @param setting
 	 *        the setting to try to handle
 	 * @return {@literal true} if the setting was handled as a configuration
@@ -186,7 +193,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the instance key.
-	 * 
+	 *
 	 * @return the key
 	 */
 	public String getKey() {
@@ -195,7 +202,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the instance ID.
-	 * 
+	 *
 	 * @param key
 	 *        the key to set
 	 */
@@ -205,7 +212,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the service name.
-	 * 
+	 *
 	 * @return the service name
 	 */
 	public String getServiceName() {
@@ -214,7 +221,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the service name.
-	 * 
+	 *
 	 * @param serviceName
 	 *        the service name to set
 	 */
@@ -224,7 +231,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the service group.
-	 * 
+	 *
 	 * @return the service group
 	 */
 	public String getServiceGroup() {
@@ -233,7 +240,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the service group.
-	 * 
+	 *
 	 * @param serviceGroup
 	 *        the service group to set
 	 */
@@ -243,7 +250,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the sourceId
 	 */
 	public String getSourceId() {
@@ -252,7 +259,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the source ID.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the sourceId to set
 	 */
@@ -262,7 +269,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the schedule.
-	 * 
+	 *
 	 * @return the schedule
 	 */
 	public String getSchedule() {
@@ -271,7 +278,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the schedule.
-	 * 
+	 *
 	 * @param schedule
 	 *        the schedule to set
 	 */
@@ -281,7 +288,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the BACnet network name.
-	 * 
+	 *
 	 * @return the bacnetNetworkName
 	 */
 	public String getBacnetNetworkName() {
@@ -290,7 +297,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the BACnet network name.
-	 * 
+	 *
 	 * @param bacnetNetworkName
 	 *        the bacnetNetworkName to set
 	 */
@@ -300,7 +307,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the datum mode.
-	 * 
+	 *
 	 * @return the datum mode
 	 */
 	public BacnetDatumMode getDatumMode() {
@@ -309,7 +316,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the datum mode.
-	 * 
+	 *
 	 * @param datumMode
 	 *        the datum mode to set
 	 */
@@ -319,7 +326,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the datum mode as a string value.
-	 * 
+	 *
 	 * @return the datum mode value
 	 */
 	public String getDatumModeValue() {
@@ -329,7 +336,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the datum mode as a string value.
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -345,7 +352,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the sample cache milliseconds.
-	 * 
+	 *
 	 * @return the sampleCacheMs
 	 */
 	public Long getSampleCacheMs() {
@@ -354,7 +361,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Set the sample cache milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the sampleCacheMs to set
 	 */
@@ -364,7 +371,7 @@ public class BacnetDatumDataSourceConfig {
 
 	/**
 	 * Get the device configurations.
-	 * 
+	 *
 	 * @return the configurations, never {@literal null}
 	 */
 	public List<BacnetDeviceConfig> getDeviceConfigs() {

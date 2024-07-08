@@ -1,21 +1,21 @@
 /* ==================================================================
  * RFXCOMDatumDataSource.java - Jul 8, 2012 4:44:30 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -63,9 +63,9 @@ import net.solarnetwork.util.StringUtils;
 /**
  * {@link MultiDatumDataSource} for {@link AcEnergyDatum} entities read from the
  * supported energy formats of the RFXCOM transceiver.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -121,13 +121,13 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Add a new cached "known" address value.
-	 * 
+	 *
 	 * <p>
 	 * This adds the address to the cached set of <em>known</em> addresses,
 	 * which are shown as a read-only setting property to aid in mapping the
 	 * right RFXCOM-recognized device address.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to add
 	 */
@@ -364,8 +364,8 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 
 		List<SettingSpecifier> results = new ArrayList<>(21);
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['uid']",
-				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.rfxcom.RFXCOM)"));
 
 		StringBuilder status = new StringBuilder();
 		for ( AddressSource datum : knownAddresses ) {
@@ -393,20 +393,20 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set a {@code addressSourceMapping} Map via an encoded String value.
-	 * 
+	 *
 	 * <p>
 	 * The format of the {@code mapping} String should be:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * key=val[,key=val,...]
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Whitespace is permitted around all delimiters, and will be stripped from
 	 * the keys and values.
 	 * </p>
-	 * 
+	 *
 	 * @param mapping
 	 *        the address mapping
 	 */

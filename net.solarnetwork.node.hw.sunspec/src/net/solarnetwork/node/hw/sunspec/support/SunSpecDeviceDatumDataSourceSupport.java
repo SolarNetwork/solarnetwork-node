@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -55,7 +56,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport
@@ -84,6 +85,13 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	public SunSpecDeviceDatumDataSourceSupport(AtomicReference<ModelData> sample) {
 		super();
 		this.sample = sample;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -278,7 +286,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	/**
 	 * Get an instance of this object to use as default values for settings.
-	 * 
+	 *
 	 * @return the default settings instance
 	 */
 	protected abstract SunSpecDeviceDatumDataSourceSupport getSettingsDefaultInstance();

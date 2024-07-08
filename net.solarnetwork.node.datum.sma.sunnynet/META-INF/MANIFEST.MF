@@ -4,7 +4,7 @@ Bundle-Name: SMA Power Datum DataSource (SunnyNet)
 Bundle-SymbolicName: net.solarnetwork.node.datum.sma.sunnynet
 Automatic-Module-Name: net.solarnetwork.node.datum.sma.sunnynet
 Bundle-Description: Collect generation data from SMA inverts using the SunnyNet protocol.
-Bundle-Version: 3.0.0
+Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -24,8 +24,8 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
- net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[2.3,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",

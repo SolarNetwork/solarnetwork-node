@@ -1,21 +1,21 @@
 /* ==================================================================
  * LoadShedControlConfig.java - 27/06/2015 11:26:03 am
- * 
+ *
  * Copyright 2007-2015 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,7 +36,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Settings for a single configurable load shed switch.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -64,7 +64,7 @@ public class LoadShedControlConfig {
 
 	/**
 	 * Construct with a control ID.
-	 * 
+	 *
 	 * @param controlId
 	 *        The control ID.
 	 */
@@ -75,7 +75,7 @@ public class LoadShedControlConfig {
 
 	/**
 	 * Construct with a control ID and priority.
-	 * 
+	 *
 	 * @param controlId
 	 *        The control ID.
 	 * @param priority
@@ -89,7 +89,7 @@ public class LoadShedControlConfig {
 
 	/**
 	 * Get a list of settings for configuring this object.
-	 * 
+	 *
 	 * @param prefix
 	 *        A prefix to apply, e.g. for dynamic list support.
 	 * @return A list of settings.
@@ -144,7 +144,7 @@ public class LoadShedControlConfig {
 	/**
 	 * Get a {@link Calendar} instance set to the current date, with the time
 	 * set from the parsed time window.
-	 * 
+	 *
 	 * @param window
 	 *        A time window in the pattern {@link #TIME_WINDOW_PATTERN}.
 	 * @return A Calendar, or {@literal null} if the window cannot be parsed.
@@ -174,7 +174,7 @@ public class LoadShedControlConfig {
 	 * Test if a specific date falls within the configured time window. If both
 	 * the start and end time windows are <b>not</b> configured then this method
 	 * will return {@literal true}.
-	 * 
+	 *
 	 * @param date
 	 *        The date to test.
 	 * @return {@literal true} if the date's time component falls within the
@@ -198,58 +198,135 @@ public class LoadShedControlConfig {
 		return (date >= start.getTimeInMillis() && date <= end.getTimeInMillis());
 	}
 
+	/**
+	 * Get the control ID.
+	 *
+	 * @return the control ID
+	 */
 	public String getControlId() {
 		return controlId;
 	}
 
+	/**
+	 * Set the control ID.
+	 *
+	 * @param controlId
+	 *        the control ID to set
+	 */
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
 	}
 
+	/**
+	 * Get the name.
+	 *
+	 * @return the name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Set the name.
+	 *
+	 * @param name
+	 *        the name to set
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/**
+	 * Get the priority.
+	 *
+	 * @return the priority
+	 */
 	public Integer getPriority() {
 		return priority;
 	}
 
+	/**
+	 * Set the priority.
+	 *
+	 * @param priority
+	 *        the priority to set
+	 */
 	public void setPriority(Integer priority) {
 		this.priority = priority;
 	}
 
+	/**
+	 * Get the active state.
+	 *
+	 * @return the state
+	 */
 	public Boolean getActive() {
 		return active;
 	}
 
+	/**
+	 * Set the active set.
+	 *
+	 * @param active
+	 *        the state to set
+	 */
 	public void setActive(Boolean active) {
 		this.active = active;
 	}
 
+	/**
+	 * Get the time window start.
+	 *
+	 * @return the start
+	 */
 	public String getTimeWindowStart() {
 		return timeWindowStart;
 	}
 
+	/**
+	 * Set the time window start.
+	 *
+	 * @param timeWindowStart
+	 *        the start to set
+	 */
 	public void setTimeWindowStart(String timeWindowStart) {
 		this.timeWindowStart = timeWindowStart;
 	}
 
+	/**
+	 * Get the time window end.
+	 *
+	 * @return the end
+	 */
 	public String getTimeWindowEnd() {
 		return timeWindowEnd;
 	}
 
+	/**
+	 * Set the time window end.
+	 *
+	 * @param timeWindowEnd
+	 *        the end to set
+	 */
 	public void setTimeWindowEnd(String timeWindowEnd) {
 		this.timeWindowEnd = timeWindowEnd;
 	}
 
+	/**
+	 * Get the minimum limit minutes.
+	 *
+	 * @return the minimum
+	 */
 	public Integer getMinimumLimitMinutes() {
 		return minimumLimitMinutes;
 	}
 
+	/**
+	 * Set the minimum limit minutes.
+	 *
+	 * @param minimumLimitMinutes
+	 *        the minimum
+	 */
 	public void setMinimumLimitMinutes(Integer minimumLimitMinutes) {
 		this.minimumLimitMinutes = minimumLimitMinutes;
 	}

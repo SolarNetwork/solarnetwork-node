@@ -20,7 +20,7 @@
 		<div class="col-auto">
 			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-secondary text-nowrap">
 				<i class="bi bi-arrow-left"></i>
-				<fmt:message key="back.label"/>
+				<fmt:message key='${navloc == "filters-component" ? "settings.factory.back.filters.label" : "settings.factory.back.label"}'/>
 			</a>
 		</div>
 		<div class="col-auto">

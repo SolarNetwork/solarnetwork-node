@@ -1,21 +1,21 @@
 /* ==================================================================
  * ControlsDatumDataSource.java - Dec 18, 2014 7:05:05 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,9 +25,12 @@ package net.solarnetwork.node.datum.controls;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
@@ -42,7 +45,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Datum data source for {@link NodeControlProvider} instances. This exposes the
  * available {@link NodeControlProvider} services as a datum data source, so
  * they can be queried and logged like any other datum data source.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -129,9 +132,25 @@ public class ControlsDatumDataSource extends DatumDataSourceSupport
 		return result;
 	}
 
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final List<NodeControlProvider> providers = this.providers;
+		if ( providers == null || providers.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		Set<String> result = new TreeSet<>();
+		for ( NodeControlProvider provider : providers ) {
+			List<String> controlIds = provider.getAvailableControlIds();
+			if ( controlIds != null ) {
+				result.addAll(controlIds);
+			}
+		}
+		return result;
+	}
+
 	/**
 	 * Set the list of providers to collect from.
-	 * 
+	 *
 	 * @param providers
 	 *        the providers
 	 */
@@ -141,14 +160,14 @@ public class ControlsDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the unchanged ignore time, in milliseconds.
-	 * 
+	 *
 	 * <p>
 	 * When sampling a control, if it has not changed from the previously
 	 * sampled value within this amount of time then ignore the value and do not
 	 * return it from {@link #readMultipleDatum()}. Set to <code>0</code> to
 	 * always return a datum for each control provider.
 	 * </p>
-	 * 
+	 *
 	 * @param unchangedIgnoreMs
 	 *        the ignore time in milliseconds; defaults to
 	 *        {@link #DEFAULT_UNCHANGED_IGNORE_MS}

@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetControl.java - 10/11/2022 8:07:57 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -73,9 +73,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Control for BACnet object properties.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetControl extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, NodeControlProvider, InstructionHandler {
@@ -103,7 +103,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param bacnetNetwork
 	 *        the network to use
 	 */
@@ -279,7 +279,8 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("groupUid", null));
-		results.add(new BasicTextFieldSettingSpecifier("bacnetNetworkUid", null));
+		results.add(new BasicTextFieldSettingSpecifier("bacnetNetworkUid", null, false,
+				"(objectClass=net.solarnetwork.node.io.bacnet.BacnetNetwork)"));
 
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
@@ -351,7 +352,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the BACNet connection, if available.
-	 * 
+	 *
 	 * @return the connection, or {@literal null} it not available
 	 */
 	protected synchronized BacnetConnection connection() {
@@ -400,7 +401,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Set a BACnet property.
-	 * 
+	 *
 	 * @param config
 	 *        the configuration of the property to set
 	 * @param desiredValue
@@ -461,7 +462,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the BacnetNetwork service UID filter value.
-	 * 
+	 *
 	 * @return the BacnetNetwork UID filter value, if {@code bacnetNetwork} also
 	 *         implements {@link FilterableService}
 	 */
@@ -475,7 +476,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Set the BacnetNetwork service UID filter value.
-	 * 
+	 *
 	 * @param uid
 	 *        the BacnetNetwork UID filter value to set, if
 	 *        {@code bacnetNetwork} also implements {@link FilterableService}
@@ -486,7 +487,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -495,7 +496,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -505,7 +506,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the event admin service.
-	 * 
+	 *
 	 * @return the event admin
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -514,7 +515,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Set the event admin sevice.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the service to set
 	 */
@@ -524,7 +525,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public BacnetWritePropertyConfig[] getPropConfigs() {
@@ -533,7 +534,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -543,7 +544,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -553,12 +554,12 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link BacnetWritePropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */

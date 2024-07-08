@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusControl.java - 15/03/2018 5:34:09 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -82,9 +82,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Read and write a Modbus "coil" or "holding" type register.
- * 
+ *
  * @author matt
- * @version 3.4
+ * @version 3.5
  */
 public class ModbusControl extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -97,28 +97,28 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * The setting UID used by this service.
-	 * 
+	 *
 	 * @since 3.1
 	 */
 	public static final String SETTING_UID = "net.solarnetwork.node.control.modbus";
 
 	/**
 	 * The {@code maxReadWordCount} property default value.
-	 * 
+	 *
 	 * @since 3.2
 	 */
 	public static final int DEFAULT_MAX_READ_WORD_COUNT = 64;
 
 	/**
 	 * The {@code wordOrder} property default value.
-	 * 
+	 *
 	 * @since 3.4
 	 */
 	public static final ModbusWordOrder DEFAULT_WORD_ORDER = ModbusWordOrder.MostToLeastSignificant;
 
 	/**
 	 * The default value for the {@code sampleCacheMs} property.
-	 * 
+	 *
 	 * @since 3.4
 	 */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
@@ -204,7 +204,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Set the modbus register to a true/false value.
-	 * 
+	 *
 	 * @param desiredValue
 	 *        the desired value to set, which should have been returned from
 	 *        {@link #controlValueForParameterValue(ModbusWritePropertyConfig, String)}
@@ -612,21 +612,6 @@ public class ModbusControl extends ModbusDeviceSupport
 		return buf.toString();
 	}
 
-	/**
-	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
-	 * 
-	 * @return list of setting specifiers
-	 * @since 1.1
-	 */
-	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
-				"Modbus Port"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
-		return results;
-	}
-
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		ModbusControl defaults = new ModbusControl();
@@ -637,8 +622,8 @@ public class ModbusControl extends ModbusDeviceSupport
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
-				"Modbus Port"));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.io.modbus.ModbusNetwork)"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
@@ -676,7 +661,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the event admin service.
-	 * 
+	 *
 	 * @return the event admin
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -685,7 +670,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Set the event admin sevice.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the service to set
 	 */
@@ -695,7 +680,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public ModbusWritePropertyConfig[] getPropConfigs() {
@@ -704,7 +689,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -714,7 +699,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -724,12 +709,12 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ModbusWritePropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
@@ -741,7 +726,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	/**
 	 * Get the maximum number of Modbus registers to read in any single read
 	 * operation.
-	 * 
+	 *
 	 * @return the max read word count; defaults to
 	 *         {@link #DEFAULT_MAX_READ_WORD_COUNT}
 	 * @since 3.2
@@ -753,12 +738,12 @@ public class ModbusControl extends ModbusDeviceSupport
 	/**
 	 * Set the maximum number of Modbus registers to read in any single read
 	 * operation.
-	 * 
+	 *
 	 * <p>
 	 * Some modbus devices do not handle large read ranges. This setting can be
 	 * used to limit the number of registers read at one time.
 	 * </p>
-	 * 
+	 *
 	 * @param maxReadWordCount
 	 *        the maximum word count
 	 * @since 3.2
@@ -772,7 +757,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the word order.
-	 * 
+	 *
 	 * @return the word order
 	 * @since 3.4
 	 */
@@ -782,7 +767,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Set the word order.
-	 * 
+	 *
 	 * @param wordOrder
 	 *        the order to set; {@literal null} will be ignored
 	 * @since 3.4
@@ -797,7 +782,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the word order as a key value.
-	 * 
+	 *
 	 * @return the word order as a key; if {@link #getWordOrder()} is
 	 *         {@literal null} then
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
@@ -813,7 +798,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Set the word order as a key value.
-	 * 
+	 *
 	 * @param key
 	 *        the word order key to set; if {@code key} is not valid then
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
@@ -831,7 +816,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 * @since 3.4
 	 */
@@ -841,7 +826,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 * @since 3.4

@@ -1,21 +1,21 @@
 /* ==================================================================
  * EGaugeXMLDatumDataSource.java - Oct 2, 2011 8:50:13 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,6 +24,8 @@ package net.solarnetwork.node.datum.egauge.ws;
 
 import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,15 +44,15 @@ import net.solarnetwork.util.CachedResult;
 
 /**
  * Web service based support for eGauge inverters.
- * 
+ *
  * <p>
  * Needs to be configured with an {@link EGaugeClient} such as
  * {@link XmlEGaugeClient} to retrieve the content to be stored.
  * </p>
- * 
+ *
  * @author maxieduncan
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -71,6 +73,13 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	private Throwable sampleException;
 
 	private final AtomicReference<CachedResult<AcDcEnergyDatum>> sampleCache = new AtomicReference<>();
+
+	/**
+	 * Constructor.
+	 */
+	public EGaugeDatumDataSource() {
+		super();
+	}
 
 	private AcDcEnergyDatum getCurrentSample() {
 		// First check for a cached sample
@@ -100,7 +109,12 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		return datum;
 	}
 
-	//	
+	@Override
+	public Collection<String> publishedSourceIds() {
+		String sourceId = resolvePlaceholders(client != null ? client.getSourceId() : null);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
 
 	private void setSampleCache(CachedResult<AcDcEnergyDatum> cache, AcDcEnergyDatum datum) {
 		sampleCache.compareAndSet(cache,
@@ -149,7 +163,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the client settings.
-	 * 
+	 *
 	 * @return the client settings
 	 */
 	protected List<SettingSpecifier> getClientSettings() {
@@ -171,7 +185,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get an informational status message.
-	 * 
+	 *
 	 * @return A status message.
 	 */
 	public String getInfoMessage() {
@@ -206,7 +220,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the sample cache TTL, in milliseconds.
-	 * 
+	 *
 	 * @return the TTL, in milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -215,7 +229,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the sample cache TTL, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the TTL in milliseconds
 	 */
@@ -225,7 +239,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the client.
-	 * 
+	 *
 	 * @return the client
 	 */
 	public EGaugeClient getClient() {
@@ -234,7 +248,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the client.
-	 * 
+	 *
 	 * @param client
 	 *        the client
 	 */

@@ -1,21 +1,21 @@
 /* ==================================================================
  * PriceComponents.java - 9/08/2019 1:30:46 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -35,7 +35,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Components of price.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -53,7 +53,7 @@ public class PriceComponents {
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param currency
 	 *        the currency
 	 * @param apparentEnergyPrice
@@ -67,7 +67,7 @@ public class PriceComponents {
 
 	/**
 	 * Create a price components out of string values.
-	 * 
+	 *
 	 * @param currencyCode
 	 *        the currency code
 	 * @param apparentEnergyPrice
@@ -82,7 +82,7 @@ public class PriceComponents {
 
 	/**
 	 * Add settings for this class to a list.
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to use for all setting keys
 	 * @param results
@@ -98,7 +98,7 @@ public class PriceComponents {
 
 	/**
 	 * Get the power components data as a Map.
-	 * 
+	 *
 	 * @return a map of the properties of this class
 	 */
 	public Map<String, Object> asMap() {
@@ -108,6 +108,11 @@ public class PriceComponents {
 		return map;
 	}
 
+	/**
+	 * Create a copy of this instance.
+	 *
+	 * @return the new copy
+	 */
 	public PriceComponents copy() {
 		PriceComponents c = new PriceComponents();
 		c.setCurrency(getCurrency());
@@ -144,7 +149,7 @@ public class PriceComponents {
 
 	/**
 	 * Create a copy of the price components with a specific decimal scale.
-	 * 
+	 *
 	 * @param scale
 	 *        the desired scale
 	 * @param roundingMode
@@ -159,7 +164,7 @@ public class PriceComponents {
 	/**
 	 * Create a copy of the price components with a specific decimal scale, with
 	 * {@link RoundingMode#HALF_UP} rounding.
-	 * 
+	 *
 	 * @param scale
 	 *        the desired scale
 	 * @return the new price components
@@ -171,7 +176,7 @@ public class PriceComponents {
 	/**
 	 * Create a copy of the price components with a specific decimal scale,
 	 * without rounding.
-	 * 
+	 *
 	 * @param scale
 	 *        the desired scale
 	 * @return the new price components
@@ -184,7 +189,7 @@ public class PriceComponents {
 
 	/**
 	 * Get the currency.
-	 * 
+	 *
 	 * @return the currency
 	 */
 	public Currency getCurrency() {
@@ -193,7 +198,7 @@ public class PriceComponents {
 
 	/**
 	 * Set the currency.
-	 * 
+	 *
 	 * @param currency
 	 *        the currency to set
 	 */
@@ -203,11 +208,11 @@ public class PriceComponents {
 
 	/**
 	 * Get the currency code.
-	 * 
+	 *
 	 * <p>
 	 * This returns the currency code from link {@link #getCurrency()}}.
 	 * </p>
-	 * 
+	 *
 	 * @return the currency code, or {@literal null}
 	 */
 	public String getCurrencyCode() {
@@ -217,7 +222,7 @@ public class PriceComponents {
 
 	/**
 	 * Set the currency via a currency code.
-	 * 
+	 *
 	 * @param currencyCode
 	 *        the currency code to set
 	 * @throws IllegalArgumentException
@@ -229,12 +234,12 @@ public class PriceComponents {
 
 	/**
 	 * Get a non-null currency value.
-	 * 
+	 *
 	 * <p>
 	 * If the currency is not set, this will return the default currency for the
 	 * default locale.
 	 * </p>
-	 * 
+	 *
 	 * @return the currency, or a default
 	 */
 	public Currency currency() {
@@ -244,7 +249,7 @@ public class PriceComponents {
 
 	/**
 	 * Get the apparent energy price.
-	 * 
+	 *
 	 * @return the apparent energy price, in units per volt-amp hour (VAh), or
 	 *         {@literal null} if no price available
 	 */
@@ -254,7 +259,7 @@ public class PriceComponents {
 
 	/**
 	 * Set the apparent energy price.
-	 * 
+	 *
 	 * @param apparentEnergyPrice
 	 *        the price to set, in units per volt-amp hour (VAh)
 	 */
@@ -264,7 +269,7 @@ public class PriceComponents {
 
 	/**
 	 * Get the apparent energy price as a string value.
-	 * 
+	 *
 	 * @return the apparent energy price as a string, or {@literal null}
 	 */
 	public String getApparentEnergyPriceValue() {
@@ -274,7 +279,7 @@ public class PriceComponents {
 
 	/**
 	 * Set the apparent energy price as a string value.
-	 * 
+	 *
 	 * @param value
 	 *        the apparent energy value, or {@literal null}
 	 * @throws NumberFormatException
@@ -287,11 +292,11 @@ public class PriceComponents {
 
 	/**
 	 * Get a non-null apparent energy price.
-	 * 
+	 *
 	 * <p>
 	 * If the apparent energy price is not set, {@literal 0} will be returned.
 	 * </p>
-	 * 
+	 *
 	 * @return the apparent energy price, or {@literal 0}
 	 */
 	public BigDecimal apparentEnergyPrice() {

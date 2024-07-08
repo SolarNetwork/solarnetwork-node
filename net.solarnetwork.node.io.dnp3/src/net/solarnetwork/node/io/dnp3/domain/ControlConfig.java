@@ -1,21 +1,21 @@
 /* ==================================================================
  * ControlConfig.java - 22/02/2019 5:21:41 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -33,13 +33,13 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * A configuration for a DNP3 control integration with a
  * {@link net.solarnetwork.node.service.NodeControlProvider} control value.
- * 
+ *
  * <p>
  * This configuration maps a control value to a DNP3 measurement.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ControlConfig {
 
@@ -59,7 +59,7 @@ public class ControlConfig {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param controlProviderUid
 	 *        the
 	 *        {@link net.solarnetwork.node.service.NodeControlProvider#getUid()}
@@ -80,7 +80,7 @@ public class ControlConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -88,7 +88,8 @@ public class ControlConfig {
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(3);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlProviderUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlProviderUid", "", false,
+				"(objectClass=net.solarnetwork.node.service.NodeControlProvider)"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", ""));
 
 		// drop-down menu for control type
@@ -104,39 +105,72 @@ public class ControlConfig {
 		return results;
 	}
 
+	/**
+	 * Get the control provider UID.
+	 *
+	 * @return the UID
+	 */
 	public String getControlProviderUid() {
 		return controlProviderUid;
 	}
 
+	/**
+	 * Set the control provider UID.
+	 *
+	 * @param dataSourceUid
+	 *        the UID to set
+	 */
 	public void setControlProviderUid(String dataSourceUid) {
 		this.controlProviderUid = dataSourceUid;
 	}
 
+	/**
+	 * Get the control ID.
+	 *
+	 * @return the ID
+	 */
 	public String getControlId() {
 		return controlId;
 	}
 
-	public void setControlId(String sourceId) {
-		this.controlId = sourceId;
+	/**
+	 * Set the control ID.
+	 *
+	 * @param controlId
+	 *        the ID to set
+	 */
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
 	}
 
+	/**
+	 * Get the control type.
+	 *
+	 * @return the type
+	 */
 	public ControlType getType() {
 		return type;
 	}
 
+	/**
+	 * Set the control type.
+	 *
+	 * @param type
+	 *        the type to set
+	 */
 	public void setType(ControlType type) {
 		this.type = type;
 	}
 
 	/**
 	 * Get the control type key.
-	 * 
+	 *
 	 * <p>
 	 * This returns the configured {@link #getType()}
 	 * {@link ControlType#getCode()} value as a string. If the type is not
 	 * available, {@link #DEFAULT_TYPE} will be returned.
 	 * </p>
-	 * 
+	 *
 	 * @return the control type key
 	 */
 	public String getTypeKey() {
@@ -149,13 +183,13 @@ public class ControlConfig {
 
 	/**
 	 * Set the control type via a key value.
-	 * 
+	 *
 	 * <p>
 	 * This uses the first character of {@code key} as a {@link ControlType}
 	 * code value to call {@link #setType(ControlType)}. If there is any problem
 	 * parsing the type, {@link #DEFAULT_TYPE} is set.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the control type key to set
 	 */

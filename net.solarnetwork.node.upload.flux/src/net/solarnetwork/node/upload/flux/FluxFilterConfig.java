@@ -49,7 +49,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for filtering options used by SolarFlux.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.4
  */
 public class FluxFilterConfig implements SettingsChangeObserver {
@@ -232,9 +232,11 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "sourceIdRegexValue", ""));
-		result.add(new BasicTextFieldSettingSpecifier(prefix + "transformServiceUid", ""));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "transformServiceUid", null, false,
+				"(&(objectClass=net.solarnetwork.service.DatumFilterService)(role=user))"));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "requiredOperationalMode", ""));
-		result.add(new BasicTextFieldSettingSpecifier(prefix + "datumEncoderUid", ""));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "datumEncoderUid", null, false,
+				"(objectClass=net.solarnetwork.codec.ObjectEncoder)"));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "frequencySeconds", ""));
 
 		SimpleKeyedListCallback cb = new SimpleKeyedListCallback();

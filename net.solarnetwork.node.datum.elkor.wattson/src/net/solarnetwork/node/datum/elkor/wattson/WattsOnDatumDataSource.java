@@ -1,21 +1,21 @@
 /* ==================================================================
  * WattsOnDatumDataSource.java - 14/08/2020 11:49:58 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -44,9 +44,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for Elkor WattsOn meters.
- * 
+ *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<WattsOnData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -64,13 +64,20 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 
 	/**
 	 * Construct with a sample instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample to use
 	 */
 	public WattsOnDatumDataSource(WattsOnData sample) {
 		super(sample);
 		sourceId = "WattsOn";
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -180,7 +187,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
@@ -190,7 +197,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 
 	/**
 	 * Toggle the "backwards" current direction flag.
-	 * 
+	 *
 	 * @param backwards
 	 *        {@literal true} to swap energy delivered and received values
 	 */
@@ -200,7 +207,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 
 	/**
 	 * Toggle the inclusion of phase measurement properties in collected datum.
-	 * 
+	 *
 	 * @param includePhaseMeasurements
 	 *        {@literal true} to collect phase measurements
 	 */

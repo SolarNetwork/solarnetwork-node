@@ -241,7 +241,8 @@ SolarNode.Settings.addScheduleField = function(params) {
 				if ( fieldMatch ) {
 					resultExpr = fieldMatch[2] === '*' ? multiplier : Number(fieldMatch[2]) * multiplier;
 				} else {
-					resultExpr = (multiplier > 1 ? base : multiplier);
+					const isWildcard = isNaN(Number(cronMatch[cronFieldIndex]));
+					resultExpr = (isWildcard ? multiplier : base);
 				}
 			} else {
 				resultExpr = multiplier;
@@ -819,6 +820,12 @@ function setupComponentSettings(container) {
 	container.find('button.copy').on('click', function(event) {
 		event.preventDefault();
 		let copySrc = this.previousElementSibling;
+		
+		// search past buttons and menus (ul)
+		while ( copySrc && (copySrc.tagName === 'BUTTON' || copySrc.tagName === 'UL') ) {
+			copySrc = copySrc.previousElementSibling;
+		}
+		
 		let copyEl = undefined;
 		if ( copySrc.tagName === 'INPUT' ) {
 			if ( copySrc.getAttribute('type') != 'password') {
@@ -837,6 +844,57 @@ function setupComponentSettings(container) {
 			}
 		}
 	});
+	
+	// a Map<String, String[]> mapping of factory IDs to associated UL elements, so we only 
+	// request data once per factory
+	const settingRelatedServiceLists = new Map();
+	container.find('ul.dropdown-menu.setting-related-service').each(function(_idx, el) {
+		const serviceFilter = el.dataset.settingRelatedServiceFilter;
+		if ( !serviceFilter ) {
+			return true;
+		}
+		let list = settingRelatedServiceLists.get(serviceFilter);
+		if ( !list ) {
+			list = [];
+			settingRelatedServiceLists.set(serviceFilter, list);
+		}
+		list.push(el);
+		return true;
+	});
+	populateSettingProviderFactoryLists(settingRelatedServiceLists);
+
+}
+
+function populateSettingProviderFactoryLists(/** @type Map<String, HTMLUListElement[]> */ settingRelatedServiceLists) {
+	if ( SolarNode.Settings.runtime.settingRelatedServiceInfos === undefined ) {
+		SolarNode.Settings.runtime.settingRelatedServiceInfos = new Map();
+	}
+	for ( let serviceFilter of settingRelatedServiceLists.keys() ) {
+		const uls = settingRelatedServiceLists.get(serviceFilter);
+		if ( SolarNode.Settings.runtime.settingRelatedServiceInfos.get(serviceFilter) ) {
+			renderSettingProviderFactoryLists(SolarNode.Settings.runtime.settingRelatedServiceInfos.get(serviceFilter), uls);
+		} else {
+			$.getJSON(SolarNode.context.path('/a/settings/providerInfo?filter='+encodeURIComponent(serviceFilter))).done(function(json) {
+				if ( json && Array.isArray(json.data) ) {
+					SolarNode.Settings.runtime.settingRelatedServiceInfos.set(serviceFilter, json.data);
+					renderSettingProviderFactoryLists(json.data, uls);
+				}
+			});
+		}
+	}
+}
+
+function renderSettingProviderFactoryLists(/** @type Object[] */ infos, /** @type HTMLUListElement[] */ uls) {
+	for ( let ul of uls ) {
+		const el = $(ul);
+		for ( let info of infos ) {
+			const btn = $(`<button class="dropdown-item" type="button">${info.displayName} - <b>${info.uid}</b></button>`);
+			btn.on('click', () => {
+				el.prevAll('input[type=text]').val(info.uid).trigger('change');
+			});
+			$('<li>').append(btn).appendTo(el);
+		}
+	}
 }
 
 // instance carousel support

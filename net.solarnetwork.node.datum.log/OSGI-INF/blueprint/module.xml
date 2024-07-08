@@ -36,6 +36,7 @@
 		<interfaces>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 			<value>org.osgi.service.event.EventHandler</value>
+			<value>net.solarnetwork.node.service.DatumSourceIdProvider</value>
 		</interfaces>
 		<service-properties>
 			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">

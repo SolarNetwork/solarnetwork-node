@@ -41,7 +41,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Abstract base class for MBus based datum data sources.
  *
  * @author alex
- * @version 2.1
+ * @version 2.2
  */
 public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -226,8 +226,8 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	 */
 	protected List<SettingSpecifier> getMBusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(
-				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['uid']", "M-Bus Port"));
+		results.add(new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['uid']", null, false,
+				"(objectClass=net.solarnetwork.node.io.mbus.MBusNetwork)"));
 		results.add(new BasicTextFieldSettingSpecifier("address", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));

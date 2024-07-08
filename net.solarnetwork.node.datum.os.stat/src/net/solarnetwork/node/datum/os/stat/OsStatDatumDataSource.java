@@ -1,21 +1,21 @@
 /* ==================================================================
  * OsStatDatumDataSource.java - 10/08/2018 9:27:02 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,6 +34,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -66,50 +67,50 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for OS statistics obtained from a helper command.
- * 
+ *
  * <p>
  * The command-line helper program this has been designed for is the
  * {@literal solarstats.sh} bash script, but any program will work as long as it
  * follows this syntax:
  * </p>
- * 
+ *
  * <pre>
  * prog action
  * </pre>
- * 
+ *
  * <p>
  * Each invocation should return a comma-delimited list of header names followed
  * by any number of comma-delimited lines of data.
  * </p>
- * 
+ *
  * <p>
  * The following actions are assumed:
  * </p>
- * 
+ *
  * <dl>
  * <dt>{@literal cpu-use}</dt>
  * <dd>print CPU utilization statistics, with the following columns supported:
  * date, period-secs, user, system, idle. The date is assumed to be in
  * {@literal YYYY-MM-dd HH:mm:ss UTC} form. The remaining columns are decimal
  * numbers representing percentage utilization.</dd>
- * 
+ *
  * <dt>{@literal fs-use}</dt>
  * <dd>print file system utilization, with the following columns supported:
  * mount, size-kb, used-kb, used-percent.</dd>
- * 
+ *
  * <dt>{@literal net-traffic}</dt>
  * <dd>print network traffic statistics, with the following columns supported:
  * device, bytes-in, bytes-out, packets-in, packets-out</dd>
- * 
+ *
  * <dt>{@literal sys-load}</dt>
  * <dd>print system average load information, with the following columns
  * supported: 1min, 5min, 15min</dd>
- * 
+ *
  * <dt>{@literal sys-up}</dt>
  * <dd>print the system uptime, with the following columns supported:
  * up-sec</dd>
  * </dl>
- * 
+ *
  * <p>
  * Other actions can be used, as long as the supporting OS script also supports
  * them and returns CSV data as outlined previously. By default, <i>status</i>
@@ -120,16 +121,16 @@ import net.solarnetwork.util.StringUtils;
  * {@literal cpu-temp} could populate a "cpu_temp" instantaneous property if the
  * OS script returned the following output when called with that action:
  * </p>
- * 
+ *
  * <pre>
  * <code>
  * i/cpu_temp
  * 30.1
  * </code>
  * </pre>
- * 
+ *
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, PingTest {
@@ -527,6 +528,13 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
+
+	@Override
 	public String getPingTestId() {
 		String settingUid = getSettingUid();
 		String uid = getUid();
@@ -594,7 +602,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the command runner.
-	 * 
+	 *
 	 * @return the command runner; defaults to a
 	 *         {@link ProcessActionCommandRunner} instance
 	 */
@@ -604,7 +612,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the command runner to use.
-	 * 
+	 *
 	 * @param commandRunner
 	 *        the runner to use
 	 * @throws IllegalArgumentException
@@ -619,7 +627,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the maximum time to cache sampled data for.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the sample cache time, in milliseconds
 	 */
@@ -630,7 +638,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Configure a {@link NodeMetadataService} to publish OS system information
 	 * to.
-	 * 
+	 *
 	 * @param nodeMetadataService
 	 *        the node metadata service to use
 	 */
@@ -640,7 +648,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the list of actions to perform and gather statistics from.
-	 * 
+	 *
 	 * @param actions
 	 *        the actions to perform
 	 */
@@ -655,7 +663,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the action set of actions to perform and gather statistics from.
-	 * 
+	 *
 	 * @param actions
 	 *        the actions
 	 */
@@ -666,7 +674,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the list of actions to perform and gather statistics from, as a
 	 * comma-delimited string.
-	 * 
+	 *
 	 * @return actions the actions to perform, as a comma-delimited string
 	 */
 	public String getActionsValue() {
@@ -675,7 +683,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the actions to include, in the form of a comma-delimited list.
-	 * 
+	 *
 	 * @param keys
 	 *        the action values, as a comma-delimited list
 	 * @see #setActions(Set)
@@ -687,11 +695,11 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the filesystem mount points (paths) to include in filesystem
 	 * statistics.
-	 * 
+	 *
 	 * <p>
 	 * This value defaults to a set with {@literal /}, {@literal /run}.
 	 * </p>
-	 * 
+	 *
 	 * @param fsUseMounts
 	 *        the filesystem mount points to include
 	 */
@@ -705,7 +713,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the network filesystem mount points (paths) to include in filesystem
 	 * statistics, as a comma-delimited string.
-	 * 
+	 *
 	 * @return the comma-delimited list of filesystem mount points
 	 */
 	public String getFsUseMountsValue() {
@@ -715,7 +723,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the filesystem mount points (paths) to include in filesystem
 	 * statistics, in the form of a comma-delimited list.
-	 * 
+	 *
 	 * @param mounts
 	 *        the comma-delimited list of mounts to include
 	 * @see #setFsUseMounts(Set)
@@ -726,11 +734,11 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the network device names to include in network traffic statistics.
-	 * 
+	 *
 	 * <p>
 	 * This value defaults to a set with {@literal eht0}, {@literal wlan0}.
 	 * </p>
-	 * 
+	 *
 	 * @param netDevices
 	 *        the devices to include
 	 */
@@ -744,7 +752,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the network device names to include in network traffic statistics, as
 	 * a comma-delimited string.
-	 * 
+	 *
 	 * @return the comma-delimited list of network device names
 	 */
 	public String getNetDevicesValue() {
@@ -754,7 +762,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the network device names to include in network traffic statistics, in
 	 * the form of a comma-delimited list.
-	 * 
+	 *
 	 * @param devices
 	 *        the comma-delimited list of devices to include
 	 * @see #setNetDevices(Set)
@@ -765,7 +773,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the source ID to assign to captured datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID
 	 */
@@ -779,7 +787,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the filesystem use percentage threshold for triggering a ping test
 	 * failure.
-	 * 
+	 *
 	 * @return the threshold; defaults to {@link #DEFAULT_FS_USE_WARNING}
 	 */
 	public float getFsUseWarningThreshold() {
@@ -789,7 +797,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the filesystem use percentage threshold for triggering a ping test
 	 * failure.
-	 * 
+	 *
 	 * @param fsUseWarningThreshold
 	 *        the threshold to set, or {@literal 0} to disable
 	 */

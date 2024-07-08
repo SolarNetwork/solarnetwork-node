@@ -1,21 +1,21 @@
 /* ==================================================================
  * CsvDatumDataSource.java - 31/03/2023 3:10:09 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -43,7 +43,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.http.HttpMethod;
@@ -80,9 +82,9 @@ import net.solarnetwork.web.service.HttpRequestCustomizerService;
 
 /**
  * Read data from a CSV-formatted resource and generate one or more datum.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CsvDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
@@ -140,7 +142,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@link #DEFAULT_SETTING_UID} will be used.
 	 * </p>
@@ -151,7 +153,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingUid
 	 *        the setting UID to use
 	 */
@@ -193,6 +195,27 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 		}
 		this.sourceIdColumnIndexes = CsvDatumDataSourceUtils.columnIndexes(sourceIdColumn);
 		this.dateTimeColumnIndexes = CsvDatumDataSourceUtils.columnIndexes(dateTimeColumn);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final int[] cols = this.sourceIdColumnIndexes;
+		if ( cols == null || cols.length < 1 ) {
+			final String sourceId = resolvePlaceholders(getSourceId());
+			return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+					: Collections.singleton(sourceId));
+		}
+
+		// have to fetch data to resolve source IDs
+		final Collection<NodeDatum> datum = readMultipleDatum();
+		if ( datum == null || datum.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		final Set<String> result = new TreeSet<>();
+		for ( NodeDatum d : datum ) {
+			result.add(d.getSourceId());
+		}
+		return result;
 	}
 
 	@Override
@@ -348,7 +371,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Test if this instance has a valid configuration.
-	 * 
+	 *
 	 * @return {@literal true} if this instance has a valid configuration
 	 */
 	public boolean isConfigurationValid() {
@@ -481,7 +504,8 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 			result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		}
 		result.add(new BasicTextFieldSettingSpecifier("url", null));
-		result.add(new BasicTextFieldSettingSpecifier("httpRequestCustomizerUid", null));
+		result.add(new BasicTextFieldSettingSpecifier("httpRequestCustomizerUid", null, false,
+				"(objectClass=net.solarnetwork.web.service.HttpRequestCustomizerService)"));
 		result.add(new BasicTextFieldSettingSpecifier("charsetName", StandardCharsets.UTF_8.name()));
 		result.add(new BasicTextFieldSettingSpecifier("connectionTimeout",
 				String.valueOf(DEFAULT_CONNECTION_TIMEOUT)));
@@ -532,12 +556,12 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * <p>
 	 * If {@link #getPlaceholderService()} is configured then placeholder values
 	 * will be resolved in the configured {@code sourceId}.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
@@ -547,7 +571,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the {@literal 1}- or {@literal A}-based source ID column reference.
-	 * 
+	 *
 	 * @return the source ID column reference
 	 */
 	public String getSourceIdColumn() {
@@ -556,7 +580,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the {@literal 1}- or {@literal A}-based source ID column reference.
-	 * 
+	 *
 	 * @param sourceIdColumn
 	 *        the source ID column reference to set
 	 */
@@ -566,7 +590,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the flag to include a source ID setting.
-	 * 
+	 *
 	 * @return {@literal true} to include a source ID setting in
 	 *         {@link #getSettingSpecifiers()}
 	 */
@@ -581,7 +605,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	 * {@link net.solarnetwork.node.service.support.LocationDatumDataSource},
 	 * for example.
 	 * </p>
-	 * 
+	 *
 	 * @param includeSourceIdSetting
 	 *        {@literal true} to include a source ID setting in
 	 *        {@link #getSettingSpecifiers()}
@@ -592,7 +616,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the URL template.
-	 * 
+	 *
 	 * @return the template
 	 */
 	public String getUrl() {
@@ -601,7 +625,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the URL template to retrieve price data from.
-	 * 
+	 *
 	 * <p>
 	 * This template is for accessing the delimited price data from. This will
 	 * be passed through {@link StringUtils#expandTemplateString(String, Map)}
@@ -611,7 +635,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	 * <code>http://some.place/prices?date={date}</code> might resolve to
 	 * something like {@code http://some.place/prices?date=2009-08-08}.
 	 * </p>
-	 * 
+	 *
 	 * @param url
 	 *        the URL template
 	 */
@@ -621,7 +645,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the character set the CSV resource should be parsed as.
-	 * 
+	 *
 	 * @return the character set, never {@literal null}
 	 */
 	public Charset getCharset() {
@@ -630,7 +654,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the character set the CSV resource should be parsed as.
-	 * 
+	 *
 	 * @param charset
 	 *        the character set to set; if {@literal null} then
 	 *        {@link StandardCharsets#UTF_8} will be used
@@ -641,7 +665,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the character set name.
-	 * 
+	 *
 	 * @return the character set name, never {@literal null}
 	 */
 	public String getCharsetName() {
@@ -651,7 +675,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the character set the CSV resource should be parsed as, as a string
 	 * name.
-	 * 
+	 *
 	 * @param name
 	 *        the character set name to set; if invalid then
 	 *        {@link StandardCharsets#UTF_8} will be used
@@ -668,7 +692,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the URL connection timeout to apply when requesting the data.
-	 * 
+	 *
 	 * @return the connection timeout, in milliseconds; defaults to
 	 *         {@link #DEFAULT_CONNECTION_TIMEOUT}
 	 */
@@ -678,7 +702,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the URL connection timeout to apply when requesting the data.
-	 * 
+	 *
 	 * @param connectionTimeout
 	 *        the timeout, in milliseconds
 	 */
@@ -688,14 +712,14 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the number of rows of CSV to skip.
-	 * 
+	 *
 	 * <p>
 	 * When greater than {@literal 0} this will skip "header" rows. When
 	 * {@literal 0} the first row will be used. When less than {@literal 0} then
 	 * this line starting from the last available will be used, for example
 	 * {@literal -1} will cause the last row to be used.
 	 * </p>
-	 * 
+	 *
 	 * @return the number of rows to skip; defaults to
 	 *         {@link #DEFAULT_SKIP_ROWS}
 	 */
@@ -705,7 +729,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the number of rows of CSV to skip.
-	 * 
+	 *
 	 * @param skipRows
 	 *        the number of rows, or {@literal 0} to not skip any rows
 	 */
@@ -715,7 +739,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the number of rows of CSV to keep (turn into datum).
-	 * 
+	 *
 	 * @return the number of rows to keep; defaults to
 	 *         {@link #DEFAULT_KEEP_ROWS}
 	 */
@@ -725,7 +749,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the number of rows of CSV to keep (turn into datum).
-	 * 
+	 *
 	 * @param keepRows
 	 *        the number of rows, or {@literal 0} to keep all rows
 	 */
@@ -736,14 +760,14 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the comma-delimited set of {@literal 1}- or {@literal A}-based column
 	 * references to use as the time stamp value for datum.
-	 * 
+	 *
 	 * <p>
 	 * This is provided as an array in case the date and time of the data is
 	 * split across multiple columns. If multiple columns are configured, they
 	 * will be joined with a space character before parsing the result into a
 	 * time stamp value.
 	 * </p>
-	 * 
+	 *
 	 * @return the date time columns
 	 */
 	public String getDateTimeColumn() {
@@ -753,7 +777,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the comma-delimited set of {@literal 1}- or {@literal A}-based column
 	 * references to use as the time stamp value for datum.
-	 * 
+	 *
 	 * @param dateTimeColumn
 	 *        the column indexes to use for time stamps
 	 */
@@ -764,7 +788,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the {@link DateTimeFormatter} pattern to use for parsing the price
 	 * date value into a time stamp.
-	 * 
+	 *
 	 * @return the date pattern; defaults to {@link #DEFAULT_DATE_FORMAT}.
 	 */
 	public String getDateFormat() {
@@ -774,7 +798,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the {@link DateTimeFormatter} pattern to use for parsing the price
 	 * date value into a time stamp.
-	 * 
+	 *
 	 * @param dateFormat
 	 *        the date pattern
 	 */
@@ -784,7 +808,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the time zone to use for dates.
-	 * 
+	 *
 	 * @return the time zone; defaults to the system default time zone
 	 */
 	public String getTimeZoneId() {
@@ -793,7 +817,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the time zone to use for dates.
-	 * 
+	 *
 	 * @param timeZoneId
 	 *        the time zone to set
 	 */
@@ -803,7 +827,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the date format to use for URL parameters.
-	 * 
+	 *
 	 * @return the date format; defaults to {@link #DEFAULT_URL_DATE_FORMAT}
 	 */
 	public String getUrlDateFormat() {
@@ -812,7 +836,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the date format to use for URL parameters.
-	 * 
+	 *
 	 * @param urlDateFormat
 	 *        the urlDateFormat to set
 	 */
@@ -822,7 +846,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -831,7 +855,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -841,7 +865,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public CsvPropertyConfig[] getPropConfigs() {
@@ -850,7 +874,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -860,7 +884,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -870,12 +894,12 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link CsvPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
@@ -886,7 +910,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the optional HTTP request factory.
-	 * 
+	 *
 	 * @return the factory
 	 */
 	public OptionalService<ClientHttpRequestFactory> getHttpRequestFactory() {
@@ -895,7 +919,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the optional HTTP request factory.
-	 * 
+	 *
 	 * @param httpRequestFactory
 	 *        the factory to set
 	 */
@@ -905,7 +929,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * An optional HTTP request customizer service.
-	 * 
+	 *
 	 * @return the service
 	 */
 	public OptionalFilterableService<HttpRequestCustomizerService> getHttpRequestCustomizer() {
@@ -914,14 +938,14 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * An optional HTTP request customizer service.
-	 * 
+	 *
 	 * <p>
 	 * If a {@link #getPlaceholderService()} is configured, all placeholder
 	 * values will be provided to the customizer as parameters to the
 	 * {@link HttpRequestCustomizerService#customize(org.springframework.http.HttpRequest, net.solarnetwork.util.ByteList, Map)}
 	 * method.
 	 * </p>
-	 * 
+	 *
 	 * @param httpRequestCustomizer
 	 *        the service to set
 	 */
@@ -932,7 +956,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the UID of the {@code HttpRequestCustomizerService} service to use.
-	 * 
+	 *
 	 * @return the service UID
 	 */
 	public String getHttpRequestCustomizerUid() {
@@ -942,7 +966,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the UID of the {@code HttpRequestCustomizerService} service to use.
-	 * 
+	 *
 	 * @param uid
 	 *        the service UID to set
 	 */

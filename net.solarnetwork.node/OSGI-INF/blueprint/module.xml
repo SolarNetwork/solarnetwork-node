@@ -105,6 +105,13 @@
 		
 	<reference-list id="platformPackageServices" availability="optional"
 		interface="net.solarnetwork.node.service.PlatformPackageService"/>
+		
+	<!-- ServiceRegistry -->
+	<service interface="net.solarnetwork.service.ServiceRegistry">
+		<bean class="net.solarnetwork.common.osgi.service.OsgiServiceRegistry">
+			<argument ref="bundleContext"/>
+		</bean>
+	</service>
 
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.service.ObjectMapperService">

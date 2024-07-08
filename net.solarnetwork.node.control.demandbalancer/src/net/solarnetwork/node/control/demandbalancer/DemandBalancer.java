@@ -1,21 +1,21 @@
 /* ==================================================================
  * DemandBalancer.java - Mar 23, 2014 3:58:26 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -72,9 +72,9 @@ import net.solarnetwork.util.StringUtils;
  * (power) and send out {@link InstructionHandler#TOPIC_DEMAND_BALANCE}
  * instructions to a specific control to limit generation to an amount that
  * keeps generation at or below current consumption levels.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DemandBalancer implements SettingSpecifierProvider {
 
@@ -86,13 +86,28 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 */
 	public static final String EVENT_TOPIC_STATISTICS = "net/solarnetwork/node/control/demandbalancer/DemandBalancer/STATISTICS";
 
+	/** The last consumption collection date stat key. */
 	public static final String STAT_LAST_CONSUMPTION_COLLECTION_DATE = "ConsumptionCollectionDate";
+
+	/** The last consumption collection error stat key. */
 	public static final String STAT_LAST_CONSUMPTION_COLLECTION_ERROR = "ConsumptionCollectionError";
+
+	/** The last power collection date stat key. */
 	public static final String STAT_LAST_POWER_COLLECTION_DATE = "PowerCollectionDate";
+
+	/** The last power collection error stat key. */
 	public static final String STAT_LAST_POWER_COLLECTION_ERROR = "PowerCollectionError";
+
+	/** The last power control collection date stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_COLLECTION_DATE = "PowerControlCollectionDate";
+
+	/** The last power control collection date stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_COLLECTION_ERROR = "PowerControlCollectionError";
+
+	/** The last power control modify date stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_MODIFY_DATE = "PowerControlModifyDate";
+
+	/** The last power control modify error stat key. */
 	public static final String STAT_LAST_POWER_CONTROL_MODIFY_ERROR = "PowerControlModifyError";
 
 	/** The {@code collectPower} property default value. */
@@ -127,7 +142,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionExecutionService
 	 *        the service to set
 	 * @throws IllegalArgumentException
@@ -162,7 +177,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * Get a message for an exception. This will try to return the root cause's
 	 * message. If that is not available the name of the root cause's class will
 	 * be returned.
-	 * 
+	 *
 	 * @param t
 	 *        the exception
 	 * @return message
@@ -267,7 +282,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Evaluate current demand and generation conditions, and apply an
 	 * adjustment if necessary.
-	 * 
+	 *
 	 * @param demandWatts
 	 *        the current demand, in watts
 	 * @param generationWatts
@@ -299,7 +314,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * Adjust the generation limit. If no handlers are available, or no handlers
 	 * acknowledge handling the instruction,
 	 * {@link InstructionStatus.InstructionState#Declined} will be returned.
-	 * 
+	 *
 	 * @param desiredLimit
 	 *        the desired limit, as an integer percentage
 	 * @return the result of handling the adjustment instruction, never
@@ -430,7 +445,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	/**
 	 * Getter for the current {@link DemandBalanceStrategy}.
-	 * 
+	 *
 	 * @return the strategy
 	 */
 	public DemandBalanceStrategy getStrategy() {
@@ -457,17 +472,18 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(6);
-		results.add(
-				new BasicTextFieldSettingSpecifier("balanceStrategy.propertyFilters['uid']", "Default"));
+		results.add(new BasicTextFieldSettingSpecifier("balanceStrategy.propertyFilters['uid']", null,
+				false,
+				"(objectClass=net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy)"));
 		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['uid']",
-				"Main"));
+				null, false, "(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 		results.add(new BasicTextFieldSettingSpecifier(
 				"consumptionDataSource.propertyFilters['groupUid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier("acEnergyPhaseFilter",
 				commaDelimitedStringFromCollection(DEFAULT_AC_ENERGY_PHASE_FILTER)));
 		results.add(new BasicToggleSettingSpecifier("collectPower", DEFAULT_COLLECT_POWER));
-		results.add(
-				new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['uid']", "Main"));
+		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 		results.add(
 				new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['groupUid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier("powerControlId", DEFAULT_POWER_CONTROL_ID));
@@ -495,6 +511,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	// Accessors
 
+	/**
+	 * Get the power control ID.
+	 *
+	 * @return the power control ID
+	 */
 	public String getPowerControlId() {
 		return powerControlId;
 	}
@@ -503,7 +524,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * Set the ID of the control that should respond to the
 	 * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction to match
 	 * generation levels to consumption levels.
-	 * 
+	 *
 	 * @param powerControlId
 	 *        the power control ID
 	 */
@@ -515,6 +536,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 	}
 
+	/**
+	 * Get the power control.
+	 *
+	 * @return the power control
+	 */
 	public OptionalFilterableService<NodeControlProvider> getPowerControl() {
 		return powerControl;
 	}
@@ -524,14 +550,14 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * {@code powerControlId}, and can report back its current status, whose
 	 * value must be provided as an integer percentage of the maximum allowable
 	 * generation level.
-	 * 
+	 *
 	 * <p>
 	 * <b>Note</b> that this object must also implement
 	 * {@link FilterableService} and will automatically have a filter property
 	 * set for the {@code availableControlIds} property to match the
 	 * {@code powerControlId} value.
 	 * </p>
-	 * 
+	 *
 	 * @param powerControl
 	 *        the power control
 	 */
@@ -541,6 +567,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	}
 
+	/**
+	 * Get the power data source collection.
+	 *
+	 * @return the collection
+	 */
 	public OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
 		return powerDataSource;
 	}
@@ -548,12 +579,12 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Set the collection of {@link DatumDataSource} that provide real-time
 	 * power generation data.
-	 * 
+	 *
 	 * <p>
 	 * If more than one {@code DatumDataSource} is configured the effective
 	 * generation will be aggregated as a sum total of all of them.
 	 * </p>
-	 * 
+	 *
 	 * @param powerDataSource
 	 *        the power data sources
 	 */
@@ -562,6 +593,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		this.powerDataSource = powerDataSource;
 	}
 
+	/**
+	 * Get the power maximum watts.
+	 *
+	 * @return the maximum watts
+	 */
 	public int getPowerMaximumWatts() {
 		return powerMaximumWatts;
 	}
@@ -569,7 +605,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Set the maximum watts the configured {@code powerDataSource} is capable
 	 * of producing.
-	 * 
+	 *
 	 * <p>
 	 * This value is used to calculate the output percentage level passed on
 	 * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instructions. For
@@ -577,7 +613,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * current consumption is {@literal 800} then the demand balance will be
 	 * requested as <b>80%</b>.
 	 * </p>
-	 * 
+	 *
 	 * @param powerMaximumWatts
 	 *        the maximum watts
 	 */
@@ -588,7 +624,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Get the collection of {@link DatumDataSource} that provide real-time
 	 * consumption generation data.
-	 * 
+	 *
 	 * @return the consumption data sources
 	 */
 	public OptionalFilterableServiceCollection<DatumDataSource> getConsumptionDataSource() {
@@ -598,12 +634,12 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Set the collection of {@link DatumDataSource} that provide real-time
 	 * consumption generation data.
-	 * 
+	 *
 	 * <p>
 	 * If more than one {@code DatumDataSource} is configured the effective
 	 * demand will be aggregated as a sum total of all of them.
 	 * </p>
-	 * 
+	 *
 	 * @param consumptionDataSource
 	 *        the consumption data sources
 	 */
@@ -615,7 +651,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Get the strategy implementation to use to decide how to balance the
 	 * demand and generation.
-	 * 
+	 *
 	 * @return the strategy; defaults to {@link SimpleDemandBalanceStrategy}.
 	 */
 	public OptionalFilterableService<DemandBalanceStrategy> getBalanceStrategy() {
@@ -625,7 +661,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Set the strategy implementation to use to decide how to balance the
 	 * demand and generation.
-	 * 
+	 *
 	 * @param balanceStrategy
 	 *        the strategy to use
 	 */
@@ -633,10 +669,21 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		this.balanceStrategy = balanceStrategy;
 	}
 
+	/**
+	 * Set the message source.
+	 *
+	 * @param messageSource
+	 *        the message source
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Get the instruction handlers.
+	 *
+	 * @return the handlers
+	 */
 	public Collection<InstructionHandler> getInstructionHandlers() {
 		return instructionHandlers;
 	}
@@ -644,7 +691,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * If {@literal true} then collect datum from all configured power data
 	 * sources for passing to the {@link DemandBalanceStrategy}.
-	 * 
+	 *
 	 * <p>
 	 * Not all strategies need power information, and it may take too long to
 	 * collect this information, however, so this can be turned off by setting
@@ -653,29 +700,57 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * {@link DemandBalanceStrategy#evaluateBalance(String, int, int, int, int)}.
 	 * Defaults to {@literal false}.
 	 * </p>
-	 * 
+	 *
 	 * @return {@literal true} to collect power datum
 	 */
 	public boolean isCollectPower() {
 		return collectPower;
 	}
 
+	/**
+	 * Set the collect power mode.
+	 *
+	 * @param collectPower
+	 *        the mode to set
+	 */
 	public void setCollectPower(boolean collectPower) {
 		this.collectPower = collectPower;
 	}
 
+	/**
+	 * Get the event admin service.
+	 *
+	 * @return the service
+	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
+	/**
+	 * Set the event admin service.
+	 *
+	 * @param eventAdmin
+	 *        the service to set
+	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
+	/**
+	 * Get the AC energy phase filter.
+	 *
+	 * @return the filter
+	 */
 	public Set<AcPhase> getAcEnergyPhaseFilter() {
 		return acEnergyPhaseFilter;
 	}
 
+	/**
+	 * Set the AC energy phase filter.
+	 *
+	 * @param acEnergyPhaseFilter
+	 *        the filter to set
+	 */
 	public void setAcEnergyPhaseFilter(Set<AcPhase> acEnergyPhaseFilter) {
 		this.acEnergyPhaseFilter = acEnergyPhaseFilter;
 	}
@@ -683,7 +758,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Get the value of the {@code acEnergyPhaseFilter} property as a
 	 * comma-delimited string.
-	 * 
+	 *
 	 * @return the AC phase as a delimited string
 	 */
 	public String getAcEnergyPhaseFilterValue() {
@@ -693,7 +768,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/**
 	 * Set the {@code acEnergyPhaseFilter} property via a comma-delimited
 	 * string.
-	 * 
+	 *
 	 * @param value
 	 *        the comma delimited string
 	 * @see #getAcEnergyPhaseFilterValue()

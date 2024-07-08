@@ -13,8 +13,8 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.0,)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.15,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.13,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[5.0,)"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>

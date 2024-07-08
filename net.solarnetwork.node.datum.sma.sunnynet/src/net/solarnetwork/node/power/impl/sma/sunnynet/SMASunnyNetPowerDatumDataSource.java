@@ -1,23 +1,23 @@
 /* ===================================================================
  * SMASunnyNetPowerDatumDataSource.java
- * 
+ *
  * Created Aug 19, 2009 1:21:11 PM
- * 
+ *
  * Copyright (c) 2009 Solarnetwork.net Dev Team.
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ===================================================================
  */
@@ -71,57 +71,57 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Implementation of {@link DatumDataSource} for SMA controllers.
- * 
+ *
  * <p>
  * In limited testing, the following serial settings values work well for
  * communicating with SMA over a RS-232 serial connection using 8N1 data
  * configuration:
  * </p>
- * 
+ *
  * <dl>
  * <dt>serialPort</dt>
  * <dd>/dev/ttyS0 (this will vary depending on system)</dd>
- * 
+ *
  * <dt>baud</dt>
  * <dd>1200</dd>
- * 
+ *
  * <dt>rts</dt>
  * <dd>false</dd>
- * 
+ *
  * <dt>dtr</dt>
  * <dd>false</dd>
- * 
+ *
  * <dt>receiveThreshold</dt>
  * <dd>-1</dd>
- * 
+ *
  * <dt>receiveTimeout</dt>
  * <dd>2000</dd>
- * 
+ *
  * <dt>maxWait</dt>
  * <dd>60000</dd>
  * </dl>
- * 
+ *
  * <p>
  * This class is not generally not thread-safe. Only one thread should execute
  * {@link #readCurrentDatum()} at a time.
  * </p>
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>synOnlineWaitMs</dt>
  * <dd>Number of milliseconds to wait after issuing the SynOnline command. A
  * wait seems to be necessary otherwise the first data request fails. Defaults
  * to {@link #DEFAULT_SYN_ONLINE_WAIT_MS}.</dd>
- * 
+ *
  * <dt>channelNamesToResetDaily</dt>
  * <dd>If configured, a set of channels to reset each day to a zero value. This
  * is useful for resetting accumulative counter values, such as E-Total, on a
  * daily basis for tracking the total kWh generated each day. Requires the
  * {@code settingDao} property to also be configured.</dd>
- * 
+ *
  * <dt>channelNamesToOffsetDaily</dt>
  * <dd>If configured, a set of channels to treat as ever-accumulating numbers
  * that should be treated as daily-resetting values. This can be used, for
@@ -131,11 +131,11 @@ import net.solarnetwork.util.StringUtils;
  * the same day can be calculated as an offset from that initial value. Requires
  * the {@code settingDao} property to also be configured.</dd>
  * </dl>
- * 
+ *
  * <p>
  * Based on code from Gray Watson's sma.pl script, copyright included here:
  * </p>
- * 
+ *
  * <pre>
  * # Copyright 2004 by Gray Watson
  * #
@@ -152,9 +152,9 @@ import net.solarnetwork.util.StringUtils;
  * #
  * # The author may be contacted via http://256.com/gray/
  * </pre>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSourceSupport<AcDcEnergyDatum>
 		implements DatumDataSource, SettingSpecifierProvider, SerialConnectionAction<AcDcEnergyDatum> {
@@ -170,7 +170,7 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 
 	/**
 	 * Default value for the {@code channelNamesToMonitor} property.
-	 * 
+	 *
 	 * <p>
 	 * Contains the PV voltage, PV current, and kWh channels.
 	 * </p>
@@ -202,7 +202,7 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 
 	/**
 	 * Construct with cached sample.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample
 	 */
@@ -279,7 +279,7 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 			// TODO handle multiple device responses, for now we only accept one
 
 			// Issue GetChannelInfo command, to get full list of available channels
-			// This returns a lot of data... so we just do it once and cache the 
+			// This returns a lot of data... so we just do it once and cache the
 			// results for subsequent use
 			this.smaAddress = resp.getSrcAddress();
 			req = writeCommand(conn, SmaCommand.GetChannelInfo, this.smaAddress, 0,
@@ -330,7 +330,7 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 	/**
 	 * Issue a GetData command for a specific channel that returns a numeric
 	 * value and set that value onto a PowerDatum instance.
-	 * 
+	 *
 	 * @param conn
 	 *        the SerialConnection to collect the data from
 	 * @param channelName
@@ -406,13 +406,13 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 
 	/**
 	 * Write an SmaPacket and listen for a response.
-	 * 
+	 *
 	 * <p>
 	 * The returned {@link SmaPacket} can be passed to
 	 * {@link #decodeResponse(SerialConnection, SmaPacket)} to obtain the
 	 * response value.
 	 * </p>
-	 * 
+	 *
 	 * @param dataCollector
 	 *        the data collector to use
 	 * @param cmd
@@ -436,7 +436,7 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 
 	/**
 	 * Create a new SmaPacket instance.
-	 * 
+	 *
 	 * @param cmd
 	 *        the command to create
 	 * @param destAddr
@@ -467,13 +467,13 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 
 	/**
 	 * Decode a response to a request SmaPacket.
-	 * 
+	 *
 	 * <p>
 	 * This is usually called after
 	 * {@link #writeCommand(SerialConnection, SmaCommand, int, int, SmaControl, byte[])}
 	 * to decode the response into a response SmaPacket instance.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * The response might consist of many individual packets. This happens when
 	 * the first response packet contains a {@code packetCounter} value greater
@@ -484,7 +484,7 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 	 * response packet will be combined into one byte array and returned with
 	 * the final response packet as the {@code userData} value.
 	 * </p>
-	 * 
+	 *
 	 * @param dataCollector
 	 *        the data collector
 	 * @param originalRequest
@@ -572,8 +572,8 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		result.add(new BasicTitleSettingSpecifier("address",
 				(smaAddress < 0 ? "N/A" : String.valueOf(smaAddress)), true));
-		result.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
-				"Serial Port"));
+		result.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.io.serial.SerialNetwork)"));
 		result.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", CHANNEL_NAME_PV_VOLTS));
 		result.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
 		result.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
@@ -583,45 +583,100 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 		return result;
 	}
 
+	/**
+	 * Get the synchronize online wait milliseconds.
+	 *
+	 * @return the wait time
+	 */
 	public long getSynOnlineWaitMs() {
 		return synOnlineWaitMs;
 	}
 
+	/**
+	 * Set the synchronize online wait milliseconds.
+	 *
+	 * @param synOnlineWaitMs
+	 *        the wait time to set
+	 */
 	public void setSynOnlineWaitMs(long synOnlineWaitMs) {
 		this.synOnlineWaitMs = synOnlineWaitMs;
 	}
 
+	/**
+	 * Get the PV voltage channel name.
+	 *
+	 * @return the channel name
+	 */
 	public String getPvVoltsChannelName() {
 		return pvVoltsChannelName;
 	}
 
+	/**
+	 * Set the PV voltage channel name.
+	 *
+	 * @param pvVoltsChannelName
+	 *        the channel name to set
+	 */
 	public void setPvVoltsChannelName(String pvVoltsChannelName) {
 		this.pvVoltsChannelName = pvVoltsChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the PV current channel name.
+	 *
+	 * @return the channel name
+	 */
 	public String getPvAmpsChannelName() {
 		return pvAmpsChannelName;
 	}
 
+	/**
+	 * Set the PV current channel name.
+	 *
+	 * @param pvAmpsChannelName
+	 *        the channel name to set
+	 */
 	public void setPvAmpsChannelName(String pvAmpsChannelName) {
 		this.pvAmpsChannelName = pvAmpsChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the energy channel name.
+	 *
+	 * @return the channel name
+	 */
 	public String getkWhChannelName() {
 		return kWhChannelName;
 	}
 
+	/**
+	 * Set the energy channel name.
+	 *
+	 * @param kWhChannelName
+	 *        the channel name to set
+	 */
 	public void setkWhChannelName(String kWhChannelName) {
 		this.kWhChannelName = kWhChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the set of channel names to monitor.
+	 *
+	 * @return the channel names
+	 */
 	public Set<String> getChannelNamesToMonitor() {
 		return smaSupport.getChannelNamesToMonitor();
 	}
 
+	/**
+	 * Set the channel names to monitor.
+	 *
+	 * @param channelNamesToMonitor
+	 *        the names to set
+	 */
 	public void setChannelNamesToMonitor(Set<String> channelNamesToMonitor) {
 		smaSupport.setChannelNamesToMonitor(channelNamesToMonitor);
 	}
@@ -636,6 +691,12 @@ public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSource
 		smaSupport.setSourceId(sourceId);
 	}
 
+	/**
+	 * Set the setting DAO.
+	 *
+	 * @param settingDao
+	 *        the DAO to set
+	 */
 	public void setSettingDao(SettingDao settingDao) {
 		smaSupport.setSettingDao(settingDao);
 	}

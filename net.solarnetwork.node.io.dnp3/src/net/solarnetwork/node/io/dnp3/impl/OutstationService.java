@@ -1,21 +1,21 @@
 /* ==================================================================
  * OutstationService.java - 21/02/2019 11:05:32 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -97,9 +97,9 @@ import net.solarnetwork.util.StringUtils;
 /**
  * A DNP3 "outstation" server service that publishes SolarNode datum/control
  * events to DNP3.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -128,7 +128,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param dnp3Channel
 	 *        the channel to use
 	 * @param instructionExecutionService
@@ -137,7 +137,6 @@ public class OutstationService extends AbstractApplicationService
 	public OutstationService(OptionalService<ChannelService> dnp3Channel,
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
 		super(dnp3Channel);
-		setUid(DEFAULT_UID);
 		this.app = new Application();
 		this.outstationConfig = new OutstationConfig();
 		this.commandHandler = new CommandHandler();
@@ -151,7 +150,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Callback after properties have been changed.
-	 * 
+	 *
 	 * @param properties
 	 *        the changed properties
 	 */
@@ -891,12 +890,12 @@ public class OutstationService extends AbstractApplicationService
 
 		result.add(new BasicTitleSettingSpecifier("status", getStackStatusMessage(), true));
 
-		result.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
+		result.add(new BasicTextFieldSettingSpecifier("uid", null));
 		result.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier("eventBufferSize",
 				String.valueOf(DEFAULT_EVENT_BUFFER_SIZE)));
-		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['uid']",
-				TcpServerChannelService.DEFAULT_UID));
+		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['uid']", null, false,
+				"(objectClass=net.solarnetwork.node.io.dnp3.ChannelService)"));
 
 		result.addAll(linkLayerSettings("linkLayerConfig.", new LinkLayerConfig(false)));
 
@@ -977,11 +976,11 @@ public class OutstationService extends AbstractApplicationService
 	/**
 	 * Get the internal {@link com.automatak.dnp3.CommandHandler}
 	 * implementation.
-	 * 
+	 *
 	 * <p>
 	 * This is exposed primarily for testing purposes.
 	 * </p>
-	 * 
+	 *
 	 * @return the handler, never {@literal null}
 	 */
 	protected com.automatak.dnp3.CommandHandler getCommandHandler() {
@@ -990,7 +989,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the measurement configurations.
-	 * 
+	 *
 	 * @return the measurement configurations
 	 */
 	public MeasurementConfig[] getMeasurementConfigs() {
@@ -999,7 +998,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Set the measurement configurations to use.
-	 * 
+	 *
 	 * @param measurementConfigs
 	 *        the configs to use
 	 */
@@ -1009,7 +1008,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the number of configured {@code measurementConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code measurementConfigs} elements
 	 */
 	public int getMeasurementConfigsCount() {
@@ -1019,12 +1018,12 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Adjust the number of configured {@code MeasurementConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link MeasurementConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code measurementConfigs} elements.
 	 */
@@ -1035,7 +1034,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the control configurations.
-	 * 
+	 *
 	 * @return the control configurations
 	 */
 	public ControlConfig[] getControlConfigs() {
@@ -1044,7 +1043,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Set the control configurations to use.
-	 * 
+	 *
 	 * @param controlConfigs
 	 *        the configs to use
 	 */
@@ -1054,7 +1053,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the number of configured {@code controlConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code controlConfigs} elements
 	 */
 	public int getControlConfigsCount() {
@@ -1064,12 +1063,12 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Adjust the number of configured {@code ControlConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new {@link ControlConfig}
 	 * instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code controlConfigs} elements.
 	 */
@@ -1080,11 +1079,11 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the event buffer size.
-	 * 
+	 *
 	 * <p>
 	 * This buffer is used by DNP3 to hold updated values.
 	 * </p>
-	 * 
+	 *
 	 * @return the buffer size, defaults to {@link #DEFAULT_EVENT_BUFFER_SIZE}
 	 */
 	public int getEventBufferSize() {
@@ -1093,7 +1092,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Set the event buffer size.
-	 * 
+	 *
 	 * @param eventBufferSize
 	 *        the buffer size to set
 	 */
@@ -1106,7 +1105,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the startup delay, in seconds.
-	 * 
+	 *
 	 * @return the delay; defaults to {@link #DEFAULT_STARTUP_DELAY_SECONDS}
 	 */
 	public int getStartupDelaySecs() {
@@ -1115,12 +1114,12 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Set the startup delay, in seconds.
-	 * 
+	 *
 	 * <p>
 	 * This delay is used to allow the class to be configured fully before
 	 * starting.
 	 * </p>
-	 * 
+	 *
 	 * @param startupDelaySecs
 	 *        the delay
 	 */
@@ -1130,7 +1129,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Get the outstation configuration.
-	 * 
+	 *
 	 * @return the configuration
 	 * @since 1.2
 	 */
@@ -1140,7 +1139,7 @@ public class OutstationService extends AbstractApplicationService
 
 	/**
 	 * Copy the link outstation configuration from one object to another.
-	 * 
+	 *
 	 * @param from
 	 *        the settings to copy
 	 * @param to
@@ -1162,7 +1161,7 @@ public class OutstationService extends AbstractApplicationService
 	/**
 	 * Get settings suitable for configuring an instance of
 	 * {@link OutstationConfig}.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @param defaults

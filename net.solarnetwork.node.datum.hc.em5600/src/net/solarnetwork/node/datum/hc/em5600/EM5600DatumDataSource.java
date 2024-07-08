@@ -1,21 +1,21 @@
 /* ==================================================================
  * EM5600DatumDataSource.java - Mar 26, 2014 10:13:12 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,9 +25,12 @@ package net.solarnetwork.node.datum.hc.em5600;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
@@ -47,9 +50,9 @@ import net.solarnetwork.util.StringUtils;
 /**
  * {@link DatumDataSource} implementation for {@link AcEnergyDatum} with the
  * EM5600 series watt meter.
- * 
+ *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -64,7 +67,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	/**
 	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
 	 * source to the value {@code Main}.
-	 * 
+	 *
 	 * @return mapping
 	 */
 	public static Map<AcPhase, String> getDefaulSourceMapping() {
@@ -82,12 +85,25 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
 	public EM5600DatumDataSource(EM5600Data sample) {
 		super(sample);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final Map<AcPhase, String> mapping = getSourceMapping();
+		if ( mapping == null || mapping.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		final Set<String> result = new TreeSet<>();
+		for ( String sourceId : mapping.values() ) {
+			result.add(resolvePlaceholders(sourceId));
+		}
+		return result;
 	}
 
 	@Override
@@ -239,7 +255,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	/**
 	 * Get the consumption/generation tag setting.
-	 * 
+	 *
 	 * @return {@literal true} to tag as consumption, {@literal false} for
 	 *         generation
 	 */
@@ -249,14 +265,14 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	/**
 	 * Configure the consumption/generation tag setting.
-	 * 
+	 *
 	 * <p>
 	 * When {@literal true} then tag the configured source with
 	 * {@link AcEnergyDatum#TAG_CONSUMPTION}. When {@literal false} then tag the
 	 * configured source with {@link AcEnergyDatum#TAG_GENERATION}. Requires the
 	 * {@link #getDatumMetadataService()} to be available.
 	 * </p>
-	 * 
+	 *
 	 * @param tagConsumption
 	 *        {@literal true} to tag as consumption, {@literal false} for
 	 *        generation
@@ -265,30 +281,41 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		this.tagConsumption = tagConsumption;
 	}
 
+	/**
+	 * Get the source mapping.
+	 *
+	 * @return the mapping
+	 */
 	public Map<AcPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
+	/**
+	 * Set the source mapping.
+	 *
+	 * @param sourceMapping
+	 *        the mapping to set
+	 */
 	public void setSourceMapping(Map<AcPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 
 	/**
 	 * Set a {@code sourceMapping} Map via an encoded String value.
-	 * 
+	 *
 	 * <p>
 	 * The format of the {@code mapping} String should be:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * key=val[,key=val,...]
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Whitespace is permitted around all delimiters, and will be stripped from
 	 * the keys and values.
 	 * </p>
-	 * 
+	 *
 	 * @param mapping
 	 *        the encoding mapping
 	 * @see #getSourceMappingValue()
@@ -314,15 +341,15 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	/**
 	 * Get a delimited string representation of the {@link #getSourceMapping()}
 	 * map.
-	 * 
+	 *
 	 * <p>
 	 * The format of the {@code mapping} String should be:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * key=val[,key=val,...]
 	 * </pre>
-	 * 
+	 *
 	 * @return the encoded mapping
 	 * @see #setSourceMappingValue(String)
 	 */
@@ -332,7 +359,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	/**
 	 * Get a source ID value for a given measurement kind.
-	 * 
+	 *
 	 * @param kind
 	 *        the measurement kind
 	 * @return the source ID value, or {@literal null} if not available
@@ -341,25 +368,45 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
+	/**
+	 * Get the capture total mode.
+	 *
+	 * @return {@literal true} to capture the total phase
+	 */
 	public boolean isCaptureTotal() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.Total));
 	}
 
+	/**
+	 * Get the capture phase A mode.
+	 *
+	 * @return {@literal true} to capture phase A
+	 */
 	public boolean isCapturePhaseA() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseA));
 	}
 
+	/**
+	 * Get the capture phase B mode.
+	 *
+	 * @return {@literal true} to capture phase B
+	 */
 	public boolean isCapturePhaseB() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseB));
 	}
 
+	/**
+	 * Get the capture phase C mode.
+	 *
+	 * @return {@literal true} to capture phase C
+	 */
 	public boolean isCapturePhaseC() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseC));
 	}
 
 	/**
 	 * Get the "backwards" current direction flag.
-	 * 
+	 *
 	 * @return the backwards flag
 	 * @since 2.0
 	 */
@@ -369,7 +416,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	/**
 	 * Toggle the "backwards" current direction flag.
-	 * 
+	 *
 	 * @param backwards
 	 *        {@literal true} to swap energy delivered and received values
 	 * @since 2.0

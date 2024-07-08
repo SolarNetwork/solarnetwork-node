@@ -81,9 +81,10 @@
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" 
 										value="net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="Default"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 									<property name="fallbackService">
@@ -95,9 +96,10 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="Main"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>	
@@ -106,9 +108,10 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 									<property name="propertyFilters">
 										<map>
-											<entry key="uid" value="Main"/>
+											<entry key="uid" value=""/>
 										</map>
 									</property>
 								</bean>	

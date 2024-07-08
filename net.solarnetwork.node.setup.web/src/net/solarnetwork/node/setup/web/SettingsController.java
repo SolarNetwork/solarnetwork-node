@@ -88,10 +88,14 @@ import net.solarnetwork.node.setup.web.support.IteratorStatus;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
+import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceRegistry;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.SettingSpecifierProviderInfo;
+import net.solarnetwork.settings.support.BasicSettingSpecifierProviderInfo;
 import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.web.domain.Response;
@@ -101,7 +105,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.6
+ * @version 2.9
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -115,6 +119,7 @@ public class SettingsController {
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
 	private static final String KEY_SETTING_RESOURCES = "settingResources";
+	private static final String KEY_SETTING_RESOURCE_LIST = "settingResourceList";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
@@ -144,6 +149,9 @@ public class SettingsController {
 
 	@Autowired
 	private MessageSource messageSource;
+
+	@Autowired
+	private ServiceRegistry serviceRegistry;
 
 	/**
 	 * Default constructor.
@@ -246,7 +254,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
-			model.put(KEY_SETTING_RESOURCES, settingResources(settingsService, providers));
+			populateSettingResources(settingsService, providers, model);
 		}
 		final BackupManager backupManager = backupManagerTracker.service();
 		if ( backupManager != null ) {
@@ -262,34 +270,41 @@ public class SettingsController {
 		return "backups";
 	}
 
-	private Map<String, List<SettingResourceInfo>> settingResources(SettingsService settingsService,
-			List<SettingSpecifierProvider> providers) {
+	private static final Comparator<SettingResourceInfo> SETTING_RESOURCE_SORT_BY_NAME = (o1, o2) -> {
+		return o1.getName().compareTo(o2.getName());
+	};
+
+	private void populateSettingResources(SettingsService settingsService,
+			List<SettingSpecifierProvider> providers, ModelMap model) {
+		Map<String, List<SettingResourceInfo>> info;
+		List<SettingResourceInfo> list;
 		List<SettingResourceHandler> handlers = settingsService.getSettingResourceHandlers();
 		if ( handlers == null || handlers.isEmpty() ) {
-			return Collections.emptyMap();
+			info = Collections.emptyMap();
+			list = Collections.emptyList();
+		} else {
+			info = new TreeMap<>();
+			list = new ArrayList<>(handlers.size());
+			for ( SettingResourceHandler handler : handlers ) {
+				final String handlerKey = handler.getSettingUid();
+				Collection<String> supportedKeys = handler.supportedCurrentResourceSettingKeys();
+				if ( supportedKeys == null || supportedKeys.isEmpty() ) {
+					continue;
+				}
+				for ( String settingKey : supportedKeys ) {
+					String name = displayNameForSettingResource(providers, handlerKey, settingKey);
+					info.computeIfAbsent(handlerKey, k -> new ArrayList<SettingResourceInfo>())
+							.add(new SettingResourceInfo(name, handlerKey, null, settingKey));
+				}
+			}
+			info.values().stream().forEach(l -> {
+				Collections.sort(l, SETTING_RESOURCE_SORT_BY_NAME);
+				list.addAll(l);
+			});
+			Collections.sort(list, SETTING_RESOURCE_SORT_BY_NAME);
 		}
-		Map<String, List<SettingResourceInfo>> info = new TreeMap<>();
-		for ( SettingResourceHandler handler : handlers ) {
-			final String handlerKey = handler.getSettingUid();
-			Collection<String> supportedKeys = handler.supportedCurrentResourceSettingKeys();
-			if ( supportedKeys == null || supportedKeys.isEmpty() ) {
-				continue;
-			}
-			for ( String settingKey : supportedKeys ) {
-				String name = displayNameForSettingResource(providers, handlerKey, settingKey);
-				info.computeIfAbsent(handlerKey, k -> new ArrayList<SettingResourceInfo>())
-						.add(new SettingResourceInfo(name, handlerKey, null, settingKey));
-			}
-		}
-		info.values().stream().forEach(l -> Collections.sort(l, new Comparator<SettingResourceInfo>() {
-
-			@Override
-			public int compare(SettingResourceInfo o1, SettingResourceInfo o2) {
-				return o1.getName().compareTo(o2.getName());
-			}
-
-		}));
-		return info;
+		model.put(KEY_SETTING_RESOURCES, info);
+		model.put(KEY_SETTING_RESOURCE_LIST, list);
 	}
 
 	private String displayNameForSettingResource(List<SettingSpecifierProvider> providers,
@@ -385,6 +400,54 @@ public class SettingsController {
 		}
 		return (req.getRequestURI().contains("/filters/") ? "filters-factory-settings-list"
 				: "factory-settings-list");
+	}
+
+	/**
+	 * Get a list of setting specifier provider infos for a given service
+	 * filter.
+	 *
+	 * @param serviceFilter
+	 *        the LDAP search filter of the providers to get info for
+	 * @param locale
+	 *        the desired locale
+	 * @return the result list
+	 * @since 2.9
+	 */
+	@RequestMapping(value = "/providerInfo", method = RequestMethod.GET)
+	@ResponseBody
+	public Result<List<SettingSpecifierProviderInfo>> providerInfos(
+			@RequestParam("filter") String serviceFilter, Locale locale) {
+		if ( serviceRegistry == null ) {
+			return Result.success();
+		}
+		final SettingsService service = service(settingsServiceTracker);
+		if ( service == null ) {
+			return Result.success();
+		}
+		final List<SettingSpecifierProviderInfo> results = serviceRegistry.services(serviceFilter)
+				.stream().filter((p) -> {
+					if ( p == null || !(p instanceof Identifiable) ) {
+						return false;
+					}
+					Identifiable ip = (Identifiable) p;
+					String uid = ip.getUid();
+					if ( uid == null || uid.isEmpty() ) {
+						return false;
+					}
+					return true;
+				}).map((p) -> {
+					Identifiable ip = (Identifiable) p;
+					String uid = ip.getUid();
+					String groupUid = ip.getGroupUid();
+					if ( p instanceof SettingSpecifierProvider ) {
+						return ((SettingSpecifierProvider) p).localizedInfo(locale, uid, groupUid);
+					}
+					return new BasicSettingSpecifierProviderInfo(null, ip.getDisplayName(), uid,
+							groupUid);
+				}).sorted(Comparator.comparing(SettingSpecifierProviderInfo::getDisplayName,
+						String::compareToIgnoreCase))
+				.collect(Collectors.toList());
+		return Result.success(results);
 	}
 
 	/**

@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDataUtils.java - 10/04/2018 2:02:53 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,21 +31,25 @@ import net.solarnetwork.util.Half;
 
 /**
  * Utilities for converting to/from Modbus 16-bit register values.
- * 
+ *
  * <p>
  * All Modbus register values are stored using {@code short} values, which in
  * Java are always treated as 16-bit signed integers.
  * </p>
- * 
+ *
  * @author matt
  * @version 2.3
  * @since 2.6
  */
 public final class ModbusDataUtils {
 
+	private ModbusDataUtils() {
+		// not available
+	}
+
 	/**
 	 * Convert an array of shorts to Integer objects.
-	 * 
+	 *
 	 * @param array
 	 *        the array to convert
 	 * @return the converted array, or {@literal null} if {@code array} is
@@ -65,7 +69,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Convert an array of shorts to unsigned short int values.
-	 * 
+	 *
 	 * @param array
 	 *        the array to convert
 	 * @return the converted array, or {@literal null} if {@code array} is
@@ -85,7 +89,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Convert an array of ints to shorts.
-	 * 
+	 *
 	 * @param array
 	 *        the array to convert
 	 * @return the converted array, or {@literal null} if {@code array} is
@@ -105,7 +109,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Encode a number into raw Modbus register values.
-	 * 
+	 *
 	 * @param dataType
 	 *        the desired Modbus data type
 	 * @param number
@@ -122,13 +126,13 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Encode a number into raw Modbus register values.
-	 * 
+	 *
 	 * <p>
 	 * This method always returns a value if {@code number} is {@literal null}.
 	 * If {@code dataType} is not a supported type an,
 	 * {@link IllegalArgumentException} will be thrown.
 	 * </p>
-	 * 
+	 *
 	 * @param dataType
 	 *        the desired Modbus data type
 	 * @param number
@@ -214,7 +218,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 16-bit signed integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 1}
@@ -227,7 +231,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 16-bit unsigned integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 1}
@@ -240,7 +244,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 32-bit signed integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 2} and
@@ -253,7 +257,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 32-bit signed integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @param wordOrder
@@ -273,7 +277,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 32-bit unsigned integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 2} and
@@ -286,7 +290,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 32-bit unsigned integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @param wordOrder
@@ -305,7 +309,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 64-bit signed integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 4} and
@@ -318,7 +322,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a 64-bit signed integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the value to encode
 	 * @param wordOrder
@@ -339,7 +343,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an 64-bit unsigned integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the integer to encode
 	 * @return the register values, which will have a length of {@literal 4} and
@@ -352,7 +356,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an 64-bit unsigned integer value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the integer to encode
 	 * @param wordOrder
@@ -400,7 +404,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an unsigned integer value into raw Modbus unsigned short register
 	 * values.
-	 * 
+	 *
 	 * @param value
 	 *        the integer to encode
 	 * @return the register values, which will have a length equal to the number
@@ -414,7 +418,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an unsigned integer value into raw Modbus unsigned short register
 	 * values.
-	 * 
+	 *
 	 * @param value
 	 *        the integer to encode
 	 * @param wordOrder
@@ -456,11 +460,11 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Swap the order of an array of register values.
-	 * 
+	 *
 	 * <p>
 	 * This essentially reverses the array. The array is modified in-place.
 	 * </p>
-	 * 
+	 *
 	 * @param array
 	 *        the data to swap
 	 * @since 1.1
@@ -476,7 +480,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an IEEE-754 16-bit float value into a raw Modbus unsigned short
 	 * register value.
-	 * 
+	 *
 	 * @param value
 	 *        the half to encode
 	 * @return the register value
@@ -489,7 +493,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the float to encode
 	 * @return the register values, which will have a length of {@literal 2} and
@@ -502,7 +506,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the float to encode
 	 * @param wordOrder
@@ -518,7 +522,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the float to encode
 	 * @return the register values, which will have a length of {@literal 4} and
@@ -531,7 +535,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
 	 * register values.
-	 * 
+	 *
 	 * @param value
 	 *        the float to encode
 	 * @param wordOrder
@@ -547,11 +551,11 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Encode an array of bytes into 16-bit raw Modbus register values.
-	 * 
+	 *
 	 * <p>
 	 * Each register value will hold up to two bytes.
 	 * </p>
-	 * 
+	 *
 	 * @param data
 	 *        the data to encode
 	 * @return the register values, which will have a length of
@@ -564,11 +568,11 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Encode an array of bytes into 16-bit raw Modbus register values.
-	 * 
+	 *
 	 * <p>
 	 * Each register value will hold up to two bytes.
 	 * </p>
-	 * 
+	 *
 	 * @param data
 	 *        the data to encode
 	 * @param wordOrder
@@ -597,7 +601,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Encode a number into raw Modbus register values.
-	 * 
+	 *
 	 * @param dataType
 	 *        the desired Modbus data type
 	 * @param words
@@ -616,7 +620,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Encode a number into raw Modbus register values.
-	 * 
+	 *
 	 * @param dataType
 	 *        the desired Modbus data type
 	 * @param words
@@ -739,12 +743,12 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Convert a 16-bit signed integer value from a raw Modbus register value.
-	 * 
+	 *
 	 * <p>
 	 * This method simply returns the given argument, but provided for
 	 * completeness.
 	 * </p>
-	 * 
+	 *
 	 * @param lo
 	 *        bits 15-0
 	 * @return the parsed integer
@@ -756,7 +760,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 16-bit signed integer value from a raw Modbus register value.
-	 * 
+	 *
 	 * @param lo
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
@@ -767,7 +771,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Convert a 16-bit unsigned integer value from a raw Modbus register value.
-	 * 
+	 *
 	 * @param lo
 	 *        bits 15-0
 	 * @return the parsed integer
@@ -779,7 +783,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 16-bit unsigned integer value from a raw Modbus register value.
-	 * 
+	 *
 	 * @param lo
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
@@ -790,7 +794,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 32-bit signed integer value from raw Modbus register values.
-	 * 
+	 *
 	 * @param hi
 	 *        bits 31-16
 	 * @param lo
@@ -804,7 +808,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 32-bit signed integer value from raw Modbus register values.
-	 * 
+	 *
 	 * @param hi
 	 *        bits 31-16
 	 * @param lo
@@ -817,11 +821,11 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 32-bit unsigned integer value from raw Modbus register values.
-	 * 
+	 *
 	 * <p>
 	 * <b>Note</b> a {@code long} is returned to support unsigned 32-bit values.
 	 * </p>
-	 * 
+	 *
 	 * @param hi
 	 *        bits 31-16
 	 * @param lo
@@ -835,11 +839,11 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 32-bit unsigned integer value from raw Modbus register values.
-	 * 
+	 *
 	 * <p>
 	 * <b>Note</b> a {@code Long} is returned to support unsigned 32-bit values.
 	 * </p>
-	 * 
+	 *
 	 * @param hi
 	 *        bits 31-16
 	 * @param lo
@@ -852,7 +856,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 64-bit signed integer value from raw Modbus register values.
-	 * 
+	 *
 	 * @param h1
 	 *        bits 63-48
 	 * @param h2
@@ -871,7 +875,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse a 64-bit signed integer value from raw Modbus register values.
-	 * 
+	 *
 	 * @param h1
 	 *        bits 63-48
 	 * @param h2
@@ -888,7 +892,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Construct an 64-bit unsigned integer from raw Modbus register values.
-	 * 
+	 *
 	 * @param h1
 	 *        bits 63-48
 	 * @param h2
@@ -914,7 +918,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse an IEEE-754 16-bit float value from raw Modbus register values.
-	 * 
+	 *
 	 * @param val
 	 *        the 16 bits
 	 * @return the parsed half, or {@literal null} if not available or parsed
@@ -931,7 +935,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse an IEEE-754 32-bit float value from raw Modbus register values.
-	 * 
+	 *
 	 * @param hi
 	 *        the high 16 bits
 	 * @param lo
@@ -946,7 +950,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse an IEEE-754 32-bit float value from raw Modbus register values.
-	 * 
+	 *
 	 * @param hi
 	 *        the high 16 bits
 	 * @param lo
@@ -965,7 +969,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Parse an IEEE-754 64-bit floating point value from raw Modbus register
 	 * values.
-	 * 
+	 *
 	 * @param h1
 	 *        bits 63-48
 	 * @param h2
@@ -985,7 +989,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Parse an IEEE-754 64-bit floating point value from raw Modbus register
 	 * values.
-	 * 
+	 *
 	 * @param h1
 	 *        bits 63-48
 	 * @param h2
@@ -1007,7 +1011,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse any number of Modbus register values as a series of bytes.
-	 * 
+	 *
 	 * @param words
 	 *        the words to read as bytes, in
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} word order
@@ -1021,7 +1025,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Parse any number of Modbus register values as a series of bytes.
-	 * 
+	 *
 	 * @param words
 	 *        the words to read as bytes
 	 * @param offset
@@ -1047,7 +1051,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Parse any number of Modbus register values as a series of bytes into a
 	 * {@link BigInteger}.
-	 * 
+	 *
 	 * @param words
 	 *        the words to parse, in
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} word order
@@ -1062,7 +1066,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Parse any number of Modbus register values as a series of bytes into a
 	 * {@link BigInteger}.
-	 * 
+	 *
 	 * @param words
 	 *        the words to parse
 	 * @param offset
@@ -1091,11 +1095,11 @@ public final class ModbusDataUtils {
 	/**
 	 * Return the minimum number of 16-bit register words that can accommodate
 	 * the active bits in a bit set.
-	 * 
+	 *
 	 * <p>
 	 * If no bits are set, the returned value is {@literal 0}.
 	 * </p>
-	 * 
+	 *
 	 * @param bits
 	 *        the bit set
 	 * @return the minimum number of words
@@ -1108,7 +1112,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Convert a bit set into an array of 16-bit register values.
-	 * 
+	 *
 	 * @param bits
 	 *        the bit set
 	 * @param count
@@ -1137,7 +1141,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Convert a bit set into an array of 16-bit register values, using
 	 * {@link ModbusWordOrder#MostToLeastSignificant} word order.
-	 * 
+	 *
 	 * @param bits
 	 *        the bit set
 	 * @param count
@@ -1151,7 +1155,7 @@ public final class ModbusDataUtils {
 
 	/**
 	 * Convert an array of 16-bit register values into a bit set.
-	 * 
+	 *
 	 * @param words
 	 *        the words
 	 * @param wordOrder
@@ -1177,7 +1181,7 @@ public final class ModbusDataUtils {
 	/**
 	 * Convert an array of 16-bit register values into a bit set, using
 	 * {@link ModbusWordOrder#MostToLeastSignificant} word order.
-	 * 
+	 *
 	 * @param words
 	 *        the words
 	 * @return the bit set, never {@literal null}

@@ -1,21 +1,21 @@
 /* ==================================================================
  * MeasurementConfig.java - 21/02/2019 4:39:11 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,13 +34,13 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * A configuration for a DNP3 measurement integration with a
  * {@link net.solarnetwork.node.service.DatumDataSource} property.
- * 
+ *
  * <p>
  * This configuration maps a datum property to a DNP3 measurement.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class MeasurementConfig {
 
@@ -72,7 +72,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param dataSourceUid
 	 *        the {@link net.solarnetwork.node.service.DatumDataSource#getUid()}
 	 *        to collect from
@@ -96,7 +96,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -104,7 +104,8 @@ public class MeasurementConfig {
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(6);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataSourceUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataSourceUid", "", false,
+				"(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyName", ""));
 
@@ -126,47 +127,91 @@ public class MeasurementConfig {
 		return results;
 	}
 
+	/**
+	 * Get the data source UID.
+	 *
+	 * @return the UID
+	 */
 	public String getDataSourceUid() {
 		return dataSourceUid;
 	}
 
+	/**
+	 * Set the data source UID.
+	 *
+	 * @param dataSourceUid
+	 *        the UID to set
+	 */
 	public void setDataSourceUid(String dataSourceUid) {
 		this.dataSourceUid = dataSourceUid;
 	}
 
+	/**
+	 * Get the source ID.
+	 *
+	 * @return the source ID
+	 */
 	public String getSourceId() {
 		return sourceId;
 	}
 
+	/**
+	 * Set the source ID.
+	 *
+	 * @param sourceId
+	 *        the source ID to set
+	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
 
+	/**
+	 * Get the property name.
+	 *
+	 * @return the property name
+	 */
 	public String getPropertyName() {
 		return propertyName;
 	}
 
+	/**
+	 * Set the property name.
+	 *
+	 * @param propertyName
+	 *        the property name to set
+	 */
 	public void setPropertyName(String propertyName) {
 		this.propertyName = propertyName;
 	}
 
+	/**
+	 * Get the measurement type.
+	 *
+	 * @return the type
+	 */
 	public MeasurementType getType() {
 		return type;
 	}
 
+	/**
+	 * Set the measurement type.
+	 *
+	 * @param type
+	 *        the type to set
+	 */
 	public void setType(MeasurementType type) {
 		this.type = type;
 	}
 
 	/**
 	 * Get the measurement type key.
-	 * 
+	 *
 	 * <p>
 	 * This returns the configured {@link #getType()}
 	 * {@link MeasurementType#getCode()} value as a string. If the type is not
 	 * available, {@link MeasurementType#AnalogInput} will be returned.
 	 * </p>
-	 * 
+	 *
 	 * @return the measurement type key
 	 */
 	public String getTypeKey() {
@@ -179,13 +224,13 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the measurement type via a key value.
-	 * 
+	 *
 	 * <p>
 	 * This uses the first character of {@code key} as a {@link MeasurementType}
 	 * code value to call {@link #setType(MeasurementType)}. If there is any
 	 * problem parsing the type, {@link MeasurementType#AnalogInput} is set.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the measurement type key to set
 	 */
@@ -206,7 +251,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the unit multiplier.
-	 * 
+	 *
 	 * @return the multiplier; defaults to {@link #DEFAULT_UNIT_MULTIPLIER}
 	 */
 	public BigDecimal getUnitMultiplier() {
@@ -215,7 +260,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the unit multiplier.
-	 * 
+	 *
 	 * <p>
 	 * This value represents a multiplication factor to apply to values
 	 * collected for this property so that a standardized unit is captured. For
@@ -223,7 +268,7 @@ public class MeasurementConfig {
 	 * case {@code multiplier} can be configured as {@literal .001} to convert
 	 * the value to <i>watts</i>.
 	 * </p>
-	 * 
+	 *
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
@@ -233,7 +278,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the decimal scale to round decimal numbers to.
-	 * 
+	 *
 	 * @return the decimal scale; defaults to {@link #DEFAULT_DECIMAL_SCALE}
 	 */
 	public int getDecimalScale() {
@@ -242,14 +287,14 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the decimal scale to round decimal numbers to.
-	 * 
+	 *
 	 * <p>
 	 * This is a <i>maximum</i> scale value that decimal values should be
 	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
 	 * applied. A scale of {@literal 0} would round all decimals to integer
 	 * values.
 	 * </p>
-	 * 
+	 *
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */

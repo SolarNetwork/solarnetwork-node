@@ -1,21 +1,21 @@
 /* ==================================================================
  * CanbusSubscription.java - 23/09/2019 10:07:45 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,11 +31,11 @@ import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 
 /**
  * Immutable information about a CAN bus subscription.
- * 
+ *
  * <p>
  * This class implements equality based on just the {@code address} property.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -50,7 +50,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param address
 	 *        the CAN address to subscribe to
 	 * @param forceExtendedAddress
@@ -77,7 +77,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param address
 	 *        the CAN address to subscribe to
 	 * @param forceExtendedAddress
@@ -121,7 +121,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Get the number of seconds in the configured limit.
-	 * 
+	 *
 	 * @return the number of seconds in the limit
 	 */
 	public int getLimitSeconds() {
@@ -130,7 +130,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Get the number of microseconds in the configured limit.
-	 * 
+	 *
 	 * @return the number of microseconds in the limit
 	 */
 	public int getLimitMicroseconds() {
@@ -140,7 +140,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Test if a limit is configured.
-	 * 
+	 *
 	 * @return {@literal true} if a {@code limit} is configured and is not a
 	 *         zero length
 	 */
@@ -150,7 +150,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Test if a data filter is configured.
-	 * 
+	 *
 	 * @return {@literal true} if a data filter is configured
 	 */
 	public boolean hasFilter() {
@@ -159,7 +159,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Get the "force extended" flag.
-	 * 
+	 *
 	 * @return {@literal true} if extended address values should be used always
 	 */
 	public boolean isForceExtendedAddress() {
@@ -168,12 +168,12 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Test if multiplex data filters are configured.
-	 * 
+	 *
 	 * <p>
 	 * If this method returns {@literal true} then {@link #getDataFilter()}
 	 * represents the multiplex identifier value used with the subscription.
 	 * </p>
-	 * 
+	 *
 	 * @return {@literal true} if
 	 */
 	public boolean isMultiplexFilter() {
@@ -182,7 +182,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	/**
 	 * Get the multiplex data filters.
-	 * 
+	 *
 	 * @return the multiplex data filters, or {@literal null} if this is not a
 	 *         multiplex subscription
 	 */
@@ -226,18 +226,38 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 		return address == other.address;
 	}
 
+	/**
+	 * Get the address.
+	 *
+	 * @return the address
+	 */
 	public int getAddress() {
 		return address;
 	}
 
+	/**
+	 * Get the limit.
+	 *
+	 * @return the limit
+	 */
 	public Duration getLimit() {
 		return limit;
 	}
 
+	/**
+	 * Get the data filter.
+	 *
+	 * @return the filter
+	 */
 	public long getDataFilter() {
 		return dataFilter;
 	}
 
+	/**
+	 * Get the listener.
+	 *
+	 * @return the listener
+	 */
 	public CanbusFrameListener getListener() {
 		return listener;
 	}

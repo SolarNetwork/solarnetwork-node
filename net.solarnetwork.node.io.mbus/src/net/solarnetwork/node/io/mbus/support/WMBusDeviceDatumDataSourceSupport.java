@@ -47,7 +47,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Supporting abstract class for WMBus datum data sources.
  *
  * @author alex
- * @version 1.3
+ * @version 1.4
  */
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler, ServiceLifecycleObserver {
@@ -309,8 +309,8 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	 */
 	protected List<SettingSpecifier> getWMBusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['uid']",
-				"M-Bus (Wireless) Port"));
+		results.add(new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.io.mbus.WMBusNetwork)"));
 		results.add(new BasicTextFieldSettingSpecifier("secondaryAddress", ""));
 		results.add(new BasicTextFieldSettingSpecifier("key", "", true));
 		return results;

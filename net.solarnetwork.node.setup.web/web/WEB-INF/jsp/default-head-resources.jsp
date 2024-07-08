@@ -28,6 +28,7 @@
 	/js/global-platform.js
 	/js/backups.js
 	/js/datum.js
+	/js/datum-sources.js
 	/js/certs.js
 	/js/hosts.js
 	/js/login.js

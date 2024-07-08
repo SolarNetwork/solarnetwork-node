@@ -1,21 +1,21 @@
 /* ==================================================================
  * XmlEGaugeClient.java - 9/03/2018 12:45:52 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -67,10 +67,10 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * XML implementation of the EGaugeClient. Instances of this can be shared
  * between EGaugeDatumDataSource instances.
- * 
+ *
  * The {@code propertyConfigs} configuration should match the content expected
  * to be returned by the {@code url}.
- * 
+ *
  * @author maxieduncan
  * @version 2.1
  */
@@ -93,6 +93,13 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/** The list of property/register configurations. */
 	private EGaugeDatumSamplePropertyConfig[] propertyConfigs;
+
+	/**
+	 * Constructor.
+	 */
+	public XmlEGaugeClient() {
+		super();
+	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -169,7 +176,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Populate a datum.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to populate
 	 * @throws XmlEGaugeClientException
@@ -224,7 +231,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Populate a datum property.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to populate the property on
 	 * @param propertyConfig
@@ -340,7 +347,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	/**
 	 * Retrieves the eGauge file from the specified URL and returns the register
 	 * names found inside.
-	 * 
+	 *
 	 * @return the register names found in the file
 	 */
 	public List<String> getRegisterNames() {
@@ -394,7 +401,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Get the configured source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	@Override
@@ -404,7 +411,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Set the source ID value to assign to the collected data.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to set
 	 */
@@ -413,15 +420,19 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	/**
-	 * @return the propertyConfig
+	 * Get the property configurations.
+	 *
+	 * @return the configurations
 	 */
 	public EGaugeDatumSamplePropertyConfig[] getPropertyConfigs() {
 		return propertyConfigs;
 	}
 
 	/**
+	 * Set the property configurations.
+	 *
 	 * @param propertyConfigs
-	 *        the propertyConfig to set
+	 *        the configurations to set
 	 */
 	public void setPropertyConfigs(EGaugeDatumSamplePropertyConfig[] propertyConfigs) {
 		this.propertyConfigs = propertyConfigs;
@@ -429,7 +440,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropertyConfigsCount() {
@@ -439,12 +450,12 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Adjust the number of configured {@code propertyConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link EGaugePropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
@@ -454,10 +465,10 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	/**
-	 * 
+	 *
 	 * Indicates that an exception has been encountered and handled but that the
 	 * datum should not be processed further.
-	 * 
+	 *
 	 * @author maxieduncan
 	 * @version 1.0
 	 */
@@ -473,7 +484,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Get the URL.
-	 * 
+	 *
 	 * @return the URL
 	 */
 	public String getUrl() {
@@ -520,7 +531,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Get the base URL.
-	 * 
+	 *
 	 * @return the base URL
 	 */
 	public String getBaseUrl() {
@@ -529,7 +540,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Set the base URL.
-	 * 
+	 *
 	 * @param baseUrl
 	 *        the base URL to set
 	 */
@@ -539,7 +550,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Get the query URL.
-	 * 
+	 *
 	 * @return the query URL
 	 */
 	public String getQueryUrl() {
@@ -548,7 +559,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/**
 	 * Set the query URL.
-	 * 
+	 *
 	 * @param queryUrl
 	 *        the query URL to set
 	 */

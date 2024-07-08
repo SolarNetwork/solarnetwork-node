@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDeviceDatumDataSourceSupport.java - 26/09/2017 11:16:38 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -43,9 +43,9 @@ import net.solarnetwork.util.StringUtils;
 /**
  * A base helper class to support {@link ModbusNetwork} based
  * {@link DatumDataSource} implementations.
- * 
+ *
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -57,9 +57,16 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	private OptionalService<ModbusNetwork> modbusNetwork;
 
 	/**
+	 * Constructor.
+	 */
+	public ModbusDeviceDatumDataSourceSupport() {
+		super();
+	}
+
+	/**
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
-	 * 
+	 *
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
@@ -70,7 +77,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
-	 * 
+	 *
 	 * @param uid
 	 *        the Modbus Network UID property filter default value to use
 	 * @param unitId
@@ -80,7 +87,8 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 */
 	public static List<SettingSpecifier> modbusNetworkSettingSpecifiers(String uid, int unitId) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']", uid));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']", uid,
+				false, "(objectClass=net.solarnetwork.node.io.modbus.ModbusNetwork)"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(unitId)));
 		return results;
 	}
@@ -88,7 +96,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
 	 * service, or {@literal null} if not available or not configured.
-	 * 
+	 *
 	 * @return ModbusNetwork
 	 */
 	protected final ModbusNetwork modbusNetwork() {
@@ -97,12 +105,12 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Read general device info and return a map of the results.
-	 * 
+	 *
 	 * <p>
 	 * See the various {@code INFO_KEY_*} constants for information on the
 	 * values returned in the result map.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the connection to use
 	 * @return a map with general device information populated
@@ -113,13 +121,13 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Return an informational message composed of general device info.
-	 * 
+	 *
 	 * <p>
 	 * This method will call {@link #getDeviceInfo()} and return a {@code /}
 	 * (forward slash) delimited string of the resulting values, or
 	 * {@literal null} if that method returns {@literal null}.
 	 * </p>
-	 * 
+	 *
 	 * @return info message
 	 */
 	public String getDeviceInfoMessage() {
@@ -132,13 +140,13 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the device info data as a Map.
-	 * 
+	 *
 	 * <p>
 	 * This method will call {@link #readDeviceInfo(ModbusConnection)}. The map
 	 * is cached so subsequent calls will not attempt to read from the device.
 	 * Note the returned map cannot be modified.
 	 * </p>
-	 * 
+	 *
 	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(ModbusConnection)
 	 */
@@ -164,14 +172,14 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Perform some work with a Modbus {@link ModbusConnection}.
-	 * 
+	 *
 	 * <p>
 	 * This method attempts to obtain a {@link ModbusNetwork} from the
 	 * configured {@code modbusNetwork} service, calling
 	 * {@link ModbusNetwork#performAction(int, ModbusConnectionAction)} if one
 	 * can be obtained.
 	 * </p>
-	 * 
+	 *
 	 * @param <T>
 	 *        the result type
 	 * @param action
@@ -192,7 +200,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get direct access to the device info data.
-	 * 
+	 *
 	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
@@ -201,14 +209,14 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Set the device info data.
-	 * 
+	 *
 	 * <p>
 	 * Setting the {@code deviceInfo} to {@literal null} will force the next
 	 * call to {@link #getDeviceInfo()} to read from the device to populate this
 	 * data, and setting this to anything else will force all subsequent calls
 	 * to {@link #getDeviceInfo()} to simply return that map.
 	 * </p>
-	 * 
+	 *
 	 * @param deviceInfo
 	 *        the device info map to set
 	 */
@@ -218,7 +226,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get device info.
-	 * 
+	 *
 	 * @return the device info based on calling the {@link #getDeviceInfo()}
 	 *         method
 	 * @since 2.2
@@ -231,7 +239,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the configured Modbus device name.
-	 * 
+	 *
 	 * @return the modbus device name
 	 * @since 1.3
 	 */
@@ -241,7 +249,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the configured {@link ModbusNetwork}.
-	 * 
+	 *
 	 * @return the modbus network
 	 */
 	public OptionalService<ModbusNetwork> getModbusNetwork() {
@@ -250,7 +258,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Set the {@link ModbusNetwork} to use.
-	 * 
+	 *
 	 * @param modbusDevice
 	 *        the modbus network
 	 */
@@ -260,7 +268,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the Modbus unit ID.
-	 * 
+	 *
 	 * @return the unit ID; defauts to {@link #DEFAULT_UNIT_ID}
 	 */
 	public int getUnitId() {
@@ -269,7 +277,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Set the Modbus unit ID.
-	 * 
+	 *
 	 * @param unitId
 	 *        the unit ID
 	 */

@@ -1,21 +1,21 @@
 /* ==================================================================
  * SerialDeviceSupport.java - 25/10/2014 7:25:24 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -46,15 +46,22 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link SerialNetwork} based services.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
+	 * Constructor.
+	 */
+	public SerialDeviceSupport() {
+		super();
+	}
+
+	/**
 	 * Get setting specifiers for the serial network UID filter.
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to add to each setting key
 	 * @param defaultUid
@@ -64,8 +71,8 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 */
 	public static List<SettingSpecifier> serialNetworkSettings(String prefix, String defaultUid) {
 		prefix = (prefix != null ? prefix : "");
-		return singletonList(
-				new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid));
+		return singletonList(new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid,
+				false, "(objectClass=net.solarnetwork.node.io.serial.SerialNetwork)"));
 	}
 
 	private Map<String, Object> deviceInfo;
@@ -79,7 +86,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * Read general device info and return a map of the results. See the various
 	 * {@code INFO_KEY_*} constants for information on the values returned in
 	 * the result map.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection to use
 	 * @return a map with general device information populated
@@ -93,7 +100,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
 	 * slash) delimited string of the resulting values, or {@literal null} if
 	 * that method returns {@literal null}.
-	 * 
+	 *
 	 * @return info message
 	 */
 	public String getDeviceInfoMessage() {
@@ -109,7 +116,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * {@link #readDeviceInfo(SerialConnection)}. The map is cached so
 	 * subsequent calls will not attempt to read from the device. Note the
 	 * returned map cannot be modified.
-	 * 
+	 *
 	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(SerialConnection)
 	 */
@@ -144,7 +151,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * {@code serialNetwork} service, calling
 	 * {@link SerialNetwork#performAction(SerialConnectionAction)} if one can be
 	 * obtained.
-	 * 
+	 *
 	 * @param <T>
 	 *        the action result type
 	 * @param action
@@ -165,7 +172,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get direct access to the device info data.
-	 * 
+	 *
 	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
@@ -178,7 +185,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * read from the device to populate this data, and setting this to anything
 	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
 	 * simply return that map.
-	 * 
+	 *
 	 * @param deviceInfo
 	 *        the device info map to set
 	 */
@@ -188,13 +195,13 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Post an {@link Event}.
-	 * 
+	 *
 	 * <p>
 	 * This method only works if a {@link EventAdmin} has been configured via
 	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
 	 * ignored.
 	 * </p>
-	 * 
+	 *
 	 * @param event
 	 *        the event to post
 	 */
@@ -208,7 +215,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the serial network.
-	 * 
+	 *
 	 * @return the network
 	 */
 	public OptionalFilterableService<SerialNetwork> getSerialNetwork() {
@@ -217,7 +224,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the serial network.
-	 * 
+	 *
 	 * @param serialDevice
 	 *        the network
 	 */
@@ -227,7 +234,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the serial network UID.
-	 * 
+	 *
 	 * @return the serial network UID
 	 */
 	public String getSerialNetworkUid() {
@@ -236,7 +243,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the serial network UID.
-	 * 
+	 *
 	 * @param uid
 	 *        the serial network UID
 	 */
@@ -246,7 +253,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the configured {@link EventAdmin}.
-	 * 
+	 *
 	 * @return the event admin service
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -255,7 +262,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set an {@link EventAdmin} to use for posting control provider events.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        The service to use.
 	 */

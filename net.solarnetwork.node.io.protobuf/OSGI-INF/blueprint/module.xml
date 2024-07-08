@@ -60,6 +60,7 @@
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.common.protobuf.ProtobufCompilerService"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 					<property name="propertyFilters">
 						<map>
 							<entry key="uid" value=""/>

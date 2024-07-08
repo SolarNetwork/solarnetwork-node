@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.control.loadshedder
 Automatic-Module-Name: net.solarnetwork.node.control.loadshedder
 Bundle-Description: Service to monitor demand conditions (consumption) and make adjustments \
  to another switch-based control to limit demand to a maximum level.
-Bundle-Version: 3.0.1
+Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -20,8 +20,8 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
- net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[2.3,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",

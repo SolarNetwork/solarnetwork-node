@@ -53,7 +53,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -172,7 +172,9 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
 							String key) {
-						return Collections.singletonList(new BasicTextFieldSettingSpecifier(key, ""));
+						return Collections.singletonList(new BasicTextFieldSettingSpecifier(key, null,
+								false,
+								"(&(objectClass=net.solarnetwork.service.DatumFilterService)(role=user))"));
 					}
 				});
 		result.add(uidsGroup);

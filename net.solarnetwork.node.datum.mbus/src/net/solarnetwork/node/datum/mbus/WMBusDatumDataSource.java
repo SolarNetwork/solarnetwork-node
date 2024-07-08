@@ -1,21 +1,21 @@
 /* ==================================================================
  * WMBusDatumDataSource.java - 06/07/2020 13:09:29 pm
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -48,16 +48,16 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Datum data source for wireless M-Bus devices.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * The setting UID used by this service.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String SETTING_UID = "net.solarnetwork.node.datum.mbus.wireless";
@@ -72,9 +72,16 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		super();
 	}
 
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
+
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public MBusPropertyConfig[] getPropConfigs() {
@@ -83,7 +90,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -93,7 +100,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -103,12 +110,12 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link MBusPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
@@ -119,7 +126,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the source ID to use for the returned datum.
-	 * 
+	 *
 	 * @return the source ID
 	 * @since 2.1
 	 */
@@ -129,7 +136,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal wmbus}
 	 */

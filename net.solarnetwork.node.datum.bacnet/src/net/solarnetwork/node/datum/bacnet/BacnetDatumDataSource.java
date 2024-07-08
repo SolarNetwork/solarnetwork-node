@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetDatumDataSource.java - 3/11/2022 2:34:46 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -65,9 +65,9 @@ import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Generic BACnet device datum data source.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class BacnetDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver, BacnetCovHandler {
@@ -101,7 +101,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param bacnetNetwork
 	 *        the network to use
 	 */
@@ -141,7 +141,8 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = basicIdentifiableSettings();
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
-		results.add(new BasicTextFieldSettingSpecifier("bacnetNetworkUid", null));
+		results.add(new BasicTextFieldSettingSpecifier("bacnetNetworkUid", null, false,
+				"(objectClass=net.solarnetwork.node.io.bacnet.BacnetNetwork)"));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 
@@ -176,7 +177,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the BACNet connection, if available.
-	 * 
+	 *
 	 * @return the connection, or {@literal null} it not available
 	 */
 	protected synchronized BacnetConnection connection() {
@@ -323,6 +324,13 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		return null;
 	}
 
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
+
 	private NodeDatum createDatum(final String sourceId,
 			Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> refs,
 			Map<BacnetDeviceObjectPropertyRef, ?> values) {
@@ -377,7 +385,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the BacnetNetwork service UID filter value.
-	 * 
+	 *
 	 * @return the BacnetNetwork UID filter value, if {@code bacnetNetwork} also
 	 *         implements {@link FilterableService}
 	 */
@@ -391,7 +399,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the BacnetNetwork service UID filter value.
-	 * 
+	 *
 	 * @param uid
 	 *        the BacnetNetwork UID filter value to set, if
 	 *        {@code bacnetNetwork} also implements {@link FilterableService}
@@ -402,7 +410,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the source ID to use for returned datum.
-	 * 
+	 *
 	 * @return the source ID to use
 	 */
 	public String getSourceId() {
@@ -411,7 +419,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
@@ -421,7 +429,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -430,7 +438,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -440,7 +448,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the connection check frequency.
-	 * 
+	 *
 	 * @return the check frequency, in milliseconds; defaults to
 	 *         {@link #DEFAULT_CONNECTION_CHECK_FREQUENCY}
 	 */
@@ -450,13 +458,13 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the connection check frequency.
-	 * 
+	 *
 	 * <p>
 	 * A frequency at which to check that the CAN bus connection is still valid,
 	 * or {@literal 0} to disable. Requires the
 	 * {@link #setTaskScheduler(TaskScheduler)} to have been configured.
 	 * </p>
-	 * 
+	 *
 	 * @param connectionCheckFrequency
 	 *        the frequency to check for a valid connection, in milliseconds
 	 */
@@ -466,7 +474,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the reconnect delay.
-	 * 
+	 *
 	 * @return the delay, in milliseconds
 	 */
 	public long getReconnectDelay() {
@@ -475,7 +483,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the reconnect delay.
-	 * 
+	 *
 	 * @param reconnectDelay
 	 *        the delay to set, in milliseconds
 	 */
@@ -485,7 +493,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the device configurations.
-	 * 
+	 *
 	 * @return the device configurations
 	 */
 	public BacnetDeviceConfig[] getDeviceConfigs() {
@@ -494,7 +502,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the device configurations to use.
-	 * 
+	 *
 	 * @param deviceConfigs
 	 *        the configs to use
 	 */
@@ -504,7 +512,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the number of configured {@code deviceConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code deviceConfigs} elements
 	 */
 	public int getDeviceConfigsCount() {
@@ -514,12 +522,12 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Adjust the number of configured {@code deviceConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link BacnetDeviceConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        the desired number of {@code deviceConfigs} elements
 	 */
@@ -530,7 +538,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the datum mode.
-	 * 
+	 *
 	 * @return the datum mode, never {@literal null}; defaults to
 	 *         {@link #DEFAULT_DATUM_MODE}
 	 */
@@ -540,7 +548,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the datum mode.
-	 * 
+	 *
 	 * @param datumMode
 	 *        the datum mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_DATUM_MODE} will be used
@@ -554,7 +562,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Get the datum mode as a string value.
-	 * 
+	 *
 	 * @return the datum mode value
 	 */
 	public String getDatumModeValue() {
@@ -563,7 +571,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/**
 	 * Set the datum mode as a string value.
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */

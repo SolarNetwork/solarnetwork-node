@@ -1,21 +1,21 @@
 /* ==================================================================
  * LoadShedder.java - 24/06/2015 6:55:15 am
- * 
+ *
  * Copyright 2007-2015 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -64,9 +64,9 @@ import net.solarnetwork.support.PrefixedMessageSource;
  * Service to monitor demand (consumption) from a
  * {@link InstructionHandler#TOPIC_SHED_LOAD} instructions to a specific control
  * to limit power draw to below a maximum threshold.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class LoadShedder implements SettingSpecifierProvider, JobService {
 
@@ -87,7 +87,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionExecutionService
 	 *        the execution service
 	 * @throws IllegalArgumentException
@@ -105,7 +105,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	/**
 	 * Evaluate current demand (consumption) and attempt to shed load as
 	 * necessary.
-	 * 
+	 *
 	 * @return the resulting state
 	 */
 	public synchronized InstructionState evaluatePowerLoad() {
@@ -163,6 +163,11 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		evaluatePowerLoad();
 	}
 
+	/**
+	 * Get the strategy.
+	 *
+	 * @return the strategy
+	 */
 	public LoadShedderStrategy getStrategy() {
 		if ( shedStrategy == null ) {
 			return null;
@@ -255,10 +260,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			results.add(new BasicTitleSettingSpecifier("info.control", infoMessage, true));
 		}
 
-		results.add(
-				new BasicTextFieldSettingSpecifier("shedStrategy.propertyFilters['uid']", "Default"));
+		results.add(new BasicTextFieldSettingSpecifier("shedStrategy.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.control.loadshedder.LoadShedderStrategy)"));
 		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['uid']",
-				"Main"));
+				null, false, "(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 
 		LoadShedderStrategy strategy = getStrategy();
 		if ( strategy instanceof SettingSpecifierProvider ) {
@@ -351,29 +356,57 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	// Accessors
 
+	/**
+	 * Get the consumption data source.
+	 *
+	 * @return the data source
+	 */
 	public OptionalService<DatumDataSource> getConsumptionDataSource() {
 		return consumptionDataSource;
 	}
 
+	/**
+	 * Set the consumption data source.
+	 *
+	 * @param consumptionDataSource
+	 *        the data source to set
+	 */
 	public void setConsumptionDataSource(OptionalService<DatumDataSource> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
 	}
 
+	/**
+	 * Set the message source.
+	 *
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Get the configurations.
+	 *
+	 * @return the configurations
+	 */
 	public List<LoadShedControlConfig> getConfigs() {
 		return configs;
 	}
 
+	/**
+	 * Set the configurations.
+	 *
+	 * @param configs
+	 *        the configurations to set
+	 */
 	public void setConfigs(List<LoadShedControlConfig> configs) {
 		this.configs = configs;
 	}
 
 	/**
 	 * Get the number of configured {@code configs} elements.
-	 * 
+	 *
 	 * @return The number of {@code configs} elements.
 	 */
 	public int getConfigsCount() {
@@ -383,7 +416,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	/**
 	 * Adjust the number of configured {@code configs} elements.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code configs} elements.
 	 */
@@ -407,14 +440,31 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		}
 	}
 
+	/**
+	 * Set the consumption sample limit.
+	 *
+	 * @param consumptionSampleLimit
+	 *        the limit to set
+	 */
 	public void setConsumptionSampleLimit(int consumptionSampleLimit) {
 		this.consumptionSampleLimit = consumptionSampleLimit;
 	}
 
+	/**
+	 * Get the shed strategy.
+	 *
+	 * @return the strategy
+	 */
 	public OptionalService<LoadShedderStrategy> getShedStrategy() {
 		return shedStrategy;
 	}
 
+	/**
+	 * Set the shed strategy.
+	 *
+	 * @param shedStrategy
+	 *        the strategy to set
+	 */
 	public void setShedStrategy(OptionalService<LoadShedderStrategy> shedStrategy) {
 		this.shedStrategy = shedStrategy;
 	}

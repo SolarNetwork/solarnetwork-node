@@ -1,21 +1,21 @@
 /* ==================================================================
  * RFXCOMTransceiver.java - Jul 9, 2012 12:05:16 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,9 +47,9 @@ import net.solarnetwork.util.ByteList;
 /**
  * {@link SettingSpecifierProvider} for RFXCOM transceiver, allowing for the
  * configuration of the transceiver via settings.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class RFXCOMTransceiver extends BasicIdentifiable implements RFXCOM, SettingSpecifierProvider {
 
@@ -129,8 +129,8 @@ public class RFXCOMTransceiver extends BasicIdentifiable implements RFXCOM, Sett
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(20);
 		results.addAll(basicIdentifiableSettings());
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
-				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']", null,
+				false, "(objectClass=net.solarnetwork.node.io.serial.SerialNetwork)"));
 
 		if ( status == null ) {
 			try {
@@ -189,7 +189,7 @@ public class RFXCOMTransceiver extends BasicIdentifiable implements RFXCOM, Sett
 
 	/**
 	 * Update the settings of this class.
-	 * 
+	 *
 	 * <p>
 	 * This method is designed to work with Spring's bean-managed OSGi
 	 * Configuration Admin service, rather than the container-managed approach
@@ -198,7 +198,7 @@ public class RFXCOMTransceiver extends BasicIdentifiable implements RFXCOM, Sett
 	 * all be set via a single call. Thus the supported properties of this
 	 * method are those properties directly available on this class itself, and
 	 * those available on the {@link SetModeMessage} class.
-	 * 
+	 *
 	 * @param properties
 	 *        the properties to change
 	 */
@@ -335,7 +335,7 @@ public class RFXCOMTransceiver extends BasicIdentifiable implements RFXCOM, Sett
 
 	/**
 	 * Get the serial network.
-	 * 
+	 *
 	 * @return the serial network
 	 */
 	public OptionalFilterableService<SerialNetwork> getSerialNetwork() {
@@ -344,7 +344,7 @@ public class RFXCOMTransceiver extends BasicIdentifiable implements RFXCOM, Sett
 
 	/**
 	 * Set the serial network.
-	 * 
+	 *
 	 * @param serialNetwork
 	 *        the serial network
 	 */

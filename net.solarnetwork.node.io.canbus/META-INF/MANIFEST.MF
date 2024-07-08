@@ -3,16 +3,16 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Communication Support
 Bundle-Description: Communication support for the CAN bus protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.canbus
-Bundle-Version: 3.0.1
+Bundle-Version: 3.1.0
 Automatic-Module-Name: net.solarnetwork.node.io.canbus
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
  net.solarnetwork.node.io.canbus;version="2.0.0",
  net.solarnetwork.node.io.canbus.kcd;version="1.2.0",
  net.solarnetwork.node.io.canbus.schema;version="1.2.0",
- net.solarnetwork.node.io.canbus.socketcand;version="2.1.0",
+ net.solarnetwork.node.io.canbus.socketcand;version="2.1.1",
  net.solarnetwork.node.io.canbus.socketcand.msg;version="1.0.0",
- net.solarnetwork.node.io.canbus.support;version="2.1.0",
+ net.solarnetwork.node.io.canbus.support;version="2.2.0",
  net.solarnetwork.node.io.canbus.util;version="1.0.0"
 Import-Package: 
  com.sun.xml.bind.v2;resolution:=optional,
@@ -47,8 +47,8 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.2,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
- net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[2.3,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",

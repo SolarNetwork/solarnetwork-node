@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.eclipse.org/gemini/blueprint/schema/blueprint"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+	<!-- Service references -->
+
+	<bean id="taskExecutor" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.core.task.AsyncTaskExecutor"/>
+		<property name="serviceFilter" value="(function=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>	
+		
+	<!-- Published Services -->
+	
+	<service interface="net.solarnetwork.node.service.PlatformPackageService" ranking="5" ref="mockPlatformPackageService"/>
+
+	<bean id="mockPlatformPackageService" class="net.solarnetwork.node.setup.mockpkg.MockPlatformPackageService"
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<property name="taskExecutor" ref="taskExecutor"/>
+	</bean>
+
+</blueprint>
