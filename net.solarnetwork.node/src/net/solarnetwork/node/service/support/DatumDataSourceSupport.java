@@ -25,6 +25,7 @@ package net.solarnetwork.node.service.support;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.service.OptionalService.service;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -57,7 +58,7 @@ import net.solarnetwork.util.ArrayUtils;
  * extend.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -103,12 +104,27 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	}
 
 	/**
+	 * Get the collection of source IDs produced by this datum data source.
+	 *
+	 * <p>
+	 * This is a default implementation meant to be overridden is extending
+	 * classes.
+	 * </p>
+	 *
+	 * @return the collection of published source IDs, never {@literal null}
+	 * @since 1.2
+	 */
+	public Collection<String> publishedSourceIds() {
+		return Collections.emptySet();
+	}
+
+	/**
 	 * Clear the source metadata cache.
-	 * 
+	 *
 	 * <p>
 	 * This is designed to support testing primarily.
 	 * </p>
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final void clearSourceMetadataCache() {
@@ -211,7 +227,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Support the {@code DeviceInfoProvider} publish setting.
-	 * 
+	 *
 	 * @return the {@link #isPublishDeviceInfoMetadata()} value
 	 */
 	public boolean canPublishDeviceInfo() {
@@ -357,7 +373,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Save the {@link #getMetadata()} data as datum source metadata.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to save the metadata on
 	 * @since 1.1
@@ -568,7 +584,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the datum service.
-	 * 
+	 *
 	 * @return the datum service
 	 */
 	public OptionalService<DatumService> getDatumService() {
@@ -577,7 +593,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the datum service.
-	 * 
+	 *
 	 * @param datumService
 	 *        the datum service
 	 */
