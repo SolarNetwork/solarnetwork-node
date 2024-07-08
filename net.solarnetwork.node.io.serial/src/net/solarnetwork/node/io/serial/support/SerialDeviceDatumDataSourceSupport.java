@@ -28,6 +28,7 @@ import static net.solarnetwork.service.FilterableService.setFilterProp;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.FilterableService;
@@ -55,11 +57,11 @@ import net.solarnetwork.util.StringUtils;
  * @param <S>
  *        the sample type
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.3
  */
-public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
-		extends DatumDataSourceSupport {
+public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum> extends DatumDataSourceSupport
+		implements DatumSourceIdProvider {
 
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
@@ -103,6 +105,13 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	public SerialDeviceDatumDataSourceSupport(AtomicReference<S> sample) {
 		super();
 		this.sample = sample;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	/**
