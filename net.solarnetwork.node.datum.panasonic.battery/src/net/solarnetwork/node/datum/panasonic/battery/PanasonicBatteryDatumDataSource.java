@@ -1,21 +1,21 @@
 /* ==================================================================
  * PanasonicBatteryDatumDataSource.java - 16/02/2016 8:19:50 pm
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.panasonic.battery;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
@@ -32,6 +34,7 @@ import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryAPISupport;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -39,18 +42,32 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * {@link DatumDataSource} implementation for {@link EnergyStorageDatum} with
  * the Panasonic Battery API.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
-		implements DatumDataSource, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider, DatumSourceIdProvider {
 
 	private String email;
 	private String deviceID;
 	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
-	private String sourceId = "Battery";
+	private String sourceId;
+
+	/**
+	 * Constructor.
+	 */
+	public PanasonicBatteryDatumDataSource() {
+		super();
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
 
 	private synchronized BatteryData getCurrentSample() {
 		final String user = getEmail();
@@ -179,7 +196,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -188,7 +205,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -198,7 +215,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 
 	/**
 	 * Get the email address used with the Battery API.
-	 * 
+	 *
 	 * @return The configured email.
 	 */
 	public String getEmail() {
@@ -208,7 +225,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 	/**
 	 * Set the email address to use with the Battery API. This must be the same
 	 * as the email registered with Panasonic.
-	 * 
+	 *
 	 * @param email
 	 *        The email address to use.
 	 */
@@ -220,7 +237,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 	 * Get the battery device ID to use with the Battery API. Either this or
 	 * {@link #getEmail()} must be configured, with this value being used in
 	 * preference to the other.
-	 * 
+	 *
 	 * @return The configured battery device ID.
 	 */
 	public String getDeviceID() {
@@ -229,7 +246,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 
 	/**
 	 * Set the battery device ID to use with the Battery API.
-	 * 
+	 *
 	 * @param deviceID
 	 *        The battery device ID to use.
 	 */
@@ -239,7 +256,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 
 	/**
 	 * Get the source ID to assign to generated datum.
-	 * 
+	 *
 	 * @return The configured source ID.
 	 */
 	public String getSourceId() {
@@ -248,7 +265,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 
 	/**
 	 * Set the source ID to assign to generated datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        The source ID to use.
 	 */
