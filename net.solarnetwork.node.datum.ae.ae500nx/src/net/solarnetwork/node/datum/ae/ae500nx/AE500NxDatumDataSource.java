@@ -1,21 +1,21 @@
 /* ==================================================================
  * AE500NxDatumDataSource.java - 23/04/2020 2:36:49 pm
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,9 +47,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for the AE 500NX series inverter.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE500NxData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -65,13 +65,20 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
 	public AE500NxDatumDataSource(AE500NxData sample) {
 		super(sample);
 		setDisplayName("Advanced Energy 500NX Meter");
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -189,7 +196,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 
 	/**
 	 * Get the source ID to use for returned datum.
-	 * 
+	 *
 	 * @return the source ID
 	 * @since 2.1
 	 */
@@ -199,7 +206,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
