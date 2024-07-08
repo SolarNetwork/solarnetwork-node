@@ -1,21 +1,21 @@
 /* ==================================================================
  * PM5100DatumDataSource.java - 15/05/2018 7:02:47 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -52,16 +52,16 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the PM5100 series meter.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * The {@code sampleCacheMs} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000;
@@ -82,13 +82,20 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
 	public PM5100DatumDataSource(PM5100Data sample) {
 		super();
 		this.sample = sample;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	private PM5100Data getCurrentSample() {
@@ -153,7 +160,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the sample.
-	 * 
+	 *
 	 * @return the sample
 	 */
 	public PM5100Data getSample() {
@@ -188,7 +195,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Test if the sample data has expired.
-	 * 
+	 *
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired() {
@@ -258,7 +265,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -267,7 +274,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -277,7 +284,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the source ID to use for returned datum.
-	 * 
+	 *
 	 * @return the source ID
 	 * @since 2.1
 	 */
@@ -287,7 +294,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
@@ -297,7 +304,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the "backwards" current direction flag.
-	 * 
+	 *
 	 * @return {@literal true} to swap energy delivered and received values
 	 * @since 2.1
 	 */
@@ -307,7 +314,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Toggle the "backwards" current direction flag.
-	 * 
+	 *
 	 * @param backwards
 	 *        {@literal true} to swap energy delivered and received values
 	 */
@@ -318,7 +325,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Get the inclusion toggle of phase measurement properties in collected
 	 * datum.
-	 * 
+	 *
 	 * @return {@literal true} to collect phase measurements
 	 * @since 2.1
 	 */
@@ -328,7 +335,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Toggle the inclusion of phase measurement properties in collected datum.
-	 * 
+	 *
 	 * @param includePhaseMeasurements
 	 *        {@literal true} to collect phase measurements
 	 */
