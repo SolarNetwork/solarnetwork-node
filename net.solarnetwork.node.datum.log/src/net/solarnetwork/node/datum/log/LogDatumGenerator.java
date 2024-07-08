@@ -1,21 +1,21 @@
 /* ==================================================================
  * LogDatumGenerator.java - 21/10/2022 10:09:35 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,6 +27,8 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,7 @@ import org.osgi.service.event.EventHandler;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -44,12 +47,12 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Generate datum from log events.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class LogDatumGenerator extends BaseIdentifiable
-		implements EventHandler, SettingSpecifierProvider {
+		implements EventHandler, SettingSpecifierProvider, DatumSourceIdProvider {
 
 	/** The EventAdmin topic for log events. */
 	public static final String EVENT_ADMIN_LOG_TOPIC = "net/solarnetwork/Log";
@@ -65,7 +68,7 @@ public class LogDatumGenerator extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the datum queue
 	 */
@@ -73,6 +76,13 @@ public class LogDatumGenerator extends BaseIdentifiable
 		super();
 		this.datumQueue = requireNonNullArgument(datumQueue, "datumQueue");
 		setDisplayName("Log Datum Generator");
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -142,7 +152,7 @@ public class LogDatumGenerator extends BaseIdentifiable
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -151,7 +161,7 @@ public class LogDatumGenerator extends BaseIdentifiable
 
 	/**
 	 * Set the source ID.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to set
 	 */
