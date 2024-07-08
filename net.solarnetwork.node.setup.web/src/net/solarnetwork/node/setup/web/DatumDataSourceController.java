@@ -218,8 +218,9 @@ public class DatumDataSourceController {
 				}
 
 			} else {
-				info = new BasicSettingSpecifierProviderInfo(null, dsp.getDisplayName(), dsp.getUid(),
-						dsp.getGroupUid());
+				info = new BasicSettingSpecifierProviderInfo(null,
+						dsp.getDisplayName() != null ? dsp.getDisplayName() : dsp.getClass().getName(),
+						dsp.getUid(), dsp.getGroupUid());
 			}
 			List<String> sourceIds = new ArrayList<>(dsp.publishedSourceIds());
 			sourceIds.sort(String::compareToIgnoreCase);
