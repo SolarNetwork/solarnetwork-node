@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +61,7 @@ import net.solarnetwork.util.NumberUtils;
  * Datum data source for GPS data collected from a {@link GpsdClientConnection}.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class GpsDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
@@ -103,6 +104,13 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 			GpsdClientStatus status = conn.getClientStatus();
 			handleStatusChange(conn, status);
 		}
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
