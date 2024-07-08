@@ -1,21 +1,21 @@
 /* ==================================================================
  * HealthCheckDatumSource.java - 14/12/2021 4:51:05 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,9 +54,9 @@ import net.solarnetwork.settings.support.SettingUtils;
 
 /**
  * Datum source for health check information.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class HealthCheckDatumSource extends DatumDataSourceSupport
 		implements MultiDatumDataSource, SettingSpecifierProvider {
@@ -91,7 +91,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param systemHealthService
 	 *        the service to use
 	 * @throws IllegalArgumentException
@@ -100,6 +100,13 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	public HealthCheckDatumSource(SystemHealthService systemHealthService) {
 		super();
 		this.systemHealthService = requireNonNullArgument(systemHealthService, "systemHealthService");
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -291,7 +298,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the ping test ID expressions to filter on.
-	 * 
+	 *
 	 * @return the patterns to limit reported ping test information on, or
 	 *         {@literal null} for all tests
 	 */
@@ -301,12 +308,12 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the ping test ID expressions to filter on.
-	 * 
+	 *
 	 * <p>
 	 * These expressions are treated as regular expressions, in a
 	 * case-insensitive manner matching any part of a ping test ID value.
 	 * </p>
-	 * 
+	 *
 	 * @param pingTestIdFilters
 	 *        the patterns to limit reported ping test information on, or
 	 *        {@literal null} for all tests
@@ -317,7 +324,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the number of configured {@code pingTestIdFilters} elements.
-	 * 
+	 *
 	 * @return The number of {@code pingTestIdFilters} elements.
 	 */
 	public int getPingTestIdFiltersCount() {
@@ -328,7 +335,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	/**
 	 * Adjust the number of configured {@code pingTestIdFilters} elements. Any
 	 * newly added element values will be {@literal null}.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code pingTestIdFilters} elements.
 	 */
@@ -349,7 +356,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get a single source ID to publish datum under.
-	 * 
+	 *
 	 * @return the sourceId to use, or {@literal null} to publish individual
 	 *         sources per ping test
 	 */
@@ -359,7 +366,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Set a single source ID to publish datum under.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the sourceId to use, or {@literal null} to publish individual
 	 *        sources per ping test
@@ -370,7 +377,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the publish mode.
-	 * 
+	 *
 	 * @return the mode, never {@literal null}
 	 */
 	public PublishMode getPublishMode() {
@@ -379,7 +386,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the publish mode.
-	 * 
+	 *
 	 * @param publishMode
 	 *        the mode to publish datum; if {@literal null} then
 	 *        {@link #DEFAULT_PUBLISH_MODE} will be set instead
@@ -390,7 +397,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the publish mode code value.
-	 * 
+	 *
 	 * @return the publish mode code
 	 */
 	public int getPublishModeCode() {
@@ -399,7 +406,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the publish mode as a code value.
-	 * 
+	 *
 	 * @param code
 	 *        the publish mode code; if unsupported then
 	 *        {@link #DEFAULT_PUBLISH_MODE} will be set instead
@@ -410,7 +417,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the unchanged publish maximum seconds.
-	 * 
+	 *
 	 * @return the maximum seconds to refrain from publishing an unchanged
 	 *         status value, or {@literal 0} for no limit
 	 */
@@ -420,7 +427,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the unchanged publish maximum seconds.
-	 * 
+	 *
 	 * @param unchangedPublishMaxSeconds
 	 *        the maximum seconds to refrain from publishing an unchanged status
 	 *        value, or {@literal 0} for no limit
