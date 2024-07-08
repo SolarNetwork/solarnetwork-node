@@ -1,21 +1,21 @@
 /* ==================================================================
  * MBusDatumDataSource.java - 13/08/2020 12:41:24 pm
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -48,23 +48,30 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for M-Bus devices.
- * 
+ *
  * @author alex
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * The setting UID used by this service.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String SETTING_UID = "net.solarnetwork.node.datum.mbus";
 
 	private String sourceId;
 	private MBusPropertyConfig[] propConfigs;
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
 
 	@Override
 	public NodeDatum readCurrentDatum() {
@@ -234,7 +241,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public MBusPropertyConfig[] getPropConfigs() {
@@ -243,7 +250,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -253,7 +260,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -263,12 +270,12 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link MBusPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
@@ -284,7 +291,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal wmbus}
 	 */
