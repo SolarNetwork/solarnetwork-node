@@ -1,21 +1,21 @@
 /* ==================================================================
  * TempestUdpDatumDataSource.java - 4/11/2023 3:31:31 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ScheduledFuture;
 import org.springframework.scheduling.TaskScheduler;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -79,9 +80,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * WeatherFlow Tempest datum source reading UDP messages.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements MultiDatumDataSource,
 		SettingSpecifierProvider, ServiceLifecycleObserver, SettingsChangeObserver {
@@ -96,7 +97,6 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 	private int port = DEFAULT_PORT;
 	private String sourceId;
 
-	private int sensorStatus = 0;
 	private DeviceInfo deviceInfo;
 	private DeviceInfo hubDeviceInfo;
 	private ScheduledFuture<?> startupFuture;
@@ -209,6 +209,21 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 		}
 	}
 
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		final Set<String> result = new TreeSet<>();
+		result.add(sourceId);
+		result.add(sourceId + LIGHTNING_STRIKE_EVENT_SOURCE_ID_SUFFIX);
+		result.add(sourceId + PRECIP_EVENT_SOURCE_ID_SUFFIX);
+		result.add(sourceId + RAPID_WIND_EVENT_SOURCE_ID_SUFFIX);
+		result.add(sourceId + STATUS_EVENT_SOURCE_ID_SUFFIX);
+		return result;
+	}
+
 	private synchronized void start() {
 		log.info("Starting Tempest UDP listener for source [{}]", sourceId);
 		startupFuture = null;
@@ -296,7 +311,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 	/**
 	 * Process a Tempest JSON message, generating datum as appropriate.
-	 * 
+	 *
 	 * @param json
 	 *        the JSON to process
 	 * @throws IOException
@@ -881,7 +896,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 	/**
 	 * Get the port to listen on.
-	 * 
+	 *
 	 * @return the port; defaults to {@link #DEFAULT_PORT}
 	 */
 	public int getPort() {
@@ -890,7 +905,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 	/**
 	 * Set the port to listen on.
-	 * 
+	 *
 	 * @param port
 	 *        the port to set
 	 */
@@ -900,7 +915,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 	/**
 	 * Get a single source ID to publish datum under.
-	 * 
+	 *
 	 * @return the sourceId to use, or {@literal null} to publish individual
 	 *         sources per ping test
 	 */
@@ -910,7 +925,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 	/**
 	 * Set a single source ID to publish datum under.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the sourceId to use, or {@literal null} to publish individual
 	 *        sources per ping test
