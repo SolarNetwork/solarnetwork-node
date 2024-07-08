@@ -81,10 +81,14 @@ $(document).ready(function datumSourcesManagement() {
 		itemEl.find('.datum-source-details-link').on('click', showDatumDetails);
 		
 		let link = SolarNode.context.path('/a/settings');
-		if ( ds.type === 'DatumFilterService' ) {
-			link += '/filters/manage?uid=';
+		if ( ds.identifier ) {
+			if ( ds.type === 'DatumFilterService' ) {
+				link += '/filters/manage?uid=';
+			} else {
+				link += '/manage?uid=';
+			}
 		} else {
-			link += '/manage?uid=';
+			link += '/services#'
 		}
 		link += encodeURIComponent(ds.info.settingUid);
 		if ( ds.identifier ) {
