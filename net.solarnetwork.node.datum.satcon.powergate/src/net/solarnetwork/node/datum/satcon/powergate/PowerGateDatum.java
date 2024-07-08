@@ -41,6 +41,7 @@ public class PowerGateDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = -8054395654117410804L;
 
+	/** The data. */
 	private final PowerGateInverterDataAccessor sample;
 
 	/**

@@ -34,7 +34,6 @@ import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryAPISupport;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 import net.solarnetwork.node.service.DatumDataSource;
-import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -47,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @version 2.1
  */
 public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
-		implements DatumDataSource, SettingSpecifierProvider, DatumSourceIdProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	private String email;
 	private String deviceID;
