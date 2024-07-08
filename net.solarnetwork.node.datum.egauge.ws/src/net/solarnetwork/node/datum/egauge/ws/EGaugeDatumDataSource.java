@@ -74,6 +74,13 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	private final AtomicReference<CachedResult<AcDcEnergyDatum>> sampleCache = new AtomicReference<>();
 
+	/**
+	 * Constructor.
+	 */
+	public EGaugeDatumDataSource() {
+		super();
+	}
+
 	private AcDcEnergyDatum getCurrentSample() {
 		// First check for a cached sample
 		CachedResult<AcDcEnergyDatum> cache = sampleCache.get();
