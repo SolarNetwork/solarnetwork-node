@@ -25,6 +25,8 @@ package net.solarnetwork.node.datum.sma.webbox;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -44,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for a {@link WebBoxDevice}.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -73,6 +75,13 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	public WebBoxDeviceDataSource(OptionalFilterableService<WebBoxOperations> webBox) {
 		super();
 		this.webBox = webBox;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
