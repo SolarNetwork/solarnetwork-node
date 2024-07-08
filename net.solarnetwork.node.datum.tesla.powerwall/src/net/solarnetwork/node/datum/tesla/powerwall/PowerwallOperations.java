@@ -1,21 +1,21 @@
 /* ==================================================================
  * PowerwallOperations.java - 9/11/2023 6:40:15 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -67,7 +67,7 @@ import net.solarnetwork.service.RemoteServiceException;
 
 /**
  * Access to Powerwall APIs.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -103,7 +103,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param hostName
 	 *        the host name that is required; can include a port after a
 	 *        {@literal :} delimiter
@@ -125,7 +125,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param useTls
 	 *        {@literal true} to use TLS (HTTPS)
 	 * @param hostName
@@ -189,6 +189,11 @@ public class PowerwallOperations implements Closeable {
 		// @formatter:on
 	}
 
+	/**
+	 * Get the status.
+	 *
+	 * @return the status
+	 */
 	public JsonNode status() {
 		URI uri = baseUri().path("/api/status").build().toUri();
 		JsonNode json = getJson(uri);
@@ -196,6 +201,11 @@ public class PowerwallOperations implements Closeable {
 		return json;
 	}
 
+	/**
+	 * Get the meters aggregates.
+	 *
+	 * @return the meters
+	 */
 	public JsonNode metersAggregates() {
 		URI uri = baseUri().path("/api/meters/aggregates").build().toUri();
 		JsonNode json = getJson(uri);
@@ -203,6 +213,11 @@ public class PowerwallOperations implements Closeable {
 		return json;
 	}
 
+	/**
+	 * Get the system status.
+	 *
+	 * @return the status
+	 */
 	public JsonNode systemStatus() {
 		URI uri = baseUri().path("/api/system_status").build().toUri();
 		JsonNode json = getJson(uri);
@@ -210,6 +225,11 @@ public class PowerwallOperations implements Closeable {
 		return json;
 	}
 
+	/**
+	 * Get the system status SOE.
+	 *
+	 * @return the SOE
+	 */
 	public JsonNode systemStatusSoe() {
 		URI uri = baseUri().path("/api/system_status/soe").build().toUri();
 		JsonNode json = getJson(uri);
@@ -247,7 +267,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Read the meter aggregate API and return datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the base source ID to use; the various suffix values configured on
 	 *        this class will be appended
@@ -297,7 +317,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Extract a datum.
-	 * 
+	 *
 	 * @param root
 	 *        the object node to extract from
 	 * @param sourceId
@@ -448,7 +468,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Get the source ID suffix used for battery data.
-	 * 
+	 *
 	 * @return the suffix; default to {@link #DEFAULT_BATTERY_SUFFIX}
 	 */
 	public String getBatterySuffix() {
@@ -457,7 +477,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Set the source ID used for battery data.
-	 * 
+	 *
 	 * @param batterySuffix
 	 *        the suffix to set
 	 */
@@ -467,7 +487,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Get the source ID suffix used for load data.
-	 * 
+	 *
 	 * @return the suffix; default to {@link #DEFAULT_LOAD_SUFFIX}
 	 */
 	public String getLoadSuffix() {
@@ -476,7 +496,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Set the source ID used for load data.
-	 * 
+	 *
 	 * @param loadSuffix
 	 *        the suffix to set
 	 */
@@ -486,7 +506,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Get the source ID suffix used for solar data.
-	 * 
+	 *
 	 * @return the suffix; default to {@link #DEFAULT_SOLAR_SUFFIX}
 	 */
 	public String getSolarSuffix() {
@@ -495,7 +515,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Set the source ID used for solar data.
-	 * 
+	 *
 	 * @param solarSuffix
 	 *        the suffix to set
 	 */
@@ -505,7 +525,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Get the source ID suffix used for site data.
-	 * 
+	 *
 	 * @return the suffix; default to {@link #DEFAULT_SITE_SUFFIX}
 	 */
 	public String getSiteSuffix() {
@@ -514,7 +534,7 @@ public class PowerwallOperations implements Closeable {
 
 	/**
 	 * Set the source ID used for site data.
-	 * 
+	 *
 	 * @param siteSuffix
 	 *        the suffix to set
 	 */

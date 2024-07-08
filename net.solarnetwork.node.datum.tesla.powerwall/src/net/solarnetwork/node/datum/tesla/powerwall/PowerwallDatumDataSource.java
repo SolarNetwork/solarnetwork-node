@@ -1,21 +1,21 @@
 /* ==================================================================
  * PowerwallDatumDataSource.java - 8/11/2023 7:46:12 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,9 +42,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * {@link MultiDatumDataSource} for Tesla Powerwall devices.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PowerwallDatumDataSource extends DatumDataSourceSupport implements MultiDatumDataSource,
 		ServiceLifecycleObserver, SettingsChangeObserver, SettingSpecifierProvider {
@@ -97,6 +97,13 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		closeOperations();
 		this.ops = createOperations();
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -183,7 +190,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the source ID to assign to generated datum.
-	 * 
+	 *
 	 * @return the source ID to use
 	 */
 	public String getSourceId() {
@@ -192,7 +199,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the source ID to assign to generated datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to set
 	 */
@@ -202,7 +209,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the host name of the Powerwall device to connect to.
-	 * 
+	 *
 	 * @return the host name; defaults to {@link #DEFAULT_HOST_NAME}
 	 */
 	public String getHostName() {
@@ -211,7 +218,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the host name of the Powerwall device to connect to.
-	 * 
+	 *
 	 * @param hostName
 	 *        the host name to set; can include a custom port using a colon
 	 *        delimiter
@@ -222,7 +229,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the Powerwall username to use.
-	 * 
+	 *
 	 * @return the username; defaults to {@link #DEFAULT_USERNAME}
 	 */
 	public String getUsername() {
@@ -231,7 +238,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the Powerwall username to use.
-	 * 
+	 *
 	 * @param username
 	 *        the username to set
 	 */
@@ -241,7 +248,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the Powerwall password.
-	 * 
+	 *
 	 * @return the password
 	 */
 	public String getPassword() {
@@ -250,7 +257,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the Powerwall password.
-	 * 
+	 *
 	 * @param password
 	 *        the password to set
 	 */
@@ -260,7 +267,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the connection timeout.
-	 * 
+	 *
 	 * @return the timeout, in milliseconds, or {@literal 0} for no timeout or
 	 *         {@literal -1} for a "system default"; defaults to
 	 *         {@link #DEFAULT_CONNECT_TIMEOUT}
@@ -271,7 +278,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the connection timeout.
-	 * 
+	 *
 	 * @param connectTimeout
 	 *        the timeout to set, in milliseconds, or {@literal 0} for no
 	 *        timeout or {@literal -1} for a "system default"
@@ -282,7 +289,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the socket read timeout.
-	 * 
+	 *
 	 * @return the timeout, in milliseconds, or {@literal 0} for no timeout or
 	 *         {@literal -1} for a "system default"; defaults to
 	 *         {@link #DEFAULT_READ_TIMEOUT}
@@ -293,14 +300,14 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the socket read timeout.
-	 * 
+	 *
 	 * <p>
 	 * This timeout defines the socket timeout ({@code SO_TIMEOUT}) in
 	 * milliseconds, which is the timeout for waiting for data or, put
 	 * differently, a maximum period inactivity between two consecutive data
 	 * packets).
 	 * </p>
-	 * 
+	 *
 	 * @param readTimeout
 	 *        the timeout to set, in milliseconds, or {@literal 0} for no
 	 *        timeout or {@literal -1} for a "system default"
@@ -311,7 +318,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Get the connection request timeout.
-	 * 
+	 *
 	 * @return the timeout, in milliseconds, or {@literal 0} for no timeout or
 	 *         {@literal -1} for a "system default"; defaults to
 	 *         {@link #DEFAULT_CONNECTION_REQUEST_TIMEOUT}
@@ -322,12 +329,12 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	/**
 	 * Set the connection request timeout.
-	 * 
+	 *
 	 * <p>
 	 * This timeout is used when requesting a connection from the connection
 	 * manager.
 	 * </p>
-	 * 
+	 *
 	 * @param connectionRequestTimeout
 	 *        the timeout to set, in milliseconds, or {@literal 0} for no
 	 *        timeout or {@literal -1} for a "system default"
