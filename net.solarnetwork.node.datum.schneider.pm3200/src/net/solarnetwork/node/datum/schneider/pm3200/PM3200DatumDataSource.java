@@ -1,21 +1,21 @@
 /* ==================================================================
  * PM3200DatumDataSource.java - 1/03/2014 8:42:02 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,9 +25,12 @@ package net.solarnetwork.node.datum.schneider.pm3200;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -45,13 +48,14 @@ import net.solarnetwork.util.StringUtils;
 /**
  * DatumDataSource for GeneralNodeACEnergyDatum with the Schneider Electric
  * PM3200 series kWh meter.
- * 
+ *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM3200Data>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
+	/** The main source ID. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
 	private Map<AcPhase, String> sourceMapping = getDefaulSourceMapping();
@@ -60,7 +64,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	/**
 	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
 	 * source to the value {@code Main}.
-	 * 
+	 *
 	 * @return mapping
 	 */
 	public static Map<AcPhase, String> getDefaulSourceMapping() {
@@ -78,12 +82,25 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
 	public PM3200DatumDataSource(PM3200Data sample) {
 		super(sample);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final Map<AcPhase, String> mapping = getSourceMapping();
+		if ( mapping == null || mapping.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		final Set<String> result = new TreeSet<>();
+		for ( String sourceId : mapping.values() ) {
+			result.add(resolvePlaceholders(sourceId));
+		}
+		return result;
 	}
 
 	@Override
@@ -225,30 +242,41 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		return results;
 	}
 
+	/**
+	 * Get the source ID mapping.
+	 *
+	 * @return the mapping
+	 */
 	public Map<AcPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
+	/**
+	 * Set the source ID mapping.
+	 *
+	 * @param sourceMapping
+	 *        the mapping to set
+	 */
 	public void setSourceMapping(Map<AcPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 
 	/**
 	 * Set a {@code sourceMapping} Map via an encoded String value.
-	 * 
+	 *
 	 * <p>
 	 * The format of the {@code mapping} String should be:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * key=val[,key=val,...]
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Whitespace is permitted around all delimiters, and will be stripped from
 	 * the keys and values.
 	 * </p>
-	 * 
+	 *
 	 * @param mapping
 	 *        the encoding mapping
 	 * @see #getSourceMappingValue()
@@ -274,15 +302,15 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	/**
 	 * Get a delimited string representation of the {@link #getSourceMapping()}
 	 * map.
-	 * 
+	 *
 	 * <p>
 	 * The format of the {@code mapping} String should be:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * key=val[,key=val,...]
 	 * </pre>
-	 * 
+	 *
 	 * @return the encoded mapping
 	 * @see #setSourceMappingValue(String)
 	 */
@@ -292,7 +320,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 
 	/**
 	 * Get a source ID value for a given measurement kind.
-	 * 
+	 *
 	 * @param kind
 	 *        the measurement kind
 	 * @return the source ID value, or {@literal null} if not available
@@ -301,25 +329,49 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
+	/**
+	 * Test if the {@code Total} phase should be captured.
+	 *
+	 * @return {@literal true} if the {@code sourceMapping} contains a
+	 *         {@code Total} key
+	 */
 	public boolean isCaptureTotal() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.Total));
 	}
 
+	/**
+	 * Test if the {@code PhaseA} phase should be captured.
+	 *
+	 * @return {@literal true} if the {@code sourceMapping} contains a
+	 *         {@code PhaseA} key
+	 */
 	public boolean isCapturePhaseA() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseA));
 	}
 
+	/**
+	 * Test if the {@code PhaseB} phase should be captured.
+	 *
+	 * @return {@literal true} if the {@code sourceMapping} contains a
+	 *         {@code PhaseB} key
+	 */
 	public boolean isCapturePhaseB() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseB));
 	}
 
+	/**
+	 * Test if the {@code PhaseC} phase should be captured.
+	 *
+	 * @return {@literal true} if the {@code sourceMapping} contains a
+	 *         {@code PhaseC} key
+	 */
 	public boolean isCapturePhaseC() {
 		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseC));
 	}
 
 	/**
 	 * Get the "backwards" current direction flag.
-	 * 
+	 *
 	 * @return the backwards flag
 	 * @since 2.0
 	 */
@@ -329,7 +381,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 
 	/**
 	 * Toggle the "backwards" current direction flag.
-	 * 
+	 *
 	 * @param backwards
 	 *        {@literal true} to swap energy delivered and received values
 	 * @since 2.0
