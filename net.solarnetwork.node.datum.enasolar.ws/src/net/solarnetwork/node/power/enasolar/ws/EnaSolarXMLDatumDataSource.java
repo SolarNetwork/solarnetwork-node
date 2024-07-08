@@ -1,21 +1,21 @@
 /* ==================================================================
  * EnaSolarXMLDatumDataSource.java - Oct 2, 2011 8:50:13 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,6 +30,8 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,11 +55,11 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Web service based support for EnaSolar inverters.
- * 
+ *
  * This service can read from two different XML services provided by EnaSolar
  * inverters. First is the <b>deviceinfo.xml</b> form. This expects to access a
  * URL that returns XML in the following form:
- * 
+ *
  * <pre>
  * &lt;info time="16180F57"&gt;
  *  &lt;data key="vendor" value="EnaSolar" /&gt;
@@ -70,10 +72,10 @@ import net.solarnetwork.util.StringUtils;
  *  &lt;data key="decaWattHoursTotal" value="0000167A" /&gt;
  * &lt;/info&gt;
  * </pre>
- * 
+ *
  * The second is the <b>data.xml</b> and <b>meters.xml</b> form. The first URL
  * should return XML in the following form:
- * 
+ *
  * <pre>
  * &lt;response&gt;
  *   &lt;EnergyToday&gt;0000&lt;/EnergyToday&gt;
@@ -86,9 +88,9 @@ import net.solarnetwork.util.StringUtils;
  *   &lt;DaysProducing&gt;03F5&lt;/DaysProducing&gt;
  * &lt;/response&gt;
  * </pre>
- * 
+ *
  * and the second URL in the following form:
- * 
+ *
  * <pre>
  * &lt;response&gt;
  *   &lt;OutputPower&gt;0&lt;/OutputPower&gt;
@@ -96,9 +98,9 @@ import net.solarnetwork.util.StringUtils;
  *   &lt;OutputVoltage&gt;0&lt;/OutputVoltage&gt;
  * &lt;/response&gt;
  * </pre>
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -124,6 +126,20 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	private EnaSolarPowerDatum sample;
 	private Throwable sampleException;
 	private final Map<String, Long> validationCache = new HashMap<>(4);
+
+	/**
+	 * Constructor.
+	 */
+	public EnaSolarXMLDatumDataSource() {
+		super();
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
 
 	private EnaSolarPowerDatum getCurrentSample() {
 		EnaSolarPowerDatum datum;
@@ -248,7 +264,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 		// we've seen values reported less than last known value after
 		// a power outage (i.e. after inverter turns off, then back on)
-		// on single day, so we verify that current decaWattHoursTotal is not less 
+		// on single day, so we verify that current decaWattHoursTotal is not less
 		// than last known decaWattHoursTotal value
 		if ( currValue != null && currValue.longValue() < lastKnownValue.longValue()
 				&& (dailyResettingWh == false || (dailyResettingWh && zeroWattCount < 1L)) ) {
@@ -295,7 +311,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the XPath mapping using String values.
-	 * 
+	 *
 	 * @param xpathMap
 	 *        the string XPath mapping values
 	 */
@@ -306,7 +322,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the XML data mapping as a delimited string.
-	 * 
+	 *
 	 * @return delimited string of XML mappings
 	 */
 	public String getDataMapping() {
@@ -332,8 +348,8 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	 * Set the XML data mapping. This supports setting simple
 	 * {@code deviceinfo.xml} key names or, if the value contains a {@code /}
 	 * character, direct XPath values.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param mapping
 	 *        comma-delimited equal-delimited key value pair list
 	 */
@@ -384,7 +400,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get an informational status message.
-	 * 
+	 *
 	 * @return A status message.
 	 */
 	public String getInfoMessage() {
@@ -412,11 +428,11 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the cached sample.
-	 * 
+	 *
 	 * <p>
 	 * This is meant to support unit tests.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the sample to set
 	 */
@@ -426,7 +442,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the first available URL.
-	 * 
+	 *
 	 * @return the first URL
 	 */
 	public String getUrl() {
@@ -435,7 +451,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the first URL.
-	 * 
+	 *
 	 * @param url
 	 *        the URL
 	 */
@@ -449,7 +465,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the URLs.
-	 * 
+	 *
 	 * @return the URLs
 	 */
 	public String[] getUrls() {
@@ -459,7 +475,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set an array of URLs for accessing the XML data from (more than one in
 	 * case the {@code data.xml} and {@code meters.xml} URLs are used).
-	 * 
+	 *
 	 * @param urls
 	 *        the urls to set
 	 */
@@ -469,7 +485,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the URL list.
-	 * 
+	 *
 	 * @return list of URLs
 	 */
 	public String getUrlList() {
@@ -478,7 +494,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the URL list as a comma-delimited string.
-	 * 
+	 *
 	 * @param list
 	 *        the comma-delimited list of URLs
 	 */
@@ -489,7 +505,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the XPath mapping.
-	 * 
+	 *
 	 * @return the mapping
 	 */
 	public Map<String, XPathExpression> getXpathMapping() {
@@ -499,13 +515,13 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set a mapping of PowerDatum JavaBean property names to corresponding
 	 * XPath expressions for extracting the data from the XML response.
-	 * 
+	 *
 	 * <p>
 	 * This property can also be configured via {@link #setXpathMap(Map)} using
 	 * String values, which is useful when using Spring. Defaults to a sensible
 	 * value, so this should only be configured in special cases.
 	 * </p>
-	 * 
+	 *
 	 * @param xpathMapping
 	 *        the mapping to set
 	 */
@@ -515,7 +531,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the configured source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -524,7 +540,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the source ID value to assign to the collected data.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to set
 	 */
@@ -535,7 +551,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the sample cache, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
