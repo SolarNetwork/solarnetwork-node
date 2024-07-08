@@ -60,7 +60,7 @@ import net.solarnetwork.util.SearchFilter.LogicOperator;
  * Web controller for datum data source support.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.5
  */
 @Controller
@@ -78,6 +78,8 @@ public class DatumDataSourceController {
 		p.put("c2", new SearchFilter("objectClass", MultiDatumDataSource.class.getName(),
 				CompareOperator.EQUAL));
 		p.put("c3", new SearchFilter("objectClass", DatumSourceIdProvider.class.getName(),
+				CompareOperator.EQUAL));
+		p.put("c4", new SearchFilter("objectClass", DatumSourceIdProvider.class.getName(),
 				CompareOperator.EQUAL));
 		SERVICE_FILTER = new SearchFilter(p, LogicOperator.OR).asLDAPSearchFilterString();
 	}
