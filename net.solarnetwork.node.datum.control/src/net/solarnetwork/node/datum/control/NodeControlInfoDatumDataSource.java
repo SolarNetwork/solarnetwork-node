@@ -26,6 +26,7 @@ import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -260,13 +261,27 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public Collection<String> publishedSourceIds() {
+		final List<NodeControlProvider> providers = this.providers;
+		if ( providers == null || providers.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		final Pattern controlIdRegex = getControlIdRegex();
 		Set<String> result = new TreeSet<>();
+
 		for ( NodeControlProvider p : providers ) {
 			List<String> controlIds = p.getAvailableControlIds();
 			if ( controlIds == null || controlIds.isEmpty() ) {
 				continue;
 			}
-			result.addAll(controlIds);
+			if ( controlIdRegex == null ) {
+				result.addAll(controlIds);
+			} else {
+				for ( String controlId : controlIds ) {
+					if ( controlId != null && controlIdRegex.matcher(controlId).find() ) {
+						result.add(controlId);
+					}
+				}
+			}
 		}
 		return result;
 	}
