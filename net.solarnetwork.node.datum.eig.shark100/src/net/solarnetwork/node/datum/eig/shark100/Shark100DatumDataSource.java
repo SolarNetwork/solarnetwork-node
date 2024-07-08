@@ -1,21 +1,21 @@
 /* ==================================================================
  * Shark100DatumDataSource.java - 27/07/2018 8:49:55 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -45,14 +45,14 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the Shark 100 series meter.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Shark100Data>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private String sourceId = "Shark 100";
+	private String sourceId;
 	private boolean backwards = false;
 	private boolean includePhaseMeasurements = false;
 
@@ -65,12 +65,19 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
 	public Shark100DatumDataSource(Shark100Data sample) {
 		super(sample);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -183,7 +190,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
@@ -193,7 +200,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	/**
 	 * Toggle the "backwards" current direction flag.
-	 * 
+	 *
 	 * @param backwards
 	 *        {@literal true} to swap energy delivered and received values
 	 */
@@ -203,7 +210,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	/**
 	 * Toggle the inclusion of phase measurement properties in collected datum.
-	 * 
+	 *
 	 * @param includePhaseMeasurements
 	 *        {@literal true} to collect phase measurements
 	 */
