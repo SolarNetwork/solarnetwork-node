@@ -130,7 +130,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, PingTest {
@@ -626,6 +626,15 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	/**
+	 * et the maximum time to cache sampled data for.
+	 *
+	 * @return the sampleCacheMs the sample cache time, in milliseconds
+	 */
+	public final long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	/**
 	 * Set the maximum time to cache sampled data for.
 	 *
 	 * @param sampleCacheMs
@@ -769,6 +778,15 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setNetDevicesValue(String devices) {
 		setNetDevices(net.solarnetwork.util.StringUtils.commaDelimitedStringToSet(devices));
+	}
+
+	/**
+	 * Get the source ID to assign to captured datum.
+	 *
+	 * @return the source ID
+	 */
+	public final String getSourceId() {
+		return sourceId;
 	}
 
 	/**
