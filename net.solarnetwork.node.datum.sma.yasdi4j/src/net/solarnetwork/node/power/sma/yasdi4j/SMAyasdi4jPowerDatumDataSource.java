@@ -1,21 +1,21 @@
 /* ==================================================================
  * SMAyasdi4jPowerDatumDataSource.java - Mar 7, 2013 11:57:06 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,6 +25,7 @@ package net.solarnetwork.node.power.sma.yasdi4j;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -54,14 +55,14 @@ import net.solarnetwork.util.StringUtils;
 /**
  * SMA {@link DatumDataSource} for {@link AcEnergyDatum}, using the
  * {@code yasdi4j} library.
- * 
+ *
  * <p>
  * This class is not generally not thread-safe. Only one thread should execute
  * {@link #readCurrentDatum()} at a time.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -86,7 +87,7 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Default value for the {@code channelNamesToMonitor} property.
-	 * 
+	 *
 	 * <p>
 	 * Contains the PV voltage, PV current, and kWh channels.
 	 * </p>
@@ -108,10 +109,20 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 	private OptionalFilterableService<ObjectFactory<YasdiMaster>> yasdi;
 	private MessageSource messageSource;
 
+	/**
+	 * Constructor.
+	 */
 	public SMAyasdi4jPowerDatumDataSource() {
 		super();
 		smaSupport = new SMAInverterDataSourceSupport();
 		setChannelNamesToMonitor(DEFAULT_CHANNEL_NAMES_TO_MONITOR);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -258,7 +269,7 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Read a specific channel and set that value into a Map.
-	 * 
+	 *
 	 * @param device
 	 *        the YasdiDevice to collect the data from
 	 * @param channelName
@@ -355,28 +366,61 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		}
 	}
 
+	/**
+	 * Get the PV voltage channel name.
+	 *
+	 * @return the name
+	 */
 	public String getPvVoltsChannelName() {
 		return pvVoltsChannelName;
 	}
 
+	/**
+	 * Set the PV voltage channel name.
+	 *
+	 * @param pvVoltsChannelName
+	 *        the name to set
+	 */
 	public void setPvVoltsChannelName(String pvVoltsChannelName) {
 		this.pvVoltsChannelName = pvVoltsChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the PV current channel name.
+	 *
+	 * @return the name
+	 */
 	public String getPvAmpsChannelName() {
 		return pvAmpsChannelName;
 	}
 
+	/**
+	 * Set the PV current channel name.
+	 *
+	 * @param pvAmpsChannelName
+	 *        the name to set
+	 */
 	public void setPvAmpsChannelName(String pvAmpsChannelName) {
 		this.pvAmpsChannelName = pvAmpsChannelName;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the kWh channel name.
+	 *
+	 * @return the name
+	 */
 	public String getkWhChannelName() {
 		return kWhChannelName;
 	}
 
+	/**
+	 * Set the kWh channel name.
+	 *
+	 * @param kWhChannelName
+	 *        the name to set
+	 */
 	public void setkWhChannelName(String kWhChannelName) {
 		this.kWhChannelName = kWhChannelName;
 		setupChannelNamesToMonitor();
@@ -384,7 +428,7 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the configured {@link YasdiMaster} service.
-	 * 
+	 *
 	 * @return the service
 	 */
 	public OptionalFilterableService<ObjectFactory<YasdiMaster>> getYasdi() {
@@ -393,7 +437,7 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the dynamic service for the {@link YasdiMaster} instance to use.
-	 * 
+	 *
 	 * @param yasdi
 	 *        the service to use
 	 */
@@ -401,13 +445,9 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		this.yasdi = yasdi;
 	}
 
-	public void setChannelMaxAgeSeconds(int channelMaxAgeSeconds) {
-		this.channelMaxAgeSeconds = channelMaxAgeSeconds;
-	}
-
 	/**
 	 * Get {@code pvWattsChannelNames} as a comma-delimited string value.
-	 * 
+	 *
 	 * @return the channel names, as a delimited string
 	 */
 	public String getPvWattsChannelNamesValue() {
@@ -417,7 +457,7 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set {@code pvWattsChannelNames} as a comma-delimited string value.
-	 * 
+	 *
 	 * @param value
 	 *        the channel names, as a delimited string
 	 */
@@ -425,15 +465,41 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		setPvWattsChannelNames(StringUtils.commaDelimitedStringToSet(value));
 	}
 
+	/**
+	 * Get the PV watts channel names.
+	 *
+	 * @return the names
+	 */
 	public Set<String> getPvWattsChannelNames() {
 		return pvWattsChannelNames;
 	}
 
+	/**
+	 * Set the PV watts channel names.
+	 *
+	 * @param pvWattsChannelNames
+	 *        the names to set
+	 */
 	public void setPvWattsChannelNames(Set<String> pvWattsChannelNames) {
 		this.pvWattsChannelNames = pvWattsChannelNames;
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the device serial number.
+	 *
+	 * @return the deviceSerialNumber the number
+	 */
+	public final long getDeviceSerialNumber() {
+		return deviceSerialNumber;
+	}
+
+	/**
+	 * Set the device serial number.
+	 *
+	 * @param deviceSerialNumber
+	 *        the serial number to set
+	 */
 	public void setDeviceSerialNumber(long deviceSerialNumber) {
 		this.deviceSerialNumber = deviceSerialNumber;
 	}
@@ -443,17 +509,28 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Get the other channel names.
+	 *
+	 * @return the other names
+	 */
 	public Set<String> getOtherChannelNames() {
 		return otherChannelNames;
 	}
 
+	/**
+	 * Set the other channel names.
+	 *
+	 * @param otherChannelNames
+	 *        the other names to set
+	 */
 	public void setOtherChannelNames(Set<String> otherChannelNames) {
 		this.otherChannelNames = otherChannelNames;
 	}
 
 	/**
 	 * Get {@code otherChannelNames} as a comma-delimited string value.
-	 * 
+	 *
 	 * @return the other channel names, as a delimited string
 	 */
 	public String getOtherChannelNamesValue() {
@@ -463,7 +540,7 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set {@code otherChannelNames} as a comma-delimited string value.
-	 * 
+	 *
 	 * @param value
 	 *        the channel names, as a delimited string
 	 */
@@ -471,34 +548,88 @@ public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		setOtherChannelNames(StringUtils.commaDelimitedStringToSet(value));
 	}
 
+	/**
+	 * Get the device lock timeout.
+	 *
+	 * @return the timeout, in seconds
+	 */
 	public long getDeviceLockTimeoutSeconds() {
 		return deviceLockTimeoutSeconds;
 	}
 
+	/**
+	 * Set the device lock timeout.
+	 *
+	 * @param deviceLockTimeoutSeconds
+	 *        the timeout, in seconds
+	 */
 	public void setDeviceLockTimeoutSeconds(long deviceLockTimeoutSeconds) {
 		this.deviceLockTimeoutSeconds = deviceLockTimeoutSeconds;
 	}
 
+	/**
+	 * Get the channel max age.
+	 *
+	 * @return the max age, in seconds
+	 */
 	public int getChannelMaxAgeSeconds() {
 		return channelMaxAgeSeconds;
 	}
 
+	/**
+	 * Set the channel max age.
+	 *
+	 * @param channelMaxAgeSeconds
+	 *        the max age, in seconds
+	 */
+	public void setChannelMaxAgeSeconds(int channelMaxAgeSeconds) {
+		this.channelMaxAgeSeconds = channelMaxAgeSeconds;
+	}
+
+	/**
+	 * Get the channel names to monitor.
+	 *
+	 * @return the names to monitor
+	 */
 	public Set<String> getChannelNamesToMonitor() {
 		return smaSupport.getChannelNamesToMonitor();
 	}
 
+	/**
+	 * Set the channel names to monitor.
+	 *
+	 * @param channelNamesToMonitor
+	 *        the names to monitor
+	 */
 	public void setChannelNamesToMonitor(Set<String> channelNamesToMonitor) {
 		smaSupport.setChannelNamesToMonitor(channelNamesToMonitor);
 	}
 
+	/**
+	 * Get the source ID.
+	 *
+	 * @return the source ID
+	 */
 	public String getSourceId() {
 		return smaSupport.getSourceId();
 	}
 
+	/**
+	 * Set the source ID.
+	 *
+	 * @param sourceId
+	 *        the source ID to set
+	 */
 	public void setSourceId(String sourceId) {
 		smaSupport.setSourceId(sourceId);
 	}
 
+	/**
+	 * Set the setting DAO.
+	 *
+	 * @param settingDao
+	 *        the DAO to set
+	 */
 	public void setSettingDao(SettingDao settingDao) {
 		smaSupport.setSettingDao(settingDao);
 	}
