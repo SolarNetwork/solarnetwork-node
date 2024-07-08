@@ -43,7 +43,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.http.HttpMethod;
@@ -82,7 +84,7 @@ import net.solarnetwork.web.service.HttpRequestCustomizerService;
  * Read data from a CSV-formatted resource and generate one or more datum.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CsvDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
@@ -193,6 +195,27 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 		}
 		this.sourceIdColumnIndexes = CsvDatumDataSourceUtils.columnIndexes(sourceIdColumn);
 		this.dateTimeColumnIndexes = CsvDatumDataSourceUtils.columnIndexes(dateTimeColumn);
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final int[] cols = this.sourceIdColumnIndexes;
+		if ( cols == null || cols.length < 1 ) {
+			final String sourceId = resolvePlaceholders(getSourceId());
+			return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+					: Collections.singleton(sourceId));
+		}
+
+		// have to fetch data to resolve source IDs
+		final Collection<NodeDatum> datum = readMultipleDatum();
+		if ( datum == null || datum.isEmpty() ) {
+			return Collections.emptySet();
+		}
+		final Set<String> result = new TreeSet<>();
+		for ( NodeDatum d : datum ) {
+			result.add(d.getSourceId());
+		}
+		return result;
 	}
 
 	@Override
