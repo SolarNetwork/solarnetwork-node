@@ -26,6 +26,7 @@ import static java.lang.String.format;
 import static java.util.Collections.sort;
 import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.StringUtils.naturalSortCompare;
 import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -105,7 +106,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.9
+ * @version 2.10
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -444,9 +445,13 @@ public class SettingsController {
 					}
 					return new BasicSettingSpecifierProviderInfo(null, ip.getDisplayName(), uid,
 							groupUid);
-				}).sorted(Comparator.comparing(SettingSpecifierProviderInfo::getDisplayName,
-						String::compareToIgnoreCase))
-				.collect(Collectors.toList());
+				}).sorted((l, r) -> {
+					int result = naturalSortCompare(l.getDisplayName(), r.getDisplayName(), true);
+					if ( result == 0 ) {
+						result = naturalSortCompare(l.getUid(), r.getUid(), true);
+					}
+					return result;
+				}).collect(Collectors.toList());
 		return Result.success(results);
 	}
 
