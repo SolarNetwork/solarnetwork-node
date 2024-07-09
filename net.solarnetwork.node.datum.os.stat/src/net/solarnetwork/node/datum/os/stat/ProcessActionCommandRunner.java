@@ -1,21 +1,21 @@
 /* ==================================================================
  * ProcessActionCommandRunner.java - 13/08/2018 10:29:20 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -43,9 +43,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * Implementation of {@link ActionCommandRunner} that executes an external OS
  * command.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ProcessActionCommandRunner implements ActionCommandRunner, SettingSpecifierProvider {
 
@@ -86,7 +86,7 @@ public class ProcessActionCommandRunner implements ActionCommandRunner, SettingS
 
 	/**
 	 * Parse action command output in CSV form.
-	 * 
+	 *
 	 * @param input
 	 *        the input stream to parse
 	 * @return the parsed rows
@@ -142,12 +142,21 @@ public class ProcessActionCommandRunner implements ActionCommandRunner, SettingS
 	}
 
 	/**
+	 * Get the helper program command to use.
+	 *
+	 * @return the command; defaults to {@link #DEFAULT_COMMAND}
+	 */
+	public final String getCommand() {
+		return command;
+	}
+
+	/**
 	 * Set the helper program command to use.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@link #DEFAULT_COMMAND}.
 	 * </p>
-	 * 
+	 *
 	 * @param command
 	 *        the command to set
 	 */
@@ -157,7 +166,7 @@ public class ProcessActionCommandRunner implements ActionCommandRunner, SettingS
 
 	/**
 	 * The message source to use for settings.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 */

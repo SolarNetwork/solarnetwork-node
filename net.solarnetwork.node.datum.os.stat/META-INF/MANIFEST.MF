@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OS Statistics Data Source
 Bundle-Description: Collect SolarNode OS statistics data.
 Bundle-SymbolicName: net.solarnetwork.node.datum.os.stat
-Bundle-Version: 3.1.0
+Bundle-Version: 3.1.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.os.stat
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

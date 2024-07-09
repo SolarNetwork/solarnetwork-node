@@ -1,21 +1,21 @@
 /* ==================================================================
  * ADAM411xDatumDataSource.java - 22/11/2018 12:49:23 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -52,9 +52,9 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Datum data source for ADAM 411x series devices.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<ADAM411xData>
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -73,13 +73,19 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 	/**
 	 * Construct with a sample instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample to use
 	 */
 	public ADAM411xDatumDataSource(ADAM411xData sample) {
 		super(sample);
-		sourceId = "ADAM-411x";
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
 	}
 
 	@Override
@@ -231,10 +237,19 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 	}
 
 	/**
+	 * Get the source ID to use for returned datum.
+	 *
+	 * @return the source ID
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
-	 *        the source ID to use; defaults to {@literal ADAM-411x}
+	 *        the source ID to use
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
@@ -242,7 +257,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 	/**
 	 * Get the channel property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public ChannelPropertyConfig[] getPropConfigs() {
@@ -251,7 +266,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 	/**
 	 * Set the channel property configurations.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configurations to set
 	 */
@@ -261,7 +276,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -271,12 +286,12 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ChannelPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */

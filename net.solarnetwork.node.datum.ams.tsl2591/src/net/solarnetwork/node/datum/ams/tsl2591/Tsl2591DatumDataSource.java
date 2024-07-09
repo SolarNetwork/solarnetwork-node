@@ -1,21 +1,21 @@
 /* ==================================================================
  * Tsl2591DatumDataSource.java - 1/09/2020 2:18:03 PM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,6 +29,8 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,25 +57,36 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Datum data source for the TSL2591 light sensor.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
 
+	/** The {@code deviceName} property default value. */
 	public static final String DEFAULT_DEVICE_NAME = "/dev/i2c-0";
+
+	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+
+	/** The {@code sourceId} property default value. */
 	public static final String DEFAULT_SOURCE_ID = "TSL2591";
+
+	/** The {@code gain} property default value. */
 	public static final Gain DEFAULT_GAIN = Gain.Medium;
+
+	/** The {@code integrationTime} property default value. */
 	public static final IntegrationTime DEFAULT_INT_TIME = IntegrationTime.Time200ms;
+
+	/** The {@code configureDelay} property default value. */
 	public static final long DEFAULT_CONFIGURE_DELAY = 15000L;
 
 	private final AtomicReference<AtmosphericDatum> sample;
 
 	private String deviceName = DEFAULT_DEVICE_NAME;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
-	private String sourceId = DEFAULT_SOURCE_ID;
+	private String sourceId;
 	private Gain gain = DEFAULT_GAIN;
 	private IntegrationTime integrationTime = DEFAULT_INT_TIME;
 	private final long configureDelay = DEFAULT_CONFIGURE_DELAY;
@@ -89,7 +102,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -118,6 +131,13 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 	}
 
 	@Override
+	public Collection<String> publishedSourceIds() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
+				: Collections.singleton(sourceId));
+	}
+
+	@Override
 	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.ams.tsl2591";
 	}
@@ -132,7 +152,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 		results.add(new BasicTextFieldSettingSpecifier("deviceName", DEFAULT_DEVICE_NAME));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 
 		// drop-down menu for Gain
 		BasicMultiValueSettingSpecifier gainSpec = new BasicMultiValueSettingSpecifier("gainCode",
@@ -254,7 +274,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -263,7 +283,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -273,7 +293,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the source ID; defaults to {@link #DEFAULT_SOURCE_ID}
 	 */
 	public String getSourceId() {
@@ -282,7 +302,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
@@ -292,7 +312,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the I2C device name.
-	 * 
+	 *
 	 * @return the device name; defaults to {@link #DEFAULT_DEVICE_NAME}
 	 */
 	public String getDeviceName() {
@@ -301,7 +321,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the I2C device name.
-	 * 
+	 *
 	 * @param deviceName
 	 *        the device name to set
 	 */
@@ -311,7 +331,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the gain.
-	 * 
+	 *
 	 * @return the gain; defaults to {@link #DEFAULT_GAIN}
 	 */
 	public Gain getGain() {
@@ -320,7 +340,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the gain.
-	 * 
+	 *
 	 * @param gain
 	 *        the gain to set
 	 */
@@ -333,7 +353,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the gain.
-	 * 
+	 *
 	 * @return the gain code value
 	 */
 	public int getGainCode() {
@@ -342,7 +362,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the gain as a code value.
-	 * 
+	 *
 	 * @param code
 	 *        the code to set
 	 */
@@ -359,7 +379,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the integration time.
-	 * 
+	 *
 	 * @return the integration time
 	 */
 	public IntegrationTime getIntegrationTime() {
@@ -368,7 +388,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the integration time.
-	 * 
+	 *
 	 * @param integrationTime
 	 *        the time to set
 	 */
@@ -381,7 +401,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Get the integration time as a code value.
-	 * 
+	 *
 	 * @return the integration time code
 	 */
 	public int getIntegrationTimeCode() {
@@ -390,7 +410,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 
 	/**
 	 * Set the integration time as a code value.
-	 * 
+	 *
 	 * @param code
 	 *        the code to set
 	 */
