@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+		http://www.springframework.org/schema/util
+		http://www.springframework.org/schema/util/spring-util-4.2.xsd">
+	
+	
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-metrics)"/>
+	
+	<reference id="eventAdmin" interface="org.osgi.service.event.EventAdmin"/>
+	
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<bean id="txEventAdmin" class="net.solarnetwork.service.StaticOptionalService">
+		<argument>
+			<bean class="net.solarnetwork.common.osgi.event.TransactionSynchronizationEventAdminAdapter">
+				<argument ref="eventAdmin"/>
+			</bean>
+		</argument>
+	</bean>
+
+	<bean id="metricDao" class="net.solarnetwork.node.metrics.dao.jdbc.JdbcMetricDao" init-method="init">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="eventAdmin" ref="txEventAdmin"/>
+	</bean>
+
+	<!-- Published Services -->
+	
+	<service ref="metricDao">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+			<value>net.solarnetwork.node.metrics.dao.MetricDao</value>
+		</interfaces>
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
+	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
+		<bean class="net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider">
+			<argument>
+				<bean class="org.springframework.jdbc.core.JdbcTemplate">
+					<property name="dataSource" ref="dataSource"/>
+				</bean>
+			</argument>
+			<argument>
+				<bean class="org.springframework.transaction.support.TransactionTemplate">
+					<argument ref="txManager"/>
+				</bean>
+			</argument>
+			<argument ref="taskExecutor"/>
+			<property name="tableNames">
+				<list>
+					<value>SOLARNODE.MTR_METRIC</value>
+					<value>SOLARNODE.MTR_METRIC_META</value>
+				</list>
+			</property>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.metrics.dao.jdbc.JdbcTableBackupResourceProvider"/>
+				</bean>
+			</property>
+		</bean>
+	</service>
+	
+</blueprint>
