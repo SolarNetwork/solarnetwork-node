@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Metrics Services
+Bundle-Description: Support for local metrics collection and querying.
+Bundle-SymbolicName: net.solarnetwork.node.metrics
+Bundle-Version: 1.0.0
+Export-Package: 
+ net.solarnetwork.node.metrics.dao;version="1.0.0",
+ net.solarnetwork.node.metrics.domain;version="1.0.0"
+Import-Package: 
+ net.solarnetwork.dao;version="[2.2,3.0)",
+ net.solarnetwork.domain;version="[2.4,3.0)",
+ net.solarnetwork.util;version="[2.12,3.0)"
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.metrics
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
