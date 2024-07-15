@@ -44,6 +44,27 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	private final double value;
 
 	/**
+	 * Create a new sample metric instance.
+	 *
+	 * <p>
+	 * The {@link type} will be set to {@link #METRIC_TYPE_SAMPLE}.
+	 * </p>
+	 *
+	 * @param ts
+	 *        the timestamp
+	 * @param name
+	 *        the name
+	 * @param value
+	 *        the value
+	 * @return the new instance
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public static Metric sampleValue(Instant ts, String name, double value) {
+		return metricValue(ts, METRIC_TYPE_SAMPLE, name, value);
+	}
+
+	/**
 	 * Create a new metric instance.
 	 *
 	 * @param ts

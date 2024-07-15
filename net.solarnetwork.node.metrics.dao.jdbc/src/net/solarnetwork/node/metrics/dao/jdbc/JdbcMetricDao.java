@@ -26,7 +26,9 @@ import static java.lang.String.format;
 import static net.solarnetwork.node.metrics.dao.jdbc.Constants.TABLE_NAME_TEMPALTE;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.core.io.ClassPathResource;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
@@ -36,6 +38,11 @@ import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.dao.MetricFilter;
 import net.solarnetwork.node.metrics.domain.Metric;
 import net.solarnetwork.node.metrics.domain.MetricKey;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StatTracker;
 
 /**
  * JDBC implementation of {@link MetricDao}.
@@ -43,7 +50,8 @@ import net.solarnetwork.node.metrics.domain.MetricKey;
  * @author matt
  * @version 1.0
  */
-public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey> implements MetricDao {
+public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
+		implements MetricDao, SettingSpecifierProvider {
 
 	/**
 	 * The default SQL template for the {@code sqlGetTablesVersion} property.
@@ -57,6 +65,37 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey> impleme
 	/** The JDBC table version. */
 	public static final int VERSION = 1;
 
+	/** The {@code stats.logFrequency} default value. */
+	public static final int DEFAULT_STAT_LOG_FREQUENCY = 100;
+
+	/**
+	 * Enumeration of SQL resources.
+	 */
+	public enum SqlResource {
+
+		/** Get a count of stored records. */
+		Count("count"),
+
+		;
+
+		private final String resource;
+
+		private SqlResource(String resource) {
+			this.resource = resource;
+		}
+
+		/**
+		 * Get the SQL resource name.
+		 *
+		 * @return the resource
+		 */
+		public String getResource() {
+			return resource;
+		}
+	}
+
+	private final StatTracker stats;
+
 	/**
 	 * Constructor.
 	 */
@@ -67,6 +106,19 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey> impleme
 		setSqlGetTablesVersion(format(SQL_GET_TABLES_VERSION_TEMPLATE, TABLE_NAME));
 		setInitSqlResource(
 				new ClassPathResource(format(INIT_SQL_FORMAT, getSqlResourcePrefix()), getClass()));
+		this.stats = new StatTracker("JdbcMetricDao", null, log, DEFAULT_STAT_LOG_FREQUENCY);
+	}
+
+	@Override
+	public void init() {
+		super.init();
+	}
+
+	@Override
+	public MetricKey save(Metric entity) {
+		insertDomainObject(entity, getSqlResource(SQL_INSERT));
+		stats.increment(MetricDaoStat.MetricsStored);
+		return entity.getId();
 	}
 
 	@Override
@@ -83,16 +135,81 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey> impleme
 	}
 
 	@Override
-	protected void setUpdateStatementValues(Metric obj, PreparedStatement ps) throws SQLException {
-		setInsertStatementValues(obj, ps, 0);
+	protected void setStoreStatementValues(Metric obj, PreparedStatement ps) throws SQLException {
+		ps.setObject(1, obj.getTimestamp());
+		ps.setString(2, obj.getType());
+		ps.setString(3, obj.getName());
+		ps.setDouble(4, obj.getValue());
 	}
 
-	private void setInsertStatementValues(Metric obj, PreparedStatement ps, int offset)
-			throws SQLException {
-		ps.setObject(1 + offset, obj.getTimestamp());
-		ps.setString(2 + offset, obj.getType());
-		ps.setString(3 + offset, obj.getName());
-		ps.setDouble(4 + offset, obj.getValue());
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.metrics.dao.jdbc.metrics";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "JDBC Metrics DAO";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> result = new ArrayList<>(8);
+		result.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
+		result.add(new BasicTextFieldSettingSpecifier("statLogFrequency",
+				String.valueOf(DEFAULT_STAT_LOG_FREQUENCY)));
+		return result;
+	}
+
+	private String getStatusMessage() {
+		// @formatter:off
+		long rowCount = 0;
+		try {
+			rowCount = rowCount();
+		} catch ( Exception e ) {
+			log.warn("Error finding metric row count.", e);
+		}
+		return getMessageSource().getMessage("status.msg",
+				new Object[] {
+						rowCount,
+						stats.get(MetricDaoStat.MetricsStored),
+						stats.get(MetricDaoStat.MetricsDeleted) },
+				Locale.getDefault());
+		// @formatter:on
+	}
+
+	private long rowCount() {
+		final Number rowCountNum = getJdbcTemplate()
+				.queryForObject(getSqlResource(SqlResource.Count.getResource()), Number.class);
+		return (rowCountNum == null ? 0 : rowCountNum.longValue());
+	}
+
+	/**
+	 * Get the statistics.
+	 *
+	 * @return the statistics, never {@literal null}
+	 */
+	public final StatTracker getStats() {
+		return stats;
+	}
+
+	/**
+	 * Get the statistic log frequency.
+	 *
+	 * @return the log frequency
+	 */
+	public final int getStatLogFrequency() {
+		return stats.getLogFrequency();
+	}
+
+	/**
+	 * Set the statistic log frequency.
+	 *
+	 * @param logFrequency
+	 *        the log frequency to set
+	 */
+	public final void setStatLogFrequency(int logFrequency) {
+		stats.setLogFrequency(logFrequency);
 	}
 
 }

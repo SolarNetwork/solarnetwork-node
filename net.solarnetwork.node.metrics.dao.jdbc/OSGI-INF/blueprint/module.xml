@@ -17,9 +17,10 @@
 		http://www.springframework.org/schema/util
 		http://www.springframework.org/schema/util/spring-util-4.2.xsd">
 	
-	
 	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-metrics)"/>
 	
+	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
+
 	<reference id="eventAdmin" interface="org.osgi.service.event.EventAdmin"/>
 	
 	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
@@ -37,18 +38,20 @@
 	<bean id="metricDao" class="net.solarnetwork.node.metrics.dao.jdbc.JdbcMetricDao" init-method="init">
 		<property name="dataSource" ref="dataSource"/>
 		<property name="eventAdmin" ref="txEventAdmin"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.metrics.dao.jdbc.JdbcMetricDao"/>
+			</bean>
+		</property>
 	</bean>
 
 	<!-- Published Services -->
 	
 	<service ref="metricDao">
 		<interfaces>
-			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
 			<value>net.solarnetwork.node.metrics.dao.MetricDao</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
-		<service-properties>
-			<entry key="function" value="node"/>
-		</service-properties>
 	</service>
 	
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
