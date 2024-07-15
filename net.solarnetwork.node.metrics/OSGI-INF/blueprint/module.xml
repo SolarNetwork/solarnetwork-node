@@ -47,6 +47,49 @@
 		<property name="serviceFilter" value="(function=node)"/>
 		<property name="sticky" value="true"/>
 	</bean>
+	
+	<!-- 
+	 !!! Metric Cleaner Job
+	 -->
+
+	<service ref="metricDaoCleanerJob">
+		<interfaces>
+			<value>net.solarnetwork.node.job.ManagedJob</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.metrics.dao.cleaner"/>
+		</service-properties>
+	</service>
+	
+	<bean id="metricDaoCleanerJob" class="net.solarnetwork.node.job.SimpleManagedJob" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<osgix:managed-properties
+			persistent-id="net.solarnetwork.node.metrics.dao.cleaner"
+			autowire-on-update="true"
+			update-method="configurationChanged"
+			/>
+		<argument>
+			<bean class="net.solarnetwork.node.metrics.service.MetricDaoCleanerJob">
+				<argument ref="metricDao"/>
+				<property name="messageSource">
+					<bean class="net.solarnetwork.support.PrefixedMessageSource">
+						<property name="prefix" value="jobService."/>
+						<property name="delegate">
+							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+								<property name="basenames">
+									<array>
+										<value>net.solarnetwork.node.metrics.service.MetricDaoCleanerJob</value>
+									</array>
+								</property>
+							</bean>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</argument>
+		<argument value="3600000"/>
+		<property name="displayName" value="MetricCleaner"/>
+	</bean>
 
 	<!--
 	 !!! Metric Harvester Filter Service

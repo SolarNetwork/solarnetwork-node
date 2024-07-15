@@ -36,4 +36,13 @@ import net.solarnetwork.node.metrics.domain.MetricKey;
 public interface MetricDao
 		extends GenericDao<Metric, MetricKey>, FilterableDao<Metric, MetricKey, MetricFilter> {
 
+	/**
+	 * Delete metrics matching a filter.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @return the number of rows deleted
+	 */
+	int deleteFiltered(MetricFilter filter);
+
 }

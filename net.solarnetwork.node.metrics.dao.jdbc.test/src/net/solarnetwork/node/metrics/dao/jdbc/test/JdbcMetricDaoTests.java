@@ -36,12 +36,14 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
@@ -349,6 +351,45 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 						is(equalTo(expectedVal)));
 			}
 		}
+	}
+
+	@Test
+	public void deleteFiltered() {
+		// GIVEN
+		final int rowCount = 12;
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		final String[] types = new String[] { "t1", "t2" };
+		final String[] names = new String[] { "a", "b" };
+		final List<Metric> allMetrics = new ArrayList<>(rowCount * types.length);
+		for ( int i = 0; i < rowCount; i++ ) {
+			for ( int j = 0; j < types.length; j++ ) {
+				Metric m = metricValue(start.plusSeconds(i), types[j % types.length],
+						names[i % names.length], random());
+				dao.save(m);
+				allMetrics.add(m);
+			}
+		}
+
+		final List<Map<String, Object>> rowsBefore = allTableData(log, jdbcOps, "SOLARNODE.MTR_METRIC",
+				"ts, mtype, mname");
+
+		// WHEN
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setEndDate(start.plusSeconds(6));
+		filter.setType("t1");
+		int result = dao.deleteFiltered(filter);
+
+		// THEN
+		assertThat("Expected row count before delete", rowsBefore, hasSize(rowCount * types.length));
+		assertThat("Result matches expected delete count", result, is(equalTo(6)));
+
+		final List<Map<String, Object>> rowsAfter = allTableData(log, jdbcOps, "SOLARNODE.MTR_METRIC",
+				"ts, mtype, mname");
+		assertThat("Expected row count after delete", rowsAfter, hasSize(rowCount * types.length - 6));
+		assertThat("Expected rows deleted", rowsAfter.stream().noneMatch((row) -> {
+			Instant ts = ((OffsetDateTime) row.get("ts")).toInstant();
+			return ("t1".equals(row.get("type")) && ts.isBefore(filter.getEndDate()));
+		}), is(equalTo(true)));
 	}
 
 }

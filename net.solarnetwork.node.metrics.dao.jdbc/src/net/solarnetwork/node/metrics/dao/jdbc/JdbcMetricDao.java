@@ -130,6 +130,12 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
 	}
 
 	@Override
+	public int deleteFiltered(MetricFilter filter) {
+		DeleteMetrics sql = new DeleteMetrics(filter);
+		return getJdbcTemplate().update(sql);
+	}
+
+	@Override
 	protected Object[] primaryKeyArguments(MetricKey id) {
 		return new Object[] { id.getTimestamp(), id.getType(), id.getName() };
 	}
