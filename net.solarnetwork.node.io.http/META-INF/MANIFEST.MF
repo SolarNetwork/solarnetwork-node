@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: HTTP Support
 Bundle-SymbolicName: net.solarnetwork.node.io.http
 Bundle-Description: General support for HTTP integrations.
-Bundle-Version: 1.0.1
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.http
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -18,6 +18,9 @@ Import-Package:
  net.solarnetwork.web.service;version="[1.0,2.0)",
  net.solarnetwork.web.service.support;version="[1.0,2.0)",
  org.apache.http.client;version="[4.5,5.0)",
+ org.apache.http.impl.client;version="[4.5,5.0)",
+ org.apache.http.impl.nio.client;version="[4.1,5.0)",
+ org.apache.http.nio.client;version="[4.1,5.0)",
  org.apache.http.protocol;version="[4.4,5.0)",
  org.springframework.beans.factory;version="[5.3,6.0)",
  org.springframework.context.support;version="[5.3,6.0)",
