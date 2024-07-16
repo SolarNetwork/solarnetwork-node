@@ -735,7 +735,15 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	 * @since 2.1
 	 */
 	public DatumMetadataOperations getMeta() {
-		return meta(getSourceId());
+		final Long locationId = getLocId();
+		if ( locationId == null ) {
+			return meta(getSourceId());
+		}
+		final GeneralLocationSourceMetadata m = locationSourceMetadata(locationId, getSourceId());
+		if ( m == null ) {
+			return null;
+		}
+		return m.getMeta();
 	}
 
 	/**
@@ -843,17 +851,18 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	}
 
 	/**
-	 * Get a location datum's stream metadata.
+	 * Get a location datum stream's metadata.
 	 *
-	 * @return the location metadata, or {@literal null}
+	 * @param locationId
+	 *        the ID of the location datum stream
+	 * @param sourceId
+	 *        the source ID of the location datum stream
+	 * @return the location metadata, or {@literal null} if not available
 	 * @since 2.4
 	 */
-	public DatumMetadataOperations getLocMeta() {
-		final GeneralLocationSourceMetadata m = locationSourceMetadata(getLocId(), getSourceId());
-		if ( m == null ) {
-			return null;
-		}
-		return m.getMeta();
+	public DatumMetadataOperations locMeta(Long locationId, String sourceId) {
+		GeneralLocationSourceMetadata m = locationSourceMetadata(locationId, sourceId);
+		return (m != null ? m.getMeta() : null);
 	}
 
 }
