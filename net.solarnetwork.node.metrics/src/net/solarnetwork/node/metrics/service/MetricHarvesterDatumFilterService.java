@@ -24,16 +24,26 @@ package net.solarnetwork.node.metrics.service;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.dao.DuplicateKeyException;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.domain.Metric;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
@@ -53,6 +63,7 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 	private final MetricDao metricDao;
 
 	private MetricHarvesterPropertyConfig[] propertyConfigs;
+	private ExpressionConfig[] expressionConfigs;
 
 	/**
 	 * Constructor.
@@ -72,8 +83,9 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		final MetricHarvesterPropertyConfig[] configs = getPropertyConfigs();
-		if ( configs == null || configs.length < 1 || datum == null || datum.getSourceId() == null
-				|| samples == null ) {
+		final ExpressionConfig[] exprConfigs = getExpressionConfigs();
+		if ( ((configs == null || configs.length < 1) && (exprConfigs == null || exprConfigs.length < 1))
+				|| datum == null || datum.getSourceId() == null || samples == null ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
@@ -81,7 +93,13 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		captureMetrics(datum, samples, configs, parameters);
+		if ( configs != null && configs.length > 0 ) {
+			captureMetrics(datum, samples, configs, parameters);
+		}
+		if ( exprConfigs != null && exprConfigs.length > 0 ) {
+			captureMetrics(datum, samples, exprConfigs, parameters);
+
+		}
 		incrementStats(start, samples, samples);
 		return samples;
 	}
@@ -97,8 +115,39 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 					samples.getSampleBigDecimal(config.getPropertyType(), config.getPropertyKey()));
 			if ( n != null ) {
 				Metric m = Metric.sampleValue(datum.getTimestamp(), metricName, n.doubleValue());
-				metricDao.save(m);
+				saveMetric(m);
 			}
+		}
+	}
+
+	private void captureMetrics(Datum datum, DatumSamplesOperations samples, ExpressionConfig[] configs,
+			Map<String, Object> parameters) {
+		// store expression results in temp DatumSamples
+		DatumSamples s = new DatumSamples(samples);
+		ExpressionRoot root = new ExpressionRoot(datum, s, parameters, service(getDatumService()),
+				getOpModesService(), service(getMetadataService()), service(getLocationService()));
+		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
+
+		// then extract generated property values as metrics
+		for ( ExpressionConfig config : configs ) {
+			final String metricName = config.getPropertyKey();
+			if ( metricName == null || metricName.isEmpty() ) {
+				continue;
+			}
+
+			Double n = s.getSampleDouble(config.getPropertyType(), config.getPropertyKey());
+			if ( n != null ) {
+				Metric m = Metric.sampleValue(datum.getTimestamp(), metricName, n.doubleValue());
+				saveMetric(m);
+			}
+		}
+	}
+
+	private void saveMetric(Metric m) {
+		try {
+			metricDao.save(m);
+		} catch ( DuplicateKeyException e ) {
+			log.debug("Ignoring metric value update.");
 		}
 	}
 
@@ -137,6 +186,31 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 						return Collections.singletonList(configGroup);
 					}
 				}));
+
+		Iterable<ExpressionService> exprServices = services(getExpressionServices());
+		if ( exprServices != null ) {
+			ExpressionConfig[] exprConfs = getExpressionConfigs();
+			List<ExpressionConfig> exprConfsList = (template ? singletonList(new ExpressionConfig())
+					: (exprConfs != null ? asList(exprConfs) : emptyList()));
+			result.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
+
+						@Override
+						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
+								int index, String key) {
+							List<SettingSpecifier> exprSettings = ExpressionConfig.settings(
+									MetricHarvesterDatumFilterService.class, key + ".", exprServices);
+							// remove type as not used here
+							exprSettings = exprSettings.stream().filter(s -> {
+								return !((s instanceof KeyedSettingSpecifier<?>)
+										&& ((KeyedSettingSpecifier<?>) s).getKey()
+												.endsWith(".datumPropertyTypeKey"));
+							}).collect(Collectors.toList());
+							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(exprSettings);
+							return singletonList(configGroup);
+						}
+					}));
+		}
 
 		return result;
 	}
@@ -184,6 +258,52 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 	public void setPropertyConfigsCount(int count) {
 		this.propertyConfigs = ArrayUtils.arrayWithLength(this.propertyConfigs, count,
 				MetricHarvesterPropertyConfig.class, MetricHarvesterPropertyConfig::new);
+	}
+
+	/**
+	 * Get the expression configurations.
+	 *
+	 * @return the expression configurations
+	 */
+	public ExpressionConfig[] getExpressionConfigs() {
+		return expressionConfigs;
+	}
+
+	/**
+	 * Set the expression configurations to use.
+	 *
+	 * @param expressionConfigs
+	 *        the configs to use
+	 */
+	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+		this.expressionConfigs = expressionConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code expressionConfigs} elements.
+	 *
+	 * @return the number of {@code expressionConfigs} elements
+	 */
+	public int getExpressionConfigsCount() {
+		ExpressionConfig[] confs = this.expressionConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code ExpressionTransformConfig}
+	 * elements.
+	 *
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link ExpressionTransformConfig} instances.
+	 * </p>
+	 *
+	 * @param count
+	 *        The desired number of {@code expressionConfigs} elements.
+	 */
+	public void setExpressionConfigsCount(int count) {
+		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
+				ExpressionConfig.class, null);
 	}
 
 }

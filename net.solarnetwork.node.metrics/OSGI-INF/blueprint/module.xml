@@ -48,6 +48,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- 
 	 !!! Metric Cleaner Job
 	 -->
@@ -99,6 +105,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.metrics.service.MetricHarvesterDatumFilterService</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
 				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
@@ -137,7 +144,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metrics.service.harvester"
-			autowire-on-update="true">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -159,6 +166,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
