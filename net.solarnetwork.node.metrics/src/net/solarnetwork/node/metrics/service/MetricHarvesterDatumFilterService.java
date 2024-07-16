@@ -93,9 +93,10 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 			if ( metricName == null || metricName.isEmpty() ) {
 				continue;
 			}
-			Double n = samples.getSampleDouble(config.getPropertyType(), config.getPropertyKey());
+			Number n = config.applyTransformations(
+					samples.getSampleBigDecimal(config.getPropertyType(), config.getPropertyKey()));
 			if ( n != null ) {
-				Metric m = Metric.sampleValue(datum.getTimestamp(), metricName, n);
+				Metric m = Metric.sampleValue(datum.getTimestamp(), metricName, n.doubleValue());
 				metricDao.save(m);
 			}
 		}
