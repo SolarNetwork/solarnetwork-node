@@ -62,6 +62,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!--
 	 !!! SimpleFilterSamplesTransformer (property filter) - global filter
 	 -->
@@ -114,6 +120,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -175,6 +182,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 		</bean>
@@ -232,6 +240,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -293,6 +302,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 		</bean>
@@ -349,6 +359,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -406,6 +417,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -462,6 +474,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -518,6 +531,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -575,6 +589,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -632,6 +647,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -688,6 +704,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -743,6 +760,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -798,6 +816,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -864,6 +883,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 

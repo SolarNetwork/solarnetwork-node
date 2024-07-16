@@ -49,7 +49,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the output samples.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class ExpressionDatumFilterService extends BaseDatumFilterSupport
@@ -75,7 +75,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 		Map<String, Object> params = smartPlaceholders(parameters);
 		DatumSamples s = new DatumSamples(samples);
 		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()));
+				getOpModesService(), service(getMetadataService()), service(getLocationService()));
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, s);
 		return s;
