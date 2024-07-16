@@ -22,12 +22,13 @@
 
 package net.solarnetwork.node.domain;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,8 +39,11 @@ import net.solarnetwork.domain.datum.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 
@@ -60,7 +64,7 @@ import net.solarnetwork.node.service.OperationalModesService;
  * </p>
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumMetadataOperations {
@@ -70,6 +74,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	private final DatumService datumService;
 	private final OperationalModesService opModesService;
 	private final MetadataService metadataService;
+	private final LocationService locationService;
 
 	/**
 	 * Constructor.
@@ -163,10 +168,36 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
 			DatumService datumService, OperationalModesService opModesService,
 			MetadataService metadataService) {
+		this(datum, samples, parameters, datumService, opModesService, metadataService, null);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
+	 * @param opModesService
+	 *        the optional operational modes service
+	 * @param metadataService
+	 *        the metadata service
+	 * @param locationService
+	 *        the location service
+	 * @since 2.4
+	 */
+	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
+			DatumService datumService, OperationalModesService opModesService,
+			MetadataService metadataService, LocationService locationService) {
 		super(datum, samples, parameters);
 		this.datumService = datumService;
 		this.opModesService = opModesService;
 		this.metadataService = metadataService;
+		this.locationService = locationService;
 	}
 
 	@Override
@@ -280,16 +311,17 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	 */
 	public Collection<DatumExpressionRoot> latestMatching(String sourceIdPattern) {
 		if ( datumService == null || sourceIdPattern == null ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
-		Set<String> pats = Collections.singleton(sourceIdPattern);
+		Set<String> pats = singleton(sourceIdPattern);
 		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		for ( Datum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
+					locationService));
 		}
 		return result;
 	}
@@ -328,12 +360,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	 */
 	public Collection<DatumExpressionRoot> latestOthersMatching(String sourceIdPattern) {
 		if ( datumService == null || sourceIdPattern == null ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
-		Set<String> pats = Collections.singleton(sourceIdPattern);
+		Set<String> pats = singleton(sourceIdPattern);
 		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 		final String sourceId = getSourceId();
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
@@ -341,7 +373,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
 				continue;
 			}
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
+					locationService));
 		}
 		return result;
 	}
@@ -362,12 +395,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	 */
 	public Collection<DatumExpressionRoot> selfAndLatestMatching(String sourceIdPattern) {
 		if ( datumService == null || sourceIdPattern == null ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
-		Set<String> pats = Collections.singleton(sourceIdPattern);
+		Set<String> pats = singleton(sourceIdPattern);
 		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
-			return Collections.singleton(this);
+			return singleton(this);
 		}
 		final String sourceId = getSourceId();
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
@@ -377,7 +410,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 				continue;
 			} else {
 				result.add(new ExpressionRoot(d, null, null, datumService, opModesService,
-						metadataService));
+						metadataService, locationService));
 			}
 		}
 		return result;
@@ -520,7 +553,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService);
+		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
+				locationService);
 	}
 
 	/**
@@ -582,7 +616,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService);
+		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
+				locationService);
 	}
 
 	/**
@@ -607,16 +642,17 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	 */
 	public Collection<DatumExpressionRoot> slice(String sourceId, int offset, int count) {
 		if ( datumService == null || sourceId == null ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 		Collection<NodeDatum> found = datumService.slice(sourceId, offset, count, null);
 		if ( found == null || found.isEmpty() ) {
-			return Collections.singleton(this);
+			return singleton(this);
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		result.add(this);
 		for ( NodeDatum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
+					locationService));
 		}
 		return result;
 	}
@@ -646,16 +682,17 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	public Collection<DatumExpressionRoot> slice(String sourceId, Instant timestamp, int offset,
 			int count) {
 		if ( datumService == null || sourceId == null ) {
-			return Collections.emptyList();
+			return emptyList();
 		}
 		Collection<NodeDatum> found = datumService.slice(sourceId, offset, count, null);
 		if ( found == null || found.isEmpty() ) {
-			return Collections.singleton(this);
+			return singleton(this);
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		result.add(this);
 		for ( NodeDatum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
+					locationService));
 		}
 		return result;
 	}
@@ -736,7 +773,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	 */
 	public Collection<DatumMetadataOperations> metaMatching(String sourceIdFilter) {
 		return (datumService != null ? datumService.datumMetadata(singleton(sourceIdFilter))
-				: Collections.emptyList());
+				: emptyList());
 	}
 
 	/**
@@ -752,25 +789,25 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	@Override
 	public Map<String, ?> getInfo() {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getInfo() : Collections.emptyMap());
+		return (delegate != null ? delegate.getInfo() : emptyMap());
 	}
 
 	@Override
 	public Set<String> getPropertyInfoKeys() {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getPropertyInfoKeys() : Collections.emptySet());
+		return (delegate != null ? delegate.getPropertyInfoKeys() : emptySet());
 	}
 
 	@Override
 	public Map<String, ?> getPropertyInfo(String key) {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getPropertyInfo(key) : Collections.emptyMap());
+		return (delegate != null ? delegate.getPropertyInfo(key) : emptyMap());
 	}
 
 	@Override
 	public Set<String> getTags() {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getTags() : Collections.emptySet());
+		return (delegate != null ? delegate.getTags() : emptySet());
 	}
 
 	@Override
@@ -783,6 +820,40 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	public <T> T metadataAtPath(String path, Class<T> clazz) {
 		final DatumMetadataOperations delegate = metadata();
 		return (delegate != null ? delegate.metadataAtPath(path, clazz) : null);
+	}
+
+	private GeneralLocationSourceMetadata locationSourceMetadata(final Long locationId,
+			final String sourceId) {
+		if ( locationId == null || sourceId == null || sourceId.isEmpty() || locationService == null ) {
+			return null;
+		}
+		return locationService.getLocationMetadata(locationId, sourceId);
+	}
+
+	/**
+	 * Get a location datum's object ID.
+	 *
+	 * @return the object ID, or {@literal null}
+	 * @since 2.4
+	 */
+	public Long getLocId() {
+		Datum datum = getDatum();
+		return (datum != null && datum.getKind() == ObjectDatumKind.Location ? datum.getObjectId()
+				: null);
+	}
+
+	/**
+	 * Get a location datum's stream metadata.
+	 *
+	 * @return the location metadata, or {@literal null}
+	 * @since 2.4
+	 */
+	public DatumMetadataOperations getLocMeta() {
+		final GeneralLocationSourceMetadata m = locationSourceMetadata(getLocId(), getSourceId());
+		if ( m == null ) {
+			return null;
+		}
+		return m.getMeta();
 	}
 
 }

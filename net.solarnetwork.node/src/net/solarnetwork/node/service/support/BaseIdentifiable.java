@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.ExpressionService;
@@ -49,7 +50,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.67
  */
 public abstract class BaseIdentifiable extends BasicIdentifiable implements Identifiable {
@@ -63,6 +64,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	private OptionalService<PlaceholderService> placeholderService;
 	private OptionalService<MetadataService> metadataService;
+	private OptionalService<LocationService> locationService;
 	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	/**
@@ -245,7 +247,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	/**
 	 * Get an optional {@link MetadataService}.
 	 *
-	 * @return the metadataService
+	 * @return the service
 	 * @since 2.1
 	 */
 	public OptionalService<MetadataService> getMetadataService() {
@@ -256,11 +258,32 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * Configure an optional {@link MetadataService}.
 	 *
 	 * @param metadataService
-	 *        the metadataService to set
+	 *        the service to set
 	 * @since 2.1
 	 */
 	public void setMetadataService(OptionalService<MetadataService> metadataService) {
 		this.metadataService = metadataService;
+	}
+
+	/**
+	 * Get an optional {@link LocationService}.
+	 *
+	 * @return the service
+	 * @since 2.2
+	 */
+	public final OptionalService<LocationService> getLocationService() {
+		return locationService;
+	}
+
+	/**
+	 * Configure an optional {@link LocationService}.
+	 *
+	 * @param locationService
+	 *        the service to set
+	 * @since 2.2
+	 */
+	public final void setLocationService(OptionalService<LocationService> locationService) {
+		this.locationService = locationService;
 	}
 
 }
