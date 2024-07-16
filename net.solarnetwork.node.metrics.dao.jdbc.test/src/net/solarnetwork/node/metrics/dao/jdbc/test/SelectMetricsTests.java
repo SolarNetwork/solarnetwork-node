@@ -148,4 +148,33 @@ public class SelectMetricsTests {
 				equalToTextResource("select-metrics-agg-01.sql", getClass(), null));
 	}
 
+	@Test
+	public void pagination() throws SQLException {
+		// GIVEN
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setStartDate(start);
+		filter.setEndDate(start.plusSeconds(1));
+		filter.setOffset(1);
+		filter.setMax(2);
+
+		Capture<String> sqlCaptor = Capture.newInstance();
+		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
+				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
+		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
+		ps.setObject(1, filter.getStartDate());
+		ps.setObject(2, filter.getEndDate());
+		ps.setInt(3, filter.getOffset());
+		ps.setInt(4, filter.getMax());
+
+		// WHEN
+		replayAll();
+		SelectMetrics select = new SelectMetrics(filter);
+		PreparedStatement ps = select.createPreparedStatement(conn);
+
+		// THEN
+		assertThat("PreparedStatement returned", ps, is(notNullValue()));
+		assertThat("Generated SQL", sqlCaptor.getValue(),
+				equalToTextResource("select-metrics-02.sql", getClass(), null));
+	}
 }

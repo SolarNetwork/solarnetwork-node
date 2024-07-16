@@ -392,4 +392,46 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 		}), is(equalTo(true)));
 	}
 
+	@Test
+	public void findFiltered_pagination() {
+		// GIVEN
+		final int rowCount = 12;
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		final String[] types = new String[] { "t1", "t2", "t3" };
+		final String[] names = new String[] { "a", "b", "c" };
+		final List<Metric> allMetrics = new ArrayList<>(rowCount * types.length);
+		for ( int i = 0; i < rowCount; i++ ) {
+			for ( int j = 0; j < types.length; j++ ) {
+				Metric m = metricValue(start.plusSeconds(i), types[j % types.length],
+						names[i % names.length], random());
+				dao.save(m);
+				allMetrics.add(m);
+			}
+		}
+
+		// WHEN
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setType("t1");
+		filter.setMax(2);
+		FilterResults<Metric, MetricKey> results1 = dao.findFiltered(filter);
+
+		filter.setOffset(2);
+		FilterResults<Metric, MetricKey> results2 = dao.findFiltered(filter);
+
+		// THEN
+		assertThat("Result returned", results1, is(notNullValue()));
+		assertThat("Result returned", results2, is(notNullValue()));
+
+		final Metric[] t1 = allMetrics.stream().filter(m -> {
+			return "t1".equals(m.getType());
+		}).toArray(Metric[]::new);
+
+		final List<Metric> resultList1 = stream(results1.spliterator(), false).collect(toList());
+		assertThat("Expected page 1 count returned", resultList1, hasSize(2));
+		assertThat("Expected page 1 returned", resultList1, contains(t1[0], t1[1]));
+
+		final List<Metric> resultList2 = stream(results2.spliterator(), false).collect(toList());
+		assertThat("Expected page 1 count returned", resultList2, hasSize(2));
+		assertThat("Expected page 1 returned", resultList2, contains(t1[2], t1[3]));
+	}
 }

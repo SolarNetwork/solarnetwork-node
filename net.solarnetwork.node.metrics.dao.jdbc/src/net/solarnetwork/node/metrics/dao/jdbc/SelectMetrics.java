@@ -81,11 +81,12 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		StringBuilder buf = new StringBuilder();
 		if ( filter.hasAggregateCriteria() ) {
 			sqlAgg(buf);
-			buf.append("ORDER BY mname, mtype");
+			buf.append("ORDER BY mname, mtype\n");
 		} else {
 			sqlRaw(buf);
-			buf.append("ORDER BY ts, mtype, mname");
+			buf.append("ORDER BY ts, mtype, mname\n");
 		}
+		sqlPagination(buf);
 		return buf.toString();
 	}
 
@@ -93,7 +94,8 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 	public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 		PreparedStatement stmt = con.prepareStatement(getSql(), ResultSet.TYPE_FORWARD_ONLY,
 				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
-		prepareWhere(con, stmt, 0);
+		int p = prepareWhere(con, stmt, 0);
+		preparePagination(con, stmt, p);
 		if ( fetchSize > 0 ) {
 			stmt.setFetchSize(fetchSize);
 		}
@@ -175,6 +177,15 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		}
 	}
 
+	private void sqlPagination(StringBuilder buf) {
+		if ( filter.getOffset() != null ) {
+			buf.append("OFFSET ? ROWS\n");
+		}
+		if ( filter.getMax() != null ) {
+			buf.append("FETCH FIRST ? ROWS ONLY\n");
+		}
+	}
+
 	private int prepareWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.hasAggregateCriteria() ) {
 			for ( MetricAggregate agg : filter.getAggregates() ) {
@@ -198,6 +209,16 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 			Array a = con.createArrayOf("VARCHAR", filter.getNames());
 			stmt.setArray(++p, a);
 			a.free();
+		}
+		return p;
+	}
+
+	private int preparePagination(Connection con, PreparedStatement stmt, int p) throws SQLException {
+		if ( filter.getOffset() != null ) {
+			stmt.setInt(++p, filter.getOffset());
+		}
+		if ( filter.getMax() != null ) {
+			stmt.setInt(++p, filter.getMax());
 		}
 		return p;
 	}
