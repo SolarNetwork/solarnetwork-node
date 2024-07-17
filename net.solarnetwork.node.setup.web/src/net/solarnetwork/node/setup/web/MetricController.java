@@ -193,6 +193,7 @@ public class MetricController {
 			filter.setName(name);
 			filter.setOffset(offset);
 			filter.setMax(max);
+			filter.setWithoutTotalResultsCount(false);
 			if ( sorts != null ) {
 				filter.setSorts(sorts.stream().map(s -> (SortDescriptor) s).collect(toList()));
 			}

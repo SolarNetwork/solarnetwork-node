@@ -19,21 +19,30 @@ $(document).ready(function metricsManagement() {
 	 * Metric filter results.
 	 * 
 	 * @typedef {Object} MetricFilterResults
+	 * @property {number} totalResults the total result count
 	 * @property {number} returnedResultCount the number of results returned
 	 * @property {number} startingOffset the starting offset
 	 * @property {Metric[]} results the metrics
 	 */
-
-	const metricTemplate = $('#metrics .template');
-	const metricContainer = $('#metrics .list-container');
 	
-	const nameInput = $('#metrics-filter-name');
+	const i18nPage = document.getElementById('metrics').dataset.i18nPage;
+
+	const metricTemplate = $('#metrics-list .template');
+	const metricContainer = $('#metrics-list .list-container');
+	
+	const nameInput = $('#metrics-list-filter-name');
+	const prevPageBtn = $('#metrics-list-nav-prev');
+	const selectPageBtn = $('#metrics-list-nav-menu');
+	const selectPageContainer = $('#metrics-list-nav-menu-page-container');
+	const nextPageBtn = $('#metrics-list-nav-next');
 
 	const metricRows = new Map();
 	
-	let pageSize = 25;
-	let totalMetricCount = 0;
+	let pageSize = 10;
+	let totalPageCount = 0;
 	let pageOffset = 0;
+	
+	let nameInputTimer = undefined;
 	
 	function setupMetrics(/** @type {MetricFilterResults} */ metrics) {
 		metricRows.clear();
@@ -46,8 +55,37 @@ $(document).ready(function metricsManagement() {
 			}
 		}
 			
-		$('#metrics .none').toggleClass('hidden', metricRows.size > 0);
-		$('#metrics .some').toggleClass('hidden', metricRows.size < 1);
+		prevPageBtn.prop('disabled', pageOffset < 1);
+		nextPageBtn.prop('disabled', (pageOffset + 1) * pageSize > metrics.totalResults);
+
+		let pageCount = Math.ceil(metrics.totalResults / pageSize);
+		if ( pageCount != totalPageCount ) {
+			// (re)render page links
+			selectPageContainer.empty();
+			for ( let i = 0; i < pageCount; i++ ) {
+				const btn = $('<button class="dropdown-item" type="button">').text(`${i18nPage} ${i +1}`);
+				btn.data('page', i);
+				if ( i == pageOffset ) {
+					btn.addClass('active');
+				}
+				btn.on('click', pageMenuJump);
+				selectPageContainer.append($('<li>').append(btn));
+			}
+			totalPageCount = pageCount;
+		}
+		
+		selectPageBtn.prop('disabled', pageCount < 1);
+	}
+	
+	function pageMenuJump(event) {
+		const btn = $(event.target);
+		const page = btn.data('page');
+		if (page != pageOffset) {
+			pageOffset = page;
+			selectPageContainer.find('button.active').removeClass('active');
+			btn.addClass('active');
+			queryForMetrics();
+		}
 	}
 
 	function toggleLoading(on) {
@@ -106,20 +144,18 @@ $(document).ready(function metricsManagement() {
 		return $.getJSON(url, (data) => {
 			if ( data && data.success === true ) {
 				setupMetrics(data.data);
-				// TODO subscribe net/solarnetwork/dao/Metric/STORED
 			}
 		});
 	}
 
-	/**
-	 * Subscribe to the "datum stored" topic.
-	 *
-	 * @param {string} [name] an optional source ID to subscribe to; if not provided all sources are subscribed
-	 * @param {function} msgHandler the callback function that accepts error and message arguments
-	 */
-	function subscribeMetricStored(name, msgHandler) {
-		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/metric/stored', name);
-		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
+	function subscribeMetricStored() {
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/metric/stored');
+		SolarNode.WebSocket.subscribeToTopic(topic, handleMetricStoredMessage);
+	}
+	
+	function activateSelectMenuItem(idx) {
+		selectPageContainer.find('button.active').removeClass('active');
+		selectPageContainer.find('button:eq('+idx+')').addClass('active');
 	}
 	
 	/* ============================
@@ -127,7 +163,31 @@ $(document).ready(function metricsManagement() {
 	   ============================ */
 
  	queryForMetrics().always(() => {
+		$('#metrics .none').toggleClass('hidden', metricRows.size > 0);
+		$('#metrics .some').toggleClass('hidden', metricRows.size < 1);
 		toggleLoading(false);
-		subscribeMetricStored(undefined, handleMetricStoredMessage);
+		subscribeMetricStored();
+	});
+
+	nameInput.on('keyup', () => {
+		if (nameInputTimer) {
+			clearTimeout(nameInputTimer);
+		}
+		nameInputTimer = setTimeout(() => {
+			pageOffset = 0;
+			queryForMetrics();
+		}, 500);
+	});
+	
+	prevPageBtn.on('click', () => {
+		pageOffset--;
+		activateSelectMenuItem(pageOffset);
+		queryForMetrics();
+	});
+
+	nextPageBtn.on('click', () => {
+		pageOffset++;
+		activateSelectMenuItem(pageOffset);
+		queryForMetrics();
 	});
 });

@@ -277,4 +277,37 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		return p;
 	}
 
+	/**
+	 * Get SQL to execute a {@code COUNT} style query based on the configured
+	 * filter.
+	 *
+	 * @return the SQL creator
+	 */
+	public PreparedStatementCreator countPreparedStatementCreator() {
+		return new CountPreparedStatementCreator();
+	}
+
+	private final class CountPreparedStatementCreator implements PreparedStatementCreator, SqlProvider {
+
+		@Override
+		public String getSql() {
+			StringBuilder buf = new StringBuilder();
+			buf.append("SELECT COUNT(*) FROM (");
+			if ( filter.hasAggregateCriteria() ) {
+				sqlAgg(buf);
+			} else {
+				sqlRaw(buf);
+			}
+			buf.append(") AS q");
+			return buf.toString();
+		}
+
+		@Override
+		public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+			PreparedStatement stmt = con.prepareStatement(getSql());
+			prepareWhere(con, stmt, 0);
+			return stmt;
+		}
+
+	}
 }

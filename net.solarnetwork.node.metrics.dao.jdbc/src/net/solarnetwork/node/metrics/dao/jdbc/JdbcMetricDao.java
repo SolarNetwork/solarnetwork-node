@@ -25,11 +25,14 @@ package net.solarnetwork.node.metrics.dao.jdbc;
 import static java.lang.String.format;
 import static net.solarnetwork.node.metrics.dao.jdbc.Constants.TABLE_NAME_TEMPALTE;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.SortDescriptor;
@@ -127,7 +130,21 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
 			Integer offset, Integer max) {
 		SelectMetrics sql = new SelectMetrics(filter);
 		List<Metric> results = getJdbcTemplate().query(sql, getRowMapper());
-		return new BasicFilterResults<>(results);
+
+		Long totalResultCount = null;
+		if ( !filter.isWithoutTotalResultsCount() ) {
+			totalResultCount = getJdbcTemplate().query(sql.countPreparedStatementCreator(),
+					new ResultSetExtractor<Long>() {
+
+						@Override
+						public Long extractData(ResultSet rs) throws SQLException, DataAccessException {
+							return rs.next() ? rs.getLong(1) : null;
+						}
+					});
+		}
+
+		return new BasicFilterResults<>(results, totalResultCount,
+				(filter.getOffset() != null ? filter.getOffset() : 0), results.size());
 	}
 
 	@Override

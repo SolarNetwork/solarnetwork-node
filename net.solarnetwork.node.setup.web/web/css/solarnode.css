@@ -541,3 +541,8 @@ input[readonly].form-control {
 .sn-loc-lookup-modal .table.search-results tbody tr {
 	cursor: pointer;	
 }
+
+.dropdown-menu {
+	max-height: 15rem;
+	overflow-y: auto;
+}

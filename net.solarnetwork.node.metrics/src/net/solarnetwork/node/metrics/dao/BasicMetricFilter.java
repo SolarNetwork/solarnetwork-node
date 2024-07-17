@@ -39,6 +39,7 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	private String[] types;
 	private String[] names;
 	private MetricAggregate[] aggregates;
+	private boolean withoutTotalResultsCount = true;
 
 	/**
 	 * Constructor.
@@ -150,4 +151,18 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 		this.aggregates = aggregates;
 	}
 
+	/**
+	 * Toggle the "without total results" mode.
+	 *
+	 * @param mode
+	 *        the mode to set
+	 */
+	public void setWithoutTotalResultsCount(boolean mode) {
+		this.withoutTotalResultsCount = mode;
+	}
+
+	@Override
+	public boolean isWithoutTotalResultsCount() {
+		return withoutTotalResultsCount;
+	}
 }
