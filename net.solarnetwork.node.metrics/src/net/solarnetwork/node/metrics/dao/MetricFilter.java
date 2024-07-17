@@ -25,6 +25,7 @@ package net.solarnetwork.node.metrics.dao;
 import net.solarnetwork.dao.DateRangeCriteria;
 import net.solarnetwork.dao.OptimizedQueryCriteria;
 import net.solarnetwork.dao.PaginationCriteria;
+import net.solarnetwork.dao.RecentCriteria;
 import net.solarnetwork.node.metrics.domain.MetricAggregate;
 
 /**
@@ -34,7 +35,8 @@ import net.solarnetwork.node.metrics.domain.MetricAggregate;
  * @author matt
  * @version 1.0
  */
-public interface MetricFilter extends DateRangeCriteria, PaginationCriteria, OptimizedQueryCriteria {
+public interface MetricFilter
+		extends DateRangeCriteria, PaginationCriteria, OptimizedQueryCriteria, RecentCriteria {
 
 	/**
 	 * Get the first metric type.

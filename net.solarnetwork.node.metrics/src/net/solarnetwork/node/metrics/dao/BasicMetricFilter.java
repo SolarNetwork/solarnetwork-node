@@ -40,6 +40,7 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	private String[] names;
 	private MetricAggregate[] aggregates;
 	private boolean withoutTotalResultsCount = true;
+	private boolean mostRecent;
 
 	/**
 	 * Constructor.
@@ -165,4 +166,20 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	public boolean isWithoutTotalResultsCount() {
 		return withoutTotalResultsCount;
 	}
+
+	@Override
+	public boolean isMostRecent() {
+		return mostRecent;
+	}
+
+	/**
+	 * Set the "most recent" flag.
+	 *
+	 * @param mostRecent
+	 *        the "most recent" flag to set
+	 */
+	public void setMostRecent(boolean mostRecent) {
+		this.mostRecent = mostRecent;
+	}
+
 }

@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.Before;
@@ -55,6 +56,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.metrics.dao.BasicMetricFilter;
+import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.dao.jdbc.JdbcMetricDao;
 import net.solarnetwork.node.metrics.domain.BasicMetricAggregate;
 import net.solarnetwork.node.metrics.domain.Metric;
@@ -434,4 +436,56 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 		assertThat("Expected page 1 count returned", resultList2, hasSize(2));
 		assertThat("Expected page 1 returned", resultList2, contains(t1[2], t1[3]));
 	}
+
+	@Test
+	public void findFiltered_mostRecent() {
+		// GIVEN
+		final int rowCount = 12;
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		final String[] types = new String[] { "t1", "t2", "t3" };
+		final String[] names = new String[] { "a", "b", "c" };
+		final List<Metric> allMetrics = new ArrayList<>(rowCount * types.length);
+		for ( int i = 0; i < rowCount; i++ ) {
+			for ( int j = 0; j < types.length; j++ ) {
+				Metric m = metricValue(start.plusSeconds(i), types[j % types.length],
+						names[i % names.length], random());
+				dao.save(m);
+				allMetrics.add(m);
+			}
+		}
+
+		// WHEN
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setType("t1");
+		filter.setNames(new String[] { "a", "b" });
+		filter.setMostRecent(true);
+		filter.setSorts(MetricDao.SORT_BY_TYPE_NAME);
+		FilterResults<Metric, MetricKey> results = dao.findFiltered(filter);
+
+		// THEN
+		assertThat("Result returned", results, is(notNullValue()));
+
+		// pull out expected most recent a/b values
+		Metric expected_a = null;
+		Metric expected_b = null;
+		for ( ListIterator<Metric> itr = allMetrics.listIterator(allMetrics.size()); itr
+				.hasPrevious(); ) {
+			Metric m = itr.previous();
+			if ( "t1".equals(m.getType()) ) {
+				if ( expected_a == null && "a".equals(m.getName()) ) {
+					expected_a = m;
+				} else if ( expected_b == null && "b".equals(m.getName()) ) {
+					expected_b = m;
+				}
+			}
+			if ( expected_a != null && expected_b != null ) {
+				break;
+			}
+		}
+
+		final List<Metric> resultList = stream(results.spliterator(), false).collect(toList());
+		assertThat("1 result per name returned", resultList, hasSize(2));
+		assertThat("Results ordered by name", resultList, contains(expected_a, expected_b));
+	}
+
 }

@@ -105,9 +105,20 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 	}
 
 	private void sqlRaw(StringBuilder buf) {
-		buf.append("SELECT ts, mtype, mname, val\n");
+		if ( filter.isMostRecent() ) {
+			buf.append("SELECT ts, mtype, mname, val FROM (\n");
+		}
+		buf.append("SELECT ");
+		if ( filter.isMostRecent() ) {
+			buf.append("DISTINCT ON (mtype, mname) ");
+		}
+		buf.append("ts, mtype, mname, val\n");
 		buf.append("FROM solarnode.mtr_metric\n");
 		sqlWhere(buf);
+		if ( filter.isMostRecent() ) {
+			buf.append("ORDER BY ts DESC, mtype, mname\n");
+			buf.append(") m\n");
+		}
 	}
 
 	private void sqlAgg(StringBuilder buf) {

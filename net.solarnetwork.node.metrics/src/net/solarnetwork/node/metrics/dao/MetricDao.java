@@ -22,8 +22,13 @@
 
 package net.solarnetwork.node.metrics.dao;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+import java.util.List;
 import net.solarnetwork.dao.FilterableDao;
 import net.solarnetwork.dao.GenericDao;
+import net.solarnetwork.domain.SimpleSortDescriptor;
+import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.node.metrics.domain.Metric;
 import net.solarnetwork.node.metrics.domain.MetricKey;
 
@@ -47,6 +52,25 @@ public interface MetricDao
 
 	/** The sort key for ordering by timestamp. */
 	String SORT_BY_VALUE = "value";
+
+	/** Sort descriptor to sort by date, descending. */
+	SortDescriptor SORT_BY_DATE_DESC = new SimpleSortDescriptor(MetricDao.SORT_BY_DATE, true);
+
+	/** Sort descriptor to sort by type, ascending. */
+	SortDescriptor SORT_BY_TYPE_ASC = new SimpleSortDescriptor(MetricDao.SORT_BY_TYPE);
+
+	/** Sort descriptor to sort by name, ascending. */
+	SortDescriptor SORT_BY_NAME_ASC = new SimpleSortDescriptor(MetricDao.SORT_BY_NAME);
+
+	/**
+	 * Sort descriptor list to sort by date descending, then type, then name.
+	 */
+	List<SortDescriptor> SORT_BY_DATE_DESC_TYPE_NAME = unmodifiableList(
+			asList(SORT_BY_DATE_DESC, SORT_BY_TYPE_ASC, SORT_BY_NAME_ASC));
+
+	/** Sort descriptor list to sort by type then name. */
+	List<SortDescriptor> SORT_BY_TYPE_NAME = unmodifiableList(
+			asList(SORT_BY_TYPE_ASC, SORT_BY_NAME_ASC));
 
 	/**
 	 * Delete metrics matching a filter.

@@ -243,4 +243,32 @@ public class SelectMetricsTests {
 				equalToTextResource("select-metrics-04.sql", getClass(), null));
 	}
 
+	@Test
+	public void mostRecent() throws SQLException {
+		// GIVEN
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setStartDate(start);
+		filter.setEndDate(start.plusSeconds(1));
+		filter.setMostRecent(true);
+		filter.setSorts(MetricDao.SORT_BY_TYPE_NAME);
+
+		Capture<String> sqlCaptor = Capture.newInstance();
+		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
+				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
+		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
+		ps.setObject(1, filter.getStartDate());
+		ps.setObject(2, filter.getEndDate());
+
+		// WHEN
+		replayAll();
+		SelectMetrics select = new SelectMetrics(filter);
+		PreparedStatement ps = select.createPreparedStatement(conn);
+
+		// THEN
+		assertThat("PreparedStatement returned", ps, is(notNullValue()));
+		assertThat("Generated SQL", sqlCaptor.getValue(),
+				equalToTextResource("select-metrics-05.sql", getClass(), null));
+	}
+
 }
