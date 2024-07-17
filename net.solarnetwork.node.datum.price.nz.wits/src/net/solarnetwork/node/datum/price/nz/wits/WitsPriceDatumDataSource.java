@@ -81,11 +81,15 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	public static final MarketType DEFAULT_MARKET_TYPE = MarketType.Energy;
 
 	/** The {@code fromOffset} property default value. */
-	public static final Duration DEFAULT_FROM_OFFSET = Duration.ofMinutes(2);
+	public static final Duration DEFAULT_FROM_OFFSET = Duration.ofSeconds(299);
+
+	/** The {@code sampleCacheTtl} property default value. */
+	public static final Duration DEFAULT_SAMPLE_CACHE_TTL = Duration.ofSeconds(59);
 
 	/** The {@code tokenUrl} property default value. */
 	public static final String DEFAULT_TOKEN_URL = "https://api.electricityinfo.co.nz/login/oauth2/token";
 
+	/** The {code priceUrl} property default value. */
 	public static final String DEFAULT_PRICE_URL = "https://api.electricityinfo.co.nz/api/market-prices/v1/schedules/RTD/prices";
 
 	private final Clock clock;
@@ -99,6 +103,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	private Duration fromOffset = DEFAULT_FROM_OFFSET;
 	private String tokenUrl = DEFAULT_TOKEN_URL;
 	private String priceUrl = DEFAULT_PRICE_URL;
+	private Duration sampleCacheTtl = DEFAULT_SAMPLE_CACHE_TTL;
 
 	private CachedResult<PriceDatum> latestDatum;
 	private OAuth20Service oauth;
@@ -188,7 +193,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 					MarketPrice data = objectMapper.treeToValue(prices.get(0), MarketPrice.class);
 					if ( data != null ) {
 						SimplePriceDatum d = datum(data);
-						CachedResult<PriceDatum> cd = new CachedResult<>(d, fromOffset.getSeconds(),
+						CachedResult<PriceDatum> cd = new CachedResult<>(d, sampleCacheTtl.getSeconds(),
 								TimeUnit.SECONDS);
 						this.latestDatum = cd;
 						return d;
@@ -322,6 +327,8 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 		results.add(new BasicTextFieldSettingSpecifier("node", null));
 		results.add(new BasicTextFieldSettingSpecifier("fromOffsetSeconds",
 				String.valueOf(DEFAULT_FROM_OFFSET.getSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds",
+				String.valueOf(DEFAULT_SAMPLE_CACHE_TTL.getSeconds())));
 
 		return results;
 	}
@@ -479,7 +486,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	 *        the offset to set; if less than 1 then
 	 *        {@link #DEFAULT_FROM_OFFSET} will be used
 	 */
-	public final void setFromOffset(long seconds) {
+	public final void setFromOffsetSeconds(long seconds) {
 		setFromOffset(seconds > 0 ? Duration.ofSeconds(seconds) : null);
 	}
 
@@ -521,6 +528,46 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	 */
 	public final void setPriceUrl(String priceUrl) {
 		this.priceUrl = (priceUrl != null && !priceUrl.isEmpty() ? priceUrl : DEFAULT_PRICE_URL);
+	}
+
+	/**
+	 * Get the sample cache time-to-live (TTL).
+	 *
+	 * @return the TTL; defaults to {@link #DEFAULT_SAMPLE_CACHE_TTL}
+	 */
+	public final Duration getSampleCacheTtl() {
+		return sampleCacheTtl;
+	}
+
+	/**
+	 * Set the sample cache time-to-live (TTL).
+	 *
+	 * @param sampleCacheTtl
+	 *        the TTL to set; if {@literal null} then
+	 *        {@link #DEFAULT_SAMPLE_CACHE_TTL} will be used
+	 */
+	public final void setSampleCacheTtl(Duration sampleCacheTtl) {
+		this.sampleCacheTtl = (sampleCacheTtl != null ? sampleCacheTtl : DEFAULT_SAMPLE_CACHE_TTL);
+	}
+
+	/**
+	 * Get the sample cache time-to-live (TTL), in seconds
+	 *
+	 * @return the TTL in seconds; defaults to {@link #DEFAULT_SAMPLE_CACHE_TTL}
+	 */
+	public final long getSampleCacheSeconds() {
+		return sampleCacheTtl.getSeconds();
+	}
+
+	/**
+	 * Set the sample cache time-to-live (TTL), in seconds.
+	 *
+	 * @param ttl
+	 *        the TTL in seconds to set; if {@literal null} then
+	 *        {@link #DEFAULT_SAMPLE_CACHE_TTL} will be used
+	 */
+	public final void setSampleCacheSeconds(long ttl) {
+		setSampleCacheTtl(Duration.ofSeconds(ttl));
 	}
 
 }
