@@ -1,5 +1,5 @@
 /* ==================================================================
- * MetricDao.java - 14/07/2024 7:40:55 am
+ * MetricEventDataExtractor.java - 17/07/2024 3:59:07 pm
  *
  * Copyright 2024 SolarNetwork.net Dev Team
  *
@@ -20,41 +20,46 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.metrics.dao;
+package net.solarnetwork.node.metrics.service;
 
-import net.solarnetwork.dao.FilterableDao;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Function;
+import org.osgi.service.event.Event;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.metrics.domain.Metric;
-import net.solarnetwork.node.metrics.domain.MetricKey;
 
 /**
- * DAO API for {@link Metric} entities.
+ * Function to extract event data from a Metric entity event.
  *
  * @author matt
  * @version 1.0
  */
-public interface MetricDao
-		extends GenericDao<Metric, MetricKey>, FilterableDao<Metric, MetricKey, MetricFilter> {
-
-	/** The sort key for ordering by timestamp. */
-	String SORT_BY_DATE = "date";
-
-	/** The sort key for ordering by timestamp. */
-	String SORT_BY_TYPE = "type";
-
-	/** The sort key for ordering by timestamp. */
-	String SORT_BY_NAME = "name";
-
-	/** The sort key for ordering by timestamp. */
-	String SORT_BY_VALUE = "value";
+public final class MetricEventDataExtractor implements Function<Event, Map<String, ?>> {
 
 	/**
-	 * Delete metrics matching a filter.
-	 *
-	 * @param filter
-	 *        the filter
-	 * @return the number of rows deleted
+	 * Constructor.
 	 */
-	int deleteFiltered(MetricFilter filter);
+	public MetricEventDataExtractor() {
+		super();
+	}
+
+	@Override
+	public Map<String, ?> apply(Event event) {
+		if ( event == null ) {
+			return null;
+		}
+		Object entity = event.getProperty(GenericDao.ENTITY_EVENT_ENTITY_PROPERTY);
+		if ( entity instanceof Metric ) {
+			Metric m = (Metric) entity;
+			Map<String, Object> data = new LinkedHashMap<>(4);
+			data.put("timestamp", m.getTimestamp());
+			data.put("type", m.getType());
+			data.put("name", m.getName());
+			data.put("value", m.getValue());
+			return data;
+		}
+		return null;
+	}
 
 }

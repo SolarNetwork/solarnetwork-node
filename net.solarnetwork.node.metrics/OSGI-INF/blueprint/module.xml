@@ -18,6 +18,8 @@
 
 	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
 
+	<reference id="eventMessageRegistrar" interface="net.solarnetwork.node.service.EventMessageRegistrar"/>
+
 	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
@@ -52,6 +54,23 @@
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="messageRegistration" class="net.solarnetwork.node.service.support.EventMessageRegistration" 
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<argument ref="eventMessageRegistrar"/>
+		<property name="topicMappings">
+			<map>
+				<entry key="net/solarnetwork/dao/Metric/STORED" value="metric/stored/{name}"/>
+			</map>
+		</property>
+		<property name="eventExtractors">
+			<map>
+				<entry key="net/solarnetwork/dao/Metric/STORED">
+					<bean class="net.solarnetwork.node.metrics.service.MetricEventDataExtractor"/>
+				</entry>
+			</map>
+		</property>
 	</bean>
 
 	<!-- 
