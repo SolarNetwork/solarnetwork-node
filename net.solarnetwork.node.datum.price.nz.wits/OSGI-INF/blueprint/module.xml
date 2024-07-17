@@ -116,7 +116,7 @@
 					</property>
 				</bean>
 			</argument>
-			<argument value="5,20,45 1/5 * * * ?"/>
+			<argument value="0 * * * * *"/>
 		</bean>
 	</osgix:managed-service-factory>
 
