@@ -126,7 +126,7 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	/**
 	 * Set the event extractors.
 	 *
-	 * @param eventExtractor
+	 * @param eventExtractors
 	 *        the event extractors to set
 	 */
 	public final void setEventExtractors(Map<String, Function<Event, Map<String, ?>>> eventExtractors) {
