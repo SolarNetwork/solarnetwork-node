@@ -84,12 +84,15 @@ public class MetricHarvesterPropertyConfig extends NumberDatumSamplePropertyConf
 	 * Constructor.
 	 *
 	 * @param propertyKey
+	 *        the property key
 	 * @param propertyType
-	 * @param config
+	 *        the property type
+	 * @param metricName
+	 *        the metric name
 	 */
 	public MetricHarvesterPropertyConfig(String propertyKey, DatumSamplesType propertyType,
-			String config) {
-		super(propertyKey, propertyType, config);
+			String metricName) {
+		super(propertyKey, propertyType, metricName);
 	}
 
 	/**

@@ -62,7 +62,18 @@ public class MetricDaoCleanerJob extends BaseIdentifiable implements JobService 
 		/** The {@code types} default value. */
 		public static final String DEFAULT_TYPE = Metric.METRIC_TYPE_SAMPLE;
 
+		/**
+		 * Get settings for configuring a {@link MetricDaoCleanerJob}.
+		 *
+		 * @param prefix
+		 *        the prefix
+		 * @return the settings
+		 */
 		public static List<SettingSpecifier> settings(String prefix) {
+			if ( prefix == null ) {
+				prefix = "";
+			}
+
 			List<SettingSpecifier> results = new ArrayList<>(2);
 
 			results.add(new BasicTextFieldSettingSpecifier(prefix + "ageDays", null));
@@ -75,6 +86,13 @@ public class MetricDaoCleanerJob extends BaseIdentifiable implements JobService 
 		private Duration age;
 		private Set<String> types = Collections.singleton(DEFAULT_TYPE);
 		private Set<String> names;
+
+		/**
+		 * Constructor.
+		 */
+		public MetricCleanConfig() {
+			super();
+		}
 
 		/**
 		 * Test if the configuration is valid.
@@ -315,7 +333,7 @@ public class MetricDaoCleanerJob extends BaseIdentifiable implements JobService 
 	 *
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link MetricHarvesterConfig} instances.
+	 * {@link MetricCleanConfig} instances.
 	 * </p>
 	 *
 	 * @param count

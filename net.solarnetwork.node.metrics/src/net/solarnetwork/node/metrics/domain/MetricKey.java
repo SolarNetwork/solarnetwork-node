@@ -37,8 +37,13 @@ public class MetricKey implements Serializable, Cloneable, Comparable<MetricKey>
 
 	private static final long serialVersionUID = 987923456336920228L;
 
+	/** The timestamp. */
 	private final Instant timestamp;
+
+	/** The type. */
 	private final String type;
+
+	/** The name. */
 	private final String name;
 
 	/**
@@ -58,6 +63,19 @@ public class MetricKey implements Serializable, Cloneable, Comparable<MetricKey>
 		this.timestamp = ObjectUtils.requireNonNullArgument(timestamp, "timestamp");
 		this.type = ObjectUtils.requireNonNullArgument(type, "type");
 		this.name = ObjectUtils.requireNonNullArgument(name, "name");
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("MetricKey{timestamp=");
+		builder.append(timestamp);
+		builder.append(", type=");
+		builder.append(type);
+		builder.append(", name=");
+		builder.append(name);
+		builder.append("}");
+		return builder.toString();
 	}
 
 	@Override

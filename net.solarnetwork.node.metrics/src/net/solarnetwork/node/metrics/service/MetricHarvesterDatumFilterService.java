@@ -295,7 +295,7 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link ExpressionTransformConfig} instances.
+	 * {@link ExpressionConfig} instances.
 	 * </p>
 	 *
 	 * @param count

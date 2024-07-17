@@ -41,13 +41,14 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 
 	private static final long serialVersionUID = 5073245960163407375L;
 
+	/** The value. */
 	private final double value;
 
 	/**
 	 * Create a new sample metric instance.
 	 *
 	 * <p>
-	 * The {@link type} will be set to {@link #METRIC_TYPE_SAMPLE}.
+	 * The {@code type} will be set to {@link #METRIC_TYPE_SAMPLE}.
 	 * </p>
 	 *
 	 * @param ts
