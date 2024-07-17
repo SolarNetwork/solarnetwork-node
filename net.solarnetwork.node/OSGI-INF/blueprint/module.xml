@@ -384,11 +384,15 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<service interface="org.osgi.service.event.EventHandler">
+	<service>
+		<interfaces>
+			<value>org.osgi.service.event.EventHandler</value>
+			<value>net.solarnetwork.node.service.EventMessageRegistrar</value>
+		</interfaces>
 		<service-properties>
 			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>net/solarnetwork/node/*</beans:value>
+					<beans:value>net/solarnetwork/*</beans:value>
 				</beans:array>
 			</entry>
 		</service-properties>
