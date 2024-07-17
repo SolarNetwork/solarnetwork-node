@@ -40,7 +40,7 @@ public final class JdbcUtils {
 	}
 
 	/**
-	 * Get an {@Link Instant} from a JDBC result set.
+	 * Get an {@link Instant} from a JDBC result set.
 	 *
 	 * @param rs
 	 *        the result set

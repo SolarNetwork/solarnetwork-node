@@ -30,6 +30,10 @@ package net.solarnetwork.node.metrics.dao.jdbc;
  */
 public final class Constants {
 
+	private Constants() {
+		// not available
+	}
+
 	/** The metric table name template to use. */
 	public static final String TABLE_NAME_TEMPALTE = "mtr_%s";
 
