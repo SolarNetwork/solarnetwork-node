@@ -90,6 +90,7 @@ public class MetricController {
 		private String name;
 		private Integer offset;
 		private Integer max;
+		private boolean mostRecent;
 		private List<MutableSortDescriptor> sorts;
 
 		/**
@@ -169,6 +170,25 @@ public class MetricController {
 		}
 
 		/**
+		 * Get the "most recent" flag.
+		 *
+		 * @return the "most recent" flag
+		 */
+		public boolean isMostRecent() {
+			return mostRecent;
+		}
+
+		/**
+		 * Set the "most recent" flag.
+		 *
+		 * @param mostRecent
+		 *        the "most recent" flag to set
+		 */
+		public void setMostRecent(boolean mostRecent) {
+			this.mostRecent = mostRecent;
+		}
+
+		/**
 		 * Get the sorts.
 		 *
 		 * @return the sorts
@@ -193,7 +213,11 @@ public class MetricController {
 			filter.setName(name);
 			filter.setOffset(offset);
 			filter.setMax(max);
-			filter.setWithoutTotalResultsCount(false);
+			if ( mostRecent ) {
+				filter.setMostRecent(true);
+			} else {
+				filter.setWithoutTotalResultsCount(false);
+			}
 			if ( sorts != null ) {
 				filter.setSorts(sorts.stream().map(s -> (SortDescriptor) s).collect(toList()));
 			}
@@ -211,7 +235,7 @@ public class MetricController {
 	 */
 	@RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public Result<FilterResults<Metric, MetricKey>> listDatumDataSources(MetricListCommand cmd) {
+	public Result<FilterResults<Metric, MetricKey>> listMetrics(MetricListCommand cmd) {
 		final MetricDao dao = OptionalService.service(this.metricDao);
 		if ( dao == null ) {
 			return Result.success(new BasicFilterResults<>(Collections.emptyList()));

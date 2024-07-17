@@ -27,6 +27,10 @@ $(document).ready(function metricsManagement() {
 	
 	const i18nPage = document.getElementById('metrics').dataset.i18nPage;
 
+	const mostRecentMetricsSection = $('#metrics-most-recent');
+	const mostRecentMetricTemplate = mostRecentMetricsSection.find('.template');
+	const mostRecentMetricContainer = mostRecentMetricsSection.find('.list-container');
+	
 	const metricTemplate = $('#metrics-list .template');
 	const metricContainer = $('#metrics-list .list-container');
 	
@@ -36,6 +40,10 @@ $(document).ready(function metricsManagement() {
 	const selectPageContainer = $('#metrics-list-nav-menu-page-container');
 	const nextPageBtn = $('#metrics-list-nav-next');
 
+	/** @type Map<String, jQuery> */
+	const mostRecentMetricRows = new Map();
+
+	/** @type Map<String, jQuery> */
 	const metricRows = new Map();
 	
 	let pageSize = 10;
@@ -44,6 +52,19 @@ $(document).ready(function metricsManagement() {
 	
 	let nameInputTimer = undefined;
 	
+	function setupMostRecentMetrics(/** @type {MetricFilterResults} */ metrics) {
+		mostRecentMetricRows.clear();
+		mostRecentMetricContainer.empty();
+		
+		if ( Array.isArray(metrics.results) ) {
+			for ( let metric of metrics.results ) {
+				renderMetric(metric, 0, mostRecentMetricTemplate, mostRecentMetricContainer, mostRecentMetricRows, mostRecentMetricKey(metric));
+			}
+		}
+		
+		mostRecentMetricsSection.toggleClass('hidden', mostRecentMetricRows.size == 0);
+	}
+
 	function setupMetrics(/** @type {MetricFilterResults} */ metrics) {
 		metricRows.clear();
 		metricContainer.empty();
@@ -51,7 +72,7 @@ $(document).ready(function metricsManagement() {
 		if ( Array.isArray(metrics.results) ) {
 			let row = metrics.startingOffset;
 			for ( let metric of metrics.results ) {
-				renderMetric(metric, ++row);
+				renderMetric(metric, ++row, metricTemplate, metricContainer, metricRows, metricKey(metric));
 			}
 		}
 			
@@ -93,18 +114,33 @@ $(document).ready(function metricsManagement() {
 		$('.ready').toggleClass('hidden', on);
 	}
 	
-	function renderMetric(/** @type {Metric} */ metric, /** @type {number} */ row) {
-		const itemEl = metricTemplate.clone(true).removeClass('template');
+	function renderMetric(/** @type {Metric} */ metric
+			, /** @type {number} */ row
+			, /** @type {jQuery} */ template
+			, /** @type {jQuery} */ dest
+			, /** @type {Map<String, jQuery>} */ rowMap
+			, /** @type {string} */ rowKey) {
+		const itemEl = template.clone(true).removeClass('template');
+		populateMetric(metric, row, itemEl);
+		dest.append(itemEl);
+		rowMap.set(rowKey, itemEl);
+	}
+
+	function populateMetric(/** @type {Metric} */ metric, /** @type {number} */ row, /** @type jQuery */ itemEl) {
 		itemEl.find('[data-tprop=idx]').text(row);
 		itemEl.find('[data-tprop=displayTs]').text(moment(metric.timestamp).format('YYYY-MM-DD HH:mm:ss.SSS'));
 		itemEl.find('[data-tprop=type]').text(metric.type);
 		itemEl.find('[data-tprop=name]').text(metric.name);
 		itemEl.find('[data-tprop=value]').text(metric.value);
-		
-		metricContainer.append(itemEl);
-		metricRows.set(metricKey(metric), itemEl);
 	}
 	
+	function mostRecentMetricKey(metric) {
+		if (!metric ) {
+			return undefined;
+		}
+		return `${metric.type}.${metric.name}`;
+	}
+
 	function metricKey(metric) {
 		if (!metric ) {
 			return undefined;
@@ -120,11 +156,32 @@ $(document).ready(function metricsManagement() {
 		}
 		console.debug('Metric stored: %o', metric);
 
-		const key = metricKey(metric);
-		const itemEl = metricRows.get(key);
-		// TODO: handle metric
+		const key = mostRecentMetricKey(metric);
+		const itemEl = mostRecentMetricRows.get(key);
+		if ( !itemEl ) {
+			renderMetric(metric, 0, mostRecentMetricTemplate, mostRecentMetricContainer, mostRecentMetricRows, key);
+		} else {
+			itemEl.removeClass('brief-showcase');
+			populateMetric(metric, 0, itemEl);
+			setTimeout(() => {
+				// kick to another event loop
+				itemEl.addClass('brief-showcase');
+			}, 100);
+		}
 	}
 	
+	function queryForMostRecentMetrics() {
+		let url = SolarNode.context.path('/a/metrics/list') 
+			+ '?type=s&mostRecent=true&'
+			+ encodeURIComponent('sorts[0].sortKey') +'=name'
+			;
+		return $.getJSON(url, (data) => {
+			if ( data && data.success === true ) {
+				setupMostRecentMetrics(data.data);
+			}
+		});
+	}
+
 	function queryForMetrics() {
 		let url = SolarNode.context.path('/a/metrics/list') 
 			+ '?type=s'
@@ -168,8 +225,14 @@ $(document).ready(function metricsManagement() {
 		toggleLoading(false);
 		subscribeMetricStored();
 	});
+	
+	queryForMostRecentMetrics();
 
-	nameInput.on('keyup', () => {
+	nameInput.on('keydown', (event) => {
+		if (event.key === "Enter" ) {
+			event.preventDefault();
+		}
+	}).on('keyup', (event) => {
 		if (nameInputTimer) {
 			clearTimeout(nameInputTimer);
 		}
@@ -190,4 +253,6 @@ $(document).ready(function metricsManagement() {
 		activateSelectMenuItem(pageOffset);
 		queryForMetrics();
 	});
+	
+	$('#metrics-list-refresh').on('click', queryForMetrics);
 });
