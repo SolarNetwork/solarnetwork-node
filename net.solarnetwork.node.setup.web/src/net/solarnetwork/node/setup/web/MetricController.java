@@ -59,10 +59,8 @@ public class MetricController {
 	/**
 	 * Constructor.
 	 *
-	 * @param serviceRegistry
-	 *        the service registry
-	 * @param settingsService
-	 *        the settings service
+	 * @param metricDao
+	 *        the metric DAO
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
@@ -77,7 +75,7 @@ public class MetricController {
 	 * @return the Metrics view name
 	 */
 	@RequestMapping(value = { "", "/" }, method = RequestMethod.GET)
-	public String datumDataSourcesUi() {
+	public String metricsUi() {
 		return "metrics";
 	}
 
@@ -92,6 +90,13 @@ public class MetricController {
 		private Integer max;
 		private boolean mostRecent;
 		private List<MutableSortDescriptor> sorts;
+
+		/**
+		 * Constructor.
+		 */
+		public MetricListCommand() {
+			super();
+		}
 
 		/**
 		 * Get the type.
@@ -207,6 +212,11 @@ public class MetricController {
 			this.sorts = sorts;
 		}
 
+		/**
+		 * Create a filter instance from this command.
+		 *
+		 * @return the filter instance
+		 */
 		public BasicMetricFilter toFilter() {
 			final BasicMetricFilter filter = new BasicMetricFilter();
 			filter.setType(type);
