@@ -28,8 +28,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.SqlProvider;
+import net.solarnetwork.domain.SortDescriptor;
+import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.dao.MetricFilter;
 import net.solarnetwork.node.metrics.domain.MetricAggregate;
 import net.solarnetwork.util.ObjectUtils;
@@ -81,11 +84,10 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		StringBuilder buf = new StringBuilder();
 		if ( filter.hasAggregateCriteria() ) {
 			sqlAgg(buf);
-			buf.append("ORDER BY mname, mtype\n");
 		} else {
 			sqlRaw(buf);
-			buf.append("ORDER BY ts, mtype, mname\n");
 		}
+		sqlOrderBy(buf);
 		sqlPagination(buf);
 		return buf.toString();
 	}
@@ -175,6 +177,58 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		if ( where.length() > 0 ) {
 			buf.append("WHERE").append(where.substring(4));
 		}
+	}
+
+	private void sqlOrderBy(StringBuilder buf) {
+		List<SortDescriptor> sorts = filter.getSorts();
+		int count = 0;
+		if ( sorts != null ) {
+			for ( SortDescriptor s : sorts ) {
+				if ( s.getSortKey() == null ) {
+					continue;
+				}
+				String colName = null;
+				switch (s.getSortKey()) {
+					case MetricDao.SORT_BY_DATE:
+						colName = "ts";
+						break;
+
+					case MetricDao.SORT_BY_TYPE:
+						colName = "mtype";
+						break;
+
+					case MetricDao.SORT_BY_NAME:
+						colName = "mname";
+						break;
+
+					case MetricDao.SORT_BY_VALUE:
+						colName = "val";
+						break;
+
+					default:
+						// ignore
+				}
+				if ( colName != null ) {
+					if ( count++ == 0 ) {
+						buf.append("ORDER BY ");
+					} else {
+						buf.append(", ");
+					}
+					buf.append(colName);
+					if ( s.isDescending() ) {
+						buf.append(" DESC");
+					}
+				}
+			}
+		}
+		if ( count < 1 ) {
+			if ( filter.hasAggregateCriteria() ) {
+				buf.append("ORDER BY mname, mtype");
+			} else {
+				buf.append("ORDER BY ts, mtype, mname");
+			}
+		}
+		buf.append("\n");
 	}
 
 	private void sqlPagination(StringBuilder buf) {

@@ -37,12 +37,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.SimpleSortDescriptor;
 import net.solarnetwork.node.metrics.dao.BasicMetricFilter;
+import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.dao.jdbc.SelectMetrics;
 import net.solarnetwork.node.metrics.domain.BasicMetricAggregate;
 import net.solarnetwork.node.metrics.domain.Metric;
@@ -177,4 +180,67 @@ public class SelectMetricsTests {
 		assertThat("Generated SQL", sqlCaptor.getValue(),
 				equalToTextResource("select-metrics-02.sql", getClass(), null));
 	}
+
+	@Test
+	public void sorted() throws SQLException {
+		// GIVEN
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setStartDate(start);
+		filter.setEndDate(start.plusSeconds(1));
+		filter.setSorts(Arrays.asList(new SimpleSortDescriptor(MetricDao.SORT_BY_DATE, true),
+				new SimpleSortDescriptor(MetricDao.SORT_BY_NAME),
+				new SimpleSortDescriptor(MetricDao.SORT_BY_VALUE, true)));
+
+		Capture<String> sqlCaptor = Capture.newInstance();
+		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
+				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
+		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
+		ps.setObject(1, filter.getStartDate());
+		ps.setObject(2, filter.getEndDate());
+
+		// WHEN
+		replayAll();
+		SelectMetrics select = new SelectMetrics(filter);
+		PreparedStatement ps = select.createPreparedStatement(conn);
+
+		// THEN
+		assertThat("PreparedStatement returned", ps, is(notNullValue()));
+		assertThat("Generated SQL", sqlCaptor.getValue(),
+				equalToTextResource("select-metrics-03.sql", getClass(), null));
+	}
+
+	@Test
+	public void sortedPagination() throws SQLException {
+		// GIVEN
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setStartDate(start);
+		filter.setEndDate(start.plusSeconds(1));
+		filter.setSorts(Arrays.asList(new SimpleSortDescriptor(MetricDao.SORT_BY_DATE, true),
+				new SimpleSortDescriptor(MetricDao.SORT_BY_NAME),
+				new SimpleSortDescriptor(MetricDao.SORT_BY_VALUE, true)));
+		filter.setOffset(1);
+		filter.setMax(2);
+
+		Capture<String> sqlCaptor = Capture.newInstance();
+		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
+				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
+		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
+		ps.setObject(1, filter.getStartDate());
+		ps.setObject(2, filter.getEndDate());
+		ps.setInt(3, filter.getOffset());
+		ps.setInt(4, filter.getMax());
+
+		// WHEN
+		replayAll();
+		SelectMetrics select = new SelectMetrics(filter);
+		PreparedStatement ps = select.createPreparedStatement(conn);
+
+		// THEN
+		assertThat("PreparedStatement returned", ps, is(notNullValue()));
+		assertThat("Generated SQL", sqlCaptor.getValue(),
+				equalToTextResource("select-metrics-04.sql", getClass(), null));
+	}
+
 }
