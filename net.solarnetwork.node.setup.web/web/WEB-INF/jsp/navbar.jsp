@@ -73,13 +73,18 @@
 						</li>
 		
 						<li class="nav-item dropdown">
-							<a href="#" class="nav-link dropdown-toggle${navloc == 'cli-console' or navloc == 'controls' ? ' active' : ''}" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+							<a href="#" class="nav-link dropdown-toggle${navloc == 'cli-console' 
+									or navloc == 'metrics'
+									or navloc == 'controls' ? ' active' : ''}" data-bs-toggle="dropdown" role="button" aria-expanded="false">
 								<fmt:message key='link.tools'/>
 								<b class="caret"></b>
 							</a>
 							<ul class="dropdown-menu dropdown-menu-md-end">
 								<li><a class="dropdown-item${navloc == 'controls' ? ' active' : ''}" href="<setup:url value='/a/controls'/>"><fmt:message key='link.controls'/></a></li>
 								<li><a class="dropdown-item${navloc == 'cli-console' ? ' active' : ''}" href="<setup:url value='/a/cli-console'/>"><fmt:message key='link.cli-console'/></a></li>
+								<c:if test="${not empty metricDao}">
+									<li><a class="dropdown-item${navloc == 'metrics' ? ' active' : ''}" href="<setup:url value='/a/metrics'/>"><fmt:message key='link.metrics'/></a></li>
+								</c:if>
 							</ul>
 						</li>
 						<li class="nav-item dropdown">

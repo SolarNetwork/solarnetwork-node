@@ -27,6 +27,7 @@ import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.PlatformPackageService;
 import net.solarnetwork.node.service.SystemService;
@@ -38,7 +39,7 @@ import net.solarnetwork.service.OptionalService;
  * Add global services to all MVC controllers.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.23
  */
 @ControllerAdvice(annotations = { ServiceAwareController.class })
@@ -64,6 +65,13 @@ public class ControllerServiceSupport {
 	 */
 	public static final String PLUGIN_SERVICE_ATTRIBUTE = "pluginService";
 
+	/**
+	 * The model attribute name for the {@code PluginService}.
+	 *
+	 * @since 2.3
+	 */
+	public static final String METRIC_DAO_ATTRIBUTE = "metricDao";
+
 	@Resource(name = "systemService")
 	private OptionalService<SystemService> systemService;
 
@@ -72,6 +80,9 @@ public class ControllerServiceSupport {
 
 	@Resource(name = "pluginService")
 	private OptionalService<PluginService> pluginService;
+
+	@Resource(name = "metricDao")
+	private OptionalService<MetricDao> metricDao;
 
 	@Autowired
 	private IdentityService identityService;
@@ -124,6 +135,17 @@ public class ControllerServiceSupport {
 	@ModelAttribute(value = PLUGIN_SERVICE_ATTRIBUTE)
 	public PluginService pluginService() {
 		return service(pluginService);
+	}
+
+	/**
+	 * The {@link MetricDao}.
+	 *
+	 * @return the service
+	 * @since 2.3
+	 */
+	@ModelAttribute(value = METRIC_DAO_ATTRIBUTE)
+	public MetricDao metricDao() {
+		return service(metricDao);
 	}
 
 }
