@@ -118,6 +118,7 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
 	public MetricKey save(Metric entity) {
 		insertDomainObject(entity, getSqlResource(SQL_INSERT));
 		stats.increment(MetricDaoStat.MetricsStored);
+		postEntityEvent(entity.getId(), entity, EntityEventType.STORED);
 		return entity.getId();
 	}
 
