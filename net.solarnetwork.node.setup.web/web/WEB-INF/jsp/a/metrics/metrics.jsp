@@ -15,7 +15,7 @@
 			<div class="col-5"><fmt:message key="metric.name.label"/></div>
 			<div class="col-3"><fmt:message key="metric.value.label"/></div>
 		</div>
-		<div class="row border-bottom brief-showcase template item">
+		<div class="row py-1 border-bottom brief-showcase template item">
 			<div class="col-4" data-tprop="displayTs"></div>
 			<div class="col-5" data-tprop="name"></div>
 			<div class="col-3" data-tprop="value"></div>
@@ -51,7 +51,7 @@
 			<div class="col-4"><fmt:message key="metric.name.label"/></div>
 			<div class="col-3"><fmt:message key="metric.value.label"/></div>
 		</div>
-		<div class="row border-bottom template item">
+		<div class="row py-1 border-bottom template item">
 			<div class="col-1 text-end"data-tprop="idx"></div>
 			<div class="col-3" data-tprop="displayTs"></div>
 			<div class="col-4" data-tprop="name"></div>
