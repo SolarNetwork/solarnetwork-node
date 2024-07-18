@@ -9,17 +9,19 @@
 
 <section id="metrics-most-recent" class="hidden">
 	<h2><fmt:message key="metrics.mostRecent.title"/></h2>
-	<div class="row fw-bold border-bottom">
-		<div class="col-4"><fmt:message key="metric.ts.label"/></div>
-		<div class="col-5"><fmt:message key="metric.name.label"/></div>
-		<div class="col-3"><fmt:message key="metric.value.label"/></div>
-	</div>
-	<div class="row border-bottom brief-showcase template item">
-		<div class="col-4" data-tprop="displayTs"></div>
-		<div class="col-5" data-tprop="name"></div>
-		<div class="col-3" data-tprop="value"></div>
-	</div>
-	<div class="list-container">
+	<div class="container">
+		<div class="row fw-bold border-bottom">
+			<div class="col-4"><fmt:message key="metric.ts.label"/></div>
+			<div class="col-5"><fmt:message key="metric.name.label"/></div>
+			<div class="col-3"><fmt:message key="metric.value.label"/></div>
+		</div>
+		<div class="row border-bottom brief-showcase template item">
+			<div class="col-4" data-tprop="displayTs"></div>
+			<div class="col-5" data-tprop="name"></div>
+			<div class="col-3" data-tprop="value"></div>
+		</div>
+		<div class="list-container">
+		</div>
 	</div>
 </section>
 
@@ -42,7 +44,7 @@
 		</form>
 	</div>
 
-	<div id="metrics-list">
+	<div class="container" id="metrics-list">
 		<div class="row fw-bold border-bottom some hidden">
 			<div class="col-1 text-end"><fmt:message key="metric.idx.label"/></div>
 			<div class="col-3"><fmt:message key="metric.ts.label"/></div>
