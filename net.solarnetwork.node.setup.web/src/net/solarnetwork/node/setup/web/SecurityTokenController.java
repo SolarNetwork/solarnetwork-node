@@ -1,21 +1,21 @@
 /* ==================================================================
  * SecurityTokenController.java - 7/09/2023 6:59:35 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,7 +26,6 @@ import static java.util.Collections.singletonMap;
 import static net.solarnetwork.domain.Result.success;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,14 +38,15 @@ import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.domain.SecurityToken;
 import net.solarnetwork.node.service.SecurityTokenService;
 import net.solarnetwork.node.setup.web.support.SecurityTokenInfo;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 
 /**
  * Controller to manage security tokens.
- * 
+ *
  * @author matt
  * @version 1.0
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/security-tokens")
 public class SecurityTokenController extends BaseSetupWebServiceController {
 
@@ -54,7 +54,7 @@ public class SecurityTokenController extends BaseSetupWebServiceController {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param securityTokenService
 	 *        the service to use
 	 * @throws IllegalArgumentException
@@ -67,7 +67,7 @@ public class SecurityTokenController extends BaseSetupWebServiceController {
 
 	/**
 	 * Security Tokens UI.
-	 * 
+	 *
 	 * @return the Security Tokens view name
 	 */
 	@GetMapping(value = { "", "/" })
@@ -78,7 +78,7 @@ public class SecurityTokenController extends BaseSetupWebServiceController {
 
 	/**
 	 * Create a new security token.
-	 * 
+	 *
 	 * @param tokenInfo
 	 *        the token info
 	 * @return the newly created token ID and secret
@@ -95,7 +95,7 @@ public class SecurityTokenController extends BaseSetupWebServiceController {
 
 	/**
 	 * Update a security token.
-	 * 
+	 *
 	 * @param tokenInfo
 	 *        the token info
 	 * @return the newly created token ID and secret
@@ -114,7 +114,7 @@ public class SecurityTokenController extends BaseSetupWebServiceController {
 
 	/**
 	 * Delete a security token.
-	 * 
+	 *
 	 * @param tokenId
 	 *        the ID of the token to delete
 	 * @return the result

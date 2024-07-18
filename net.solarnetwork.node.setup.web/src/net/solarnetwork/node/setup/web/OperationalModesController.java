@@ -1,21 +1,21 @@
 /* ==================================================================
  * OperationalModesController.java - 18/03/2023 6:08:29 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -42,16 +41,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Controller for operational modes support.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 3.2
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/opmodes")
 public class OperationalModesController extends BaseSetupWebServiceController {
 
@@ -59,7 +59,7 @@ public class OperationalModesController extends BaseSetupWebServiceController {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the operational modes service
 	 */
@@ -71,7 +71,7 @@ public class OperationalModesController extends BaseSetupWebServiceController {
 
 	/**
 	 * OpModes UI.
-	 * 
+	 *
 	 * @return the operational modes view name
 	 */
 	@RequestMapping(value = { "", "/" }, method = RequestMethod.GET)
@@ -81,7 +81,7 @@ public class OperationalModesController extends BaseSetupWebServiceController {
 
 	/**
 	 * Get all active modes.
-	 * 
+	 *
 	 * @return the result
 	 */
 	@RequestMapping(value = "/active", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -92,7 +92,7 @@ public class OperationalModesController extends BaseSetupWebServiceController {
 
 	/**
 	 * Enable one or more modes.
-	 * 
+	 *
 	 * @param modes
 	 *        the modes to enable, as a comma-delimited set
 	 * @param expiration
@@ -127,7 +127,7 @@ public class OperationalModesController extends BaseSetupWebServiceController {
 
 	/**
 	 * Disable one or more modes.
-	 * 
+	 *
 	 * @param modes
 	 *        a comma-delimited set of modes to disable
 	 * @return the resulting overall active modes
