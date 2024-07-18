@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.metrics.service.test;
+package net.solarnetwork.node.metrics.harvester.test;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -47,8 +47,8 @@ import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.domain.Metric;
-import net.solarnetwork.node.metrics.service.MetricHarvesterDatumFilterService;
-import net.solarnetwork.node.metrics.service.MetricHarvesterPropertyConfig;
+import net.solarnetwork.node.metrics.harvester.MetricHarvesterDatumFilterService;
+import net.solarnetwork.node.metrics.harvester.MetricHarvesterPropertyConfig;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.StaticOptionalServiceCollection;

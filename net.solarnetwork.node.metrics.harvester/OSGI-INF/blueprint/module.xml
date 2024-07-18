@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<reference id="metricDao" interface="net.solarnetwork.node.metrics.dao.MetricDao"/>
+
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+	</bean>
+
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="nodeMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+		<property name="serviceFilter" value="(function=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<!-- 
+	 !!! Metric Cleaner Job
+	 -->
+
+	<service ref="metricDaoCleanerJob">
+		<interfaces>
+			<value>net.solarnetwork.node.job.ManagedJob</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.metrics.dao.cleaner"/>
+		</service-properties>
+	</service>
+	
+	<bean id="metricDaoCleanerJob" class="net.solarnetwork.node.job.SimpleManagedJob" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<osgix:managed-properties
+			persistent-id="net.solarnetwork.node.metrics.dao.cleaner"
+			autowire-on-update="true"
+			update-method="configurationChanged"
+			/>
+		<argument>
+			<bean class="net.solarnetwork.node.metrics.harvester.MetricDaoCleanerJob">
+				<argument ref="metricDao"/>
+				<property name="messageSource">
+					<bean class="net.solarnetwork.support.PrefixedMessageSource">
+						<property name="prefix" value="jobService."/>
+						<property name="delegate">
+							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+								<property name="basenames">
+									<array>
+										<value>net.solarnetwork.node.metrics.harvester.MetricDaoCleanerJob</value>
+									</array>
+								</property>
+							</bean>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</argument>
+		<argument value="3600000"/>
+		<property name="displayName" value="MetricCleaner"/>
+	</bean>
+
+	<!--
+	 !!! Metric Harvester Filter Service
+	 -->
+
+	<bean id="metricHarvesterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.metrics.harvester.MetricHarvesterDatumFilterService</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</array>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="propertyConfigsItem."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<array>
+								<value>net.solarnetwork.node.metrics.harvester.MetricHarvesterPropertyConfig</value>
+								<value>net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig</value>
+							</array>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Metric Harvester"/>
+			<property name="factoryUid" value="net.solarnetwork.node.metrics.service.harvester"/>
+			<property name="messageSource" ref="metricHarvesterMessageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metrics.service.harvester"
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.metrics.service.harvester"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.metrics.harvester.MetricHarvesterDatumFilterService">
+			<argument ref="metricDao"/>
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="messageSource" ref="metricHarvesterMessageSource"/>
+			<property name="datumService" ref="datumService"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
+			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="locationService" ref="locationService"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.metrics.service;
+package net.solarnetwork.node.metrics.harvester;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.metrics.service;
+package net.solarnetwork.node.metrics.harvester;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
