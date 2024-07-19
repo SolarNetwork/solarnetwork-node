@@ -44,7 +44,7 @@ Each property configuration contains the following settings:
 | Offset             | An offset to add to the value. This is the forth transform applied, **after** the **Multiplier**. Set to `0` for no offset. |
 | Metric Name        | The metric name to assign to the value. |
 
-## Value transform
+### Value transform
 
 The various **Multiplier** and **Offset** settings allow you to apply two linear equations to the
 datum property values to transform a raw data value _x_ into a corresponding metric value _y_.
@@ -89,5 +89,4 @@ filter parameters, as expression variables directly.
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [DatumExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/DatumExpressionRoot.java
-[Datum]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/datum/Datum.java
 [node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
