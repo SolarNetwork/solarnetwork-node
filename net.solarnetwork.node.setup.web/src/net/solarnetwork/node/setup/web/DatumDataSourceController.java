@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -45,6 +44,7 @@ import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceRegistry;
@@ -63,7 +63,7 @@ import net.solarnetwork.util.SearchFilter.LogicOperator;
  * @version 1.1
  * @since 4.5
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/datum-sources")
 public class DatumDataSourceController {
 

@@ -352,7 +352,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs) {
 		populateExpressionDatumProperties(d, expressionConfs,
-				new ExpressionRoot(d, null, null, service(datumService)));
+				new ExpressionRoot(d, null, null, service(datumService), null,
+						service(getMetadataService()), service(getLocationService())));
 	}
 
 	/**

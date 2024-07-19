@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- Service References -->
+
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+	
+	<bean id="asyncHttpClient" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.apache.http.nio.client.HttpAsyncClient"/>
+		<property name="serviceFilter" value="(function=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<!-- Services -->
+
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.price.nz.wits.WitsPriceDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.PriceLocationDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="delegate."/>
+				<property name="delegate" ref="messageSource"/>
+			</bean>
+		</property>
+	</bean>
+
+	<!-- Published Services -->
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="New Zealand energy market price lookup"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.price.nz.wits"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.price.nz.wits"
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumDataSource">
+						<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="delegate">
+								<bean class="net.solarnetwork.node.datum.price.nz.wits.WitsPriceDatumDataSource">
+									<argument ref="objectMapper"/>
+									<argument ref="asyncHttpClient"/>
+									<property name="placeholderService" ref="placeholderService"/>
+									<property name="messageSource" ref="messageSource"/>
+								</bean>
+							</property>
+							<property name="locationService" ref="locationService"/>
+							<property name="requireLocationService" value="true"/>
+							<property name="locationType" value="price"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 * * * * *"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>

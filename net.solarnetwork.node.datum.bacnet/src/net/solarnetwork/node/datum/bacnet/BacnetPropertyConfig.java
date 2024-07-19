@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetPropertyConfig.java - 4/11/2022 2:00:32 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -51,12 +51,12 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for a single datum property to be set via a BACnet property.
- * 
+ *
  * <p>
  * The {@link #getConfig()} value represents the BACnet property identifier to
  * read.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -64,7 +64,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * A setting type pattern for a property configuration element.
-	 * 
+	 *
 	 * <p>
 	 * The pattern has two capture groups: the device configuration index and
 	 * the property setting name.
@@ -90,7 +90,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param propertyKey
 	 *        the property key
 	 * @param propertyType
@@ -104,7 +104,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -140,7 +140,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Test if this configuration is empty.
-	 * 
+	 *
 	 * @return {@literal true} if all properties are null
 	 */
 	public boolean isEmpty() {
@@ -151,12 +151,12 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Test if this instance represents a valid configuration.
-	 * 
+	 *
 	 * <p>
 	 * This only verifies that the configuration is complete, not that actual
 	 * BACnet device properties exist for the configured values.
 	 * </p>
-	 * 
+	 *
 	 * @return {@literal true} if this instance represents a valid configuration
 	 */
 	public boolean isValid() {
@@ -173,10 +173,27 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		return true;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("BacnetPropertyConfig{objectType=");
+		builder.append(getObjectTypeValue());
+		builder.append(", objectNumber=");
+		builder.append(objectNumber);
+		builder.append(", propertyId=");
+		builder.append(getPropertyIdValue());
+		builder.append(", covIncrement=");
+		builder.append(covIncrement);
+		builder.append(", valid=");
+		builder.append(isValid());
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Get a reference for a given device ID and the configuration of this
 	 * instance.
-	 * 
+	 *
 	 * @param deviceId
 	 *        the device ID
 	 * @return the reference, or {@literal null} if any of the required
@@ -198,7 +215,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Populate a setting as a property configuration value, if possible.
-	 * 
+	 *
 	 * @param config
 	 *        the device configuration
 	 * @param setting
@@ -256,7 +273,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Generate a list of setting values.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -297,7 +314,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Get the object type.
-	 * 
+	 *
 	 * @return the object type
 	 */
 	public Integer getObjectType() {
@@ -306,7 +323,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the object type.
-	 * 
+	 *
 	 * @param objectType
 	 *        the object type to set
 	 */
@@ -316,7 +333,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Get the object type as a string value.
-	 * 
+	 *
 	 * @return the object type enumeration name if supported, else the
 	 *         configured object type as a string
 	 */
@@ -331,12 +348,12 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the object type as a string value.
-	 * 
+	 *
 	 * <p>
 	 * The value can be an object type code, enumeration name, or train-case
 	 * enumeration name.
 	 * </p>
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -354,7 +371,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Get the object (instance) number.
-	 * 
+	 *
 	 * @return the object number
 	 */
 	public Integer getObjectNumber() {
@@ -363,7 +380,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the object (instance) number.
-	 * 
+	 *
 	 * @param objectNumber
 	 *        the object number to set
 	 */
@@ -376,7 +393,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * <p>
 	 * This is an alias for {@link #getConfig()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the property ID
 	 */
 	public Integer getPropertyId() {
@@ -385,11 +402,11 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the BACnet property ID.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #setConfig(Object)}.
 	 * </p>
-	 * 
+	 *
 	 * @param propertyId
 	 *        the property ID to set
 	 */
@@ -399,7 +416,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Get the property ID as a string value.
-	 * 
+	 *
 	 * @return the property type enumeration name if supported, else the
 	 *         configured object type as a string
 	 */
@@ -414,12 +431,12 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the property ID as a string value.
-	 * 
+	 *
 	 * <p>
 	 * The value can be an property ID code, enumeration name, or train-case
 	 * enumeration name.
 	 * </p>
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -437,7 +454,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Get the change-of-value increment (notification threshold).
-	 * 
+	 *
 	 * @return the COV increment
 	 */
 	public Float getCovIncrement() {
@@ -446,7 +463,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the change-of-value increment (notification threshold).
-	 * 
+	 *
 	 * @param covIncrement
 	 *        the COV increment to set
 	 */

@@ -224,11 +224,6 @@ pre.pre-scrollable {
 	overflow: inherit; /* Override BS: was causing 4px margin glitch when navigating l-to-r */
 }
 
-.table.setting-components td:last-of-type {
-	width: 120px;
-	text-align: right;
-}
-
 #weather-lookup-modal {
 	width: 700px;
 	margin-left: -350px;
@@ -496,7 +491,7 @@ input[readonly].form-control {
 }
 
 /** A visual rule between setting component rows. */
-.row.setting-components > .row:not(:last-child):after {
+.setting-components > .col > .row:not(:last-child):after {
 	content: '';
 	display: inline-block;
 	position: relative;
@@ -540,4 +535,9 @@ input[readonly].form-control {
 
 .sn-loc-lookup-modal .table.search-results tbody tr {
 	cursor: pointer;	
+}
+
+.dropdown-menu {
+	max-height: 25rem;
+	overflow-y: auto;
 }

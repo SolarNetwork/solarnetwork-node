@@ -32,6 +32,7 @@
 	/js/certs.js
 	/js/hosts.js
 	/js/login.js
+	/js/metrics.js
 	/js/settings.js
 	/js/new-node.js
 	/js/packages.js

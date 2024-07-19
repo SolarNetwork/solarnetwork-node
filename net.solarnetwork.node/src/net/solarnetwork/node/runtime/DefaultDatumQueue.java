@@ -82,7 +82,7 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -441,7 +441,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						} catch ( Throwable t ) {
 							stats.incrementAndGet(QueueStats.Errors);
 							log.error("Error processing datum {}; discarding.", event.datum, t);
-							throw t;
+							uncaughtException(Thread.currentThread(), t);
+							result = null;
 						}
 						if ( result != null ) {
 							if ( dirConsumer != null ) {
@@ -460,11 +461,14 @@ public class DefaultDatumQueue extends BaseIdentifiable
 								} catch ( Throwable t ) {
 									stats.incrementAndGet(QueueStats.Errors);
 									log.error("Error persisting datum {}; discarding.", event.datum, t);
-									throw t;
+									uncaughtException(Thread.currentThread(), t);
+									result = null;
 								}
 							}
-							for ( Consumer<NodeDatum> consumer : consumers ) {
-								consumer.accept(result);
+							if ( result != null ) {
+								for ( Consumer<NodeDatum> consumer : consumers ) {
+									consumer.accept(result);
+								}
 							}
 						}
 					}
@@ -566,8 +570,11 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {
 		synchronized ( this ) {
-			datumProcessor = null;
-			startup();
+			final Thread processor = this.datumProcessor;
+			if ( !processor.isAlive() ) {
+				datumProcessor = null;
+				startup();
+			}
 		}
 		if ( datumProcessorExceptionHandler != null ) {
 			datumProcessorExceptionHandler.uncaughtException(t, e);

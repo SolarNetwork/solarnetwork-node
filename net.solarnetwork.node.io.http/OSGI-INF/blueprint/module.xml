@@ -22,11 +22,28 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="httpClient" class="org.apache.http.impl.client.HttpClients" factory-method="createSystem"/>
+	
+	<service ref="httpClient" interface="org.apache.http.client.HttpClient">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
+	<bean id="asyncHttpClient" class="org.apache.http.impl.nio.client.HttpAsyncClients" factory-method="createSystem"/>
+
+	<service ref="asyncHttpClient" interface="org.apache.http.nio.client.HttpAsyncClient">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
 	<service interface="org.springframework.http.client.ClientHttpRequestFactory">
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
 		<bean class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
+			<argument ref="httpClient"/>
 			<property name="readTimeout" value="60000"/>
 		</bean>
 	</service>

@@ -28,6 +28,7 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.service.ExpressionService;
 
@@ -36,7 +37,7 @@ import net.solarnetwork.service.ExpressionService;
  * evaluation.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.6
  */
 public class VirtualMeterExpressionRootImpl extends ExpressionRoot
@@ -62,6 +63,8 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 	 *        the optional datum service
 	 * @param metadataService
 	 *        the metadata service
+	 * @param locationService
+	 *        the location service
 	 * @param config
 	 *        the virtual meter configuration
 	 * @param prevDate
@@ -76,10 +79,10 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 	 *        the previous reading
 	 */
 	public VirtualMeterExpressionRootImpl(Datum datum, DatumSamples samples, Map<String, ?> parameters,
-			DatumService datumService, MetadataService metadataService, VirtualMeterConfig config,
-			long prevDate, long currDate, BigDecimal prevInput, BigDecimal currInput,
-			BigDecimal prevReading) {
-		super(datum, samples, parameters, datumService, null, metadataService);
+			DatumService datumService, MetadataService metadataService, LocationService locationService,
+			VirtualMeterConfig config, long prevDate, long currDate, BigDecimal prevInput,
+			BigDecimal currInput, BigDecimal prevReading) {
+		super(datum, samples, parameters, datumService, null, metadataService, locationService);
 		this.config = config;
 		this.prevDate = prevDate;
 		this.currDate = currDate;

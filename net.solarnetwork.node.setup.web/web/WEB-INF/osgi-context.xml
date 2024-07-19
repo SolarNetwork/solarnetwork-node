@@ -152,4 +152,10 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="metricDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.metrics.dao.MetricDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 </beans>

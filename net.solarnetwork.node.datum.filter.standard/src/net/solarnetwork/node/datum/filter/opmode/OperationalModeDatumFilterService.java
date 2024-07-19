@@ -56,7 +56,7 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
@@ -88,7 +88,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
 		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()));
+				getOpModesService(), service(getMetadataService()), service(getLocationService()));
 		DatumSamplesOperations s = samplesForEvaluation(samples, configs);
 		if ( s instanceof MutableDatumSamplesOperations ) {
 			evaluateExpressions((MutableDatumSamplesOperations) s, configs, root, services,

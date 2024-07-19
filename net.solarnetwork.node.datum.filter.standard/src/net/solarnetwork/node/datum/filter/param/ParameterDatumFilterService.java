@@ -54,7 +54,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the active transform parameters.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.1
  */
 public class ParameterDatumFilterService extends BaseDatumFilterSupport
@@ -80,7 +80,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 		Map<String, Object> params = smartPlaceholders(parameters);
 		MapSampleOperations s = new MapSampleOperations(new CopyingMap<>(parameters, params), samples);
 		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()));
+				getOpModesService(), service(getMetadataService()), service(getLocationService()));
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, samples);
 		return samples;

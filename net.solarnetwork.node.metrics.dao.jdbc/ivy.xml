@@ -1,0 +1,26 @@
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="net.solarnetwork.node" module="${bundle.name}" />
+	<configurations defaultconf="compile,runtime">
+		<conf name="compile" visibility="public" description="Build dependencies"/>
+		<conf name="runtime" visibility="public" description="Runtime dependencies"/>
+		<conf name="javadoc" visibility="public" description="Javadoc documentation"/>
+		<conf name="sources"/>
+	</configurations>
+	<publications>
+		<artifact type="pom" ext="pom"/>
+		<artifact type="bundle" ext="jar"/>
+		<artifact type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
+		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
+	</publications>
+	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.1" />
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.15,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.15,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc" rev="[3.1,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.metrics" rev="[1.0,)"/>
+		<dependency org="org.osgi" name="org.osgi.service.event" rev="1.4.1"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
+		<dependency org="org.springframework" name="spring-beans" rev="5.3.24"/>
+		<dependency org="org.springframework" name="spring-jdbc" rev="5.3.24"/>
+	</dependencies>
+</ivy-module>

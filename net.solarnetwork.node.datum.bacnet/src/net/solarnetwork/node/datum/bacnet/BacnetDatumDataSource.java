@@ -38,6 +38,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -67,7 +69,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generic BACnet device datum data source.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class BacnetDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver, BacnetCovHandler {
@@ -86,6 +88,8 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	/** The {@code datumMode} property default value. */
 	public static final BacnetDatumMode DEFAULT_DATUM_MODE = BacnetDatumMode.PollOnly;
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OptionalService<BacnetNetwork> bacnetNetwork;
 	private String sourceId;
@@ -275,12 +279,21 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 			return results;
 		}
 		Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> results = new HashMap<>();
+		int devNum = 0;
 		for ( BacnetDeviceConfig deviceConf : deviceConfs ) {
+			devNum++;
 			if ( !deviceConf.isValid() ) {
+				log.warn("Bacnet source [{}] device configuration {} is not valid, ignoring.",
+						resolvePlaceholders(sourceId), devNum);
 				continue;
 			}
+			int propNum = 0;
 			for ( BacnetPropertyConfig propConf : deviceConf.getPropConfigs() ) {
+				propNum++;
 				if ( !propConf.isValid() ) {
+					log.warn(
+							"Bacnet source [{}] device {} property {} configuration is not valid, ignoring: {}",
+							resolvePlaceholders(sourceId), devNum, propNum, propConf);
 					continue;
 				}
 				results.put(propConf.toRef(deviceConf.getDeviceId()), propConf);
