@@ -72,7 +72,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Electricity Authority WITS API.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
 public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -107,7 +107,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 
 	private CachedResult<PriceDatum> latestDatum;
 	private OAuth20Service oauth;
-	private OAuth2AccessToken accessToken;
+	private CachedResult<OAuth2AccessToken> accessToken;
 
 	/**
 	 * Constructor.
@@ -238,15 +238,36 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	private synchronized OAuth2AccessToken acquireAccessToken() {
 		final OAuth20Service service = this.oauth;
 		if ( service == null ) {
-			return accessToken;
+			return accessToken();
 		}
 		try {
-			accessToken = service.getAccessTokenClientCredentialsGrant();
-			return accessToken;
+			OAuth2AccessToken token = null;
+			if ( accessToken != null && accessToken.getResult().getRefreshToken() != null ) {
+				try {
+					token = service.refreshAccessToken(accessToken.getResult().getRefreshToken());
+				} catch ( Exception e ) {
+					log.warn("Error refreshing OAuth access token from [{}]: {}", tokenUrl,
+							e.toString());
+				}
+			}
+			if ( token == null ) {
+				token = service.getAccessTokenClientCredentialsGrant();
+				if ( token != null ) {
+					Integer expireSecs = token.getExpiresIn();
+					// set cache TTL 66% of expiration time, to allow for refresh
+					long ttl = (expireSecs != null && expireSecs > 1 ? expireSecs / 3 * 2 : 900L);
+					accessToken = new CachedResult<>(token, ttl, TimeUnit.SECONDS);
+				}
+			}
+			return token;
 		} catch ( Exception e ) {
 			log.error("Error obtaining OAuth access token from [{}]: {}", tokenUrl, e.toString());
 		}
-		return accessToken;
+		return accessToken();
+	}
+
+	private synchronized OAuth2AccessToken accessToken() {
+		return accessToken != null && accessToken.isValid() ? accessToken.getResult() : null;
 	}
 
 	private JsonNode requestData() throws IOException {
@@ -258,8 +279,8 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 		if ( service == null ) {
 			return null;
 		}
-		OAuth2AccessToken token = this.accessToken;
-		if ( token == null /* TODO || expired */ ) {
+		OAuth2AccessToken token = accessToken();
+		if ( token == null ) {
 			token = acquireAccessToken();
 			if ( token == null ) {
 				return null;
@@ -271,7 +292,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 		request.addQuerystringParameter("marketType", type.getKey());
 		request.addQuerystringParameter("nodes", node);
 		request.addQuerystringParameter("from", clock.instant().minus(from).toString());
-		service.signRequest(accessToken, request);
+		service.signRequest(token, request);
 		try {
 			final Response response = service.execute(request);
 			return objectMapper.readTree(response.getBody());
