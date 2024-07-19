@@ -72,7 +72,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Electricity Authority WITS API.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -201,7 +201,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 				}
 			}
 		} catch ( IOException e ) {
-			log.warn("Communication problem requesting [{}] price data from [{}]: {}", node, tokenUrl,
+			log.warn("Communication problem requesting [{}] price data from [{}]: {}", node, priceUrl,
 					e.getMessage());
 		}
 		return null;
