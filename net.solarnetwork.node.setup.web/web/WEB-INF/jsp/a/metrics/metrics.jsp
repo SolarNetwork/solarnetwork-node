@@ -13,12 +13,12 @@
 		<div class="row fw-bold border-bottom">
 			<div class="col-4"><fmt:message key="metric.ts.label"/></div>
 			<div class="col-5"><fmt:message key="metric.name.label"/></div>
-			<div class="col-3"><fmt:message key="metric.value.label"/></div>
+			<div class="col-3 text-end"><span class="number-whole"><fmt:message key="metric.value.label"/></span><span class="number-dot invisible">.</span><span class="number-fraction"></span></div>
 		</div>
 		<div class="row py-1 border-bottom brief-showcase template item">
 			<div class="col-4" data-tprop="displayTs"></div>
 			<div class="col-5" data-tprop="name"></div>
-			<div class="col-3" data-tprop="value"></div>
+			<div class="col-3 text-end"><span class="number-whole" data-tprop="valueWhole"></span><span class="number-dot">.</span><span class="number-fraction" data-tprop="valueFraction"></span></div>
 		</div>
 		<div class="list-container">
 		</div>
@@ -48,7 +48,7 @@
 			<div class="row mt-2">
 				<div class="col-auto">
 					<div class="form-check">
-						<input class="form-check-input" type="checkbox" name="aggs" value="min" id="metrics-aggregate-filter-agg-min">
+						<input class="form-check-input" type="checkbox" name="aggs" value="min" id="metrics-aggregate-filter-agg-min" checked>
 						<label class="form-check-label" for="metrics-aggregate-filter-agg-min">
 							<fmt:message key='metrics.aggregate.min.label'/>
 						</label>
@@ -56,7 +56,7 @@
 				</div>
 				<div class="col-auto">
 					<div class="form-check">
-						<input class="form-check-input" type="checkbox" name="aggs" value="max" id="metrics-aggregate-filter-agg-max">
+						<input class="form-check-input" type="checkbox" name="aggs" value="max" id="metrics-aggregate-filter-agg-max" checked>
 						<label class="form-check-label" for="metrics-aggregate-filter-agg-max">
 							<fmt:message key='metrics.aggregate.max.label'/>
 						</label>
@@ -64,7 +64,7 @@
 				</div>
 				<div class="col-auto">
 					<div class="form-check">
-						<input class="form-check-input" type="checkbox" name="aggs" value="avg" id="metrics-aggregate-filter-agg-avg">
+						<input class="form-check-input" type="checkbox" name="aggs" value="avg" id="metrics-aggregate-filter-agg-avg" checked>
 						<label class="form-check-label" for="metrics-aggregate-filter-agg-avg">
 							<fmt:message key='metrics.aggregate.avg.label'/>
 						</label>
@@ -76,7 +76,7 @@
 			<label for="metrics-aggregate-filter-agg-p1-inc"><fmt:message key='metrics.aggregate.p1.label'/>: <span id="metrics-aggregate-filter-agg-p1-disp">25</span>%</label>
 			<div class="row mt-2">
 				<div class="col-auto pe-0">
-					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p1-inc">
+					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p1-inc" checked>
 				</div>
 				<div class="col">
 					<input type="range" min="1" max="99" value="25" name="p1" class="form-range" id="metrics-aggregate-filter-agg-p1">
@@ -87,7 +87,7 @@
 			<label for="metrics-aggregate-filter-agg-p2-inc"><fmt:message key='metrics.aggregate.p2.label'/>: <span id="metrics-aggregate-filter-agg-p2-disp">75</span>%</label>
 			<div class="row mt-2">
 				<div class="col-auto pe-0">
-					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p2-inc">
+					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p2-inc" checked>
 				</div>
 				<div class="col">
 					<input type="range" min="1" max="99" value="75" name="p1" class="form-range" id="metrics-aggregate-filter-agg-p2">
@@ -100,12 +100,12 @@
 		<div class="row fw-bold border-bottom">
 			<div class="col-5"><fmt:message key="metric.name.label"/></div>
 			<div class="col-4"><fmt:message key="metric.type.label"/></div>
-			<div class="col-3"><fmt:message key="metric.value.label"/></div>
+			<div class="col-3 text-end"><span class="number-whole"><fmt:message key="metric.value.label"/></span><span class="number-dot invisible">.</span><span class="number-fraction"></span></div>
 		</div>
 		<div class="row py-1 border-bottom template item">
 			<div class="col-5" data-tprop="name"></div>
 			<div class="col-4" data-tprop="displayType"></div>
-			<div class="col-3" data-tprop="value"></div>
+			<div class="col-3 text-end"><span class="number-whole" data-tprop="valueWhole"></span><span class="number-dot">.</span><span class="number-fraction" data-tprop="valueFraction"></span></div>
 		</div>
 		<div class="list-container">
 		</div>
@@ -136,13 +136,13 @@
 			<div class="col-1 text-end"><fmt:message key="metric.idx.label"/></div>
 			<div class="col-3"><fmt:message key="metric.ts.label"/></div>
 			<div class="col-4"><fmt:message key="metric.name.label"/></div>
-			<div class="col-3"><fmt:message key="metric.value.label"/></div>
+			<div class="col-3 text-end"><span class="number-whole"><fmt:message key="metric.value.label"/></span><span class="number-dot invisible">.</span><span class="number-fraction"></span></div>
 		</div>
 		<div class="row py-1 border-bottom template item">
 			<div class="col-1 text-end"data-tprop="idx"></div>
 			<div class="col-3" data-tprop="displayTs"></div>
 			<div class="col-4" data-tprop="name"></div>
-			<div class="col-3" data-tprop="value"></div>
+			<div class="col-3 text-end"><span class="number-whole" data-tprop="valueWhole"></span><span class="number-dot">.</span><span class="number-fraction" data-tprop="valueFraction"></span></div>
 		</div>
 		<div class="list-container some hidden">
 		</div>

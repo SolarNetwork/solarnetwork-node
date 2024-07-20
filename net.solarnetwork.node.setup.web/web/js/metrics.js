@@ -12,7 +12,7 @@ $(document).ready(function metricsManagement() {
 	 * @property {string} timestamp the timestamp
 	 * @property {string} type the type
 	 * @property {string} name the name
-	 * @property {string} value the value
+	 * @property {number} value the value
 	 */
 	
 	/**
@@ -158,6 +158,8 @@ $(document).ready(function metricsManagement() {
 		dest.append(itemEl);
 		rowMap.set(rowKey, itemEl);
 	}
+	
+	const NUM_COMPONENTS = /^(\d+)(?:\.(\d+))?$/;
 
 	function populateMetric(/** @type {Metric} */ metric, /** @type {number} */ row, /** @type jQuery */ itemEl) {
 		itemEl.find('[data-tprop=idx]').text(row);
@@ -165,7 +167,15 @@ $(document).ready(function metricsManagement() {
 		itemEl.find('[data-tprop=type]').text(metric.type);
 		itemEl.find('[data-tprop=displayType]').text(displayType(metric.type));		
 		itemEl.find('[data-tprop=name]').text(metric.name);
-		itemEl.find('[data-tprop=value]').text(metric.value);
+		
+		const rounded = metric.value.toFixed(3);
+		const comps = rounded.match(NUM_COMPONENTS);
+		const whole = Number(comps[1]);
+		const frac = comps[2] ? Number(comps[2].replace(/0+$/, '')) : undefined;
+		
+		itemEl.find('[data-tprop=valueWhole]').text(whole.toLocaleString());
+		itemEl.find('[data-tprop=valueFraction]').text(frac ? frac : '');
+		itemEl.find('.number-dot').toggleClass('invisible', !frac);
 	}
 	
 	function displayType(/** @type {string} */ type) {
