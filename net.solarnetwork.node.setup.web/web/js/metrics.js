@@ -31,6 +31,10 @@ $(document).ready(function metricsManagement() {
 	const mostRecentMetricTemplate = mostRecentMetricsSection.find('.template');
 	const mostRecentMetricContainer = mostRecentMetricsSection.find('.list-container');
 	
+	const aggregateMetricsSection = $('#metrics-aggregate');
+	const aggregateMetricTemplate = aggregateMetricsSection.find('.template');
+	const aggregateMetricContainer = aggregateMetricsSection.find('.list-container');
+
 	const metricTemplate = $('#metrics-list .template');
 	const metricContainer = $('#metrics-list .list-container');
 	
@@ -42,6 +46,9 @@ $(document).ready(function metricsManagement() {
 
 	/** @type Map<String, jQuery> */
 	const mostRecentMetricRows = new Map();
+
+	/** @type Map<String, jQuery> */
+	const aggregateMetricRows = new Map();
 
 	/** @type Map<String, jQuery> */
 	const metricRows = new Map();
@@ -63,6 +70,19 @@ $(document).ready(function metricsManagement() {
 		}
 		
 		mostRecentMetricsSection.toggleClass('hidden', mostRecentMetricRows.size == 0);
+	}
+
+	function setupAggregateMetrics(/** @type {MetricFilterResults} */ metrics) {
+		aggregateMetricRows.clear();
+		aggregateMetricContainer.empty();
+		
+		if ( Array.isArray(metrics.results) ) {
+			for ( let metric of metrics.results ) {
+				renderMetric(metric, 0, aggregateMetricTemplate, aggregateMetricContainer, aggregateMetricRows, mostRecentMetricKey(metric));
+			}
+		}
+		
+		aggregateMetricsSection.toggleClass('hidden', aggregateMetricRows.size == 0);
 	}
 
 	function setupMetrics(/** @type {MetricFilterResults} */ metrics) {
@@ -130,8 +150,17 @@ $(document).ready(function metricsManagement() {
 		itemEl.find('[data-tprop=idx]').text(row);
 		itemEl.find('[data-tprop=displayTs]').text(moment(metric.timestamp).format('YYYY-MM-DD HH:mm:ss.SSS'));
 		itemEl.find('[data-tprop=type]').text(metric.type);
+		itemEl.find('[data-tprop=displayType]').text(displayType(metric.type));		
 		itemEl.find('[data-tprop=name]').text(metric.name);
 		itemEl.find('[data-tprop=value]').text(metric.value);
+	}
+	
+	function displayType(/** @type {string} */ type) {
+		let disp = aggregateMetricsSection.data('i18n-'+type.replace(':', '') );
+		if ( disp ) {
+			return disp;
+		}
+		return type;
 	}
 	
 	function mostRecentMetricKey(metric) {
@@ -182,6 +211,21 @@ $(document).ready(function metricsManagement() {
 		});
 	}
 
+	function queryForAggregateMetrics() {
+		let url = SolarNode.context.path('/a/metrics/list') 
+			+ '?type=s&start='
+			+ encodeURIComponent(moment().subtract(5, 'days').format());
+			;
+		for ( let k of ['min', 'max', 'avg', 'q:25', 'q:75'] ) {
+			url += '&aggs=' + encodeURIComponent(k);
+		}
+		return $.getJSON(url, (data) => {
+			if ( data && data.success === true ) {
+				setupAggregateMetrics(data.data);
+			}
+		});
+	}
+
 	function queryForMetrics() {
 		let url = SolarNode.context.path('/a/metrics/list') 
 			+ '?type=s'
@@ -227,6 +271,8 @@ $(document).ready(function metricsManagement() {
 	});
 	
 	queryForMostRecentMetrics();
+
+	queryForAggregateMetrics();
 
 	nameInput.on('keydown', (event) => {
 		if (event.key === "Enter" ) {

@@ -25,6 +25,31 @@
 	</div>
 </section>
 
+<section id="metrics-aggregate" class="hidden"
+		data-i18n-min="<fmt:message key='metrics.aggregate.min.label'/>"
+		data-i18n-max="<fmt:message key='metrics.aggregate.max.label'/>"
+		data-i18n-avg="<fmt:message key='metrics.aggregate.avg.label'/>"
+		data-i18n-q25="<fmt:message key='metrics.aggregate.q25.label'/>"
+		data-i18n-q75="<fmt:message key='metrics.aggregate.q75.label'/>"
+		>
+	<h2><fmt:message key="metrics.aggregate.title"/></h2>
+	<p><fmt:message key="metrics.aggregate.intro"/></p>
+	<div class="container">
+		<div class="row fw-bold border-bottom">
+			<div class="col-5"><fmt:message key="metric.name.label"/></div>
+			<div class="col-4"><fmt:message key="metric.type.label"/></div>
+			<div class="col-3"><fmt:message key="metric.value.label"/></div>
+		</div>
+		<div class="row py-1 border-bottom template item">
+			<div class="col-5" data-tprop="name"></div>
+			<div class="col-4" data-tprop="displayType"></div>
+			<div class="col-3" data-tprop="value"></div>
+		</div>
+		<div class="list-container">
+		</div>
+	</div>
+</section>
+
 <section id="metrics" class="hidden ready" data-i18n-page="<fmt:message key='metrics.list.nav.page.label'/>">
 	<h2><fmt:message key="metrics.title"/></h2>
 

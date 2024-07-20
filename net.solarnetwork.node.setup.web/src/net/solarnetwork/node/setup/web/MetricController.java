@@ -25,8 +25,13 @@ package net.solarnetwork.node.setup.web;
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.domain.Result.success;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,10 +44,14 @@ import net.solarnetwork.domain.Result;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.node.metrics.dao.BasicMetricFilter;
 import net.solarnetwork.node.metrics.dao.MetricDao;
+import net.solarnetwork.node.metrics.domain.BasicMetricAggregate;
 import net.solarnetwork.node.metrics.domain.Metric;
+import net.solarnetwork.node.metrics.domain.MetricAggregate;
 import net.solarnetwork.node.metrics.domain.MetricKey;
+import net.solarnetwork.node.metrics.domain.ParameterizedMetricAggregate;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.util.DateUtils;
 
 /**
  * Web controller for metrics support.
@@ -84,18 +93,59 @@ public class MetricController {
 	 */
 	public static final class MetricListCommand {
 
+		private String start;
+		private String end;
 		private String type;
 		private String name;
 		private Integer offset;
 		private Integer max;
 		private boolean mostRecent;
 		private List<MutableSortDescriptor> sorts;
+		private Set<String> aggs;
 
 		/**
 		 * Constructor.
 		 */
 		public MetricListCommand() {
 			super();
+		}
+
+		/**
+		 * Get the start date.
+		 *
+		 * @return the start
+		 */
+		public final String getStart() {
+			return start;
+		}
+
+		/**
+		 * Set the start date.
+		 *
+		 * @param start
+		 *        the start to set
+		 */
+		public final void setStart(String start) {
+			this.start = start;
+		}
+
+		/**
+		 * Get the end date.
+		 *
+		 * @return the end
+		 */
+		public final String getEnd() {
+			return end;
+		}
+
+		/**
+		 * Set the end date.
+		 *
+		 * @param end
+		 *        the end to set
+		 */
+		public final void setEnd(String end) {
+			this.end = end;
 		}
 
 		/**
@@ -213,6 +263,74 @@ public class MetricController {
 		}
 
 		/**
+		 * Get the set of aggregates.
+		 *
+		 * @return the aggregates
+		 */
+		public final Set<String> getAggs() {
+			return aggs;
+		}
+
+		/**
+		 * Set the set of aggregates.
+		 *
+		 * <p>
+		 * This is a set of {@link MetricAggregate} key values. All the values
+		 * in {@link BasicMetricAggregate} are supported, along with {@code q:x}
+		 * quantiles where {@code x} is an integer percent, like {@code q:25}
+		 * for the 25th quantile.
+		 * </p>
+		 *
+		 * @param aggregates
+		 *        the aggregates to set
+		 */
+		public final void setAggs(Set<String> aggs) {
+			this.aggs = aggs;
+		}
+
+		private Instant startDate() {
+			if ( start == null || start.isEmpty() ) {
+				return null;
+			}
+			ZonedDateTime date = DateUtils.parseIsoTimestamp(start, TimeZone.getDefault().toZoneId());
+			return (date != null ? date.toInstant() : null);
+		}
+
+		private Instant endDate() {
+			if ( end == null || end.isEmpty() ) {
+				return null;
+			}
+			ZonedDateTime date = DateUtils.parseIsoTimestamp(end, TimeZone.getDefault().toZoneId());
+			return (date != null ? date.toInstant() : null);
+		}
+
+		private MetricAggregate[] aggregates() {
+			if ( aggs == null || aggs.isEmpty() ) {
+				return null;
+			}
+			List<MetricAggregate> result = new ArrayList<>(aggs.size());
+			for ( String key : aggs ) {
+				if ( MetricAggregate.METRIC_TYPE_MINIMUM.equalsIgnoreCase(key) ) {
+					result.add(BasicMetricAggregate.Minimum);
+				} else if ( MetricAggregate.METRIC_TYPE_MAXIMUM.equalsIgnoreCase(key) ) {
+					result.add(BasicMetricAggregate.Maximum);
+				} else if ( MetricAggregate.METRIC_TYPE_AVERAGE.equalsIgnoreCase(key) ) {
+					result.add(BasicMetricAggregate.Average);
+				} else if ( key.startsWith("q:") || key.startsWith("Q:") && key.length() > 2 ) {
+					try {
+						Integer p = Integer.valueOf(key.substring(2));
+						result.add(new ParameterizedMetricAggregate(MetricAggregate.METRIC_TYPE_QUANTILE,
+								new Object[] { p / 100.0 },
+								ParameterizedMetricAggregate.INTEGER_PERCENT_KEY));
+					} catch ( NumberFormatException e ) {
+						// ignore
+					}
+				}
+			}
+			return (result.isEmpty() ? null : result.toArray(new MetricAggregate[result.size()]));
+		}
+
+		/**
 		 * Create a filter instance from this command.
 		 *
 		 * @return the filter instance
@@ -223,7 +341,14 @@ public class MetricController {
 			filter.setName(name);
 			filter.setOffset(offset);
 			filter.setMax(max);
-			if ( mostRecent ) {
+
+			filter.setStartDate(startDate());
+			filter.setEndDate(endDate());
+
+			MetricAggregate[] aggregates = aggregates();
+			if ( aggregates != null && aggregates.length > 0 ) {
+				filter.setAggregates(aggregates);
+			} else if ( mostRecent ) {
 				filter.setMostRecent(true);
 			} else {
 				filter.setWithoutTotalResultsCount(false);
