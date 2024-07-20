@@ -25,16 +25,78 @@
 	</div>
 </section>
 
-<section id="metrics-aggregate" class="hidden"
+<section id="metrics-aggregate" class="hidden some"
 		data-i18n-min="<fmt:message key='metrics.aggregate.min.label'/>"
 		data-i18n-max="<fmt:message key='metrics.aggregate.max.label'/>"
 		data-i18n-avg="<fmt:message key='metrics.aggregate.avg.label'/>"
-		data-i18n-q25="<fmt:message key='metrics.aggregate.q25.label'/>"
-		data-i18n-q75="<fmt:message key='metrics.aggregate.q75.label'/>"
+		data-i18n-q="<fmt:message key='metrics.aggregate.q.label'/>"
 		>
 	<h2><fmt:message key="metrics.aggregate.title"/></h2>
 	<p><fmt:message key="metrics.aggregate.intro"/></p>
-	<div class="container">
+	
+	<form class="row g-3" id="metrics-aggregate-filter-form">
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-from"><fmt:message key='metrics.aggregate.filter.from.label'/></label>
+			<input type="date" name="start" class="form-control" id="metrics-aggregate-filter-from">
+		</div>
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-to"><fmt:message key='metrics.aggregate.filter.to.label'/></label>
+			<input type="date" name="end" class="form-control" id="metrics-aggregate-filter-to">
+		</div>
+		<div class="col-auto">
+			<label for="metrics-aggregate-filter-from"><fmt:message key='metrics.aggregate.filter.stats.label'/></label>
+			<div class="row mt-2">
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="min" id="metrics-aggregate-filter-agg-min">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-min">
+							<fmt:message key='metrics.aggregate.min.label'/>
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="max" id="metrics-aggregate-filter-agg-max">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-max">
+							<fmt:message key='metrics.aggregate.max.label'/>
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="avg" id="metrics-aggregate-filter-agg-avg">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-avg">
+							<fmt:message key='metrics.aggregate.avg.label'/>
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-agg-p1-inc"><fmt:message key='metrics.aggregate.p1.label'/>: <span id="metrics-aggregate-filter-agg-p1-disp">25</span>%</label>
+			<div class="row mt-2">
+				<div class="col-auto pe-0">
+					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p1-inc">
+				</div>
+				<div class="col">
+					<input type="range" min="1" max="99" value="25" name="p1" class="form-range" id="metrics-aggregate-filter-agg-p1">
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-agg-p2-inc"><fmt:message key='metrics.aggregate.p2.label'/>: <span id="metrics-aggregate-filter-agg-p2-disp">75</span>%</label>
+			<div class="row mt-2">
+				<div class="col-auto pe-0">
+					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p2-inc">
+				</div>
+				<div class="col">
+					<input type="range" min="1" max="99" value="75" name="p1" class="form-range" id="metrics-aggregate-filter-agg-p2">
+				</div>
+			</div>
+		</div>
+	</form>
+
+	<div class="container mt-3">
 		<div class="row fw-bold border-bottom">
 			<div class="col-5"><fmt:message key="metric.name.label"/></div>
 			<div class="col-4"><fmt:message key="metric.type.label"/></div>

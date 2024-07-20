@@ -34,6 +34,19 @@ $(document).ready(function metricsManagement() {
 	const aggregateMetricsSection = $('#metrics-aggregate');
 	const aggregateMetricTemplate = aggregateMetricsSection.find('.template');
 	const aggregateMetricContainer = aggregateMetricsSection.find('.list-container');
+	
+	const aggregateMetricFilterForm = $('#metrics-aggregate-filter-form');
+	const aggregateMetricFilterFromField = $('#metrics-aggregate-filter-from');
+	const aggregateMetricFilterToField = $('#metrics-aggregate-filter-to');
+	const aggregateMetricFilterMinField = $('#metrics-aggregate-filter-agg-min');
+	const aggregateMetricFilterMaxField = $('#metrics-aggregate-filter-agg-max');
+	const aggregateMetricFilterAvgField = $('#metrics-aggregate-filter-agg-avg');
+	const aggregateMetricFilterP1Check = $('#metrics-aggregate-filter-agg-p1-inc');
+	const aggregateMetricFilterP1Field = $('#metrics-aggregate-filter-agg-p1');
+	const aggregateMetricFilterP1Disp = $('#metrics-aggregate-filter-agg-p1-disp');
+	const aggregateMetricFilterP2Check = $('#metrics-aggregate-filter-agg-p2-inc');
+	const aggregateMetricFilterP2Field = $('#metrics-aggregate-filter-agg-p2');
+	const aggregateMetricFilterP2Disp = $('#metrics-aggregate-filter-agg-p2-disp');
 
 	const metricTemplate = $('#metrics-list .template');
 	const metricContainer = $('#metrics-list .list-container');
@@ -57,7 +70,7 @@ $(document).ready(function metricsManagement() {
 	let totalPageCount = 0;
 	let pageOffset = 0;
 	
-	let nameInputTimer = undefined;
+	let inputTimer = undefined;
 	
 	function setupMostRecentMetrics(/** @type {MetricFilterResults} */ metrics) {
 		mostRecentMetricRows.clear();
@@ -82,7 +95,7 @@ $(document).ready(function metricsManagement() {
 			}
 		}
 		
-		aggregateMetricsSection.toggleClass('hidden', aggregateMetricRows.size == 0);
+		//aggregateMetricsSection.toggleClass('hidden', aggregateMetricRows.size == 0);
 	}
 
 	function setupMetrics(/** @type {MetricFilterResults} */ metrics) {
@@ -160,6 +173,9 @@ $(document).ready(function metricsManagement() {
 		if ( disp ) {
 			return disp;
 		}
+		if ( type.startsWith('q:') ) {
+			return aggregateMetricsSection.data('i18n-q') + ' ' +type.substring(2) + '%';
+		}
 		return type;
 	}
 	
@@ -214,11 +230,41 @@ $(document).ready(function metricsManagement() {
 	function queryForAggregateMetrics() {
 		let url = SolarNode.context.path('/a/metrics/list') 
 			+ '?type=s&start='
-			+ encodeURIComponent(moment().subtract(5, 'days').format());
 			;
-		for ( let k of ['min', 'max', 'avg', 'q:25', 'q:75'] ) {
+		
+		const start = aggregateMetricFilterFromField.val();
+		if (start) {
+			url += moment(start).toISOString();
+		} else {
+			url += encodeURIComponent(moment().subtract(5, 'days').toISOString());
+		}
+
+		const end = aggregateMetricFilterToField.val();
+		if (end) {
+			url += '&end=' +encodeURIComponent(moment(end).add(1, 'days').toISOString());
+		}
+		
+		const aggs = new Set();
+		for ( let f of [aggregateMetricFilterMinField
+				, aggregateMetricFilterMaxField
+				, aggregateMetricFilterAvgField] ) {
+			if ( f.is(":checked") ) {
+				aggs.add(f.val());
+			}
+		}
+		if ( aggregateMetricFilterP1Check.is(":checked") ) {
+			aggs.add('q:' + aggregateMetricFilterP1Field.val());
+		}
+		if ( aggregateMetricFilterP2Check.is(":checked") ) {
+			aggs.add('q:' + aggregateMetricFilterP2Field.val());
+		}
+		if ( aggs.size < 1 ) {
+			['min', 'max', 'avg', 'q:25', 'q:75'].forEach(aggs.add, aggs);
+		}
+		for ( let k of aggs ) {
 			url += '&aggs=' + encodeURIComponent(k);
 		}
+		
 		return $.getJSON(url, (data) => {
 			if ( data && data.success === true ) {
 				setupAggregateMetrics(data.data);
@@ -266,6 +312,7 @@ $(document).ready(function metricsManagement() {
  	queryForMetrics().always(() => {
 		$('#metrics .none').toggleClass('hidden', metricRows.size > 0);
 		$('#metrics .some').toggleClass('hidden', metricRows.size < 1);
+		aggregateMetricsSection.toggleClass('hidden', metricRows.size < 1);
 		toggleLoading(false);
 		subscribeMetricStored();
 	});
@@ -278,11 +325,11 @@ $(document).ready(function metricsManagement() {
 		if (event.key === "Enter" ) {
 			event.preventDefault();
 		}
-	}).on('keyup', (event) => {
-		if (nameInputTimer) {
-			clearTimeout(nameInputTimer);
+	}).on('keyup', () => {
+		if (inputTimer) {
+			clearTimeout(inputTimer);
 		}
-		nameInputTimer = setTimeout(() => {
+		inputTimer = setTimeout(() => {
 			pageOffset = 0;
 			queryForMetrics();
 		}, 500);
@@ -301,4 +348,35 @@ $(document).ready(function metricsManagement() {
 	});
 	
 	$('#metrics-list-refresh').on('click', queryForMetrics);
+	
+	for ( let e of ['mousemove', 'touchmove'] ) {
+		aggregateMetricFilterP1Field.on(e, () => {
+			aggregateMetricFilterP1Disp.text(aggregateMetricFilterP1Field.val());
+		}).on('change', () => {
+			aggregateMetricFilterP1Check.prop('checked', true);
+			aggregateMetricFilterP1Disp.text(aggregateMetricFilterP1Field.val());
+		});
+		aggregateMetricFilterP2Field.on(e, () => {
+			aggregateMetricFilterP2Disp.text(aggregateMetricFilterP2Field.val());
+		}).on('change', () => {
+			aggregateMetricFilterP2Check.prop('checked', true);
+			aggregateMetricFilterP2Disp.text(aggregateMetricFilterP2Field.val());
+		});
+	}
+
+		aggregateMetricFilterForm.on('submit', (event) => {
+		event.preventDefault();
+		
+		return false;
+	}).find('input')
+	.on('change', queryForAggregateMetrics)
+	.on('keyup', () => {
+		if (inputTimer) {
+			clearTimeout(inputTimer);
+		}
+		inputTimer = setTimeout(() => {
+			queryForAggregateMetrics();
+		}, 500);
+	});
+
 });
