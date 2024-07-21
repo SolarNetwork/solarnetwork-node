@@ -541,3 +541,18 @@ input[readonly].form-control {
 	max-height: 25rem;
 	overflow-y: auto;
 }
+
+.number-whole,
+.number-dot,
+.number-fraction {
+	display: inline-block;
+}
+
+.number-whole {
+	text-align: right;
+}
+
+.number-fraction {
+	text-align: left;
+	width: 3em;
+}

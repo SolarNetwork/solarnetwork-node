@@ -41,6 +41,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -53,6 +54,9 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import net.solarnetwork.dao.BasicBatchOptions;
+import net.solarnetwork.dao.BatchableDao.BatchCallback;
+import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.metrics.dao.BasicMetricFilter;
@@ -70,7 +74,7 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * Test cases for the {@link
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcMetricDaoTests extends AbstractNodeTest {
 
@@ -486,6 +490,43 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 		final List<Metric> resultList = stream(results.spliterator(), false).collect(toList());
 		assertThat("1 result per name returned", resultList, hasSize(2));
 		assertThat("Results ordered by name", resultList, contains(expected_a, expected_b));
+	}
+
+	@Test
+	public void batchExport() {
+		// GIVEN
+		final int rowCount = 10;
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		final List<Metric> allMetrics = new ArrayList<>(rowCount);
+		for ( int i = 0; i < rowCount; i++ ) {
+			Metric m = Metric.metricValue(start.plusSeconds(i), UUID.randomUUID().toString(),
+					UUID.randomUUID().toString(), random());
+			dao.save(m);
+			allMetrics.add(m);
+		}
+
+		// WHEN
+		BasicMetricFilter filter = new BasicMetricFilter();
+		filter.setStartDate(start.plusSeconds(2));
+		filter.setEndDate(start.plusSeconds(6));
+
+		List<Metric> results = new ArrayList<>();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put(MetricDao.BATCH_PARAM_FILTER, filter);
+		BasicBatchOptions opts = new BasicBatchOptions("export", 50, false, params);
+		dao.batchProcess(new BatchCallback<Metric>() {
+
+			@Override
+			public BatchCallbackResult handle(Metric metric) {
+				results.add(metric);
+				return BatchCallbackResult.CONTINUE;
+			}
+		}, opts);
+
+		// THEN
+		assertThat("Expected processed count", results, hasSize(6 - 2));
+		assertThat("Expected results returned", results,
+				contains(allMetrics.subList(2, 6).toArray(new Metric[6 - 2])));
 	}
 
 }

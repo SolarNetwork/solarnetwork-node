@@ -21,7 +21,7 @@
 	<osgix:cm-properties id="dao.jdbc.cfg"
 		persistent-id="net.solarnetwork.node.dao.jdbc">
 		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql</beans:prop>
-		<beans:prop key="reset.sqlStateRegex">900\d{2}</beans:prop>
+		<beans:prop key="reset.sqlStateRegex">900(28|31)</beans:prop>
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
 		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>

@@ -24,19 +24,24 @@ package net.solarnetwork.node.metrics.dao.jdbc;
 
 import static java.lang.String.format;
 import static net.solarnetwork.node.metrics.dao.jdbc.Constants.TABLE_NAME_TEMPALTE;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.SortDescriptor;
-import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
+import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
+import net.solarnetwork.node.metrics.dao.BasicMetricFilter;
 import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.dao.MetricFilter;
 import net.solarnetwork.node.metrics.domain.Metric;
@@ -51,9 +56,9 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link MetricDao}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
+public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 		implements MetricDao, SettingSpecifierProvider {
 
 	/**
@@ -70,6 +75,9 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
 
 	/** The {@code stats.logFrequency} default value. */
 	public static final int DEFAULT_STAT_LOG_FREQUENCY = 100;
+
+	/** An internal batch parameter for a {@link PreparedStatementSetter}. */
+	private static final String BATCH_PARAM_PSC = "_pss";
 
 	/**
 	 * Enumeration of SQL resources.
@@ -145,6 +153,50 @@ public class JdbcMetricDao extends BaseJdbcGenericDao<Metric, MetricKey>
 
 		return new BasicFilterResults<>(results, totalResultCount,
 				(filter.getOffset() != null ? filter.getOffset() : 0), results.size());
+	}
+
+	@Override
+	protected String getBatchJdbcStatement(BatchOptions options) {
+		requireNonNullArgument(options, "options");
+		Map<String, Object> params = requireNonNullArgument(options.getParameters(),
+				"options.parameters");
+
+		MetricFilter filter = null;
+		if ( options.getParameters() != null
+				&& options.getParameters().get(BATCH_PARAM_FILTER) instanceof MetricFilter ) {
+			filter = (MetricFilter) options.getParameters().get(BATCH_PARAM_FILTER);
+		} else {
+			filter = new BasicMetricFilter();
+		}
+		SelectMetrics sql = new SelectMetrics(filter);
+		params.put(BATCH_PARAM_PSC, sql);
+		return sql.getSql();
+	}
+
+	@Override
+	protected void prepareBatchStatement(BatchOptions options, Connection con,
+			PreparedStatement queryStmt) throws SQLException {
+		requireNonNullArgument(options, "options");
+		Map<String, Object> params = requireNonNullArgument(options.getParameters(),
+				"options.parameters");
+		if ( !(params.get(BATCH_PARAM_PSC) instanceof PreparedStatementSetter) ) {
+			throw new IllegalStateException(
+					"PreparedStatementSetter not available on " + BATCH_PARAM_PSC + " parameter.");
+		}
+		PreparedStatementSetter pss = (PreparedStatementSetter) params.get(BATCH_PARAM_PSC);
+		pss.setValues(queryStmt);
+	}
+
+	@Override
+	protected Metric getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
+			throws SQLException {
+		return getRowMapper().mapRow(resultSet, rowCount);
+	}
+
+	@Override
+	protected void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
+			Metric entity) throws SQLException {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

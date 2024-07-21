@@ -30,6 +30,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.SqlProvider;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.node.metrics.dao.MetricDao;
@@ -41,9 +42,9 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate {@code SELECT} SQL for metric values based on a filter.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
+public class SelectMetrics implements PreparedStatementCreator, PreparedStatementSetter, SqlProvider {
 
 	/** The {@code fetchSize} property default value. */
 	public static final int DEFAULT_FETCH_SIZE = 100;
@@ -96,12 +97,17 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 	public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 		PreparedStatement stmt = con.prepareStatement(getSql(), ResultSet.TYPE_FORWARD_ONLY,
 				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
-		int p = prepareWhere(con, stmt, 0);
-		preparePagination(con, stmt, p);
 		if ( fetchSize > 0 ) {
 			stmt.setFetchSize(fetchSize);
 		}
+		setValues(stmt);
 		return stmt;
+	}
+
+	@Override
+	public void setValues(PreparedStatement stmt) throws SQLException {
+		int p = prepareWhere(stmt, 0);
+		preparePagination(stmt, p);
 	}
 
 	private void sqlRaw(StringBuilder buf) {
@@ -251,7 +257,7 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		}
 	}
 
-	private int prepareWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
+	private int prepareWhere(PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.hasAggregateCriteria() ) {
 			for ( MetricAggregate agg : filter.getAggregates() ) {
 				if ( MetricAggregate.METRIC_TYPE_QUANTILE.equals(agg.getType()) ) {
@@ -266,19 +272,19 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 			stmt.setObject(++p, filter.getEndDate());
 		}
 		if ( filter.hasTypeCriteria() ) {
-			Array a = con.createArrayOf("VARCHAR", filter.getTypes());
+			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.getTypes());
 			stmt.setArray(++p, a);
 			a.free();
 		}
 		if ( filter.hasNameCriteria() ) {
-			Array a = con.createArrayOf("VARCHAR", filter.getNames());
+			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.getNames());
 			stmt.setArray(++p, a);
 			a.free();
 		}
 		return p;
 	}
 
-	private int preparePagination(Connection con, PreparedStatement stmt, int p) throws SQLException {
+	private int preparePagination(PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.getOffset() != null ) {
 			stmt.setInt(++p, filter.getOffset());
 		}
@@ -316,7 +322,7 @@ public class SelectMetrics implements PreparedStatementCreator, SqlProvider {
 		@Override
 		public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 			PreparedStatement stmt = con.prepareStatement(getSql());
-			prepareWhere(con, stmt, 0);
+			prepareWhere(stmt, 0);
 			return stmt;
 		}
 

@@ -12,7 +12,7 @@ A _metric_ in SolarNode has this basic structure:
 |:---------|:--------|:------------|
 | `timestamp` | `2024-07-18 19:48:50.003767Z` | The date the metric was created. |
 | `type`      | `s` | A classifier. The `s` type represents a raw "sample". Other types can be used to represent other metric types, such as computed aggregation values. |
-| `name`      | `gridPric` | An arbitrary name for the metric. Typically these should be concise and use an expression-friendly syntax of just letters, numbers, and underscores. |
+| `name`      | `gridPrice` | An arbitrary name for the metric. Typically these should be concise and use an expression-friendly syntax of just letters, numbers, and underscores. |
 | `value`     | `123.4` | The metric numeric value, as a 64-bit floating-point number. |
 
 # Working with metrics

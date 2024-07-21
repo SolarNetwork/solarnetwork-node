@@ -1,27 +1,29 @@
 /* ==================================================================
  * WebServiceControllerSupport.java - Dec 18, 2012 7:29:54 AM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web.support;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.Principal;
 import java.sql.SQLException;
 import java.time.DateTimeException;
@@ -30,6 +32,8 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
@@ -62,15 +66,16 @@ import org.springframework.web.multipart.MultipartException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.solarnetwork.domain.Result;
+import net.solarnetwork.io.ProvidedOutputStream;
 import net.solarnetwork.security.AbstractAuthorizationBuilder;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.web.domain.Response;
 
 /**
  * A base class to support web service style controllers.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.3
  */
 @RestControllerAdvice(annotations = GlobalExceptionRestController.class)
@@ -149,7 +154,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Get a standardized string description of a request.
-	 * 
+	 *
 	 * @param request
 	 *        the request
 	 * @return the description
@@ -188,7 +193,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Get the user principal name of a given request.
-	 * 
+	 *
 	 * @param request
 	 *        the request
 	 * @return the name, or {@link #ANONYMOUS_USER_PRINCIPAL}
@@ -215,9 +220,37 @@ public final class WebServiceControllerSupport {
 		return ANONYMOUS_USER_PRINCIPAL;
 	}
 
+	private static final Pattern GZIP_ENCODING = Pattern.compile("\\bgzip\\b", Pattern.CASE_INSENSITIVE);
+
+	/**
+	 * Get a response output stream, with gzip encoding support.
+	 *
+	 * @param response
+	 *        the response
+	 * @param acceptEncoding
+	 *        the HTTP Accept-Encoding request header value
+	 * @return the output stream
+	 * @since 1.1
+	 */
+	public static final OutputStream responseOutputStream(HttpServletResponse response,
+			String acceptEncoding) {
+		return new ProvidedOutputStream(() -> {
+			try {
+				OutputStream out = response.getOutputStream();
+				if ( acceptEncoding != null && GZIP_ENCODING.matcher(acceptEncoding).find() ) {
+					out = new GZIPOutputStream(out);
+					response.setHeader(HttpHeaders.CONTENT_ENCODING, "gzip");
+				}
+				return out;
+			} catch ( IOException e ) {
+				throw new IllegalStateException(e);
+			}
+		});
+	}
+
 	/**
 	 * Handle an {@link BeanInstantiationException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -236,7 +269,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle an {@link TypeMismatchException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -257,7 +290,7 @@ public final class WebServiceControllerSupport {
 	/**
 	 * Handle an {@link UnsupportedOperationException} as a {@literal 404} error
 	 * status.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -276,7 +309,7 @@ public final class WebServiceControllerSupport {
 	/**
 	 * Handle a {@link JsonProcessingException}, presuming from malformed JSON
 	 * input.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -294,7 +327,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle a {@link DateTimeParseException}, from malformed date input.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -312,7 +345,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle a general {@link DateTimeException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -330,7 +363,7 @@ public final class WebServiceControllerSupport {
 	/**
 	 * Handle a {@link HttpMessageNotReadableException}, from malformed JSON
 	 * input.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -355,7 +388,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle a {@link DataIntegrityViolationException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -428,7 +461,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle a {@link DataRetrievalFailureException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -459,7 +492,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle a {@link InvalidDataAccessResourceUsageException} .
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -487,7 +520,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle an {@link ConstraintViolationException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -509,7 +542,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle an {@link BindException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -528,7 +561,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle an {@link InvalidPropertyException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -550,7 +583,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Handle a {@link MultipartException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param request
@@ -574,11 +607,11 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Add a {@literal Vary} HTTP response header.
-	 * 
+	 *
 	 * <p>
 	 * This is so the responses work well with caching proxies.
 	 * </p>
-	 * 
+	 *
 	 * @param response
 	 *        the response to add the header to
 	 */
@@ -592,7 +625,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Get the message source.
-	 * 
+	 *
 	 * @return the message source
 	 */
 	public MessageSource getMessageSource() {
@@ -601,7 +634,7 @@ public final class WebServiceControllerSupport {
 
 	/**
 	 * Set a message source to use for resolving exception messages.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 */

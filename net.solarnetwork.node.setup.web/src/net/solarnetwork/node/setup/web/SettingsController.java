@@ -25,13 +25,18 @@ package net.solarnetwork.node.setup.web;
 import static java.lang.String.format;
 import static java.util.Collections.sort;
 import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
+import static net.solarnetwork.node.setup.web.support.WebServiceControllerSupport.responseOutputStream;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.StringUtils.naturalSortCompare;
 import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -62,11 +67,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -106,7 +113,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.10
+ * @version 2.11
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -624,13 +631,17 @@ public class SettingsController {
 	 *        the backup key
 	 * @param response
 	 *        the response
+	 * @param acceptEncoding
+	 *        the Accept-Encoding header value
 	 * @throws IOException
 	 *         if an IO error occurs
 	 */
 	@RequestMapping(value = "/export", method = RequestMethod.GET)
 	@ResponseBody
 	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
-			HttpServletResponse response) throws IOException {
+			HttpServletResponse response,
+			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING, required = false) final String acceptEncoding)
+			throws IOException {
 		final SettingsService service = service(settingsServiceTracker);
 		final Long nodeId = identityService.getNodeId();
 		if ( service != null ) {
@@ -646,10 +657,16 @@ public class SettingsController {
 			if ( backupKey != null ) {
 				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
 				if ( r != null ) {
-					FileCopyUtils.copy(r, response.getWriter());
+					try (Writer out = new OutputStreamWriter(
+							responseOutputStream(response, acceptEncoding), StandardCharsets.UTF_8)) {
+						FileCopyUtils.copy(r, out);
+					}
 				}
 			} else {
-				service.exportSettingsCSV(response.getWriter());
+				try (Writer out = new OutputStreamWriter(responseOutputStream(response, acceptEncoding),
+						StandardCharsets.UTF_8)) {
+					service.exportSettingsCSV(out);
+				}
 			}
 		}
 	}
@@ -708,6 +725,8 @@ public class SettingsController {
 	 *        the resource setting key
 	 * @param response
 	 *        the HTTP response
+	 * @param acceptEncoding
+	 *        the Accept-Encoding header value
 	 * @throws IOException
 	 *         if any IO error occurs
 	 * @since 2.1
@@ -716,7 +735,9 @@ public class SettingsController {
 	@ResponseBody
 	public void exportSettingsResources(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
-			@RequestParam("key") String key, HttpServletResponse response) throws IOException {
+			@RequestParam("key") String key, HttpServletResponse response,
+			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING, required = false) final String acceptEncoding)
+			throws IOException {
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			SettingResourceHandler handler = service.getSettingResourceHandler(handlerKey, instanceKey);
@@ -731,10 +752,15 @@ public class SettingsController {
 							// return resource directly
 							Resource r = rList.get(0);
 							String rName = filenameForSettingsResource(r, key, idx);
-							response.setContentType(contentTypeForSettingsResource(r, rName));
+							String contentType = contentTypeForSettingsResource(r, rName);
+							response.setContentType(contentType);
 							response.setHeader("Content-Disposition",
 									format("attachment; filename=%s", rName));
-							FileCopyUtils.copy(r.getInputStream(), response.getOutputStream());
+							try (OutputStream out = (contentType.startsWith("text")
+									? responseOutputStream(response, acceptEncoding)
+									: response.getOutputStream())) {
+								FileCopyUtils.copy(r.getInputStream(), out);
+							}
 						} else {
 							// zip up into a single archive
 							response.setContentType(ZIP_ARCHIVE_CONTENT_TYPE);
