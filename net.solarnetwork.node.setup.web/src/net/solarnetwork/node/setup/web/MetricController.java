@@ -294,7 +294,7 @@ public class MetricController extends BaseSetupController {
 		 * for the 25th quantile.
 		 * </p>
 		 *
-		 * @param aggregates
+		 * @param aggs
 		 *        the aggregates to set
 		 */
 		public final void setAggs(Set<String> aggs) {
@@ -405,7 +405,6 @@ public class MetricController extends BaseSetupController {
 	 *        the Accept-Encoding header value
 	 * @param response
 	 *        the response
-	 * @return the resulting list of metrics
 	 */
 	@RequestMapping(value = "/csv", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public void exportMetricsCsv(MetricListCommand cmd,
