@@ -1,21 +1,21 @@
 /* ==================================================================
  * PKITestHelper.java - 18/07/2016 3:52:59 PM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -41,10 +41,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
-import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX500NameUtil;
@@ -64,9 +64,9 @@ import net.solarnetwork.service.CertificateException;
 
 /**
  * Helper class for PKI related tasks within tests.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PKITestUtils {
 
@@ -116,23 +116,23 @@ public class PKITestUtils {
 			int issuerPathLength = issuer.getBasicConstraints();
 			basicConstraints = new BasicConstraints(issuerPathLength - 1);
 		}
-		builder.addExtension(X509Extension.basicConstraints, true, basicConstraints);
+		builder.addExtension(Extension.basicConstraints, true, basicConstraints);
 
 		// add subjectKeyIdentifier
 		JcaX509ExtensionUtils utils = new JcaX509ExtensionUtils();
 		SubjectKeyIdentifier ski = utils.createSubjectKeyIdentifier(publicKey);
-		builder.addExtension(X509Extension.subjectKeyIdentifier, false, ski);
+		builder.addExtension(Extension.subjectKeyIdentifier, false, ski);
 
 		// add authorityKeyIdentifier
 		GeneralNames issuerName = new GeneralNames(new GeneralName(GeneralName.directoryName, caDN));
 		AuthorityKeyIdentifier aki = utils.createAuthorityKeyIdentifier(publicKey);
 		aki = new AuthorityKeyIdentifier(aki.getKeyIdentifier(), issuerName, serial);
-		builder.addExtension(X509Extension.authorityKeyIdentifier, false, aki);
+		builder.addExtension(Extension.authorityKeyIdentifier, false, aki);
 
 		// add keyUsage
 		X509KeyUsage keyUsage = new X509KeyUsage(X509KeyUsage.cRLSign | X509KeyUsage.digitalSignature
 				| X509KeyUsage.keyCertSign | X509KeyUsage.nonRepudiation);
-		builder.addExtension(X509Extension.keyUsage, true, keyUsage);
+		builder.addExtension(Extension.keyUsage, true, keyUsage);
 
 		JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSA");
 		ContentSigner signer = signerBuilder.build(issuerKey);
