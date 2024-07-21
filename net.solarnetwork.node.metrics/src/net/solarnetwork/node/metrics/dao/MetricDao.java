@@ -25,6 +25,7 @@ package net.solarnetwork.node.metrics.dao;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import java.util.List;
+import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.FilterableDao;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.domain.SimpleSortDescriptor;
@@ -36,10 +37,10 @@ import net.solarnetwork.node.metrics.domain.MetricKey;
  * DAO API for {@link Metric} entities.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface MetricDao
-		extends GenericDao<Metric, MetricKey>, FilterableDao<Metric, MetricKey, MetricFilter> {
+public interface MetricDao extends GenericDao<Metric, MetricKey>,
+		FilterableDao<Metric, MetricKey, MetricFilter>, BatchableDao<Metric> {
 
 	/** The sort key for ordering by timestamp. */
 	String SORT_BY_DATE = "date";
@@ -71,6 +72,9 @@ public interface MetricDao
 	/** Sort descriptor list to sort by type then name. */
 	List<SortDescriptor> SORT_BY_TYPE_NAME = unmodifiableList(
 			asList(SORT_BY_TYPE_ASC, SORT_BY_NAME_ASC));
+
+	/** A batch parameter for a {@link MetricFilter} value. */
+	String BATCH_PARAM_FILTER = "filter";
 
 	/**
 	 * Delete metrics matching a filter.

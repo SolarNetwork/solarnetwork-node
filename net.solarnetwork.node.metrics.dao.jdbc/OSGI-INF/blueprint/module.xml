@@ -43,6 +43,11 @@
 				<property name="basename" value="net.solarnetwork.node.metrics.dao.jdbc.JdbcMetricDao"/>
 			</bean>
 		</property>
+		<property name="transactionTemplate">
+			<bean class="org.springframework.transaction.support.TransactionTemplate">
+				<argument ref="txManager" />
+			</bean>
+		</property>
 	</bean>
 
 	<!-- Published Services -->

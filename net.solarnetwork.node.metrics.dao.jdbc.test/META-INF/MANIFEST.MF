@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Metrics DAO (JDBC) Tests
 Bundle-SymbolicName: net.solarnetwork.node.metrics.dao.jdbc.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.metrics.dao.jdbc;bundle-version="[1.0.0,2.0.0)"
 Automatic-Module-Name: net.solarnetwork.node.metrics.dao.jdbc.test
