@@ -236,12 +236,12 @@ $(document).ready(function metricsManagement() {
 			}
 		});
 	}
-
-	function queryForAggregateMetrics() {
-		let url = SolarNode.context.path('/a/metrics/list') 
+	
+	function aggregateListUrl(endpoint) {
+		let url = SolarNode.context.path('/a/metrics/' +endpoint) 
 			+ '?type=s&start='
 			;
-		
+
 		const start = aggregateMetricFilterFromField.val();
 		if (start) {
 			url += moment(start).toISOString();
@@ -253,7 +253,7 @@ $(document).ready(function metricsManagement() {
 		if (end) {
 			url += '&end=' +encodeURIComponent(moment(end).add(1, 'days').toISOString());
 		}
-		
+
 		const aggs = new Set();
 		for ( let f of [aggregateMetricFilterMinField
 				, aggregateMetricFilterMaxField
@@ -274,7 +274,11 @@ $(document).ready(function metricsManagement() {
 		for ( let k of aggs ) {
 			url += '&aggs=' + encodeURIComponent(k);
 		}
-		
+		return url;
+	}
+
+	function queryForAggregateMetrics() {
+		let url = aggregateListUrl('list');
 		return $.getJSON(url, (data) => {
 			if ( data && data.success === true ) {
 				setupAggregateMetrics(data.data);
@@ -282,18 +286,31 @@ $(document).ready(function metricsManagement() {
 		});
 	}
 
-	function queryForMetrics() {
-		let url = SolarNode.context.path('/a/metrics/list') 
-			+ '?type=s'
-			+ '&max=' + pageSize 
-			+ '&offset=' +(pageOffset * pageSize)
-			;
+	function exportAggregateMetricsCsv() {
+		let url = aggregateListUrl('csv');
+		document.location = url;		
+	}
+	
+	function metricsListUrl(endpoint, type, pageSize, pageOffset) {
+		let url = SolarNode.context.path('/a/metrics/'+endpoint);
+		url += '?offset=' + (pageOffset || '0');
+		if ( type ) {
+			url +=  '&type=' + type;
+		}
+		if (pageSize) {
+			url += '&max=' + pageSize;
+		}
 		if ( nameInput.length > 0 ) {
 			const name = nameInput.val();
 			if ( name ) {
 				url += '&name=' + encodeURIComponent(name);
 			}
 		}
+		return url;
+	}
+
+	function queryForMetrics() {
+		let url = metricsListUrl('list', 's', pageSize, (pageOffset * pageSize));
 		// TODO: configurable sorting
 		url += '&' + encodeURIComponent('sorts[0].sortKey') + '=date';
 		url += '&' + encodeURIComponent('sorts[0].descending') + '=true';
@@ -303,6 +320,11 @@ $(document).ready(function metricsManagement() {
 				setupMetrics(data.data);
 			}
 		});
+	}
+	
+	function exportMetricsCsv() {
+		let url = metricsListUrl('csv');
+		document.location = url;		
 	}
 
 	function subscribeMetricStored() {
@@ -357,7 +379,9 @@ $(document).ready(function metricsManagement() {
 		queryForMetrics();
 	});
 	
+	$('#metrics-list-export').on('click', exportMetricsCsv);
 	$('#metrics-list-refresh').on('click', queryForMetrics);
+	$('#metrics-aggregate-export').on('click', exportAggregateMetricsCsv);
 	
 	for ( let e of ['mousemove', 'touchmove'] ) {
 		aggregateMetricFilterP1Field.on(e, () => {

@@ -24,19 +24,31 @@ package net.solarnetwork.node.setup.web;
 
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.domain.Result.success;
+import static net.solarnetwork.node.setup.web.support.WebServiceControllerSupport.responseOutputStream;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.MutableSortDescriptor;
@@ -49,6 +61,7 @@ import net.solarnetwork.node.metrics.domain.Metric;
 import net.solarnetwork.node.metrics.domain.MetricAggregate;
 import net.solarnetwork.node.metrics.domain.MetricKey;
 import net.solarnetwork.node.metrics.domain.ParameterizedMetricAggregate;
+import net.solarnetwork.node.metrics.service.CsvExportBatchCallback;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.DateUtils;
@@ -57,11 +70,11 @@ import net.solarnetwork.util.DateUtils;
  * Web controller for metrics support.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @ServiceAwareController
 @RequestMapping("/a/metrics")
-public class MetricController {
+public class MetricController extends BaseSetupController {
 
 	private final OptionalService<MetricDao> metricDao;
 
@@ -381,6 +394,48 @@ public class MetricController {
 		FilterResults<Metric, MetricKey> results = dao.findFiltered(filter);
 
 		return success(results);
+	}
+
+	/**
+	 * List metrics.
+	 *
+	 * @param cmd
+	 *        the command arguments
+	 * @param acceptEncoding
+	 *        the Accept-Encoding header value
+	 * @param response
+	 *        the response
+	 * @return the resulting list of metrics
+	 */
+	@RequestMapping(value = "/csv", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	public void exportMetricsCsv(MetricListCommand cmd,
+			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING, required = false) final String acceptEncoding,
+			HttpServletResponse response) {
+		final MetricDao dao = OptionalService.service(this.metricDao);
+		if ( dao == null ) {
+			response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+			return;
+		}
+
+		final BasicMetricFilter filter = (cmd != null ? cmd.toFilter() : new BasicMetricFilter());
+		final Map<String, Object> params = new HashMap<>(2);
+		params.put(MetricDao.BATCH_PARAM_FILTER, filter);
+		final BasicBatchOptions opts = new BasicBatchOptions("Export metric CSV", 50, false, params);
+		final Long nodeId = getIdentityService().getNodeId();
+
+		response.setStatus(HttpStatus.OK.value());
+		response.setContentType("text/csv;charset=UTF-8");
+		response.setHeader("Content-Disposition",
+				"attachment; filename=solarnode" + (filter.getAggregates() != null ? "-aggregate" : "")
+						+ "-metrics" + (nodeId == null ? "" : "-" + nodeId) + "_"
+						+ DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss").format(ZonedDateTime.now())
+						+ ".csv");
+		try (CsvExportBatchCallback exporter = new CsvExportBatchCallback(new OutputStreamWriter(
+				responseOutputStream(response, acceptEncoding), StandardCharsets.UTF_8))) {
+			dao.batchProcess(exporter, opts);
+		} catch ( IOException e ) {
+			log.warn("Communication error exporting metric CSV", e);
+		}
 	}
 
 }
