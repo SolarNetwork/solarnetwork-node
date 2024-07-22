@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock Control
 Bundle-SymbolicName: net.solarnetwork.node.control.mock
 Automatic-Module-Name: net.solarnetwork.node.control.mock
-Bundle-Description: Mock switching control to be used with development testing.
+Bundle-Description: Control simulator to be used for development and testing.
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
