@@ -3,29 +3,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
 	xmlns:beans="http://www.springframework.org/schema/beans"
-	xmlns:ctx="http://www.springframework.org/schema/context"
 	xsi:schemaLocation="
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
-		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
-
-	<!-- Configuration -->
-
-	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.control.mock">
-		<beans:prop key="MockNodeControlProvider.booleanControlIds">
-			/power/switch/1,
-			/power/switch/2,
-			/power/switch/3,
-			/power/switch/grid
-		</beans:prop>
-	</osgix:cm-properties>
-	
-	<!-- Services -->
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
 	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
@@ -33,30 +17,43 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<!-- Published Services -->
-
-	<service ref="mockProvider" ranking="-1">
-		<interfaces>
-			<value>net.solarnetwork.node.service.NodeControlProvider</value>
-			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
-		</interfaces>
-		<service-properties>
-			<entry key="instruction">
-				<list>
-					<value>SetControlParameter</value>
-					<value>ShedLoad</value>
-				</list>
-			</entry>
-		</service-properties>
-	</service>
 	
-	<!-- Supporting Services -->
-
-	<ctx:property-placeholder properties-ref="cfg"/>
-	
-	<bean id="mockProvider" class="net.solarnetwork.node.control.mock.MockNodeControlProvider">
-		<property name="booleanControlIds" value="${MockNodeControlProvider.booleanControlIds}"/>
-		<property name="eventAdmin" ref="eventAdmin"/>
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.mock.MockNodeControlProvider</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
 	</bean>
 	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Mock Control"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.mock"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.mock"
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.control.mock"/>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
+				</beans:list>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.control.mock.MockNodeControlProvider" init-method="serviceDidStartup">
+			<property name="messageSource" ref="messageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
+		</bean>
+	</osgix:managed-service-factory>
+
 </blueprint>
