@@ -1,21 +1,21 @@
 /* ==================================================================
  * SimpleManagedJob.java - 13/10/2021 4:19:15 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -53,9 +53,9 @@ import net.solarnetwork.support.PrefixedMessageSource;
 
 /**
  * Simple implementation of {@link ManagedJob}.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SimpleManagedJob extends BaseIdentifiable
 		implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -73,13 +73,12 @@ public class SimpleManagedJob extends BaseIdentifiable
 	private String schedule;
 	private Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
 
-	private MessageSource messageSource;
 	private PropertyAccessor jobServiceAccessor;
 	private boolean ignoreLegacySchedule = false;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param jobService
 	 *        the job service
 	 * @throws IllegalArgumentException
@@ -91,14 +90,14 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * This constructor can be used to configure a default schedule that can be
 	 * overwritten by either the legacy support method
 	 * {@link #setTriggerCronExpression(String)} or the modern replacement
 	 * {@link #setSchedule(String)}.
 	 * </p>
-	 * 
+	 *
 	 * @param jobService
 	 *        the job service
 	 * @param schedule
@@ -125,7 +124,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	/**
 	 * Get the job trigger.
-	 * 
+	 *
 	 * @return the trigger
 	 */
 	public Trigger getTrigger() {
@@ -222,13 +221,13 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	@Override
 	public MessageSource getMessageSource() {
-		if ( messageSource == null ) {
+		if ( super.getMessageSource() == null ) {
 			PrefixedMessageSource pSource = new PrefixedMessageSource();
 			pSource.setPrefix(JOB_SERVICE_SETTING_PREFIX);
 			pSource.setDelegate(jobService.getMessageSource());
-			messageSource = pSource;
+			setMessageSource(pSource);
 		}
-		return messageSource;
+		return super.getMessageSource();
 	}
 
 	@Override
@@ -298,12 +297,12 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set a mapping of service provider configurations.
-	 * 
+	 *
 	 * <p>
 	 * When this job is registered at runtime, these services will also be
 	 * registered.
 	 * </p>
-	 * 
+	 *
 	 * @param serviceProviderConfigurations
 	 *        the configurations to set
 	 */
@@ -323,12 +322,12 @@ public class SimpleManagedJob extends BaseIdentifiable
 	/**
 	 * A getter property to maintain backwards-compatibility with legacy
 	 * SolarNode 1.x settings.
-	 * 
+	 *
 	 * <p>
 	 * This method exists to support SolarNode 1.x settings like
 	 * {@literal jobDetail.x}.
 	 * </p>
-	 * 
+	 *
 	 * @return this instance
 	 */
 	public SimpleManagedJob getJobDetail() {
@@ -342,7 +341,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * This method exists to support SolarNode 1.x settings like
 	 * {@literal jobDetail.jobDataMap['datumDataSource'].x}.
 	 * </p>
-	 * 
+	 *
 	 * @return a Map instance that exposes JavaBean properties on the configured
 	 *         {@link JobService}
 	 */
@@ -392,12 +391,12 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set the trigger schedule expression.
-	 * 
+	 *
 	 * <p>
 	 * Once this method has been called all calls to the legacy schedule setter
 	 * method {@link #setTriggerCronExpression(String)} will be ignored.
 	 * </p>
-	 * 
+	 *
 	 * @param schedule
 	 *        the trigger schedule expression to set
 	 */
@@ -409,13 +408,13 @@ public class SimpleManagedJob extends BaseIdentifiable
 	/**
 	 * Set the trigger schedule expression, using the legacy setting property
 	 * name.
-	 * 
+	 *
 	 * <p>
 	 * This method is to maintain backwards-compatibility with the SolarNode 1.x
 	 * settings. <b>Note</b> that once {@link #setSchedule(String)} is called
 	 * this method will have no effect.
 	 * </p>
-	 * 
+	 *
 	 * @param schedule
 	 *        the schedule to set
 	 */
@@ -427,7 +426,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	/**
 	 * Get the schedule setting key.
-	 * 
+	 *
 	 * @return the setting key; defaults to
 	 *         {@link #DEFAULT_SCHEDULE_SETTING_KEY}
 	 */
@@ -438,7 +437,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	/**
 	 * Set the schedule setting key.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal schedule} to match the
 	 * {@link #setSchedule(String)} property. However this can be changed to any
@@ -446,7 +445,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * used to bundle mutliple job schedules into the same setting UID, using
 	 * different schedule setting keys for different jobs.
 	 * </p>
-	 * 
+	 *
 	 * @param scheduleSettingKey
 	 *        the setting key to set
 	 */
