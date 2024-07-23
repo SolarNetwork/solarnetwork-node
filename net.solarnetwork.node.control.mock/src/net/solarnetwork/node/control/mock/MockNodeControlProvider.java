@@ -211,7 +211,7 @@ public class MockNodeControlProvider extends BaseIdentifiable implements NodeCon
 				break;
 		}
 		if ( curr != null && finalValue.equalsIgnoreCase(curr.getValue()) ) {
-			return false;
+			return true;
 		}
 
 		SimpleNodeControlInfoDatum newValue = newSimpleNodeControlInfoDatum(controlId, null, controlType,
