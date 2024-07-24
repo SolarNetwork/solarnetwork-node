@@ -73,7 +73,7 @@ import net.solarnetwork.util.CachedResult;
  * spreadsheet style tariff metadata.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class TariffDatumFilterService extends BaseDatumFilterSupport
@@ -91,6 +91,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	private Locale locale = Locale.getDefault();
 	private int scheduleCacheSeconds = DEFAULT_SCHEDULE_CACHE_SECONDS;
 	private boolean firstMatchOnly = SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY;
+	private boolean preserveRateCase;
 
 	private final AtomicReference<CachedResult<TariffSchedule>> schedule = new AtomicReference<>();
 
@@ -173,6 +174,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 				new BasicTextFieldSettingSpecifier("tariffMetadataPath", DEFAULT_TARIFF_METADATA_PATH));
 		result.add(new BasicToggleSettingSpecifier("firstMatchOnly",
 				SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY));
+		result.add(new BasicToggleSettingSpecifier("preserveRateCase", Boolean.FALSE));
 		result.add(new BasicTextFieldSettingSpecifier("scheduleCacheSeconds",
 				String.valueOf(DEFAULT_SCHEDULE_CACHE_SECONDS)));
 		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null, false,
@@ -334,7 +336,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		List<TemporalRangesTariff> tariffs;
 		if ( o instanceof String ) {
 			// parse as CSV
-			tariffs = new CsvTemporalRangeTariffParser(locale)
+			tariffs = new CsvTemporalRangeTariffParser(locale, preserveRateCase)
 					.parseTariffs(new StringReader(o.toString()));
 		} else if ( o instanceof String[][] ) {
 			tariffs = new ArrayList<>();
@@ -376,7 +378,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the path; defaults to {@link #DEFAULT_TARIFF_METADATA_PATH}
 	 */
-	public String getTariffMetadataPath() {
+	public final String getTariffMetadataPath() {
 		return tariffMetadataPath;
 	}
 
@@ -392,7 +394,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param tariffMetadataPath
 	 *        the path to set
 	 */
-	public void setTariffMetadataPath(String tariffMetadataPath) {
+	public final void setTariffMetadataPath(String tariffMetadataPath) {
 		this.tariffMetadataPath = tariffMetadataPath;
 	}
 
@@ -402,7 +404,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @return the maximum number of seconds to cache the resolved tariff
 	 *         schedule; defaults to {@link #DEFAULT_SCHEDULE_CACHE_SECONDS}
 	 */
-	public int getScheduleCacheSeconds() {
+	public final int getScheduleCacheSeconds() {
 		return scheduleCacheSeconds;
 	}
 
@@ -412,7 +414,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param scheduleCacheSeconds
 	 *        the seconds to set
 	 */
-	public void setScheduleCacheSeconds(int scheduleCacheSeconds) {
+	public final void setScheduleCacheSeconds(int scheduleCacheSeconds) {
 		this.scheduleCacheSeconds = scheduleCacheSeconds;
 	}
 
@@ -421,7 +423,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the locale
 	 */
-	public Locale getLocale() {
+	public final Locale getLocale() {
 		return locale;
 	}
 
@@ -431,7 +433,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param locale
 	 *        the locale to set
 	 */
-	public void setLocale(Locale locale) {
+	public final void setLocale(Locale locale) {
 		if ( locale == null ) {
 			locale = Locale.getDefault();
 		}
@@ -443,7 +445,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the language
 	 */
-	public String getLanguage() {
+	public final String getLanguage() {
 		return getLocale().toLanguageTag();
 	}
 
@@ -453,7 +455,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param lang
 	 *        the language tag to set
 	 */
-	public void setLanguage(String lang) {
+	public final void setLanguage(String lang) {
 		setLocale(lang != null ? Locale.forLanguageTag(lang) : null);
 	}
 
@@ -465,7 +467,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *         matches; defaults to
 	 *         {@link SimpleTemporalTariffSchedule#DEFAULT_FIRST_MATCH_ONLY}
 	 */
-	public boolean isFirstMatchOnly() {
+	public final boolean isFirstMatchOnly() {
 		return firstMatchOnly;
 	}
 
@@ -476,7 +478,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *        {@literal true} if only the first tariff rule that matches should
 	 *        be returned
 	 */
-	public void setFirstMatchOnly(boolean firstMatchOnly) {
+	public final void setFirstMatchOnly(boolean firstMatchOnly) {
 		this.firstMatchOnly = firstMatchOnly;
 	}
 
@@ -485,7 +487,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the service UID
 	 */
-	public String getMetadataServiceUid() {
+	public final String getMetadataServiceUid() {
 		return metadataService.getPropertyValue(UID_PROPERTY);
 	}
 
@@ -495,7 +497,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param uid
 	 *        the service UID
 	 */
-	public void setMetadataServiceUid(String uid) {
+	public final void setMetadataServiceUid(String uid) {
 		metadataService.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
@@ -504,7 +506,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the service UID
 	 */
-	public String getEvaluatorUid() {
+	public final String getEvaluatorUid() {
 		return evaluator.getPropertyValue(UID_PROPERTY);
 	}
 
@@ -514,8 +516,28 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param uid
 	 *        the service UID
 	 */
-	public void setEvaluatorUid(String uid) {
+	public final void setEvaluatorUid(String uid) {
 		evaluator.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
+	/**
+	 * Get the "preserve rate case" mode.
+	 *
+	 * @return {@literal true} to preserve the case of rate names
+	 * @since 1.2
+	 */
+	public final boolean isPreserveRateCase() {
+		return preserveRateCase;
+	}
+
+	/**
+	 * Set the "preserve rate case" mode.
+	 *
+	 * @param preserveRateCase
+	 *        {@literal true} to preserve the case of rate names
+	 * @since 1.4
+	 */
+	public final void setPreserveRateCase(boolean preserveRateCase) {
+		this.preserveRateCase = preserveRateCase;
+	}
 }
