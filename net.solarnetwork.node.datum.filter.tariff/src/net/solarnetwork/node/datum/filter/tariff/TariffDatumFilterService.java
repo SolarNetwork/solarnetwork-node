@@ -27,14 +27,11 @@ import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.DateUtils.formatRange;
 import java.io.IOException;
-import java.io.StringReader;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -48,12 +45,11 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.tariff.CompositeTariff;
-import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
-import net.solarnetwork.domain.tariff.SimpleTariffRate;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
 import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.domain.tariff.TariffSchedule;
+import net.solarnetwork.domain.tariff.TariffUtils;
 import net.solarnetwork.domain.tariff.TemporalRangesTariff;
 import net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator;
 import net.solarnetwork.node.service.MetadataService;
@@ -333,40 +329,8 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	private TariffSchedule parseSchedule(Object o) throws IOException {
-		List<TemporalRangesTariff> tariffs;
-		if ( o instanceof String ) {
-			// parse as CSV
-			tariffs = new CsvTemporalRangeTariffParser(locale, preserveRateCase)
-					.parseTariffs(new StringReader(o.toString()));
-		} else if ( o instanceof String[][] ) {
-			tariffs = new ArrayList<>();
-			String[][] data = (String[][]) o;
-			if ( data.length > 1 ) {
-				String[] headers = data[0];
-				if ( headers.length < 5 ) {
-					return null;
-				}
-				for ( int i = 1; i < data.length; i++ ) {
-					String[] row = data[i];
-					if ( row.length < 5 ) {
-						continue;
-					}
-					List<Tariff.Rate> rates = new ArrayList<>(row.length - 4);
-					for ( int j = 4; j < row.length; j++ ) {
-						rates.add(new SimpleTariffRate(headers[j], new BigDecimal(row[j])));
-					}
-					TemporalRangesTariff tariff = new TemporalRangesTariff(row[0], row[1], row[2],
-							row[3], rates, locale);
-					tariffs.add(tariff);
-				}
-			}
-		} else {
-			return null;
-		}
-		TemporalRangesTariffEvaluator e = evaluator();
-		SimpleTemporalTariffSchedule s = new SimpleTemporalTariffSchedule(tariffs, e);
-		s.setFirstMatchOnly(firstMatchOnly);
-		return s;
+		return TariffUtils.parseCsvTemporalRangeSchedule(locale, preserveRateCase, firstMatchOnly,
+				evaluator(), o);
 	}
 
 	private TemporalRangesTariffEvaluator evaluator() {

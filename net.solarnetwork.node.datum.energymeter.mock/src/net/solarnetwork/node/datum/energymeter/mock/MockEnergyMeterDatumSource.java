@@ -25,7 +25,6 @@ package net.solarnetwork.node.datum.energymeter.mock;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -34,7 +33,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,12 +46,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.datum.DatumSamples;
-import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
-import net.solarnetwork.domain.tariff.SimpleTariffRate;
-import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
 import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.domain.tariff.TariffSchedule;
-import net.solarnetwork.domain.tariff.TemporalRangesTariff;
+import net.solarnetwork.domain.tariff.TariffUtils;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
@@ -232,39 +227,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	private TariffSchedule parseSchedule(Object o) throws IOException {
-		List<TemporalRangesTariff> tariffs;
-		if ( o instanceof String ) {
-			// parse as CSV
-			tariffs = new CsvTemporalRangeTariffParser(touLocale)
-					.parseTariffs(new StringReader(o.toString()));
-		} else if ( o instanceof String[][] ) {
-			tariffs = new ArrayList<>();
-			String[][] data = (String[][]) o;
-			if ( data.length > 1 ) {
-				String[] headers = data[0];
-				if ( headers.length < 5 ) {
-					return null;
-				}
-				for ( int i = 1; i < data.length; i++ ) {
-					String[] row = data[i];
-					if ( row.length < 5 ) {
-						continue;
-					}
-					List<Tariff.Rate> rates = new ArrayList<>(row.length - 4);
-					for ( int j = 4; j < row.length; j++ ) {
-						rates.add(new SimpleTariffRate(headers[j], new BigDecimal(row[j])));
-					}
-					TemporalRangesTariff tariff = new TemporalRangesTariff(row[0], row[1], row[2],
-							row[3], rates, touLocale);
-					tariffs.add(tariff);
-				}
-			}
-		} else {
-			return null;
-		}
-		SimpleTemporalTariffSchedule s = new SimpleTemporalTariffSchedule(tariffs);
-		s.setFirstMatchOnly(true);
-		return s;
+		return TariffUtils.parseCsvTemporalRangeSchedule(touLocale, true, true, null, o);
 	}
 
 	private double readVoltage() {
