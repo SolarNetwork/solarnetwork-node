@@ -27,7 +27,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
-import static net.solarnetwork.util.DateUtils.formatRange;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Clock;
 import java.time.Duration;
@@ -49,14 +48,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
 import net.solarnetwork.domain.tariff.CompositeTariff;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
 import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.domain.tariff.TariffUtils;
-import net.solarnetwork.domain.tariff.TemporalRangesTariff;
 import net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator;
+import net.solarnetwork.domain.tariff.TemporalTariffEvaluator;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumDataSource;
@@ -93,7 +93,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 
 	private final Clock clock;
 	private final OptionalFilterableService<MetadataService> metadataService;
-	private final OptionalFilterableService<TemporalRangesTariffEvaluator> evaluator;
+	private final OptionalFilterableService<TemporalTariffEvaluator> evaluator;
 
 	private String sourceId;
 	private Duration scheduleCacheTtl = DEFAULT_SCHEDULE_CACHE_TTL;
@@ -118,7 +118,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 	 *         if any argument is {@literal null}
 	 */
 	public TouDatumDataSource(OptionalFilterableService<MetadataService> metadataService,
-			OptionalFilterableService<TemporalRangesTariffEvaluator> evaluator) {
+			OptionalFilterableService<TemporalTariffEvaluator> evaluator) {
 		this(Clock.systemUTC(), metadataService, evaluator);
 	}
 
@@ -135,7 +135,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 	 *         if any argument is {@literal null}
 	 */
 	public TouDatumDataSource(Clock clock, OptionalFilterableService<MetadataService> metadataService,
-			OptionalFilterableService<TemporalRangesTariffEvaluator> evaluator) {
+			OptionalFilterableService<TemporalTariffEvaluator> evaluator) {
 		super();
 		this.clock = requireNonNullArgument(clock, "clock");
 		this.metadataService = requireNonNullArgument(metadataService, "metadataService");
@@ -306,22 +306,21 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 		TariffSchedule schedule = schedule();
 		CachedResult<TariffSchedule> cached = this.schedule.get();
 		MessageSource messageSource = getMessageSource();
-		if ( schedule instanceof SimpleTemporalTariffSchedule ) {
-			List<TemporalRangesTariff> rules = ((SimpleTemporalTariffSchedule) schedule).getRules();
+		if ( schedule != null ) {
+			Collection<? extends Tariff> rules = schedule.rules();
 			if ( rules.isEmpty() ) {
 				buf.append("<p>").append(messageSource.getMessage("rules.empty", null, null))
 						.append("</p>");
 			} else {
 				final LocalDateTime now = LocalDateTime.now();
-				Map<Integer, TemporalRangesTariff> active = renderRulesTable(
-						(SimpleTemporalTariffSchedule) schedule, now, buf);
+				Map<Integer, Tariff> active = renderRulesTable(schedule, now, buf);
 				if ( !active.isEmpty() ) {
 					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
 					DateTimeFormatter dateFormat = DateTimeFormatter
 							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
 					buf.append("<p>").append(messageSource.getMessage("rates.active",
 							new Object[] { dateFormat.format(now) }, null)).append("</p><ol>");
-					for ( Map.Entry<Integer, TemporalRangesTariff> me : active.entrySet() ) {
+					for ( Map.Entry<Integer, Tariff> me : active.entrySet() ) {
 						buf.append("<li value=\"").append(me.getKey() + 1).append("\">");
 						int rateCount = 0;
 						for ( Rate rate : me.getValue().getRates().values() ) {
@@ -339,7 +338,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 					buf.append("</ol>");
 				}
 			}
-		} else if ( schedule == null ) {
+		} else {
 			buf.append("<p>").append(messageSource.getMessage("schedule.none", null, null))
 					.append("</p>");
 		}
@@ -353,11 +352,11 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 		return buf.toString();
 	}
 
-	private Map<Integer, TemporalRangesTariff> renderRulesTable(SimpleTemporalTariffSchedule schedule,
-			LocalDateTime date, StringBuilder buf) {
-		final List<TemporalRangesTariff> tariffs = schedule.getRules();
-		final Map<Integer, TemporalRangesTariff> active = new TreeMap<>();
-		final TemporalRangesTariffEvaluator e = service(evaluator, DEFAULT_EVALUATOR);
+	private Map<Integer, Tariff> renderRulesTable(TariffSchedule schedule, LocalDateTime date,
+			StringBuilder buf) {
+		final Collection<? extends Tariff> tariffs = schedule.rules();
+		final Map<Integer, Tariff> active = new TreeMap<>();
+		final TemporalTariffEvaluator e = service(evaluator, DEFAULT_EVALUATOR);
 		final boolean firstOnly = isFirstMatchOnly();
 		final CompositeTariff ct = new CompositeTariff(tariffs);
 		final Map<String, Rate> rates = ct.getRates();
@@ -369,20 +368,20 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 		buf.append("</tr></thead><tbody>");
 
 		int i = 0;
-		for ( TemporalRangesTariff tariff : tariffs ) {
-			if ( (active.isEmpty() || !firstOnly) && tariff.applies(e, date, null) ) {
+		for ( Tariff tariff : tariffs ) {
+			if ( !(tariff instanceof ChronoFieldsTariff) ) {
+				continue;
+			}
+			ChronoFieldsTariff t = (ChronoFieldsTariff) tariff;
+			if ( (active.isEmpty() || !firstOnly) && e.applies(t, date, null) ) {
 				active.put(i, tariff);
 			}
 			buf.append("<tr>");
 			buf.append("<th>").append(++i).append("</th>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, tariff))
-					.append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, tariff))
-					.append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, tariff))
-					.append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, tariff))
-					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, t)).append("</td>");
 			Map<String, Rate> tariffRates = tariff.getRates();
 			// iterate over global rates, to keep order consistent in case rows vary
 			for ( String id : rates.keySet() ) {
@@ -399,8 +398,8 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 		return active;
 	}
 
-	private String rangeDisplayString(ChronoField field, TemporalRangesTariff tariff) {
-		String r = formatRange(field, tariff.rangeForField(field), locale, SHORT);
+	private String rangeDisplayString(ChronoField field, ChronoFieldsTariff tariff) {
+		String r = tariff.formatChronoField(field, locale, SHORT);
 		return (r != null ? r : "*");
 	}
 
