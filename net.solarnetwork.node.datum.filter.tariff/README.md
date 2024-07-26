@@ -32,6 +32,7 @@ Each filter configuration contains the following overall settings:
 | Metadata Path      | The metadata path that will resolve the tariff schedule from the configured Metadata Service. |
 | Language           | A IETF BCP 47 language tag to parse the tariff data with. If not configured then the default system language will be assumed.
 | First Match        | If enabled, then apply only the **first** tariff that matches a given datum date. If disabled, then apply **all** tariffs that match. |
+| Preserve Case      | If enabled, then preserve the case in resolved datum property names. See [Rate columns](#rate-columns) below. |
 | Schedule Cache     | The amount of seconds to cache the tariff schedule obtained from the configured Metadata Service.
 | Tariff Evaluator   | The **Service Name** of a _Time-based Tariff Evaluator_ service to evaluate each tariff to determine if it should apply to a given datum. |
 
@@ -79,7 +80,8 @@ that can be easily exported from a spreadsheet. Each row represents a rule that 
 > The first 4 column names are ignored.
 
 The schedule consists of 4 time constraint columns followed by one or more tariff rate columns. Each
-constraint is represented as a range, in the form `start - end`. Whitespace is allowed around the
+constraint is represented as a range, in the form `start - end`. Multiple ranges can be specified by
+adding a `,` between each range (see [Range sets](#range-sets) below). Whitespace is allowed around the
 `-` character. If the `start` and `end` are the same, the range may be shortened to just `start`. A
 range can be left empty to represent **all values**. The time constraint columns are:
 
