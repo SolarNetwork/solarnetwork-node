@@ -679,7 +679,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	/**
 	 * Set the TOU schedule cache time-to-live, in seconds.
 	 *
-	 * @param touScheduleCacheTtl
+	 * @param seconds
 	 *        the TTL to set, in seconds
 	 */
 	public final void setTouScheduleCacheTtlSecs(long seconds) {
