@@ -175,7 +175,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		result.add(new BasicTextFieldSettingSpecifier("scheduleCacheSeconds",
 				String.valueOf(DEFAULT_SCHEDULE_CACHE_SECONDS)));
 		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null, false,
-				"(objectClass=net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator)"));
+				"(objectClass=net.solarnetwork.domain.tariff.TemporalTariffEvaluator)"));
 		result.add(new BasicTextFieldSettingSpecifier("language", null));
 		return result;
 	}

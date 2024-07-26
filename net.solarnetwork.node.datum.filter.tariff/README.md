@@ -15,7 +15,7 @@ Once installed, a new **Time-based Tariff Datum Filter** component will appear o
 **Settings > Datum Filter** page on your SolarNode. Click on the **Manage** button to configure 
 filters.
 
-![Tariff filter settings](docs/solarnode-tariff-filter-settings.png)
+<img alt="Tariff filter settings" src="docs/solarnode-tariff-filter-settings.png" width="920">
 
 # Settings
 
@@ -48,21 +48,24 @@ Each filter configuration contains the following overall settings:
 
 # Metadata Service
 
-SolarNode provides a **User Metadata Service** component that this filter can use for the Metadata
-Service setting. This allows you to configure the tariff schedule as user metadata in SolarNetwork
-and then SolarNode will download the schedule and use it as needed.
+SolarNode provides **Node Metadata Service** and **User Metadata Service** components that this filter
+can use for the **Metadata Service** setting. This allows you to configure the tariff schedule as either
+node or user metadata in SolarNetwork and then SolarNode will download the schedule and use it as needed.
 
-![User Metadata Service settings](docs/solarnode-user-metadata-settings.png)
+The **Node Metadata Service** does not require any configuration to use (its **Service Name** is simply
+`Node Metadata Service`), but the **User Metadata Service** requires setting up.
+
+<img alt="User Metadata Service settings" src="docs/solarnode-user-metadata-settings.png" width="697">
 
 You must configure a SolarNetwork security token to use the User Metadata Service. We recommend
 that you create a **Data** security token in SolarNetwork with a limited security policy that includes an **API Path** of just `/users/meta` and a **User Metadata Path** of something granular like `/pm/tariffs/**`. This will give SolarNode access to just the tariff metadata under the `/pm/tariffs` metadata path.
 
-![Tariff metadata security token](docs/solaruser-tariff-metadata-security-token.png)
+<img alt="Tariff metadata security token" src="docs/solaruser-tariff-metadata-security-token.png" width="956">
 
 The [SolarNetwork API Explorer][api-explorer] can be used to add the necessary tariff schedule
 metadata to your account. For example:
 
-![API Explorer add tariff metadata](docs/api-explorer-add-tariff-user-metdata.png)
+<img alt="API Explorer add tariff metadata" src="docs/api-explorer-add-tariff-user-metdata.png" width="678">
 
 # Tariff schedule format
 
@@ -87,21 +90,29 @@ range can be left empty to represent **all values**. The time constraint columns
 | 3      | Weekday range | An inclusive day-of-week range. Weekdays can be specified as numbers (1-7) with Monday being `1` and Sunday being `7`, or abbreviations (Mon-Sun) or full names (Monday - Sunday). When using text names case does not matter and they will be parsed using the **Lanauage** setting. |
 | 4      | Time range | An **inclusive - exclusive** time-of-day range. The time can be specified as whole hour numbers (0-24) or `HH:MM` style (`00:00` - `24:00`). |
 
+## Range sets
+
+All range values can be specified as a comma-delimited set of ranges, so disparate ranges can be used.
+For example a Month range could be specified as `Jan-Mar,Oct-Dec` to represent the overall set of months
+including January, February, March, October, November, and December.
+
+## Rate columns
+
 Starting on column 5 of the tariff schedule are arbitrary rate values to add to datum when the 
 corresponding constraints are satisfied. The name of the datum property is derived from the **header
 row** of the column, adapted according to the following rules:
 
- 1. change to lower case
+ 1. change to lower case (if **Preserve Case** is disabled)
  2. replacing any runs of non-alphanumeric or underscore with a single underscore
  3. removing any leading/trailing underscores
  
 Here are some examples of the header name to the equivalent property name:
 
-| Rate Header Name         | Datum Property Name |
-|:-------------------------|:--------------------|
-| TOU                      | `tou`               |
-| Foo Bar                  | `foo_bar`           |
-| This Isn't A Great Name! | `this_isn_t_a_great_name` |
+| Rate Header Name         | Datum Property Name | Datum Property Name with Preserve Case |
+|:-------------------------|:--------------------|:---------------------------------------|
+| TOU                      | `tou`               | `TOU` |
+| Foo Bar                  | `foo_bar`           | `Foo_Bar` |
+| This Isn't A Great Name! | `this_isn_t_a_great_name` | `This_Isn_t_A_Great_Name` |
 
 ## Example schedule
 
