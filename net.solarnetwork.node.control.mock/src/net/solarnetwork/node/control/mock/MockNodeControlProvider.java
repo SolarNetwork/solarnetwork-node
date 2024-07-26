@@ -305,7 +305,7 @@ public class MockNodeControlProvider extends BaseIdentifiable implements NodeCon
 	}
 
 	/**
-	 * Get the control type.
+	 * Get the control type as a string value.
 	 *
 	 * @return the type
 	 */
@@ -314,9 +314,9 @@ public class MockNodeControlProvider extends BaseIdentifiable implements NodeCon
 	}
 
 	/**
-	 * Set the control type.
+	 * Set the control type as a string value.
 	 *
-	 * @param controlType
+	 * @param value
 	 *        the type to set; either a key value or name
 	 */
 	public final void setControlTypeValue(String value) {
