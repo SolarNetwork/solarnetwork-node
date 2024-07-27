@@ -35,6 +35,8 @@ Each component contains the following overall settings:
 You must add one property configuration for each tariff rate column you want to capture as a datum
 property. Each property configuration contains the following settings:
 
+<img alt="Time-based Tariff Datum Source property settings" src="docs/solarnode-tou-datum-source-property-settings@2x.png" width="932">
+
 | Setting            | Description |
 |:-------------------|:------------|
 | Rate Name          | The tariff schedule column name to collect as a datum property. |
