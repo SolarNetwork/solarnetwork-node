@@ -461,6 +461,12 @@ button.close + button.copy {
 	border-color: var(--bs-border-color);
 }
 
+.form-button-secondary {
+	--bs-btn-hover-bg: inherit;
+	--bs-btn-hover-color: inherit;
+	border-color: var(--bs-border-color) !important;
+}
+
 .cmd {
 	font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
 	font-size: 12px;

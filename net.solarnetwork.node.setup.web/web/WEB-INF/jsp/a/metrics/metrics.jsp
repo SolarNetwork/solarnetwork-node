@@ -96,8 +96,12 @@
 		</div>
 		<div class="col-1">
 			<label class="invisible"><fmt:message key='metrics.aggregate.export.label'/></label>
-			<button class="btn btn-outline-secondary" type="button" id="metrics-aggregate-export"
-				title="<fmt:message key='metrics.list.export.btn'/>"><i class="bi bi-download"></i></button>
+			<div class="input-group">			
+				<button class="btn btn-outline-secondary form-button-secondary" type="button" id="metrics-aggregate-export"
+					title="<fmt:message key='metrics.list.export.btn'/>"><i class="bi bi-download"></i></button>
+				<button class="btn btn-outline-secondary" type="button" id="metrics-aggregate-refresh"
+					title="<fmt:message key='metrics.list.refresh.btn'/>"><i class="bi bi-arrow-clockwise"></i></button>
+			</div>
 		</div>
 	</form>
 

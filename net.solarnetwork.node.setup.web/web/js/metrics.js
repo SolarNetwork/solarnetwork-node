@@ -382,6 +382,7 @@ $(document).ready(function metricsManagement() {
 	$('#metrics-list-export').on('click', exportMetricsCsv);
 	$('#metrics-list-refresh').on('click', queryForMetrics);
 	$('#metrics-aggregate-export').on('click', exportAggregateMetricsCsv);
+	$('#metrics-aggregate-refresh').on('click', queryForAggregateMetrics)
 	
 	for ( let e of ['mousemove', 'touchmove'] ) {
 		aggregateMetricFilterP1Field.on(e, () => {
