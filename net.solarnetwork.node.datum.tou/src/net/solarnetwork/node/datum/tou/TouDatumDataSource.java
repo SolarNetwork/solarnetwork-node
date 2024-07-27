@@ -519,7 +519,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the schedule cache time-to-live, in seconds.
 	 *
-	 * @param scheduleCacheTtl
+	 * @param seconds
 	 *        the TTL to set, in seconds
 	 */
 	public final void setScheduleCacheTtlSecs(long seconds) {
