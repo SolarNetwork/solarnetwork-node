@@ -94,7 +94,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-1">
+		<div class="col-auto">
 			<label class="invisible"><fmt:message key='metrics.aggregate.export.label'/></label>
 			<div class="input-group">			
 				<button class="btn btn-outline-secondary form-button-secondary" type="button" id="metrics-aggregate-export"
