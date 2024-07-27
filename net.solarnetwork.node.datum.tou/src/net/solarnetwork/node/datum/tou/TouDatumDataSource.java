@@ -277,8 +277,6 @@ public class TouDatumDataSource extends DatumDataSourceSupport
 		result.add(new BasicTextFieldSettingSpecifier("language", null));
 		result.add(new BasicToggleSettingSpecifier("firstMatchOnly",
 				SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY));
-		result.add(new BasicToggleSettingSpecifier("preserveRateCase",
-				String.valueOf(DEFAULT_PRESERVE_RATE_CASE)));
 		result.add(new BasicTextFieldSettingSpecifier("scheduleCacheTtlSecs",
 				String.valueOf(DEFAULT_SCHEDULE_CACHE_TTL.getSeconds())));
 		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null, false,
