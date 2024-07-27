@@ -159,7 +159,7 @@ $(document).ready(function metricsManagement() {
 		rowMap.set(rowKey, itemEl);
 	}
 	
-	const NUM_COMPONENTS = /^(\d+)(?:\.(\d+))?$/;
+	const NUM_COMPONENTS = /^(-?\d+)(?:\.(\d+))?$/;
 
 	function populateMetric(/** @type {Metric} */ metric, /** @type {number} */ row, /** @type jQuery */ itemEl) {
 		itemEl.find('[data-tprop=idx]').text(row);
