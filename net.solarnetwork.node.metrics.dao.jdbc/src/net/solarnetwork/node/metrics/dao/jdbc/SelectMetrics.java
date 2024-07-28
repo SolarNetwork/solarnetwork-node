@@ -42,7 +42,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate {@code SELECT} SQL for metric values based on a filter.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SelectMetrics implements PreparedStatementCreator, PreparedStatementSetter, SqlProvider {
 
@@ -145,6 +145,12 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 					break;
 				case MetricAggregate.METRIC_TYPE_QUANTILE:
 					buf.append("percentile_cont(?) WITHIN GROUP (ORDER BY val)");
+					break;
+				case MetricAggregate.METRIC_TYPE_COUNT:
+					buf.append("count(val)");
+					break;
+				case MetricAggregate.METRIC_TYPE_SUM:
+					buf.append("sum(val)");
 					break;
 				default:
 					throw new IllegalArgumentException(

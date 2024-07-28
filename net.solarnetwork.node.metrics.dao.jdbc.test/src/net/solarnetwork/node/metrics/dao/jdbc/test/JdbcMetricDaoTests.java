@@ -308,6 +308,8 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 			BasicMetricAggregate.Minimum,
 			BasicMetricAggregate.Maximum,
 			BasicMetricAggregate.Average,
+			BasicMetricAggregate.Count,
+			BasicMetricAggregate.Sum,
 			ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_25,
 			ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_75
 		});
@@ -325,15 +327,19 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 		// @formatter:off
 		final double[] expectedValues = new double[] {
 			10, // avg
+			3,  // cnt
 			20, // max
 			0,  // min
 			5,  // q:25
 			15, // q:75
+			30, // sum
 			11,
+			3,
 			21,
 			1,
 			6,
 			16,
+			33,
 		};
 		// @formatter:on
 
