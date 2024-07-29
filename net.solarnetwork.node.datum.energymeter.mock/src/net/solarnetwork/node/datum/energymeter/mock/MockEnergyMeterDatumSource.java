@@ -749,7 +749,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param hours
 	 *        the offset to set
 	 */
-	public final void setTouOffset(long hours) {
+	public final void setTouOffsetHours(long hours) {
 		this.touOffset = Duration.ofHours(hours);
 	}
 
