@@ -65,8 +65,8 @@
 			<div class="col-3 py-2" data-tprop="date"></div>
 			<div class="col-5 py-2">
 				<dl class="row datum-props hidden">
-					<dt class="col-sm-5 datum-prop template" data-tprop="propName"></dt>
-					<dd class="col-sm-7 datum-prop template" data-tprop="propValue"></dd>
+					<dt class="col-sm-5 col-md-7 col-lg-8 datum-prop template" data-tprop="propName"></dt>
+					<dd class="col-sm-7 col-md-5 col-lg-4 datum-prop template" data-tprop="propValue"></dd>
 				</dl>
 			</div>
 		</div>

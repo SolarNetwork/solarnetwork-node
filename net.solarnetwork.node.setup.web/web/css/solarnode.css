@@ -312,6 +312,11 @@ div.plugin > div {
 	margin-left: 0;
 }
 
+.datum-activity-seenprops dl.datum-props dt,
+.datum-activity-seenprops dl.datum-props dd {
+	overflow-x: clip;
+}
+
 .datum-activity-seenprops dd {
 	margin-bottom: 0;
 }
