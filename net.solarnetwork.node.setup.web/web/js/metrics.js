@@ -41,6 +41,8 @@ $(document).ready(function metricsManagement() {
 	const aggregateMetricFilterMinField = $('#metrics-aggregate-filter-agg-min');
 	const aggregateMetricFilterMaxField = $('#metrics-aggregate-filter-agg-max');
 	const aggregateMetricFilterAvgField = $('#metrics-aggregate-filter-agg-avg');
+	const aggregateMetricFilterSumField = $('#metrics-aggregate-filter-agg-sum');
+	const aggregateMetricFilterCntField = $('#metrics-aggregate-filter-agg-cnt');
 	const aggregateMetricFilterP1Check = $('#metrics-aggregate-filter-agg-p1-inc');
 	const aggregateMetricFilterP1Field = $('#metrics-aggregate-filter-agg-p1');
 	const aggregateMetricFilterP1Disp = $('#metrics-aggregate-filter-agg-p1-disp');
@@ -257,7 +259,9 @@ $(document).ready(function metricsManagement() {
 		const aggs = new Set();
 		for ( let f of [aggregateMetricFilterMinField
 				, aggregateMetricFilterMaxField
-				, aggregateMetricFilterAvgField] ) {
+				, aggregateMetricFilterAvgField
+				, aggregateMetricFilterSumField
+				, aggregateMetricFilterCntField] ) {
 			if ( f.is(":checked") ) {
 				aggs.add(f.val());
 			}

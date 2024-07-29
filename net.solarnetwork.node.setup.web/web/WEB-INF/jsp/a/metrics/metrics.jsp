@@ -29,6 +29,8 @@
 		data-i18n-min="<fmt:message key='metrics.aggregate.min.label'/>"
 		data-i18n-max="<fmt:message key='metrics.aggregate.max.label'/>"
 		data-i18n-avg="<fmt:message key='metrics.aggregate.avg.label'/>"
+		data-i18n-sum="<fmt:message key='metrics.aggregate.sum.label'/>"
+		data-i18n-cnt="<fmt:message key='metrics.aggregate.cnt.label'/>"
 		data-i18n-q="<fmt:message key='metrics.aggregate.q.label'/>"
 		>
 	<h2><fmt:message key="metrics.aggregate.title"/></h2>
@@ -43,9 +45,17 @@
 			<label for="metrics-aggregate-filter-to"><fmt:message key='metrics.aggregate.filter.to.label'/></label>
 			<input type="date" name="end" class="form-control" id="metrics-aggregate-filter-to">
 		</div>
-		<div class="col-auto">
+		<div class="col-sm-2">
 			<label for="metrics-aggregate-filter-from"><fmt:message key='metrics.aggregate.filter.stats.label'/></label>
 			<div class="row mt-2">
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="avg" id="metrics-aggregate-filter-agg-avg" checked>
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-avg">
+							<fmt:message key='metrics.aggregate.avg.label'/>
+						</label>
+					</div>
+				</div>
 				<div class="col-auto">
 					<div class="form-check">
 						<input class="form-check-input" type="checkbox" name="aggs" value="min" id="metrics-aggregate-filter-agg-min" checked>
@@ -64,9 +74,17 @@
 				</div>
 				<div class="col-auto">
 					<div class="form-check">
-						<input class="form-check-input" type="checkbox" name="aggs" value="avg" id="metrics-aggregate-filter-agg-avg" checked>
-						<label class="form-check-label" for="metrics-aggregate-filter-agg-avg">
-							<fmt:message key='metrics.aggregate.avg.label'/>
+						<input class="form-check-input" type="checkbox" name="aggs" value="sum" id="metrics-aggregate-filter-agg-sum">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-sum">
+							<fmt:message key='metrics.aggregate.sum.label'/>
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="cnt" id="metrics-aggregate-filter-agg-cnt">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-cnt">
+							<fmt:message key='metrics.aggregate.cnt.label'/>
 						</label>
 					</div>
 				</div>
@@ -94,9 +112,9 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-auto">
+		<div class="col-sm-2">
 			<label class="invisible"><fmt:message key='metrics.aggregate.export.label'/></label>
-			<div class="input-group">			
+			<div class="input-group justify-content-end">			
 				<button class="btn btn-outline-secondary form-button-secondary" type="button" id="metrics-aggregate-export"
 					title="<fmt:message key='metrics.list.export.btn'/>"><i class="bi bi-download"></i></button>
 				<button class="btn btn-outline-secondary" type="button" id="metrics-aggregate-refresh"
