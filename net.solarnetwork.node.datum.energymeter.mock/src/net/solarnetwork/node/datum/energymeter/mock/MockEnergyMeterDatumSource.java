@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.datum.energymeter.mock;
 
+import static java.time.format.TextStyle.SHORT;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -32,23 +34,34 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
+import net.solarnetwork.domain.tariff.CompositeTariff;
 import net.solarnetwork.domain.tariff.Tariff;
+import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.domain.tariff.TariffUtils;
+import net.solarnetwork.domain.tariff.TemporalTariffEvaluator;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
@@ -60,6 +73,7 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.ObjectUtils;
@@ -95,6 +109,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private String touMetadataPath;
 	private Locale touLocale = Locale.getDefault();
 	private Duration touOffset = Duration.ZERO;
+	private BigDecimal touScaleFactor = BigDecimal.ONE;
 
 	private final Clock clock;
 	private final Random rng;
@@ -227,7 +242,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	private TariffSchedule parseSchedule(Object o) throws IOException {
-		return TariffUtils.parseCsvTemporalRangeSchedule(touLocale, true, true, null, o);
+		return TariffUtils.parseCsvTemporalRangeSchedule(touLocale, true, true, DEFAULT_EVALUATOR, o);
 	}
 
 	private double readVoltage() {
@@ -273,7 +288,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 			if ( t != null ) {
 				Tariff.Rate r = t.getRates().get("watts");
 				if ( r != null ) {
-					watts = r.getAmount().intValue();
+					watts = r.getAmount().multiply(touScaleFactor).intValue();
 				}
 			}
 			datum.setWatts(watts);
@@ -349,8 +364,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		final MockEnergyMeterDatumSource defaults = new MockEnergyMeterDatumSource();
+		final List<SettingSpecifier> result = new ArrayList<>(24);
 
-		List<SettingSpecifier> result = getIdentifiableSettingSpecifiers();
+		if ( touSchedule() != null ) {
+			result.add(new BasicTitleSettingSpecifier("touStatus", touStatusMessage(), true, true));
+		}
+
+		result.addAll(getIdentifiableSettingSpecifiers());
 		result.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
 		// user enters text
@@ -375,10 +395,114 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				String.valueOf(DEFAULT_TOU_SCHEDULE_CACHE_TTL.getSeconds())));
 		result.add(new BasicTextFieldSettingSpecifier("touLanguage", null));
 		result.add(new BasicTextFieldSettingSpecifier("touOffsetHours", null));
+		result.add(new BasicTextFieldSettingSpecifier("touScaleFactor", BigDecimal.ONE.toPlainString()));
 
-		result.add(new BasicTextFieldSettingSpecifier("weatherSourceId", defaults.weatherSourceId));
+		// TODO: use weather source to influence output (cloudy sky decrease output)
+		//result.add(new BasicTextFieldSettingSpecifier("weatherSourceId", defaults.weatherSourceId));
 
 		return result;
+	}
+
+	private String touStatusMessage() {
+		StringBuilder buf = new StringBuilder();
+		TariffSchedule schedule = touSchedule();
+		CachedResult<TariffSchedule> cached = this.touSchedule.get();
+		MessageSource messageSource = getMessageSource();
+		if ( schedule != null ) {
+			Collection<? extends Tariff> rules = schedule.rules();
+			if ( rules.isEmpty() ) {
+				buf.append("<p>").append(messageSource.getMessage("rules.empty", null, null))
+						.append("</p>");
+			} else {
+				final LocalDateTime now = LocalDateTime.now();
+				Map<Integer, Tariff> active = renderRulesTable(schedule, now, buf);
+				if ( !active.isEmpty() ) {
+					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
+					DateTimeFormatter dateFormat = DateTimeFormatter
+							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
+					buf.append("<p>").append(messageSource.getMessage("rates.active",
+							new Object[] { dateFormat.format(now) }, null)).append("</p><ol>");
+					for ( Map.Entry<Integer, Tariff> me : active.entrySet() ) {
+						buf.append("<li value=\"").append(me.getKey() + 1).append("\">");
+						int rateCount = 0;
+						for ( Rate rate : me.getValue().getRates().values() ) {
+							if ( rate == activeRates.get(rate.getId()) ) {
+								// this rate active for this rule
+								if ( rateCount++ > 0 ) {
+									buf.append("; ");
+								}
+								buf.append("<b>").append(rate.getDescription()).append("</b>: ")
+										.append(rate.getAmount().toPlainString());
+							}
+							buf.append("</li>");
+						}
+					}
+					buf.append("</ol>");
+				}
+			}
+		} else {
+			buf.append("<p>").append(messageSource.getMessage("schedule.none", null, null))
+					.append("</p>");
+		}
+		if ( cached != null ) {
+			buf.append("<p>");
+			buf.append(messageSource.getMessage(cached.isValid() ? "cached.valid" : "cached.invalid",
+					new Object[] { new Date(cached.getCreated()), new Date(cached.getExpires()) },
+					null));
+			buf.append("</p>");
+		}
+		return buf.toString();
+	}
+
+	private Map<Integer, Tariff> renderRulesTable(TariffSchedule schedule, LocalDateTime date,
+			StringBuilder buf) {
+		final Collection<? extends Tariff> tariffs = schedule.rules();
+		final Map<Integer, Tariff> active = new TreeMap<>();
+		final TemporalTariffEvaluator e = DEFAULT_EVALUATOR;
+		final boolean firstOnly = true;
+		final CompositeTariff ct = new CompositeTariff(tariffs);
+		final Map<String, Rate> rates = ct.getRates();
+		buf.append(
+				"<table class=\"table counts\"><thead><tr><th>Rule</th><th>Month</th><th>Day</th><th>Weekday</th><th>Time</th>");
+		for ( Rate r : rates.values() ) {
+			buf.append("<th>").append(r.getDescription()).append("</th>");
+		}
+		buf.append("</tr></thead><tbody>");
+
+		int i = 0;
+		for ( Tariff tariff : tariffs ) {
+			if ( !(tariff instanceof ChronoFieldsTariff) ) {
+				continue;
+			}
+			ChronoFieldsTariff t = (ChronoFieldsTariff) tariff;
+			if ( (active.isEmpty() || !firstOnly) && e.applies(t, date, null) ) {
+				active.put(i, tariff);
+			}
+			buf.append("<tr>");
+			buf.append("<th>").append(++i).append("</th>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, t)).append("</td>");
+			Map<String, Rate> tariffRates = tariff.getRates();
+			// iterate over global rates, to keep order consistent in case rows vary
+			for ( String id : rates.keySet() ) {
+				Rate r = tariffRates.get(id);
+				buf.append("<td>");
+				if ( r != null ) {
+					buf.append(r.getAmount().toPlainString());
+				}
+				buf.append("</td>");
+			}
+			buf.append("</tr>");
+		}
+		buf.append("</tbody></table>");
+		return active;
+	}
+
+	private String rangeDisplayString(ChronoField field, ChronoFieldsTariff tariff) {
+		String r = tariff.formatChronoField(field, touLocale, SHORT);
+		return (r != null ? r : "*");
 	}
 
 	/**
@@ -751,6 +875,26 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 */
 	public final void setTouOffsetHours(long hours) {
 		this.touOffset = Duration.ofHours(hours);
+	}
+
+	/**
+	 * Get a multiplication factor to apply to TOU rates.
+	 *
+	 * @return the multiplication factor; defaults to {@code 1}
+	 */
+	public final BigDecimal getTouScaleFactor() {
+		return touScaleFactor;
+	}
+
+	/**
+	 * Set a multiplication factor to apply to TOU rates.
+	 *
+	 * @param touScaleFactor
+	 *        the touScaleFactor to set; if {@literal null} then {@code 1} will
+	 *        be used
+	 */
+	public final void setTouScaleFactor(BigDecimal touScaleFactor) {
+		this.touScaleFactor = (touScaleFactor != null ? touScaleFactor : BigDecimal.ONE);
 	}
 
 }
