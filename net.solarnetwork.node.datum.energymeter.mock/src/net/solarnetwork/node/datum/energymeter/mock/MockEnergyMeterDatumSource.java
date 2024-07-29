@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.energymeter.mock;
 
 import static java.time.format.TextStyle.SHORT;
+import static java.util.Collections.emptyMap;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
@@ -76,6 +77,8 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
+import net.solarnetwork.util.IntRangeContainer;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -281,18 +284,20 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		// check for TOU power schedule, if available use that
 		TariffSchedule schedule = touSchedule();
 		if ( schedule != null ) {
-			int watts = 0;
+			BigDecimal watts = BigDecimal.ZERO;
 			LocalDateTime now = clock.instant().plus(touOffset).atZone(TimeZone.getDefault().toZoneId())
 					.toLocalDateTime();
-			Tariff t = schedule.resolveTariff(now, Collections.emptyMap());
+			Tariff t = schedule.resolveTariff(now, emptyMap());
 			if ( t != null ) {
-				Tariff.Rate r = t.getRates().get("watts");
+				Tariff.Rate r = t.getRates().values().iterator().next();
 				if ( r != null ) {
-					watts = r.getAmount().multiply(touScaleFactor).intValue();
+					watts = r.getAmount().multiply(touScaleFactor);
+					// see if we can interpolate over time
+					watts = interpolate(schedule, watts, now, t, r);
 				}
 			}
-			datum.setWatts(watts);
-			datum.setCurrent((float) (watts / vrms));
+			datum.setWatts(watts.intValue());
+			datum.setCurrent((float) (watts.doubleValue() / vrms));
 		} else {
 			// convention to use capital L for inductance reading in microhenry
 			double L = readInductance() / 1000000;
@@ -329,6 +334,36 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 					AcEnergyDatum.POWER_FACTOR_KEY,
 					BigDecimal.valueOf(Math.cos(phaseAngle)).setScale(8, RoundingMode.HALF_UP));
 		}
+	}
+
+	private BigDecimal interpolate(TariffSchedule schedule, BigDecimal watts, LocalDateTime now,
+			Tariff t, Tariff.Rate r) {
+		if ( t == null ) {
+			return watts;
+		}
+		ChronoFieldsTariff ct = t.unwrap(ChronoFieldsTariff.class);
+		IntRangeContainer ranges = ct.rangeForChronoField(ChronoField.MINUTE_OF_DAY);
+		if ( ranges == null ) {
+			return watts;
+		}
+
+		// single minute range; find value at next minute block
+		LocalDateTime next = now.with(ChronoField.MINUTE_OF_DAY, ranges.max())
+				.truncatedTo(ChronoUnit.MINUTES);
+		Tariff tNext = schedule.resolveTariff(next, emptyMap());
+		if ( tNext != null && tNext != t ) {
+			Tariff.Rate rNext = tNext.getRates().values().iterator().next();
+			if ( rNext != null ) {
+				BigDecimal wattsNext = rNext.getAmount().multiply(touScaleFactor);
+				if ( wattsNext.compareTo(watts) != 0 ) {
+					Number y = NumberUtils.linearInterpolate(now.get(ChronoField.MINUTE_OF_DAY),
+							ranges.min(), ranges.max(), watts.intValue(), wattsNext.intValue());
+					watts = NumberUtils.bigDecimalForNumber(y);
+				}
+			}
+		}
+
+		return watts;
 	}
 
 	private void calcWattHours(AcEnergyDatum prev, AcEnergyDatum datum) {
