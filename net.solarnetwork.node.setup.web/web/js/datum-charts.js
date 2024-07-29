@@ -247,7 +247,9 @@ SolarNode.DatumCharts = (function(){
 					.attr('transform', null)
 				.transition(t)
 					.attr('transform', 'translate(' + x(now - (n - 1) * duration) + ')')
-					.on('end', tick);
+					.on('end', () => {
+						setTimeout(tick, 1000)
+					});
 
 			// pop the old data point off the front
 			data.shift();
