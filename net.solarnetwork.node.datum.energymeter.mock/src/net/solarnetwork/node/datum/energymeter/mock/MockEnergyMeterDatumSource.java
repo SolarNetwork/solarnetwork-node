@@ -391,7 +391,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	@Override
 	public Collection<String> publishedSourceIds() {
-		final String sourceId = getSourceId();
+		final String sourceId = resolvePlaceholders(getSourceId());
 		return (sourceId == null || sourceId.isEmpty() ? Collections.emptyList()
 				: Collections.singleton(sourceId));
 	}
