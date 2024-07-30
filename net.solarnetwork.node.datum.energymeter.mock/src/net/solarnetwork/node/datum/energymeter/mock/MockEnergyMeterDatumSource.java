@@ -24,15 +24,12 @@ package net.solarnetwork.node.datum.energymeter.mock;
 
 import static java.time.format.TextStyle.SHORT;
 import static java.util.Collections.emptyMap;
-import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -96,16 +93,23 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	/** The {@code touScheduleCacheTtl} default value (12 hours). */
 	public static final Duration DEFAULT_TOU_SCHEDULE_CACHE_TTL = Duration.ofHours(12);
 
+	/** The {@code voltagerms} property default value. */
+	public static final double DEFAULT_VOLTAGE = 230.0;
+
+	/** The {@code frequency} property default value. */
+	public static final double DEFAULT_FREQUENCY = 50.0;
+
+	/** The {@code current} property default value. */
+	public static final double DEFAULT_CURRENT = 10.0;
+
 	private String sourceId;
-	private Double voltagerms = 230.0;
-	private Double frequency = 50.0;
-	private Double resistance = 10.0;
-	private Double inductance = 10.0;
-	private boolean randomness = false;
-	private Double freqDeviation = 0.0;
-	private Double voltDeviation = 0.0;
-	private Double resistanceDeviation = 0.0;
-	private Double inductanceDeviation = 0.0;
+	private double voltagerms = DEFAULT_VOLTAGE;
+	private double frequency = DEFAULT_FREQUENCY;
+	private double current = DEFAULT_CURRENT;
+	private boolean randomness;
+	private double freqDeviation;
+	private double voltDeviation;
+	private double currentDeviation;
 	private String weatherSourceId;
 
 	private Duration touScheduleCacheTtl = DEFAULT_TOU_SCHEDULE_CACHE_TTL;
@@ -170,9 +174,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @return an {@link AcEnergyDatum}
 	 */
 	@Override
-	public NodeDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
 		AcEnergyDatum prev = this.lastsample.get();
-		AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId), Instant.now(),
+		AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId), clock.instant(),
 				new DatumSamples());
 
 		calcVariables(datum);
@@ -181,7 +185,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		this.lastsample.compareAndSet(prev, datum);
 
-		NodeDatum result = applyDatumFilter(datum, null);
+		AcEnergyDatum result = (AcEnergyDatum) applyDatumFilter(datum, null);
 
 		return result;
 	}
@@ -249,30 +253,22 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	private double readVoltage() {
-		return voltagerms + (randomness ? voltDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
+		return voltagerms + (randomness ? voltDeviation * Math.cos(Math.PI * rng.nextDouble()) : 0);
 	}
 
 	private double readFrequency() {
-		return frequency + (randomness ? freqDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
+		return frequency + (randomness ? freqDeviation * Math.cos(Math.PI * rng.nextDouble()) : 0);
 	}
 
-	private double readResistance() {
-		return resistance
-				+ (randomness ? resistanceDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
-	}
-
-	private double readInductance() {
-		return inductance
-				+ (randomness ? inductanceDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
+	private double readCurrent() {
+		return current + (randomness ? currentDeviation * Math.cos(Math.PI * rng.nextDouble()) : 0);
 	}
 
 	/**
-	 * Calculates the values to feed the datum.
+	 * Populate the meter values on the datum.
 	 *
-	 * @param vrms
-	 *        the voltage to use
-	 * @param f
-	 *        the frequency to use
+	 * @param datum
+	 *        the datum to populate
 	 */
 	private void calcVariables(AcEnergyDatum datum) {
 		final double vrms = readVoltage();
@@ -299,40 +295,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 			datum.setWatts(watts.intValue());
 			datum.setCurrent((float) (watts.doubleValue() / vrms));
 		} else {
-			// convention to use capital L for inductance reading in microhenry
-			double L = readInductance() / 1000000;
-
-			// convention to use capital R for resistance
-			double R = readResistance();
-
-			double vmax = Math.sqrt(2) * vrms;
-
-			double phasevoltage = vmax * Math.sin(2 * Math.PI * f * System.currentTimeMillis() / 1000);
-			datum.setPhaseVoltage((float) phasevoltage);
-
-			double inductiveReactance = 2 * Math.PI * f * L;
-			double impedance = Math.sqrt(Math.pow(R, 2) + Math.pow(inductiveReactance, 2));
-
-			double phasecurrent = phasevoltage / impedance;
-			datum.setCurrent((float) phasecurrent);
-			datum.asMutableSampleOperations().putSampleValue(Instantaneous, AcEnergyDatum.CURRENT_KEY,
-					BigDecimal.valueOf(phasecurrent).setScale(6, RoundingMode.HALF_UP));
-			double current = vrms / impedance;
-
-			double reactivePower = Math.pow(current, 2) * inductiveReactance;
-			datum.setReactivePower((int) reactivePower);
-			double realPower = Math.pow(current, 2) * R;
-			datum.setRealPower((int) realPower);
-			datum.setApparentPower((int) (Math.pow(current, 2) * impedance));
-
-			// not sure if correct calculation
-			double watts = Math.pow(phasecurrent, 2) * R;
-			datum.setWatts((int) watts);
-
-			double phaseAngle = Math.atan(inductiveReactance / R);
-			datum.asMutableSampleOperations().putSampleValue(Instantaneous,
-					AcEnergyDatum.POWER_FACTOR_KEY,
-					BigDecimal.valueOf(Math.cos(phaseAngle)).setScale(8, RoundingMode.HALF_UP));
+			final double I = readCurrent();
+			datum.setCurrent((float) I);
+			datum.setWatts((int) (vrms * I));
 		}
 	}
 
@@ -398,7 +363,6 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		final MockEnergyMeterDatumSource defaults = new MockEnergyMeterDatumSource();
 		final List<SettingSpecifier> result = new ArrayList<>(24);
 
 		if ( touSchedule() != null ) {
@@ -409,18 +373,14 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		result.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
 		// user enters text
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		result.add(new BasicTextFieldSettingSpecifier("voltage", defaults.voltagerms.toString()));
-		result.add(new BasicTextFieldSettingSpecifier("frequency", defaults.frequency.toString()));
-		result.add(new BasicTextFieldSettingSpecifier("resistance", defaults.resistance.toString()));
-		result.add(new BasicTextFieldSettingSpecifier("inductance", defaults.inductance.toString()));
-		result.add(new BasicToggleSettingSpecifier("randomness", defaults.randomness));
-		result.add(new BasicTextFieldSettingSpecifier("voltdev", defaults.voltDeviation.toString()));
-		result.add(new BasicTextFieldSettingSpecifier("freqdev", defaults.freqDeviation.toString()));
-		result.add(new BasicTextFieldSettingSpecifier("resistanceDeviation",
-				defaults.resistanceDeviation.toString()));
-		result.add(new BasicTextFieldSettingSpecifier("inductanceDeviation",
-				defaults.inductanceDeviation.toString()));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		result.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
+		result.add(new BasicTextFieldSettingSpecifier("frequency", String.valueOf(DEFAULT_FREQUENCY)));
+		result.add(new BasicTextFieldSettingSpecifier("current", String.valueOf(DEFAULT_CURRENT)));
+		result.add(new BasicToggleSettingSpecifier("randomness", Boolean.FALSE));
+		result.add(new BasicTextFieldSettingSpecifier("voltdev", String.valueOf(0)));
+		result.add(new BasicTextFieldSettingSpecifier("freqdev", String.valueOf(0)));
+		result.add(new BasicTextFieldSettingSpecifier("currentDeviation", String.valueOf(0)));
 
 		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null, false,
 				"(objectClass=net.solarnetwork.node.service.MetadataService)"));
@@ -573,7 +533,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the voltage RMS
 	 */
-	public final Double getVoltage() {
+	public final double getVoltage() {
 		return voltagerms;
 	}
 
@@ -583,46 +543,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param voltage
 	 *        the voltage to set
 	 */
-	public final void setVoltage(Double voltage) {
+	public final void setVoltage(double voltage) {
 		this.voltagerms = voltage;
-	}
-
-	/**
-	 * Get the resistance.
-	 *
-	 * @return the resistance
-	 */
-	public final Double getResistance() {
-		return resistance;
-	}
-
-	/**
-	 * Set the resistance.
-	 *
-	 * @param resistance
-	 *        the resistance to set
-	 */
-	public final void setResistance(Double resistance) {
-		this.resistance = resistance;
-	}
-
-	/**
-	 * Get the inductance.
-	 *
-	 * @return the inductance
-	 */
-	public final Double getInductance() {
-		return inductance;
-	}
-
-	/**
-	 * Set the inductance.
-	 *
-	 * @param inductance
-	 *        the inductance to set
-	 */
-	public final void setInductance(Double inductance) {
-		this.inductance = inductance;
 	}
 
 	/**
@@ -630,7 +552,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the frequency
 	 */
-	public final Double getFrequency() {
+	public final double getFrequency() {
 		return frequency;
 	}
 
@@ -640,7 +562,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param frequency
 	 *        the frequency to set
 	 */
-	public final void setFrequency(Double frequency) {
+	public final void setFrequency(double frequency) {
 		this.frequency = frequency;
 	}
 
@@ -649,7 +571,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the deviation
 	 */
-	public final Double getVoltdev() {
+	public final double getVoltdev() {
 		return voltDeviation;
 	}
 
@@ -659,7 +581,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param voltdev
 	 *        the deviation to set
 	 */
-	public final void setVoltdev(Double voltdev) {
+	public final void setVoltdev(double voltdev) {
 		this.voltDeviation = voltdev;
 	}
 
@@ -668,7 +590,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the deviation
 	 */
-	public final Double getFreqdev() {
+	public final double getFreqdev() {
 		return freqDeviation;
 	}
 
@@ -678,7 +600,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param freqdev
 	 *        the deviation
 	 */
-	public final void setFreqdev(Double freqdev) {
+	public final void setFreqdev(double freqdev) {
 		this.freqDeviation = freqdev;
 	}
 
@@ -703,31 +625,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	/**
-	 * Get the resistance randomness deviation.
-	 *
-	 * @return the deviation
-	 */
-	public final Double getResistanceDeviation() {
-		return resistanceDeviation;
-	}
-
-	/**
-	 * Set the resistance deviation.
-	 *
-	 * @param resistanceDeviation
-	 *        the deviation to set
-	 */
-	public final void setResistanceDeviation(Double resistanceDeviation) {
-		this.resistanceDeviation = resistanceDeviation;
-	}
-
-	/**
 	 * Get the inductance randomness deviation.
 	 *
 	 * @return the deviation
 	 */
-	public final Double getInductanceDeviation() {
-		return inductanceDeviation;
+	public final double getCurrentDeviation() {
+		return currentDeviation;
 	}
 
 	/**
@@ -736,8 +639,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param inductanceDeviation
 	 *        the deviation to set
 	 */
-	public final void setInductanceDeviation(Double inductanceDeviation) {
-		this.inductanceDeviation = inductanceDeviation;
+	public final void setCurrentDeviation(double inductanceDeviation) {
+		this.currentDeviation = inductanceDeviation;
 	}
 
 	/**

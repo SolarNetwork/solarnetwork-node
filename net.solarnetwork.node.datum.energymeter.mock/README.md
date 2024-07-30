@@ -4,7 +4,7 @@ This project provides SolarNode plugin that pretends to collect data from
 a power meter. It is designed for developers to use, when testing SolarNode
 components.
 
-<img alt="Mock Power Meter settings" src="docs/solarnode-mock-energymeter-device-settings.png" with="930">
+<img alt="Mock Power Meter settings" src="docs/solarnode-mock-energymeter-device-settings@2x.png" with="926">
 
 # Use
 
@@ -24,21 +24,19 @@ Each configuration contains the following overall settings:
 | Service Group        | A group name to associate this data source with. |
 | Source ID            | The SolarNetwork unique source ID to assign to datum collected from this device. |
 | RMS Voltage          | RMS of the power supply, in volts. |
-| Frequency            | Frequency of mock AC power supply, in Hz. |
-| Resistance           | Resistance of the circuit, in Ohms. |
-| Inductance           | Inductance of the circuit, in mirco Henry. |
-| Toggle Randomness    | When enabled, apply random deviation to votage, frequency, resistance, and inductance values, limited by the various **Deviation** settings. |
-| Voltage Deviation    | The maximum amount of randomness to apply to the voltage value. |
-| Frequency Deviation  | The maximum amount of randomness to apply to the frequency value. |
-| Resistance Deviation | The maximum amount of randomness to apply to the resistance value. |
-| Inductance Deviation | The maximum amount of randomness to apply to the inductance value. |
+| Frequency            | Frequency of power supply, in Hz. |
+| Current              | Current of the power supply, in A. |
+| Toggle Randomness    | When enabled, apply random deviation to votage, frequency, and current values, limited by the various **Deviation** settings. |
+| Voltage Deviation    | The +- maximum amount of randomness to apply to the voltage value. |
+| Frequency Deviation  | The +- maximum amount of randomness to apply to the frequency value. |
+| Current Deviation    | The +- maximum amount of randomness to apply to the current value. |
+| Inductance Deviation | The +- maximum amount of randomness to apply to the inductance value. |
 | Metadata Service     | The **Service Name** of the Metadata Service to obtain the tariff schedule from. See [Metadata Service](#metadata-service) for more information. |
 | TOU Metadata Path    | The metadata path that will resolve the tariff schedule from the configured **Metadata Service**. See [Tariff schedule format](#tariff-schedule-format) for more information. |
 | TOU Cache TTL        | The amount of seconds to cache the tariff schedule obtained from the configured **Metadata Service**. |
 | TOU Language         | A IETF BCP 47 language tag to parse the tariff data with. If not configured then the default system language will be assumed. |
 | TOU Offset           | A number of **hours** to add to the current time when resolving TOU rules. |
 | TOU Scale Factor     | A multiplication factor to apply to the resolved TOU schedule rates. |
-
 
 
 # Metadata Service
