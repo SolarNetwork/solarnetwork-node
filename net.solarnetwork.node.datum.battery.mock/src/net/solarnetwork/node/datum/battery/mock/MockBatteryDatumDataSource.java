@@ -74,16 +74,21 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	/** The {@code energyCapacity} property default value. */
 	public static final double DEFAULT_ENERGY_CAPACITY = 10_000.0;
 
+	/** The {@code initialSoc} property default value. */
+	public static final double DEFAULT_INITIAL_SOC = 100.0;
+
 	private final Clock clock;
 
 	private String sourceId;
 	private String targetPowerRateControlId;
+	private String socControlId;
 	private double energyCapacity = DEFAULT_ENERGY_CAPACITY;
 	private double maxPowerRateCharge = DEFAULT_MAX_POWER_RATE;
 	private double maxPowerRateDischarge = -DEFAULT_MAX_POWER_RATE;
+	private double initialSoc = DEFAULT_INITIAL_SOC;
 
 	private double targetPowerRate = 0.0;
-	private double availableEnergyCapacity = DEFAULT_ENERGY_CAPACITY;
+	private double availableEnergy = DEFAULT_ENERGY_CAPACITY;
 
 	private SimpleEnergyStorageDatum lastDatum;
 
@@ -127,29 +132,48 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	@Override
 	public List<String> getAvailableControlIds() {
 		final String targetPowerRateControlId = resolvePlaceholders(this.targetPowerRateControlId, null);
-		return (targetPowerRateControlId == null || targetPowerRateControlId.isEmpty()
-				? Collections.emptyList()
-				: Collections.singletonList(targetPowerRateControlId));
+		final String socControlId = resolvePlaceholders(this.socControlId, null);
+		if ( (targetPowerRateControlId == null || targetPowerRateControlId.isEmpty())
+				&& (socControlId == null || socControlId.isEmpty()) ) {
+			return Collections.emptyList();
+		}
+		List<String> result = new ArrayList<>(2);
+		if ( targetPowerRateControlId != null && !targetPowerRateControlId.isEmpty() ) {
+			result.add(targetPowerRateControlId);
+		}
+		if ( socControlId != null && !socControlId.isEmpty() ) {
+			result.add(socControlId);
+		}
+		return result;
 	}
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
 		final String targetPowerRateControlId = resolvePlaceholders(this.targetPowerRateControlId, null);
-		if ( targetPowerRateControlId == null || !targetPowerRateControlId.equals(controlId) ) {
-			return null;
+		if ( targetPowerRateControlId != null && targetPowerRateControlId.equals(controlId) ) {
+			EnergyStorageDatum d = readCurrentDatum();
+			return newSimpleNodeControlInfoDatum(targetPowerRateControlId, NodeControlPropertyType.Float,
+					"W", d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
+							POWER_RATE_PROP));
 		}
-		EnergyStorageDatum d = readCurrentDatum();
-		return newSimpleNodeControlInfoDatum(targetPowerRateControlId,
-				d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous, POWER_RATE_PROP));
+		final String socControlId = resolvePlaceholders(this.socControlId, null);
+		if ( socControlId != null && socControlId.equals(controlId) ) {
+			EnergyStorageDatum d = readCurrentDatum();
+			return newSimpleNodeControlInfoDatum(socControlId, NodeControlPropertyType.Percent, null,
+					d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
+							EnergyStorageDatum.STATE_OF_CHARGE_PERCENTAGE_KEY));
+		}
+		return null;
 	}
 
-	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId, String value) {
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId,
+			NodeControlPropertyType type, String unit, String value) {
 		// @formatter:off
 		NodeControlInfo info = BasicNodeControlInfo.builder()
-				.withControlId(resolvePlaceholders(controlId))
-				.withType(NodeControlPropertyType.Float)
+				.withControlId(controlId)
+				.withType(type)
 				.withReadonly(false)
-				.withUnit("W")
+				.withUnit(unit)
 				.withValue(value)
 				.build();
 		// @formatter:on
@@ -167,13 +191,20 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 			return null;
 		}
 		// look for a parameter name that matches a control ID
-		final String targetPowerRateControlId = this.targetPowerRateControlId;
+		final String targetPowerRateControlId = resolvePlaceholders(this.targetPowerRateControlId, null);
+		final String socControlId = resolvePlaceholders(this.socControlId, null);
 		InstructionState result = null;
 		for ( String paramName : instruction.getParameterNames() ) {
 			if ( targetPowerRateControlId.equals(paramName) ) {
-				Number newValue = StringUtils
-						.numberValue(instruction.getParameterValue(targetPowerRateControlId));
+				Number newValue = StringUtils.numberValue(instruction.getParameterValue(paramName));
 				if ( updateTargetPowerRate(newValue) ) {
+					result = InstructionState.Completed;
+				} else {
+					result = InstructionState.Declined;
+				}
+			} else if ( socControlId.equals(paramName) ) {
+				Number newValue = StringUtils.numberValue(instruction.getParameterValue(paramName));
+				if ( updateSoc(newValue) ) {
 					result = InstructionState.Completed;
 				} else {
 					result = InstructionState.Declined;
@@ -188,6 +219,16 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 			return false;
 		}
 		setTargetPowerRate(newValue.doubleValue());
+		return true;
+	}
+
+	private synchronized boolean updateSoc(Number newValue) {
+		if ( newValue == null ) {
+			return false;
+		}
+		final double soc = Math.max(0, Math.min(1.0, newValue.doubleValue() / 100.0));
+		final double newAvailEnergy = soc * energyCapacity;
+		this.availableEnergy = newAvailEnergy;
 		return true;
 	}
 
@@ -207,18 +248,21 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 
 		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		result.add(new BasicTextFieldSettingSpecifier("targetPowerRateControlId", null));
+		result.add(new BasicTextFieldSettingSpecifier("socControlId", null));
 		result.add(new BasicTextFieldSettingSpecifier("energyCapacity",
 				String.valueOf(DEFAULT_ENERGY_CAPACITY)));
 		result.add(new BasicTextFieldSettingSpecifier("maxPowerRateCharge",
 				String.valueOf(DEFAULT_MAX_POWER_RATE)));
 		result.add(new BasicTextFieldSettingSpecifier("maxPowerRateDischarge",
 				String.valueOf(-DEFAULT_MAX_POWER_RATE)));
+		result.add(
+				new BasicTextFieldSettingSpecifier("initialSoc", String.valueOf(DEFAULT_INITIAL_SOC)));
 
 		return result;
 	}
 
-	private String statusMessage(Locale locale) {
-		final double currentCapacity = this.availableEnergyCapacity;
+	private synchronized String statusMessage(Locale locale) {
+		final double currentCapacity = this.availableEnergy;
 		final double totalCapacity = this.energyCapacity;
 		final int rate = (int) this.targetPowerRate;
 		final int soc = (int) ((currentCapacity / totalCapacity) * 100.0);
@@ -229,7 +273,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	private synchronized SimpleEnergyStorageDatum sample() {
 		final Instant now = clock.instant();
 
-		double availCapacity = this.availableEnergyCapacity;
+		double availCapacity = this.availableEnergy;
 		final double totalCapacity = this.energyCapacity;
 		final double rate = (int) this.targetPowerRate;
 		final double soc = ((availCapacity / totalCapacity) * 100.0);
@@ -243,7 +287,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 			double newCapacity = Math.max(0.0,
 					Math.min(totalCapacity, availCapacity + hoursDiff * rate));
 			if ( newCapacity != availCapacity ) {
-				this.availableEnergyCapacity = newCapacity;
+				this.availableEnergy = newCapacity;
 			}
 		}
 
@@ -295,6 +339,48 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	/**
+	 * Get the control ID to use for the state of charge.
+	 *
+	 * @return the control ID
+	 */
+	public final String getSocControlId() {
+		return socControlId;
+	}
+
+	/**
+	 * Set the control ID to use for the state of charge.
+	 *
+	 * @param socControlId
+	 *        the control ID to set
+	 */
+	public final void setSocControlId(String socControlId) {
+		this.socControlId = socControlId;
+	}
+
+	/**
+	 * Get the starting state of charge.
+	 *
+	 * @return the starting state of charge, as a percentage from 0 - 100;
+	 *         defaults to {@link #DEFAULT_INITIAL_SOC}
+	 */
+	public final double getInitialSoc() {
+		return initialSoc;
+	}
+
+	/**
+	 * Set the starting state of charge.
+	 *
+	 * @param initialSoc
+	 *        the starting state of charge to set, as a percentage from 0 - 100
+	 */
+	public final synchronized void setInitialSoc(double initialSoc) {
+		this.initialSoc = initialSoc;
+		if ( lastDatum == null ) {
+			updateSoc(initialSoc);
+		}
+	}
+
+	/**
 	 * Get the target power rate, in watts.
 	 *
 	 * @return the rate in watts; defaults to {@code 0}
@@ -337,8 +423,11 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 */
 	public synchronized final void setEnergyCapacity(double energyCapacity) {
 		this.energyCapacity = (energyCapacity < 0.0 ? 0.0 : energyCapacity);
-		if ( this.energyCapacity < this.availableEnergyCapacity ) {
-			this.availableEnergyCapacity = this.energyCapacity;
+		if ( this.energyCapacity < this.availableEnergy ) {
+			this.availableEnergy = this.energyCapacity;
+		}
+		if ( lastDatum == null ) {
+			updateSoc(initialSoc);
 		}
 	}
 

@@ -4,7 +4,7 @@ This project provides SolarNode plugin that pretends to collect data from a batt
 control for adjusting its charge/discharge power rate. It is designed for developers to use, when
 testing SolarNode components.
 
-<img alt="Mock Power Meter settings" src="docs/solarnode-mock-battery-settings@2x.png" with="710">
+<img alt="Mock Power Meter settings" src="docs/solarnode-mock-battery-settings@2x.png" with="700">
 
 # Use
 
@@ -23,9 +23,11 @@ Each configuration contains the following overall settings:
 | Service Group                | A group name to associate this data source with. |
 | Source ID                    | The SolarNetwork unique source ID to assign to datum collected from this component. |
 | Target Power Rate Control ID | A control ID to expose for managing the target power rate. The `SetControlParameter` instruction can be used to update the control value, passing the desired power rate, in **watts**. A positive value represents a _charge_ (receive) rate while a negative value represents a _discharge_ (supply) rate. |
+| SOC Control ID               | A control ID to expose for manipulating the state of charge. The `SetControlParameter` instruction can be used to update the control value, passing the desired SOC as an integer percentage from `0 - 100`. |
 | Energy Capacity              | The total capacity of the battery, in **watt-hours**. |
 | Charge Max Power             | The maximum power rate allowed for charging, in **watts**. |
 | Discharge Max Power          | The maximum power rate allowed for discharging, in watts. |
+| Start SOC                    | The state of charge to use when the battery is first measured, from `0 - 100`. |
 
 
 # Power rate control
