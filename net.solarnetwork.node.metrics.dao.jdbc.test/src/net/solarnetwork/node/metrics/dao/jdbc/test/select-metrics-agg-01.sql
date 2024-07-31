@@ -3,8 +3,10 @@ WITH m AS (
 		, min(val) AS m0
 		, max(val) AS m1
 		, avg(val) AS m2
-		, percentile_cont(?) WITHIN GROUP (ORDER BY val) AS m3
-		, percentile_cont(?) WITHIN GROUP (ORDER BY val) AS m4
+		, count(val) AS m3
+		, sum(val) AS m4
+		, percentile_cont(?) WITHIN GROUP (ORDER BY val) AS m5
+		, percentile_cont(?) WITHIN GROUP (ORDER BY val) AS m6
 	FROM solarnode.mtr_metric
 	WHERE ts >= ?
 		AND ts < ?
@@ -27,14 +29,24 @@ WITH m AS (
 		, m2 AS val
 	FROM m
 	UNION ALL
-	SELECT 'q:25' AS mtype
+	SELECT 'cnt' AS mtype
 		, mname
 		, m3 AS val
 	FROM m
 	UNION ALL
-	SELECT 'q:75' AS mtype
+	SELECT 'sum' AS mtype
 		, mname
 		, m4 AS val
+	FROM m
+	UNION ALL
+	SELECT 'q:25' AS mtype
+		, mname
+		, m5 AS val
+	FROM m
+	UNION ALL
+	SELECT 'q:75' AS mtype
+		, mname
+		, m6 AS val
 	FROM m
 )
 SELECT CURRENT_TIMESTAMP AS ts

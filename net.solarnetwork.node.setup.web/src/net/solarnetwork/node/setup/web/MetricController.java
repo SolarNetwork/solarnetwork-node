@@ -70,7 +70,7 @@ import net.solarnetwork.util.DateUtils;
  * Web controller for metrics support.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 @ServiceAwareController
 @RequestMapping("/a/metrics")
@@ -323,20 +323,20 @@ public class MetricController extends BaseSetupController {
 			}
 			List<MetricAggregate> result = new ArrayList<>(aggs.size());
 			for ( String key : aggs ) {
-				if ( MetricAggregate.METRIC_TYPE_MINIMUM.equalsIgnoreCase(key) ) {
-					result.add(BasicMetricAggregate.Minimum);
-				} else if ( MetricAggregate.METRIC_TYPE_MAXIMUM.equalsIgnoreCase(key) ) {
-					result.add(BasicMetricAggregate.Maximum);
-				} else if ( MetricAggregate.METRIC_TYPE_AVERAGE.equalsIgnoreCase(key) ) {
-					result.add(BasicMetricAggregate.Average);
-				} else if ( key.startsWith("q:") || key.startsWith("Q:") && key.length() > 2 ) {
-					try {
-						Integer p = Integer.valueOf(key.substring(2));
-						result.add(new ParameterizedMetricAggregate(MetricAggregate.METRIC_TYPE_QUANTILE,
-								new Object[] { p / 100.0 },
-								ParameterizedMetricAggregate.INTEGER_PERCENT_KEY));
-					} catch ( NumberFormatException e ) {
-						// ignore
+				try {
+					BasicMetricAggregate agg = BasicMetricAggregate.forType(key);
+					result.add(agg);
+
+				} catch ( IllegalArgumentException e ) {
+					if ( key.startsWith("q:") || key.startsWith("Q:") && key.length() > 2 ) {
+						try {
+							Integer p = Integer.valueOf(key.substring(2));
+							result.add(new ParameterizedMetricAggregate(
+									MetricAggregate.METRIC_TYPE_QUANTILE, new Object[] { p / 100.0 },
+									ParameterizedMetricAggregate.INTEGER_PERCENT_KEY));
+						} catch ( NumberFormatException e2 ) {
+							// ignore
+						}
 					}
 				}
 			}

@@ -1,21 +1,21 @@
 /* ==================================================================
  * SecurityTokenAuthenticationFilter.java - 7/09/2023 1:56:35 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -44,6 +45,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.transaction.TransactionException;
 import org.springframework.util.Assert;
+import org.springframework.util.MimeType;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -55,9 +57,9 @@ import net.solarnetwork.web.security.SecurityTokenAuthenticationEntryPoint;
 
 /**
  * Authentication filter for "SolarNetworkWS" style authentication.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.3
  */
 public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter implements Filter {
@@ -84,7 +86,7 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settings,
 	 *        or {@literal null} to create a default instance
 	 */
@@ -108,6 +110,13 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 				settings.getCompressibleContentTypePattern(),
 				(int) settings.getMinimumSpoolLength().toBytes(), settings.getSpoolDirectory());
 		HttpServletResponse response = res;
+
+		// for multipart requests, force the InputStream to be resolved now so the parameters
+		// are not parsed by the servlet container
+		if ( req.getContentType() != null && MediaType.MULTIPART_FORM_DATA
+				.isCompatibleWith(MimeType.valueOf(req.getContentType())) ) {
+			request.getContentSHA256();
+		}
 
 		AuthenticationData data;
 		try {
@@ -220,12 +229,12 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 	 * usernames (email addresses) and plain-text authorization token secret
 	 * passwords via {@link UserDetails#getUsername()} and
 	 * {@link UserDetails#getPassword()}.
-	 * 
+	 *
 	 * <p>
 	 * After validating the request authorization, this filter will authenticate
 	 * the user with Spring Security.
 	 * </p>
-	 * 
+	 *
 	 * @param userDetailsService
 	 *        the service
 	 */
@@ -235,11 +244,11 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 
 	/**
 	 * Set the details source to use.
-	 * 
+	 *
 	 * <p>
 	 * Defaults to a {@link WebAuthenticationDetailsSource}.
 	 * </p>
-	 * 
+	 *
 	 * @param authenticationDetailsSource
 	 *        the source to use
 	 */
@@ -252,11 +261,11 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 	 * Set the maximum amount of difference in the supplied HTTP {@code Date}
 	 * (or {@code X-SN-Date}) header value with the current time as reported by
 	 * the system.
-	 * 
+	 *
 	 * <p>
 	 * If this difference is exceeded, authorization fails.
 	 * </p>
-	 * 
+	 *
 	 * @param maxDateSkew
 	 *        the maximum allowed date skew
 	 */
@@ -267,7 +276,7 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 	/**
 	 * The {@link SecurityTokenAuthenticationEntryPoint} to use as the entry
 	 * point.
-	 * 
+	 *
 	 * @param entryPoint
 	 *        the entry point to use
 	 */
@@ -277,7 +286,7 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 
 	/**
 	 * Set the maximum allowed request body size.
-	 * 
+	 *
 	 * @param maxRequestBodySize
 	 *        the maximum request body size allowed
 	 */
@@ -287,7 +296,7 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 
 	/**
 	 * Get the filter settings.
-	 * 
+	 *
 	 * @return the settings, never {@literal null}
 	 */
 	public SecurityTokenFilterSettings getSettings() {

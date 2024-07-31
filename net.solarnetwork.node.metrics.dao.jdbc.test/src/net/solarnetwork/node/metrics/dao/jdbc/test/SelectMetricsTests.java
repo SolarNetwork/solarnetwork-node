@@ -119,6 +119,8 @@ public class SelectMetricsTests {
 			BasicMetricAggregate.Minimum,
 			BasicMetricAggregate.Maximum,
 			BasicMetricAggregate.Average,
+			BasicMetricAggregate.Count,
+			BasicMetricAggregate.Sum,
 			ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_25,
 			ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_75
 		});
@@ -128,6 +130,8 @@ public class SelectMetricsTests {
 		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
 				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
+
+		expect(ps.getConnection()).andReturn(conn).anyTimes();
 
 		ps.setObject(1, ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_25.numberParameter(0));
 		ps.setObject(2, ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_75.numberParameter(0));

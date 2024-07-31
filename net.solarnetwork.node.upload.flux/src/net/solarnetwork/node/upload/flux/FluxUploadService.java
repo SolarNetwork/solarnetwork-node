@@ -221,6 +221,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
+		getMqttConfig().setReadTimeoutSeconds(0);
+		getMqttConfig().setWriteTimeoutSeconds(-1);
 		setDisplayName("SolarFlux Upload Service");
 	}
 

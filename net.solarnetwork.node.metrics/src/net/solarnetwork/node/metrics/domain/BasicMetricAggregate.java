@@ -26,7 +26,7 @@ package net.solarnetwork.node.metrics.domain;
  * Basic metric aggregates, that have no parameters.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum BasicMetricAggregate implements MetricAggregate {
 
@@ -38,6 +38,20 @@ public enum BasicMetricAggregate implements MetricAggregate {
 
 	/** An average. */
 	Average(MetricAggregate.METRIC_TYPE_AVERAGE),
+
+	/**
+	 * A count.
+	 *
+	 * @since 1.1
+	 */
+	Count(MetricAggregate.METRIC_TYPE_COUNT),
+
+	/**
+	 * A sum.
+	 *
+	 * @since 1.1
+	 */
+	Sum(MetricAggregate.METRIC_TYPE_SUM),
 
 	;
 
@@ -55,6 +69,31 @@ public enum BasicMetricAggregate implements MetricAggregate {
 	@Override
 	public Object[] getParameters() {
 		return null;
+	}
+
+	/**
+	 * Get an enum instance for a type value.
+	 *
+	 * <p>
+	 * The {@code type} is compared in a case-insensitive manner against both
+	 * {@link #getType()} and the {@code name} values.
+	 * </p>
+	 *
+	 * @param type
+	 *        the type value to get an enumeration instance for
+	 * @return the enumeration instance
+	 * @throws IllegalArgumentException
+	 *         if {@code type} is not a valid value
+	 * @since 1.1
+	 */
+	public static BasicMetricAggregate forType(String type) {
+		for ( BasicMetricAggregate agg : BasicMetricAggregate.values() ) {
+			if ( agg.type.equalsIgnoreCase(type) || agg.name().equalsIgnoreCase(type) ) {
+				return agg;
+			}
+		}
+		throw new IllegalArgumentException(
+				"The type [" + type + "] is not a supported BasicMetricAggregate value.");
 	}
 
 }

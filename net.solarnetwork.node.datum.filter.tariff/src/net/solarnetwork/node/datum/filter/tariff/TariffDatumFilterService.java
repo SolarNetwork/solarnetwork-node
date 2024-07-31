@@ -25,16 +25,13 @@ package net.solarnetwork.node.datum.filter.tariff;
 import static java.time.format.TextStyle.SHORT;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
-import static net.solarnetwork.util.DateUtils.formatRange;
 import java.io.IOException;
-import java.io.StringReader;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoField;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -47,15 +44,15 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
 import net.solarnetwork.domain.tariff.CompositeTariff;
-import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
-import net.solarnetwork.domain.tariff.SimpleTariffRate;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
 import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.domain.tariff.TariffSchedule;
-import net.solarnetwork.domain.tariff.TemporalRangesTariff;
+import net.solarnetwork.domain.tariff.TariffUtils;
 import net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator;
+import net.solarnetwork.domain.tariff.TemporalTariffEvaluator;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
@@ -73,7 +70,7 @@ import net.solarnetwork.util.CachedResult;
  * spreadsheet style tariff metadata.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class TariffDatumFilterService extends BaseDatumFilterSupport
@@ -86,11 +83,12 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	public static final int DEFAULT_SCHEDULE_CACHE_SECONDS = 60 * 60 * 12;
 
 	private final OptionalFilterableService<MetadataService> metadataService;
-	private final OptionalFilterableService<TemporalRangesTariffEvaluator> evaluator;
+	private final OptionalFilterableService<TemporalTariffEvaluator> evaluator;
 	private String tariffMetadataPath = DEFAULT_TARIFF_METADATA_PATH;
 	private Locale locale = Locale.getDefault();
 	private int scheduleCacheSeconds = DEFAULT_SCHEDULE_CACHE_SECONDS;
 	private boolean firstMatchOnly = SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY;
+	private boolean preserveRateCase;
 
 	private final AtomicReference<CachedResult<TariffSchedule>> schedule = new AtomicReference<>();
 
@@ -105,7 +103,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *         if any argument is {@literal null}
 	 */
 	public TariffDatumFilterService(OptionalFilterableService<MetadataService> metadataService,
-			OptionalFilterableService<TemporalRangesTariffEvaluator> evaluator) {
+			OptionalFilterableService<TemporalTariffEvaluator> evaluator) {
 		super();
 		if ( metadataService == null ) {
 			throw new IllegalArgumentException("The metadataService argument must not be null.");
@@ -173,10 +171,11 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 				new BasicTextFieldSettingSpecifier("tariffMetadataPath", DEFAULT_TARIFF_METADATA_PATH));
 		result.add(new BasicToggleSettingSpecifier("firstMatchOnly",
 				SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY));
+		result.add(new BasicToggleSettingSpecifier("preserveRateCase", Boolean.FALSE));
 		result.add(new BasicTextFieldSettingSpecifier("scheduleCacheSeconds",
 				String.valueOf(DEFAULT_SCHEDULE_CACHE_SECONDS)));
 		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null, false,
-				"(objectClass=net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator)"));
+				"(objectClass=net.solarnetwork.domain.tariff.TemporalTariffEvaluator)"));
 		result.add(new BasicTextFieldSettingSpecifier("language", null));
 		return result;
 	}
@@ -187,22 +186,22 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		TariffSchedule schedule = schedule();
 		CachedResult<TariffSchedule> cached = this.schedule.get();
 		MessageSource messageSource = getMessageSource();
-		if ( schedule instanceof SimpleTemporalTariffSchedule ) {
-			List<TemporalRangesTariff> rules = ((SimpleTemporalTariffSchedule) schedule).getRules();
+
+		if ( schedule != null ) {
+			Collection<? extends Tariff> rules = schedule.rules();
 			if ( rules.isEmpty() ) {
 				buf.append("<p>").append(messageSource.getMessage("rules.empty", null, null))
 						.append("</p>");
 			} else {
 				final LocalDateTime now = LocalDateTime.now();
-				Map<Integer, TemporalRangesTariff> active = renderRulesTable(
-						(SimpleTemporalTariffSchedule) schedule, now, buf);
+				Map<Integer, Tariff> active = renderRulesTable(schedule, now, buf);
 				if ( !active.isEmpty() ) {
 					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
 					DateTimeFormatter dateFormat = DateTimeFormatter
 							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
 					buf.append("<p>").append(messageSource.getMessage("rates.active",
 							new Object[] { dateFormat.format(now) }, null)).append("</p><ol>");
-					for ( Map.Entry<Integer, TemporalRangesTariff> me : active.entrySet() ) {
+					for ( Map.Entry<Integer, Tariff> me : active.entrySet() ) {
 						buf.append("<li value=\"").append(me.getKey() + 1).append("\">");
 						int rateCount = 0;
 						for ( Rate rate : me.getValue().getRates().values() ) {
@@ -220,7 +219,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 					buf.append("</ol>");
 				}
 			}
-		} else if ( schedule == null ) {
+		} else {
 			buf.append("<p>").append(messageSource.getMessage("schedule.none", null, null))
 					.append("</p>");
 		}
@@ -234,11 +233,11 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		return buf.toString();
 	}
 
-	private Map<Integer, TemporalRangesTariff> renderRulesTable(SimpleTemporalTariffSchedule schedule,
-			LocalDateTime date, StringBuilder buf) {
-		final List<TemporalRangesTariff> tariffs = schedule.getRules();
-		final Map<Integer, TemporalRangesTariff> active = new TreeMap<>();
-		final TemporalRangesTariffEvaluator e = evaluator();
+	private Map<Integer, Tariff> renderRulesTable(TariffSchedule schedule, LocalDateTime date,
+			StringBuilder buf) {
+		final Collection<? extends Tariff> tariffs = schedule.rules();
+		final Map<Integer, Tariff> active = new TreeMap<>();
+		final TemporalTariffEvaluator e = evaluator();
 		final boolean firstOnly = isFirstMatchOnly();
 		final CompositeTariff ct = new CompositeTariff(tariffs);
 		final Map<String, Rate> rates = ct.getRates();
@@ -250,20 +249,20 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		buf.append("</tr></thead><tbody>");
 
 		int i = 0;
-		for ( TemporalRangesTariff tariff : tariffs ) {
-			if ( (active.isEmpty() || !firstOnly) && tariff.applies(e, date, null) ) {
+		for ( Tariff tariff : tariffs ) {
+			if ( !(tariff instanceof ChronoFieldsTariff) ) {
+				continue;
+			}
+			ChronoFieldsTariff t = (ChronoFieldsTariff) tariff;
+			if ( (active.isEmpty() || !firstOnly) && e.applies(tariff, date, null) ) {
 				active.put(i, tariff);
 			}
 			buf.append("<tr>");
 			buf.append("<th>").append(++i).append("</th>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, tariff))
-					.append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, tariff))
-					.append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, tariff))
-					.append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, tariff))
-					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, t)).append("</td>");
 			Map<String, Rate> tariffRates = tariff.getRates();
 			// iterate over global rates, to keep order consistent in case rows vary
 			for ( String id : rates.keySet() ) {
@@ -280,8 +279,8 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 		return active;
 	}
 
-	private String rangeDisplayString(ChronoField field, TemporalRangesTariff tariff) {
-		String r = formatRange(field, tariff.rangeForField(field), locale, SHORT);
+	private String rangeDisplayString(ChronoField field, ChronoFieldsTariff tariff) {
+		String r = tariff.formatChronoField(field, locale, SHORT);
 		return (r != null ? r : "*");
 	}
 
@@ -331,43 +330,11 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	private TariffSchedule parseSchedule(Object o) throws IOException {
-		List<TemporalRangesTariff> tariffs;
-		if ( o instanceof String ) {
-			// parse as CSV
-			tariffs = new CsvTemporalRangeTariffParser(locale)
-					.parseTariffs(new StringReader(o.toString()));
-		} else if ( o instanceof String[][] ) {
-			tariffs = new ArrayList<>();
-			String[][] data = (String[][]) o;
-			if ( data.length > 1 ) {
-				String[] headers = data[0];
-				if ( headers.length < 5 ) {
-					return null;
-				}
-				for ( int i = 1; i < data.length; i++ ) {
-					String[] row = data[i];
-					if ( row.length < 5 ) {
-						continue;
-					}
-					List<Tariff.Rate> rates = new ArrayList<>(row.length - 4);
-					for ( int j = 4; j < row.length; j++ ) {
-						rates.add(new SimpleTariffRate(headers[j], new BigDecimal(row[j])));
-					}
-					TemporalRangesTariff tariff = new TemporalRangesTariff(row[0], row[1], row[2],
-							row[3], rates, locale);
-					tariffs.add(tariff);
-				}
-			}
-		} else {
-			return null;
-		}
-		TemporalRangesTariffEvaluator e = evaluator();
-		SimpleTemporalTariffSchedule s = new SimpleTemporalTariffSchedule(tariffs, e);
-		s.setFirstMatchOnly(firstMatchOnly);
-		return s;
+		return TariffUtils.parseCsvTemporalRangeSchedule(locale, preserveRateCase, firstMatchOnly,
+				evaluator(), o);
 	}
 
-	private TemporalRangesTariffEvaluator evaluator() {
+	private TemporalTariffEvaluator evaluator() {
 		return service(evaluator, DEFAULT_EVALUATOR);
 	}
 
@@ -376,7 +343,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the path; defaults to {@link #DEFAULT_TARIFF_METADATA_PATH}
 	 */
-	public String getTariffMetadataPath() {
+	public final String getTariffMetadataPath() {
 		return tariffMetadataPath;
 	}
 
@@ -392,7 +359,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param tariffMetadataPath
 	 *        the path to set
 	 */
-	public void setTariffMetadataPath(String tariffMetadataPath) {
+	public final void setTariffMetadataPath(String tariffMetadataPath) {
 		this.tariffMetadataPath = tariffMetadataPath;
 	}
 
@@ -402,7 +369,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @return the maximum number of seconds to cache the resolved tariff
 	 *         schedule; defaults to {@link #DEFAULT_SCHEDULE_CACHE_SECONDS}
 	 */
-	public int getScheduleCacheSeconds() {
+	public final int getScheduleCacheSeconds() {
 		return scheduleCacheSeconds;
 	}
 
@@ -412,7 +379,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param scheduleCacheSeconds
 	 *        the seconds to set
 	 */
-	public void setScheduleCacheSeconds(int scheduleCacheSeconds) {
+	public final void setScheduleCacheSeconds(int scheduleCacheSeconds) {
 		this.scheduleCacheSeconds = scheduleCacheSeconds;
 	}
 
@@ -421,7 +388,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the locale
 	 */
-	public Locale getLocale() {
+	public final Locale getLocale() {
 		return locale;
 	}
 
@@ -431,7 +398,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param locale
 	 *        the locale to set
 	 */
-	public void setLocale(Locale locale) {
+	public final void setLocale(Locale locale) {
 		if ( locale == null ) {
 			locale = Locale.getDefault();
 		}
@@ -443,7 +410,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the language
 	 */
-	public String getLanguage() {
+	public final String getLanguage() {
 		return getLocale().toLanguageTag();
 	}
 
@@ -453,7 +420,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param lang
 	 *        the language tag to set
 	 */
-	public void setLanguage(String lang) {
+	public final void setLanguage(String lang) {
 		setLocale(lang != null ? Locale.forLanguageTag(lang) : null);
 	}
 
@@ -465,7 +432,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *         matches; defaults to
 	 *         {@link SimpleTemporalTariffSchedule#DEFAULT_FIRST_MATCH_ONLY}
 	 */
-	public boolean isFirstMatchOnly() {
+	public final boolean isFirstMatchOnly() {
 		return firstMatchOnly;
 	}
 
@@ -476,7 +443,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *        {@literal true} if only the first tariff rule that matches should
 	 *        be returned
 	 */
-	public void setFirstMatchOnly(boolean firstMatchOnly) {
+	public final void setFirstMatchOnly(boolean firstMatchOnly) {
 		this.firstMatchOnly = firstMatchOnly;
 	}
 
@@ -485,7 +452,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the service UID
 	 */
-	public String getMetadataServiceUid() {
+	public final String getMetadataServiceUid() {
 		return metadataService.getPropertyValue(UID_PROPERTY);
 	}
 
@@ -495,7 +462,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param uid
 	 *        the service UID
 	 */
-	public void setMetadataServiceUid(String uid) {
+	public final void setMetadataServiceUid(String uid) {
 		metadataService.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
@@ -504,7 +471,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the service UID
 	 */
-	public String getEvaluatorUid() {
+	public final String getEvaluatorUid() {
 		return evaluator.getPropertyValue(UID_PROPERTY);
 	}
 
@@ -514,8 +481,28 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	 * @param uid
 	 *        the service UID
 	 */
-	public void setEvaluatorUid(String uid) {
+	public final void setEvaluatorUid(String uid) {
 		evaluator.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
+	/**
+	 * Get the "preserve rate case" mode.
+	 *
+	 * @return {@literal true} to preserve the case of rate names
+	 * @since 1.2
+	 */
+	public final boolean isPreserveRateCase() {
+		return preserveRateCase;
+	}
+
+	/**
+	 * Set the "preserve rate case" mode.
+	 *
+	 * @param preserveRateCase
+	 *        {@literal true} to preserve the case of rate names
+	 * @since 1.4
+	 */
+	public final void setPreserveRateCase(boolean preserveRateCase) {
+		this.preserveRateCase = preserveRateCase;
+	}
 }

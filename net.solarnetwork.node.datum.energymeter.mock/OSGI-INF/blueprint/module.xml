@@ -90,6 +90,13 @@
 						<bean class="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource">
 							<property name="messageSource" ref="jobMessageSource"/>
 							<property name="placeholderService" ref="placeholderService"/>
+							<property name="metadataService">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+								</bean>
+							</property>
 						</bean>
 					</property>
 				</bean>

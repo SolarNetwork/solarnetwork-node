@@ -28,7 +28,7 @@ import net.solarnetwork.util.StringUtils;
  * A metric aggregate.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface MetricAggregate {
 
@@ -43,6 +43,20 @@ public interface MetricAggregate {
 
 	/** A metric type for an aggregate quantile sample. */
 	String METRIC_TYPE_QUANTILE = "q";
+
+	/**
+	 * A metric type for an aggregate count sample.
+	 *
+	 * @since 1.1
+	 */
+	String METRIC_TYPE_COUNT = "cnt";
+
+	/**
+	 * A metric type for an aggregate sum sample.
+	 *
+	 * @since 1.1
+	 */
+	String METRIC_TYPE_SUM = "sum";
 
 	/**
 	 * Get a unique type name.

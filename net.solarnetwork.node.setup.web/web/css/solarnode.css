@@ -312,6 +312,11 @@ div.plugin > div {
 	margin-left: 0;
 }
 
+.datum-activity-seenprops dl.datum-props dt,
+.datum-activity-seenprops dl.datum-props dd {
+	overflow-x: clip;
+}
+
 .datum-activity-seenprops dd {
 	margin-bottom: 0;
 }
@@ -459,6 +464,12 @@ button.close + button.copy {
 	--bs-btn-hover-color: inherit;
 	border-left-style: none;
 	border-color: var(--bs-border-color);
+}
+
+.form-button-secondary {
+	--bs-btn-hover-bg: inherit;
+	--bs-btn-hover-color: inherit;
+	border-color: var(--bs-border-color) !important;
 }
 
 .cmd {

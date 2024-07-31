@@ -66,7 +66,7 @@
 			<argument>
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator"/>
+					<property name="serviceClassName" value="net.solarnetwork.domain.tariff.TemporalTariffEvaluator"/>
 					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 				</bean>
 			</argument>
