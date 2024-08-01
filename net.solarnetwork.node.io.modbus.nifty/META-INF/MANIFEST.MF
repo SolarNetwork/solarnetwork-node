@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support (Nifty Modbus)
 Bundle-Description: SolarNode Modbus API implementation using the Nifty Modbus framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty
-Bundle-Version: 2.2.3
+Bundle-Version: 2.2.4
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -16,13 +16,13 @@ Import-Package:
  io.netty.channel.socket.nio;version="[4.1,5.0)",
  io.netty.util.concurrent;version="[4.1,5.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.io.modbus;version="[0.14,2.0)",
- net.solarnetwork.io.modbus.netty.handler;version="[0.14,2.0)",
- net.solarnetwork.io.modbus.netty.msg;version="[0.14,2.0)",
- net.solarnetwork.io.modbus.rtu;version="[0.14,2.0)",
- net.solarnetwork.io.modbus.serial;version="[0.14,2.0)",
- net.solarnetwork.io.modbus.tcp;version="[0.14,2.0)",
- net.solarnetwork.io.modbus.tcp.netty;version="[0.14,2.0)",
+ net.solarnetwork.io.modbus;version="[0.15,2.0)",
+ net.solarnetwork.io.modbus.netty.handler;version="[0.15,2.0)",
+ net.solarnetwork.io.modbus.netty.msg;version="[0.15,2.0)",
+ net.solarnetwork.io.modbus.rtu;version="[0.15,2.0)",
+ net.solarnetwork.io.modbus.serial;version="[0.15,2.0)",
+ net.solarnetwork.io.modbus.tcp;version="[0.15,2.0)",
+ net.solarnetwork.io.modbus.tcp.netty;version="[0.15,2.0)",
  net.solarnetwork.node.io.modbus;version="[4.2,5.0)",
  net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
  net.solarnetwork.node.service;version="[1.5,2.0)",

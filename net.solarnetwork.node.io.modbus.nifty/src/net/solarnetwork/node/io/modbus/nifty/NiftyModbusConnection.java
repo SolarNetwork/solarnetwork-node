@@ -167,9 +167,10 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			}
 
 			ModbusMessage res = controller.send(req);
+			res.validate();
 			if ( res.isException() ) {
 				throw new IOException(
-						String.format("Modbus exception %s reading %d coil values from %d @ %s",
+						String.format("Modbus exception %s reading %d discrete values from %d @ %s",
 								res.getError(), count, address, describer.get()));
 			}
 			BitsModbusMessage r = res.unwrap(BitsModbusMessage.class);
@@ -180,6 +181,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				return result;
 			}
 			return new BitSet();
+		} catch ( IOException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new IOException(String.format("Error reading %d discrete values from %d @ %s: %s",
 					count, address, describer.get(), e.toString()), e);
@@ -231,11 +234,14 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				BitsModbusMessage req = writeCoilsRequest(getUnitId(), addresses[i], 1,
 						bits.get(i) ? BigInteger.ONE : BigInteger.ZERO);
 				ModbusMessage res = controller.send(req);
+				res.validate();
 				if ( res.isException() ) {
 					throw new IOException(
 							String.format("Modbus exception %s writing %d coil value to %d @ %s",
 									res.getError(), 1, addresses[i], describer.get()));
 				}
+			} catch ( IOException e ) {
+				throw e;
 			} catch ( Exception e ) {
 				throw new IOException(String.format("Error writing %d coil values from %d @ %s: %s", 1,
 						addresses[i], describer.get(), e.toString()), e);
@@ -256,6 +262,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			}
 
 			ModbusMessage res = controller.send(req);
+			res.validate();
 			if ( res.isException() ) {
 				throw new IOException(String.format(
 						"Modbus exception %d reading %d discrete input values from %d @ %s",
@@ -269,6 +276,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				return result;
 			}
 			return new BitSet();
+		} catch ( IOException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new IOException(
 					String.format("Error reading %d discrete input values from %d @ %s: %s", count,
@@ -376,6 +385,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			}
 
 			ModbusMessage res = controller.send(req);
+			res.validate();
 			if ( res.isException() ) {
 				throw new IOException(
 						String.format("Modbus exception %s reading %d %s values from %d @ %s",
@@ -395,6 +405,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				return regs.dataDecode();
 			}
 			return null;
+		} catch ( IOException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new IOException(String.format("Error reading %d %s values from %d @ %s: %s", count,
 					function.blockType(), address, describer.get(), e.toString()), e);
@@ -450,6 +462,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			}
 
 			ModbusMessage res = controller.send(req);
+			res.validate();
 			if ( res.isException() ) {
 				throw new IOException(String.format(
 						"Modbus exception %d writing %d %s values to %d @ %s", res.getError(),
@@ -460,6 +473,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				log.trace("Wrote {} {} values to {} @ {}: {}", values.length, function.blockType(),
 						address, describer.get(), ByteUtils.encodeHexString(data, 0, data.length, true));
 			}
+		} catch ( IOException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new IOException(String.format("Error writing %d %s values from %d @ %s: %s",
 					values.length, function.blockType(), address, describer.get(), e.toString()), e);
@@ -588,6 +603,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			}
 
 			ModbusMessage res = controller.send(req);
+			res.validate();
 			if ( res.isException() ) {
 				throw new IOException(
 						String.format("Modbus exception %s reading %d %s values from %d @ %s",
@@ -598,6 +614,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				return r.dataCopy();
 			}
 			return null;
+		} catch ( IOException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new IOException(String.format("Error reading %d %s values from %d @ %s: %s", count,
 					function.blockType(), address, describer.get(), e.toString()), e);
