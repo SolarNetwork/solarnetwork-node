@@ -166,8 +166,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				publishCliCommand(req);
 			}
 
-			ModbusMessage res = controller.send(req);
-			res.validate();
+			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(
 						String.format("Modbus exception %s reading %d discrete values from %d @ %s",
@@ -233,8 +232,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			try {
 				BitsModbusMessage req = writeCoilsRequest(getUnitId(), addresses[i], 1,
 						bits.get(i) ? BigInteger.ONE : BigInteger.ZERO);
-				ModbusMessage res = controller.send(req);
-				res.validate();
+				ModbusMessage res = controller.send(req).validate();
 				if ( res.isException() ) {
 					throw new IOException(
 							String.format("Modbus exception %s writing %d coil value to %d @ %s",
@@ -261,8 +259,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				publishCliCommand(req);
 			}
 
-			ModbusMessage res = controller.send(req);
-			res.validate();
+			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(String.format(
 						"Modbus exception %d reading %d discrete input values from %d @ %s",
@@ -384,8 +381,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				publishCliCommand(req);
 			}
 
-			ModbusMessage res = controller.send(req);
-			res.validate();
+			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(
 						String.format("Modbus exception %s reading %d %s values from %d @ %s",
@@ -461,8 +457,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 							"Function " + function + " is not supported");
 			}
 
-			ModbusMessage res = controller.send(req);
-			res.validate();
+			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(String.format(
 						"Modbus exception %d writing %d %s values to %d @ %s", res.getError(),
@@ -602,8 +597,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				publishCliCommand(req);
 			}
 
-			ModbusMessage res = controller.send(req);
-			res.validate();
+			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(
 						String.format("Modbus exception %s reading %d %s values from %d @ %s",
