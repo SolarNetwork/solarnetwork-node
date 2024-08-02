@@ -52,6 +52,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="settingsService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingsService"/>
@@ -669,7 +675,7 @@
 	</service>
 
 	<!-- 
-		Datum Expression Service
+		DatumExpression Service
 	 -->
 	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
 		<service-properties>
@@ -690,6 +696,23 @@
 			</property>
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
+		</bean>
+	</service>
+	
+	<!-- 
+		Simple ExecuteInstructions Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>ExecuteInstructions</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleExecuteInstructionsService">
+			<argument ref="objectMapper"/>
+			<argument ref="instructionExecutionService"/>
 		</bean>
 	</service>
 	

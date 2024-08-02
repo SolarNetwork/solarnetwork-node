@@ -1,0 +1,6 @@
+[
+	{"topic":"SetControlParameter","params":{"/foo/bar":"1"}},
+	{"topic":"SetControlParameter","parameters":[
+		{"name":"/bim/bam", "value":"2"}
+	]}
+]
