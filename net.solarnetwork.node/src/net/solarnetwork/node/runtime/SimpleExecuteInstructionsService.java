@@ -181,8 +181,8 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 							+ e.getMessage(),
 					"EIS.0002"));
 		}
-		final int instructionCount = instructions.length;
-		if ( instructions == null || instructionCount < 1 ) {
+		final int instructionCount = (instructions != null ? instructions.length : 0);
+		if ( instructionCount < 1 ) {
 			return createStatus(instruction, InstructionState.Declined, createErrorResultParameters(
 					"No instructions given on instructions parameter.", "EIS.0003"));
 		}
