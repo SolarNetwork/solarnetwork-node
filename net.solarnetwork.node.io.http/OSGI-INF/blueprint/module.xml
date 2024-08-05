@@ -76,7 +76,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.s10k.http.customizer.chain"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService" 
+		<bean class="net.solarnetwork.node.io.http.req.ChainHttpRequestCustomizerService" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="httpReqCustomizers"/>
 			<property name="messageSource" ref="httpReqCustChainMessageSource"/>
@@ -96,7 +96,7 @@
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="HTTP Request Customizer Chain"/>
+			<property name="displayName" value="HTTP Request Customizer: Basic Credentials"/>
 			<property name="factoryUid" value="net.s10k.http.customizer.auth.basic"/>
 			<property name="messageSource" ref="httpReqCustBasicAuthMessageSource"/>
 		</bean>
@@ -114,6 +114,41 @@
 		<bean class="net.solarnetwork.node.io.http.req.BasicAuthHttpRequestCustomizerService" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<property name="messageSource" ref="httpReqCustBasicAuthMessageSource"/>
+			<property name="placeholderService" ref="placeholderService"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+	<!--  HTTP Request Customizer: SNWS2 Authorization -->
+
+	<bean id="httpReqCustSnws2AuthMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.http.req.Snws2AuthHttpRequestCustomizerService</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="HTTP Request Customizer: SolarNetwork Token Credentials"/>
+			<property name="factoryUid" value="net.s10k.http.customizer.auth.snws2"/>
+			<property name="messageSource" ref="httpReqCustSnws2AuthMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.s10k.http.customizer.auth.snws2" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.web.service.HttpRequestCustomizerService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.s10k.http.customizer.auth.snws2"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.http.req.Snws2AuthHttpRequestCustomizerService" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<property name="messageSource" ref="httpReqCustSnws2AuthMessageSource"/>
 			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
