@@ -19,6 +19,7 @@
 			<array>
 				<value>net.solarnetwork.node.datum.filter.tariff.TariffDatumFilterService</value>
 				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
+				<value>net.solarnetwork.node.service.support.TariffScheduleUtils</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
@@ -45,6 +46,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.service.TariffScheduleProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.filter.tariff"/>

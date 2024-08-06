@@ -37,6 +37,7 @@
 			<array>
 				<value>net.solarnetwork.node.datum.tou.TouDatumDataSource</value>
 				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.service.support.TariffScheduleUtils</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
@@ -111,6 +112,7 @@
 							<property name="interfaces">
 								<list>
 									<value>net.solarnetwork.node.service.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.TariffScheduleProvider</value>
 								</list>
 							</property>
 							<property name="properties">
