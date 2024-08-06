@@ -28,11 +28,17 @@ import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -41,25 +47,31 @@ import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.domain.tariff.SimpleTariffRate;
+import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
+import net.solarnetwork.domain.tariff.TemporalRangeSetsTariff;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.TariffScheduleProvider;
 import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link ExpressionRoot} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ExpressionRootTests {
 
 	private DatumService datumService;
 	private OperationalModesService opModesService;
 	private MetadataService metadataService;
+	private TariffScheduleProvider tariffScheduleProvider;
 	private ExpressionService expressionService = new SpelExpressionService();
 
 	@Before
@@ -67,23 +79,25 @@ public class ExpressionRootTests {
 		datumService = EasyMock.createMock(DatumService.class);
 		opModesService = EasyMock.createMock(OperationalModesService.class);
 		metadataService = EasyMock.createMock(MetadataService.class);
+		tariffScheduleProvider = EasyMock.createMock(TariffScheduleProvider.class);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumService, opModesService, metadataService);
+		EasyMock.verify(datumService, opModesService, metadataService, tariffScheduleProvider);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumService, opModesService, metadataService);
+		EasyMock.replay(datumService, opModesService, metadataService, tariffScheduleProvider);
 	}
 
 	private ExpressionRoot createTestRoot() {
-		return createTestRoot(datumService, opModesService, metadataService);
+		return createTestRoot(datumService, opModesService, metadataService, tariffScheduleProvider);
 	}
 
 	private static ExpressionRoot createTestRoot(DatumService datumService,
-			OperationalModesService opModesService, MetadataService metadataService) {
+			OperationalModesService opModesService, MetadataService metadataService,
+			TariffScheduleProvider tariffScheduleProvider) {
 		SimpleDatum d = SimpleDatum.nodeDatum("foo");
 		d.putSampleValue(Instantaneous, "a", 3);
 		d.putSampleValue(Instantaneous, "b", 5);
@@ -102,7 +116,10 @@ public class ExpressionRootTests {
 		p.put("f", 35);
 		p.put("g", 35);
 
-		return new ExpressionRoot(d, s, p, datumService, opModesService, metadataService);
+		ExpressionRoot r = new ExpressionRoot(d, s, p, datumService, opModesService, metadataService);
+		r.setTariffScheduleProviders(
+				new StaticOptionalServiceCollection<>(Collections.singleton(tariffScheduleProvider)));
+		return r;
 	}
 
 	@Test
@@ -219,7 +236,7 @@ public class ExpressionRootTests {
 
 		// WHEN
 		replayAll();
-		ExpressionRoot root = createTestRoot(datumService, null, null);
+		ExpressionRoot root = createTestRoot(datumService, null, null, null);
 		Boolean result = expressionService.evaluateExpression("isOpMode('foo')", null, root, null,
 				Boolean.class);
 
@@ -317,6 +334,87 @@ public class ExpressionRootTests {
 		assertThat("Metadata property info number accessor", result3, is(3000));
 		assertThat("Metadata property info string accessor", result4, is("Thingy"));
 		assertThat("Metadata property info string direct traversal", result5, is("1.23.4"));
+	}
+
+	@Test
+	public void sort_strings() {
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+
+		Collection<?> result = expressionService.evaluateExpression("sort({'b','a','c'})", null, root,
+				null, Collection.class);
+
+		// THEN
+		assertThat("Sorted collection returned", result, contains("a", "b", "c"));
+	}
+
+	@Test
+	public void sort_datumByProperty() {
+		// GIVEN
+		ExpressionRoot root = createTestRoot();
+
+		SimpleDatum d1 = SimpleDatum.nodeDatum("foo/1");
+		d1.putSampleValue(Instantaneous, "aa", 100);
+		d1.putSampleValue(Accumulating, "bb", 200);
+
+		SimpleDatum d2 = SimpleDatum.nodeDatum("foo/2");
+		d2.putSampleValue(Instantaneous, "aa", 110);
+		d2.putSampleValue(Accumulating, "bb", 220);
+
+		SimpleDatum d3 = SimpleDatum.nodeDatum("foo/3");
+		d3.putSampleValue(Instantaneous, "aa", 111);
+		d3.putSampleValue(Accumulating, "bb", 222);
+
+		List<NodeDatum> matches = Arrays.asList(new NodeDatum[] { d1, d2, d3 });
+		expect(datumService.offset(singleton("foo/*"), root.getTimestamp(), 0, NodeDatum.class))
+				.andReturn(matches).anyTimes();
+
+		// WHEN
+		replayAll();
+
+		Collection<?> result = expressionService.evaluateExpression(
+				"sort(latestMatching('foo/*'), true, 'aa').![aa]", null, root, null, Collection.class);
+
+		// THEN
+		assertThat("Sorted collection of extracted 'aa' prop values returned", result,
+				contains(d3.getSampleInteger(Instantaneous, "aa"),
+						d2.getSampleInteger(Instantaneous, "aa"),
+						d1.getSampleInteger(Instantaneous, "aa")));
+	}
+
+	@Test
+	public void resolveTariffRate() {
+		// GIVEN
+		final TemporalRangeSetsTariff t1 = new TemporalRangeSetsTariff("Jan-Jun", null, null, null,
+				Collections.singletonList(
+						new SimpleTariffRate("price", "Price", new BigDecimal("1.23"))),
+				Locale.US);
+		final TemporalRangeSetsTariff t2 = new TemporalRangeSetsTariff("Jul-Dec", null, null, null,
+				Collections.singletonList(
+						new SimpleTariffRate("price", "Price", new BigDecimal("12.34"))),
+				Locale.US);
+		final SimpleTemporalTariffSchedule schedule = new SimpleTemporalTariffSchedule(
+				Arrays.asList(t1, t2));
+
+		final String scheduleId = "my-schedule";
+		expect(tariffScheduleProvider.getUid()).andReturn(scheduleId).anyTimes();
+		expect(tariffScheduleProvider.tariffSchedule()).andReturn(schedule).anyTimes();
+
+		final ExpressionRoot root = createTestRoot();
+
+		// WHEN
+		replayAll();
+
+		LocalDateTime now = LocalDateTime.now();
+		BigDecimal price = expressionService.evaluateExpression(
+				"tariffSchedule('my-schedule')?.resolveTariff(datePlus(now(), 1, 'months'), null)?.rates['price']?.amount",
+				null, root, null, BigDecimal.class);
+
+		// THEN
+		BigDecimal expectedPrice = schedule.resolveTariff(now.plusMonths(1), null).getRates()
+				.get("price").getAmount();
+		assertThat("Tariff rate resolved", price, is(equalTo(expectedPrice)));
 	}
 
 }

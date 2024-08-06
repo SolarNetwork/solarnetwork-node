@@ -44,9 +44,11 @@ import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.TariffScheduleProvider;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
@@ -58,7 +60,7 @@ import net.solarnetwork.util.ArrayUtils;
  * extend.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -93,6 +95,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private OptionalFilterableService<DatumFilterService> datumFilterService;
 	private ExpressionConfig[] expressionConfigs;
 	private boolean publishDeviceInfoMetadata = DEFAULT_PUBLISH_DEVICE_INFO_METADATA;
+	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
 
 	private ScheduledFuture<?> subSampleFuture;
 
@@ -351,9 +354,10 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 */
 	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs) {
-		populateExpressionDatumProperties(d, expressionConfs,
-				new ExpressionRoot(d, null, null, service(datumService), null,
-						service(getMetadataService()), service(getLocationService())));
+		ExpressionRoot root = new ExpressionRoot(d, null, null, service(datumService), null,
+				service(getMetadataService()), service(getLocationService()));
+		root.setTariffScheduleProviders(tariffScheduleProviders);
+		populateExpressionDatumProperties(d, expressionConfs, root);
 	}
 
 	/**
@@ -600,6 +604,28 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 */
 	public void setDatumService(OptionalService<DatumService> datumService) {
 		this.datumService = datumService;
+	}
+
+	/**
+	 * Get the tariff schedule providers.
+	 *
+	 * @return the providers
+	 * @since 1.3
+	 */
+	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+		return tariffScheduleProviders;
+	}
+
+	/**
+	 * Set the tariff schedule providers.
+	 *
+	 * @param tariffScheduleProviders
+	 *        the providers to set
+	 * @since 1.3
+	 */
+	public final void setTariffScheduleProviders(
+			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
 
 }

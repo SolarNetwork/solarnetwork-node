@@ -46,6 +46,9 @@ import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.TariffScheduleProvider;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.util.CollectionUtils;
 
 /**
  * An object to use as the "root" for
@@ -64,10 +67,11 @@ import net.solarnetwork.node.service.OperationalModesService;
  * </p>
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  * @since 1.79
  */
-public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumMetadataOperations {
+public class ExpressionRoot extends DatumSamplesExpressionRoot
+		implements DatumMetadataOperations, TariffScheduleProvidersOperations {
 
 	private static final Logger log = LoggerFactory.getLogger(ExpressionRoot.class);
 
@@ -75,6 +79,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	private final OperationalModesService opModesService;
 	private final MetadataService metadataService;
 	private final LocationService locationService;
+	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
 
 	/**
 	 * Constructor.
@@ -200,6 +205,41 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		this.locationService = locationService;
 	}
 
+	/**
+	 * Create a copy with a given datum value.
+	 *
+	 * <p>
+	 * The samples and parameters values will be set to {@literal null}.
+	 * </p>
+	 *
+	 * @param datum
+	 *        the datum
+	 * @since 2.5
+	 */
+	public ExpressionRoot copyWith(Datum datum) {
+		return copyWith(datum, null, null);
+	}
+
+	/**
+	 * Create a copy with a given datum, samples, and parameters values.
+	 *
+	 * @param datum
+	 *        the datum
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 * @return the new instance
+	 * @since 2.5
+	 */
+	public ExpressionRoot copyWith(Datum datum, DatumSamplesOperations samples,
+			Map<String, ?> parameters) {
+		ExpressionRoot r = new ExpressionRoot(datum, samples, parameters, datumService, opModesService,
+				metadataService, locationService);
+		r.setTariffScheduleProviders(tariffScheduleProviders);
+		return r;
+	}
+
 	@Override
 	public String toString() {
 		String data = super.toString();
@@ -320,8 +360,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		for ( Datum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
-					locationService));
+			result.add(copyWith(d));
 		}
 		return result;
 	}
@@ -373,8 +412,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
 				continue;
 			}
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
-					locationService));
+			result.add(copyWith(d));
 		}
 		return result;
 	}
@@ -409,8 +447,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
 				continue;
 			} else {
-				result.add(new ExpressionRoot(d, null, null, datumService, opModesService,
-						metadataService, locationService));
+				result.add(copyWith(d));
 			}
 		}
 		return result;
@@ -553,8 +590,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
-				locationService);
+		return copyWith(d);
 	}
 
 	/**
@@ -616,8 +652,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
-				locationService);
+		return copyWith(d);
 	}
 
 	/**
@@ -651,8 +686,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		result.add(this);
 		for ( NodeDatum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
-					locationService));
+			result.add(copyWith(d));
 		}
 		return result;
 	}
@@ -691,8 +725,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		result.add(this);
 		for ( NodeDatum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService,
-					locationService));
+			result.add(copyWith(d));
 		}
 		return result;
 	}
@@ -863,6 +896,77 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	public DatumMetadataOperations locMeta(Long locationId, String sourceId) {
 		GeneralLocationSourceMetadata m = locationSourceMetadata(locationId, sourceId);
 		return (m != null ? m.getMeta() : null);
+	}
+
+	/**
+	 * Sort a collection.
+	 *
+	 * <p>
+	 * If the collection fails to sort in any way, the {@code collection} value
+	 * will be returned as-is.
+	 * </p>
+	 *
+	 * @param <T>
+	 *        the collection type
+	 * @param collection
+	 *        the collection
+	 * @param reverse
+	 *        {@literal true} to sort in reverse ordering
+	 * @param propNames
+	 *        an optional list of element property names to sort by; if not
+	 *        provided then the elements themselves will be compared
+	 * @return the sorted list
+	 * @since 2.5
+	 */
+	public <T> Collection<T> sort(Collection<T> collection, String... propNames) {
+		return CollectionUtils.sort(collection, propNames);
+	}
+
+	/**
+	 * Sort a collection.
+	 *
+	 * <p>
+	 * If the collection fails to sort in any way, the {@code collection} value
+	 * will be returned as-is.
+	 * </p>
+	 *
+	 * @param <T>
+	 *        the collection type
+	 * @param collection
+	 *        the collection
+	 * @param reverse
+	 *        {@literal true} to sort in reverse ordering
+	 * @param propNames
+	 *        an optional list of element property names to sort by; if not
+	 *        provided then the elements themselves will be compared
+	 * @return the sorted list
+	 * @since 2.5
+	 */
+	public <T> Collection<T> sort(Collection<T> collection, boolean reverse, String... propNames) {
+		return CollectionUtils.sort(collection, reverse, propNames);
+	}
+
+	/**
+	 * Get the tariff schedule providers.
+	 *
+	 * @return the providers
+	 * @since 2.5
+	 */
+	@Override
+	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+		return tariffScheduleProviders;
+	}
+
+	/**
+	 * Set the tariff schedule providers.
+	 *
+	 * @param tariffScheduleProviders
+	 *        the providers to set
+	 * @since 2.5
+	 */
+	public final void setTariffScheduleProviders(
+			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
 
 }

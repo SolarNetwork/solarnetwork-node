@@ -689,13 +689,19 @@
 			<argument ref="datumService"/>
 			<argument ref="opModesService"/>
 			<property name="expressionServices">
-					<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-						<argument ref="bundleContext"/>
-						<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
-					</bean>			
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+				</bean>			
 			</property>
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
+			<property name="tariffScheduleProviders">
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
+				</bean>			
+			</property>
 		</bean>
 	</service>
 	
