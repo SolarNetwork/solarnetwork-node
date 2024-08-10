@@ -37,6 +37,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.SortDescriptor;
@@ -56,7 +58,7 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link MetricDao}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 		implements MetricDao, SettingSpecifierProvider {
@@ -200,9 +202,33 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 	}
 
 	@Override
+	protected void willDeleteBatchRowEntity(BatchOptions options, ResultSet queryResult, int intValue,
+			Metric entity) throws SQLException {
+		super.willDeleteBatchRowEntity(options, queryResult, intValue, entity);
+		if ( TransactionSynchronizationManager.isSynchronizationActive() ) {
+			TransactionSynchronization txSynchronization = new TransactionSynchronization() {
+
+				@Override
+				public void afterCommit() {
+					stats.increment(MetricDaoStat.MetricsDeleted);
+					postEntityEvent(entity.getId(), entity, EntityEventType.DELETED);
+				}
+
+			};
+			TransactionSynchronizationManager.registerSynchronization(txSynchronization);
+		} else {
+			stats.increment(MetricDaoStat.MetricsDeleted);
+		}
+	}
+
+	@Override
 	public int deleteFiltered(MetricFilter filter) {
 		DeleteMetrics sql = new DeleteMetrics(filter);
-		return getJdbcTemplate().update(sql);
+		int result = getJdbcTemplate().update(sql);
+		if ( result > 0 ) {
+			stats.increment(MetricDaoStat.MetricsDeleted, result);
+		}
+		return result;
 	}
 
 	@Override

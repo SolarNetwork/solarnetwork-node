@@ -62,6 +62,7 @@ import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.metrics.dao.BasicMetricFilter;
 import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.metrics.dao.jdbc.JdbcMetricDao;
+import net.solarnetwork.node.metrics.dao.jdbc.MetricDaoStat;
 import net.solarnetwork.node.metrics.domain.BasicMetricAggregate;
 import net.solarnetwork.node.metrics.domain.Metric;
 import net.solarnetwork.node.metrics.domain.MetricAggregate;
@@ -392,8 +393,9 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 		int result = dao.deleteFiltered(filter);
 
 		// THEN
+		final int expectedDeleteCount = 6;
 		assertThat("Expected row count before delete", rowsBefore, hasSize(rowCount * types.length));
-		assertThat("Result matches expected delete count", result, is(equalTo(6)));
+		assertThat("Result matches expected delete count", result, is(equalTo(expectedDeleteCount)));
 
 		final List<Map<String, Object>> rowsAfter = allTableData(log, jdbcOps, "SOLARNODE.MTR_METRIC",
 				"ts, mtype, mname");
@@ -402,6 +404,9 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 			Instant ts = ((OffsetDateTime) row.get("ts")).toInstant();
 			return ("t1".equals(row.get("type")) && ts.isBefore(filter.getEndDate()));
 		}), is(equalTo(true)));
+
+		assertThat(dao.getStats().get(MetricDaoStat.MetricsDeleted),
+				is(equalTo((long) expectedDeleteCount)));
 	}
 
 	@Test
