@@ -28,15 +28,20 @@ import static org.easymock.EasyMock.isNull;
 import static org.easymock.EasyMock.same;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -52,6 +57,8 @@ import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.mock.http.client.MockClientHttpResponse;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.datum.Aggregation;
+import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
+import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.io.UrlUtils;
 import net.solarnetwork.node.datum.tou.SolarQueryTariffScheduleProvider;
@@ -60,6 +67,7 @@ import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.util.DateUtils;
+import net.solarnetwork.util.IntRange;
 import net.solarnetwork.web.service.HttpRequestCustomizerService;
 
 /**
@@ -165,7 +173,22 @@ public class SolarQueryTariffScheduleProviderTests {
 				req.getHeaders().getFirst(HttpHeaders.ACCEPT_ENCODING), is(equalTo("gzip")));
 
 		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
-
+		Collection<? extends Tariff> rules = result.rules();
+		assertThat("Schedule has one rule per datum result (day of week)", rules, hasSize(7));
+		int dow = 0;
+		for ( Tariff tariff : rules ) {
+			dow++;
+			assertThat("Tariff is a ChronoFieldsTariff", tariff, instanceOf(ChronoFieldsTariff.class));
+			ChronoFieldsTariff cft = (ChronoFieldsTariff) tariff;
+			assertThat("No month range for DOW query",
+					cft.rangeForChronoField(ChronoField.MONTH_OF_YEAR), is(nullValue()));
+			assertThat("No day range for DOW query", cft.rangeForChronoField(ChronoField.DAY_OF_MONTH),
+					is(nullValue()));
+			assertThat("Singleton weekday range for DOW query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(IntRange.rangeOf(dow)));
+			assertThat("No minute range for DOW query",
+					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY), is(nullValue()));
+		}
 	}
 
 }
