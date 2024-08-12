@@ -188,7 +188,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 	 *         if any SQL error occurs
 	 * @since 1.1
 	 */
-	protected void willDeleteBatchRowEntity(BatchOptions options, ResultSet queryResult, int intValue,
+	protected void willDeleteBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
 			T entity) throws SQLException {
 		// extending classes can override
 	}
