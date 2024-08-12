@@ -214,6 +214,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param datum
 	 *        the datum
+	 * @return a new instance using {@code datum}
 	 * @since 2.5
 	 */
 	public ExpressionRoot copyWith(Datum datum) {
@@ -229,7 +230,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the samples
 	 * @param parameters
 	 *        the parameters
-	 * @return the new instance
+	 * @return the new instance using {@code datum}, {@code samples}, and
+	 *         {@code parameters}
 	 * @since 2.5
 	 */
 	public ExpressionRoot copyWith(Datum datum, DatumSamplesOperations samples,
@@ -910,8 +912,6 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the collection type
 	 * @param collection
 	 *        the collection
-	 * @param reverse
-	 *        {@literal true} to sort in reverse ordering
 	 * @param propNames
 	 *        an optional list of element property names to sort by; if not
 	 *        provided then the elements themselves will be compared
