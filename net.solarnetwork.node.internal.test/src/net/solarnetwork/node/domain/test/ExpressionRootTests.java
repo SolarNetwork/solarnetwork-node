@@ -32,7 +32,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.Temporal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -415,6 +417,52 @@ public class ExpressionRootTests {
 		BigDecimal expectedPrice = schedule.resolveTariff(now.plusMonths(1), null).getRates()
 				.get("price").getAmount();
 		assertThat("Tariff rate resolved", price, is(equalTo(expectedPrice)));
+	}
+
+	@Test
+	public void resolveDate_startOfHour() {
+		// GIVEN
+		final ExpressionRoot root = createTestRoot();
+
+		// WHEN
+		replayAll();
+		Temporal result = expressionService.evaluateExpression(
+				"dateTruncate(date(2024,8,13,12,30), \"hours\")", null, root, null, Temporal.class);
+
+		// THEN
+		assertThat("Result is LocalDateTime for start of hour", result,
+				is(equalTo(LocalDateTime.of(2024, 8, 13, 12, 0))));
+	}
+
+	@Test
+	public void resolveDate_startOfMonth() {
+		// GIVEN
+		final ExpressionRoot root = createTestRoot();
+
+		// WHEN
+		replayAll();
+		Temporal result = expressionService.evaluateExpression(
+				"dateTruncate(date(2024,8,13), \"months\")", null, root, null, Temporal.class);
+
+		// THEN
+		assertThat("Result is LocalDate for 1st of month", result,
+				is(equalTo(LocalDate.of(2024, 8, 1))));
+	}
+
+	@Test
+	public void resolveDate_startOfNextWeek() {
+		// GIVEN
+		final ExpressionRoot root = createTestRoot();
+
+		// WHEN
+		replayAll();
+		Temporal result = expressionService.evaluateExpression(
+				"datePlus(dateTruncate(date(2024,8,13), \"weeks\"), 1, \"weeks\")", null, root, null,
+				Temporal.class);
+
+		// THEN
+		assertThat("Result is LocalDate for following Monday", result,
+				is(equalTo(LocalDate.of(2024, 8, 19))));
 	}
 
 }
