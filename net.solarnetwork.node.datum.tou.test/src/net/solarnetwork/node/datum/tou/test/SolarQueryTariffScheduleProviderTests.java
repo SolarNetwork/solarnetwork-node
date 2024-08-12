@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.tou.test;
 
+import static net.solarnetwork.util.IntRange.rangeOf;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isNull;
@@ -36,10 +37,17 @@ import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
+import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +75,7 @@ import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.util.DateUtils;
-import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.web.service.HttpRequestCustomizerService;
 
 /**
@@ -143,7 +151,7 @@ public class SolarQueryTariffScheduleProviderTests {
 		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
 		queryUrl.append("?nodeId=").append(nodeId);
 		queryUrl.append("&sourceId=").append(sourceId);
-		queryUrl.append("&aggregation=").append(Aggregation.DayOfWeek.name());
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
 		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
 				DateUtils.ISO_DATE_OPT_TIME.format(startDate));
 		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
@@ -185,9 +193,469 @@ public class SolarQueryTariffScheduleProviderTests {
 			assertThat("No day range for DOW query", cft.rangeForChronoField(ChronoField.DAY_OF_MONTH),
 					is(nullValue()));
 			assertThat("Singleton weekday range for DOW query",
-					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(IntRange.rangeOf(dow)));
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(new IntRangeSet(rangeOf(dow))));
 			assertThat("No minute range for DOW query",
 					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY), is(nullValue()));
+		}
+	}
+
+	@Test
+	public void relativeDateRange_truncateDay() throws IOException {
+		// GIVEN
+
+		// configure stream settings
+		final Long nodeId = 123L;
+		final String sourceId = "test";
+		final Set<String> datumProps = new HashSet<>(Arrays.asList("consCurr", "prodTotal"));
+
+		service.setAggregation(Aggregation.DayOfWeek);
+		service.setSourceId(sourceId);
+		service.setStartDateOffset(Period.ofYears(-1));
+		service.setStartDateOffsetTruncateUnit(ChronoUnit.DAYS);
+		service.setEndDateOffset(Duration.ZERO);
+		service.setEndDateOffsetTruncateUnit(ChronoUnit.DAYS);
+		service.setDatumStreamPropertyNames(datumProps);
+
+		// discover SolarQuery URL
+		final String solarQueryBaseUrl = "http://localhost/solarquery";
+		NodeAppConfiguration appConfig = new NodeAppConfiguration(
+				Collections.singletonMap("solarquery", solarQueryBaseUrl));
+		expect(setupService.getAppConfiguration()).andReturn(appConfig);
+
+		// discover node ID
+		expect(identityService.getNodeId()).andReturn(nodeId);
+
+		// resolved date range is 1 year to start of today
+		final LocalDateTime expectedStartDate = LocalDateTime.now(clock)
+				.plus(service.getStartDateOffset())
+				.truncatedTo(service.getStartDateOffsetTruncateUnit());
+		final LocalDateTime expectedEndDate = LocalDateTime.now(clock).plus(service.getEndDateOffset())
+				.truncatedTo(service.getEndDateOffsetTruncateUnit());
+		final StringBuilder queryUrl = new StringBuilder(solarQueryBaseUrl);
+		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
+		queryUrl.append("?nodeId=").append(nodeId);
+		queryUrl.append("&sourceId=").append(sourceId);
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
+		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(expectedStartDate));
+		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(expectedEndDate));
+
+		final URI queryUri = URI.create(queryUrl.toString());
+
+		final MockClientHttpRequest req = new MockClientHttpRequest(HttpMethod.GET, queryUri);
+		final MockClientHttpResponse res = new MockClientHttpResponse(
+				getClass().getResourceAsStream("test-datum-stream-dow-01.json"), HttpStatus.OK);
+		req.setResponse(res);
+
+		// create request
+		expect(httpRequestFactory.createRequest(queryUri, HttpMethod.GET)).andReturn(req);
+
+		// invoke customizer
+		expect(httpRequestCustomizer.customize(same(req), isNull(), anyObject())).andReturn(req);
+
+		// WHEN
+		replayAll();
+		TariffSchedule result = service.tariffSchedule();
+
+		// THEN
+		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
+	}
+
+	@Test
+	public void doy() throws IOException {
+		// GIVEN
+
+		// configure stream settings
+		final Long nodeId = 123L;
+		final String sourceId = "test";
+		final LocalDateTime startDate = LocalDateTime.of(2020, 1, 1, 0, 0);
+		final LocalDateTime endDate = LocalDateTime.of(2024, 1, 1, 0, 0);
+		final Set<String> datumProps = new HashSet<>(Arrays.asList("wattHours"));
+
+		service.setNodeId(nodeId);
+		service.setAggregation(Aggregation.DayOfYear);
+		service.setSourceId(sourceId);
+		service.setStartDate(startDate);
+		service.setEndDate(endDate);
+		service.setDatumStreamPropertyNames(datumProps);
+
+		// discover SolarQuery URL
+		final String solarQueryBaseUrl = "http://localhost/solarquery";
+		NodeAppConfiguration appConfig = new NodeAppConfiguration(
+				Collections.singletonMap("solarquery", solarQueryBaseUrl));
+		expect(setupService.getAppConfiguration()).andReturn(appConfig);
+
+		final StringBuilder queryUrl = new StringBuilder(solarQueryBaseUrl);
+		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
+		queryUrl.append("?nodeId=").append(nodeId);
+		queryUrl.append("&sourceId=").append(sourceId);
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
+		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(startDate));
+		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(endDate));
+
+		final URI queryUri = URI.create(queryUrl.toString());
+
+		final MockClientHttpRequest req = new MockClientHttpRequest(HttpMethod.GET, queryUri);
+		final MockClientHttpResponse res = new MockClientHttpResponse(
+				getClass().getResourceAsStream("test-datum-stream-doy-01.json"), HttpStatus.OK);
+		req.setResponse(res);
+
+		// create request
+		expect(httpRequestFactory.createRequest(queryUri, HttpMethod.GET)).andReturn(req);
+
+		// invoke customizer
+		expect(httpRequestCustomizer.customize(same(req), isNull(), anyObject())).andReturn(req);
+
+		// WHEN
+		replayAll();
+		TariffSchedule result = service.tariffSchedule();
+
+		// THEN
+		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
+		Collection<? extends Tariff> rules = result.rules();
+		assertThat("Schedule has one rule per datum result (day of year, leap day included)", rules,
+				hasSize(366));
+
+		LocalDate day = LocalDate.of(1996, 1, 1);
+		for ( Tariff tariff : rules ) {
+			assertThat("Tariff is a ChronoFieldsTariff", tariff, instanceOf(ChronoFieldsTariff.class));
+			ChronoFieldsTariff cft = (ChronoFieldsTariff) tariff;
+			assertThat("Month range is singleton for DOY query",
+					cft.rangeForChronoField(ChronoField.MONTH_OF_YEAR),
+					is(new IntRangeSet(rangeOf(day.getMonthValue()))));
+			assertThat("Day range is singleton DOY query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_MONTH),
+					is(new IntRangeSet(rangeOf(day.getDayOfMonth()))));
+			assertThat("No weekday range for DOY query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(nullValue()));
+			assertThat("No minute range for DOY query",
+					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY), is(nullValue()));
+			day = day.plusDays(1);
+		}
+	}
+
+	@Test
+	public void hoy() throws IOException {
+		// GIVEN
+
+		// configure stream settings
+		final Long nodeId = 123L;
+		final String sourceId = "test";
+		final LocalDateTime startDate = LocalDateTime.of(2020, 1, 1, 0, 0);
+		final LocalDateTime endDate = LocalDateTime.of(2024, 1, 1, 0, 0);
+		final Set<String> datumProps = new HashSet<>(Arrays.asList("wattHours"));
+
+		service.setNodeId(nodeId);
+		service.setAggregation(Aggregation.HourOfYear);
+		service.setSourceId(sourceId);
+		service.setStartDate(startDate);
+		service.setEndDate(endDate);
+		service.setDatumStreamPropertyNames(datumProps);
+
+		// discover SolarQuery URL
+		final String solarQueryBaseUrl = "http://localhost/solarquery";
+		NodeAppConfiguration appConfig = new NodeAppConfiguration(
+				Collections.singletonMap("solarquery", solarQueryBaseUrl));
+		expect(setupService.getAppConfiguration()).andReturn(appConfig);
+
+		final StringBuilder queryUrl = new StringBuilder(solarQueryBaseUrl);
+		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
+		queryUrl.append("?nodeId=").append(nodeId);
+		queryUrl.append("&sourceId=").append(sourceId);
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
+		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(startDate));
+		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(endDate));
+
+		final URI queryUri = URI.create(queryUrl.toString());
+
+		final MockClientHttpRequest req = new MockClientHttpRequest(HttpMethod.GET, queryUri);
+		final MockClientHttpResponse res = new MockClientHttpResponse(
+				getClass().getResourceAsStream("test-datum-stream-hoy-01.json"), HttpStatus.OK);
+		req.setResponse(res);
+
+		// create request
+		expect(httpRequestFactory.createRequest(queryUri, HttpMethod.GET)).andReturn(req);
+
+		// invoke customizer
+		expect(httpRequestCustomizer.customize(same(req), isNull(), anyObject())).andReturn(req);
+
+		// WHEN
+		replayAll();
+		TariffSchedule result = service.tariffSchedule();
+
+		// THEN
+		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
+		Collection<? extends Tariff> rules = result.rules();
+		assertThat("Schedule has one rule per datum result (hour of year, leap day included)", rules,
+				hasSize(366 * 24));
+
+		LocalDateTime hour = LocalDateTime.of(1996, 1, 1, 0, 0);
+		for ( Tariff tariff : rules ) {
+			assertThat("Tariff is a ChronoFieldsTariff", tariff, instanceOf(ChronoFieldsTariff.class));
+			ChronoFieldsTariff cft = (ChronoFieldsTariff) tariff;
+			assertThat("Month range is singleton for DOY query",
+					cft.rangeForChronoField(ChronoField.MONTH_OF_YEAR),
+					is(new IntRangeSet(rangeOf(hour.getMonthValue()))));
+			assertThat("Day range is singleton HOY query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_MONTH),
+					is(new IntRangeSet(rangeOf(hour.getDayOfMonth()))));
+			assertThat("No weekday range for HOY query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(nullValue()));
+			assertThat("Minute range is hour for HOY query",
+					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY),
+					is(new IntRangeSet(rangeOf(hour.getHour() * 60, hour.getHour() * 60 + 60))));
+			hour = hour.plusHours(1);
+		}
+	}
+
+	@Test
+	public void hod() throws IOException {
+		// GIVEN
+
+		// configure stream settings
+		final Long nodeId = 123L;
+		final String sourceId = "test";
+		final LocalDateTime startDate = LocalDateTime.of(2020, 1, 1, 0, 0);
+		final LocalDateTime endDate = LocalDateTime.of(2024, 1, 1, 0, 0);
+		final Set<String> datumProps = new HashSet<>(Arrays.asList("wattHours"));
+
+		service.setNodeId(nodeId);
+		service.setAggregation(Aggregation.HourOfDay);
+		service.setSourceId(sourceId);
+		service.setStartDate(startDate);
+		service.setEndDate(endDate);
+		service.setDatumStreamPropertyNames(datumProps);
+
+		// discover SolarQuery URL
+		final String solarQueryBaseUrl = "http://localhost/solarquery";
+		NodeAppConfiguration appConfig = new NodeAppConfiguration(
+				Collections.singletonMap("solarquery", solarQueryBaseUrl));
+		expect(setupService.getAppConfiguration()).andReturn(appConfig);
+
+		final StringBuilder queryUrl = new StringBuilder(solarQueryBaseUrl);
+		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
+		queryUrl.append("?nodeId=").append(nodeId);
+		queryUrl.append("&sourceId=").append(sourceId);
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
+		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(startDate));
+		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(endDate));
+
+		final URI queryUri = URI.create(queryUrl.toString());
+
+		final MockClientHttpRequest req = new MockClientHttpRequest(HttpMethod.GET, queryUri);
+		final MockClientHttpResponse res = new MockClientHttpResponse(
+				getClass().getResourceAsStream("test-datum-stream-hod-01.json"), HttpStatus.OK);
+		req.setResponse(res);
+
+		// create request
+		expect(httpRequestFactory.createRequest(queryUri, HttpMethod.GET)).andReturn(req);
+
+		// invoke customizer
+		expect(httpRequestCustomizer.customize(same(req), isNull(), anyObject())).andReturn(req);
+
+		// WHEN
+		replayAll();
+		TariffSchedule result = service.tariffSchedule();
+
+		// THEN
+		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
+		Collection<? extends Tariff> rules = result.rules();
+		assertThat("Schedule has one rule per datum result (hour of day)", rules, hasSize(24));
+
+		LocalTime hour = LocalTime.of(0, 0);
+		for ( Tariff tariff : rules ) {
+			assertThat("Tariff is a ChronoFieldsTariff", tariff, instanceOf(ChronoFieldsTariff.class));
+			ChronoFieldsTariff cft = (ChronoFieldsTariff) tariff;
+			assertThat("No month range for HOD query",
+					cft.rangeForChronoField(ChronoField.MONTH_OF_YEAR), is(nullValue()));
+			assertThat("No day range for HOD query", cft.rangeForChronoField(ChronoField.DAY_OF_MONTH),
+					is(nullValue()));
+			assertThat("No weekday range for HOD query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(nullValue()));
+			assertThat("Minute range is hour for HOD query",
+					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY),
+					is(new IntRangeSet(rangeOf(hour.getHour() * 60, hour.getHour() * 60 + 60))));
+			hour = hour.plusHours(1);
+		}
+	}
+
+	@Test
+	public void seasonal_hod() throws IOException {
+		// GIVEN
+
+		// configure stream settings
+		final Long nodeId = 123L;
+		final String sourceId = "test";
+		final LocalDateTime startDate = LocalDateTime.of(2020, 1, 1, 0, 0);
+		final LocalDateTime endDate = LocalDateTime.of(2024, 1, 1, 0, 0);
+		final Set<String> datumProps = new HashSet<>(Arrays.asList("wattHours"));
+
+		service.setNodeId(nodeId);
+		service.setAggregation(Aggregation.SeasonalHourOfDay);
+		service.setSourceId(sourceId);
+		service.setStartDate(startDate);
+		service.setEndDate(endDate);
+		service.setDatumStreamPropertyNames(datumProps);
+
+		// discover SolarQuery URL
+		final String solarQueryBaseUrl = "http://localhost/solarquery";
+		NodeAppConfiguration appConfig = new NodeAppConfiguration(
+				Collections.singletonMap("solarquery", solarQueryBaseUrl));
+		expect(setupService.getAppConfiguration()).andReturn(appConfig);
+
+		final StringBuilder queryUrl = new StringBuilder(solarQueryBaseUrl);
+		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
+		queryUrl.append("?nodeId=").append(nodeId);
+		queryUrl.append("&sourceId=").append(sourceId);
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
+		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(startDate));
+		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(endDate));
+
+		final URI queryUri = URI.create(queryUrl.toString());
+
+		final MockClientHttpRequest req = new MockClientHttpRequest(HttpMethod.GET, queryUri);
+		final MockClientHttpResponse res = new MockClientHttpResponse(
+				getClass().getResourceAsStream("test-datum-stream-seasonal-hod-01.json"), HttpStatus.OK);
+		req.setResponse(res);
+
+		// create request
+		expect(httpRequestFactory.createRequest(queryUri, HttpMethod.GET)).andReturn(req);
+
+		// invoke customizer
+		expect(httpRequestCustomizer.customize(same(req), isNull(), anyObject())).andReturn(req);
+
+		// WHEN
+		replayAll();
+		TariffSchedule result = service.tariffSchedule();
+
+		// THEN
+		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
+		Collection<? extends Tariff> rules = result.rules();
+		assertThat("Schedule has one rule per datum result (hour of day, per 4 seasons)", rules,
+				hasSize(24 * 4));
+
+		LocalDateTime hour = LocalDateTime.of(2000, 12, 1, 0, 0); // seasonal results start in Dec
+		for ( Tariff tariff : rules ) {
+			assertThat("Tariff is a ChronoFieldsTariff", tariff, instanceOf(ChronoFieldsTariff.class));
+			ChronoFieldsTariff cft = (ChronoFieldsTariff) tariff;
+
+			IntRangeSet monthRange = new IntRangeSet(3);
+			LocalDate date = hour.toLocalDate();
+			for ( int i = 0; i < 3; i++ ) {
+				monthRange.add(date.getMonthValue());
+				date = date.plusMonths(1);
+			}
+
+			assertThat("Month range for seasonal HOD query is 3-month season",
+					cft.rangeForChronoField(ChronoField.MONTH_OF_YEAR), is(monthRange));
+			assertThat("No day range for seasonal HOD query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_MONTH), is(nullValue()));
+			assertThat("No weekday range for seasonal HOD query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK), is(nullValue()));
+			assertThat("Minute range is hour for seasonal HOD query",
+					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY),
+					is(new IntRangeSet(rangeOf(hour.getHour() * 60, hour.getHour() * 60 + 60))));
+			hour = hour.plusHours(1);
+			if ( hour.getHour() == 0 ) {
+				// skip to next season
+				hour = hour.plusMonths(3);
+			}
+		}
+	}
+
+	@Test
+	public void seasonal_dow() throws IOException {
+		// GIVEN
+
+		// configure stream settings
+		final Long nodeId = 123L;
+		final String sourceId = "test";
+		final LocalDateTime startDate = LocalDateTime.of(2020, 1, 1, 0, 0);
+		final LocalDateTime endDate = LocalDateTime.of(2024, 1, 1, 0, 0);
+		final Set<String> datumProps = new HashSet<>(Arrays.asList("wattHours"));
+
+		service.setNodeId(nodeId);
+		service.setAggregation(Aggregation.SeasonalDayOfWeek);
+		service.setSourceId(sourceId);
+		service.setStartDate(startDate);
+		service.setEndDate(endDate);
+		service.setDatumStreamPropertyNames(datumProps);
+
+		// discover SolarQuery URL
+		final String solarQueryBaseUrl = "http://localhost/solarquery";
+		NodeAppConfiguration appConfig = new NodeAppConfiguration(
+				Collections.singletonMap("solarquery", solarQueryBaseUrl));
+		expect(setupService.getAppConfiguration()).andReturn(appConfig);
+
+		final StringBuilder queryUrl = new StringBuilder(solarQueryBaseUrl);
+		queryUrl.append(SolarQueryTariffScheduleProvider.STREAM_DATUM_PATH);
+		queryUrl.append("?nodeId=").append(nodeId);
+		queryUrl.append("&sourceId=").append(sourceId);
+		queryUrl.append("&aggregation=").append(service.getAggregation().name());
+		UrlUtils.appendURLEncodedValue(queryUrl, "localStartDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(startDate));
+		UrlUtils.appendURLEncodedValue(queryUrl, "localEndDate",
+				DateUtils.ISO_DATE_OPT_TIME.format(endDate));
+
+		final URI queryUri = URI.create(queryUrl.toString());
+
+		final MockClientHttpRequest req = new MockClientHttpRequest(HttpMethod.GET, queryUri);
+		final MockClientHttpResponse res = new MockClientHttpResponse(
+				getClass().getResourceAsStream("test-datum-stream-seasonal-dow-01.json"), HttpStatus.OK);
+		req.setResponse(res);
+
+		// create request
+		expect(httpRequestFactory.createRequest(queryUri, HttpMethod.GET)).andReturn(req);
+
+		// invoke customizer
+		expect(httpRequestCustomizer.customize(same(req), isNull(), anyObject())).andReturn(req);
+
+		// WHEN
+		replayAll();
+		TariffSchedule result = service.tariffSchedule();
+
+		// THEN
+		assertThat("TariffSchedule resolved from SolarQuery data", result, is(notNullValue()));
+		Collection<? extends Tariff> rules = result.rules();
+		assertThat("Schedule has one rule per datum result (weekday, per 4 seasons)", rules,
+				hasSize(7 * 4));
+
+		LocalDate day = LocalDate.of(2000, 12, 4); // seasonal results start on first Mon of Dec
+		for ( Tariff tariff : rules ) {
+			assertThat("Tariff is a ChronoFieldsTariff", tariff, instanceOf(ChronoFieldsTariff.class));
+			ChronoFieldsTariff cft = (ChronoFieldsTariff) tariff;
+
+			IntRangeSet monthRange = new IntRangeSet(3);
+			LocalDate date = day;
+			for ( int i = 0; i < 3; i++ ) {
+				monthRange.add(date.getMonthValue());
+				date = date.plusMonths(1);
+			}
+
+			assertThat("Month range for seasonal DOW query is 3-month season",
+					cft.rangeForChronoField(ChronoField.MONTH_OF_YEAR), is(monthRange));
+			assertThat("No day range for seasonal DOW query",
+					cft.rangeForChronoField(ChronoField.DAY_OF_MONTH), is(nullValue()));
+			assertThat("Weekday range for seasonal DOW query is singleton day",
+					cft.rangeForChronoField(ChronoField.DAY_OF_WEEK),
+					is(new IntRangeSet(rangeOf(day.getDayOfWeek().getValue()))));
+			assertThat("No minute range for seasonal DOW query",
+					cft.rangeForChronoField(ChronoField.MINUTE_OF_DAY), is(nullValue()));
+
+			day = day.plusDays(1);
+			if ( day.getDayOfWeek() == DayOfWeek.MONDAY ) {
+				// skip to next season
+				day = day.plusMonths(3).with(TemporalAdjusters.firstInMonth(DayOfWeek.MONDAY));
+			}
 		}
 	}
 

@@ -31,6 +31,7 @@ import java.net.URISyntaxException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -75,7 +76,7 @@ import net.solarnetwork.domain.tariff.SimpleTariffRate;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
 import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.domain.tariff.TariffSchedule;
-import net.solarnetwork.domain.tariff.TemporalRangesTariff;
+import net.solarnetwork.domain.tariff.TemporalRangeSetsTariff;
 import net.solarnetwork.io.UrlUtils;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.service.IdentityService;
@@ -96,6 +97,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.DateUtils;
 import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.web.service.HttpRequestCustomizerService;
@@ -508,30 +510,72 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 				}
 			}
 			final ZonedDateTime zdt = d.getTimestamp().atZone(zone);
-			IntRange month = null;
-			if ( agg.compareLevel(Aggregation.Month) <= 0 && agg != Aggregation.DayOfWeek ) {
-				month = IntRange.rangeOf(zdt.getMonthValue());
+			Map<Integer, IntRangeSet> monthRangeCache = null;
+			IntRangeSet month = null;
+			if ( agg == Aggregation.SeasonalDayOfWeek || agg == Aggregation.SeasonalHourOfDay ) {
+				// create month range out of the 3 months in the current season
+				// use a cache to avoid creating new instance for each tariff
+				if ( monthRangeCache == null ) {
+					monthRangeCache = new HashMap<>(4);
+				}
+				month = monthRangeCache.computeIfAbsent(zdt.getMonthValue(), m -> {
+					IntRangeSet result = new IntRangeSet(3);
+					LocalDate date = zdt.toLocalDate();
+					for ( int i = 0; i < 3; i++ ) {
+						result.add(date.getMonthValue());
+						date = date.plusMonths(1);
+					}
+					return result;
+				});
+			} else if ( agg.compareLevel(Aggregation.Month) <= 0 && agg != Aggregation.DayOfWeek
+					&& agg != Aggregation.HourOfDay ) {
+				// use a cache to avoid creating new instance for each tariff
+				if ( monthRangeCache == null ) {
+					monthRangeCache = new HashMap<>(4);
+				}
+				month = monthRangeCache.computeIfAbsent(zdt.getMonthValue(),
+						m -> new IntRangeSet(IntRange.rangeOf(m)));
 			}
 
-			IntRange dom = null;
-			IntRange dow = null;
+			Map<Integer, IntRangeSet> domRangeCache = null;
+			Map<Integer, IntRangeSet> dowRangeCache = null;
+			IntRangeSet dom = null;
+			IntRangeSet dow = null;
 			if ( agg == Aggregation.DayOfWeek || agg == Aggregation.SeasonalDayOfWeek ) {
-				dow = IntRange.rangeOf(zdt.getDayOfWeek().getValue());
-			} else if ( agg.compareLevel(Aggregation.Day) <= 0 ) {
-				dom = IntRange.rangeOf(zdt.getDayOfMonth());
+				if ( dowRangeCache == null ) {
+					dowRangeCache = new HashMap<>(7);
+				}
+				dow = dowRangeCache.computeIfAbsent(zdt.getDayOfWeek().getValue(),
+						wd -> new IntRangeSet(IntRange.rangeOf(wd)));
+			} else if ( agg.compareLevel(Aggregation.Day) <= 0 && agg != Aggregation.HourOfDay
+					&& agg != Aggregation.SeasonalHourOfDay ) {
+				if ( domRangeCache == null ) {
+					domRangeCache = new HashMap<>(31);
+				}
+				dom = domRangeCache.computeIfAbsent(zdt.getDayOfMonth(),
+						md -> new IntRangeSet(IntRange.rangeOf(md)));
 			}
 
-			IntRange mod = null;
+			Map<Integer, IntRangeSet> modRangeCache = null;
+			IntRangeSet mod = null;
 			if ( agg.compareLevel(Aggregation.Hour) < 0 ) {
+				if ( modRangeCache == null ) {
+					modRangeCache = new HashMap<>(24);
+				}
 				int minutesPerAgg = agg.getLevel() / 60;
-				int minuteOfDayStart = zdt.getMinute() / minutesPerAgg;
-				mod = IntRange.rangeOf(minuteOfDayStart, minuteOfDayStart + minutesPerAgg);
+				int minuteOfDayStart = zdt.getHour() * 60 + zdt.getMinute() / minutesPerAgg;
+				mod = modRangeCache.computeIfAbsent(minuteOfDayStart,
+						mods -> new IntRangeSet(IntRange.rangeOf(mods, mods + minutesPerAgg)));
 			} else if ( agg.compareLevel(Aggregation.Hour) == 0 ) {
+				if ( modRangeCache == null ) {
+					modRangeCache = new HashMap<>(24);
+				}
 				int minuteOfDayStart = zdt.getHour() * 60;
-				mod = IntRange.rangeOf(minuteOfDayStart, minuteOfDayStart + 60);
+				mod = modRangeCache.computeIfAbsent(minuteOfDayStart,
+						mods -> new IntRangeSet(IntRange.rangeOf(mods, mods + 60)));
 			}
 
-			tariffs.add(new TemporalRangesTariff(month, dom, dow, mod, rates));
+			tariffs.add(new TemporalRangeSetsTariff(month, dom, dow, mod, rates));
 		}
 		return new SimpleTemporalTariffSchedule(tariffs);
 	}
