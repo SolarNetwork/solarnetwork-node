@@ -45,7 +45,10 @@ public class ChainHttpRequestCustomizerService
 		extends net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService {
 
 	/**
+	 * Constructor.
+	 *
 	 * @param services
+	 *        the services to include
 	 */
 	public ChainHttpRequestCustomizerService(List<HttpRequestCustomizerService> services) {
 		super(services);
