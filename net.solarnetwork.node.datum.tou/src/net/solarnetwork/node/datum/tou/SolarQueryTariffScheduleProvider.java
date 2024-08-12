@@ -1320,7 +1320,7 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 	 * Set the explicit time zone to interpret the datum stream as, as a zone ID
 	 * value.
 	 *
-	 * @param timeZone
+	 * @param timeZoneId
 	 *        the zone ID to set, or {@literal null} to use the system zone
 	 */
 	public final void setTimeZoneId(String timeZoneId) {
