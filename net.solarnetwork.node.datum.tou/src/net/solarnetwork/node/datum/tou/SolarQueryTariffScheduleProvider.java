@@ -87,6 +87,7 @@ import net.solarnetwork.node.service.support.TariffScheduleUtils;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -110,7 +111,7 @@ import net.solarnetwork.web.service.HttpRequestCustomizerService;
  * @version 1.0
  */
 public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implements TariffScheduleProvider,
-		SettingSpecifierProvider, DatumDateFunctions, SettingsChangeObserver {
+		SettingSpecifierProvider, DatumDateFunctions, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	/** The default value for the {@code connectionTimeout} property. */
 	public static final Duration DEFAULT_CONNECTION_TIMEOUT = Duration.ofSeconds(15);
@@ -215,6 +216,18 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 	}
 
 	@Override
+	public void serviceDidStartup() {
+		if ( tariffSchedule.get() == null ) {
+			configurationChanged(null);
+		}
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		// nothing
+	}
+
+	@Override
 	public void configurationChanged(Map<String, Object> properties) {
 		tariffSchedule.set(null);
 
@@ -304,6 +317,7 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 		if ( uri == null ) {
 			return null;
 		}
+		log.info("Querying SolarNetwork for [{}] service for tariff schedule data: {}", getUid(), uri);
 		final ClientHttpRequest req;
 		try {
 			req = reqFactory.createRequest(uri, HttpMethod.GET);
@@ -330,7 +344,7 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 		try (ClientHttpResponse res = req.execute()) {
 			if ( !res.getStatusCode().is2xxSuccessful() ) {
 				log.error(
-						"SolarQuery request [{}] returned {} status code, [{}] service unable to resolve tariff schedule.",
+						"SolarNetwork request [{}] returned {} status code, [{}] service unable to resolve tariff schedule.",
 						uri, res.getStatusCode(), getUid());
 				return null;
 			}
@@ -340,7 +354,13 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 					UrlUtils.getInputStreamFromUrlResponseStream(res.getBody(),
 							res.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING)),
 					ObjectDatumStreamDataSet.class);
-			return generateSchedule(nodeId, sourceId, agg, propNames, datum);
+			TariffSchedule schedule = generateSchedule(nodeId, sourceId, agg, propNames, datum);
+			if ( schedule != null ) {
+				log.info(
+						"Query from SolarNetwork for [{}] service generated {} tariff rules for tariff schedule data: {}",
+						getUid(), schedule.rules().size(), uri);
+			}
+			return schedule;
 		} catch ( IOException e ) {
 			log.warn(
 					"Communication error on SolarQuery request [{}], [{}] service unable to resolve tariff schedule: {}",

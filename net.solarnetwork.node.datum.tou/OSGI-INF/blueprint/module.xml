@@ -178,7 +178,8 @@
 			<beans:value>net.solarnetwork.node.service.TariffScheduleProvider</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
-		<bean class="net.solarnetwork.node.datum.tou.SolarQueryTariffScheduleProvider">
+		<bean class="net.solarnetwork.node.datum.tou.SolarQueryTariffScheduleProvider"
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="setupService"/>
 			<argument ref="identityService"/>
 			<argument ref="httpRequestFactory"/>
