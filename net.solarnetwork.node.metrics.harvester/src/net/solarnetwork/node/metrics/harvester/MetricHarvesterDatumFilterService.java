@@ -126,6 +126,7 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 		DatumSamples s = new DatumSamples(samples);
 		ExpressionRoot root = new ExpressionRoot(datum, s, parameters, service(getDatumService()),
 				getOpModesService(), service(getMetadataService()), service(getLocationService()));
+		root.setTariffScheduleProviders(getTariffScheduleProviders());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 
 		// then extract generated property values as metrics

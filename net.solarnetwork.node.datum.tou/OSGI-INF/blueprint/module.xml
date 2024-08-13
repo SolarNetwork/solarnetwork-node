@@ -14,9 +14,31 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<!-- References -->
+
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+	
+	<bean id="httpRequestFactory" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.http.client.ClientHttpRequestFactory"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -26,17 +48,20 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="setupService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.setup.SetupService"/>
 		<property name="sticky" value="true"/>
 	</bean>
+	
+	<!-- TouDatumDataSource -->
 		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.tou.TouDatumDataSource</value>
 				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.service.support.TariffScheduleUtils</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
@@ -111,6 +136,7 @@
 							<property name="interfaces">
 								<list>
 									<value>net.solarnetwork.node.service.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.TariffScheduleProvider</value>
 								</list>
 							</property>
 							<property name="properties">
@@ -121,6 +147,51 @@
 						</bean>
 					</entry>
 				</map>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- SolarQueryTariffScheduleProvider -->
+		
+	<bean id="sqMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.tou.SolarQueryTariffScheduleProvider</value>
+				<value>net.solarnetwork.node.service.support.TariffScheduleUtils</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+				<value>net.solarnetwork.domain.datum.Aggregation</value>
+			</array>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Tariff Schedule Provider - SolarNetwork"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.tou.solarquery"/>
+			<property name="messageSource" ref="sqMessageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.tou.solarquery" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.service.TariffScheduleProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.datum.tou.SolarQueryTariffScheduleProvider"
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="setupService"/>
+			<argument ref="identityService"/>
+			<argument ref="httpRequestFactory"/>
+			<property name="executor" ref="executor"/>
+			<property name="messageSource" ref="sqMessageSource"/>
+			<property name="placeholderService" ref="placeholderService"/>
+			<property name="httpRequestCustomizer">
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.web.service.HttpRequestCustomizerService"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>

@@ -60,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * Simple simulated battery.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -195,14 +195,14 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		final String socControlId = resolvePlaceholders(this.socControlId, null);
 		InstructionState result = null;
 		for ( String paramName : instruction.getParameterNames() ) {
-			if ( targetPowerRateControlId.equals(paramName) ) {
+			if ( targetPowerRateControlId != null && targetPowerRateControlId.equals(paramName) ) {
 				Number newValue = StringUtils.numberValue(instruction.getParameterValue(paramName));
 				if ( updateTargetPowerRate(newValue) ) {
 					result = InstructionState.Completed;
 				} else {
 					result = InstructionState.Declined;
 				}
-			} else if ( socControlId.equals(paramName) ) {
+			} else if ( socControlId != null && socControlId.equals(paramName) ) {
 				Number newValue = StringUtils.numberValue(instruction.getParameterValue(paramName));
 				if ( updateSoc(newValue) ) {
 					result = InstructionState.Completed;

@@ -41,9 +41,11 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.TariffScheduleProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
 
 /**
@@ -55,7 +57,7 @@ import net.solarnetwork.service.support.ExpressionServiceExpression;
  * </p>
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SimpleDatumExpressionService extends BaseIdentifiable implements InstructionHandler {
 
@@ -70,6 +72,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 	private final DatumService datumService;
 	private final OperationalModesService opModesService;
+	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
 
 	/**
 	 * Constructor.
@@ -129,6 +132,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 		ExpressionRoot root = new ExpressionRoot(d, null, null, datumService, opModesService,
 				service(getMetadataService()), service(getLocationService()));
+		root.setTariffScheduleProviders(tariffScheduleProviders);
 
 		ExpressionConfig config = new ExpressionConfig("result", DatumSamplesType.Status, expression,
 				expressionService.getUid());
@@ -174,4 +178,25 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 		return createStatus(instruction, Completed, resultParams);
 	}
 
+	/**
+	 * Get the tariff schedule providers.
+	 *
+	 * @return the providers
+	 * @since 1.3
+	 */
+	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+		return tariffScheduleProviders;
+	}
+
+	/**
+	 * Set the tariff schedule providers.
+	 *
+	 * @param tariffScheduleProviders
+	 *        the providers to set
+	 * @since 1.3
+	 */
+	public final void setTariffScheduleProviders(
+			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+		this.tariffScheduleProviders = tariffScheduleProviders;
+	}
 }

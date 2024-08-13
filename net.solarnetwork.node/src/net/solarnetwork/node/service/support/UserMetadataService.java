@@ -1,21 +1,21 @@
 /* ==================================================================
  * UserMetadataService.java - 7/05/2021 12:48:01 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -48,9 +48,9 @@ import net.solarnetwork.util.CachedResult;
 /**
  * Implementation of {@link MetadataService} that uses SolarQuery to find
  * user-level metadata.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class UserMetadataService extends JsonHttpClientSupport
 		implements MetadataService, SettingSpecifierProvider, SettingsChangeObserver {
@@ -70,7 +70,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param setupService
 	 *        the setup service
 	 */
@@ -111,7 +111,6 @@ public class UserMetadataService extends JsonHttpClientSupport
 					Instant now = Instant.now();
 					Snws2AuthorizationBuilder auth = new Snws2AuthorizationBuilder(token)
 							.saveSigningKey(secret);
-					auth.saveSigningKey(secret);
 					setupTokenAuthorization(conn, auth, now, null);
 				}
 			});
@@ -170,7 +169,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Set the number of seconds to cache metadata.
-	 * 
+	 *
 	 * @param cacheSeconds
 	 *        the maximum number of seconds to cache metadata for, or anything
 	 *        less than {@literal 1} to disable
@@ -181,7 +180,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Set the SolarNetwork token to use.
-	 * 
+	 *
 	 * @param token
 	 *        the token to set
 	 */
@@ -191,7 +190,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Set the SolarNetwork token secret to use.
-	 * 
+	 *
 	 * @param tokenSecret
 	 *        the token secret to set
 	 */

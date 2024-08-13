@@ -54,6 +54,11 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="tariffScheduleProviders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
+	</bean>
+
 	<!-- 
 	 !!! Metric Cleaner Job
 	 -->
@@ -167,6 +172,7 @@
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
+			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
 		</bean>
 	</osgix:managed-service-factory>
 

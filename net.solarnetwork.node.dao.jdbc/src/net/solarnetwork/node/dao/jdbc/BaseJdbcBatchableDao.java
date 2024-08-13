@@ -1,21 +1,21 @@
 /* ==================================================================
  * AbstractBatchableJdbcDao.java - Nov 5, 2012 11:12:42 AM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,13 +40,13 @@ import net.solarnetwork.dao.Entity;
 
 /**
  * Base class for {@link BatchableDao} implementations.
- * 
+ *
  * @param <T>
  *        the type of domain object this DAO supports
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.29
  */
 public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJdbcGenericDao<T, K>
@@ -57,7 +57,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param objectType
 	 *        the entity type
 	 * @param keyType
@@ -76,7 +76,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 	/**
 	 * Init with an an entity name and table version, deriving various names
 	 * based on conventions.
-	 * 
+	 *
 	 * @param objectType
 	 *        the entity type
 	 * @param keyType
@@ -100,7 +100,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Get the SQL statement to use for batch processing.
-	 * 
+	 *
 	 * @param options
 	 *        the requested batch options
 	 * @return the SQL query
@@ -109,12 +109,12 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Prepare the batch statement.
-	 * 
+	 *
 	 * <p>
 	 * This implementation does nothing. Extending classes might need to set
 	 * parameters.
 	 * </p>
-	 * 
+	 *
 	 * @param options
 	 *        the batch options
 	 * @param con
@@ -131,7 +131,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Get an entity from the current row in a ResultSet for batch processing.
-	 * 
+	 *
 	 * @param options
 	 *        the requested batch options
 	 * @param resultSet
@@ -147,12 +147,12 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Update the current row in a ResulSet for batch processing.
-	 * 
+	 *
 	 * <p>
 	 * The {@link ResultSet#updateRow()} method should <strong>not</strong> be
 	 * called within this method.
 	 * </p>
-	 * 
+	 *
 	 * @param options
 	 *        the requested batch options
 	 * @param resultSet
@@ -166,6 +166,32 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 	 */
 	protected abstract void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
 			T entity) throws SQLException;
+
+	/**
+	 * Callback when deleting the current row in a ResulSet during batch
+	 * processing.
+	 *
+	 * <p>
+	 * The {@link ResultSet#deleteRow()} method should <strong>not</strong> be
+	 * called within this method.
+	 * </p>
+	 *
+	 * @param options
+	 *        the requested batch options
+	 * @param resultSet
+	 *        the current ResultSet, positioned on the next row
+	 * @param rowCount
+	 *        the current count of rows processed (1-based)
+	 * @param entity
+	 *        the entity to be deleted
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.1
+	 */
+	protected void willDeleteBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
+			T entity) throws SQLException {
+		// extending classes can override
+	}
 
 	@Override
 	public BatchResult batchProcess(final BatchCallback<T> callback, final BatchOptions options) {
@@ -216,6 +242,8 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 							case STOP:
 								return null;
 							case DELETE:
+								willDeleteBatchRowEntity(options, queryResult, rowCount.intValue(),
+										entity);
 								queryResult.deleteRow();
 								break;
 							case UPDATE:
@@ -245,7 +273,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Get the transaction template.
-	 * 
+	 *
 	 * @return the template
 	 */
 	public TransactionTemplate getTransactionTemplate() {
@@ -254,7 +282,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	/**
 	 * Set the transaction template.
-	 * 
+	 *
 	 * @param transactionTemplate
 	 *        the template to set
 	 */
@@ -265,7 +293,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 	/**
 	 * Set a SQL fragment to append to SQL statements where an updatable result
 	 * set is desired.
-	 * 
+	 *
 	 * @return the SQL suffix, or {@literal null} if not desired
 	 * @since 1.4
 	 */
@@ -277,12 +305,12 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 	/**
 	 * Set a SQL fragment to append to SQL statements where an updatable result
 	 * set is desired.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
 	 * included at the beginning. Set to {@literal null} to disable.
 	 * </p>
-	 * 
+	 *
 	 * @param sqlForUpdateSuffix
 	 *        the suffix to set
 	 * @since 1.4
