@@ -73,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  *
  * @author matt
- * @version 3.8
+ * @version 3.9
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<Void>,
@@ -269,11 +269,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getReadFunctionSets(
 			ModbusPropertyConfig[] configs) {
-		if ( configs == null ) {
-			return Collections.emptyMap();
-		}
 		Map<ModbusReadFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
-				configs.length);
+				configs == null ? 0 : configs.length);
+		if ( configs == null ) {
+			return confsByFunction;
+		}
 		for ( ModbusPropertyConfig config : configs ) {
 			confsByFunction.computeIfAbsent(config.getFunction(), k -> new ArrayList<>(4)).add(config);
 		}
@@ -386,6 +386,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getReadFunctionSets(
 				propConfigs);
 		IntRangeSet expressionRegisterSet = expressionRegisterSet();
+		if ( !expressionRegisterSet.isEmpty()
+				&& !functionMap.containsKey(ModbusReadFunction.ReadHoldingRegister) ) {
+			// expressions configured but no read holding registers; add a "dummy" config to the loop below picks
+			// up the expression registers
+			functionMap.put(ModbusReadFunction.ReadHoldingRegister, Collections.emptyList());
+		}
 		for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap.entrySet() ) {
 			ModbusReadFunction function = me.getKey();
 			ModbusRegisterBlockType blockType = function.blockType();
