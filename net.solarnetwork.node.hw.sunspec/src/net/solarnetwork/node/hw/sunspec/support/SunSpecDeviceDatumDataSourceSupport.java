@@ -56,7 +56,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport
@@ -111,9 +111,10 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *
 	 * <p>
 	 * This returns cached data if possible. Otherwise it will query the device
-	 * and cache the results. When refreshing data, only the data for the model
-	 * returned from {@link #getPrimaryModelAccessorType()} and any accessors in
-	 * {@link #getSecondaryModelAccessors(ModelData)} will be refreshed.
+	 * and cache the results. Only the data for the model returned from
+	 * {@link #getPrimaryModelAccessorType()} and any accessors in
+	 * {@link #getSecondaryModelAccessors(ModelData)} will be populated with
+	 * data.
 	 * </p>
 	 *
 	 * @return the model data
@@ -128,15 +129,15 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 				@Override
 				public ModelData doWithConnection(ModbusConnection connection) throws IOException {
-					if ( data == null ) {
-						ModelData result = modelData(connection);
+					ModelData result = data;
+					if ( result == null ) {
+						result = modelData(connection);
 						if ( result != null ) {
 							sample.set(result);
 						}
-						return result;
 					}
-					final ModelAccessor accessor = data.findTypedModel(getPrimaryModelAccessorType());
-					final List<ModelAccessor> secondaryAccessors = getSecondaryModelAccessors(data);
+					final ModelAccessor accessor = result.findTypedModel(getPrimaryModelAccessorType());
+					final List<ModelAccessor> secondaryAccessors = getSecondaryModelAccessors(result);
 					List<ModelAccessor> accessors = null;
 					if ( secondaryAccessors == null || secondaryAccessors.isEmpty() ) {
 						accessors = (accessor != null ? Collections.singletonList(accessor) : null);
@@ -148,9 +149,9 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 						accessors.addAll(secondaryAccessors);
 					}
 					if ( accessors != null && !accessors.isEmpty() ) {
-						data.readModelData(connection, accessors);
+						result.readModelData(connection, accessors);
 					}
-					return data;
+					return result;
 				}
 
 			});
@@ -166,9 +167,9 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		Integer manualBaseAddress = getBaseAddress();
 		if ( manualBaseAddress != null && manualBaseAddress.intValue() >= 0 ) {
 			return ModelDataFactory.getInstance().getModelData(conn,
-					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress);
+					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress, false);
 		}
-		return ModelDataFactory.getInstance().getModelData(conn);
+		return ModelDataFactory.getInstance().getModelData(conn, false);
 	}
 
 	private List<ModelAccessor> getSecondaryModelAccessors(ModelData data) {

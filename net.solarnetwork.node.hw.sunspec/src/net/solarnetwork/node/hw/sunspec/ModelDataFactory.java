@@ -59,7 +59,7 @@ import net.solarnetwork.util.ByteUtils;
  * </p>
  *
  * @author matt
- * @version 1.10
+ * @version 1.11
  */
 public class ModelDataFactory {
 
@@ -114,7 +114,22 @@ public class ModelDataFactory {
 		super();
 	}
 
-	private int findSunSpecBaseAddress(ModbusConnection conn) throws IOException {
+	/**
+	 * Find the base SunSpec register address.
+	 *
+	 * <p>
+	 * This will search the {@link ModelRegister#BASE_ADDRESSES} list and return
+	 * the first that contain the expected SunSpec magic bytes.
+	 * </p>
+	 *
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @return the discovered address
+	 * @throws IOException
+	 *         if the address is not discovered or any IO error occurs
+	 * @since 1.11
+	 */
+	public int findSunSpecBaseAddress(ModbusConnection conn) throws IOException {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
 			if ( isSunSpecBaseAddress(conn, r.getAddress()) ) {
 				return r.getAddress();
@@ -164,6 +179,33 @@ public class ModelDataFactory {
 	 */
 	public ModelData getModelData(ModbusConnection conn) throws IOException {
 		return getModelData(conn, DEFAULT_MAX_READ_WORDS_COUNT);
+	}
+
+	/**
+	 * Create a new model data instance by discovering the model from a device
+	 * via a Modbus connection.
+	 *
+	 * <p>
+	 * This method calls {@link #getModelData(ModbusConnection, int)} with a
+	 * {@link #DEFAULT_MAX_READ_WORDS_COUNT} maximum read word count.
+	 * </p>
+	 *
+	 * @param conn
+	 *        the modbus connection
+	 * @param load
+	 *        if {@literal true} then read all model properties, otherwise
+	 *        {@link ModelData#readModelData(ModbusConnection)} or
+	 *        {@link ModelData#readModelData(ModbusConnection, java.util.List)}
+	 *        must be called to load the data for any discovered model(s)
+	 * @return the data, with all model properties loaded
+	 * @throws IOException
+	 *         if any communication error occurs or no supported model data can
+	 *         be discovered
+	 * @since 1.11
+	 */
+	public ModelData getModelData(ModbusConnection conn, boolean load) throws IOException {
+		final int sunSpecBaseAddress = findSunSpecBaseAddress(conn);
+		return getModelData(conn, DEFAULT_MAX_READ_WORDS_COUNT, sunSpecBaseAddress, load);
 	}
 
 	/**
@@ -332,9 +374,11 @@ public class ModelDataFactory {
 			short[] words = conn.readWords(ModbusReadFunction.ReadHoldingRegister, nextModelAddress, 2);
 			model = null;
 			if ( words != null && words.length > 1 ) {
-				if ( (words[0] & 0xFFFF) != ModelId.SUN_SPEC_END_ID ) {
-					ModelAccessor accessor = createAccessor(data, nextModelAddress, words[0], words[1]);
-					data.addModel(words[1], accessor);
+				final int modelId = Short.toUnsignedInt(words[0]);
+				if ( modelId != ModelId.SUN_SPEC_END_ID ) {
+					final int modelLen = Short.toUnsignedInt(words[1]);
+					ModelAccessor accessor = createAccessor(data, nextModelAddress, modelId, modelLen);
+					data.addModel(modelLen, accessor);
 					model = accessor;
 				}
 			}
