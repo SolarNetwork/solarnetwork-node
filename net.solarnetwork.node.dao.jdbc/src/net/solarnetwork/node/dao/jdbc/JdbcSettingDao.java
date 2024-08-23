@@ -1,23 +1,23 @@
 /* ===================================================================
  * JdbcSettingDao.java
- * 
+ *
  * Created Sep 7, 2009 3:08:37 PM
- * 
+ *
  * Copyright (c) 2009 Solarnetwork.net Dev Team.
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ===================================================================
  */
@@ -54,23 +54,23 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Simple JDBC-based implementation of {@link SettingDao}.
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>sqlGet</dt>
  * <dd>The SQL statement to use for getting a row based on a String primary key.
  * Accepts a single parameter: the String primary key to retrieve.</dd>
- * 
+ *
  * <dt>sqlDelete</dt>
  * <dd>The SQL statement to use for deleting an existing row. Accepts a single
  * parameter: the String primary key to delete.</dd>
  * </dl>
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -217,11 +217,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					storeSettingInternal(key, type, value, 0);
+					storeSettingInternal(key, type, value, null, 0);
 				}
 			});
 		} else {
-			storeSettingInternal(key, type, value, 0);
+			storeSettingInternal(key, type, value, null, 0);
 		}
 	}
 
@@ -234,12 +234,12 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
 					storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
-							SettingFlag.maskForSet(setting.getFlags()));
+							setting.getNote(), SettingFlag.maskForSet(setting.getFlags()));
 				}
 			});
 		} else {
 			storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
-					SettingFlag.maskForSet(setting.getFlags()));
+					setting.getNote(), SettingFlag.maskForSet(setting.getFlags()));
 		}
 	}
 
@@ -260,7 +260,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	private void storeSettingInternal(final String key, final String ttype, final String value,
-			final int flags) {
+			final String note, final int flags) {
 		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
 		final String sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET));
@@ -286,9 +286,17 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 							String oldValue = rs.getString(1);
 							if ( !value.equals(oldValue) ) {
 								rs.updateString(1, value);
+								updated = true;
+							}
+							String oldNote = rs.getString(6);
+							if ( note != oldNote && ((oldNote != null && !oldNote.equals(note))
+									|| (note != null && !note.equals(oldNote))) ) {
+								rs.updateString(6, note);
+								updated = true;
+							}
+							if ( updated ) {
 								rs.updateTimestamp(2, now);
 								rs.updateRow();
-								updated = true;
 							}
 						} else {
 							rs.moveToInsertRow();
@@ -297,6 +305,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 							rs.updateString(3, key);
 							rs.updateString(4, type);
 							rs.updateInt(5, flags);
+							rs.updateString(6, note);
 							rs.insertRow();
 							updated = true;
 						}
@@ -390,6 +399,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		s.setKey(resultSet.getString(3));
 		s.setType(resultSet.getString(4));
 		s.setFlags(SettingFlag.setForMask(resultSet.getInt(5)));
+		s.setNote(resultSet.getString(6));
 		return s;
 	}
 
@@ -402,6 +412,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		resultSet.updateString(3, entity.getKey());
 		resultSet.updateString(4, entity.getType());
 		resultSet.updateInt(5, SettingFlag.maskForSet(entity.getFlags()));
+		resultSet.updateString(6, entity.getNote());
 	}
 
 	private final void postSettingUpdatedEvent(final String key, final String type, final String value) {
@@ -425,7 +436,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	/**
 	 * Get the EventAdmin service.
-	 * 
+	 *
 	 * @return the EventAdmin service
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -434,7 +445,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	/**
 	 * An optional {@link EventAdmin} service to use.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        The event admin service to use.
 	 */

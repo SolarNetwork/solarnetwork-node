@@ -1,33 +1,40 @@
 /* ==================================================================
  * JdbcSettingsDaoTests.java - 7/06/2016 8:32:09 pm
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.test;
 
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import java.time.Instant;
 import java.util.Date;
@@ -55,9 +62,9 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link JdbcSettingDao}.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
@@ -121,6 +128,30 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		settingDao.storeSetting(s);
 
 		verify(eventAdminMock);
+	}
+
+	@Test
+	public void insertWithNote() {
+		// GIVEN
+		Capture<Event> eventCapture = Capture.newInstance();
+		eventAdminMock.postEvent(capture(eventCapture));
+
+		// WHEN
+		replay(eventAdminMock);
+
+		Setting s = new Setting(TEST_KEY, TEST_TYPE, TEST_VALUE, "Test note here.", null);
+		settingDao.storeSetting(s);
+
+		// THEN
+		Event event = eventCapture.getValue();
+		assertThat("Event generated", event, is(notNullValue()));
+		assertThat("Event topic", event.getTopic(), is(equalTo(SettingDao.EVENT_TOPIC_SETTING_CHANGED)));
+		assertThat("Event key property", event.getProperty(SettingDao.SETTING_KEY),
+				is(equalTo(TEST_KEY)));
+		assertThat("Event type property", event.getProperty(SettingDao.SETTING_TYPE),
+				is(equalTo(TEST_TYPE)));
+		assertThat("Event value property", event.getProperty(SettingDao.SETTING_VALUE),
+				is(equalTo(TEST_VALUE)));
 	}
 
 	@Test
@@ -262,6 +293,10 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 				} else if ( (TEST_KEY + "3").equals(domainObject.getKey()) ) {
 					domainObject.setValue(TEST_VALUE + ".UPDATED");
 					action = BatchCallbackResult.UPDATE;
+				} else if ( (TEST_KEY + "4").equals(domainObject.getKey()) ) {
+					domainObject.setValue(TEST_VALUE + ".UPDATED");
+					domainObject.setNote("This is my note, UPDATED.");
+					action = BatchCallbackResult.UPDATE;
 				} else {
 					action = BatchCallbackResult.CONTINUE;
 				}
@@ -269,11 +304,17 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 				return action;
 			}
 		}, new BasicBatchOptions("Test", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));
-		assertEquals(count, processed.intValue());
+		assertThat("Processed all rows", processed.intValue(), is(equalTo(count)));
+		assertThat("Batch delete executed", settingDao.getSetting(TEST_KEY + "0", TEST_TYPE),
+				is(nullValue()));
+		assertThat("Updated row 1", settingDao.getSetting(TEST_KEY + 1, TEST_TYPE),
+				is(equalTo(TEST_VALUE + ".UPDATED")));
+		assertThat("Updated row 3", settingDao.getSetting(TEST_KEY + 3, TEST_TYPE),
+				is(equalTo(TEST_VALUE + ".UPDATED")));
 
-		Assert.assertNull(settingDao.getSetting(TEST_KEY + "0", TEST_TYPE));
-		assertEquals(TEST_VALUE + ".UPDATED", settingDao.getSetting(TEST_KEY + 1, TEST_TYPE));
-		assertEquals(TEST_VALUE + ".UPDATED", settingDao.getSetting(TEST_KEY + 3, TEST_TYPE));
+		Setting s = settingDao.readSetting(TEST_KEY + "4", TEST_TYPE);
+		assertThat("Setting value updated", s.getValue(), is(equalTo(TEST_VALUE + ".UPDATED")));
+		assertThat("Setting note updated", s.getNote(), is(equalTo("This is my note, UPDATED.")));
 	}
 
 	@Test
@@ -289,6 +330,27 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		assertEquals(TEST_VALUE, s.getValue());
 		Assert.assertNotNull(s.getModified());
 		assertEquals(in.getFlags(), s.getFlags());
+	}
+
+	@Test
+	public void readSingle_withNote() {
+		// GIVEN
+		Setting in = new Setting(TEST_KEY, TEST_TYPE, TEST_VALUE, "This is my test note.",
+				EnumSet.of(Setting.SettingFlag.IgnoreModificationDate));
+		settingDao.storeSetting(in);
+
+		// WHEN
+		Setting s = settingDao.readSetting(TEST_KEY, TEST_TYPE);
+
+		// THEN
+		assertThat("Setting returned", s, is(notNullValue()));
+		assertThat("Different instance returneed", s, is(not(sameInstance(in))));
+		assertThat("Key matches input", s.getKey(), is(equalTo(in.getKey())));
+		assertThat("Type matches input", s.getType(), is(equalTo(in.getType())));
+		assertThat("Value matches input", s.getValue(), is(equalTo(in.getValue())));
+		assertThat("Note matches input", s.getNote(), is(equalTo(in.getNote())));
+		assertThat("Flags preserved", s.getFlags(), is(equalTo(in.getFlags())));
+		assertThat("Modification date populated", s.getModified(), is(notNullValue()));
 	}
 
 	@Test

@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingValueBean.java - Mar 18, 2012 3:38:04 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,9 +24,9 @@ package net.solarnetwork.node.settings;
 
 /**
  * An individual setting value.
- * 
+ *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class SettingValueBean implements SettingsUpdates.Change {
 
@@ -34,6 +34,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	private String instanceKey;
 	private String key;
 	private String value;
+	private String note;
 	private boolean trans;
 	private boolean remove;
 
@@ -46,7 +47,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @param value
@@ -54,14 +55,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @since 1.2
 	 */
 	public SettingValueBean(String key, String value) {
-		super();
-		this.key = key;
-		this.value = value;
+		this(null, null, key, value);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param providerKey
 	 *        the provider key
 	 * @param instanceKey
@@ -73,16 +72,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @since 1.3
 	 */
 	public SettingValueBean(String providerKey, String instanceKey, String key, String value) {
-		super();
-		this.providerKey = providerKey;
-		this.instanceKey = instanceKey;
-		this.key = key;
-		this.value = value;
+		this(providerKey, instanceKey, key, value, null);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @param remove
@@ -90,9 +85,31 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @since 1.2
 	 */
 	public SettingValueBean(String key, boolean remove) {
-		super();
 		this.key = key;
 		this.remove = remove;
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param providerKey
+	 *        the provider key
+	 * @param instanceKey
+	 *        the instance key
+	 * @param key
+	 *        the key
+	 * @param value
+	 *        the value
+	 * @since 1.4
+	 */
+	public SettingValueBean(String providerKey, String instanceKey, String key, String value,
+			String note) {
+		super();
+		this.providerKey = providerKey;
+		this.instanceKey = instanceKey;
+		this.key = key;
+		this.value = value;
+		this.note = note;
 	}
 
 	@Override
@@ -108,7 +125,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Get the remove flag.
-	 * 
+	 *
 	 * @return {@literal true} this setting should be deleted
 	 * @since 1.1
 	 */
@@ -119,7 +136,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Set the remove flag.
-	 * 
+	 *
 	 * @param remove
 	 *        The flag to set.
 	 * @since 1.1
@@ -135,7 +152,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Set the transient flag.
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -150,7 +167,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Set the provider key.
-	 * 
+	 *
 	 * @param providerKey
 	 *        the key to set
 	 */
@@ -165,7 +182,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Set the key.
-	 * 
+	 *
 	 * @param key
 	 *        the key to set
 	 */
@@ -180,7 +197,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Set the value.
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -195,12 +212,34 @@ public class SettingValueBean implements SettingsUpdates.Change {
 
 	/**
 	 * Set the instance key.
-	 * 
+	 *
 	 * @param instanceKey
 	 *        the key to set
 	 */
 	public void setInstanceKey(String instanceKey) {
 		this.instanceKey = instanceKey;
+	}
+
+	/**
+	 * Get the note.
+	 *
+	 * @return the note
+	 * @since 1.4
+	 */
+	@Override
+	public final String getNote() {
+		return note;
+	}
+
+	/**
+	 * Set the note.
+	 *
+	 * @param note
+	 *        the note to set
+	 * @since 1.4
+	 */
+	public final void setNote(String note) {
+		this.note = note;
 	}
 
 }
