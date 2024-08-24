@@ -937,7 +937,6 @@ function settingKeyForProvider(/** @type string */ providerId, /** @type string 
  */
 
 function renderProviderNotes(/** @type SettingNote[] */ notes,/** @type HTMLButtonElement[] */ noteButtons) {
-	console.log('Got notes %o for buttons %o', notes, noteButtons);
 	for ( let btn of noteButtons ) {
 		const btnKey = settingKeyForProvider(btn.dataset.provider, btn.dataset.instance);
 		for ( let note of notes ) {
