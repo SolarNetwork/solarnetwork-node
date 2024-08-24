@@ -47,6 +47,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.osgi.framework.Constants.SERVICE_PID;
 import java.io.BufferedReader;
 import java.io.File;
@@ -94,6 +95,7 @@ import net.solarnetwork.node.dao.BatchableDao;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.settings.SettingResourceHandler;
@@ -781,6 +783,59 @@ public class CASettingsServiceTests {
 		// @formatter:on
 	}
 
+	@Test
+	public void importCsv_withEmptyFlagsAndModifiedDateAndNotes() throws IOException {
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		txManager.commit(tx);
+
+		// handle "bim" CA configurations update
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("bim", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps);
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
+		config.update(capture(configPropsUpdatesCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-06.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted 'foo' and 'bim' setting values", settingCaptor.getValues(), hasSize(2));
+		// @formatter:off
+		assertThat("Persisted 'foo' setting", settingCaptor.getValues().get(0), allOf(
+				hasProperty("key", equalTo("foo")),
+				hasProperty("type", equalTo("")),
+				hasProperty("value", equalTo("bar")),
+				hasProperty("flags", equalTo(emptySet())),
+				hasProperty("note", nullValue())
+				));
+		assertThat("Persisted 'bim' setting", settingCaptor.getValues().get(1), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("bam")),
+				hasProperty("value", equalTo("pow")),
+				hasProperty("flags", nullValue()),
+				hasProperty("note", equalTo("a note"))
+				));
+		// @formatter:on
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void getSettings_nullArgs() {
 		// GIVEN
@@ -1187,6 +1242,59 @@ public class CASettingsServiceTests {
 		String expected = FileCopyUtils.copyToString(new InputStreamReader(
 				getClass().getResourceAsStream("test-export-03.csv"), StandardCharsets.UTF_8));
 		assertThat("All results exported", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void notesForKey() {
+		// GIVEN
+		final String key = UUID.randomUUID().toString();
+		final List<SettingNote> notes = new ArrayList<>();
+		expect(dao.notesForKey(key)).andReturn(notes);
+
+		// WHEN
+		replayAll();
+		List<SettingNote> result = service.notesForKey(key);
+
+		// THEN
+		assertThat("Results from DAO returned directly", result, is(sameInstance(notes)));
+	}
+
+	private void assertNoteEquals(String msg, SettingNote actual, SettingNote expected) {
+		assertThat(msg + " not null", actual, is(notNullValue()));
+		assertThat(msg + " key", actual.getKey(), is(equalTo(expected.getKey())));
+		assertThat(msg + " type", actual.getType(), is(equalTo(expected.getType())));
+		assertThat(msg + " note", actual.getNote(), is(equalTo(expected.getNote())));
+	}
+
+	@Test
+	public void saveNotes() {
+		// GIVEN
+		final List<SettingValueBean> updates = Arrays.asList(
+				new SettingValueBean("foo", "1", "a", null, "Note 1"),
+				new SettingValueBean("foo", "1", "b", null, "Note 2"),
+				new SettingValueBean("bar", "1", "aa", null, "Note 3"),
+				new SettingValueBean("bim", null, "aaa", null, "Note 4"));
+		final SettingsCommand cmd = new SettingsCommand(updates);
+		final Capture<Iterable<? extends SettingNote>> notesCaptor = Capture.newInstance();
+		dao.storeNotes(capture(notesCaptor));
+
+		// WHEN
+		replayAll();
+		service.saveNotes(cmd);
+
+		// THEN
+		assertThat("Notes passed to DAO", notesCaptor.getValue(), is(notNullValue()));
+		List<SettingNote> persistedNotes = stream(notesCaptor.getValue().spliterator(), false)
+				.collect(toList());
+		for ( int i = 0; i < updates.size(); i++ ) {
+			SettingValueBean upd = updates.get(i);
+			String expectedKey = upd.getProviderKey();
+			if ( upd.getInstanceKey() != null ) {
+				expectedKey += "." + upd.getInstanceKey();
+			}
+			SettingNote expected = Setting.note(expectedKey, upd.getKey(), upd.getNote());
+			assertNoteEquals("Note 1", persistedNotes.get(i), expected);
+		}
 	}
 
 }

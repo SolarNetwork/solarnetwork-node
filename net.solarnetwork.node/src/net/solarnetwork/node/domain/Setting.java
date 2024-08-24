@@ -40,7 +40,7 @@ import java.util.Set;
  * @author matt
  * @version 2.1
  */
-public class Setting {
+public class Setting implements SettingNote {
 
 	/**
 	 * An enumeration of setting flags.
@@ -182,6 +182,22 @@ public class Setting {
 		this.flags = flags;
 	}
 
+	/**
+	 * Create a {@link SettingNote} instance.
+	 *
+	 * @param key
+	 *        the key
+	 * @param type
+	 *        the type
+	 * @param note
+	 *        the note
+	 * @return the note instance
+	 * @since 2.1
+	 */
+	public static SettingNote note(String key, String type, String note) {
+		return new Setting(key, type, null, note, null);
+	}
+
 	@Override
 	public String toString() {
 		return "Setting{key=" + key + ",type=" + type + ",flags=" + flags + '}';
@@ -223,6 +239,7 @@ public class Setting {
 	 *
 	 * @return the key
 	 */
+	@Override
 	public String getKey() {
 		return key;
 	}
@@ -242,6 +259,7 @@ public class Setting {
 	 *
 	 * @return the type
 	 */
+	@Override
 	public String getType() {
 		return type;
 	}
@@ -281,6 +299,7 @@ public class Setting {
 	 * @return the note
 	 * @since 2.1
 	 */
+	@Override
 	public final String getNote() {
 		return note;
 	}

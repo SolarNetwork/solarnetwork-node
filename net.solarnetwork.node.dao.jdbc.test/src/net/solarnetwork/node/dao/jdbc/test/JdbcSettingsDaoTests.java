@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
@@ -37,9 +38,15 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Assert;
@@ -57,6 +64,7 @@ import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.JdbcSettingDao;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.Setting.SettingFlag;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.service.StaticOptionalService;
 
@@ -152,6 +160,120 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 				is(equalTo(TEST_TYPE)));
 		assertThat("Event value property", event.getProperty(SettingDao.SETTING_VALUE),
 				is(equalTo(TEST_VALUE)));
+	}
+
+	@Test
+	public void findNotesForKey() {
+		// GIVEN
+		final int keyCount = 2;
+		final int typeCount = 4;
+		final Map<String, List<Setting>> settings = new HashMap<>(2);
+		for ( int i = 0; i < keyCount; i++ ) {
+			for ( int j = 0; j < typeCount; j++ ) {
+				// note added only for even-numbered types
+				Setting s = new Setting(String.format("key.%d", i), String.format("type.%d", j),
+						String.format("value.%d.%d", i, j),
+						j % 2 == 0 ? String.format("note.%d.%d", i, j) : null, null);
+				settingDao.storeSetting(s);
+				settings.computeIfAbsent(s.getKey(), k -> new ArrayList<>()).add(s);
+			}
+		}
+
+		// WHEN
+		final String keyToFind = "key.0";
+		List<SettingNote> result = settingDao.notesForKey(keyToFind);
+
+		// THEN
+		assertThat("Results available for key", result, hasSize(2));
+		for ( int i = 0; i < 2; i++ ) {
+			SettingNote note = result.get(i);
+			assertThat("Notes returned for requested key", note.getKey(), is(equalTo(keyToFind)));
+			assertThat("Notes returned in type order", note.getType(),
+					is(equalTo(String.format("type.%d", i * 2))));
+			assertThat("Note returned", note.getNote(), is(equalTo(String.format("note.0.%d", i * 2))));
+		}
+	}
+
+	@Test
+	public void insertNotes() {
+		final int keyCount = 2;
+		final int typeCount = 4;
+		final Map<String, List<SettingNote>> settings = new HashMap<>(2);
+		for ( int i = 0; i < keyCount; i++ ) {
+			for ( int j = 0; j < typeCount; j++ ) {
+				SettingNote s = Setting.note(String.format("key.%d", i), String.format("type.%d", j),
+						String.format("note.%d.%d", i, j));
+				settings.computeIfAbsent(s.getKey(), k -> new ArrayList<>()).add(s);
+			}
+		}
+
+		// WHEN
+		final List<SettingNote> notes = settings.values().stream().flatMap(l -> l.stream())
+				.collect(Collectors.toList());
+		settingDao.storeNotes(notes);
+
+		// THEN
+		for ( Entry<String, List<SettingNote>> e : settings.entrySet() ) {
+			List<SettingNote> persisted = settingDao.notesForKey(e.getKey());
+			assertThat("Persisted all notes", persisted, hasSize(e.getValue().size()));
+			for ( int i = 0; i < typeCount; i++ ) {
+				SettingNote persistedNote = persisted.get(i);
+				assertThat("Key persisted", persistedNote.getKey(), is(equalTo(e.getKey())));
+				assertThat("Type persisted", persistedNote.getType(),
+						is(equalTo(e.getValue().get(i).getType())));
+				assertThat("Note persisted", persistedNote.getNote(),
+						is(equalTo(e.getValue().get(i).getNote())));
+			}
+		}
+	}
+
+	@Test
+	public void updateNotes() {
+		final int keyCount = 2;
+		final int typeCount = 4;
+		final Map<String, List<Setting>> settings = new HashMap<>(2);
+		for ( int i = 0; i < keyCount; i++ ) {
+			for ( int j = 0; j < typeCount; j++ ) {
+				// note added only for even-numbered types
+				Setting s = new Setting(String.format("key.%d", i), String.format("type.%d", j),
+						String.format("value.%d.%d", i, j),
+						j % 2 == 0 ? String.format("note.%d.%d", i, j) : null, null);
+				settingDao.storeSetting(s);
+				settings.computeIfAbsent(s.getKey(), k -> new ArrayList<>()).add(s);
+			}
+		}
+
+		// WHEN
+		final String updateKey = "key.0";
+		final List<Setting> notes = settings.get(updateKey);
+		for ( Setting s : notes ) {
+			s.setNote((s.getNote() != null ? s.getNote() : "") + " UPDATED");
+		}
+		settingDao.storeNotes(notes);
+
+		// THEN
+		List<SettingNote> persisted = settingDao.notesForKey(updateKey);
+		assertThat("Persisted all notes", persisted, hasSize(notes.size()));
+		for ( int i = 0; i < typeCount; i++ ) {
+			SettingNote persistedNote = persisted.get(i);
+			assertThat("Key preserved", persistedNote.getKey(), is(equalTo(updateKey)));
+			assertThat("Type preserved", persistedNote.getType(), is(equalTo(notes.get(i).getType())));
+			assertThat("Note updated", persistedNote.getNote(), is(equalTo(notes.get(i).getNote())));
+		}
+	}
+
+	@Test
+	public void emptyNotePersistedAsNull() {
+		// GIVEN
+		Setting s = new Setting("k", "t", "v", "", null);
+		settingDao.storeSetting(s);
+
+		// WHEN
+		Setting result = settingDao.readSetting(s.getKey(), s.getType());
+
+		// THEN
+		assertThat("Result available", result, is(not(nullValue())));
+		assertThat("Empty note persisted as NULL", result.getNote(), is(nullValue()));
 	}
 
 	@Test

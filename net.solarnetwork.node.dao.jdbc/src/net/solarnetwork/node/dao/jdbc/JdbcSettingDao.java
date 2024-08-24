@@ -50,6 +50,7 @@ import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.Setting.SettingFlag;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.service.OptionalService;
 
 /**
@@ -80,8 +81,14 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	/** The SQL resource for a typed fetch. */
 	public static final String SQL_RESOURCE_TYPED_GET = "typed-get";
 
+	/** The SQL resource for a typed fetch for note. */
+	public static final String SQL_RESOURCE_TYPED_GET_NOTE = "typed-get-note";
+
 	/** The SQL resource for a search. */
 	public static final String SQL_RESOURCE_FIND = "find";
+
+	/** The SQL resource for a search for notes for a key. */
+	public static final String SQL_RESOURCE_FIND_NOTES_FOR_KEY = "find-notes-for-key";
 
 	/** The SQL resource for a fetch for update. */
 	public static final String SQL_RESOURCE_BATCH_GET_FOR_UPDATE = "batch-get-for-update";
@@ -210,6 +217,18 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
+	public List<SettingNote> notesForKey(String key) {
+		return getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_FIND_NOTES_FOR_KEY),
+				new RowMapper<SettingNote>() {
+
+					@Override
+					public SettingNote mapRow(ResultSet rs, int rowNum) throws SQLException {
+						return Setting.note(rs.getString(1), rs.getString(2), rs.getString(3));
+					}
+				}, key);
+	}
+
+	@Override
 	public void storeSetting(final String key, final String type, final String value) {
 		TransactionTemplate tt = getTransactionTemplate();
 		if ( tt != null ) {
@@ -217,11 +236,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					storeSettingInternal(key, type, value, null, 0);
+					storeSettingInternal(key, type, value, null, 0, false);
 				}
 			});
 		} else {
-			storeSettingInternal(key, type, value, null, 0);
+			storeSettingInternal(key, type, value, null, 0, false);
 		}
 	}
 
@@ -234,13 +253,96 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
 					storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
-							setting.getNote(), SettingFlag.maskForSet(setting.getFlags()));
+							setting.getNote(), SettingFlag.maskForSet(setting.getFlags()), true);
 				}
 			});
 		} else {
 			storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
-					setting.getNote(), SettingFlag.maskForSet(setting.getFlags()));
+					setting.getNote(), SettingFlag.maskForSet(setting.getFlags()), true);
 		}
+	}
+
+	@Override
+	public void storeNotes(Iterable<? extends SettingNote> notes) {
+		TransactionTemplate tt = getTransactionTemplate();
+		if ( tt != null ) {
+			tt.execute(new TransactionCallbackWithoutResult() {
+
+				@Override
+				protected void doInTransactionWithoutResult(TransactionStatus status) {
+					for ( SettingNote note : notes ) {
+						storeNoteInternal(note.getKey(), note.getType(), note.getNote());
+					}
+				}
+			});
+		} else {
+			for ( SettingNote note : notes ) {
+				storeNoteInternal(note.getKey(), note.getType(), note.getNote());
+			}
+		}
+	}
+
+	private void storeNoteInternal(final String key, final String ttype, final String note) {
+		final String type = (ttype == null ? "" : ttype);
+		final Timestamp now = new Timestamp(System.currentTimeMillis());
+		final String sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET_NOTE));
+		final String noteToSave = (note != null && !note.isEmpty() ? note : null);
+		// to avoid bumping modified date column when values haven't changed, we are careful here
+		// to compare before actually updating
+		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {
+
+			@Override
+			public Boolean doInConnection(Connection con) throws SQLException, DataAccessException {
+				PreparedStatement stmt = null;
+				ResultSet rs = null;
+				boolean updated = false;
+
+				try {
+					stmt = con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+							ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+					stmt.setString(1, key);
+					stmt.setString(2, type);
+
+					if ( stmt.execute() ) {
+						rs = stmt.getResultSet();
+						if ( rs.next() ) {
+							String oldNote = rs.getString(1);
+							if ( note != oldNote && ((oldNote != null && !oldNote.equals(noteToSave))
+									|| (noteToSave != null && !noteToSave.equals(oldNote))) ) {
+								rs.updateString(1, noteToSave);
+								updated = true;
+							}
+							if ( updated ) {
+								rs.updateTimestamp(2, now);
+								rs.updateRow();
+							}
+						} else {
+							rs.moveToInsertRow();
+							rs.updateString(1, noteToSave);
+							rs.updateTimestamp(2, now);
+							rs.updateString(3, key);
+							rs.updateString(4, type);
+							rs.updateString(5, ""); // non-null column
+							rs.insertRow();
+							updated = true;
+						}
+					}
+				} finally {
+					if ( stmt != null ) {
+						SQLWarning warning = stmt.getWarnings();
+						if ( warning != null ) {
+							log.warn("SQL warning saving setting {}.{} note to {}", key, type,
+									noteToSave, warning);
+						}
+						stmt.close();
+					}
+					if ( rs != null ) {
+						rs.close();
+					}
+				}
+				return updated;
+			}
+		});
 	}
 
 	@Override
@@ -260,10 +362,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	private void storeSettingInternal(final String key, final String ttype, final String value,
-			final String note, final int flags) {
+			final String note, final int flags, final boolean updateNote) {
 		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
 		final String sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET));
+		final String noteToSave = (note != null && !note.isEmpty() ? note : null);
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
 		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {
@@ -288,11 +391,13 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 								rs.updateString(1, value);
 								updated = true;
 							}
-							String oldNote = rs.getString(6);
-							if ( note != oldNote && ((oldNote != null && !oldNote.equals(note))
-									|| (note != null && !note.equals(oldNote))) ) {
-								rs.updateString(6, note);
-								updated = true;
+							if ( updateNote ) {
+								String oldNote = rs.getString(6);
+								if ( note != oldNote && ((oldNote != null && !oldNote.equals(noteToSave))
+										|| (noteToSave != null && !noteToSave.equals(oldNote))) ) {
+									rs.updateString(6, noteToSave);
+									updated = true;
+								}
 							}
 							if ( updated ) {
 								rs.updateTimestamp(2, now);
@@ -305,7 +410,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 							rs.updateString(3, key);
 							rs.updateString(4, type);
 							rs.updateInt(5, flags);
-							rs.updateString(6, note);
+							if ( updateNote ) {
+								rs.updateString(6, noteToSave);
+							}
 							rs.insertRow();
 							updated = true;
 						}

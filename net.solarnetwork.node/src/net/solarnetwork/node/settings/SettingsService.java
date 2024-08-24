@@ -34,6 +34,7 @@ import java.util.Set;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  *
  * @author matt
- * @version 2.5
+ * @version 2.6
  * @since 2.0
  */
 public interface SettingsService {
@@ -427,6 +428,27 @@ public interface SettingsService {
 	 * @since 2.1
 	 */
 	List<Setting> getSettings(String factoryUid, String instanceUid);
+
+	/**
+	 * Get a list of available setting notes for a given key.
+	 *
+	 * @parm key the setting key to get the notes for
+	 * @return the available notes, never {@literal null}
+	 * @since 2.6
+	 */
+	List<SettingNote> notesForKey(String key);
+
+	/**
+	 * Save a set of notes.
+	 *
+	 * <p>
+	 * Only the note values will be persisted, all other properties are ignored.
+	 * </p>
+	 *
+	 * @param command
+	 *        the notes to save
+	 */
+	void saveNotes(SettingsCommand command);
 
 	/**
 	 * Import all settings from a CSV formatted text stream.

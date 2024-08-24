@@ -217,7 +217,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the key to set
 	 */
 	public void setInstanceKey(String instanceKey) {
-		this.instanceKey = instanceKey;
+		this.instanceKey = (instanceKey != null && !instanceKey.isEmpty() ? instanceKey : null);
 	}
 
 	/**
