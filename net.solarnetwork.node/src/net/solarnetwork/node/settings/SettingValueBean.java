@@ -100,6 +100,8 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the key
 	 * @param value
 	 *        the value
+	 * @param note
+	 *        the note
 	 * @since 1.4
 	 */
 	public SettingValueBean(String providerKey, String instanceKey, String key, String value,

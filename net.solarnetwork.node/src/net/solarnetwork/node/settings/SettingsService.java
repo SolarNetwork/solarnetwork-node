@@ -432,7 +432,8 @@ public interface SettingsService {
 	/**
 	 * Get a list of available setting notes for a given key.
 	 *
-	 * @parm key the setting key to get the notes for
+	 * @param key
+	 *        the setting key to get the notes for
 	 * @return the available notes, never {@literal null}
 	 * @since 2.6
 	 */
