@@ -81,3 +81,4 @@
 		</script>
 	</section>
 </c:if>
+<jsp:include page="note-popover.jsp"/>
