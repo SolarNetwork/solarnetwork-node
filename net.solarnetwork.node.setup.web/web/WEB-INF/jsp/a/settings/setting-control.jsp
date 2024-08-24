@@ -327,12 +327,26 @@
 				<c:set var="help">
 					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}' arguments='${setting.descriptionArguments}'/>
 				</c:set>
-
 				<c:if test="${fn:length(help) gt 0}">
 					<button type="button" class="help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 							data-bs-content="${fn:escapeXml(help)}"
 							data-bs-html="true">
 						<i class="bi bi-question-circle" aria-hidden="true"></i>
+					</button>
+				</c:if>
+				<c:if test="${not setting['transient']
+							and setup:instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')
+							and not setup:instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')
+							and not(setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier')
+								and not setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier'))}">
+					<button type="button" class="note-popover help-icon" title="<fmt:message key='note.label'/>" tabindex="-1"
+							data-key="${settingId}"
+							data-provider-name="<setup:message key='title' messageSource='${provider.messageSource}' text='${provider.displayName}'/>"
+							data-provider="${provider.settingUid}"
+							data-setting="${setup:js(setting.key)}"
+							data-instance="${instanceId}"
+							>
+						<i class="bi bi-sticky" aria-hidden="true"></i>
 					</button>
 				</c:if>
 			</div>

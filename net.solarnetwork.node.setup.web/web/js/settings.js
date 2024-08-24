@@ -464,7 +464,7 @@ SolarNode.Settings.addGroupedSetting = function(params) {
  * @param resultCallback {Function} optional callback to invoke after updates saved, passed error as parameter
  * @param extraFormData {Object} any extra form data to include in the submission
  */
-SolarNode.Settings.saveUpdates = function(url, msg, resultCallback, extraFormData) {
+SolarNode.Settings.saveUpdates = function saveUpdates(url, msg, resultCallback, extraFormData) {
 	var updates = SolarNode.Settings.updates;
 	var formData = '';
 	var i = 0;
@@ -845,7 +845,54 @@ function setupComponentSettings(container) {
 		}
 	});
 	
-	// a Map<String, String[]> mapping of factory IDs to associated UL elements, so we only 
+	// edit note buttons
+	const notesByKey = new Map(); // Map<String, HTMLButtonElement[]>
+	container.find('button.note-popover').on('click', function(event) {
+		event.preventDefault();
+		const noteBtn = $(this);
+		const key = this.dataset.key;
+		const providerName = this.dataset.providerName;
+		const container = $('#cg-' +key);
+		const helpHtml = noteBtn.prev('.help-popover').data('bs-content');
+		const help = $('#edit-setting-note-help');
+
+		let  name = container.children('label').first().text().trim();
+		
+		// look for a list item group setting name
+		let groupName = container.closest('.grouped').prev('.grouped').children('label').first().text().trim();
+		let groupContainer = container.parent('.group');
+		if (groupName) {
+			name = groupName + ' #' +(groupContainer.length ? (groupContainer.prevAll('.group').length+1) + ' ' : '') + name;
+		}
+		
+		$('#edit-setting-note-name').text(providerName + ': ' + name);
+		if (helpHtml) {
+			help.removeClass('hidden').find('.form-text').html(helpHtml);
+		} else {
+			help.addClass('hidden');
+		}
+		const modal = $('#edit-setting-note-modal');
+		$('#edit-setting-note-provider').val(this.dataset.provider);
+		$('#edit-setting-note-instance').val(this.dataset.instance);
+		$('#edit-setting-note-key').val(this.dataset.setting);
+		$('#edit-setting-note-note').val(this.dataset.note);
+		modal.data('note', noteBtn).modal('show');
+	}).each(function(_idx, noteBtn) {
+		let key = noteBtn.dataset.provider;
+		const instanceId = noteBtn.dataset.instance;
+		if (instanceId) {
+			key += '.' + instanceId;
+		}
+		let list = notesByKey.get(key);
+		if ( !list ) {
+			list = [];
+			notesByKey.set(key, list);
+		}
+		list.push(noteBtn);
+	});
+	populateProviderNotes(notesByKey);
+	
+	// a Map<String, HTMLUListElement[]> mapping of factory IDs to associated UL elements, so we only 
 	// request data once per factory
 	const settingRelatedServiceLists = new Map();
 	container.find('ul.dropdown-menu.setting-related-service').each(function(_idx, el) {
@@ -862,7 +909,55 @@ function setupComponentSettings(container) {
 		return true;
 	});
 	populateSettingProviderFactoryLists(settingRelatedServiceLists);
+}
 
+function populateProviderNotes(/** @type Map<String, HTMLButtonElement[]> */ noteButtonsByKey) {
+	for ( let key of noteButtonsByKey.keys() ) {
+		$.getJSON(SolarNode.context.path('/a/settings/notes?key='+encodeURIComponent(key))).done(function(json) {
+			if ( json && Array.isArray(json.data) && json.data.length > 0 ) {				
+				renderProviderNotes(json.data, noteButtonsByKey.get(key));
+			}
+		});
+	}
+}
+
+function settingKeyForProvider(/** @type string */ providerId, /** @type string */instanceId) {
+	let key = providerId;
+	if (instanceId) {
+		key += '.' + instanceId;
+	}
+	return key;
+}
+
+/**
+ * @typedef {Object} SettingNote
+ * @property {string} key the setting key
+ * @property {string} type the setting type
+ * @property {string} note the note
+ */
+
+function renderProviderNotes(/** @type SettingNote[] */ notes,/** @type HTMLButtonElement[] */ noteButtons) {
+	for ( let btn of noteButtons ) {
+		const btnKey = settingKeyForProvider(btn.dataset.provider, btn.dataset.instance);
+		for ( let note of notes ) {
+			if ( btnKey === note.key && btn.dataset.setting === note.type ) {
+				renderProviderNote(note, btn);
+				break;
+			}
+		}
+	}
+}
+
+function renderProviderNote(/** @type SettingNote */ note,/** @type HTMLButtonElement */ btn) {
+	btn.dataset.note = note.note;
+	if (note.note) {
+		btn.classList.add('text-primary');
+	} else {
+		btn.classList.remove('text-primary');
+	}
+	$(btn).children('.bi')
+		.toggleClass('bi-sticky-fill', note.note)
+		.toggleClass('bi-sticky', !note.note);
 }
 
 function populateSettingProviderFactoryLists(/** @type Map<String, HTMLUListElement[]> */ settingRelatedServiceLists) {
@@ -1071,6 +1166,29 @@ $(document).ready(function() {
 		}
 		document.location.hash = encodeURIComponent(instanceKey);
 		loadComponentInstance(instanceKey);
+	});
+
+	$('#edit-setting-note-modal').ajaxForm({
+		dataType: 'json',
+		success: function(json) {
+			var modal = $('#edit-setting-note-modal');
+			if ( json && json.success === true ) {
+				renderProviderNote({
+					key: settingKeyForProvider($('#edit-setting-note-provider').val(), $('#edit-setting-note-instance').val()),
+					type: $('#edit-setting-note-key').val(),
+					note: $('#edit-setting-note-note').val(),
+				}, modal.data('note')[0]);
+				modal.modal('hide');
+			} else {
+				SolarNode.error(json.message, $('#edit-setting-note-modal .modal-body'));
+			}
+		},
+		error: function(xhr) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#edit-setting-note-modal .modal-body'));
+		}
+	}).on('shown.bs.modal', function() {
+		$('#edit-setting-note-note').focus();
 	});
 	
 	selectInitialComponentInstance();

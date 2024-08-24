@@ -1,21 +1,21 @@
 /* ==================================================================
  * Setting.java - Nov 5, 2012 11:05:11 AM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,17 +30,17 @@ import java.util.Set;
 
 /**
  * An application setting object.
- * 
+ *
  * <p>
  * A setting is based on a {@code key} and {@code type}, the combination of
  * which forms a unique key for its associated value. No values are allowed to
  * be {@literal null}, but empty strings are allowed.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class Setting {
+public class Setting implements SettingNote {
 
 	/**
 	 * An enumeration of setting flags.
@@ -61,7 +61,7 @@ public class Setting {
 
 		/**
 		 * Get the key value.
-		 * 
+		 *
 		 * @return the key
 		 */
 		public int getKey() {
@@ -70,7 +70,7 @@ public class Setting {
 
 		/**
 		 * Get a SettingFlag for a given key.
-		 * 
+		 *
 		 * @param key
 		 *        the key
 		 * @return the flag
@@ -92,7 +92,7 @@ public class Setting {
 
 		/**
 		 * Create a set of SettingFlag from a mask.
-		 * 
+		 *
 		 * @param mask
 		 *        the mask
 		 * @return the set (never {@literal null})
@@ -112,7 +112,7 @@ public class Setting {
 
 		/**
 		 * Get a mask from a set of SettingFlag.
-		 * 
+		 *
 		 * @param set
 		 *        the set
 		 * @return the mask
@@ -131,6 +131,7 @@ public class Setting {
 	private String key;
 	private String type;
 	private String value;
+	private String note;
 	private Date modified;
 	private Set<SettingFlag> flags;
 
@@ -143,7 +144,7 @@ public class Setting {
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @param type
@@ -154,11 +155,47 @@ public class Setting {
 	 *        the falgs
 	 */
 	public Setting(String key, String type, String value, Set<SettingFlag> flags) {
+		this(key, type, value, null, flags);
+	}
+
+	/**
+	 * Construct with values.
+	 *
+	 * @param key
+	 *        the key
+	 * @param type
+	 *        the type
+	 * @param value
+	 *        the value
+	 * @param note
+	 *        the note
+	 * @param flags
+	 *        the falgs
+	 * @since 2.1
+	 */
+	public Setting(String key, String type, String value, String note, Set<SettingFlag> flags) {
 		super();
 		this.key = key;
 		this.type = type;
 		this.value = value;
+		this.note = note;
 		this.flags = flags;
+	}
+
+	/**
+	 * Create a {@link SettingNote} instance.
+	 *
+	 * @param key
+	 *        the key
+	 * @param type
+	 *        the type
+	 * @param note
+	 *        the note
+	 * @return the note instance
+	 * @since 2.1
+	 */
+	public static SettingNote note(String key, String type, String note) {
+		return new Setting(key, type, null, note, null);
 	}
 
 	@Override
@@ -199,16 +236,17 @@ public class Setting {
 
 	/**
 	 * Get the key.
-	 * 
+	 *
 	 * @return the key
 	 */
+	@Override
 	public String getKey() {
 		return key;
 	}
 
 	/**
 	 * Set the key.
-	 * 
+	 *
 	 * @param key
 	 *        the key to set
 	 */
@@ -218,16 +256,17 @@ public class Setting {
 
 	/**
 	 * Get the type.
-	 * 
+	 *
 	 * @return the type
 	 */
+	@Override
 	public String getType() {
 		return type;
 	}
 
 	/**
 	 * Set the type.
-	 * 
+	 *
 	 * @param type
 	 *        the type to set
 	 */
@@ -237,7 +276,7 @@ public class Setting {
 
 	/**
 	 * Get the value.
-	 * 
+	 *
 	 * @return the value
 	 */
 	public String getValue() {
@@ -246,7 +285,7 @@ public class Setting {
 
 	/**
 	 * Set the value.
-	 * 
+	 *
 	 * @param value
 	 *        the value to set
 	 */
@@ -255,8 +294,30 @@ public class Setting {
 	}
 
 	/**
+	 * Get the note.
+	 *
+	 * @return the note
+	 * @since 2.1
+	 */
+	@Override
+	public final String getNote() {
+		return note;
+	}
+
+	/**
+	 * Set the note.
+	 *
+	 * @param note
+	 *        the note to set
+	 * @since 2.1
+	 */
+	public final void setNote(String note) {
+		this.note = note;
+	}
+
+	/**
 	 * Get the flags.
-	 * 
+	 *
 	 * @return the flags
 	 */
 	public Set<SettingFlag> getFlags() {
@@ -265,7 +326,7 @@ public class Setting {
 
 	/**
 	 * Set the flags.
-	 * 
+	 *
 	 * @param flags
 	 *        the flags to set
 	 */
@@ -275,7 +336,7 @@ public class Setting {
 
 	/**
 	 * Get the modification date.
-	 * 
+	 *
 	 * @return the date
 	 */
 	public Date getModified() {
@@ -284,7 +345,7 @@ public class Setting {
 
 	/**
 	 * Set the modification date.
-	 * 
+	 *
 	 * @param modified
 	 *        the date to set
 	 */
