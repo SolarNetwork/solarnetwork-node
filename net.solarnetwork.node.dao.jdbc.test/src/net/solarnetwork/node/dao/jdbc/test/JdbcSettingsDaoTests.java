@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -482,9 +483,9 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		Instant before = null;
 		Instant after = null;
 		for ( int i = 0; i < count; i += 1 ) {
-			before = Instant.now();
+			before = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
-			after = Instant.now();
+			after = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 			Thread.sleep(200);
 		}
 
