@@ -489,9 +489,9 @@ public class SettingsController {
 	/**
 	 * Find available notes for a given key.
 	 *
-	 * @param key
-	 *        the setting key to get notes for
-	 * @return the notes
+	 * @param command
+	 *        the setting notes to save
+	 * @return success result
 	 * @since 2.12
 	 */
 	@RequestMapping(value = "/notes", method = RequestMethod.POST)
