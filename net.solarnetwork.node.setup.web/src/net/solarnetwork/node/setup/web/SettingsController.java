@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.web;
 
 import static java.lang.String.format;
 import static java.util.Collections.sort;
+import static net.solarnetwork.domain.Result.success;
 import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
 import static net.solarnetwork.node.setup.web.support.WebServiceControllerSupport.responseOutputStream;
 import static net.solarnetwork.service.OptionalService.service;
@@ -85,6 +86,7 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingsBackup;
@@ -113,7 +115,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.11
+ * @version 2.12
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -426,11 +428,11 @@ public class SettingsController {
 	public Result<List<SettingSpecifierProviderInfo>> providerInfos(
 			@RequestParam("filter") String serviceFilter, Locale locale) {
 		if ( serviceRegistry == null ) {
-			return Result.success();
+			return success();
 		}
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service == null ) {
-			return Result.success();
+			return success();
 		}
 		final List<SettingSpecifierProviderInfo> results = serviceRegistry.services(serviceFilter)
 				.stream().filter((p) -> {
@@ -459,7 +461,48 @@ public class SettingsController {
 					}
 					return result;
 				}).collect(Collectors.toList());
-		return Result.success(results);
+		return success(results);
+	}
+
+	/**
+	 * Find available notes for a given key.
+	 *
+	 * @param key
+	 *        the setting key to get notes for
+	 * @return the notes
+	 * @since 2.12
+	 */
+	@RequestMapping(value = "/notes", method = RequestMethod.GET)
+	@ResponseBody
+	public Result<List<SettingNote>> notesForKey(@RequestParam("key") String key) {
+		final SettingsService service = service(settingsServiceTracker);
+		if ( service == null ) {
+			return success();
+		}
+		List<SettingNote> results = service.notesForKey(key);
+		Collections.sort(results, (l, r) -> {
+			return naturalSortCompare(l.getType(), r.getType(), false);
+		});
+		return success(results);
+	}
+
+	/**
+	 * Find available notes for a given key.
+	 *
+	 * @param command
+	 *        the setting notes to save
+	 * @return success result
+	 * @since 2.12
+	 */
+	@RequestMapping(value = "/notes", method = RequestMethod.POST)
+	@ResponseBody
+	public Result<Void> saveNotes(SettingsCommand command) {
+		final SettingsService service = service(settingsServiceTracker);
+		if ( service == null ) {
+			return success();
+		}
+		service.saveNotes(command);
+		return success();
 	}
 
 	/**
@@ -599,13 +642,11 @@ public class SettingsController {
 	 *
 	 * @param command
 	 *        the settings to save
-	 * @param model
-	 *        the model
 	 * @return the result
 	 */
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> saveSettings(CleanSupportSettingsCommand command, ModelMap model) {
+	public Response<Object> saveSettings(CleanSupportSettingsCommand command) {
 		final SettingsService service = service(settingsServiceTracker);
 		SettingsCommand cmd = command;
 		if ( service != null ) {

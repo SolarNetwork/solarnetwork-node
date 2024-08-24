@@ -1,0 +1,4 @@
+SELECT skey, tkey, note
+FROM SOLARNODE.SN_SETTINGS
+WHERE skey = ? AND note IS NOT NULL
+ORDER BY tkey

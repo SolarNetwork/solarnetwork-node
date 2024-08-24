@@ -393,3 +393,4 @@ $(function() {
 		</div>
 	</div>
 </form>
+<jsp:include page="note-popover.jsp"/>

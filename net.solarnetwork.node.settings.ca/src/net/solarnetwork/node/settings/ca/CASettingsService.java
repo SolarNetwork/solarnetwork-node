@@ -114,6 +114,7 @@ import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.Setting.SettingFlag;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -141,7 +142,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -824,8 +825,42 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
+	@Override
+	public List<SettingNote> notesForKey(String key) {
+		return settingDao.notesForKey(key);
+	}
+
+	@Override
+	public void saveNotes(SettingsCommand command) {
+		// create SettingNote instances from command
+		List<SettingValueBean> updates = command.getValues();
+		if ( updates == null || updates.isEmpty() ) {
+			return;
+		}
+		List<SettingNote> notes = new ArrayList<>(updates.size());
+		for ( SettingValueBean update : updates ) {
+			String settingKey = update.getProviderKey();
+			if ( settingKey == null || settingKey.isEmpty() ) {
+				continue;
+			}
+			if ( update.getInstanceKey() != null && !update.getInstanceKey().isEmpty() ) {
+				settingKey = getFactoryInstanceSettingKey(settingKey, update.getInstanceKey());
+			}
+			String typeKey = update.getKey();
+			if ( typeKey == null || typeKey.isEmpty() ) {
+				continue;
+			}
+
+			notes.add(Setting.note(settingKey, typeKey, update.getNote()));
+		}
+		if ( notes.isEmpty() ) {
+			return;
+		}
+		settingDao.storeNotes(notes);
+	}
+
 	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value", "flags",
-			"modified" };
+			"modified", "note" };
 	private static final String SETTING_MODIFIED_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 	@Override
@@ -851,8 +886,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 						return "";
 					}
-				}, new org.supercsv.cellprocessor.Optional(
-						new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT)) };
+				},
+				new org.supercsv.cellprocessor.Optional(
+						new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT)),
+				new org.supercsv.cellprocessor.Optional() };
 		final String providerFilter = (filter != null && filter.getProviderKey() != null
 				? filter.getProviderKey() + "."
 				: null);
@@ -1026,12 +1063,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
-		final CsvPreference prefs = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
-				.skipComments(new CommentStartsWith("#")).build();
-		final ICsvBeanReader reader = new CsvBeanReader(in, prefs);
-		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null,
-				new CellProcessor() {
+	private CellProcessor[] importProcessors(String[] headerRow) {
+		CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null,
+				new org.supercsv.cellprocessor.Optional(new CellProcessor() {
 
 					@SuppressWarnings("unchecked")
 					@Override
@@ -1043,9 +1077,35 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 						return set;
 					}
-				}, new org.supercsv.cellprocessor.Optional(
-						new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT)) };
-		reader.getHeader(true);
+				}),
+				new org.supercsv.cellprocessor.Optional(
+						new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT)),
+				new org.supercsv.cellprocessor.Optional() };
+		if ( processors.length > headerRow.length && headerRow.length > 2 ) {
+			CellProcessor[] p = new CellProcessor[headerRow.length];
+			System.arraycopy(processors, 0, p, 0, headerRow.length);
+			processors = p;
+		}
+		return processors;
+	}
+
+	private String[] importColumnNames(String[] headerRow) {
+		String[] cols = CSV_HEADERS;
+		if ( cols.length > headerRow.length && headerRow.length > 2 ) {
+			String[] c = new String[headerRow.length];
+			System.arraycopy(cols, 0, c, 0, headerRow.length);
+			cols = c;
+		}
+		return cols;
+	}
+
+	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
+		final CsvPreference prefs = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
+				.skipComments(new CommentStartsWith("#")).build();
+		final ICsvBeanReader reader = new CsvBeanReader(in, prefs);
+		final String[] headerRow = reader.getHeader(true);
+		final CellProcessor[] processors = importProcessors(headerRow);
+		final String[] colNames = importColumnNames(headerRow);
 		final List<Setting> importedSettings = new ArrayList<>();
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
@@ -1053,7 +1113,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			protected void doInTransactionWithoutResult(final TransactionStatus status) {
 				Setting s;
 				try {
-					while ( (s = reader.read(Setting.class, CSV_HEADERS, processors)) != null ) {
+					while ( (s = reader.read(Setting.class, colNames, processors)) != null ) {
 						if ( !callback.shouldImportSetting(s) ) {
 							continue;
 						}
