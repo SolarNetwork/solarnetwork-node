@@ -850,8 +850,8 @@ function setupComponentSettings(container) {
 	container.find('button.note-popover').on('click', function(event) {
 		event.preventDefault();
 		const noteBtn = $(this);
-		const key = noteBtn.data('key');
-		const providerName = noteBtn.data('providerName');
+		const key = this.dataset.key;
+		const providerName = this.dataset.providerName;
 		const container = $('#cg-' +key);
 		const helpHtml = noteBtn.prev('.help-popover').data('bs-content');
 		const help = $('#edit-setting-note-help');
@@ -872,10 +872,10 @@ function setupComponentSettings(container) {
 			help.addClass('hidden');
 		}
 		const modal = $('#edit-setting-note-modal');
-		$('#edit-setting-note-provider').val(noteBtn.data('provider'));
-		$('#edit-setting-note-instance').val(noteBtn.data('instance'));
-		$('#edit-setting-note-key').val(noteBtn.data('setting'));
-		$('#edit-setting-note-note').val(noteBtn.data('note'));
+		$('#edit-setting-note-provider').val(this.dataset.provider);
+		$('#edit-setting-note-instance').val(this.dataset.instance);
+		$('#edit-setting-note-key').val(this.dataset.setting);
+		$('#edit-setting-note-note').val(this.dataset.note);
 		modal.data('note', noteBtn).modal('show');
 	}).each(function(_idx, noteBtn) {
 		let key = noteBtn.dataset.provider;
