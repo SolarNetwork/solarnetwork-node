@@ -35,6 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Nifty Modbus implementation of {@link ModbusNetwork} using a serial RTU
@@ -139,6 +140,16 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 				String.valueOf(SerialParameters.DEFAULT_READ_TIMEOUT)));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlInString", "none"));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlOutString", "none"));
+
+		results.add(new BasicToggleSettingSpecifier("serialParams.rs485ModeEnabled", Boolean.FALSE));
+		results.add(new BasicToggleSettingSpecifier("serialParams.rs485RtsHighEnabled", Boolean.TRUE));
+		results.add(
+				new BasicToggleSettingSpecifier("serialParams.rs485TerminationEnabled", Boolean.FALSE));
+		results.add(new BasicToggleSettingSpecifier("serialParams.rs485EchoEnabled", Boolean.FALSE));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.rs485BeforeSendDelay",
+				String.valueOf(SerialParameters.DEFAULT_RS485_BEFORE_SEND_DELAY)));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.rs485AfterSendDelay",
+				String.valueOf(SerialParameters.DEFAULT_RS485_AFTER_SEND_DELAY)));
 
 		results.addAll(baseNiftyModbusNetworkSettings(DEFAULT_KEEP_OPEN_SECONDS));
 
