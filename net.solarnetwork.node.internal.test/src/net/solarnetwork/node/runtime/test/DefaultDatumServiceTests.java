@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultDatumServiceTests.java - 18/08/2021 10:48:38 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -62,13 +62,14 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.runtime.DefaultDatumService;
 import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.DatumQueueProcessObserver.Stage;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultDatumService} class.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultDatumServiceTests {
 
@@ -94,14 +95,27 @@ public class DefaultDatumServiceTests {
 	}
 
 	private Map<String, NodeDatum> populateDatum() {
-		return populateDatum(5);
+		return populateDatum(Stage.PostFilter);
+	}
+
+	private Map<String, NodeDatum> populateDatum(final Stage stage) {
+		return populateDatum(5, stage);
 	}
 
 	private Map<String, NodeDatum> populateDatum(final int count) {
-		return populateDatum(count, "test.%d");
+		return populateDatum(count, Stage.PostFilter);
 	}
 
-	private Map<String, NodeDatum> populateDatum(final int count, String sourceIdTemplate) {
+	private Map<String, NodeDatum> populateDatum(final int count, final Stage stage) {
+		return populateDatum(count, "test.%d", stage);
+	}
+
+	private Map<String, NodeDatum> populateDatum(final int count, final String sourceIdTemplate) {
+		return populateDatum(count, sourceIdTemplate, Stage.PostFilter);
+	}
+
+	private Map<String, NodeDatum> populateDatum(final int count, final String sourceIdTemplate,
+			final Stage stage) {
 		population = new LinkedMultiValueMap<>();
 		Map<String, NodeDatum> all = new LinkedHashMap<>();
 		final Instant start = Instant.now().truncatedTo(ChronoUnit.MINUTES);
@@ -112,7 +126,7 @@ public class DefaultDatumServiceTests {
 				all.put(datum.getSourceId(), datum);
 				population.add(datum.getSourceId(), datum);
 
-				service.accept(datum);
+				service.datumQueueWillProcess(null, datum, stage, true);
 			}
 		}
 		return all;
@@ -132,6 +146,28 @@ public class DefaultDatumServiceTests {
 		// THEN
 		Datum[] expected = all.values().toArray(new Datum[all.values().size()]);
 		assertThat("Latest datum returned", latest, containsInAnyOrder(expected));
+	}
+
+	@Test
+	public void latest_all_unfiltered() {
+		// GIVEN
+		Map<String, NodeDatum> all = populateDatum(Stage.PreFilter);
+
+		// WHEN
+		replayAll();
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(emptySet(), NodeDatum.class).spliterator(), false)
+				.collect(Collectors.toList());
+
+		List<NodeDatum> latestUnfiltered = StreamSupport
+				.stream(service.unfiltered().latest(emptySet(), NodeDatum.class).spliterator(), false)
+				.collect(Collectors.toList());
+
+		// THEN
+		assertThat("Latest datum is empty", latest, hasSize(0));
+
+		Datum[] expected = all.values().toArray(new Datum[all.values().size()]);
+		assertThat("Latest unfiltered datum returned", latestUnfiltered, containsInAnyOrder(expected));
 	}
 
 	@Test
@@ -192,7 +228,7 @@ public class DefaultDatumServiceTests {
 		// add another that does not match pattern
 		SimpleDatum outlier = SimpleDatum.nodeDatum("foo/bar/charger/1/111111111/MAX", Instant.now(),
 				new DatumSamples());
-		service.accept(outlier);
+		service.datumQueueWillProcess(null, outlier, Stage.PostFilter, true);
 
 		// WHEN
 		replayAll();

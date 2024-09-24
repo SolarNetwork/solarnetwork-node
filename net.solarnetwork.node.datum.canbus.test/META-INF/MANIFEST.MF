@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Datum Source Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.canbus.test
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Fragment-Host: net.solarnetwork.node.datum.canbus;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.canbus.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

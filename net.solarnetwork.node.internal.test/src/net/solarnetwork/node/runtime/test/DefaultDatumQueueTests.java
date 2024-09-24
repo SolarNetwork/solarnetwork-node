@@ -26,6 +26,7 @@ import static java.lang.String.format;
 import static java.lang.Thread.sleep;
 import static java.util.Collections.emptyMap;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.same;
@@ -70,6 +71,8 @@ import net.solarnetwork.node.runtime.DefaultDatumQueue;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.DatumQueueProcessObserver;
+import net.solarnetwork.node.service.DatumQueueProcessObserver.Stage;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.StaticOptionalService;
@@ -87,7 +90,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	private DatumDao datumDao;
 	private EventAdmin eventAdmin;
 	private Consumer<NodeDatum> consumer;
-	private Consumer<NodeDatum> directConsumer;
+	private DatumQueueProcessObserver directConsumer;
 	private DatumFilterService filter;
 	private DefaultDatumQueue queue;
 	private Throwable datumProcessortException;
@@ -98,7 +101,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao = EasyMock.createMock(DatumDao.class);
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 		consumer = EasyMock.createMock(Consumer.class);
-		directConsumer = EasyMock.createMock(Consumer.class);
+		directConsumer = EasyMock.createMock(DatumQueueProcessObserver.class);
 		filter = EasyMock.createMock(DatumFilterService.class);
 		queue = new DefaultDatumQueue(datumDao, new StaticOptionalService<>(eventAdmin),
 				new StaticOptionalService<>(directConsumer));
@@ -155,7 +158,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
@@ -185,7 +189,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				Instant.now().plus(1, ChronoUnit.HOURS), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
@@ -215,7 +220,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
@@ -244,7 +250,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, false);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, false);
 		consumer.accept(datum);
 
 		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
@@ -273,7 +280,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, false);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, false);
 		consumer.accept(datum);
 
 		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
@@ -301,7 +309,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
@@ -341,8 +350,14 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		final int count = 20;
 		final int sources = 2;
 
+		Capture<NodeDatum> preDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(preDatumCaptor), eq(Stage.PreFilter),
+				eq(true));
+		expectLastCall().anyTimes();//.times(count);
+
 		Capture<NodeDatum> directDatumCaptor = Capture.newInstance(CaptureType.ALL);
-		directConsumer.accept(capture(directDatumCaptor));
+		directConsumer.datumQueueWillProcess(same(queue), capture(directDatumCaptor),
+				eq(Stage.PostFilter), eq(true));
 		expectLastCall().anyTimes();//.times(count);
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
@@ -390,7 +405,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		sleep(queue.getQueueDelayMs() + 300L);
 
 		// THEN
-		assertThat("No duplicates directly consumed", directDatumCaptor.getValues(), hasSize(count));
+		assertThat("No duplicates PreFilter consumed", preDatumCaptor.getValues(), hasSize(count));
+		assertThat("No duplicates PostFilter consumed", directDatumCaptor.getValues(), hasSize(count));
 		assertThat("No duplicates persisted", datumCaptor.getValues(), hasSize(count));
 		assertThat("No duplicates consumed", generalDatumCaptor.getValues(), hasSize(count));
 		assertThat("Half of all datum recorded as duplicate",
@@ -419,6 +435,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
 
 		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -463,8 +481,13 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
+		Capture<NodeDatum> preDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(preDatumCaptor), eq(Stage.PreFilter),
+				eq(true));
+
 		Capture<NodeDatum> directDatumCaptor = Capture.newInstance();
-		directConsumer.accept(capture(directDatumCaptor));
+		directConsumer.datumQueueWillProcess(same(queue), capture(directDatumCaptor),
+				eq(Stage.PostFilter), eq(true));
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		datumDao.storeDatum(capture(datumCaptor));
@@ -487,6 +510,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
 		assertThat("One datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		assertThat("PreFilter consumed datum unchanged", preDatumCaptor.getValue(),
+				is(sameInstance(datum)));
 
 		assertThat("Direct consumed datum has changed", directDatumCaptor.getValue(),
 				is(not(sameInstance(datum))));
@@ -522,12 +548,14 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 
 		datumDao.storeDatum(datum);
 		expectLastCall().andThrow(new RuntimeException("test"));
 
-		directConsumer.accept(datum2);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PostFilter, true);
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
@@ -585,10 +613,13 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+
 		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
-		directConsumer.accept(datum2);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PostFilter, true);
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
@@ -639,12 +670,14 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 		expectLastCall().andThrow(new RuntimeException("test"));
 
-		directConsumer.accept(datum2);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PostFilter, true);
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
@@ -690,12 +723,14 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
-		directConsumer.accept(datum);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
 		expectLastCall().andThrow(new RuntimeException("test"));
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
-		directConsumer.accept(datum2);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PostFilter, true);
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
@@ -730,6 +765,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
+		Capture<NodeDatum> preDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(preDatumCaptor), eq(Stage.PreFilter),
+				eq(true));
+
 		final DatumSamples filterSamples = new DatumSamples();
 		filterSamples.putInstantaneousSampleValue("foo", 321);
 		Capture<Map<String, Object>> filterParametersCaptor = Capture.newInstance();
@@ -737,7 +776,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				.andReturn(filterSamples);
 
 		Capture<NodeDatum> filteredDatumCaptor = Capture.newInstance(CaptureType.ALL);
-		directConsumer.accept(capture(filteredDatumCaptor));
+		directConsumer.datumQueueWillProcess(same(queue), capture(filteredDatumCaptor),
+				eq(Stage.PostFilter), eq(true));
 		datumDao.storeDatum(capture(filteredDatumCaptor));
 		consumer.accept(capture(filteredDatumCaptor));
 
@@ -756,6 +796,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
 		assertThat("One datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		List<NodeDatum> preDatumList = preDatumCaptor.getValues();
+		assertThat("Unfiltered datum passed to observer", preDatumList, hasSize(1));
 
 		List<NodeDatum> filteredDatumList = filteredDatumCaptor.getValues();
 		assertThat("Filtered datum passed to all output methods", filteredDatumList, hasSize(3));
@@ -781,6 +824,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		queue.setDatumFilterService(new StaticOptionalService<>(filter));
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
 
 		final DatumSamples filterSamples = new DatumSamples();
 		filterSamples.putInstantaneousSampleValue("foo", 321);
@@ -818,6 +863,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+
 		final SimpleDatum filterOutput = SimpleDatum.nodeDatum(TEST_SOURCE_ID,
 				datum.getTimestamp().truncatedTo(ChronoUnit.HOURS).minus(1, ChronoUnit.HOURS),
 				new DatumSamples());
@@ -827,7 +874,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				.andReturn(filterOutput);
 
 		Capture<NodeDatum> filteredDatumCaptor = Capture.newInstance(CaptureType.ALL);
-		directConsumer.accept(capture(filteredDatumCaptor));
+		directConsumer.datumQueueWillProcess(same(queue), capture(filteredDatumCaptor),
+				eq(Stage.PostFilter), eq(true));
 		datumDao.storeDatum(capture(filteredDatumCaptor));
 		consumer.accept(capture(filteredDatumCaptor));
 

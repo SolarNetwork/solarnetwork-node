@@ -42,6 +42,7 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumHistorian;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
@@ -67,7 +68,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 2.5
+ * @version 2.6
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot
@@ -284,6 +285,28 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Get the datum's source ID.
+	 *
+	 * @return the source ID, or {@literal null}
+	 * @since 2.1
+	 */
+	public String getSourceId() {
+		Datum datum = getDatum();
+		return (datum != null ? datum.getSourceId() : null);
+	}
+
+	/**
+	 * Get the datum's timestamp.
+	 *
+	 * @return the timestamp, or {@literal null}
+	 * @since 2.1
+	 */
+	public Instant getTimestamp() {
+		Datum datum = getDatum();
+		return (datum != null ? datum.getTimestamp() : null);
+	}
+
+	/**
 	 * Test if a "latest" datum is available for a given source ID.
 	 *
 	 * <p>
@@ -298,6 +321,24 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 */
 	public boolean hasLatest(String sourceId) {
 		return hasOffset(sourceId, 0);
+	}
+
+	/**
+	 * Test if an unfiltered "latest" datum is available for a given source ID.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #unfilteredLatest(String)} will return
+	 * a non-null value.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @return {@literal true} if {@link #unfilteredLatest(String)} for the
+	 *         given {@code sourceId} will return a non-null value
+	 * @since 2.6
+	 */
+	public boolean hasUnfilteredLatest(String sourceId) {
+		return hasUnfilteredOffset(sourceId, 0);
 	}
 
 	/**
@@ -322,6 +363,28 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Get the latest available unfiltered datum for a given source ID, as an
+	 * {@link DatumExpressionRoot}.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @return the latest datum, or {@literal null} if {@code sourceId} is
+	 *         {@literal null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@literal null}, or
+	 *         {@link DatumHistorian#latest(java.util.Set, Class)} returns
+	 *         {@literal null} for the given {@code sourceId}
+	 * @since 2.6
+	 */
+	public DatumExpressionRoot unfilteredLatest(String sourceId) {
+		return unfilteredOffset(sourceId, 0);
+	}
+
+	/**
 	 * Test if a "latest" datum is available for a given source ID.
 	 *
 	 * <p>
@@ -339,6 +402,24 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Test if a "latest" unfiltered datum is available for a given source ID.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #latestMatching(String)} will return a
+	 * non-null value.
+	 * </p>
+	 *
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return {@literal true} if {@link #latestMatching(String)} for the given
+	 *         {@code sourceIdPattern} will return a non-null value
+	 * @since 2.6
+	 */
+	public boolean hasUnfilteredLatestMatching(String sourceIdPattern) {
+		return unfilteredLatestMatching(sourceIdPattern) != null;
+	}
+
+	/**
 	 * Get the latest available datum matching a given source ID pattern, as
 	 * {@link DatumExpressionRoot} instances.
 	 *
@@ -352,11 +433,34 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the matching datum, never {@literal null}
 	 */
 	public Collection<DatumExpressionRoot> latestMatching(String sourceIdPattern) {
-		if ( datumService == null || sourceIdPattern == null ) {
+		return latestMatching(datumService, sourceIdPattern);
+	}
+
+	/**
+	 * Get the latest available unfiltered datum matching a given source ID
+	 * pattern, as {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.6
+	 */
+	public Collection<DatumExpressionRoot> unfilteredLatestMatching(String sourceIdPattern) {
+		return latestMatching(datumService != null ? datumService.unfiltered() : null, sourceIdPattern);
+	}
+
+	private Collection<DatumExpressionRoot> latestMatching(DatumHistorian history,
+			String sourceIdPattern) {
+		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
 		Set<String> pats = singleton(sourceIdPattern);
-		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return emptyList();
 		}
@@ -386,6 +490,26 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Test if a "latest" unfiltered datum is available for a given source ID,
+	 * excluding the {@link #getSourceId()} source ID.
+	 *
+	 * <p>
+	 * This can be used to test if
+	 * {@link #unfilteredLatestOthersMatching(String)} will return a non-null
+	 * value.
+	 * </p>
+	 *
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return {@literal true} if {@link #latestMatching(String)} for the given
+	 *         {@code sourceIdPattern} will return a non-null value
+	 * @since 2.6
+	 */
+	public boolean hasUnfilteredLatestOthersMatching(String sourceIdPattern) {
+		return unfilteredLatestOthersMatching(sourceIdPattern) != null;
+	}
+
+	/**
 	 * Get the latest available datum matching a given source ID pattern,
 	 * excluding the {@link #getSourceId()} source ID, as
 	 * {@link DatumExpressionRoot} instances.
@@ -400,11 +524,36 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the matching datum, never {@literal null}
 	 */
 	public Collection<DatumExpressionRoot> latestOthersMatching(String sourceIdPattern) {
-		if ( datumService == null || sourceIdPattern == null ) {
+		return latestOthersMatching(datumService, sourceIdPattern);
+	}
+
+	/**
+	 * Get the latest available unfiltered datum matching a given source ID
+	 * pattern, excluding the {@link #getSourceId()} source ID, as
+	 * {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.6
+	 */
+	public Collection<DatumExpressionRoot> unfilteredLatestOthersMatching(String sourceIdPattern) {
+		return latestOthersMatching(datumService != null ? datumService.unfiltered() : null,
+				sourceIdPattern);
+	}
+
+	private Collection<DatumExpressionRoot> latestOthersMatching(DatumHistorian history,
+			String sourceIdPattern) {
+		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
 		Set<String> pats = singleton(sourceIdPattern);
-		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return emptyList();
 		}
@@ -434,11 +583,37 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         least one value (this instance)
 	 */
 	public Collection<DatumExpressionRoot> selfAndLatestMatching(String sourceIdPattern) {
-		if ( datumService == null || sourceIdPattern == null ) {
+		return selfAndLatestMatching(datumService, sourceIdPattern);
+	}
+
+	/**
+	 * Get the latest available unfiltered datum matching a given source ID
+	 * pattern, including this instance, as {@link DatumExpressionRoot}
+	 * instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null} and always having at
+	 *         least one value (this instance)
+	 * @since 2.6
+	 */
+	public Collection<DatumExpressionRoot> selfAndUnfilteredLatestMatching(String sourceIdPattern) {
+		return selfAndLatestMatching(datumService != null ? datumService.unfiltered() : null,
+				sourceIdPattern);
+	}
+
+	private Collection<DatumExpressionRoot> selfAndLatestMatching(DatumHistorian history,
+			String sourceIdPattern) {
+		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
 		Set<String> pats = singleton(sourceIdPattern);
-		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return singleton(this);
 		}
@@ -453,28 +628,6 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * Get the datum's source ID.
-	 *
-	 * @return the source ID, or {@literal null}
-	 * @since 2.1
-	 */
-	public String getSourceId() {
-		Datum datum = getDatum();
-		return (datum != null ? datum.getSourceId() : null);
-	}
-
-	/**
-	 * Get the datum's timestamp.
-	 *
-	 * @return the timestamp, or {@literal null}
-	 * @since 2.1
-	 */
-	public Instant getTimestamp() {
-		Datum datum = getDatum();
-		return (datum != null ? datum.getTimestamp() : null);
 	}
 
 	/**
@@ -503,6 +656,34 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 			return false;
 		}
 		return hasOffset(datum.getSourceId(), datum.getTimestamp(), offset);
+	}
+
+	/**
+	 * Test if an offset from a "latest" unfiltered datum is available for the
+	 * {@link #getDatum()} source ID and timestamp.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #offset(int)} will return a non-null
+	 * value.
+	 * </p>
+	 *
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return {@literal true} if {@link #offset(String, Instant, int)} will
+	 *         return a non-null value
+	 * @since 2.6
+	 * @see #hasUnfilteredOffset(String, Instant, int)
+	 */
+	public boolean hasUnfilteredOffset(int offset) {
+		if ( offset == 0 ) {
+			return true;
+		}
+		Datum datum = getDatum();
+		if ( datum == null ) {
+			return false;
+		}
+		return hasUnfilteredOffset(datum.getSourceId(), datum.getTimestamp(), offset);
 	}
 
 	/**
@@ -538,6 +719,38 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Get an offset from latest available datum for the {@link #getDatum()}
+	 * source ID and timestamp, as an {@link DatumExpressionRoot}.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the offset from the latest datum, or {@literal null} if
+	 *         {@link #getSourceId()} or {@link #getTimestamp()} are
+	 *         {@literal null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@literal null}, or
+	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
+	 *         {@literal null} for {@link #getSourceId()}
+	 * @since 2.6
+	 * @see #unfilteredOffset(String, Instant, int)
+	 */
+	public DatumExpressionRoot unfilteredOffset(int offset) {
+		Datum datum = getDatum();
+		if ( datum == null ) {
+			return null;
+		}
+		if ( offset == 0 ) {
+			return this;
+		}
+		return unfilteredOffset(datum.getSourceId(), datum.getTimestamp(), offset);
+	}
+
+	/**
 	 * Test if an offset from a "latest" datum is available for a given source
 	 * ID.
 	 *
@@ -556,10 +769,36 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.1
 	 */
 	public boolean hasOffset(String sourceId, int offset) {
-		if ( datumService == null || sourceId == null ) {
+		return hasOffset(datumService, sourceId, offset);
+	}
+
+	/**
+	 * Test if an offset from an unfiltered "latest" datum is available for a
+	 * given source ID.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #unfilteredOffset(String,int)} will
+	 * return a non-null value.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return {@literal true} if {@link #offset(String, int)} for the given
+	 *         {@code sourceId} will return a non-null value
+	 * @since 2.6
+	 */
+	public boolean hasUnfilteredOffset(String sourceId, int offset) {
+		return hasOffset(datumService != null ? datumService.unfiltered() : null, sourceId, offset);
+	}
+
+	private boolean hasOffset(DatumHistorian history, String sourceId, int offset) {
+		if ( history == null || sourceId == null ) {
 			return false;
 		}
-		NodeDatum d = datumService.offset(sourceId, offset, NodeDatum.class);
+		NodeDatum d = history.offset(sourceId, offset, NodeDatum.class);
 		return (d != null);
 	}
 
@@ -585,10 +824,39 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.1
 	 */
 	public DatumExpressionRoot offset(String sourceId, int offset) {
-		if ( datumService == null || sourceId == null ) {
+		return offset(datumService, sourceId, offset);
+	}
+
+	/**
+	 * Get an offset from latest available unfiltered datum for a given source
+	 * ID, as an {@link DatumExpressionRoot}.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the offset from the latest datum, or {@literal null} if
+	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@literal null}, or
+	 *         {@link DatumHistorian#offset(java.util.Set, int, Class)} returns
+	 *         {@literal null} for the given {@code sourceId}
+	 * @since 2.6
+	 */
+	public DatumExpressionRoot unfilteredOffset(String sourceId, int offset) {
+		return offset(datumService != null ? datumService.unfiltered() : null, sourceId, offset);
+	}
+
+	private DatumExpressionRoot offset(DatumHistorian history, String sourceId, int offset) {
+		if ( history == null || sourceId == null ) {
 			return null;
 		}
-		NodeDatum d = datumService.offset(sourceId, offset, NodeDatum.class);
+		NodeDatum d = history.offset(sourceId, offset, NodeDatum.class);
 		if ( d == null ) {
 			return null;
 		}
@@ -616,10 +884,39 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.1
 	 */
 	public boolean hasOffset(String sourceId, Instant timestamp, int offset) {
-		if ( datumService == null || sourceId == null || timestamp == null ) {
+		return hasOffset(datumService, sourceId, timestamp, offset);
+	}
+
+	/**
+	 * Test if an unfiltered datum offset from a given timestamp is available
+	 * for a given source ID.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #unfilteredOffset(String,Instant,int)}
+	 * will return a non-null value.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param timestamp
+	 *        the timestamp refernce point
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return {@literal true} if {@link #offset(String, int)} for the given
+	 *         {@code sourceId} will return a non-null value
+	 * @since 2.1
+	 */
+	public boolean hasUnfilteredOffset(String sourceId, Instant timestamp, int offset) {
+		return hasOffset(datumService != null ? datumService.unfiltered() : null, sourceId, timestamp,
+				offset);
+	}
+
+	private boolean hasOffset(DatumHistorian history, String sourceId, Instant timestamp, int offset) {
+		if ( history == null || sourceId == null || timestamp == null ) {
 			return false;
 		}
-		NodeDatum d = datumService.offset(sourceId, timestamp, offset, NodeDatum.class);
+		NodeDatum d = history.offset(sourceId, timestamp, offset, NodeDatum.class);
 		return (d != null);
 	}
 
@@ -647,10 +944,43 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.1
 	 */
 	public DatumExpressionRoot offset(String sourceId, Instant timestamp, int offset) {
-		if ( datumService == null || sourceId == null || timestamp == null ) {
+		return offset(datumService, sourceId, timestamp, offset);
+	}
+
+	/**
+	 * Get an unfiltered datum offset from a given timestamp for a given source
+	 * ID, as an {@link DatumExpressionRoot}.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param timestamp
+	 *        the timestamp reference point
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the offset from the latest datum, or {@literal null} if
+	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@literal null}, or
+	 *         {@link DatumHistorian#offset(java.util.Set, int, Class)} returns
+	 *         {@literal null} for the given {@code sourceId}
+	 * @since 2.6
+	 */
+	public DatumExpressionRoot unfilteredOffset(String sourceId, Instant timestamp, int offset) {
+		return offset(datumService != null ? datumService.unfiltered() : null, sourceId, timestamp,
+				offset);
+	}
+
+	private DatumExpressionRoot offset(DatumHistorian history, String sourceId, Instant timestamp,
+			int offset) {
+		if ( history == null || sourceId == null || timestamp == null ) {
 			return null;
 		}
-		NodeDatum d = datumService.offset(sourceId, timestamp, offset, NodeDatum.class);
+		NodeDatum d = history.offset(sourceId, timestamp, offset, NodeDatum.class);
 		if ( d == null ) {
 			return null;
 		}
@@ -678,10 +1008,39 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.2
 	 */
 	public Collection<DatumExpressionRoot> slice(String sourceId, int offset, int count) {
-		if ( datumService == null || sourceId == null ) {
+		return slice(datumService, sourceId, offset, count);
+	}
+
+	/**
+	 * Get a set of available unfiltered datum for a given source ID, as
+	 * {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID to extract a slice from
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.6
+	 */
+	public Collection<DatumExpressionRoot> unfilteredSlice(String sourceId, int offset, int count) {
+		return slice(datumService != null ? datumService.unfiltered() : null, sourceId, offset, count);
+	}
+
+	private Collection<DatumExpressionRoot> slice(DatumHistorian history, String sourceId, int offset,
+			int count) {
+		if ( history == null || sourceId == null ) {
 			return emptyList();
 		}
-		Collection<NodeDatum> found = datumService.slice(sourceId, offset, count, null);
+		Collection<NodeDatum> found = history.slice(sourceId, offset, count, null);
 		if ( found == null || found.isEmpty() ) {
 			return singleton(this);
 		}
@@ -717,10 +1076,43 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 */
 	public Collection<DatumExpressionRoot> slice(String sourceId, Instant timestamp, int offset,
 			int count) {
-		if ( datumService == null || sourceId == null ) {
+		return slice(datumService, sourceId, timestamp, offset, count);
+	}
+
+	/**
+	 * Get a set of available unfiltered datum offset from a given timestamp,
+	 * for a given source ID, as {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceId
+	 *        the source ID to extract a slice from
+	 * @param timestamp
+	 *        the timestamp to reference
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.6
+	 */
+	public Collection<DatumExpressionRoot> unfilteredSlice(String sourceId, Instant timestamp,
+			int offset, int count) {
+		return slice(datumService != null ? datumService.unfiltered() : null, sourceId, timestamp,
+				offset, count);
+	}
+
+	private Collection<DatumExpressionRoot> slice(DatumHistorian history, String sourceId,
+			Instant timestamp, int offset, int count) {
+		if ( history == null || sourceId == null ) {
 			return emptyList();
 		}
-		Collection<NodeDatum> found = datumService.slice(sourceId, offset, count, null);
+		Collection<NodeDatum> found = history.slice(sourceId, offset, count, null);
 		if ( found == null || found.isEmpty() ) {
 			return singleton(this);
 		}
