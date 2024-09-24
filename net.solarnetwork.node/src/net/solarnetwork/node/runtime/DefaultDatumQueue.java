@@ -48,6 +48,8 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.DatumQueueProcessObserver;
+import net.solarnetwork.node.service.DatumQueueProcessObserver.Stage;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
@@ -71,9 +73,9 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  *
  * <p>
- * The {@code directConsumer} passed to the constructor will receive datum after
- * filters have been applied, sequentially in queue order directly on the queue
- * processing thread.
+ * The {@code processObserver} passed to the constructor will receive datum
+ * before and after filters have been applied, sequentially in queue order
+ * directly on the queue processing thread.
  * </p>
  *
  * <p>
@@ -82,7 +84,7 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  *
  * @author matt
- * @version 2.4
+ * @version 3.0
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -106,7 +108,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	private final DatumDao nodeDatumDao;
 	private final OptionalService<EventAdmin> eventAdmin;
-	private final OptionalService<Consumer<NodeDatum>> directConsumer;
+	private final OptionalService<DatumQueueProcessObserver> processObserver;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<DatumFilterService> datumFilterService;
@@ -136,21 +138,19 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *        the node datum DAO to use
 	 * @param eventAdmin
 	 *        the event admin
-	 * @param directConsumer
+	 * @param processObserver
 	 *        the direct consumer, which is invoked directly on the queue
-	 *        processor thread, after filters are applied but before the
-	 *        {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} is posted and
-	 *        before any consumers added via {@link #addConsumer(Consumer)}
+	 *        processor thread
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 * @since 2.1
 	 */
 	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin,
-			OptionalService<Consumer<NodeDatum>> directConsumer) {
+			OptionalService<DatumQueueProcessObserver> processObserver) {
 		super();
 		this.nodeDatumDao = requireNonNullArgument(nodeDatumDao, "nodeDatumDao");
 		this.eventAdmin = requireNonNullArgument(eventAdmin, "eventAdmin");
-		this.directConsumer = requireNonNullArgument(directConsumer, "directConsumer");
+		this.processObserver = requireNonNullArgument(processObserver, "processObserver");
 		this.processorStartupDelayMs = -1;
 	}
 
@@ -369,17 +369,17 @@ public class DefaultDatumQueue extends BaseIdentifiable
 				 of events where one should be persisted and the other not (just passed to consumers).
 				 Since all events are passed to consumers, we can discard (persist == false) events
 				 from a matching pair event with (persist == true).
-
+				
 				 The approach taken relies on the ordering of our queue, which is ordered by
 				 date, source ID, persist. Potential pairs will differ only by the persist flag,
 				 and will have identical datum objects. The algorithm thus does:
-
+				
 				 1. Poll for the next available event.
 				 2. Peek/take all next available events with a matching date.
 				 3. Sort the collected events (by date, source, persist)
 				 4. For each collected event where persist == false, search previous collected
 				    events for an identical datum with persist == true. If found, discard.
-
+				
 				 The approach holds up in highly-concurrent environments where even a single
 				 source ID has events at the same date (i.e. >1 event within 1ms on a JVM with
 				 millisecond precision dates).
@@ -413,7 +413,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 					} catch ( InterruptedException e ) {
 						// keep going
 					}
-					final Consumer<NodeDatum> dirConsumer = service(directConsumer);
+					final DatumQueueProcessObserver procObserver = service(processObserver);
 					final long start = System.currentTimeMillis();
 					DelayedDatum p;
 					EVENT: for ( int i = 0, len = events.size(); i < len; i++ ) {
@@ -434,6 +434,16 @@ public class DefaultDatumQueue extends BaseIdentifiable
 							}
 						}
 						stats.incrementAndGet(QueueStats.Processed);
+						if ( procObserver != null ) {
+							try {
+								procObserver.datumQueueWillProcess(DefaultDatumQueue.this, event.datum,
+										Stage.PreFilter, event.persist);
+							} catch ( Throwable t ) {
+								stats.incrementAndGet(QueueStats.Errors);
+								log.error("Direct consumer {} error on PreFilter datum {}; ignoring.",
+										procObserver, event.datum, t);
+							}
+						}
 						postEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, event.datum);
 						NodeDatum result;
 						try {
@@ -445,13 +455,15 @@ public class DefaultDatumQueue extends BaseIdentifiable
 							result = null;
 						}
 						if ( result != null ) {
-							if ( dirConsumer != null ) {
+							if ( procObserver != null ) {
 								try {
-									dirConsumer.accept(result);
+									procObserver.datumQueueWillProcess(DefaultDatumQueue.this, result,
+											Stage.PostFilter, event.persist);
 								} catch ( Throwable t ) {
 									stats.incrementAndGet(QueueStats.Errors);
-									log.error("Direct consumer {} error on datum {}; ignoring.",
-											dirConsumer, result, t);
+									log.error(
+											"Direct consumer {} error on PostFilter datum {}; ignoring.",
+											procObserver, result, t);
 								}
 							}
 							postEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, result);

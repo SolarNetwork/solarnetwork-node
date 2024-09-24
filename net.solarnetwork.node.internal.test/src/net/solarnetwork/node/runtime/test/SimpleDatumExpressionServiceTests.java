@@ -55,6 +55,7 @@ import net.solarnetwork.node.runtime.DefaultDatumService;
 import net.solarnetwork.node.runtime.DefaultOperationalModesService;
 import net.solarnetwork.node.runtime.SimpleDatumExpressionService;
 import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.DatumQueueProcessObserver.Stage;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.service.StaticOptionalServiceCollection;
@@ -63,7 +64,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * Test cases for the {@link SimpleDatumExpressionService} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleDatumExpressionServiceTests {
 
@@ -100,7 +101,7 @@ public class SimpleDatumExpressionServiceTests {
 
 		final SimpleEnergyDatum d = new SimpleEnergyDatum("/power/1", Instant.now(), new DatumSamples());
 		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", watts);
-		datumService.accept(d);
+		datumService.datumQueueWillProcess(null, d, Stage.PostFilter, true);
 
 		final Map<String, String> instrParams = new LinkedHashMap<>(4);
 		instrParams.put(SimpleDatumExpressionService.PARAM_EXPRESSION_LANGUAGE, spel.getUid());
@@ -128,7 +129,7 @@ public class SimpleDatumExpressionServiceTests {
 
 		final SimpleEnergyDatum d = new SimpleEnergyDatum("/power/1", Instant.now(), new DatumSamples());
 		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", watts);
-		datumService.accept(d);
+		datumService.datumQueueWillProcess(null, d, Stage.PostFilter, true);
 
 		final Map<String, String> instrParams = new LinkedHashMap<>(4);
 		instrParams.put(SimpleDatumExpressionService.PARAM_EXPRESSION, "latest('/power/1').watts");
@@ -154,7 +155,7 @@ public class SimpleDatumExpressionServiceTests {
 		final SimpleEnergyDatum d = new SimpleEnergyDatum("/power/1", Instant.now(), new DatumSamples());
 		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", 1234);
 		d.putSampleValue(DatumSamplesType.Status, "foo", "bar");
-		datumService.accept(d);
+		datumService.datumQueueWillProcess(null, d, Stage.PostFilter, true);
 
 		final Map<String, String> instrParams = new LinkedHashMap<>(4);
 		instrParams.put(SimpleDatumExpressionService.PARAM_EXPRESSION, "latest('/power/1')");

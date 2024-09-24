@@ -1,21 +1,21 @@
 /* ==================================================================
  * CanbusDatumDataSourceSimulator.java - 18/12/2019 6:46:31 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -51,6 +51,7 @@ import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.KcdConfigurer;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
@@ -80,7 +81,7 @@ import tech.units.indriya.spi.DefaultServiceProvider;
 
 /**
  * Simulate the effects of CAN bus messages on a {@link CanbusDatumDataSource}.
- * 
+ *
  * <p>
  * This class has a {@code main()} method so it can be run from the command
  * line. Pass the path to a SolarNetwork KCD file to load, along with the path
@@ -88,9 +89,9 @@ import tech.units.indriya.spi.DefaultServiceProvider;
  * and print out the result of each log message getting processed by a
  * {@link CanbusDatumDataSource} configured from the KCD.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class CanbusDatumDataSourceSimulator {
 
@@ -278,6 +279,17 @@ public class CanbusDatumDataSourceSimulator {
 			// ignore
 		}
 
+		@Override
+		public List<SettingNote> notesForKey(String key) {
+			// ignore
+			return null;
+		}
+
+		@Override
+		public void saveNotes(SettingsCommand command) {
+			// ignore
+		}
+
 	}
 
 	private static final class InternalMetadataService implements DatumMetadataService {
@@ -379,7 +391,7 @@ public class CanbusDatumDataSourceSimulator {
 	/**
 	 * Parse {@literal candump} log messages and print the datum results as JSON
 	 * to the output stream.
-	 * 
+	 *
 	 * @param int
 	 *        the {@literal candump} log data to parse
 	 * @param out
@@ -411,7 +423,7 @@ public class CanbusDatumDataSourceSimulator {
 
 	/**
 	 * Main entry point.
-	 * 
+	 *
 	 * @param args
 	 *        the path to the KCD file and the path to the {@literal candump}
 	 *        compatible input data

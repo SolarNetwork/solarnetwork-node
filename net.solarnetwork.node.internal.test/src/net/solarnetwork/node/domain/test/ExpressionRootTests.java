@@ -55,6 +55,7 @@ import net.solarnetwork.domain.tariff.TemporalRangeSetsTariff;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumHistorian;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
@@ -71,6 +72,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
 public class ExpressionRootTests {
 
 	private DatumService datumService;
+	private DatumHistorian unfilteredDatumHistorian;
 	private OperationalModesService opModesService;
 	private MetadataService metadataService;
 	private TariffScheduleProvider tariffScheduleProvider;
@@ -79,6 +81,7 @@ public class ExpressionRootTests {
 	@Before
 	public void setup() {
 		datumService = EasyMock.createMock(DatumService.class);
+		unfilteredDatumHistorian = EasyMock.createMock(DatumHistorian.class);
 		opModesService = EasyMock.createMock(OperationalModesService.class);
 		metadataService = EasyMock.createMock(MetadataService.class);
 		tariffScheduleProvider = EasyMock.createMock(TariffScheduleProvider.class);
@@ -86,11 +89,13 @@ public class ExpressionRootTests {
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumService, opModesService, metadataService, tariffScheduleProvider);
+		EasyMock.verify(datumService, unfilteredDatumHistorian, opModesService, metadataService,
+				tariffScheduleProvider);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumService, opModesService, metadataService, tariffScheduleProvider);
+		EasyMock.replay(datumService, unfilteredDatumHistorian, opModesService, metadataService,
+				tariffScheduleProvider);
 	}
 
 	private ExpressionRoot createTestRoot() {
@@ -159,6 +164,43 @@ public class ExpressionRootTests {
 	}
 
 	@Test
+	public void hasUnfilteredLatest_yes() {
+		// GIVEN
+		SimpleDatum other = SimpleDatum.nodeDatum("bar");
+		other.putSampleValue(Instantaneous, "aa", 100);
+
+		expect(datumService.unfiltered()).andReturn(unfilteredDatumHistorian);
+		expect(unfilteredDatumHistorian.offset("bar", 0, NodeDatum.class)).andReturn(other);
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		Boolean result = expressionService.evaluateExpression("hasUnfilteredLatest('bar')", null, root,
+				null, Boolean.class);
+
+		// THEN
+		assertThat("Expression resolves true when datum returned from unfiltered DatumService", result,
+				is(true));
+	}
+
+	@Test
+	public void hasUnfilteredLatest_no() {
+		// GIVEN
+		expect(datumService.unfiltered()).andReturn(unfilteredDatumHistorian);
+		expect(unfilteredDatumHistorian.offset("bar", 0, NodeDatum.class)).andReturn(null);
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		Boolean result = expressionService.evaluateExpression("hasUnfilteredLatest('bar')", null, root,
+				null, Boolean.class);
+
+		// THEN
+		assertThat("Expression resolves false when no datum returned from unfiltered DatumService",
+				result, is(false));
+	}
+
+	@Test
 	public void latest() {
 		// GIVEN
 		SimpleDatum other = SimpleDatum.nodeDatum("bar");
@@ -174,6 +216,25 @@ public class ExpressionRootTests {
 
 		// THEN
 		assertThat("Expression resolves latest datum", result, is(103));
+	}
+
+	@Test
+	public void unfilteredLatest() {
+		// GIVEN
+		SimpleDatum other = SimpleDatum.nodeDatum("bar");
+		other.putSampleValue(Instantaneous, "aa", 100);
+
+		expect(datumService.unfiltered()).andReturn(unfilteredDatumHistorian);
+		expect(unfilteredDatumHistorian.offset("bar", 0, NodeDatum.class)).andReturn(other);
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		Integer result = expressionService.evaluateExpression("a + unfilteredLatest('bar')['aa']", null,
+				root, null, Integer.class);
+
+		// THEN
+		assertThat("Expression resolves latest unfiltered datum", result, is(103));
 	}
 
 	@Test
@@ -229,6 +290,44 @@ public class ExpressionRootTests {
 		assertThat("Expression resolves matching datum and evaluates projection", result,
 				is(new BigDecimal("210")));
 		assertThat("Expression resolves matching datum and evaluates projection", result2,
+				is(new BigDecimal("44200")));
+	}
+
+	@Test
+	public void unfilteredLatestMatching() {
+		// GIVEN
+		ExpressionRoot root = createTestRoot();
+
+		SimpleDatum d1 = SimpleDatum.nodeDatum("foo/1");
+		d1.putSampleValue(Instantaneous, "aa", 100);
+		d1.putSampleValue(Accumulating, "bb", 200);
+
+		SimpleDatum d2 = SimpleDatum.nodeDatum("foo/2");
+		d2.putSampleValue(Instantaneous, "aa", 110);
+		d2.putSampleValue(Accumulating, "bb", 220);
+
+		SimpleDatum d3 = SimpleDatum.nodeDatum("foo/3");
+		d3.putSampleValue(Instantaneous, "aa", 111);
+		d3.putSampleValue(Accumulating, "bb", 222);
+
+		List<NodeDatum> matches = Arrays.asList(new NodeDatum[] { d1, d2, d3 });
+		expect(datumService.unfiltered()).andReturn(unfilteredDatumHistorian).anyTimes();
+		expect(unfilteredDatumHistorian.offset(singleton("foo/*"), root.getTimestamp(), 0,
+				NodeDatum.class)).andReturn(matches).anyTimes();
+
+		// WHEN
+		replayAll();
+		BigDecimal result = expressionService.evaluateExpression(
+				"sum(unfilteredLatestMatching('foo/*').?[aa < 111].![aa])", null, root, null,
+				BigDecimal.class);
+		BigDecimal result2 = expressionService.evaluateExpression(
+				"sum(unfilteredLatestMatching('foo/*').?[aa < 111].![aa * bb])", null, root, null,
+				BigDecimal.class);
+
+		// THEN
+		assertThat("Expression resolves matching unfiltered datum and evaluates projection", result,
+				is(new BigDecimal("210")));
+		assertThat("Expression resolves matching unfiltered datum and evaluates projection", result2,
 				is(new BigDecimal("44200")));
 	}
 
