@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Solcast Datum Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.solcast
 Bundle-Description: Collect Solcast data as a datum stream.
-Bundle-Version: 2.1.0
+Bundle-Version: 2.1.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.solcast
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
