@@ -1,11 +1,11 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: MQTT Persistence (JDBC) Tests
-Bundle-SymbolicName: net.solarnetwork.node.dao.mqtt.jdbc.test
-Bundle-Version: 3.0.1
+Bundle-Name: Modbus Server Persistence (JDBC) Tests
+Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server.dao.jdbc.test
+Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.dao.mqtt.jdbc;bundle-version="[3.0,4.0)"
-Automatic-Module-Name: net.solarnetwork.node.dao.mqtt.jdbc.test
+Fragment-Host: net.solarnetwork.node.io.modbus.server.dao.jdbc;bundle-version="[1.0.0,2.0.0)"
+Automatic-Module-Name: net.solarnetwork.node.io.modbus.server.dao.jdbc.tests
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.node.test;version="[1.9,2.0)",

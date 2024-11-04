@@ -30,6 +30,12 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
 		<property name="sticky" value="true"/>
 	</bean>	
+
+	<bean id="registerDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao"/>
+		<property name="sticky" value="true"/>
+	</bean>	
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -110,6 +116,7 @@
 			<argument ref="taskExecutor"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
+			<property name="registerDao" ref="registerDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 		

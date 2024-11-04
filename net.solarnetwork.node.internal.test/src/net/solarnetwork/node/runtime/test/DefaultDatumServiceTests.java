@@ -242,6 +242,26 @@ public class DefaultDatumServiceTests {
 	}
 
 	@Test
+	public void latest_filter_pattern_3() {
+		// GIVEN
+		Map<String, NodeDatum> all = populateDatum(5, "/foo/bar/charger/%d");
+
+		// add another that does not match pattern
+		SimpleDatum outlier = SimpleDatum.nodeDatum("/foo/bar/other/1", Instant.now(),
+				new DatumSamples());
+		service.datumQueueWillProcess(null, outlier, Stage.PostFilter, true);
+
+		// WHEN
+		replayAll();
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(singleton("/**/charger/*"), NodeDatum.class).spliterator(), false)
+				.collect(Collectors.toList());
+
+		// THEN
+		assertThat("Latest datum returned", new HashSet<>(latest), is(new HashSet<>(all.values())));
+	}
+
+	@Test
 	public void offset_all() {
 		// GIVEN
 		final int count = 8;

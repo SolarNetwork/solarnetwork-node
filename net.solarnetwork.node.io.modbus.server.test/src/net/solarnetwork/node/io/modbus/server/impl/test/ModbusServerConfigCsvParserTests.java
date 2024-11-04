@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusServerConfigcsvParserTests.java - 9/03/2022 3:17:45 PM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,10 +40,10 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
-import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerConfigCsvParser;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer;
@@ -51,7 +51,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusServerConfigCsvParser} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -143,7 +143,8 @@ public class ModbusServerConfigCsvParserTests {
 		assertThat("Block configs parsed", unitConfig.getRegisterBlockConfigs(), is(arrayWithSize(2)));
 
 		RegisterBlockConfig blockConfig = unitConfig.getRegisterBlockConfigs()[0];
-		assertThat("Parsed holding block", blockConfig.getBlockType(), is(RegisterBlockType.Holding));
+		assertThat("Parsed holding block", blockConfig.getBlockType(),
+				is(ModbusRegisterBlockType.Holding));
 		assertThat("Parsed starting address", blockConfig.getStartAddress(), is(0));
 		assertThat("Measurement configs parsed", blockConfig.getMeasurementConfigs(),
 				is(arrayWithSize(3)));
@@ -156,7 +157,7 @@ public class ModbusServerConfigCsvParserTests {
 				ModbusDataType.Float32, null, BigDecimal.ONE, 3);
 
 		blockConfig = unitConfig.getRegisterBlockConfigs()[1];
-		assertThat("Parsed input block", blockConfig.getBlockType(), is(RegisterBlockType.Input));
+		assertThat("Parsed input block", blockConfig.getBlockType(), is(ModbusRegisterBlockType.Input));
 		assertThat("Parsed starting address", blockConfig.getStartAddress(), is(100));
 		assertThat("Measurement configs parsed", blockConfig.getMeasurementConfigs(),
 				is(arrayWithSize(2)));
