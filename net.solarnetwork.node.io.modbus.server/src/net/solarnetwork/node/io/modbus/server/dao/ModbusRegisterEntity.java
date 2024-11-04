@@ -37,7 +37,10 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 
 	private static final long serialVersionUID = 4674814596838327572L;
 
+	/** The modification date. */
 	private Instant modified;
+
+	/** The register 16-bit value. */
 	private short value;
 
 	/**

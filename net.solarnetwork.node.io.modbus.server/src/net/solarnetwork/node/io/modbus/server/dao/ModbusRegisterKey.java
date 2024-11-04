@@ -37,9 +37,16 @@ public final class ModbusRegisterKey implements Comparable<ModbusRegisterKey>, S
 
 	private static final long serialVersionUID = 1261700403455906179L;
 
+	/** The server configuration identity. */
 	private final String serverId;
+
+	/** The Modbus unit ID. */
 	private final int unitId;
+
+	/** The Modbus register block type. */
 	private final ModbusRegisterBlockType blockType;
+
+	/** The Modbus register address. */
 	private final int address;
 
 	/**
