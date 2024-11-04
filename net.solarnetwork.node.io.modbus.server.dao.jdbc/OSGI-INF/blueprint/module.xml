@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.io.modbus.server.dao.jdbc">
+		<beans:prop key="JdbcModbusServerDao.initSqlResource">classpath:/net/solarnetwork/node/io/modbus/server/dao/jdbc/h2-modbus-server-init.sql</beans:prop>
+		<beans:prop key="JdbcModbusServerDao.sqlResourcePrefix">register</beans:prop>
+	</osgix:cm-properties>
+
+	<!-- Service References -->
+
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=modbus-server)"/>
+
+	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor"
+		filter="(function=node)"/>
+
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<!-- Published Services -->
+
+	<service ref="modbusRegisterDao">
+		<interfaces>
+			<value>net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+
+	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
+		<bean class="net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider">
+			<argument value="net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcTableBackupResourceProvider"/>
+			<argument>
+				<bean class="org.springframework.jdbc.core.JdbcTemplate">
+					<property name="dataSource" ref="dataSource"/>
+				</bean>
+			</argument>
+			<argument>
+				<bean class="org.springframework.transaction.support.TransactionTemplate">
+					<argument ref="txManager"/>
+				</bean>
+			</argument>
+			<argument ref="taskExecutor"/>
+			<property name="tableNames">
+				<list>
+					<value>SOLARNODE.MODBUS_SERVER_REGISTER</value>
+					<value>SOLARNODE.MODBUS_SERVER_META</value>
+				</list>
+			</property>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcTableBackupResourceProvider"/>
+				</bean>
+			</property>
+		</bean>
+	</service>
+	
+	<!-- Supporting Services -->
+
+	<ctx:property-placeholder properties-ref="cfg" />
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- PlatformTransactionManager: local JDBC transaction manager. -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- Use Java @Transactional annotations to declare transactions. -->
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<!-- ModbusRegisterEntity persistence -->
+
+	<bean id="modbusRegisterDao" class="net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcModbusRegisterDao" init-method="init">
+		<property name="dataSource" ref="dataSource" />
+		<property name="eventAdmin" ref="eventAdmin" />
+		<property name="initSqlResource" value="${JdbcModbusServerDao.initSqlResource}" />
+		<property name="sqlResourcePrefix" value="${JdbcModbusServerDao.sqlResourcePrefix}" />
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcModbusRegisterDao"/>
+			</bean>
+		</property>
+	</bean>
+	
+</blueprint>

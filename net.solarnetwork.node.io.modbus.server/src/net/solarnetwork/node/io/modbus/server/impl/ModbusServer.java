@@ -22,15 +22,23 @@
 
 package net.solarnetwork.node.io.modbus.server.impl;
 
+import static net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity.newRegisterEntity;
+import static net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData.encodeValue;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -46,16 +54,22 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.io.modbus.tcp.netty.NettyTcpModbusServer;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
+import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
+import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
-import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.PingTest;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -73,10 +87,10 @@ import net.solarnetwork.util.StringUtils;
  * Modbus TCP server service.
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
-		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler {
+		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
 
 	/** The default listen port. */
 	public static final int DEFAULT_PORT = 502;
@@ -117,6 +131,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	private UnitConfig[] unitConfigs;
 	private long pendingMessageTtl = DEFAULT_PENDING_MESSAGE_TTL;
 	private boolean wireLogging;
+	private OptionalService<ModbusRegisterDao> registerDao;
+	private boolean daoRequired;
 
 	private NettyTcpModbusServer server;
 	private ScheduledFuture<?> startupFuture;
@@ -192,6 +208,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		if ( server != null ) {
 			return;
 		}
+		loadRegisterData();
 		try {
 			server = new NettyTcpModbusServer(bindAddress, port);
 			server.setMessageHandler(handler);
@@ -256,6 +273,70 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 					new Date(System.currentTimeMillis() + startupDelay * 1000L));
 		} else {
 			startupTask.run();
+		}
+	}
+
+	private void loadRegisterData() {
+		ModbusRegisterDao dao = service(registerDao);
+		if ( dao == null ) {
+			return;
+		}
+		String serviceId = getUid();
+		if ( serviceId == null || serviceId.isEmpty() ) {
+			log.warn(
+					"Not loading Modbus server [{}] register data from persistence store because no UID configured",
+					description());
+			return;
+		}
+
+		// clear any existing data to re-load from persistence store
+		registers.clear();
+
+		log.info("Loading Modbus server [{}] register data from persistence store", description());
+		Collection<ModbusRegisterEntity> data = dao.getAll(null);
+		if ( data == null || data.isEmpty() ) {
+			return;
+		}
+
+		// organize by block by unit for more efficient mass updates below
+		Map<Integer, Map<ModbusRegisterBlockType, List<ModbusRegisterEntity>>> dataByBlockByUnit = new HashMap<>(
+				2);
+		for ( ModbusRegisterEntity reg : data ) {
+			dataByBlockByUnit.computeIfAbsent(reg.getUnitId(), k -> new HashMap<>(4))
+					.computeIfAbsent(reg.getBlockType(), k -> new ArrayList<>(8)).add(reg);
+		}
+
+		for ( Entry<Integer, Map<ModbusRegisterBlockType, List<ModbusRegisterEntity>>> unitEntry : dataByBlockByUnit
+				.entrySet() ) {
+			ModbusRegisterData unit = registers.computeIfAbsent(unitEntry.getKey(),
+					k -> new ModbusRegisterData());
+			for ( Entry<ModbusRegisterBlockType, List<ModbusRegisterEntity>> blockEntry : unitEntry
+					.getValue().entrySet() ) {
+				ModbusRegisterBlockType blockType = blockEntry.getKey();
+				if ( blockType.isBitType() ) {
+					BitSet set = (blockType == ModbusRegisterBlockType.Coil ? unit.getCoils()
+							: unit.getDiscretes());
+					synchronized ( set ) {
+						for ( ModbusRegisterEntity reg : blockEntry.getValue() ) {
+							set.set(reg.getAddress(), reg.getValue() == 0 ? false : true);
+						}
+					}
+				} else {
+					ModbusData block = (blockType == ModbusRegisterBlockType.Holding ? unit.getHoldings()
+							: unit.getInputs());
+					try {
+						block.performUpdates((MutableModbusData m) -> {
+							for ( ModbusRegisterEntity reg : blockEntry.getValue() ) {
+								m.saveDataArray(new short[] { reg.getValue() }, reg.getAddress());
+							}
+							return true;
+						});
+					} catch ( IOException e ) {
+						log.error("IOException loading Modbus server [{}] {} persistence data: {}",
+								description(), blockType, e.toString());
+					}
+				}
+			}
 		}
 	}
 
@@ -376,9 +457,13 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	}
 
 	private void applyDatumCapturedUpdates(final Collection<MeasurementUpdate> updates) {
+		final String serverId = getUid();
+		final ModbusRegisterDao dao = (serverId != null && !serverId.isEmpty() ? service(registerDao)
+				: null);
+		final Instant now = Instant.now();
 		for ( MeasurementUpdate update : updates ) {
 			Integer unitId = update.unitConfig.getUnitId();
-			RegisterBlockType blockType = update.blockConfig.getBlockType();
+			ModbusRegisterBlockType blockType = update.blockConfig.getBlockType();
 			ModbusDataType dataType = update.measConfig.getDataType();
 			log.trace("Updating measurement [{}.{}] unit {} {} {} @ {}: {}",
 					update.measConfig.getSourceId(), update.measConfig.getPropertyName(), unitId,
@@ -386,21 +471,34 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 			if ( update.propertyValue == null ) {
 				continue;
 			}
-			ModbusRegisterData regData = registers.computeIfAbsent(unitId, k -> {
-				return new ModbusRegisterData();
-			});
+			ModbusRegisterData regData = registers.computeIfAbsent(unitId,
+					k -> new ModbusRegisterData());
 			switch (blockType) {
 				case Coil:
 				case Discrete:
 					boolean bitVal = booleanPropertyValue(update.propertyValue);
 					regData.writeBit(blockType, update.address, bitVal);
+					if ( dao != null ) {
+						dao.save(newRegisterEntity(serverId, unitId, blockType, update.address, now,
+								bitVal ? (short) 1 : (short) 0));
+					}
 					break;
 
 				case Holding:
 				case Input:
 					Object xVal = update.measConfig.applyTransforms(update.propertyValue);
-					regData.writeValue(blockType, dataType, update.address, update.measConfig.getSize(),
-							xVal);
+					short[] vals = encodeValue(dataType, update.measConfig.getSize(), xVal);
+					if ( blockType == ModbusRegisterBlockType.Holding ) {
+						regData.writeHoldings(update.address, vals);
+					} else {
+						regData.writeInputs(update.address, vals);
+					}
+					if ( dao != null ) {
+						for ( int i = 0, len = vals.length; i < len; i++ ) {
+							dao.save(newRegisterEntity(serverId, unitId, blockType, update.address + i,
+									now, vals[i]));
+						}
+					}
 					break;
 
 			}
@@ -415,6 +513,42 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		} else {
 			return StringUtils.parseBoolean(propVal.toString());
 		}
+	}
+
+	@Override
+	public String getPingTestName() {
+		return getDisplayName();
+	}
+
+	@Override
+	public String getPingTestId() {
+		String settingUid = getSettingUid();
+		Object ident = getUid();
+		if ( ident == null ) {
+			ident = Integer.toUnsignedString(Objects.hashCode(this), 16);
+		}
+		return String.format("%s-%s", settingUid, ident);
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		boolean success = true;
+		String msg = null;
+		if ( daoRequired ) {
+			ModbusRegisterDao dao = service(registerDao);
+			if ( dao == null ) {
+				success = false;
+				msg = getMessageSource().getMessage("status.registerDaoMissing", null,
+						"ModbusRegisterDao missing.", Locale.getDefault());
+			}
+		}
+
+		return new PingTestResult(success, msg, Collections.emptyMap());
+	}
+
+	@Override
+	public long getPingTestMaximumExecutionMilliseconds() {
+		return 1000L;
 	}
 
 	@Override
@@ -437,6 +571,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
+		result.add(new BasicToggleSettingSpecifier("daoRequired", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
 		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
@@ -753,6 +888,50 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 */
 	public void setPendingMessageTtl(long pendingMessageTtl) {
 		this.pendingMessageTtl = pendingMessageTtl;
+	}
+
+	/**
+	 * Get the register DAO.
+	 *
+	 * @return the DAO
+	 * @since 3.1
+	 */
+	public final OptionalService<ModbusRegisterDao> getRegisterDao() {
+		return registerDao;
+	}
+
+	/**
+	 * Set the register DAO.
+	 *
+	 * @param registerDao
+	 *        the DAO to set
+	 * @since 3.1
+	 */
+	public final void setRegisterDao(OptionalService<ModbusRegisterDao> registerDao) {
+		this.registerDao = registerDao;
+	}
+
+	/**
+	 * Get the "register DAO required" mode.
+	 *
+	 * @return {@literal true} to treat the lack of a {@link #getRegisterDao()}
+	 *         service as an error state
+	 * @since 3.1
+	 */
+	public final boolean isDaoRequired() {
+		return daoRequired;
+	}
+
+	/**
+	 * Set the "register DAO required" mode.
+	 *
+	 * @param daoRequired
+	 *        {@literal true} to treat the lack of a {@link #getRegisterDao()}
+	 *        service as an error state
+	 * @since 3.1
+	 */
+	public final void setDaoRequired(boolean daoRequired) {
+		this.daoRequired = daoRequired;
 	}
 
 }

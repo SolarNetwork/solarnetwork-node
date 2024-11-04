@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusServerConfigCsvWriter.java - 10/03/2022 9:19:01 AM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,17 +28,17 @@ import java.util.List;
 import org.supercsv.io.ICsvListWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
-import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Generate Modbus Server configuration CSV from settings.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -49,7 +49,7 @@ public class ModbusServerConfigCsvWriter {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param writer
 	 *        the writer
 	 * @throws IllegalArgumentException
@@ -70,7 +70,7 @@ public class ModbusServerConfigCsvWriter {
 
 	/**
 	 * Generate Modbus Server CSV from settings.
-	 * 
+	 *
 	 * @param factoryId
 	 *        the Modbus Device factory ID
 	 * @param instanceId
@@ -108,7 +108,7 @@ public class ModbusServerConfigCsvWriter {
 			}
 			for ( int blockIdx = 0; blockIdx < blockConfigs.length; blockIdx++ ) {
 				final RegisterBlockConfig blockConfig = blockConfigs[blockIdx];
-				final RegisterBlockType blockType = blockConfig.getBlockType();
+				final ModbusRegisterBlockType blockType = blockConfig.getBlockType();
 				int regAddr = blockConfig.getStartAddress();
 				MeasurementConfig[] measConfigs = blockConfig.getMeasurementConfigs();
 				if ( measConfigs == null ) {

@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
@@ -55,9 +56,9 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  *
  * <p>
- * <b>Note</b> that the {@link RegisterBlockType#Coil} and
- * {@link RegisterBlockType#Discrete} imply each configured measurement uses one
- * on/off register.
+ * <b>Note</b> that the {@link ModbusRegisterBlockType#Coil} and
+ * {@link ModbusRegisterBlockType#Discrete} imply each configured measurement
+ * uses one on/off register.
  * </p>
  *
  * @author matt
@@ -66,7 +67,7 @@ import net.solarnetwork.util.ArrayUtils;
 public class RegisterBlockConfig {
 
 	/** The default value for the {@code blockType} property. */
-	public static final RegisterBlockType DEFAULT_BLOCK_TYPE = RegisterBlockType.Holding;
+	public static final ModbusRegisterBlockType DEFAULT_BLOCK_TYPE = ModbusRegisterBlockType.Holding;
 
 	/**
 	 * A setting type pattern for a register block configuration element.
@@ -82,7 +83,7 @@ public class RegisterBlockConfig {
 			.compile(".+".concat(Pattern.quote(".registerBlockConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
 	private int startAddress;
-	private RegisterBlockType blockType = DEFAULT_BLOCK_TYPE;
+	private ModbusRegisterBlockType blockType = DEFAULT_BLOCK_TYPE;
 	private MeasurementConfig[] measurementConfigs;
 
 	/**
@@ -170,7 +171,7 @@ public class RegisterBlockConfig {
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "blockTypeKey", String.valueOf(DEFAULT_BLOCK_TYPE.getCode()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
-		for ( RegisterBlockType e : RegisterBlockType.values() ) {
+		for ( ModbusRegisterBlockType e : ModbusRegisterBlockType.values() ) {
 			propTypeTitles.put(String.valueOf(e.getCode()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
@@ -337,7 +338,7 @@ public class RegisterBlockConfig {
 	 *
 	 * @return the block type, never {@literal null}
 	 */
-	public RegisterBlockType getBlockType() {
+	public ModbusRegisterBlockType getBlockType() {
 		return blockType;
 	}
 
@@ -348,7 +349,7 @@ public class RegisterBlockConfig {
 	 *        the type to set; if {@literal null} then will be forced to
 	 *        {@link #DEFAULT_BLOCK_TYPE}
 	 */
-	public void setBlockType(RegisterBlockType blockType) {
+	public void setBlockType(ModbusRegisterBlockType blockType) {
 		if ( blockType == null ) {
 			blockType = DEFAULT_BLOCK_TYPE;
 		}
@@ -372,7 +373,7 @@ public class RegisterBlockConfig {
 	 */
 	public void setBlockTypeKey(String key) {
 		try {
-			setBlockType(RegisterBlockType.forCode(Integer.valueOf(key)));
+			setBlockType(ModbusRegisterBlockType.forCode(Integer.valueOf(key)));
 		} catch ( IllegalArgumentException | NullPointerException e ) {
 			// ignore
 		}

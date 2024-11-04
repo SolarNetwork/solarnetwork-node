@@ -33,12 +33,13 @@ import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 
 /**
  * Data for a Modbus register set.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusRegisterData {
 
@@ -94,7 +95,7 @@ public class ModbusRegisterData {
 	 * @throws IllegalArgumentException
 	 *         if {@code blockType} is not valid
 	 */
-	public void writeBit(RegisterBlockType blockType, int address, boolean value) {
+	public void writeBit(ModbusRegisterBlockType blockType, int address, boolean value) {
 		switch (blockType) {
 			case Coil:
 				writeCoil(address, value);
@@ -127,9 +128,9 @@ public class ModbusRegisterData {
 	 * @throws IllegalArgumentException
 	 *         if {@code blockType} is not valid
 	 */
-	public void writeValue(RegisterBlockType blockType, ModbusDataType dataType, int address, int count,
-			Object value) {
-		short[] dataValue = encodeValue(dataType, address, count, value);
+	public void writeValue(ModbusRegisterBlockType blockType, ModbusDataType dataType, int address,
+			int count, Object value) {
+		short[] dataValue = encodeValue(dataType, count, value);
 		if ( dataValue == null || dataValue.length < 1 ) {
 			return;
 		}
@@ -148,7 +149,19 @@ public class ModbusRegisterData {
 		}
 	}
 
-	private short[] encodeValue(ModbusDataType dataType, int address, int count, Object value) {
+	/**
+	 * Encode a logical value into a set of Modbus register data values.
+	 *
+	 * @param dataType
+	 *        the data type
+	 * @param count
+	 *        the count
+	 * @param value
+	 *        the value
+	 * @return the register data values
+	 * @since 2.1
+	 */
+	public static short[] encodeValue(ModbusDataType dataType, int count, Object value) {
 		if ( value == null ) {
 			return null;
 		}

@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusServerConfigCsvParser.java - 9/03/2022 2:46:52 PM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,15 +47,15 @@ import java.util.TreeMap;
 import org.springframework.context.MessageSource;
 import org.supercsv.io.ICsvListReader;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
-import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 
 /**
  * Parse CSV data into {@link ModbusServerConfig} instances.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.3
@@ -68,7 +68,7 @@ public class ModbusServerConfigCsvParser {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param results
 	 *        the list to add the parsed results to
 	 * @param messageSource
@@ -86,7 +86,7 @@ public class ModbusServerConfigCsvParser {
 
 	/**
 	 * Parse CSV.
-	 * 
+	 *
 	 * @param csv
 	 *        the CSV to parse
 	 * @throws IOException
@@ -100,8 +100,8 @@ public class ModbusServerConfigCsvParser {
 		final String[] headerRow = csv.getHeader(true);
 		List<String> row = null;
 		ModbusServerConfig config = null;
-		Map<String, Map<Integer, Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>>>> instUnitBlockMapping = new LinkedHashMap<>();
-		RegisterBlockType blockType = null;
+		Map<String, Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>>> instUnitBlockMapping = new LinkedHashMap<>();
+		ModbusRegisterBlockType blockType = null;
 		int registerAddress = 0;
 		int unitId = 0;
 		while ( (row = csv.read()) != null ) {
@@ -145,7 +145,7 @@ public class ModbusServerConfigCsvParser {
 					continue;
 				}
 				try {
-					blockType = RegisterBlockType.valueOf(blockTypeVal);
+					blockType = ModbusRegisterBlockType.valueOf(blockTypeVal);
 				} catch ( IllegalArgumentException e ) {
 					messages.add(messageSource.getMessage("message.registerTypeFormatError",
 							new Object[] { rowNum }, "Invalid property configuration.",
@@ -154,9 +154,9 @@ public class ModbusServerConfigCsvParser {
 				}
 			}
 
-			Map<Integer, Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitBlockMapping = instUnitBlockMapping
+			Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitBlockMapping = instUnitBlockMapping
 					.get(config.getKey());
-			Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>> blockMapping = unitBlockMapping
+			Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>> blockMapping = unitBlockMapping
 					.computeIfAbsent(unitId, k -> new LinkedHashMap<>());
 			SortedMap<Integer, MeasurementConfig> measurementConfigs = blockMapping
 					.computeIfAbsent(blockType, k -> new TreeMap<>());
@@ -182,22 +182,22 @@ public class ModbusServerConfigCsvParser {
 			}
 		}
 
-		for ( Entry<String, Map<Integer, Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>>>> instEntry : instUnitBlockMapping
+		for ( Entry<String, Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>>> instEntry : instUnitBlockMapping
 				.entrySet() ) {
 			config = results.stream().filter(c -> instEntry.getKey().equals(c.getKey())).findAny()
 					.orElse(null);
 			if ( config == null ) {
 				continue;
 			}
-			Map<Integer, Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitBlockMapping = instEntry
+			Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitBlockMapping = instEntry
 					.getValue();
-			for ( Entry<Integer, Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitEntry : unitBlockMapping
+			for ( Entry<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitEntry : unitBlockMapping
 					.entrySet() ) {
 				unitId = unitEntry.getKey().intValue();
 				UnitConfig unitConfig = config.unitConfig(unitId);
-				Map<RegisterBlockType, SortedMap<Integer, MeasurementConfig>> blockMapping = unitEntry
+				Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>> blockMapping = unitEntry
 						.getValue();
-				for ( Entry<RegisterBlockType, SortedMap<Integer, MeasurementConfig>> bockEntry : blockMapping
+				for ( Entry<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>> bockEntry : blockMapping
 						.entrySet() ) {
 					blockType = bockEntry.getKey();
 					final SortedMap<Integer, MeasurementConfig> m = bockEntry.getValue();

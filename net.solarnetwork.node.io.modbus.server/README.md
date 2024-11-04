@@ -25,6 +25,18 @@ Each configuration part contains a list of the subsequent configuration part. Th
 configuration can have multiple unit configurations, which can contain multiple register block 
 configurations, which can have multiple measurement configurations.
 
+# Register persistence
+
+By default the Modbus Server register blocks are **not** preserved when SolarNode restarts. That
+means all registers are effectively cleared to `0` when SolarNode restarts. If you would like to
+have the registers preserved instead, a `ModbusRegisterDao` service must be available at 
+runtime. The [Modbus Server Persistence (JDBC)](../net.solarnetwork.node.io.modbus.server.dao.jdbc)
+plugin provides this.
+
+With or without persistence configured, Modbus Server serves all requests from an in-memory
+register database. If the `ModbusRegisterDao` service is available, updates to the in-memory
+database are then also persisted to that service.
+
 # CSV Configurer
 
 This plugin also provides a **Modbus Server CSV Configurer** component will appear on the main
