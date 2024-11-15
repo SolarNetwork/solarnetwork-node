@@ -69,7 +69,7 @@ public interface DatumHistorian {
 	 *        the source ID to find
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, or {@literal null} if not available
 	 * @see #offset(String, int, Class)
 	 */
 	<T extends NodeDatum> T latest(String sourceId, Class<T> type);
@@ -105,7 +105,7 @@ public interface DatumHistorian {
 	 *        {@literal 1} the next later, and so on
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, or {@literal null} if not available
 	 */
 	<T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type);
 

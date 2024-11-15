@@ -40,7 +40,6 @@ import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
-import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumHistorian;
 import net.solarnetwork.node.service.DatumService;
@@ -68,7 +67,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 2.6
+ * @version 2.7
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot
@@ -282,28 +281,6 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 			}
 		}
 		return data;
-	}
-
-	/**
-	 * Get the datum's source ID.
-	 *
-	 * @return the source ID, or {@literal null}
-	 * @since 2.1
-	 */
-	public String getSourceId() {
-		Datum datum = getDatum();
-		return (datum != null ? datum.getSourceId() : null);
-	}
-
-	/**
-	 * Get the datum's timestamp.
-	 *
-	 * @return the timestamp, or {@literal null}
-	 * @since 2.1
-	 */
-	public Instant getTimestamp() {
-		Datum datum = getDatum();
-		return (datum != null ? datum.getTimestamp() : null);
 	}
 
 	/**
@@ -1263,18 +1240,6 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 			return null;
 		}
 		return locationService.getLocationMetadata(locationId, sourceId);
-	}
-
-	/**
-	 * Get a location datum's object ID.
-	 *
-	 * @return the object ID, or {@literal null}
-	 * @since 2.4
-	 */
-	public Long getLocId() {
-		Datum datum = getDatum();
-		return (datum != null && datum.getKind() == ObjectDatumKind.Location ? datum.getObjectId()
-				: null);
 	}
 
 	/**
