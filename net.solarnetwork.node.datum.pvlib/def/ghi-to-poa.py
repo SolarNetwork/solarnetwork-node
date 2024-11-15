@@ -24,7 +24,7 @@ def ghi_get_irradiance(location: Location,
     max_zenith = 87 if max_zenith is None else max_zenith
     
     erbs = irradiance.erbs(
-        ghi = ghi,
+        ghi = ghi_data,
         zenith = solar_position['apparent_zenith'],
         min_cos_zenith = min_cos_zenith,
         max_zenith = max_zenith,
