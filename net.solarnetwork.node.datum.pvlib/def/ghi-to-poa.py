@@ -14,7 +14,7 @@ def ghi_get_irradiance(location: Location,
                        min_cos_zenith=None,
                        max_zenith=None) -> dict:
     
-    times = pd.DatetimeIndex([date])
+    times = pd.DatetimeIndex(data = [date], tz = location.tz)
     
     solar_position = location.get_solarposition(times=times)
     
@@ -85,11 +85,11 @@ ghi = 0
 date = '2024-11-16T12:00:00'
 
 for opt, arg in opts:
-    if opt in ('-a', '--altitude'):
+    if opt in ('-a', '--altitude'): # m
         alt = float(arg)
     elif opt in ('-d', '--date'):
         date = arg
-    elif opt in ('-i', '--irradiance'):
+    elif opt in ('-i', '--irradiance'): # W/m2
         ghi = float(arg)
     elif opt in ('-l', '--latitude'):
         lat = float(arg)
@@ -99,9 +99,9 @@ for opt, arg in opts:
         min_cos_zenith = float(arg)
     elif opt in ('-M', '--max-zenith'):
         max_zenith = float(arg)
-    elif opt in ('-t', '--array-tilt'):
+    elif opt in ('-t', '--array-tilt'): # angle in degrees
         array_tilt = float(arg)
-    elif opt in ('-u', '--array-azimuth'):
+    elif opt in ('-u', '--array-azimuth'): # angle in degrees
         array_azimuth = float(arg)
     elif opt in ('-z', '--zone'):
         zone = arg
