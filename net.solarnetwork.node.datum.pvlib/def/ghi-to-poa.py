@@ -47,6 +47,7 @@ def ghi_get_irradiance(location: Location,
     
     # transpose single row (timestamp) into into simple dictionary
     result = {'date': date,
+              'zone': location.tz,
               'ghi': ghi, 
               'dni': erbs['dni'].iloc[0],
               'dhi': erbs['dhi'].iloc[0],
