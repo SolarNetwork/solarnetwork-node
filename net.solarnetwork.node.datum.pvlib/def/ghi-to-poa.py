@@ -41,8 +41,8 @@ def ghi_get_irradiance(location: Location,
         dhi = erbs['dhi'],
         dni_extra = dni_extra,
         ghi = ghi_data,
-        solar_azimuth = solar_position['apparent_zenith'],
-        solar_zenith = solar_position['azimuth']
+        solar_azimuth = solar_position['azimuth'],
+        solar_zenith = solar_position['apparent_zenith']
         )
     
     # transpose single row (timestamp) into into simple dictionary
