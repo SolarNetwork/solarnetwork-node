@@ -1,4 +1,4 @@
-# pvlib Datum Source
+# pvlib Datum Filter
 
 ## Developer Setup
 

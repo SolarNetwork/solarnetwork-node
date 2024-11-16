@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>net.solarnetwork.node.datum.pvlib</name>
+	<name>net.solarnetwork.node.datum.filter.pvlib</name>
 	<comment></comment>
 	<projects>
 	</projects>

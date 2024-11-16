@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: pvlib Datum Source
-Bundle-Description: Calculate solar characteristics like POA irradiance from GHI data.
-Bundle-SymbolicName: net.solarnetwork.node.datum.pvlib
-Bundle-Version: 1.0.0
-Bundle-Vendor: SolarNetwork
-Automatic-Module-Name: net.solarnetwork.node.datum.pvlib
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
