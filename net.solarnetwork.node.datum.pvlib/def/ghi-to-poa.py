@@ -6,6 +6,21 @@ import sys
 from pvlib import irradiance
 from pvlib.location import Location
 
+def usage():
+    print("""Usage:
+
+-a --altitude        elevation above sea level, in meters
+-d --date            date, like YYYY-MM-DDTHH:mm:ss
+-i --irradiance      GHI irradiance, in W/m^2
+-l --latitude        decimal latitude
+-L --longitude       decimal longitude
+-m --min-cos-zenith  optional minimum value of cos(zenith) when calculating global clearness index
+-M --max-zenith      optional maximum value of zenith to allow in DNI calculation
+-t --array-tilt      solar array tilt angle from horizontal, in degrees 
+-u --array-azimuth   solar array angle clockwise from north
+-z --zone            time zone, like Pacific/Auckland
+""")
+
 def ghi_get_irradiance(location: Location,
                        array_tilt: float,
                        array_azimuth: float,
@@ -62,14 +77,19 @@ def ghi_get_irradiance(location: Location,
 
     return result
 
-opts, args = getopt.getopt(
-    sys.argv[1:],
-    'a:d:i:l:L:m:M:t:u:z:',
-    ['altitude=', 'date=', 'irradiance=',
-     'latitude=', 'longitude=', 
-     'min-cos-zenith=', 'max-zenith=', 
-     'array-tilt=', 'array-azimuth=', 'zone='],
-)
+try:
+    opts, args = getopt.getopt(
+        sys.argv[1:],
+        'a:d:i:l:L:m:M:t:u:z:',
+        ['altitude=', 'date=', 'irradiance=',
+        'latitude=', 'longitude=', 
+        'min-cos-zenith=', 'max-zenith=', 
+        'array-tilt=', 'array-azimuth=', 'zone='],
+    )
+except getopt.GetoptError as e:
+    print(e)
+    usage()
+    sys.exit(2)
 
 lat = 0
 lon = 0
