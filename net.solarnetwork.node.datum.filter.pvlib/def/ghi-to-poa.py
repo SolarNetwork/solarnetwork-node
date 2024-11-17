@@ -3,6 +3,8 @@ import json
 import pandas as pd
 import sys
 
+from datetime import datetime
+from datetime import timezone
 from pvlib import irradiance
 from pvlib.location import Location
 
@@ -102,7 +104,7 @@ min_cos_zenith = None
 max_zenith = None
 
 ghi = 0
-date = '2024-11-16T12:00:00'
+date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
 
 for opt, arg in opts:
     if opt in ('-a', '--altitude'): # m
