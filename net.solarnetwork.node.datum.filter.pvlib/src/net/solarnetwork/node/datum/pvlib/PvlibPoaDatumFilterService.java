@@ -22,16 +22,28 @@
 
 package net.solarnetwork.node.datum.pvlib;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static net.solarnetwork.codec.JsonUtils.STRING_MAP_TYPE;
+import static net.solarnetwork.node.Constants.solarNodeHome;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.nonEmptyString;
+import static org.springframework.util.FileCopyUtils.copyToString;
+import static org.springframework.util.StringUtils.arrayToDelimitedString;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.domain.Location;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.service.DatumDataSource;
@@ -46,9 +58,17 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * {@link DatumDataSource} for POA data derived from GHI data.
+ *
+ * <p>
+ * This filter relies on an external OS command to perform the GHI to POA
+ * irradiance calculation. The command is expected to return a JSON object with
+ * a {@link #getPoaResultKey()} property with the result. The command will be
+ * provided the arguments as defined in the {@link CommandOptions} enumeration.
+ * </p>
  *
  * @author matt
  * @version 1.0
@@ -61,6 +81,12 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 	/** The {@code poaPropertyName} property default value. */
 	public static final String DEFAULT_POA_PROPERTY_NAME = "irradiance_poa";
+
+	/** The {@code command} property default value. */
+	public static final String DEFAULT_COMMAND = solarNodeHome() + "/bin/ghi-to-poa";
+
+	/** The {@code poaResultKey} property default value. */
+	public static final String DEFAULT_POA_RESULT_KEY = "poa_global";
 
 	private final OptionalService<LocationService> locationService;
 	private final OptionalService<DatumMetadataService> datumMetadataService;
@@ -81,6 +107,9 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	private BigDecimal tilt;
 	private BigDecimal minCosZenith;
 	private BigDecimal maxZenith;
+
+	private String command = DEFAULT_COMMAND;
+	private String poaResultKey = DEFAULT_POA_RESULT_KEY;
 
 	/**
 	 * Constructor.
@@ -112,7 +141,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
-		if ( !conditionsMatch(datum, samples, parameters) ) {
+		if ( !conditionsMatch(datum, samples, parameters) || !samples.hasSampleValue(ghiPropertyName) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
@@ -164,12 +193,73 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 				populateArguments(cmdArguments, meta, metaPath);
 				populateArguments(cmdArguments, meta, altMetaPath);
 			}
+		}
 
+		// use node location, if configured to do so
+		if ( useNodeLocation ) {
+			LocationService locService = service(locationService);
+			if ( locService != null ) {
+				Location loc = locService.getNodeLocation();
+				if ( loc != null ) {
+					if ( loc.getLatitude() != null ) {
+						cmdArguments.put(CommandOptions.Latitude.getOption(),
+								loc.getLatitude().toPlainString());
+					}
+					if ( loc.getLongitude() != null ) {
+						cmdArguments.put(CommandOptions.Lonitude.getOption(),
+								loc.getLongitude().toPlainString());
+					}
+					if ( loc.getElevation() != null ) {
+						cmdArguments.put(CommandOptions.Altitude.getOption(),
+								loc.getElevation().toPlainString());
+					}
+				}
+			}
 		}
 
 		DatumSamplesOperations s = samples;
+
+		if ( !(cmdArguments.containsKey(CommandOptions.Latitude.getOption())
+				&& cmdArguments.containsKey(CommandOptions.Lonitude.getOption())) ) {
+			log.warn(
+					"No lat/lon available to perform GHI -> POA irradiance calculation; discovered options are: {}",
+					cmdArguments);
+		} else {
+			Object ghiVal = samples.findSampleValue(ghiPropertyName);
+			if ( ghiVal instanceof BigDecimal ) {
+				ghiVal = ((BigDecimal) ghiVal).toPlainString();
+			}
+			cmdArguments.put(CommandOptions.Ghi.getOption(), ghiVal.toString());
+
+			cmdArguments.put(CommandOptions.Date.getOption(), datum.getTimestamp().atZone(timeZone)
+					.truncatedTo(ChronoUnit.SECONDS).toLocalDateTime().toString());
+
+			Map<String, ?> result = executeCommand(cmdArguments);
+			if ( result != null ) {
+				log.debug("GHI -> POA command options {} returned {}", cmdArguments, result);
+				Object poaVal = result.get(poaResultKey);
+				Number poa = null;
+				if ( poaVal instanceof Number ) {
+					poa = (Number) poaVal;
+				} else if ( poaVal != null ) {
+					try {
+						poa = NumberUtils.parseNumber(poaVal.toString(), BigDecimal.class);
+					} catch ( NumberFormatException e ) {
+						log.warn(
+								"Unable to parse [{}] POA irriadiance value [{}] as a number; discarding",
+								poaResultKey, poaVal);
+					}
+				}
+				if ( poa != null ) {
+					DatumSamples copy = new DatumSamples(samples);
+					s = new DatumSamples(samples);
+					copy.putInstantaneousSampleValue(poaPropertyName, poa);
+					s = copy;
+				}
+			}
+		}
 		incrementStats(start, samples, s);
-		return samples;
+		return s;
 	}
 
 	private void populateArguments(Map<String, String> cmdArguments, GeneralDatumMetadata meta,
@@ -193,6 +283,43 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 						metaVal instanceof BigDecimal ? ((BigDecimal) metaVal).toPlainString()
 								: metaVal.toString());
 			}
+		}
+	}
+
+	private Map<String, ?> executeCommand(final Map<String, String> args) {
+		String[] cmd = new String[args.size() * 2 + 1];
+		cmd[0] = command;
+		int i = 0;
+		for ( Entry<String, String> e : args.entrySet() ) {
+			cmd[++i] = e.getKey();
+			cmd[++i] = e.getValue();
+		}
+		if ( log.isDebugEnabled() ) {
+			log.debug("Executing GHI -> POA irradiance command: {} ", arrayToDelimitedString(cmd, " "));
+		}
+		ProcessBuilder pb = new ProcessBuilder(cmd);
+		try {
+			Process pr = pb.start();
+
+			String json = nonEmptyString(
+					copyToString(new InputStreamReader(pr.getInputStream(), UTF_8)));
+
+			String err = nonEmptyString(copyToString(new InputStreamReader(pr.getErrorStream(), UTF_8)));
+			if ( err != null ) {
+				throw new RuntimeException(
+						String.format("GHI -> POA irradiance command [%s] error: %s", command, err));
+			} else if ( json == null ) {
+				throw new RuntimeException(
+						String.format("GHI -> POA irradiance command [%s] produced no output", command));
+			}
+
+			return objectMapper.readValue(json, STRING_MAP_TYPE);
+		} catch ( JacksonException e ) {
+			throw new RuntimeException(
+					String.format("Error parsing GHI -> POA irradiance command [%s] output: %s", command,
+							e.getMessage()));
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -229,6 +356,9 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		results.add(new BasicTextFieldSettingSpecifier("tilt", null));
 		results.add(new BasicTextFieldSettingSpecifier("minCosZenith", null));
 		results.add(new BasicTextFieldSettingSpecifier("maxZenith", null));
+
+		results.add(new BasicTextFieldSettingSpecifier("command", DEFAULT_COMMAND));
+		results.add(new BasicTextFieldSettingSpecifier("poaResultKey", DEFAULT_POA_RESULT_KEY));
 
 		return results;
 	}
@@ -534,6 +664,47 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public final void setMaxZenith(BigDecimal maxZenith) {
 		this.maxZenith = maxZenith;
+	}
+
+	/**
+	 * Get the OS command to run.
+	 *
+	 * @return the command
+	 */
+	public final String getCommand() {
+		return command;
+	}
+
+	/**
+	 * Set the OS command to run.
+	 *
+	 * @param command
+	 *        the command to set; if {@code null} or empty then
+	 *        {@link #DEFAULT_COMMAND} will be used
+	 */
+	public final void setCommand(String command) {
+		this.command = (command != null && !command.isEmpty() ? command : DEFAULT_COMMAND);
+	}
+
+	/**
+	 * Get the POA irradiance result key.
+	 *
+	 * @return the key
+	 */
+	public final String getPoaResultKey() {
+		return poaResultKey;
+	}
+
+	/**
+	 * Set the POA irradiance result key.
+	 *
+	 * @param poaResultKey
+	 *        the key to set; if {@code null} or empty then
+	 *        {@link #DEFAULT_POA_RESULT_KEY} will be used
+	 */
+	public final void setPoaResultKey(String poaResultKey) {
+		this.poaResultKey = (poaResultKey != null && !poaResultKey.isEmpty() ? poaResultKey
+				: DEFAULT_POA_RESULT_KEY);
 	}
 
 }
