@@ -20,18 +20,49 @@
 		interface="net.solarnetwork.service.ObjectMapperService"
 		filter="(function=node)"/>
 	
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 		
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+	</bean>
+
 	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="nodeMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+		<property name="serviceFilter" value="(function=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="tariffScheduleProviders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
+	</bean>
+
 	<!-- Services -->
 
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
@@ -41,6 +72,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
 				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
@@ -80,7 +112,6 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService">
 			<argument ref="objectMapper"/>
-			<argument ref="locationService"/>
 			<argument ref="datumMetadataService"/>
 			<argument>
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
@@ -90,6 +121,13 @@
 				</bean>
 			</argument>
 			<property name="messageSource" ref="messageSource"/>
+			<property name="datumService" ref="datumService"/>
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="locationService" ref="locationService"/>
+			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
+			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
 		</bean>
 	</osgix:managed-service-factory>
 

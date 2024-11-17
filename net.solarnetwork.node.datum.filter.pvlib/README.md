@@ -49,6 +49,7 @@ Each filter configuration contains the following overall settings:
 | Maximum Zenith     | The maximum zenith value to allow in DNI calculation. |
 | Command            | The external command to run, where the parameters and GHI irradiance will be passed as arguments and the calculated POA irradiance is returned. See [Command](#command) below. |
 | POA Result Key     | The command result key to extract for the calculated POA irradiance value. |
+| Expressions        |  A list of expression configurations that are evaluated to derive datum property values from the **Command** output. See [Expressions](#expressions) below. |
 
 # Metadata Parameters
 
@@ -98,6 +99,41 @@ The supported metadata parameters are:
 | `pvArrayAzimuth` | PV array angle value, in degrees clockwise from north |
 | `minCosZenith`   | Minimum value of `cos(zenith)` to allow when calculating global clearness index |
 | `maxZenith`      | Maximum zenith value to allow in DNI calculation |
+
+
+# Expressions
+
+Any number of [expressions][expr] can be configured on the **Expression** list. Expressions can
+reference datum properties as usually, and additionally any properties returned by the configured
+[command](#command). For example, the [def/ghi-to-poa.py](./def/ghi-to-poa.py) script returns
+many properties, like these:
+
+```json
+{
+  "date": "2024-11-18T10:24:47",
+  "zone": "Pacific/Auckland",
+  "ghi": 805.0,
+  "dni": 844.5952562517782,
+  "dhi": 151.71952235515488,
+  "zenith": 39.3322587975266,
+  "azimuth": 74.67509718383894,
+  "min_cos_zenith": 0.065,
+  "max_zenith": 87,
+  "poa_global": 799.951169881113,
+  "poa_direct": 648.6170024103126,
+  "poa_diffuse": 151.3341674708004,
+  "poa_sky_diffuse": 150.9512589662823,
+  "poa_ground_diffuse": 0.38290850451810454
+}
+```
+
+Properties like `poa_global`, `poa_direct`, and so on can be used in expressions, for example you
+could round the `poa_global` value to at most 3 digits with:
+
+```
+roundDown(poa_global, 3)
+```
+
 
 # Command
 
@@ -149,6 +185,7 @@ python def/ghi-to-poa.py --latitude -36.8509 --longitude 174.7645 \
   --date 2024-11-16T10:00 --irradiance 1000
 ```
 
+[expr]: https://solarnetwork.github.io/solarnode-handbook/users/expressions/
 [metadata]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#metadata
 [meta-path]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#metadata-filter-key-paths
 [opmodes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes

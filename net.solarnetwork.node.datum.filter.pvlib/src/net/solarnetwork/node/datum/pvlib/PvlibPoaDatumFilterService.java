@@ -23,9 +23,13 @@
 package net.solarnetwork.node.datum.pvlib;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.codec.JsonUtils.STRING_MAP_TYPE;
 import static net.solarnetwork.node.Constants.solarNodeHome;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.nonEmptyString;
 import static org.springframework.util.FileCopyUtils.copyToString;
@@ -35,7 +39,9 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,19 +52,26 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.MapSampleOperations;
+import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.NumberUtils;
+import net.solarnetwork.settings.support.SettingUtils;
+import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.CollectionUtils;
 
 /**
  * {@link DatumDataSource} for POA data derived from GHI data.
@@ -88,9 +101,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/** The {@code poaResultKey} property default value. */
 	public static final String DEFAULT_POA_RESULT_KEY = "poa_global";
 
-	private final OptionalService<LocationService> locationService;
 	private final OptionalService<DatumMetadataService> datumMetadataService;
-	private final OptionalFilterableService<MetadataService> metadataService;
+	private final OptionalFilterableService<MetadataService> characteristicsMetadataService;
 	private final ObjectMapper objectMapper;
 
 	private String metadataPath;
@@ -111,6 +123,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	private String command = DEFAULT_COMMAND;
 	private String poaResultKey = DEFAULT_POA_RESULT_KEY;
 
+	private ExpressionConfig[] expressionConfigs;
+
 	/**
 	 * Constructor.
 	 *
@@ -120,20 +134,19 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *        the location service to use
 	 * @param datumMetadataService
 	 *        the datum metadata service to use
-	 * @param metadataService
+	 * @param characteristicsMetadataService
 	 *        the metadata service to use
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@code null}
 	 */
 	public PvlibPoaDatumFilterService(ObjectMapper objectMapper,
-			OptionalService<LocationService> locationService,
 			OptionalService<DatumMetadataService> datumMetadataService,
 			OptionalFilterableService<MetadataService> metadataService) {
 		super();
 		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
-		this.locationService = requireNonNullArgument(locationService, "locationService");
 		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
-		this.metadataService = requireNonNullArgument(metadataService, "metadataService");
+		this.characteristicsMetadataService = requireNonNullArgument(metadataService,
+				"characteristicsMetadataService");
 
 	}
 
@@ -178,8 +191,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		final String altMetaPath = nonEmptyString(alternateMetadataPath);
 		if ( metaPath != null || altMetaPath != null ) {
 			// first try the configured MetadataService
-			if ( isMetadataServiceUidConfigured() ) {
-				MetadataService metaService = service(metadataService);
+			if ( isCharacteristicsMetadataServiceUidConfigured() ) {
+				MetadataService metaService = service(characteristicsMetadataService);
 				if ( metaService != null ) {
 					GeneralDatumMetadata meta = metaService.getAllMetadata();
 					populateArguments(cmdArguments, meta, metaPath);
@@ -197,7 +210,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 		// use node location, if configured to do so
 		if ( useNodeLocation ) {
-			LocationService locService = service(locationService);
+			LocationService locService = service(getLocationService());
 			if ( locService != null ) {
 				Location loc = locService.getNodeLocation();
 				if ( loc != null ) {
@@ -237,25 +250,31 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 			Map<String, ?> result = executeCommand(cmdArguments);
 			if ( result != null ) {
 				log.debug("GHI -> POA command options {} returned {}", cmdArguments, result);
-				Object poaVal = result.get(poaResultKey);
-				Number poa = null;
-				if ( poaVal instanceof Number ) {
-					poa = (Number) poaVal;
-				} else if ( poaVal != null ) {
-					try {
-						poa = NumberUtils.parseNumber(poaVal.toString(), BigDecimal.class);
-					} catch ( NumberFormatException e ) {
-						log.warn(
-								"Unable to parse [{}] POA irriadiance value [{}] as a number; discarding",
-								poaResultKey, poaVal);
+				DatumSamples samplesCopy = new DatumSamples(samples);
+				s = samplesCopy;
+
+				// if poaResultKey defined, extract that
+				final String poaKey = nonEmptyString(poaResultKey);
+				if ( poaKey != null ) {
+					BigDecimal poa = CollectionUtils.getMapBigDecimal(poaKey, result);
+					if ( poa != null ) {
+						samplesCopy.putInstantaneousSampleValue(poaPropertyName, poa);
 					}
 				}
-				if ( poa != null ) {
-					DatumSamples copy = new DatumSamples(samples);
-					s = new DatumSamples(samples);
-					copy.putInstantaneousSampleValue(poaPropertyName, poa);
-					s = copy;
+
+				// if expressions configured, execute those
+				ExpressionConfig[] exprConfs = getExpressionConfigs();
+				if ( exprConfs != null && exprConfs.length > 0 ) {
+					Map<String, Object> params = smartPlaceholders(parameters);
+					Map<String, Object> exprData = new LinkedHashMap<>(result);
+					MapSampleOperations mapSamples = new MapSampleOperations(exprData, samplesCopy);
+					ExpressionRoot root = new ExpressionRoot(datum, mapSamples, params,
+							service(getDatumService()), getOpModesService(),
+							service(getMetadataService()), service(getLocationService()));
+					root.setTariffScheduleProviders(getTariffScheduleProviders());
+					populateExpressionDatumProperties(mapSamples, getExpressionConfigs(), root);
 				}
+
 			}
 		}
 		incrementStats(start, samples, s);
@@ -335,11 +354,20 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> results = baseIdentifiableSettings("");
 		populateStatusSettings(results);
 		populateBaseSampleTransformSupportSettings(results);
 
-		results.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null, false,
+		results.add(new BasicTextFieldSettingSpecifier("characteristicsMetadataServiceUid", null, false,
 				"(objectClass=net.solarnetwork.node.service.MetadataService)"));
 		results.add(new BasicTextFieldSettingSpecifier("metadataPath", null));
 		results.add(new BasicTextFieldSettingSpecifier("alternateMetadataPath", null));
@@ -360,37 +388,57 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		results.add(new BasicTextFieldSettingSpecifier("command", DEFAULT_COMMAND));
 		results.add(new BasicTextFieldSettingSpecifier("poaResultKey", DEFAULT_POA_RESULT_KEY));
 
+		Iterable<ExpressionService> exprServices = services(getExpressionServices());
+		if ( exprServices != null ) {
+			ExpressionConfig[] exprConfs = getExpressionConfigs();
+			List<ExpressionConfig> exprConfsList = (template ? singletonList(new ExpressionConfig())
+					: (exprConfs != null ? asList(exprConfs) : emptyList()));
+			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
+
+						@Override
+						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
+								int index, String key) {
+							List<SettingSpecifier> exprSettings = ExpressionConfig
+									.settings(PvlibPoaDatumFilterService.class, key + ".", exprServices);
+							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(exprSettings);
+							return singletonList(configGroup);
+						}
+					}));
+		}
+
 		return results;
 	}
 
 	/**
-	 * Test if a {@code MetadataService} UID filter is configured.
+	 * Test if a PV characteristics {@code MetadataService} UID filter is
+	 * configured.
 	 *
-	 * @return {@code true} if {@link #getMetadataServiceUid()} is not
-	 *         {@code null} or empty
+	 * @return {@code true} if {@link #getCharacteristicsMetadataServiceUid()}
+	 *         is not {@code null} or empty
 	 */
-	private final boolean isMetadataServiceUidConfigured() {
-		String uid = getMetadataServiceUid();
+	private final boolean isCharacteristicsMetadataServiceUidConfigured() {
+		String uid = getCharacteristicsMetadataServiceUid();
 		return (uid != null && !uid.isEmpty());
 	}
 
 	/**
-	 * Get the {@link MetadataService} service filter UID.
+	 * Get the PV characteristics {@link MetadataService} service filter UID.
 	 *
 	 * @return the service UID
 	 */
-	public final String getMetadataServiceUid() {
-		return metadataService.getPropertyValue(UID_PROPERTY);
+	public final String getCharacteristicsMetadataServiceUid() {
+		return characteristicsMetadataService.getPropertyValue(UID_PROPERTY);
 	}
 
 	/**
-	 * Set the {@link MetadataService} service filter UID.
+	 * Set the PV characteristics {@link MetadataService} service filter UID.
 	 *
 	 * @param uid
 	 *        the service UID
 	 */
-	public final void setMetadataServiceUid(String uid) {
-		metadataService.setPropertyFilter(UID_PROPERTY, uid);
+	public final void setCharacteristicsMetadataServiceUid(String uid) {
+		characteristicsMetadataService.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
 	/**
@@ -699,12 +747,56 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Set the POA irradiance result key.
 	 *
 	 * @param poaResultKey
-	 *        the key to set; if {@code null} or empty then
-	 *        {@link #DEFAULT_POA_RESULT_KEY} will be used
+	 *        the key to set
 	 */
 	public final void setPoaResultKey(String poaResultKey) {
-		this.poaResultKey = (poaResultKey != null && !poaResultKey.isEmpty() ? poaResultKey
-				: DEFAULT_POA_RESULT_KEY);
+		this.poaResultKey = poaResultKey;
+	}
+
+	/**
+	 * Get the expression configurations.
+	 *
+	 * @return the expression configurations
+	 */
+	public ExpressionConfig[] getExpressionConfigs() {
+		return expressionConfigs;
+	}
+
+	/**
+	 * Set the expression configurations to use.
+	 *
+	 * @param expressionConfigs
+	 *        the configs to use
+	 */
+	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+		this.expressionConfigs = expressionConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code expressionConfigs} elements.
+	 *
+	 * @return the number of {@code expressionConfigs} elements
+	 */
+	public int getExpressionConfigsCount() {
+		ExpressionConfig[] confs = this.expressionConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code ExpressionTransformConfig}
+	 * elements.
+	 *
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link ExpressionTransformConfig} instances.
+	 * </p>
+	 *
+	 * @param count
+	 *        The desired number of {@code expressionConfigs} elements.
+	 */
+	public void setExpressionConfigsCount(int count) {
+		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
+				ExpressionConfig.class, null);
 	}
 
 }
