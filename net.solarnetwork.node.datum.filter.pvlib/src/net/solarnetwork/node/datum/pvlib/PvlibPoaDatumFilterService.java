@@ -130,8 +130,6 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @param objectMapper
 	 *        the object mapper to use
-	 * @param locationService
-	 *        the location service to use
 	 * @param datumMetadataService
 	 *        the datum metadata service to use
 	 * @param characteristicsMetadataService
@@ -141,11 +139,11 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public PvlibPoaDatumFilterService(ObjectMapper objectMapper,
 			OptionalService<DatumMetadataService> datumMetadataService,
-			OptionalFilterableService<MetadataService> metadataService) {
+			OptionalFilterableService<MetadataService> characteristicsMetadataService) {
 		super();
 		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
 		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
-		this.characteristicsMetadataService = requireNonNullArgument(metadataService,
+		this.characteristicsMetadataService = requireNonNullArgument(characteristicsMetadataService,
 				"characteristicsMetadataService");
 
 	}
@@ -788,7 +786,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link ExpressionTransformConfig} instances.
+	 * {@link ExpressionConfig} instances.
 	 * </p>
 	 *
 	 * @param count
