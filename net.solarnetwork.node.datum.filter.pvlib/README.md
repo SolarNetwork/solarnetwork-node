@@ -168,7 +168,7 @@ python3 -m venv ~/.python/venv/solarnode
 source ~/.python/venv/solarnode/bin/activate
 
 # install deps
-pip install -r def/requirements.txt
+pip install pvlib
 ```
 
 Each time you want to work with the environment in a new shell, execute
