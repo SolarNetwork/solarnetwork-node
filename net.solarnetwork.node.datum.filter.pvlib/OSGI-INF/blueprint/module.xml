@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- Service References -->
+
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+	
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+	</bean>
+
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="nodeMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+		<property name="serviceFilter" value="(function=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="tariffScheduleProviders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
+	</bean>
+
+	<!-- Services -->
+
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</array>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="POA Calculator Filter"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.filter.pvlib.poa"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.filter.pvlib.poa" 
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.filter.pvlib.poa"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService">
+			<argument ref="objectMapper"/>
+			<argument ref="datumMetadataService"/>
+			<argument>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+				</bean>
+			</argument>
+			<property name="messageSource" ref="messageSource"/>
+			<property name="datumService" ref="datumService"/>
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="locationService" ref="locationService"/>
+			<property name="metadataService" ref="nodeMetadataService"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
+			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>
