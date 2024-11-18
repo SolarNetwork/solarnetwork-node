@@ -270,9 +270,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 							service(getDatumService()), getOpModesService(),
 							service(getMetadataService()), service(getLocationService()));
 					root.setTariffScheduleProviders(getTariffScheduleProviders());
-					populateExpressionDatumProperties(mapSamples, getExpressionConfigs(), root);
+					populateExpressionDatumProperties(samplesCopy, getExpressionConfigs(), root);
 				}
-
 			}
 		}
 		incrementStats(start, samples, s);
