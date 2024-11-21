@@ -4,15 +4,11 @@ This project provides SolarNode plugin that exposes a Modbus TCP server within S
 data collected by other plugins. This is an advanced plugin that requires specific low-level
 knowledge of the Modbus services you plan to integrate with.
 
-# Install
-
-The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the **IO**
-category as **Modbus Server (TCP)**. Once installed, a new **Modbus Server (TCP)** component will
-appear on the **Settings** page on your SolarNode. Click on the **Manage** button to configure
-components. You'll need to add one configuration for each port you want to expose a Modbus server
-on.
-
 # Use
+
+Once installed, a new **Modbus Server (TCP)** component will appear on the **Settings** page on your
+SolarNode. Click on the **Manage** button to configure components. You'll need to add one
+configuration for each port you want to expose a Modbus server on.
 
 Each Modbus server configuration is divided into four parts:
 
