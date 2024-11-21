@@ -20,16 +20,30 @@ Each Modbus server configuration is divided into four parts:
  2. Unit configuration (e.g. Modbus Unit ID)
  3. Register block configuration (e.g. Modbus register starting address)
  4. Measurement configuration (e.g. mapping data into Modbus registers)
- 
+
 Each configuration part contains a list of the subsequent configuration part. That is, a server
-configuration can have multiple unit configurations, which can contain multiple register block 
+configuration can have multiple unit configurations, which can contain multiple register block
 configurations, which can have multiple measurement configurations.
+
+# Register word order
+
+All multi-register data (anything more than 16 bits) is stored in **most-to-least significant**
+register (word) order, sometimes referred to as _big endian_ or _network_ order. Specifically, the
+highest bits if the data are stored first, in smaller numbered registers, followed by lower bits in
+larger numbered registers. For example a 32-bit number requires two registers. If the register
+address for this number is `0` and the server is updated to hold the value `0x12345678` then
+registers `0-1` will look like this:
+
+```
+0:  0x1234
+1:  0x5678
+```
 
 # Register persistence
 
 By default the Modbus Server register blocks are **not** preserved when SolarNode restarts. That
 means all registers are effectively cleared to `0` when SolarNode restarts. If you would like to
-have the registers preserved instead, a `ModbusRegisterDao` service must be available at 
+have the registers preserved instead, a `ModbusRegisterDao` service must be available at
 runtime. The [Modbus Server Persistence (JDBC)](../net.solarnetwork.node.io.modbus.server.dao.jdbc)
 plugin provides this.
 
