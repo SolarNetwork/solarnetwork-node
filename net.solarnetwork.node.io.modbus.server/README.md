@@ -29,7 +29,7 @@ configurations, which can have multiple measurement configurations.
 
 All multi-register data (anything more than 16 bits) is stored in **most-to-least significant**
 register (word) order, sometimes referred to as _big endian_ or _network_ order. Specifically, the
-highest bits if the data are stored first, in smaller numbered registers, followed by lower bits in
+highest bits of the data are stored first, in smaller numbered registers, followed by lower bits in
 larger numbered registers. For example a 32-bit number requires two registers. If the register
 address for this number is `0` and the server is updated to hold the value `0x12345678` then
 registers `0-1` will look like this:
