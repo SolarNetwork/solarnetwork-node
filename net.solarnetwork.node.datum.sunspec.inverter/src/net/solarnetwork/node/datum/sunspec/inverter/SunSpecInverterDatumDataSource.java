@@ -1,21 +1,21 @@
 /* ==================================================================
  * SunSpecInverterDatumDataSource.java - 9/10/2018 10:51:45 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,9 +28,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
@@ -41,8 +43,10 @@ import net.solarnetwork.node.hw.sunspec.inverter.InverterDatum;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterNameplateRatingsModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -53,9 +57,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible inverter.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -73,7 +77,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -89,6 +93,28 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	@Override
 	protected SunSpecDeviceDatumDataSourceSupport getSettingsDefaultInstance() {
 		return new SunSpecInverterDatumDataSource();
+	}
+
+	@Override
+	protected Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
+			throws IOException {
+		Map<String, Object> result = super.readDeviceInfo(connection, data);
+		if ( result == null ) {
+			return null;
+		}
+
+		// look for nameplate ratings
+		InverterNameplateRatingsModelAccessor nameplateRatings = data
+				.findTypedModel(InverterNameplateRatingsModelAccessor.class);
+		if ( nameplateRatings != null ) {
+			data.readModelData(connection, nameplateRatings);
+			Map<String, Object> ratings = nameplateRatings.nameplateRatingsInfo();
+			if ( ratings != null ) {
+				result.put(DataAccessor.INFO_KEY_NAMEPLATE_RATINGS, ratings);
+			}
+		}
+
+		return result;
 	}
 
 	@Override
@@ -257,7 +283,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 
 	/**
 	 * Set the states to ignore and not return datum for.
-	 * 
+	 *
 	 * @param states
 	 *        the states to ignore
 	 */
@@ -268,7 +294,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	/**
 	 * Set the states to ignore via a comma-delimited list of
 	 * {@link InverterOperatingState} names.
-	 * 
+	 *
 	 * @param states
 	 *        the state names to set
 	 */
@@ -294,7 +320,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	/**
 	 * Get the states to ignore, as a comma-delimited list of
 	 * {@link InverterOperatingState} names.
-	 * 
+	 *
 	 * @return the state names list
 	 */
 	public String getIgnoreStatesValue() {
@@ -303,7 +329,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 
 	/**
 	 * Toggle the inclusion of phase measurement properties in collected datum.
-	 * 
+	 *
 	 * @param includePhaseMeasurements
 	 *        {@literal true} to collect phase measurements
 	 * @since 2.1
