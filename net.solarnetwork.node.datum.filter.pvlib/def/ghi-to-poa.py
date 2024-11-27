@@ -18,7 +18,8 @@ def usage():
 -L --longitude       decimal longitude
 -m --min-cos-zenith  optional minimum cos(zenith) value when calculating global clearness index
 -M --max-zenith      optional maximum zenith value in DNI calculation
--t --array-tilt      solar array tilt angle from horizontal, in degrees 
+-t --array-tilt      solar array tilt angle from horizontal, in degrees
+-T --transpose       the transposition model to use, e.g. 'haydavies', 'perez-driesse'
 -u --array-azimuth   solar array angle clockwise from north
 -z --zone            time zone, like Pacific/Auckland
 """)
@@ -29,7 +30,8 @@ def ghi_get_irradiance(location: Location,
                        ghi: float,
                        date: str,
                        min_cos_zenith=None,
-                       max_zenith=None) -> dict:
+                       max_zenith=None,
+                       transposition_model='haydavies') -> dict:
     
     times = pd.DatetimeIndex(data = [date], tz = location.tz)
     
@@ -51,7 +53,7 @@ def ghi_get_irradiance(location: Location,
     dni_extra = irradiance.get_extra_radiation(times)
     
     poa = irradiance.get_total_irradiance(
-        model = "haydavies",
+        model = transposition_model,
         surface_tilt = array_tilt,
         surface_azimuth = array_azimuth,
         dni = erbs['dni'],
@@ -82,11 +84,12 @@ def ghi_get_irradiance(location: Location,
 try:
     opts, args = getopt.getopt(
         sys.argv[1:],
-        'a:d:i:l:L:m:M:t:u:z:',
+        'a:d:i:l:L:m:M:t:T:u:z:',
         ['altitude=', 'date=', 'irradiance=',
         'latitude=', 'longitude=', 
         'min-cos-zenith=', 'max-zenith=', 
-        'array-tilt=', 'array-azimuth=', 'zone='],
+        'array-tilt=', 'transpose=',
+        'array-azimuth=', 'zone='],
     )
 except getopt.GetoptError as e:
     print(e)
@@ -102,6 +105,7 @@ array_tilt = 0
 
 min_cos_zenith = None
 max_zenith = None
+model = 'haydavies'
 
 ghi = 0
 date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
@@ -123,6 +127,8 @@ for opt, arg in opts:
         max_zenith = float(arg)
     elif opt in ('-t', '--array-tilt'): # angle in degrees
         array_tilt = float(arg)
+    elif opt in ('-T', '--transpose'):
+        model = arg
     elif opt in ('-u', '--array-azimuth'): # angle in degrees
         array_azimuth = float(arg)
     elif opt in ('-z', '--zone'):
@@ -137,7 +143,8 @@ poa = ghi_get_irradiance(
     min_cos_zenith = min_cos_zenith,
     max_zenith = max_zenith,
     ghi = ghi,
-    date = date
+    date = date,
+    transposition_model = model
 )
 
 print(json.dumps(poa))

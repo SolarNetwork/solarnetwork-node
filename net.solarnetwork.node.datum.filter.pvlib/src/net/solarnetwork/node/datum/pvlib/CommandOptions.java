@@ -26,7 +26,7 @@ package net.solarnetwork.node.datum.pvlib;
  * Enumeration of command options with associated metadata keys.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum CommandOptions {
 
@@ -62,6 +62,12 @@ public enum CommandOptions {
 
 	/** The GHI irradiance value. */
 	Ghi("--irradiance", null),
+
+	/**
+	 * The transposition model to use; see {@link TranspositionModel} for
+	 * supported values.
+	 */
+	TranspositionModel("--transpose", "transpositionModel"),
 
 	;
 
