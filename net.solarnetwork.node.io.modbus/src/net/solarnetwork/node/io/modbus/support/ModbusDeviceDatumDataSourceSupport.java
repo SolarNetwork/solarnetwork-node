@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.domain.DataAccessor;
@@ -45,7 +46,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  *
  * @author matt
- * @version 3.2
+ * @version 3.3
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -135,7 +136,9 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 		if ( info == null ) {
 			return null;
 		}
-		return StringUtils.delimitedStringFromCollection(info.values(), " / ");
+		return StringUtils.delimitedStringFromCollection(info.values().stream()
+				.filter(v -> v instanceof String || v instanceof Number).collect(Collectors.toList()),
+				" / ");
 	}
 
 	/**
