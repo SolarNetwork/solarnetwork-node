@@ -1,31 +1,33 @@
 /* ==================================================================
  * InverterNameplateRatingsModelAccessorImpl_120_01Tests.java - 8/10/2018 7:06:15 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.hw.sunspec.inverter.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import java.util.Map;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +41,9 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
  * Test cases for the {@link InverterNameplateRatingsModelAccessorImpl} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class InverterNameplateRatingsModelAccessorImpl_120_01Tests {
 
@@ -191,5 +193,42 @@ public class InverterNameplateRatingsModelAccessorImpl_120_01Tests {
 				.findTypedModel(InverterNameplateRatingsModelAccessor.class);
 		assertThat("Stored energy export power rating", model.getStoredEnergyExportPowerRating(),
 				nullValue());
+	}
+
+	@Test
+	public void infoMap() {
+		// GIVEN
+		InverterNameplateRatingsModelAccessor model = getTestDataInstance()
+				.findTypedModel(InverterNameplateRatingsModelAccessor.class);
+
+		// WHEN
+		Map<String, Object> result = model.nameplateRatingsInfo();
+
+		// THEN
+		// @formatter:off
+		assertThat("Info map keys populated", result.keySet(), contains(
+				InverterNameplateRatingsModelAccessor.INFO_KEY_DER_TYPE,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_DER_TYPE_CODE,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_ACTIVE_POWER_RATING,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_APPARENT_POWER_RATING,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q1_RATING,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q4_RATING,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_CURRENT_RATING,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_POWER_FACTOR_Q1_RATING,
+				InverterNameplateRatingsModelAccessor.INFO_KEY_POWER_FACTOR_Q4_RATING
+		));
+		assertThat("Info map values populated", result.values(), contains(
+				InverterDerType.PV.toString(),
+				InverterDerType.PV.getCode(),
+				11400,
+				11400,
+				6000,
+				-6000,
+				47.50f,
+				-0.850f,
+				0.850f
+		));
+		// @formatter:on
+
 	}
 }
