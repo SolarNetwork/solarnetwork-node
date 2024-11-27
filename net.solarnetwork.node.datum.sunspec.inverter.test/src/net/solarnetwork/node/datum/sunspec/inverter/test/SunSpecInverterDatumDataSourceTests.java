@@ -1,21 +1,21 @@
 /* ==================================================================
  * SunSpecInverterDatumDataSourceTests.java - 13/10/2019 7:23:55 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,18 +31,22 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.sunspec.inverter.SunSpecInverterDatumDataSource;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterNameplateRatingsModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
@@ -53,7 +57,7 @@ import net.solarnetwork.settings.TitleSettingSpecifier;
 
 /**
  * Test cases for the {@link SunSpecInverterDatumDataSource} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -116,6 +120,43 @@ public class SunSpecInverterDatumDataSourceTests {
 		assertThat("Datum info available", info, notNullValue());
 		assertThat("Datum info value", info.getDefaultValue(),
 				equalTo("Fronius / Symo 3.0-3-S (version 0.3.11.10) / 29251001150340235"));
+	}
+
+	@Test
+	public void deviceInfo() throws IOException {
+		// GIVEN
+		expectStaticDataModbusConnection("test-data-113-01.txt");
+
+		// WHEN
+		replayAll();
+		DeviceInfo info = dataSource.deviceInfo();
+
+		// THEN
+		assertThat("Datum info available", info, notNullValue());
+		assertThat("Manufacturer resolved", info.getManufacturer(), is(equalTo("Fronius")));
+		assertThat("Model name resolved", info.getModelName(),
+				is(equalTo("Symo 3.0-3-S (version 0.3.11.10)")));
+		assertThat("Serial number resolved", info.getSerialNumber(), is(equalTo("29251001150340235")));
+
+		Map<String, Object> expectedNameplateRatings = new LinkedHashMap<>(17);
+		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_DER_TYPE, "PV");
+		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_DER_TYPE_CODE, 4);
+		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_ACTIVE_POWER_RATING,
+				3000);
+		expectedNameplateRatings
+				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_APPARENT_POWER_RATING, 3000);
+		expectedNameplateRatings
+				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q1_RATING, 2140);
+		expectedNameplateRatings
+				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q4_RATING, -2140);
+		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_CURRENT_RATING,
+				4.2f);
+		expectedNameplateRatings
+				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_POWER_FACTOR_Q1_RATING, -0.85f);
+		expectedNameplateRatings
+				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_POWER_FACTOR_Q4_RATING, 0.85f);
+		assertThat("Nameplate ratings resolved", info.getNameplateRatings(),
+				is(equalTo(expectedNameplateRatings)));
 	}
 
 	@Test

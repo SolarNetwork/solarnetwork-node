@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import net.solarnetwork.domain.DeviceInfo;
-import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.sunspec.GenericModelId;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -56,7 +56,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport
@@ -238,15 +238,38 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) throws IOException {
-		CommonModelAccessor data = getSample();
+	protected final Map<String, Object> readDeviceInfo(ModbusConnection connection) throws IOException {
+		ModelData data = getSample();
 		if ( data == null ) {
 			data = modelData(connection);
 		}
 		if ( data == null ) {
 			return null;
 		}
-		return data.getDeviceInfo();
+		return readDeviceInfo(connection, data);
+	}
+
+	/**
+	 * Read general device info and return a map of the results.
+	 *
+	 * <p>
+	 * This method is called from {@link #readDeviceInfo(ModbusConnection)}.
+	 * Subclasses can override to add additional information.
+	 * </p>
+	 *
+	 * @param connection
+	 *        the connection to use
+	 * @param data
+	 *        the current data
+	 * @return a map with general device information populated, or
+	 *         {@literal null} if no data available
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.4
+	 */
+	protected Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
+			throws IOException {
+		return (data != null ? data.getDeviceInfo() : null);
 	}
 
 	/**
@@ -260,9 +283,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	@Override
 	public DeviceInfo deviceInfo() {
-		getDeviceInfo(); // make sure common model populated
-		ModelData s = sample.get();
-		return (s != null ? s.deviceInfo() : null);
+		Map<String, ?> info = getDeviceInfo();
+		return (info != null ? DataAccessor.deviceInfoBuilderForInfo(info).build() : null);
 	}
 
 	/**
