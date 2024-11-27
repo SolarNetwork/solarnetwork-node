@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import static net.solarnetwork.util.NumberUtils.narrow;
+import static net.solarnetwork.util.NumberUtils.roundDown;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.hw.sunspec.DistributedEnergyResourceType;
@@ -297,11 +299,11 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 		result.put(INFO_KEY_REACTIVE_POWER_Q2_RATING, getReactivePowerQ2Rating());
 		result.put(INFO_KEY_REACTIVE_POWER_Q3_RATING, getReactivePowerQ3Rating());
 		result.put(INFO_KEY_REACTIVE_POWER_Q4_RATING, getReactivePowerQ4Rating());
-		result.put(INFO_KEY_CURRENT_RATING, getCurrentRating());
-		result.put(INFO_KEY_POWER_FACTOR_Q1_RATING, getPowerFactorQ1Rating());
-		result.put(INFO_KEY_POWER_FACTOR_Q2_RATING, getPowerFactorQ2Rating());
-		result.put(INFO_KEY_POWER_FACTOR_Q3_RATING, getPowerFactorQ3Rating());
-		result.put(INFO_KEY_POWER_FACTOR_Q4_RATING, getPowerFactorQ4Rating());
+		result.put(INFO_KEY_CURRENT_RATING, narrow(roundDown(getCurrentRating(), 1), 2));
+		result.put(INFO_KEY_POWER_FACTOR_Q1_RATING, narrow(roundDown(getPowerFactorQ1Rating(), 3), 2));
+		result.put(INFO_KEY_POWER_FACTOR_Q2_RATING, narrow(roundDown(getPowerFactorQ2Rating(), 3), 2));
+		result.put(INFO_KEY_POWER_FACTOR_Q3_RATING, narrow(roundDown(getPowerFactorQ3Rating(), 3), 2));
+		result.put(INFO_KEY_POWER_FACTOR_Q4_RATING, narrow(roundDown(getPowerFactorQ4Rating(), 3), 2));
 		result.put(INFO_KEY_STORED_ENERGY_RATING, getStoredEnergyRating());
 		result.put(INFO_KEY_STORED_CHARGE_CAPACITY, getStoredChargeCapacity());
 		result.put(INFO_KEY_STORED_ENERGY_IMPORT_POWER_RATING, getStoredEnergyImportPowerRating());
