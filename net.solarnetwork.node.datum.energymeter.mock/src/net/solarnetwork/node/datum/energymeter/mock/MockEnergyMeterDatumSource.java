@@ -205,7 +205,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				.withSerialNumber("ABCDEF123")
 				.withVersion("1.4")
 				.withManufactureDate(LocalDate.of(2021, 7, 9))
-				.withDeviceAddress("localhost").build();
+				.withDeviceAddress("localhost")
+				.withNameplateRatings(Collections.singletonMap("activePowerRating", 1_000_000))
+				.build();
 		// @formatter:on
 	}
 
