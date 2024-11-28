@@ -46,10 +46,11 @@ Each filter configuration contains the following overall settings:
 | Azimuth            | The angle of the PV array in degrees clockwise from true north that the PV system is facing. |
 | Tilt               | The angle of the PV array in degrees from horizontal, from `0` (facing directly upwards) to `90` (facing the horizon). |
 | Minimum cos(zenith) | The minimum value of `cos(zenith)` to allow when calculating the global clearness index. |
-| Maximum Zenith     | The maximum zenith value to allow in DNI calculation. |
-| Command            | The external command to run, where the parameters and GHI irradiance will be passed as arguments and the calculated POA irradiance is returned. See [Command](#command) below. |
-| POA Result Key     | The command result key to extract for the calculated POA irradiance value. |
-| Expressions        |  A list of expression configurations that are evaluated to derive datum property values from the **Command** output. See [Expressions](#expressions) below. |
+| Maximum Zenith      | The maximum zenith value to allow in DNI calculation. |
+| Transposition Model | The transposition model name to use. See [pvlib][pvlib-transpose] for more info. |
+| Command             | The external command to run, where the parameters and GHI irradiance will be passed as arguments and the calculated POA irradiance is returned. See [Command](#command) below. |
+| POA Result Key      | The command result key to extract for the calculated POA irradiance value. |
+| Expressions         |  A list of expression configurations that are evaluated to derive datum property values from the **Command** output. See [Expressions](#expressions) below. |
 
 # Metadata Parameters
 
@@ -192,3 +193,4 @@ python def/ghi-to-poa.py --latitude -36.8509 --longitude 174.7645 \
 [meta-path]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#metadata-filter-key-paths
 [opmodes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes
 [pvlib]: https://pvlib-python.readthedocs.io/
+[pvlib-transpose]: https://pvlib-python.readthedocs.io/en/v0.10.4/reference/irradiance/transposition.html
