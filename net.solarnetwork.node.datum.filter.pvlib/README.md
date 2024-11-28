@@ -99,6 +99,7 @@ The supported metadata parameters are:
 | `pvArrayAzimuth` | PV array angle value, in degrees clockwise from north |
 | `minCosZenith`   | Minimum value of `cos(zenith)` to allow when calculating global clearness index |
 | `maxZenith`      | Maximum zenith value to allow in DNI calculation |
+| `transpositionModel` | The transposition model name to use, one of `haydavies` or `perez-driesse`; defaults to `haydavies` |
 
 
 # Expressions
@@ -153,6 +154,7 @@ command must accept the options shown below, and is expected to output a JSON ob
 | `--max-zenith`     | Maximum zenith value to allow in DNI calculation |
 | `--date`           | Local timestamp, in `YYYY-MM-DDTHH:mm:ss` format |
 | `--irradiance`     | The GHI irradiance to calculate the POA irradiance value for |
+| `--transpose`      | The optional transposition model name to use, for example `haydavies` |
 
 
 # Developer Setup

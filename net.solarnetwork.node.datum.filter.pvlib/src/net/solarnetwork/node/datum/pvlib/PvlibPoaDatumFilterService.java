@@ -43,8 +43,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.springframework.context.MessageSource;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.Location;
@@ -67,6 +69,7 @@ import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
@@ -84,7 +87,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -100,6 +103,13 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 	/** The {@code poaResultKey} property default value. */
 	public static final String DEFAULT_POA_RESULT_KEY = "poa_global";
+
+	/**
+	 * The {@code transpositionModel} property default value.
+	 *
+	 * @since 1.1
+	 */
+	public static final TranspositionModel DEFAULT_TRANSPOSITION_MODEL = TranspositionModel.HayDavies;
 
 	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private final OptionalFilterableService<MetadataService> characteristicsMetadataService;
@@ -119,6 +129,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	private BigDecimal tilt;
 	private BigDecimal minCosZenith;
 	private BigDecimal maxZenith;
+	private TranspositionModel transpositionModel = DEFAULT_TRANSPOSITION_MODEL;
 
 	private String command = DEFAULT_COMMAND;
 	private String poaResultKey = DEFAULT_POA_RESULT_KEY;
@@ -183,6 +194,9 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		}
 		if ( maxZenith != null ) {
 			cmdArguments.put(CommandOptions.MaxZenith.getOption(), maxZenith.toPlainString());
+		}
+		if ( transpositionModel != null ) {
+			cmdArguments.put(CommandOptions.TranspositionModel.getOption(), transpositionModel.getKey());
 		}
 
 		final String metaPath = nonEmptyString(metadataPath);
@@ -381,6 +395,19 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		results.add(new BasicTextFieldSettingSpecifier("tilt", null));
 		results.add(new BasicTextFieldSettingSpecifier("minCosZenith", null));
 		results.add(new BasicTextFieldSettingSpecifier("maxZenith", null));
+
+		final MessageSource messageSource = getMessageSource();
+
+		// drop-down menu for transpositionModelName
+		BasicMultiValueSettingSpecifier modelSpec = new BasicMultiValueSettingSpecifier(
+				"transpositionModelName", DEFAULT_TRANSPOSITION_MODEL.getKey());
+		Map<String, String> modelSpecTitles = new LinkedHashMap<>(2);
+		for ( TranspositionModel e : TranspositionModel.values() ) {
+			modelSpecTitles.put(e.getKey(), messageSource.getMessage("transpositionModel." + e.getKey(),
+					null, e.name(), Locale.getDefault()));
+		}
+		modelSpec.setValueTitles(modelSpecTitles);
+		results.add(modelSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier("command", DEFAULT_COMMAND));
 		results.add(new BasicTextFieldSettingSpecifier("poaResultKey", DEFAULT_POA_RESULT_KEY));
@@ -794,6 +821,57 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	public void setExpressionConfigsCount(int count) {
 		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
 				ExpressionConfig.class, null);
+	}
+
+	/**
+	 * Get the transposition model.
+	 *
+	 * @return the model, never {@literal null}
+	 * @since 1.1
+	 */
+	public final TranspositionModel getTranspositionModel() {
+		return transpositionModel;
+	}
+
+	/**
+	 * Set the transposition model.
+	 *
+	 * @param transpositionModel
+	 *        the model to set; if {@code null} then
+	 *        {@link #DEFAULT_TRANSPOSITION_MODEL} will be set
+	 * @since 1.1
+	 */
+	public final void setTranspositionModel(TranspositionModel transpositionModel) {
+		this.transpositionModel = (transpositionModel != null ? transpositionModel
+				: DEFAULT_TRANSPOSITION_MODEL);
+	}
+
+	/**
+	 * Get the transposition model as a key name.
+	 *
+	 * @return the model, never {@literal null}
+	 * @since 1.1
+	 */
+	public final String getTranspositionModelName() {
+		return getTranspositionModel().getKey();
+	}
+
+	/**
+	 * Set the transposition model as a key name.
+	 *
+	 * @param transpositionModel
+	 *        the model to set; if {@code null} then
+	 *        {@link #DEFAULT_TRANSPOSITION_MODEL} will be set
+	 * @since 1.1
+	 */
+	public final void setTranspositionModelName(String transpositionModel) {
+		TranspositionModel model = null;
+		try {
+			model = TranspositionModel.forKey(transpositionModel);
+		} catch ( IllegalArgumentException e ) {
+			// ignore, use default
+		}
+		setTranspositionModel(model);
 	}
 
 }
