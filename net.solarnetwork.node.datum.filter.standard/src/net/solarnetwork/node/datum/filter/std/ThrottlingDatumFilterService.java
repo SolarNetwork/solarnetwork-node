@@ -1,21 +1,21 @@
 /* ==================================================================
  * ThrottlingDatumFilterService.java - 8/08/2017 2:02:11 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -37,9 +37,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * {@link DatumFilterService} that can filter out samples based on a basic
  * frequency constraint.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class ThrottlingDatumFilterService extends DatumFilterSupport
@@ -50,6 +50,14 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 	 * seconds, if not configured otherwise.
 	 */
 	public static final int DEFAULT_FREQUENCY_SECONDS = 60;
+
+	/**
+	 * A "magic" frequency seconds value that means all datum should be
+	 * discarded.
+	 *
+	 * @since 1.1
+	 */
+	public static final int DISCARD_FREQUENCY_SECONDS = -1;
 
 	/** The default {@code settingUid} property value. */
 	public static final String DEFAULT_SETTING_UID = "net.solarnetwork.node.datum.samplefilter.throttle";
@@ -70,7 +78,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 			Map<String, Object> params) {
 		final long start = incrementInputStats();
 		final String settingKey = settingKey();
-		if ( settingKey == null ) {
+		if ( settingKey == null && frequencySeconds >= 0 ) {
 			log.trace("Filter does not have a UID configured; not filtering: {}", this);
 			incrementIgnoredStats(start);
 			return samples;
@@ -81,27 +89,36 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 			return samples;
 		}
 
-		final String sourceId = datum.getSourceId();
+		DatumSamplesOperations result = samples;
 
-		// load all Datum "last created" settings
-		final ConcurrentMap<String, Instant> lastSeenMap = transientSettings(settingKey);
+		if ( frequencySeconds < 0 ) {
+			// discard all by removing all properties
+			result = null;
+		} else {
+			// see if needs to be discarded by time
+			final String sourceId = datum.getSourceId();
 
-		final Instant now = (datum != null && datum.getTimestamp() != null ? datum.getTimestamp()
-				: Instant.now());
+			// load all Datum "last created" settings
+			final ConcurrentMap<String, Instant> lastSeenMap = transientSettings(settingKey);
 
-		Instant lastFilterDate = shouldLimitByFrequency(frequencySeconds, sourceId, lastSeenMap, now);
-		if ( lastFilterDate == null ) {
-			incrementStats(start, samples, null);
-			return null;
+			final Instant now = (datum != null && datum.getTimestamp() != null ? datum.getTimestamp()
+					: Instant.now());
+
+			Instant lastFilterDate = shouldLimitByFrequency(frequencySeconds, sourceId, lastSeenMap,
+					now);
+			if ( lastFilterDate == null ) {
+				result = null;
+			} else {
+				// save the new setting date
+				saveLastSeenSetting(now, sourceId, lastFilterDate, lastSeenMap);
+
+				log.trace("Throttle filter [{}] has not seen source [{}] in the past {}s; not filtering",
+						getUid(), sourceId, frequencySeconds);
+			}
 		}
-		saveLastSeenSetting(now, sourceId, lastFilterDate, lastSeenMap);
 
-		log.trace("Throttle filter [{}] has not seen source [{}] in the past {}s; not filtering",
-				getUid(), sourceId, frequencySeconds);
-
-		// save the new setting date
-		incrementStats(start, samples, samples);
-		return samples;
+		incrementStats(start, samples, result);
+		return result;
 	}
 
 	@Override
@@ -127,7 +144,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Set the frequency seconds to limit samples to.
-	 * 
+	 *
 	 * @param frequencySeconds
 	 *        the frequency seconds to set
 	 */
@@ -137,7 +154,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * The setting UID to use.
-	 * 
+	 *
 	 * @param settingUid
 	 *        the setting UID
 	 */
