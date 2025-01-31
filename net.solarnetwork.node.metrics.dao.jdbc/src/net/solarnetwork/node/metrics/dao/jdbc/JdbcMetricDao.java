@@ -58,7 +58,7 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link MetricDao}.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 		implements MetricDao, SettingSpecifierProvider {
@@ -137,7 +137,7 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 
 	@Override
 	public FilterResults<Metric, MetricKey> findFiltered(MetricFilter filter, List<SortDescriptor> sorts,
-			Integer offset, Integer max) {
+			Long offset, Integer max) {
 		SelectMetrics sql = new SelectMetrics(filter);
 		List<Metric> results = getJdbcTemplate().query(sql, getRowMapper());
 

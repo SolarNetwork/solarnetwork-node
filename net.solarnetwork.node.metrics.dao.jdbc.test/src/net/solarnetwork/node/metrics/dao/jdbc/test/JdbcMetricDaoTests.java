@@ -75,7 +75,7 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * Test cases for the {@link
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcMetricDaoTests extends AbstractNodeTest {
 
@@ -432,7 +432,7 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 		filter.setMax(2);
 		FilterResults<Metric, MetricKey> results1 = dao.findFiltered(filter);
 
-		filter.setOffset(2);
+		filter.setOffset(2L);
 		FilterResults<Metric, MetricKey> results2 = dao.findFiltered(filter);
 
 		// THEN

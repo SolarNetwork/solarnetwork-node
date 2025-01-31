@@ -70,7 +70,7 @@ import net.solarnetwork.util.DateUtils;
  * Web controller for metrics support.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 @ServiceAwareController
 @RequestMapping("/a/metrics")
@@ -110,7 +110,7 @@ public class MetricController extends BaseSetupController {
 		private String end;
 		private String type;
 		private String name;
-		private Integer offset;
+		private Long offset;
 		private Integer max;
 		private boolean mostRecent;
 		private List<MutableSortDescriptor> sorts;
@@ -204,7 +204,7 @@ public class MetricController extends BaseSetupController {
 		 *
 		 * @return the offset
 		 */
-		public final Integer getOffset() {
+		public final Long getOffset() {
 			return offset;
 		}
 
@@ -214,7 +214,7 @@ public class MetricController extends BaseSetupController {
 		 * @param offset
 		 *        the offset to set
 		 */
-		public final void setOffset(Integer offset) {
+		public final void setOffset(Long offset) {
 			this.offset = offset;
 		}
 
@@ -381,7 +381,8 @@ public class MetricController extends BaseSetupController {
 	 *        the command arguments
 	 * @return the resulting list of metrics
 	 */
-	@RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/list", method = RequestMethod.GET,
+			produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public Result<FilterResults<Metric, MetricKey>> listMetrics(MetricListCommand cmd) {
 		final MetricDao dao = OptionalService.service(this.metricDao);
@@ -406,9 +407,11 @@ public class MetricController extends BaseSetupController {
 	 * @param response
 	 *        the response
 	 */
-	@RequestMapping(value = "/csv", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(value = "/csv", method = RequestMethod.GET,
+			produces = MediaType.APPLICATION_JSON_VALUE)
 	public void exportMetricsCsv(MetricListCommand cmd,
-			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING, required = false) final String acceptEncoding,
+			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING,
+					required = false) final String acceptEncoding,
 			HttpServletResponse response) {
 		final MetricDao dao = OptionalService.service(this.metricDao);
 		if ( dao == null ) {
