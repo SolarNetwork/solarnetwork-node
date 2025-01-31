@@ -1,21 +1,21 @@
 /* ==================================================================
  * ThrottlingDatumFilterServiceTests.java - 8/08/2017 4:32:44 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,13 +24,15 @@ package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
 import static net.solarnetwork.node.datum.filter.std.DatumFilterSupport.SETTING_KEY_TEMPLATE;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentMap;
@@ -46,9 +48,9 @@ import net.solarnetwork.node.domain.datum.SimpleDatum;
 
 /**
  * Test cases for the {@link ThrottlingDatumFilterService} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ThrottlingDatumFilterServiceTests {
 
@@ -188,6 +190,39 @@ public class ThrottlingDatumFilterServiceTests {
 		assertThat("Non filter count", nonFilterCount, is(1));
 		assertThat("Last seen date persisted", settings.get(datum.getSourceId()),
 				allOf(greaterThan(lastSeen), lessThanOrEqualTo(Instant.now())));
+	}
+
+	@Test
+	public void testSourceMatch_discardAll() {
+		// GIVEN
+		xform.setFrequencySeconds(ThrottlingDatumFilterService.DISCARD_FREQUENCY_SECONDS);
+
+		final SimpleDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+
+		long stop = System.currentTimeMillis() + TEST_FREQ * 1000L + 900;
+
+		// WHEN
+		int count = 0;
+		while ( stop > System.currentTimeMillis() ) {
+			Instant now = Instant.now();
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), now));
+			DatumSamplesOperations result = xform.filter(d, d.getSamples(), emptyMap());
+			assertThat("Datum is filtered", result, is(nullValue()));
+			count++;
+			try {
+				Thread.sleep(200);
+			} catch ( InterruptedException e ) {
+				// ignore
+			}
+		}
+
+		// THEN
+		assertThat("More than 1 cycle examined", count, is(greaterThan(1)));
+
+		final ConcurrentMap<String, Instant> settings = transientSettingDao
+				.settings(String.format(SETTING_KEY_TEMPLATE, TEST_UID));
+
+		assertThat("No settings persisted", settings.keySet(), hasSize(0));
 	}
 
 }

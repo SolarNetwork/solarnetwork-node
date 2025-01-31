@@ -232,7 +232,7 @@ addition, the following properties are available:
 |:---------|:-----|:------------|
 | `datum` | `GeneralNodeDatum` | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
 | `props` | `Map<String,Object>` | Simple Map based access to the data in `datum`, to simplify expressions. |
-| `sample` | `ModbusData` | A [`ModbusData`][ModbusData] object, populated with the raw Modbus data read from the device. |
+| `sample` | `ModbusData` | A [`ModbusData`][ModbusData] object, populated with the raw Modbus holding register data read from the device. |
 | `regs` | `Map<Integer,Integer>` | Simple Map based access to the register data in `sample`, to simplify expressions all register values are returned as unsigned 16-bit integers. |
 
 Any Modbus registers referenced via `reg[x]` expressions will be automatically read via the Modbus
@@ -241,7 +241,7 @@ property configuration, in which case the Modus function defined there will be u
 
 ### Expression examples
 
-Given raw Modbus data like the following:
+Given raw Modbus holding register data like the following:
 
 ```
 [000]: 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee
@@ -255,8 +255,8 @@ Then here are some example expressions and the results they would produce:
 | Expression | Result | Comment |
 |:-----------|:-------|:--------|
 | `regs[0]` | `64542` | Returns register **0** directly, which is `0xfc1e`. |
-| `sample.getInt32(regs[2])` | `48457959` | Returns registers **2** and **3** combined as a unsigned 32-bit integer `0x02e368e7`. |
-| `sample.getFloat32(regs[200])` | `1974.1974` | Returns registers **200** and **201** as a IEEE-754 32-bit floating point: `0x44f6c651`. |
+| `sample.getInt32(2)` | `48457959` | Returns holding registers **2** and **3** combined as a unsigned 32-bit integer `0x02e368e7`. |
+| `sample.getFloat32(200)` | `1974.1974` | Returns holding registers **200** and **201** as a IEEE-754 32-bit floating point: `0x44f6c651`. |
 | `props['bigFloat'] - regs[0]` | `19677432.1974` | Returns difference of register **0** (`0xfc1e`) from datum property `bigFloat` (`0x4172d3d163288ce7`). |
 
 # Sub-sampling

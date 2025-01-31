@@ -56,7 +56,7 @@ import net.solarnetwork.node.metrics.domain.ParameterizedMetricAggregate;
  * Test cases for the {@link SelectMetrics} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SelectMetricsTests {
 
@@ -162,7 +162,7 @@ public class SelectMetricsTests {
 		BasicMetricFilter filter = new BasicMetricFilter();
 		filter.setStartDate(start);
 		filter.setEndDate(start.plusSeconds(1));
-		filter.setOffset(1);
+		filter.setOffset(1L);
 		filter.setMax(2);
 
 		Capture<String> sqlCaptor = Capture.newInstance();
@@ -171,7 +171,7 @@ public class SelectMetricsTests {
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
 		ps.setObject(1, filter.getStartDate());
 		ps.setObject(2, filter.getEndDate());
-		ps.setInt(3, filter.getOffset());
+		ps.setLong(3, filter.getOffset());
 		ps.setInt(4, filter.getMax());
 
 		// WHEN
@@ -224,7 +224,7 @@ public class SelectMetricsTests {
 		filter.setSorts(Arrays.asList(new SimpleSortDescriptor(MetricDao.SORT_BY_DATE, true),
 				new SimpleSortDescriptor(MetricDao.SORT_BY_NAME),
 				new SimpleSortDescriptor(MetricDao.SORT_BY_VALUE, true)));
-		filter.setOffset(1);
+		filter.setOffset(1L);
 		filter.setMax(2);
 
 		Capture<String> sqlCaptor = Capture.newInstance();
@@ -233,7 +233,7 @@ public class SelectMetricsTests {
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
 		ps.setObject(1, filter.getStartDate());
 		ps.setObject(2, filter.getEndDate());
-		ps.setInt(3, filter.getOffset());
+		ps.setLong(3, filter.getOffset());
 		ps.setInt(4, filter.getMax());
 
 		// WHEN

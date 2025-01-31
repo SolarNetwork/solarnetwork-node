@@ -42,7 +42,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate {@code SELECT} SQL for metric values based on a filter.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SelectMetrics implements PreparedStatementCreator, PreparedStatementSetter, SqlProvider {
 
@@ -292,7 +292,7 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 
 	private int preparePagination(PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.getOffset() != null ) {
-			stmt.setInt(++p, filter.getOffset());
+			stmt.setLong(++p, filter.getOffset());
 		}
 		if ( filter.getMax() != null ) {
 			stmt.setInt(++p, filter.getMax());
