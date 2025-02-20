@@ -38,6 +38,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.WeakValueConcurrentHashMap;
@@ -53,7 +54,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -66,6 +67,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	private String[] transformUids;
 	private List<DatumFilterService> alternateDatumFilterServices;
 	private boolean ignoreTransformUids;
+	private boolean abortOnFilterException;
 
 	private final ConcurrentMap<String, DatumFilterService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -163,6 +165,8 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 
 		populateStatusSettings(result);
 
+		result.add(new BasicToggleSettingSpecifier("abortOnFilterException", Boolean.FALSE));
+
 		// list of UIDs
 		String[] uids = getTransformUids();
 		List<String> uidsList = (uids != null ? Arrays.asList(uids) : Collections.emptyList());
@@ -254,23 +258,41 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 			if ( p == null ) {
 				p = new HashMap<>(8);
 			}
-			out = staticService.filter(outDatum, out, parameters);
-			if ( out == null ) {
-				incrementStats(start, samples, out);
-				return null;
-			} else if ( out instanceof Datum ) {
-				outDatum = (Datum) out;
+			try {
+				out = staticService.filter(outDatum, out, parameters);
+				if ( out == null ) {
+					incrementStats(start, samples, out);
+					return null;
+				} else if ( out instanceof Datum ) {
+					outDatum = (Datum) out;
+				}
+			} catch ( RuntimeException e ) {
+				if ( abortOnFilterException ) {
+					throw e;
+				} else {
+					log.error("Exception processing datum {} in filter [{}]; continuing anyway.", datum,
+							staticService.getDescription(), e);
+				}
 			}
 		}
 		if ( ignoreTransformUids ) {
 			if ( transformServices != null ) {
 				for ( DatumFilterService s : transformServices ) {
-					out = s.filter(outDatum, out, parameters);
-					if ( out == null ) {
-						incrementStats(start, samples, out);
-						return null;
-					} else if ( out instanceof Datum ) {
-						outDatum = (Datum) out;
+					try {
+						out = s.filter(outDatum, out, parameters);
+						if ( out == null ) {
+							incrementStats(start, samples, out);
+							return null;
+						} else if ( out instanceof Datum ) {
+							outDatum = (Datum) out;
+						}
+					} catch ( RuntimeException e ) {
+						if ( abortOnFilterException ) {
+							throw e;
+						} else {
+							log.error("Exception processing datum {} in filter [{}]; continuing anyway.",
+									datum, s.getDescription(), e);
+						}
 					}
 				}
 			}
@@ -289,12 +311,21 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 					if ( p == null ) {
 						p = new HashMap<>(8);
 					}
-					out = s.filter(outDatum, out, p);
-					if ( out == null ) {
-						incrementStats(start, samples, out);
-						return null;
-					} else if ( out instanceof Datum ) {
-						outDatum = (Datum) out;
+					try {
+						out = s.filter(outDatum, out, p);
+						if ( out == null ) {
+							incrementStats(start, samples, out);
+							return null;
+						} else if ( out instanceof Datum ) {
+							outDatum = (Datum) out;
+						}
+					} catch ( RuntimeException e ) {
+						if ( abortOnFilterException ) {
+							throw e;
+						} else {
+							log.error("Exception processing datum {} in filter [{}]; continuing anyway.",
+									datum, s.getDescription(), e);
+						}
 					}
 				}
 			}
@@ -393,4 +424,27 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		this.ignoreTransformUids = ignoreTransformUids;
 	}
 
+	/**
+	 * Get the abort-on-filter-exception mode.
+	 *
+	 * @return {@code true} to abort processing after a filter exception occurs,
+	 *         or {@code false} to continue processing; defaults to
+	 *         {@code false}
+	 * @since 1.6
+	 */
+	public final boolean isAbortOnFilterException() {
+		return abortOnFilterException;
+	}
+
+	/**
+	 * Set the abort-on-filter-exception mode.
+	 *
+	 * @param abortOnFilterException
+	 *        {{@code true} to abort processing after a filter exception occurs,
+	 *        or {@code false} to continue processing
+	 * @since 1.6
+	 */
+	public final void setAbortOnFilterException(boolean abortOnFilterException) {
+		this.abortOnFilterException = abortOnFilterException;
+	}
 }

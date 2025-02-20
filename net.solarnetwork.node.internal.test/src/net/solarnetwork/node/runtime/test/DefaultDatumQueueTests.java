@@ -81,7 +81,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link DefaultDatumQueue}.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
@@ -584,8 +584,70 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	}
 
 	@Test
-	public void exception_transform() throws InterruptedException {
+	public void exception_transform_continue() throws InterruptedException {
 		// GIVEN
+		queue.setDatumFilterService(new StaticOptionalService<>(filter));
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		Capture<NodeDatum> preDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(preDatumCaptor), eq(Stage.PreFilter),
+				eq(true));
+
+		final DatumSamples filterSamples = new DatumSamples();
+		filterSamples.putInstantaneousSampleValue("foo", 321);
+		Capture<Map<String, Object>> filterParametersCaptor = Capture.newInstance();
+		RuntimeException filterException = new RuntimeException("Boom!");
+		expect(filter.filter(same(datum), same(datum.getSamples()), capture(filterParametersCaptor)))
+				.andThrow(filterException);
+
+		Capture<NodeDatum> filteredDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(filteredDatumCaptor),
+				eq(Stage.PostFilter), eq(true));
+		datumDao.storeDatum(capture(filteredDatumCaptor));
+		consumer.accept(capture(filteredDatumCaptor));
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("One datum recorded as processed",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
+		assertThat("One datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		List<NodeDatum> preDatumList = preDatumCaptor.getValues();
+		assertThat("Unfiltered datum passed to observer", preDatumList, hasSize(1));
+
+		List<NodeDatum> filteredDatumList = filteredDatumCaptor.getValues();
+		assertThat("Filtered datum passed to all output methods", filteredDatumList, hasSize(3));
+
+		assertThat("Provided filter parameters is empty", filterParametersCaptor.getValue(),
+				is(equalTo(emptyMap())));
+
+		NodeDatum filteredDatum = filteredDatumList.get(0);
+		assertThat("Same filtered datum passed to DAO", filteredDatumList.get(1),
+				is(sameInstance(filteredDatum)));
+		assertThat("Same filtered datum passed to consumer", filteredDatumList.get(2),
+				is(sameInstance(filteredDatum)));
+
+		assertThat("Persisted datum ID from input datum", filteredDatum, is(equalTo(datum)));
+
+		// capture offered event, persist filtered event
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, filteredDatum);
+	}
+
+	@Test
+	public void exception_transform_discard() throws InterruptedException {
+		// GIVEN
+		queue.setDiscardDatumOnFilterException(true);
 		final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
 		queue.setDatumProcessorExceptionHandler(new UncaughtExceptionHandler() {
 

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.datum.Datum;
@@ -59,7 +60,7 @@ import net.solarnetwork.service.DatumFilterService;
  * Test cases for the {@link DatumFilterChainService} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DatumFilterChainServiceTests {
 
@@ -376,6 +377,84 @@ public class DatumFilterChainServiceTests {
 		assertThat("Datum ID from 2nd filter output", out, is(equalTo(outDatum2)));
 		assertThat("Datum samples from 2nd filter output", out.asSampleOperations(),
 				is(equalTo(outDatum2.getSamples())));
+
+		verify(xform1, xform2);
+	}
+
+	@Test
+	public void nodeDatumReturned_exception_continue() {
+		// GIVEN
+		DatumFilterService xform1 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform1.getUid()).andReturn(TEST_UID).anyTimes();
+		expect(xform1.getDescription()).andReturn("Desc because of exception");
+
+		DatumFilterService xform2 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform2.getUid()).andReturn(TEST_UID2).anyTimes();
+
+		xforms.add(xform1);
+		xforms.add(xform2);
+		chain.setTransformUids(new String[] { TEST_UID, TEST_UID2 });
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter throws exception
+		final RuntimeException ex = new RuntimeException("Boom!");
+		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andThrow(ex);
+
+		// but configured to continue, so second filter processes
+		SimpleDatum outDatum2 = d.copyWithId(
+				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
+		outDatum2.putSampleValue(DatumSamplesType.Status, "bim", "bam");
+		expect(xform2.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum2);
+
+		// WHEN
+		replayAll();
+		replay(xform1, xform2);
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		// THEN
+		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
+		NodeDatum out = (NodeDatum) result;
+		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum2))));
+		assertThat("Datum ID from 2nd filter output", out, is(equalTo(outDatum2)));
+		assertThat("Datum samples from 2nd filter output", out.asSampleOperations(),
+				is(equalTo(outDatum2.getSamples())));
+
+		verify(xform1, xform2);
+	}
+
+	@Test
+	public void nodeDatumReturned_exception_abort() {
+		// GIVEN
+		DatumFilterService xform1 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform1.getUid()).andReturn(TEST_UID).anyTimes();
+
+		DatumFilterService xform2 = EasyMock.createMock(DatumFilterService.class);
+		expect(xform2.getUid()).andReturn(TEST_UID2).anyTimes();
+
+		xforms.add(xform1);
+		xforms.add(xform2);
+		chain.setTransformUids(new String[] { TEST_UID, TEST_UID2 });
+
+		chain.setAbortOnFilterException(true);
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter throws exception
+		final RuntimeException ex = new RuntimeException("Boom!");
+		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andThrow(ex);
+
+		// WHEN
+		replayAll();
+		replay(xform1, xform2);
+		try {
+			chain.filter(d, s, null);
+			Assert.fail("Should have thrown exception");
+		} catch ( Exception e ) {
+			assertThat("Exception thrown is from filter", e, is(sameInstance(ex)));
+		}
 
 		verify(xform1, xform2);
 	}
