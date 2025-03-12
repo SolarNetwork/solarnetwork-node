@@ -460,7 +460,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(String.format(
-						"Modbus exception %d writing %d %s values to %d @ %s", res.getError(),
+						"Modbus exception %s writing %d %s values to %d @ %s", res.getError(),
 						values.length, function.blockType(), address, describer.get()));
 			}
 			if ( log.isTraceEnabled() ) {
