@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusRegisterDao.java - 4/11/2024 8:42:58 am
+ * BasicModbusRegisterFilter.java - 12/03/2025 3:45:51 pm
  *
- * Copyright 2024 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,16 +22,49 @@
 
 package net.solarnetwork.node.io.modbus.server.dao;
 
-import net.solarnetwork.dao.FilterableDao;
-import net.solarnetwork.dao.GenericDao;
-
 /**
- * Data access API for {@link ModbusRegisterEntity} entities.
+ * Basic implementation of {@link ModbusRegisterFilter}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public interface ModbusRegisterDao extends GenericDao<ModbusRegisterEntity, ModbusRegisterKey>,
-		FilterableDao<ModbusRegisterEntity, ModbusRegisterKey, ModbusRegisterFilter> {
+public class BasicModbusRegisterFilter implements ModbusRegisterFilter {
+
+	private String serverId;
+
+	/**
+	 * Constructor.
+	 */
+	public BasicModbusRegisterFilter() {
+		super();
+	}
+
+	/**
+	 * Create a new instance with a given server ID.
+	 *
+	 * @param serverId
+	 *        the server ID
+	 * @return the new filter instance
+	 */
+	public static BasicModbusRegisterFilter forServerId(String serverId) {
+		BasicModbusRegisterFilter f = new BasicModbusRegisterFilter();
+		f.setServerId(serverId);
+		return f;
+	}
+
+	@Override
+	public String getServerId() {
+		return serverId;
+	}
+
+	/**
+	 * Set the server ID.
+	 *
+	 * @param serverId
+	 *        the server ID to set
+	 */
+	public final void setServerId(String serverId) {
+		this.serverId = serverId;
+	}
 
 }

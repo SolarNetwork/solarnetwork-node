@@ -26,12 +26,17 @@ import static java.lang.String.format;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import net.solarnetwork.dao.BasicFilterResults;
+import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
+import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterFilter;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterKey;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -42,7 +47,7 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link ModbusRegisterDao}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEntity, ModbusRegisterKey>
 		implements ModbusRegisterDao, SettingSpecifierProvider {
@@ -69,6 +74,9 @@ public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEnti
 
 		/** Get a count of stored records. */
 		Count("count"),
+
+		/** Find records matching a server ID. */
+		FindForServer("find-for-server"),
 
 		;
 
@@ -122,6 +130,19 @@ public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEnti
 		ps.setObject(5, obj.getCreated(), Types.TIMESTAMP);
 		ps.setObject(6, obj.getModified(), Types.TIMESTAMP);
 		ps.setShort(7, obj.getValue());
+	}
+
+	@Override
+	public FilterResults<ModbusRegisterEntity, ModbusRegisterKey> findFiltered(
+			ModbusRegisterFilter filter, List<SortDescriptor> sorts, Long offset, Integer max) {
+		Collection<ModbusRegisterEntity> results;
+		if ( filter != null && filter.getServerId() != null ) {
+			results = getJdbcTemplate().query(querySql(SqlResource.FindForServer.getResource(), sorts),
+					getRowMapper(), filter.getServerId());
+		} else {
+			results = getAll(sorts);
+		}
+		return new BasicFilterResults<>(results);
 	}
 
 	@Override

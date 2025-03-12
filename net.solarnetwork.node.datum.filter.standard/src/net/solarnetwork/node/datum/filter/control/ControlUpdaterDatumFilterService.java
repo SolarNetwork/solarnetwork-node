@@ -29,6 +29,7 @@ import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.springframework.expression.ExpressionException;
@@ -58,7 +59,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Transform service that sets a control value based on an expression result.
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -144,12 +145,13 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 				}
 			}
 			if ( exprResult != null ) {
-				Instruction instr = InstructionUtils
-						.createSetControlValueLocalInstruction(config.getControlId(), exprResult);
+				final String controlId = resolvePlaceholders(config.getControlId(),
+						Collections.singletonMap("sourceId", root.getSourceId()));
+				Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
+						exprResult);
 				InstructionStatus status = executor.executeInstruction(instr);
 				if ( status.getInstructionState() == InstructionState.Completed ) {
-					log.info("Service [{}] set control [{}] to [{}]", getUid(), config.getControlId(),
-							exprResult);
+					log.info("Service [{}] set control [{}] to [{}]", getUid(), controlId, exprResult);
 					if ( config.getName() != null ) {
 						s.putSampleValue(config.getDatumPropertyType(), config.getName(), exprResult);
 					}
@@ -168,8 +170,8 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 						reason = String.format("error %s",
 								resultParams.get(InstructionStatus.ERROR_CODE_RESULT_PARAM));
 					}
-					log.error("Service [{}] failed to set control [{}] to [{}]: {}", getUid(),
-							config.getControlId(), exprResult, reason);
+					log.error("Service [{}] failed to set control [{}] to [{}]: {}", getUid(), controlId,
+							exprResult, reason);
 				}
 			}
 		}

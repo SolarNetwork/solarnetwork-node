@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.server.impl;
 
+import static net.solarnetwork.node.io.modbus.server.dao.BasicModbusRegisterFilter.forServerId;
 import static net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity.newRegisterEntity;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData.encodeValue;
 import static net.solarnetwork.service.OptionalService.service;
@@ -50,6 +51,7 @@ import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.io.modbus.tcp.netty.NettyTcpModbusServer;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -59,6 +61,7 @@ import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
+import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterKey;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
@@ -87,7 +90,7 @@ import net.solarnetwork.util.StringUtils;
  * Modbus TCP server service.
  *
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
@@ -163,7 +166,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		super();
 		this.executor = ObjectUtils.requireNonNullArgument(executor, "executor");
 		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
-		this.handler = new ModbusConnectionHandler(registers, this::description);
+		this.handler = new ModbusConnectionHandler(registers, this::description, this::getUid,
+				() -> service(registerDao));
 	}
 
 	private String description() {
@@ -293,8 +297,9 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		registers.clear();
 
 		log.info("Loading Modbus server [{}] register data from persistence store", description());
-		Collection<ModbusRegisterEntity> data = dao.getAll(null);
-		if ( data == null || data.isEmpty() ) {
+		FilterResults<ModbusRegisterEntity, ModbusRegisterKey> data = dao
+				.findFiltered(forServerId(serviceId));
+		if ( data == null || data.getReturnedResultCount() < 1 ) {
 			return;
 		}
 

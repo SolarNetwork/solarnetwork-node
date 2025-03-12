@@ -59,6 +59,7 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StatCounter;
 
 /**
@@ -84,7 +85,7 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -116,6 +117,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	private long processorStartupDelayMs;
 	private ProcessorThread datumProcessor;
+	private boolean discardDatumOnFilterException;
 
 	/**
 	 * Constructor.
@@ -450,9 +452,15 @@ public class DefaultDatumQueue extends BaseIdentifiable
 							result = applyTransform(event);
 						} catch ( Throwable t ) {
 							stats.incrementAndGet(QueueStats.Errors);
-							log.error("Error processing datum {}; discarding.", event.datum, t);
-							uncaughtException(Thread.currentThread(), t);
-							result = null;
+							log.error("Error processing datum {}; {}.", event.datum,
+									(discardDatumOnFilterException ? "discarding" : "continuing anyway"),
+									t);
+							if ( discardDatumOnFilterException ) {
+								uncaughtException(Thread.currentThread(), t);
+								result = null;
+							} else {
+								result = event.datum;
+							}
 						}
 						if ( result != null ) {
 							if ( procObserver != null ) {
@@ -606,6 +614,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 				String.valueOf(DEFAULT_QUEUE_DELAY_MS)));
 		result.add(new BasicTextFieldSettingSpecifier("transformServiceUid", null, false,
 				"(&(objectClass=net.solarnetwork.service.DatumFilterService)(role=user))"));
+		result.add(new BasicToggleSettingSpecifier("discardDatumOnFilterException", Boolean.FALSE));
 		return result;
 	}
 
@@ -766,6 +775,29 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public StatCounter getStats() {
 		return stats;
+	}
+
+	/**
+	 * Get the discard-datum-on-filter-exception mode.
+	 *
+	 * @return {@code true} to discard datum after a filter exception occurs, or
+	 *         {@code false} to continue processing; defaults to {@code false}
+	 * @since 3.1
+	 */
+	public final boolean isDiscardDatumOnFilterException() {
+		return discardDatumOnFilterException;
+	}
+
+	/**
+	 * Set the discard-datum-on-filter-exception mode.
+	 *
+	 * @param discardDatumOnFilterException
+	 *        {@code true} to discard datum after a filter exception occurs, or
+	 *        {@code false} to continue processing
+	 * @since 3.1
+	 */
+	public final void setDiscardDatumOnFilterException(boolean discardDatumOnFilterException) {
+		this.discardDatumOnFilterException = discardDatumOnFilterException;
 	}
 
 }

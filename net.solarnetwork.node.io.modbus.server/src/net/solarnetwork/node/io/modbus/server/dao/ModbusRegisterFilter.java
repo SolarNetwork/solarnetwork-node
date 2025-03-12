@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusRegisterDao.java - 4/11/2024 8:42:58 am
+ * ModbusRegisterFilter.java - 12/03/2025 3:33:57 pm
  *
- * Copyright 2024 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,16 +22,19 @@
 
 package net.solarnetwork.node.io.modbus.server.dao;
 
-import net.solarnetwork.dao.FilterableDao;
-import net.solarnetwork.dao.GenericDao;
-
 /**
- * Data access API for {@link ModbusRegisterEntity} entities.
+ * Filter API for {@link ModbusRegisterDao}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public interface ModbusRegisterDao extends GenericDao<ModbusRegisterEntity, ModbusRegisterKey>,
-		FilterableDao<ModbusRegisterEntity, ModbusRegisterKey, ModbusRegisterFilter> {
+public interface ModbusRegisterFilter {
+
+	/**
+	 * Get a server ID to filter by.
+	 *
+	 * @return the server ID to match
+	 */
+	String getServerId();
 
 }
