@@ -84,12 +84,6 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
-	 * @param serverIdProvider
-	 *        and optional provider of the server ID to use, when
-	 *        {@code daoProvider} is also configured
-	 * @param daoProvider
-	 *        and optional provider of a register DAO to persist updates with;
-	 *        requires the {@code serverIdProvider} to be configured as well
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
@@ -105,6 +99,12 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param serverIdProvider
+	 *        and optional provider of the server ID to use, when
+	 *        {@code daoProvider} is also configured
+	 * @param daoProvider
+	 *        and optional provider of a register DAO to persist updates with;
+	 *        requires the {@code serverIdProvider} to be configured as well
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 * @since 2.1
