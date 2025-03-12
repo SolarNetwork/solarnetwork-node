@@ -298,7 +298,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 				case WriteHoldingRegister:
 					return writeRegister(req);
 
-				case ReadWriteHoldingRegisters:
+				case WriteHoldingRegisters:
 					return writeRegisters(req);
 
 				default:
