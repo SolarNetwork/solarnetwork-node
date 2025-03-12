@@ -32,7 +32,7 @@ Each control configuration contains the following settings:
 
 | Setting             | Description                                                       |
 |:--------------------|:------------------------------------------------------------------|
-| Control ID          | The ID of the control to update with the expression result. |
+| Control ID          | The ID of the control to update with the expression result. Placeholders are supported, including a `sourceId` placeholder for the source ID of the datum being filtered. |
 | Property            | The optional datum property to store the expression result in. |
 | Property Type       | The datum property type to use. |
 | Expression          | The expression to evaluate. See [below](#expressions) for more info. |
@@ -53,6 +53,5 @@ filter parameters, as expression variables directly.
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [DatumExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/DatumExpressionRoot.java
-[Datum]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/datum/Datum.java
 [node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
 [regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html#sum
