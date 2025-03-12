@@ -1,27 +1,28 @@
 /* ==================================================================
  * InstructorController.java - Jul 10, 2013 4:00:40 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.util.StringNaturalSortComparator.CASE_INSENSITIVE_NATURAL_SORT;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,9 +49,9 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Controller to act as a local Instructor to the local node.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 @ServiceAwareController
 @RequestMapping("/a/controls")
@@ -77,7 +78,7 @@ public class InstructorController {
 
 	/**
 	 * List controls.
-	 * 
+	 *
 	 * @param model
 	 *        the model
 	 * @return the result view
@@ -88,14 +89,14 @@ public class InstructorController {
 		for ( NodeControlProvider provider : providers ) {
 			providerIds.addAll(provider.getAvailableControlIds());
 		}
-		Collections.sort(providerIds);
+		Collections.sort(providerIds, CASE_INSENSITIVE_NATURAL_SORT);
 		model.put(KEY_CONTROL_IDS, providerIds);
 		return "control/list";
 	}
 
 	/**
 	 * Manage a control.
-	 * 
+	 *
 	 * @param controlId
 	 *        the control ID to manage
 	 * @param model
@@ -133,7 +134,7 @@ public class InstructorController {
 
 	/**
 	 * Set a control parameter.
-	 * 
+	 *
 	 * @param instruction
 	 *        the instruction.
 	 * @param model
@@ -176,7 +177,7 @@ public class InstructorController {
 
 	/**
 	 * Set the available control providers.
-	 * 
+	 *
 	 * @param providers
 	 *        the providers to set
 	 */
@@ -186,7 +187,7 @@ public class InstructorController {
 
 	/**
 	 * Set the instruction service.
-	 * 
+	 *
 	 * @param instructionService
 	 *        the service to set
 	 */
