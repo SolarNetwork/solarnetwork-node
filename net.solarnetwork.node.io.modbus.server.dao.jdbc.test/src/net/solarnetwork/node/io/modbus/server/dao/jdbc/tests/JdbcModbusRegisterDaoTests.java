@@ -23,7 +23,9 @@
 package net.solarnetwork.node.io.modbus.server.dao.jdbc.tests;
 
 import static java.lang.String.format;
+import static net.solarnetwork.node.io.modbus.server.dao.BasicModbusRegisterFilter.forServerId;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -35,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
@@ -48,7 +51,7 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * Test cases for the {@link JdbcModbusRegisterDao} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcModbusRegisterDaoTests extends AbstractNodeTest {
 
@@ -140,6 +143,31 @@ public class JdbcModbusRegisterDaoTests extends AbstractNodeTest {
 
 		Collection<ModbusRegisterEntity> results = dao.getAll(null);
 		assertThat("Results found in order", results, contains(obj1, obj2, obj3));
+	}
+
+	@Test
+	public void findFiltered_serverId() {
+		ModbusRegisterEntity obj1 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 1, (short) 0xFF);
+		obj1 = dao.get(dao.save(obj1));
+		ModbusRegisterEntity obj2 = createTestModbusRegisterEntity("test2", 1,
+				ModbusRegisterBlockType.Holding, 2, (short) 0xEE);
+		obj2 = dao.get(dao.save(obj2));
+		ModbusRegisterEntity obj3 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 3, (short) 0xDD);
+		obj3 = dao.get(dao.save(obj3));
+
+		FilterResults<ModbusRegisterEntity, ModbusRegisterKey> results1 = dao
+				.findFiltered(forServerId("test1"));
+		assertThat("Results found in order", results1, contains(obj1, obj3));
+
+		FilterResults<ModbusRegisterEntity, ModbusRegisterKey> results2 = dao
+				.findFiltered(forServerId("test2"));
+		assertThat("Results found in order", results2, contains(obj2));
+
+		FilterResults<ModbusRegisterEntity, ModbusRegisterKey> results3 = dao
+				.findFiltered(forServerId("test.nope"));
+		assertThat("Results found in order", results3, emptyIterable());
 	}
 
 }
