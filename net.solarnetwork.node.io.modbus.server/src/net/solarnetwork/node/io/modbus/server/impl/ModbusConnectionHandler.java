@@ -30,7 +30,12 @@ import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readHo
 import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readInputsResponse;
 import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeHoldingResponse;
 import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeHoldingsResponse;
+import static net.solarnetwork.node.io.modbus.ModbusRegisterBlockType.Holding;
+import static net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity.newRegisterEntity;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.math.BigInteger;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.BitSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
@@ -44,15 +49,16 @@ import net.solarnetwork.io.modbus.ModbusFunctionCode;
 import net.solarnetwork.io.modbus.ModbusMessage;
 import net.solarnetwork.io.modbus.RegistersModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.BaseModbusMessage;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
+import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Handler for a Modbus server connection.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consumer<ModbusMessage>> {
 
@@ -61,8 +67,11 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 
 	private static final Logger log = LoggerFactory.getLogger(ModbusConnectionHandler.class);
 
+	private final Clock clock;
 	private final Supplier<String> descriptor;
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
+	private final Supplier<String> serverIdProvider;
+	private final Supplier<ModbusRegisterDao> daoProvider;
 	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private boolean allowWrites;
 
@@ -75,12 +84,35 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param serverIdProvider
+	 *        and optional provider of the server ID to use, when
+	 *        {@code daoProvider} is also configured
+	 * @param daoProvider
+	 *        and optional provider of a register DAO to persist updates with;
+	 *        requires the {@code serverIdProvider} to be configured as well
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
 			Supplier<String> descriptor) {
 		this(registers, descriptor, 0);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param registers
+	 *        the register data
+	 * @param descriptor
+	 *        a descriptor.get() for the connection
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 * @since 2.1
+	 */
+	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
+			Supplier<String> descriptor, Supplier<String> serverIdProvider,
+			Supplier<ModbusRegisterDao> daoProvider) {
+		this(Clock.systemUTC(), registers, descriptor, serverIdProvider, daoProvider, 0, false);
 	}
 
 	/**
@@ -119,9 +151,42 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
 			Supplier<String> descriptor, long requestThrottle, boolean allowWrites) {
+		this(Clock.systemUTC(), registers, descriptor, null, null, requestThrottle, allowWrites);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param registers
+	 *        the register data
+	 * @param descriptor
+	 *        a descriptor.get() for the connection
+	 * @param serverIdProvider
+	 *        and optional provider of the server ID to use, when
+	 *        {@code daoProvider} is also configured
+	 * @param daoProvider
+	 *        and optional provider of a register DAO to persist updates with;
+	 *        requires the {@code serverIdProvider} to be configured as well
+	 * @param requestThrottle
+	 *        if greater than {@literal 0} then a throttle in milliseconds to
+	 *        handling requests
+	 * @param allowWrites
+	 *        {@literal true} to allow Modbus write operations
+	 * @throws IllegalArgumentException
+	 *         if any argument other than {@code closeable} is {@literal null}
+	 * @since 2.1
+	 */
+	public ModbusConnectionHandler(Clock clock, ConcurrentMap<Integer, ModbusRegisterData> registers,
+			Supplier<String> descriptor, Supplier<String> serverIdProvider,
+			Supplier<ModbusRegisterDao> daoProvider, long requestThrottle, boolean allowWrites) {
 		super();
-		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
-		this.descriptor = ObjectUtils.requireNonNullArgument(descriptor, "descriptor");
+		this.clock = requireNonNullArgument(clock, "clock");
+		this.registers = requireNonNullArgument(registers, "registers");
+		this.descriptor = requireNonNullArgument(descriptor, "descriptor");
+		this.serverIdProvider = serverIdProvider;
+		this.daoProvider = daoProvider;
 		this.requestThrottle = requestThrottle;
 		this.allowWrites = allowWrites;
 	}
@@ -275,12 +340,18 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	private ModbusMessage writeCoil(BitsModbusMessage req) {
 		boolean data = req.isBitEnabled(0);
 		registerData(req).writeCoil(req.getAddress(), data);
+		if ( daoProvider != null && serverIdProvider != null ) {
+			BitSet bits = new BitSet(1);
+			bits.set(0, data);
+			persistCoilRegisterData(req, bits);
+		}
 		return writeCoilResponse(req.getUnitId(), req.getAddress(), data);
 	}
 
 	private ModbusMessage writeCoils(BitsModbusMessage req) {
 		BitSet data = req.toBitSet();
 		registerData(req).writeCoils(req.getAddress(), req.getCount(), data);
+		persistCoilRegisterData(req, data);
 		return writeCoilsResponse(req.getUnitId(), req.getAddress(), req.getCount());
 	}
 
@@ -288,6 +359,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		short[] data = req.dataDecode();
 		if ( data != null && data.length > 0 ) {
 			registerData(req).writeHolding(req.getAddress(), data[0]);
+			persistHoldingRegisterData(req, data);
 		}
 		return writeHoldingResponse(req.getUnitId(), req.getAddress(),
 				data != null && data.length > 0 ? Short.toUnsignedInt(data[0]) : 0);
@@ -296,7 +368,38 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	private ModbusMessage writeRegisters(RegistersModbusMessage req) {
 		short[] data = req.dataDecode();
 		registerData(req).writeHoldings(req.getAddress(), data);
+		persistHoldingRegisterData(req, data);
 		return writeHoldingsResponse(req.getUnitId(), req.getAddress(), req.getCount());
+	}
+
+	private void persistCoilRegisterData(BitsModbusMessage req, BitSet data) {
+		if ( data == null || data.isEmpty() ) {
+			return;
+		}
+		final ModbusRegisterDao dao = (daoProvider != null ? daoProvider.get() : null);
+		final String serverId = (dao != null ? serverIdProvider.get() : null);
+		if ( dao != null && serverId != null ) {
+			Instant now = clock.instant();
+			for ( int i = 0, len = data.size(); i < len; i++ ) {
+				dao.save(newRegisterEntity(serverId, req.getUnitId(), ModbusRegisterBlockType.Coil,
+						req.getAddress() + i, now, data.get(i) ? (short) 1 : (short) 0));
+			}
+		}
+	}
+
+	private void persistHoldingRegisterData(RegistersModbusMessage req, short[] data) {
+		if ( data == null || data.length < 1 ) {
+			return;
+		}
+		final ModbusRegisterDao dao = (daoProvider != null ? daoProvider.get() : null);
+		final String serverId = (dao != null ? serverIdProvider.get() : null);
+		if ( dao != null && serverId != null ) {
+			Instant now = clock.instant();
+			for ( int i = 0, len = data.length; i < len; i++ ) {
+				dao.save(newRegisterEntity(serverId, req.getUnitId(), Holding, req.getAddress() + i, now,
+						data[i]));
+			}
+		}
 	}
 
 	/**
