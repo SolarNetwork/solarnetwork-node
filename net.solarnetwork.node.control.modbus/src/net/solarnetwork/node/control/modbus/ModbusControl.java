@@ -219,7 +219,7 @@ public class ModbusControl extends ModbusDeviceSupport
 		final ModbusWordOrder wordOrder = data.getHoldings().getWordOrder();
 		final Integer address = config.getAddress();
 
-		return performAction(new ModbusConnectionAction<Boolean>() {
+		Boolean result = performAction(new ModbusConnectionAction<Boolean>() {
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
@@ -281,6 +281,8 @@ public class ModbusControl extends ModbusDeviceSupport
 				return false;
 			}
 		});
+
+		return (result != null ? result : false);
 	}
 
 	private Object controlValueForParameterValue(ModbusWritePropertyConfig config, String str) {
