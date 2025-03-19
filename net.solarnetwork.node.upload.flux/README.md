@@ -80,10 +80,10 @@ Each component configuration contains the following overall settings:
 
 | Setting | Description |
 |---------|-------------|
-| Host | The URI for the SolarFlux server to connect to. |
-| Username | The MQTT username to use. |
-| Password | The MQTT password to use. |
-| Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishinggrip. |
+| Host | The URI for the SolarFlux server to connect to. The default for SolarNetwork is `mqtts://influx.solarnetwork.net:8884` |
+| Username | The MQTT username to use. The default for `influx.solarnetwork.net:8884` is `solarnode` |
+| Password | The MQTT password to use. For `influx.solarnetwork.net:8884` no password is required as the node's certificate will be used. |
+| Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishing. |
 | Required Mode | If configured, an operational mode that must be active for any data to be published. |
 | Maximum Republish | If offline message persistence has been configured, then the maximum number of offline messages to publish in one go. See the [offline persistence](#offline-message-persistence) section for more information. |
 | Reliability | The MQTT _quality of service_ level to use. Normally the default of **At most once** is sufficient. |
@@ -101,9 +101,11 @@ client authentication.
 	<dt>Host</dt>
 	<dd>The URL to the MQTT server to use. Use <code>mqtts</code> for a TLS encrypted connection,
 	or <code>mqtt</code> for no encryption. For example: <code>mqtts://influx.solarnetwork.net:8884</code>.</dd>
+	<dt>Username</dt>
+	<dd>For <code>influx.solarnetwork.net:8884</code> this should be <code>solarnode</code>.</dd>
 	<dt>Password</dt>
-	<dd>Note that SolarNode will provide its X.509 certificate on TLS connections, so a password
-	might not be necessary.</dd>
+	<dd>SolarNode will provide its X.509 certificate on TLS connections, so a password
+	might not be necessary. For <code>influx.solarnetwork.net:8884</code> this is the case, so no password should be configured.</dd>
 	<dt>Exclude Properties</dt>
 	<dd>You can exclude all internal datum properties like <code>_DatumType</code> with an expression
 	like <code>_.*</code>.</dd>
