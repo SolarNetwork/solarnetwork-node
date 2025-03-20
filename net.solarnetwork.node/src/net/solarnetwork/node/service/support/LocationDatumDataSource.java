@@ -1,21 +1,21 @@
 /* ==================================================================
  * LocationDatumDataSource.java - Feb 21, 2011 5:23:28 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -55,7 +55,7 @@ import net.solarnetwork.support.PrefixedMessageSource;
 /**
  * {@link DatumDataSource} that augments some other data source's datum values
  * with location IDs.
- * 
+ *
  * <p>
  * This is to be used to easily augment various datum that relate to a location
  * with the necessary {@link DatumLocation#getLocationId()} ID. This class also
@@ -66,9 +66,9 @@ import net.solarnetwork.support.PrefixedMessageSource;
  * {@link DatumDataSource#readCurrentDatum()} and returning that object in a
  * Collection.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataSource,
@@ -109,12 +109,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Handle service startup.
-	 * 
+	 *
 	 * <p>
 	 * This method will delegate to the configured {@code delegate} if that also
 	 * implements {@link ServiceLifecycleObserver}.
 	 * </p>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -127,12 +127,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Handle service shutdown.
-	 * 
+	 *
 	 * <p>
 	 * This method will delegate to the configured {@code delegate} if that also
 	 * implements {@link ServiceLifecycleObserver}.
 	 * </p>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -145,12 +145,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Handle configuration changes.
-	 * 
+	 *
 	 * <p>
 	 * This method will delegate to the configured {@code delegate} if that also
 	 * implements {@link SettingsChangeObserver}.
 	 * </p>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -214,7 +214,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 		if ( datum != null && locationId != null ) {
 			datum = populateLocation(datum);
 		} else if ( datum != null && locationId == null && requireLocationService ) {
-			log.warn("LocationService required but not available, discarding datum: {}", datum);
+			log.warn("Location required but not available, discarding datum: {}", datum);
 			datum = null;
 		}
 		return datum;
@@ -294,7 +294,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the message source.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source to set
 	 */
@@ -353,7 +353,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the delegate.
-	 * 
+	 *
 	 * @return the delegate
 	 */
 	public DatumDataSource getDelegate() {
@@ -362,7 +362,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the delegate.
-	 * 
+	 *
 	 * @param delegate
 	 *        the delegate to set
 	 */
@@ -373,7 +373,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	/**
 	 * Get the {@link LocationService} to use to lookup {@link DatumLocation}
 	 * instances via the configured {@code locationId} property.
-	 * 
+	 *
 	 * @return the location service
 	 */
 	public OptionalService<LocationService> getLocationService() {
@@ -383,7 +383,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	/**
 	 * Set the {@link LocationService} to use to lookup {@link DatumLocation}
 	 * instances via the configured {@code locationId} property.
-	 * 
+	 *
 	 * @param locationService
 	 *        the service to use
 	 */
@@ -395,7 +395,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Get the JavaBean property name to set the found
 	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum}
 	 * returned from the configured {@code delegate}.
-	 * 
+	 *
 	 * @return the location ID property name; defaults to
 	 *         {@link #DEFAULT_LOCATION_ID_PROP_NAME}
 	 */
@@ -407,11 +407,11 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Set the JavaBean property name to set the found
 	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum}
 	 * returned from the configured {@code delegate}.
-	 * 
+	 *
 	 * <p>
 	 * The object must support a JavaBean setter method for this property.
 	 * </p>
-	 * 
+	 *
 	 * @param locationIdPropertyName
 	 *        the property name to use
 	 */
@@ -421,7 +421,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the "location service required" flag.
-	 * 
+	 *
 	 * @return the location service reqiured flag; defaults to {@literal false}
 	 */
 	public boolean isRequireLocationService() {
@@ -430,14 +430,14 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the "location service required" flag.
-	 * 
+	 *
 	 * <p>
 	 * If configured as {@literal true} then return {@literal null} data only
 	 * instead of calling the {@code delegate}. This is designed for services
 	 * that require a location ID to be set, for example a Location Datum
 	 * logger.
 	 * </p>
-	 * 
+	 *
 	 * @param requireLocationService
 	 *        the required setting to use
 	 */
@@ -447,7 +447,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the type of location to search for.
-	 * 
+	 *
 	 * @return the type; defaults to {@link PriceLocation}
 	 */
 	public String getLocationType() {
@@ -456,7 +456,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the type of location to search for.
-	 * 
+	 *
 	 * @param locationType
 	 *        the location type
 	 */
@@ -466,7 +466,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the message bundle basename to use.
-	 * 
+	 *
 	 * @return the basename; defaults to {@link #PRICE_LOCATION_MESSAGE_BUNDLE}
 	 */
 	public String getMessageBundleBasename() {
@@ -475,12 +475,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the message bundle basename to use.
-	 * 
+	 *
 	 * <p>
 	 * This can be customized so different messages can be shown for different
 	 * uses of this proxy.
 	 * </p>
-	 * 
+	 *
 	 * @param messageBundleBaseName
 	 *        the basename to use
 	 */
@@ -491,7 +491,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	/**
 	 * Get the location ID and source ID as a single string value. The format of
 	 * the key is {@code locationId:sourceId}.
-	 * 
+	 *
 	 * @return the location key, or {@literal null} if both the location ID and
 	 *         source ID values are {@literal null}
 	 */
@@ -513,7 +513,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	/**
 	 * Set the location ID and source ID as a single string value. The format of
 	 * the key is {@code locationId:sourceId}.
-	 * 
+	 *
 	 * @param key
 	 *        the location and source ID key
 	 */
@@ -533,7 +533,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the {@link DatumLocation} ID to assign to datum.
-	 * 
+	 *
 	 * @return the location ID
 	 */
 	public Long getLocationId() {
@@ -542,7 +542,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the {@link DatumLocation} ID to assign to datum.
-	 * 
+	 *
 	 * @param locationId
 	 *        the location ID
 	 */
@@ -556,7 +556,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the location.
-	 * 
+	 *
 	 * @return the location
 	 */
 	public DatumLocation getLocation() {
@@ -565,7 +565,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the datum class names to ignore.
-	 * 
+	 *
 	 * @return the ignore set
 	 */
 	public Set<String> getDatumClassNameIgnore() {
@@ -574,7 +574,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the datum class names to ignore.
-	 * 
+	 *
 	 * @param datumClassNameIgnore
 	 *        the ignore set
 	 */
@@ -584,7 +584,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -593,7 +593,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the source ID.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
@@ -609,7 +609,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Get the JavaBean property name to set the found
 	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned
 	 * from the configured {@code delegate}.
-	 * 
+	 *
 	 * @return the source ID property name; defaults to
 	 *         {@link #DEFAULT_SOURCE_ID_PROP_NAME}
 	 */
@@ -621,11 +621,11 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Set the JavaBean property name to set the found
 	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned
 	 * from the configured {@code delegate}.
-	 * 
+	 *
 	 * <p>
 	 * The object must support a JavaBean setter method for this property.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdPropertyName
 	 *        the source ID property name to use
 	 */
@@ -635,7 +635,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Get the flag to include a location type setting.
-	 * 
+	 *
 	 * @return {@literal true} to include a {@code locationType} setting in
 	 *         {@link #getSettingSpecifiers()}
 	 * @since 1.1
@@ -646,7 +646,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	/**
 	 * Set the flag to include a location type setting.
-	 * 
+	 *
 	 * @param includeLocationTypeSetting
 	 *        {@literal true} to include a {@code locationType} setting in
 	 *        {@link #getSettingSpecifiers()}

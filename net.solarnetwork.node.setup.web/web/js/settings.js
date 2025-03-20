@@ -419,6 +419,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		// associate data with singleton modal
 		chooseBtn.data('params', params);
 		chooseBtn.data('label', labelSpan);
+		modal.find('input[name=tags]').val(lcType);
 		modal.modal('show');
 	});
 };
