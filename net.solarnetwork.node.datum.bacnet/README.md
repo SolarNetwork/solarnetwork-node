@@ -16,7 +16,7 @@ be opened in the SolarNodeOS firewall, which by default is `nftables` and config
 ones that open ports 80 and 8080:
 
 ```
-# Allows BACnet
+# Allow BACnet
 add rule ip filter INPUT udp dport 47808 accept
 ```
 
