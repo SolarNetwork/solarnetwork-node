@@ -86,7 +86,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  *
  * @author matt
- * @version 3.5
+ * @version 3.6
  */
 public class ModbusControl extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
