@@ -1,21 +1,21 @@
 /* ==================================================================
  * LockingModbusConnection.java - 2/07/2021 11:30:59 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,14 +36,14 @@ import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * A {@link ModbusConnection} that wraps another connection with a lock.
- * 
+ *
  * <p>
  * The {@link #open()} method will acquire the lock, and the {@link #close()}
  * method will release the lock.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 3.3
  */
 public class LockingModbusConnection implements ModbusConnection {
@@ -57,7 +57,7 @@ public class LockingModbusConnection implements ModbusConnection {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param delegate
 	 *        the delegate connection
 	 * @param lock
@@ -101,7 +101,7 @@ public class LockingModbusConnection implements ModbusConnection {
 
 	/**
 	 * Acquire the lock, returning if lock acquired.
-	 * 
+	 *
 	 * @throws LockTimeoutException
 	 *         if the lock cannot be obtained
 	 */
@@ -134,7 +134,7 @@ public class LockingModbusConnection implements ModbusConnection {
 
 	/**
 	 * Release the lock previously obtained via {@link #acquireLock()}.
-	 * 
+	 *
 	 * <p>
 	 * This method is safe to call even if the lock has already been released.
 	 * </p>
@@ -182,6 +182,12 @@ public class LockingModbusConnection implements ModbusConnection {
 	@Override
 	public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
 		delegate.writeDiscreetValues(addresses, bits);
+	}
+
+	@Override
+	public void writeDiscreteValues(ModbusWriteFunction function, int address, int count, BitSet bits)
+			throws IOException {
+		delegate.writeDiscreteValues(function, address, count, bits);
 	}
 
 	@Override

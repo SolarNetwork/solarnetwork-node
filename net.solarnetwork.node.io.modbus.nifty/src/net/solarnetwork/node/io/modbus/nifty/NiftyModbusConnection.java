@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.nifty;
 
 import static java.lang.String.format;
+import static net.solarnetwork.io.modbus.BitsModbusMessage.bitsForBitSet;
 import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.readCoilsRequest;
 import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.readDiscretesRequest;
 import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.writeCoilRequest;
@@ -244,6 +245,46 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				throw new IOException(String.format("Error writing %d coil values from %d @ %s: %s", 1,
 						addresses[i], describer.get(), e.toString()), e);
 			}
+		}
+	}
+
+	@Override
+	public void writeDiscreteValues(ModbusWriteFunction function, int address, int count, BitSet bits)
+			throws IOException {
+		if ( !controller.isConnected() ) {
+			throw new IOException(String.format("Connection to %s is closed", describer.get()));
+		}
+		try {
+			if ( function == ModbusWriteFunction.WriteMultipleCoils ) {
+				BitsModbusMessage req = writeCoilsRequest(getUnitId(), address, count,
+						bitsForBitSet(bits));
+				ModbusMessage res = controller.send(req).validate();
+				if ( res.isException() ) {
+					throw new IOException(String.format(
+							"Modbus exception %s writing %d coil values starting at %d @ %s",
+							res.getError(), count, address, describer.get()));
+				}
+			} else if ( function == ModbusWriteFunction.WriteCoil ) {
+				for ( int i = 0; i < count; i++ ) {
+					BitsModbusMessage req = writeCoilRequest(getUnitId(), address + i, bits.get(i));
+					ModbusMessage res = controller.send(req).validate();
+					if ( res.isException() ) {
+						throw new IOException(
+								String.format("Modbus exception %s writing coil value to %d @ %s",
+										res.getError(), address + i, describer.get()));
+					}
+				}
+			} else {
+				throw new IllegalArgumentException("Function " + function
+						+ " not supported: must be either WriteCoil or WriteMultipleCoils");
+			}
+		} catch ( IOException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new IOException(
+					String.format("Error reading %d discrete input values from %d @ %s: %s", count,
+							address, describer.get(), e.toString()),
+					e);
 		}
 	}
 
