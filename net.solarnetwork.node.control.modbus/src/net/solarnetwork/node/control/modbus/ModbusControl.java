@@ -223,7 +223,8 @@ public class ModbusControl extends ModbusDeviceSupport
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-				if ( function == ModbusWriteFunction.WriteCoil ) {
+				if ( function == ModbusWriteFunction.WriteCoil
+						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
 					conn.writeDiscreteValues(new int[] { address }, bits);
