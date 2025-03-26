@@ -229,7 +229,7 @@ public class ModbusControl extends ModbusDeviceSupport
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
-					conn.writeDiscreteValues(new int[] { address }, bits);
+					conn.writeDiscreteValues(function, address, 1, bits);
 					return true;
 				}
 
