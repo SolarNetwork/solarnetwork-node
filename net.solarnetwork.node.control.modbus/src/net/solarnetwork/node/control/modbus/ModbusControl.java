@@ -437,7 +437,9 @@ public class ModbusControl extends ModbusDeviceSupport
 							int len = Math.min(range.length(), maxReadLen);
 							BitSet updates = conn.readDiscreteValues(start, len);
 							bits.clear(start, start + len);
-							bits.or(updates);
+							for ( int i = start, u = 0; i < stop; i++, u++ ) {
+								bits.set(i, updates.get(u));
+							}
 							updated = true;
 							start += len;
 						}
