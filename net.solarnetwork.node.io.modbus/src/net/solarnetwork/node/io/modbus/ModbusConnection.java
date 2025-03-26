@@ -230,7 +230,7 @@ public interface ModbusConnection extends Closeable {
 	 * The bit indexes in {@code bits} starting at {@code 0} represents the
 	 * value for the Modbus register at {@code address}. Increasing bit indexes
 	 * correspond to increasing Modbus regsiter offsets from {@code address}.
-	 * <p>
+	 * </p>
 	 *
 	 * <p>
 	 * For API backwards compatibility this default implementation simply calls
@@ -245,6 +245,8 @@ public interface ModbusConnection extends Closeable {
 	 *        the 0-based Modbus register address to start reading from
 	 * @param count
 	 *        the count of bits to write
+	 * @param bits
+	 *        the bits to write
 	 * @throws IOException
 	 *         if any communication error occurs
 	 * @since 3.2
