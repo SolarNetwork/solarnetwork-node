@@ -23,7 +23,6 @@
 package net.solarnetwork.node.control.modbus;
 
 import static net.solarnetwork.service.OptionalService.service;
-import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
@@ -37,11 +36,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -84,7 +86,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  *
  * @author matt
- * @version 3.5
+ * @version 3.6
  */
 public class ModbusControl extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -223,10 +225,11 @@ public class ModbusControl extends ModbusDeviceSupport
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-				if ( function == ModbusWriteFunction.WriteCoil ) {
+				if ( function == ModbusWriteFunction.WriteCoil
+						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
-					conn.writeDiscreteValues(new int[] { address }, bits);
+					conn.writeDiscreteValues(function, address, 1, bits);
 					return true;
 				}
 
@@ -436,7 +439,9 @@ public class ModbusControl extends ModbusDeviceSupport
 							int len = Math.min(range.length(), maxReadLen);
 							BitSet updates = conn.readDiscreteValues(start, len);
 							bits.clear(start, start + len);
-							bits.or(updates);
+							for ( int i = start, u = 0; i < stop; i++, u++ ) {
+								bits.set(i, updates.get(u));
+							}
 							updated = true;
 							start += len;
 						}
@@ -587,13 +592,13 @@ public class ModbusControl extends ModbusDeviceSupport
 		return "Modbus Control";
 	}
 
-	private String getSampleMessage() {
+	private String controlInfo(MessageSource messageSource) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( configs == null || configs.length < 1 ) {
 			return "N/A";
 		}
 
-		Map<String, Object> data = new LinkedHashMap<>(configs.length);
+		Map<String, String> data = new LinkedHashMap<>(configs.length);
 		for ( ModbusWritePropertyConfig config : configs ) {
 			if ( !config.isValid() ) {
 				continue;
@@ -606,10 +611,22 @@ public class ModbusControl extends ModbusDeviceSupport
 		}
 
 		StringBuilder buf = new StringBuilder();
-		buf.append(StringUtils.delimitedStringFromMap(data));
-		long ts = sampleDate.get();
-		if ( ts > 0 ) {
-			buf.append("; sampled at ").append(formatForLocalDisplay(Instant.ofEpochMilli(ts)));
+		if ( messageSource != null ) {
+			buf.append(messageSource.getMessage("controlInfo.start", null, Locale.getDefault()));
+		}
+		for ( Entry<String, String> e : data.entrySet() ) {
+			if ( buf.length() > 0 ) {
+				buf.append("\n");
+			}
+			if ( messageSource != null ) {
+				buf.append(messageSource.getMessage("controlInfo.row",
+						new Object[] { e.getKey(), e.getValue() }, Locale.getDefault()));
+			} else {
+				buf.append(String.format("%s: (%s)", e.getKey(), e.getValue()));
+			}
+		}
+		if ( messageSource != null ) {
+			buf.append(messageSource.getMessage("controlInfo.end", null, Locale.getDefault()));
 		}
 		return buf.toString();
 	}
@@ -620,7 +637,7 @@ public class ModbusControl extends ModbusDeviceSupport
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 
 		// get current value
-		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(), true));
+		results.add(new BasicTitleSettingSpecifier("info", controlInfo(getMessageSource()), true, true));
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));

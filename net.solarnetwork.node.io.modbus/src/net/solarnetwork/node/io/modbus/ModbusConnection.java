@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusConnection.java - Jul 29, 2014 11:19:18 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,21 +30,21 @@ import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * High level Modbus connection API.
- * 
+ *
  * <p>
  * This API aims to simplify accessing Modbus capable devices without having any
  * direct dependency on Jamod (or any other Modbus implementation).
  * </p>
- * 
+ *
  * @author matt
- * @version 3.1
+ * @version 3.2
  * @since 2.0
  */
 public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the Modbus Unit ID this device represents.
-	 * 
+	 *
 	 * @return the unit ID
 	 */
 	int getUnitId();
@@ -52,7 +52,7 @@ public interface ModbusConnection extends Closeable {
 	/**
 	 * Open the connection, if it is not already open. The connection must be
 	 * opened before calling any of the other methods in this API.
-	 * 
+	 *
 	 * @throws IOException
 	 *         if the connection cannot be opened
 	 * @throws LockTimeoutException
@@ -69,16 +69,16 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 1} request.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method by default invokes {@link #readDiscreetValues(int, int)} for
 	 * backwards compatibility.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the 0-based Modbus register address to read
 	 * @param count
@@ -94,16 +94,16 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 1} request.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method is required but deprecated to preserve backwards
 	 * compatibility.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the 0-based Modbus register address to read
 	 * @param count
@@ -119,17 +119,17 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 1} request. The returned set
 	 * will have a size equal to {@code addresses.length * count}.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method by default invokes {@link #readDiscreetValues(int, int)} for
 	 * backwards compatibility.
 	 * </p>
-	 * 
+	 *
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
 	 * @param count
@@ -145,17 +145,17 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 1} request. The returned set
 	 * will have a size equal to {@code addresses.length * count}.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method is required but deprecated to preserve backwards
 	 * compatibility.
 	 * </p>
-	 * 
+	 *
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
 	 * @param count
@@ -171,19 +171,19 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Write values of a set of "coil" type registers, via a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 5} request, once for each
 	 * address in {@code addresses}. Each address at index <em>i</em>
 	 * corresponds to the value of bit at index <em>i</em>. Thus bits
 	 * {@literal 0} to {@code addresses.length - 1} are used.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method by default invokes
 	 * {@link #writeDiscreetValues(int[], BitSet)} for backwards compatibility.
 	 * </p>
-	 * 
+	 *
 	 * @param addresses
 	 *        the Modbus register addresses to start writing to
 	 * @param bits
@@ -198,19 +198,19 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Write values of a set of "coil" type registers, via a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 5} request, once for each
 	 * address in {@code addresses}. Each address at index <em>i</em>
 	 * corresponds to the value of bit at index <em>i</em>. Thus bits
 	 * {@literal 0} to {@code addresses.length - 1} are used.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method is required but deprecated to preserve backwards
 	 * compatibility.
 	 * </p>
-	 * 
+	 *
 	 * @param addresses
 	 *        the Modbus register addresses to start writing to
 	 * @param bits
@@ -224,14 +224,47 @@ public interface ModbusConnection extends Closeable {
 	void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException;
 
 	/**
+	 * Write values of a set of "coil" type registers, via a BitSet.
+	 *
+	 * <p>
+	 * The bit indexes in {@code bits} starting at {@code 0} represents the
+	 * value for the Modbus register at {@code address}. Increasing bit indexes
+	 * correspond to increasing Modbus regsiter offsets from {@code address}.
+	 * </p>
+	 *
+	 * <p>
+	 * For API backwards compatibility this default implementation simply calls
+	 * {@link #writeDiscreteValues(int[], BitSet)}.
+	 * </p>
+	 *
+	 * @param function
+	 *        the Modbus function code to use, one of
+	 *        {@link ModbusWriteFunction#WriteCoil} or
+	 *        {@link ModbusWriteFunction#WriteMultipleCoils}
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the count of bits to write
+	 * @param bits
+	 *        the bits to write
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 3.2
+	 */
+	default void writeDiscreteValues(ModbusWriteFunction function, int address, int count, BitSet bits)
+			throws IOException {
+		writeDiscreteValues(new int[] { address }, bits);
+	}
+
+	/**
 	 * Get the values of a set of "input discrete" type registers, as a BitSet.
-	 * 
+	 *
 	 * <p>
 	 * This uses a Modbus function code {@literal 2} request. The returned
 	 * bitset will have {@code count} values set, from {@literal 0} to
 	 * {@code count - 1}.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the Modbus register addresses to start reading from
 	 * @param count
@@ -245,7 +278,7 @@ public interface ModbusConnection extends Closeable {
 	/**
 	 * Get the values of specific 16-bit Modbus registers as an array of 16-bit
 	 * words.
-	 * 
+	 *
 	 * <p>
 	 * Note that the raw short values can be treated as unsigned shorts by
 	 * converting them to integers, like
@@ -255,7 +288,7 @@ public interface ModbusConnection extends Closeable {
 	 * {@link #readWordsUnsigned(ModbusReadFunction, int, int)}, without having
 	 * been cast to ints.
 	 * </p>
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -272,7 +305,7 @@ public interface ModbusConnection extends Closeable {
 	/**
 	 * Get the values of specific 16-bit Modbus registers as an array of
 	 * unsigned 16-bit words.
-	 * 
+	 *
 	 * <p>
 	 * Note that the raw int values can be treated as signed shorts by casting
 	 * them to shorts, like {@code short signed = (short)s}. Thus the values
@@ -280,7 +313,7 @@ public interface ModbusConnection extends Closeable {
 	 * {@link #readWords(ModbusReadFunction, int, int)}, having been cast to
 	 * ints.
 	 * </p>
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -296,7 +329,7 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Write 16-bit word values to 16-bit Modbus registers.
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -310,12 +343,12 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Write unsigned 16-bit word values to 16-bit Modbus registers.
-	 * 
+	 *
 	 * <p>
 	 * All the elements in {@code values} will be truncated to 16-bits and then
 	 * stored in Modbus registers.
 	 * </p>
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -329,13 +362,13 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the raw bytes of specific registers.
-	 * 
+	 *
 	 * <p>
 	 * Each 16-bit modbus register value will be decomposed into two output
 	 * bytes, so that the returned result will have a length equal to
 	 * {@code count * 2}.
 	 * </p>
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -350,7 +383,7 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Write raw byte values to registers.
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -365,7 +398,7 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Read a set of registers as bytes and interpret as a string.
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -387,7 +420,7 @@ public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Write a string as raw byte values to registers.
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
