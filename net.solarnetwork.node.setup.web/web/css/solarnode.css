@@ -567,3 +567,19 @@ input[readonly].form-control {
 	text-align: left;
 	width: 3em;
 }
+
+.setting-content > .markup {
+	max-height: 32rem;
+	overflow-y: auto;
+	scrollbar-gutter: stable;
+}
+
+.setting-content > .markup > .row {
+	margin-right: 0;
+}
+
+.setting-content > .title {
+	margin-top: calc(0.375rem + 1px);
+	white-space: pre-line;
+	word-break: break-word;
+}
