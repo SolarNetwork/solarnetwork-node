@@ -231,7 +231,10 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier')}">
-						<div style="margin-top: calc(0.375rem + 1px);">${settingValue}</div>
+						<div <c:choose>
+								<c:when test="${setting.markup}"></c:when>
+								<c:otherwise>style="margin-top: calc(0.375rem + 1px); white-space: pre-line; word-break: break-word;"</c:otherwise>
+							</c:choose>>${settingValue}</div>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.LocationLookupSettingSpecifier')}">
 						<span id="${settingId}">
