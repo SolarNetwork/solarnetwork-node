@@ -54,7 +54,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  *
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -155,8 +155,6 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 					availableAlternateDatumFilterUidsStatus(), true, true));
 		}
 
-		result.add(new BasicTitleSettingSpecifier("availableUids", availableUidsStatus(), true, true));
-
 		if ( configurableUid ) {
 			result.addAll(baseIdentifiableSettings(""));
 			result.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
@@ -197,26 +195,6 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		Collections.sort(names, String::compareToIgnoreCase);
 		StringBuilder buf = new StringBuilder("<ol>");
 		for ( String uid : names ) {
-			buf.append("<li>").append(uid).append("</li>");
-		}
-		buf.append("</ol>");
-		return buf.toString();
-	}
-
-	private String availableUidsStatus() {
-		List<String> uids = new ArrayList<>();
-		for ( DatumFilterService s : transformServices ) {
-			String uid = s.getUid();
-			if ( uid != null && !uid.isEmpty() && !uid.equalsIgnoreCase(getUid()) ) {
-				uids.add(uid);
-			}
-		}
-		if ( uids.isEmpty() ) {
-			return "N/A";
-		}
-		Collections.sort(uids, String::compareToIgnoreCase);
-		StringBuilder buf = new StringBuilder("<ol>");
-		for ( String uid : uids ) {
 			buf.append("<li>").append(uid).append("</li>");
 		}
 		buf.append("</ol>");

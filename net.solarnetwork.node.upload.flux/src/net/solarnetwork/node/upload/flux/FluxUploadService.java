@@ -35,7 +35,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -103,7 +102,7 @@ import net.solarnetwork.util.StatTracker;
  * Service to listen to datum events and upload datum to SolarFlux.
  *
  * @author matt
- * @version 2.7
+ * @version 2.8
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -723,10 +722,6 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		List<SettingSpecifier> results = new ArrayList<>(4);
 		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
 
-		// add list of available datum encoders
-		results.add(new BasicTitleSettingSpecifier("availableDatumEncoderUids",
-				availableDatumEncoderUidsStatus(), true, true));
-
 		results.add(new BasicTextFieldSettingSpecifier("mqttHost", DEFAULT_MQTT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("mqttUsername", DEFAULT_MQTT_USERNAME));
 		results.add(new BasicTextFieldSettingSpecifier("mqttPassword", "", true));
@@ -794,29 +789,6 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 						s.get(MqttBasicCount.PayloadBytesDelivered) },
 				Locale.getDefault());
 		// @formatter:on
-	}
-
-	private String availableDatumEncoderUidsStatus() {
-		final OptionalServiceCollection<ObjectEncoder> encs = getDatumEncoders();
-		final List<String> uids = new ArrayList<>();
-		if ( encs != null ) {
-			for ( ObjectEncoder s : encs.services() ) {
-				String uid = s.getUid();
-				if ( uid != null && !uid.isEmpty() ) {
-					uids.add(uid);
-				}
-			}
-		}
-		if ( uids.isEmpty() ) {
-			return "N/A";
-		}
-		Collections.sort(uids, String::compareToIgnoreCase);
-		StringBuilder buf = new StringBuilder("<ol>");
-		for ( String uid : uids ) {
-			buf.append("<li>").append(uid).append("</li>");
-		}
-		buf.append("</ol>");
-		return buf.toString();
 	}
 
 	@Override

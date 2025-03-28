@@ -9,7 +9,7 @@
 </section>
 <section id="datum-sources" class="hidden ready">
 	<p class="none"><fmt:message key="datum-sources.intro.none"/></p>
-	<table class="table table-condensed some hidden" id="datum-sources-list">
+	<table class="table table-sm some hidden" id="datum-sources-list">
 		<thead>
 			<tr>
 				<th><fmt:message key="datum-source.sourceId"/></th>
@@ -38,7 +38,7 @@
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key="datum-sources.datum.details.intro"/></p>
-				<table class="table table-condensed some">
+				<table class="table table-sm some">
 					<thead>
 						<tr>
 							<th><fmt:message key="datum.property.label"/></th>
