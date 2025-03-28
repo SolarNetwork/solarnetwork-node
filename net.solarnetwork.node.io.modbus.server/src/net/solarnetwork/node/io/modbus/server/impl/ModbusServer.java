@@ -50,6 +50,7 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -83,6 +84,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.IntShortMap;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
@@ -90,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * Modbus TCP server service.
  *
  * @author matt
- * @version 3.2
+ * @version 3.3
  */
 public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
@@ -565,10 +567,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(8);
 
-		for ( Map.Entry<Integer, ModbusRegisterData> me : registers.entrySet() ) {
-			result.add(new BasicTitleSettingSpecifier("info", registersInfo(me.getKey(), me.getValue()),
-					true));
-		}
+		result.add(new BasicTitleSettingSpecifier("info",
+				registerBlocksInfo(getMessageSource(), Locale.getDefault()), true, true));
 
 		result.addAll(baseIdentifiableSettings(null));
 		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
@@ -596,65 +596,61 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		return result;
 	}
 
-	private String registersInfo(Integer unitId, ModbusRegisterData regData) {
-		StringBuilder buf = new StringBuilder("Unit ID: ");
-		buf.append(unitId);
-		String info = coilsInfoValue(regData);
-		if ( info != null ) {
-			buf.append("\nCoils: ").append(info);
-		}
-		info = discretesInfoValue(regData);
-		if ( info != null ) {
-			buf.append("\nDiscrete Inputs: ").append(info);
-		}
-		info = holdingsInfoValue(regData);
-		if ( info != null ) {
-			buf.append("\nHolding Registers:\n").append(info);
-		}
-		info = inputsInfoValue(regData);
-		if ( info != null ) {
-			buf.append("\nInput Registers:\n").append(info);
+	private String registerBlocksInfo(MessageSource messageSource, Locale locale) {
+		StringBuilder buf = new StringBuilder();
+		for ( Map.Entry<Integer, ModbusRegisterData> unitEntry : registers.entrySet() ) {
+			buf.append(messageSource.getMessage("serverUnitInfo.title",
+					new Object[] { unitEntry.getKey() }, locale));
+
+			BitSet bits = unitEntry.getValue().getCoils();
+			if ( bits != null && !bits.isEmpty() ) {
+				bitsBlockInfo(messageSource, locale, buf,
+						messageSource.getMessage("serverUnitInfo.coil.label", null, locale), bits);
+			}
+			bits = unitEntry.getValue().getDiscretes();
+			if ( bits != null && !bits.isEmpty() ) {
+				bitsBlockInfo(messageSource, locale, buf,
+						messageSource.getMessage("serverUnitInfo.discrete.label", null, locale), bits);
+			}
+
+			ModbusData data = unitEntry.getValue().getHoldings();
+			if ( data != null && !data.isEmpty() ) {
+				regsBlockInfo(messageSource, locale, buf,
+						messageSource.getMessage("serverUnitInfo.holding.label", null, locale), data);
+			}
+
+			data = unitEntry.getValue().getInputs();
+			if ( data != null && !data.isEmpty() ) {
+				regsBlockInfo(messageSource, locale, buf,
+						messageSource.getMessage("serverUnitInfo.input.label", null, locale), data);
+			}
 		}
 		return buf.toString();
 	}
 
-	private String coilsInfoValue(ModbusRegisterData registers) {
-		return bitSetString(registers.getCoils());
+	private void bitsBlockInfo(MessageSource messageSource, Locale locale, StringBuilder buf,
+			String title, BitSet bits) {
+		buf.append(messageSource.getMessage("serverUnitInfoBitBlock.start", new Object[] { title },
+				locale));
+		bits.stream().forEachOrdered(a -> {
+			buf.append(messageSource.getMessage("serverUnitInfoBit.row", new Object[] { a }, locale));
+		});
+		buf.append(messageSource.getMessage("serverUnitInfoBitBlock.end", null, locale));
 	}
 
-	private String discretesInfoValue(ModbusRegisterData registers) {
-		return bitSetString(registers.getDiscretes());
-	}
-
-	private String holdingsInfoValue(ModbusRegisterData registers) {
-		return dataString(registers.getHoldings());
-	}
-
-	private String inputsInfoValue(ModbusRegisterData registers) {
-		return dataString(registers.getInputs());
-	}
-
-	private static String bitSetString(BitSet set) {
-		if ( set.isEmpty() ) {
-			return null;
-		}
-		return StringUtils.commaDelimitedStringFromCollection(
-				set.stream().mapToObj(Integer::valueOf).collect(Collectors.toList()));
-	}
-
-	private static String dataString(ModbusData data) {
-		if ( data == null ) {
-			return null;
-		}
-		String s = data.dataDebugString();
-		int line1 = s.indexOf('\n');
-		int lineN = s.lastIndexOf('\n');
-		if ( line1 > 0 && lineN > line1 ) {
-			s = s.substring(line1 + 1, lineN);
-		} else {
-			return null;
-		}
-		return s.isEmpty() ? null : s;
+	private void regsBlockInfo(MessageSource messageSource, Locale locale, StringBuilder buf,
+			String title, ModbusData data) {
+		buf.append(messageSource.getMessage("serverUnitInfoIntBlock.start", new Object[] { title },
+				locale));
+		buf.append(messageSource.getMessage("serverUnitInfoInt.start", null, locale));
+		IntShortMap regs = data.dataRegisters();
+		regs.forEachOrdered((a, v) -> {
+			buf.append(messageSource.getMessage("serverUnitInfoInt.row",
+					new Object[] { a, "0x" + Integer.toHexString(a), String.format("0x%04X", v) },
+					locale));
+		});
+		buf.append(messageSource.getMessage("serverUnitInfoInt.end", null, locale));
+		buf.append(messageSource.getMessage("serverUnitInfoIntBlock.end", null, locale));
 	}
 
 	/**

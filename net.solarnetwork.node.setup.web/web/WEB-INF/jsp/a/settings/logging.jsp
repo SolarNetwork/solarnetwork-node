@@ -12,7 +12,7 @@
 </section>
 <section id="logging">
 	<h2><fmt:message key="logging.levels.title"/></h2>
-	<table class="table table-condensed table-hover" id="logging-levels">
+	<table class="table table-sm table-hover" id="logging-levels">
 		<thead>
 			<tr>
 				<th><fmt:message key="logging.levels.logger.label"/></th>

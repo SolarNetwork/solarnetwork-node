@@ -14,7 +14,7 @@
 		</button>
 	</div>
 	<p class="opmodes-none"><fmt:message key="opmodes.noActive.intro"/></p>
-	<table class="table table-condensed table-hover hidden opmodes-some" id="opmodes-active">
+	<table class="table table-sm table-hover hidden opmodes-some" id="opmodes-active">
 		<thead>
 			<tr>
 				<th><fmt:message key="opmodes.mode.label"/></th>
