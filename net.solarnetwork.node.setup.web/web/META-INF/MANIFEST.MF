@@ -62,7 +62,7 @@ Import-Package:
  net.solarnetwork.settings;version="[2.3,3.0)",
  net.solarnetwork.settings.support;version="[2.3,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
- net.solarnetwork.util;version="[2.6,3.0)",
+ net.solarnetwork.util;version="[2.19,3.0)",
  net.solarnetwork.web.domain;version="[2.0,3.0)",
  net.solarnetwork.web.gemini;version="[3.0,4.0)",
  net.solarnetwork.web.security;version="[2.4,3.0)",

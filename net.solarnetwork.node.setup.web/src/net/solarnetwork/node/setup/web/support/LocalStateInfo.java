@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.setup.web.support;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.domain.LocalState;
@@ -74,23 +73,10 @@ public class LocalStateInfo {
 				} else if ( valTmp.startsWith("{") ) {
 					type = LocalStateType.Mapping;
 				} else {
-					BigDecimal d;
-					Number n = null;
-					try {
-						d = new BigDecimal(valTmp);
-						try {
-							n = d.toBigIntegerExact();
-						} catch ( ArithmeticException e ) {
-							// keep decimal
-							n = d;
-						}
-					} catch ( Exception e ) {
-						// ignore
-					}
+					Number n = NumberUtils.parseNumber(valTmp);
 					if ( n == null ) {
 						type = LocalStateType.String;
 					} else {
-						n = NumberUtils.narrow(n, 2);
 						if ( n instanceof Float ) {
 							type = LocalStateType.Float32;
 						} else if ( n instanceof Double ) {
