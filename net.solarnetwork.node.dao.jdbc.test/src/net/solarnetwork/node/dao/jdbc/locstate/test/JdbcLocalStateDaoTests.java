@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
@@ -222,17 +223,13 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 	@Test
 	public void getAndSave_insert() {
 		// GIVEN
-		final int originalValue = 1;
-		LocalState entity = dao.get(dao.save(
-				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
+		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, 1);
 
 		// WHEN
 		LocalState result = dao.getAndSave(entity);
 
 		// THEN
-		assertThat("Result returned", result, is(equalTo(entity)));
-		assertThat("Result same as given", result.isSameAs(entity), is(equalTo(true)));
-		last = result;
+		assertThat("Result NOT returned", result, is(nullValue()));
 	}
 
 	@Test

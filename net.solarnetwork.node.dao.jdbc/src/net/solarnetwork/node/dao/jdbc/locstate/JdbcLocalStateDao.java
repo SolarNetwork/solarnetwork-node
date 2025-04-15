@@ -173,7 +173,7 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 					}
 				}
 			}
-			return entity;
+			return null;
 		});
 	}
 
