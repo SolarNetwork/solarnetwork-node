@@ -1332,13 +1332,15 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	@Override
 	public Object saveLocalState(String key, LocalStateType type, Object value, Object expectedValue) {
 		LocalState state = new LocalState(key, type, value);
-		return localStateDao().compareAndSave(state, expectedValue);
+		LocalState result = localStateDao().compareAndSave(state, expectedValue);
+		return result.getValue();
 	}
 
 	@Override
 	public Object getAndSaveLocalState(String key, LocalStateType type, Object value) {
 		LocalState state = new LocalState(key, type, value);
-		return localStateDao().getAndSave(state);
+		LocalState result = localStateDao().getAndSave(state);
+		return result != null ? result.getValue() : null;
 	}
 
 	/**
