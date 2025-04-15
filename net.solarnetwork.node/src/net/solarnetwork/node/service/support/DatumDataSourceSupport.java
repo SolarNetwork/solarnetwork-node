@@ -60,7 +60,7 @@ import net.solarnetwork.util.ArrayUtils;
  * extend.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -357,6 +357,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 		ExpressionRoot root = new ExpressionRoot(d, null, null, service(datumService), null,
 				service(getMetadataService()), service(getLocationService()));
 		root.setTariffScheduleProviders(tariffScheduleProviders);
+		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(d, expressionConfs, root);
 	}
 

@@ -87,7 +87,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -284,6 +284,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 							service(getDatumService()), getOpModesService(),
 							service(getMetadataService()), service(getLocationService()));
 					root.setTariffScheduleProviders(getTariffScheduleProviders());
+					root.setLocalStateDao(getLocalStateDao());
 					populateExpressionDatumProperties(samplesCopy, getExpressionConfigs(), root);
 				}
 			}

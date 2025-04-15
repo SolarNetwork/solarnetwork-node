@@ -10,10 +10,12 @@
 			<fmt:param value="${fn:length(tokens)}"></fmt:param>
 		</fmt:message>
 	</p>
-	<button class="btn btn-primary pull-right" data-bs-target="#create-security-token-modal" data-bs-toggle="modal">
-		<i class="bi bi-plus-lg"></i>
-		<fmt:message key="sectoks.action.create"/>
-	</button>
+	<div class="d-flex justify-content-end">
+		<button type="button" class="btn btn-primary" data-bs-target="#create-security-token-modal" data-bs-toggle="modal">
+			<i class="bi bi-plus-lg"></i>
+			<fmt:message key="sectoks.action.create"/>
+		</button>
+	</div>
 </section>
 <section id="sectoks">
 	<c:if test="${fn:length(tokens) > 0}">

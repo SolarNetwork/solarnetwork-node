@@ -45,6 +45,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="localStateDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.LocalStateDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -101,6 +107,7 @@
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 

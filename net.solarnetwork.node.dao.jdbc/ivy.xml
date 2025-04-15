@@ -18,7 +18,7 @@
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.0,)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.18,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.23,)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>

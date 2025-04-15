@@ -63,7 +63,7 @@ import net.solarnetwork.util.ArrayUtils;
  * derived from another property.
  *
  * @author matt
- * @version 2.5
+ * @version 2.6
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
@@ -361,6 +361,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 								service(getMetadataService()), service(getLocationService()), config,
 								prevDate, date, prevVal, currVal, prevReading);
 						root.setTariffScheduleProviders(getTariffScheduleProviders());
+						root.setLocalStateDao(getLocalStateDao());
 						populateExpressionDatumProperties(samples,
 								new VirtualMeterExpressionConfig[] { exprConfig }, root);
 						newReading = samples.getAccumulatingSampleBigDecimal(meterPropName);

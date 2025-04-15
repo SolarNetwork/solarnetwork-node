@@ -33,6 +33,7 @@
 								or navloc == 'filters'
 								or navloc == 'datum-sources'
 								or navloc == 'filters-component'
+								or navloc == 'locstate'
 								or navloc == 'opmodes' ? ' active' : ''}" data-bs-toggle="dropdown" role="button" aria-expanded="false">
 								<fmt:message key='link.settings'/>
 								<b class="caret"></b>
@@ -44,6 +45,7 @@
 								<li><a class="dropdown-item${navloc == 'datum-sources' ? ' active' : ''}" href="<setup:url value='/a/datum-sources'/>"><fmt:message key='link.datum-sources'/></a></li>
 								<li><a class="dropdown-item${navloc == 'logging' ? ' active' : ''}" href="<setup:url value='/a/logging'/>"><fmt:message key='link.logging'/></a></li>
 								<li><a class="dropdown-item${navloc == 'opmodes' ? ' active' : ''}" href="<setup:url value='/a/opmodes'/>"><fmt:message key='link.opmodes'/></a></li>
+								<li><a class="dropdown-item${navloc == 'locstate' ? ' active' : ''}" href="<setup:url value='/a/local-state'/>"><fmt:message key='link.locstate'/></a></li>
 								<li><a class="dropdown-item${navloc == 'backups' ? ' active' : ''}" href="<setup:url value='/a/settings/backups'/>"><fmt:message key='link.backups'/></a></li>
 							</ul>
 						</li>

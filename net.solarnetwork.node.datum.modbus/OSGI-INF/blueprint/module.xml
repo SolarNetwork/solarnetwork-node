@@ -70,6 +70,12 @@
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
+	<bean id="localStateDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.LocalStateDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Published Services -->
 
 	<service>
@@ -120,6 +126,7 @@
 							<property name="placeholderService" ref="placeholderService"/>
 							<property name="taskScheduler" ref="taskScheduler"/>
 							<property name="expressionServices" ref="expressionServices"/>
+							<property name="localStateDao" ref="localStateDao"/>
 							<property name="modbusNetwork">
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>

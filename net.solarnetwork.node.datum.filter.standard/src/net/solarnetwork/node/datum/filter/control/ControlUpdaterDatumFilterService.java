@@ -59,7 +59,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Transform service that sets a control value based on an expression result.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -99,6 +99,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 					service(getDatumService()), getOpModesService(), service(getMetadataService()),
 					service(getLocationService()));
 			root.setTariffScheduleProviders(getTariffScheduleProviders());
+			root.setLocalStateDao(getLocalStateDao());
 			updateControlValues(mutableSamples, configs, root);
 			s = mutableSamples;
 		}

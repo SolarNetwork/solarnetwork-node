@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.dao.LocalStateDao;
 import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.PlaceholderService;
@@ -50,7 +51,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.67
  */
 public abstract class BaseIdentifiable extends BasicIdentifiable implements Identifiable {
@@ -66,6 +67,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	private OptionalService<MetadataService> metadataService;
 	private OptionalService<LocationService> locationService;
 	private OptionalServiceCollection<ExpressionService> expressionServices;
+	private OptionalService<LocalStateDao> localStateDao;
 
 	/**
 	 * Default constructor.
@@ -284,6 +286,27 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 */
 	public final void setLocationService(OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
+	}
+
+	/**
+	 * Get the optional local state DAO.
+	 *
+	 * @return the DAO
+	 * @since 2.3
+	 */
+	public OptionalService<LocalStateDao> getLocalStateDao() {
+		return localStateDao;
+	}
+
+	/**
+	 * Set the optional local state DAO.
+	 *
+	 * @param localStateDao
+	 *        the DAO to set
+	 * @since 2.3
+	 */
+	public void setLocalStateDao(OptionalService<LocalStateDao> localStateDao) {
+		this.localStateDao = localStateDao;
 	}
 
 }

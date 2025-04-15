@@ -55,7 +55,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Datum filter service that "harvests" datum properties as metric values.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -127,6 +127,7 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 		ExpressionRoot root = new ExpressionRoot(datum, s, parameters, service(getDatumService()),
 				getOpModesService(), service(getMetadataService()), service(getLocationService()));
 		root.setTariffScheduleProviders(getTariffScheduleProviders());
+		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 
 		// then extract generated property values as metrics

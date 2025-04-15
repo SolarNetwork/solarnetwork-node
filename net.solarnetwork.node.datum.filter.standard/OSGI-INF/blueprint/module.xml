@@ -73,6 +73,12 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
 	</bean>
 
+	<bean id="localStateDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.LocalStateDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!--
 	 !!! SimpleFilterSamplesTransformer (property filter) - global filter
 	 -->
@@ -127,6 +133,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -190,6 +197,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 		</bean>
@@ -249,6 +257,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -312,6 +321,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 		</bean>
@@ -370,6 +380,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -429,6 +440,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -487,6 +499,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -545,6 +558,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -604,6 +618,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -663,6 +678,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -721,6 +737,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -778,6 +795,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -835,6 +853,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -903,6 +922,7 @@
 			<property name="metadataService" ref="nodeMetadataService"/>
 			<property name="locationService" ref="locationService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 

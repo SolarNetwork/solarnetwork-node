@@ -26,6 +26,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
+import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +41,7 @@ import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
+import net.solarnetwork.node.dao.LocalStateDao;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumHistorian;
 import net.solarnetwork.node.service.DatumService;
@@ -47,6 +49,7 @@ import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.TariffScheduleProvider;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.util.CollectionUtils;
 
@@ -67,11 +70,11 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 2.7
+ * @version 2.8
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot
-		implements DatumMetadataOperations, TariffScheduleProvidersOperations {
+		implements DatumMetadataOperations, TariffScheduleProvidersOperations, LocalStateOperations {
 
 	private static final Logger log = LoggerFactory.getLogger(ExpressionRoot.class);
 
@@ -80,6 +83,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	private final MetadataService metadataService;
 	private final LocationService locationService;
 	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
+	private OptionalService<LocalStateDao> localStateDao;
 
 	/**
 	 * Constructor.
@@ -239,6 +243,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		ExpressionRoot r = new ExpressionRoot(datum, samples, parameters, datumService, opModesService,
 				metadataService, locationService);
 		r.setTariffScheduleProviders(tariffScheduleProviders);
+		r.setLocalStateDao(localStateDao);
 		return r;
 	}
 
@@ -1303,6 +1308,39 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		return CollectionUtils.sort(collection, reverse, propNames);
 	}
 
+	private LocalStateDao localStateDao() {
+		final LocalStateDao dao = service(getLocalStateDao());
+		if ( dao == null ) {
+			throw new UnsupportedOperationException("LocalStateDao not available");
+		}
+		return dao;
+	}
+
+	@Override
+	public Object localState(String key, Object defaultValue) {
+		LocalState state = localStateDao().get(key);
+		return (state != null ? state.getValue() : defaultValue);
+	}
+
+	@Override
+	public Object saveLocalState(String key, LocalStateType type, Object value) {
+		LocalState state = new LocalState(key, type, value);
+		localStateDao().save(state);
+		return value;
+	}
+
+	@Override
+	public Object saveLocalState(String key, LocalStateType type, Object value, Object expectedValue) {
+		LocalState state = new LocalState(key, type, value);
+		return localStateDao().compareAndSave(state, expectedValue);
+	}
+
+	@Override
+	public Object getAndSaveLocalState(String key, LocalStateType type, Object value) {
+		LocalState state = new LocalState(key, type, value);
+		return localStateDao().getAndSave(state);
+	}
+
 	/**
 	 * Get the tariff schedule providers.
 	 *
@@ -1324,6 +1362,27 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	public final void setTariffScheduleProviders(
 			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
+	}
+
+	/**
+	 * Get the optional local state DAO.
+	 *
+	 * @return the DAO
+	 * @since 2.8
+	 */
+	public OptionalService<LocalStateDao> getLocalStateDao() {
+		return localStateDao;
+	}
+
+	/**
+	 * Set the optional local state DAO.
+	 *
+	 * @param localStateDao
+	 *        the DAO to set
+	 * @since 2.8
+	 */
+	public void setLocalStateDao(OptionalService<LocalStateDao> localStateDao) {
+		this.localStateDao = localStateDao;
 	}
 
 }

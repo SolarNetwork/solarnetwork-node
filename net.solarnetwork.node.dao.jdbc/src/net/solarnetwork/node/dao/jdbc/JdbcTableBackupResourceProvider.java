@@ -65,7 +65,7 @@ import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
  * Backup support for JDBC tables.
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
@@ -221,9 +221,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 						.formattingProcessorsForResultSetMetaData(rs.getMetaData());
 				JdbcResultSetCsvWriter writer = new ResultSetCsvWriter(out, preference);
 				try {
-					while ( rs.next() ) {
-						writer.write(rs, cellProcessors);
-					}
+					writer.write(rs, cellProcessors);
 				} finally {
 					if ( writer != null ) {
 						try {
