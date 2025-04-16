@@ -224,7 +224,7 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 					}
 				}
 			}
-			postEntityEvent(TABLE_NAME, entity, EntityEventType.STORED);
+			postEntityEvent(entity.getId(), entity, EntityEventType.STORED);
 			return null;
 		});
 	}

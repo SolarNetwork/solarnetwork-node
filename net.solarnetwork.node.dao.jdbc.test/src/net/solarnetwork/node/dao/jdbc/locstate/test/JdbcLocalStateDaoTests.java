@@ -24,6 +24,7 @@ package net.solarnetwork.node.dao.jdbc.locstate.test;
 
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static net.solarnetwork.dao.GenericDao.ENTITY_EVENT_ENTITY_ID_PROPERTY;
 import static net.solarnetwork.dao.GenericDao.entityEventTopic;
 import static net.solarnetwork.dao.GenericDao.EntityEventType.DELETED;
 import static net.solarnetwork.dao.GenericDao.EntityEventType.STORED;
@@ -48,6 +49,7 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.locstate.JdbcLocalStateDao;
 import net.solarnetwork.node.domain.LocalState;
@@ -102,6 +104,15 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		EasyMock.verify(eventAdmin);
 	}
 
+	private void assertEntityEvent(Event event, GenericDao.EntityEventType expectedType,
+			LocalState expectedEntity) {
+		assertThat("Event generated", event, is(notNullValue()));
+		assertThat("Event is STORED", event.getTopic(), is(
+				equalTo(entityEventTopic(LocalState.class.getSimpleName(), expectedType.toString()))));
+		assertThat("Event has ID property", event.getProperty(ENTITY_EVENT_ENTITY_ID_PROPERTY),
+				is(equalTo(expectedEntity.getId())));
+	}
+
 	@Test
 	public void insert() {
 		// GIVEN
@@ -118,9 +129,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		// THEN
 		assertThat("PK returned", pk, is(equalTo(entity.getId())));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -171,9 +180,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Modified updated", persisted.getModified(), is(equalTo(update.getModified())));
 		assertThat("Type and data updated", persisted.isSameAs(update), is(equalTo(true)));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -214,9 +221,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		Collection<LocalState> all = dao.getAll(null);
 		assertThat("Token deleted from table", all, hasSize(0));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is DELETED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), DELETED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), DELETED, entity);
 	}
 
 	@Test
@@ -238,9 +243,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given", result.isSameAs(entity), is(equalTo(true)));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -264,9 +267,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given (updated to new)", result.isSameAs(entity), is(equalTo(true)));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -310,9 +311,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given", result.isSameAs(entity), is(equalTo(true)));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -337,9 +336,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Result returned", result, is(equalTo(update)));
 		assertThat("Result same as given (updated to new)", result.isSameAs(update), is(equalTo(true)));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -380,9 +377,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		// THEN
 		assertThat("Result NOT returned", result, is(nullValue()));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
@@ -407,9 +402,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 				is(equalTo(false)));
 		assertThat("Result value is previous value", result.getValue(), is(equalTo(originalValue)));
 
-		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
-		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
-				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+		assertEntityEvent(eventCaptor.getValue(), STORED, entity);
 	}
 
 	@Test
