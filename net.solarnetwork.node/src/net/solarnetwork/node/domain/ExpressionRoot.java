@@ -1325,7 +1325,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	@Override
 	public Object saveLocalState(String key, LocalStateType type, Object value) {
 		LocalState state = new LocalState(key, type, value);
-		localStateDao().save(state);
+		localStateDao().compareAndChange(state); // not save to avoid excessive STORED entity events
 		return value;
 	}
 

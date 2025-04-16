@@ -26,9 +26,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.springframework.jdbc.core.ConnectionCallback;
 import net.solarnetwork.node.dao.LocalStateDao;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
@@ -61,6 +63,9 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 
 		/** Compare and save. */
 		CompareAndSave("compare-and-save"),
+
+		/** Compare and change. */
+		CompareAndChange("compare-and-change"),
 
 		/** Save and return previous value. */
 		GetAndSave("get-and-save"),
@@ -143,20 +148,62 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 	@Override
 	public LocalState compareAndSave(LocalState entity, Object expectedValue) {
 		return getJdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
+			LocalState copy = copyState(entity);
 			PreparedStatement stmt = conn
 					.prepareStatement(getSqlResource(SqlResource.CompareAndSave.getResource()));
-			setUpdateStatementValues(entity, stmt);
+			setUpdateStatementValues(copy, stmt);
 			stmt.setBytes(6, entity.getType().encode(expectedValue));
 
 			if ( stmt.execute() ) {
 				try (ResultSet rs = stmt.getResultSet()) {
 					if ( rs.next() ) {
-						return getRowMapper().mapRow(stmt.getResultSet(), 1);
+						LocalState result = getRowMapper().mapRow(stmt.getResultSet(), 1);
+						if ( Objects.equals(copy.getModified(), result.getModified()) ) {
+							postEntityEvent(result.getId(), entity, EntityEventType.STORED);
+						}
+						return result;
 					}
 				}
 			}
 			return entity;
 		});
+	}
+
+	@Override
+	public LocalState compareAndChange(LocalState entity) {
+		return getJdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
+			LocalState copy = copyState(entity);
+			PreparedStatement stmt = conn
+					.prepareStatement(getSqlResource(SqlResource.CompareAndChange.getResource()));
+			setUpdateStatementValues(copy, stmt);
+
+			if ( stmt.execute() ) {
+				try (ResultSet rs = stmt.getResultSet()) {
+					if ( rs.next() ) {
+						LocalState result = getRowMapper().mapRow(stmt.getResultSet(), 1);
+						if ( Objects.equals(copy.getModified(), result.getModified()) ) {
+							postEntityEvent(result.getId(), entity, EntityEventType.STORED);
+						}
+						return result;
+					}
+				}
+			}
+			return entity;
+		});
+	}
+
+	private static LocalState copyState(LocalState entity) {
+		LocalState copy;
+		if ( entity.getCreated() == null ) {
+			copy = new LocalState(entity.getId(), Instant.now().truncatedTo(ChronoUnit.MILLIS),
+					entity.getType(), null);
+			copy.setData(entity.getData());
+			copy.setModified(copy.getCreated());
+		} else {
+			copy = entity.clone();
+			copy.setModified(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+		}
+		return copy;
 	}
 
 	@Override
@@ -169,10 +216,15 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 			if ( stmt.execute() ) {
 				try (ResultSet rs = stmt.getResultSet()) {
 					if ( rs.next() ) {
-						return getRowMapper().mapRow(stmt.getResultSet(), 1);
+						LocalState result = getRowMapper().mapRow(stmt.getResultSet(), 1);
+						if ( result.differsFrom(entity) ) {
+							postEntityEvent(result.getId(), entity, EntityEventType.STORED);
+						}
+						return result;
 					}
 				}
 			}
+			postEntityEvent(TABLE_NAME, entity, EntityEventType.STORED);
 			return null;
 		});
 	}

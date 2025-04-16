@@ -137,6 +137,39 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 		return type == other.type && Arrays.equals(data, other.data);
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("LocalState{key=");
+		builder.append(getId());
+		builder.append(", type=");
+		builder.append(type);
+
+		if ( data != null ) {
+			builder.append(", data=");
+			builder.append(Arrays.toString(data));
+			builder.append(", ");
+		}
+
+		Object val = getValue();
+		if ( val != null ) {
+			builder.append(", value =");
+			builder.append(val);
+		}
+
+		if ( getCreated() != null ) {
+			builder.append(", created=");
+			builder.append(getCreated());
+		}
+		if ( modified != null ) {
+			builder.append(", modified=");
+			builder.append(modified);
+		}
+
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Get the key value.
 	 *

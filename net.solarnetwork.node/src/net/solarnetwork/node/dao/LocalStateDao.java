@@ -48,6 +48,16 @@ public interface LocalStateDao extends GenericDao<LocalState, String> {
 	LocalState compareAndSave(LocalState entity, Object expectedValue);
 
 	/**
+	 * Persist an entity if it does not exist or its value differs from the
+	 * currently persisted value.
+	 *
+	 * @param entity
+	 *        the entity to save if changed
+	 * @return the final stored object
+	 */
+	LocalState compareAndChange(LocalState entity);
+
+	/**
 	 * Persist an entity, creating if does not exist or updating if it does,
 	 * returning the previously stored value.
 	 *

@@ -24,18 +24,28 @@ package net.solarnetwork.node.dao.jdbc.locstate.test;
 
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static net.solarnetwork.dao.GenericDao.entityEventTopic;
+import static net.solarnetwork.dao.GenericDao.EntityEventType.DELETED;
+import static net.solarnetwork.dao.GenericDao.EntityEventType.STORED;
+import static org.easymock.EasyMock.capture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
@@ -44,6 +54,7 @@ import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.LocalStateType;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link JdbcLocalStateDao} class.
@@ -55,12 +66,15 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 	private TestEmbeddedDatabase dataSource;
 
+	private EventAdmin eventAdmin;
+
 	private JdbcLocalStateDao dao;
-	private LocalState last;
 
 	@Before
 	public void setup() throws IOException {
 		dao = new JdbcLocalStateDao();
+
+		eventAdmin = EasyMock.createMock(EventAdmin.class);
 
 		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
 		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
@@ -79,59 +93,87 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		dao.init();
 	}
 
+	private void replayAll() {
+		EasyMock.replay(eventAdmin);
+	}
+
+	@After
+	public void teardown() {
+		EasyMock.verify(eventAdmin);
+	}
+
 	@Test
 	public void insert() {
 		// GIVEN
 		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Boolean, true);
 
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
+
 		// WHEN
+		replayAll();
 		String pk = dao.save(entity);
 
 		// THEN
 		assertThat("PK returned", pk, is(equalTo(entity.getId())));
-		last = entity;
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
 	}
 
 	@Test
 	public void getByPk() {
 		// GIVEN
-		insert();
+		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Boolean, true);
+		String pk = dao.save(entity);
 
 		// WHEN
-		LocalState entity = dao.get(last.getId());
+		replayAll();
+		LocalState result = dao.get(pk);
 
 		// THEN
-		assertThat("ID", entity.getId(), equalTo(last.getId()));
-		assertThat("Created", entity.getCreated(), is(equalTo(last.getCreated())));
+		assertThat("ID", result.getId(), equalTo(entity.getId()));
+		assertThat("Created", result.getCreated(), is(equalTo(entity.getCreated())));
 		assertThat("Modified (populated as created)", entity.getCreated(),
-				is(equalTo(last.getCreated())));
-		assertThat("Sameness", entity.isSameAs(last), is(equalTo(true)));
-		assertThat("Value", entity.getValue(), is(equalTo(last.getValue())));
+				is(equalTo(entity.getCreated())));
+		assertThat("Sameness", result.isSameAs(entity), is(equalTo(true)));
+		assertThat("Value", result.getValue(), is(equalTo(entity.getValue())));
 	}
 
 	@Test
 	public void update() {
 		// GIVEN
-		insert();
-		final LocalState orig = dao.get(last.getId());
+		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Boolean, true);
+		String pk = dao.save(entity);
+		final LocalState orig = dao.get(pk);
+
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
-
+		replayAll();
 		final LocalState update = orig.clone();
 		update.setModified(Instant.now().truncatedTo(MINUTES).plus(5, MINUTES));
 		update.setType(LocalStateType.String);
 		update.setValue(UUID.randomUUID().toString());
 
-		String pk = dao.save(update);
+		String result = dao.save(update);
 
 		// THEN
-		assertThat("PK unchanged", pk, equalTo(orig.getId()));
+		assertThat("PK unchanged", result, equalTo(pk));
 
-		LocalState entity = dao.get(pk);
+		LocalState persisted = dao.get(pk);
 
-		assertThat("Created unchanged", entity.getCreated(), is(equalTo(last.getCreated())));
-		assertThat("Modified updated", entity.getModified(), is(equalTo(update.getModified())));
-		assertThat("Type and data updated", entity.isSameAs(update), is(equalTo(true)));
+		assertThat("Created unchanged", persisted.getCreated(), is(equalTo(orig.getCreated())));
+		assertThat("Modified updated", persisted.getModified(), is(equalTo(update.getModified())));
+		assertThat("Type and data updated", persisted.isSameAs(update), is(equalTo(true)));
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
 	}
 
 	@Test
@@ -146,6 +188,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		obj3 = dao.get(dao.save(obj3));
 
 		// WHEN
+		replayAll();
 		Collection<LocalState> results = dao.getAll(null);
 
 		// THEN
@@ -155,31 +198,49 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 	@Test
 	public void delete() {
 		// GIVEN
-		insert();
+		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Boolean, true);
+		String pk = dao.save(entity);
+
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
-		LocalState input = new LocalState(last.getId(), null);
+		replayAll();
+		LocalState input = new LocalState(pk, null);
 		dao.delete(input);
 
 		// THEN
 		Collection<LocalState> all = dao.getAll(null);
 		assertThat("Token deleted from table", all, hasSize(0));
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is DELETED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), DELETED.toString()))));
 	}
 
 	@Test
 	public void compareAndSave_insert() {
 		// GIVEN
 		final int originalValue = 1;
-		LocalState entity = dao.get(dao.save(
-				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
+		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32,
+				originalValue);
+
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
+		replayAll();
 		LocalState result = dao.compareAndSave(entity, null);
 
 		// THEN
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given", result.isSameAs(entity), is(equalTo(true)));
-		last = result;
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
 	}
 
 	@Test
@@ -189,7 +250,12 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		LocalState entity = dao.get(dao.save(
 				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
 
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
+
 		// WHEN
+		replayAll();
 		// update to 3 ONLY IF currently 2
 		entity.setValue(3);
 		LocalState result = dao.compareAndSave(entity, originalValue);
@@ -197,7 +263,10 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		// THEN
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given (updated to new)", result.isSameAs(entity), is(equalTo(true)));
-		last = result;
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
 	}
 
 	@Test
@@ -207,7 +276,10 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		LocalState entity = dao.get(dao.save(
 				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
 
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+
 		// WHEN
+		replayAll();
 		// update to 3 ONLY IF currently 2
 		entity.setValue(3);
 		LocalState result = dao.compareAndSave(entity, 2);
@@ -217,7 +289,79 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Result NOT same as given", result.isSameAs(entity), is(equalTo(false)));
 		assertThat("Result value is previous (unchanged) value)", result.getValue(),
 				is(equalTo(originalValue)));
-		last = result;
+	}
+
+	@Test
+	public void compareAndChange_insert() {
+		// GIVEN
+		final int originalValue = 1;
+		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32,
+				originalValue);
+
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.compareAndChange(entity);
+
+		// THEN
+		assertThat("Result returned", result, is(equalTo(entity)));
+		assertThat("Result same as given", result.isSameAs(entity), is(equalTo(true)));
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+	}
+
+	@Test
+	public void compareAndChange_changed() {
+		// GIVEN
+		final int originalValue = 1;
+		LocalState entity = dao.get(dao.save(
+				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
+
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		// update to 3
+		LocalState update = entity.clone();
+		update.setValue(3);
+		LocalState result = dao.compareAndChange(update);
+
+		// THEN
+		assertThat("Result returned", result, is(equalTo(update)));
+		assertThat("Result same as given (updated to new)", result.isSameAs(update), is(equalTo(true)));
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
+	}
+
+	@Test
+	public void compareAndChange_unchanged() {
+		// GIVEN
+		final int originalValue = 1;
+		LocalState entity = dao.get(dao.save(
+				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
+
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+
+		// WHEN
+		replayAll();
+		// update to 1 (same as previous)
+		LocalState update = entity.clone();
+		LocalState result = dao.compareAndChange(update);
+
+		// THEN
+		assertThat("Result returned", result, is(equalTo(entity)));
+		assertThat("Result unchanged", result.isSameAs(entity), is(equalTo(true)));
+		assertThat("Result value is previous (unchanged) value)", result.getValue(),
+				is(equalTo(originalValue)));
 	}
 
 	@Test
@@ -225,11 +369,20 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		// GIVEN
 		LocalState entity = new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, 1);
 
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
+
 		// WHEN
+		replayAll();
 		LocalState result = dao.getAndSave(entity);
 
 		// THEN
 		assertThat("Result NOT returned", result, is(nullValue()));
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
 	}
 
 	@Test
@@ -239,7 +392,12 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		LocalState entity = dao.get(dao.save(
 				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
 
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		Capture<Event> eventCaptor = EasyMock.newCapture();
+		eventAdmin.postEvent(capture(eventCaptor));
+
 		// WHEN
+		replayAll();
 		entity.setValue(2);
 		LocalState result = dao.getAndSave(entity);
 
@@ -248,7 +406,10 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		assertThat("Result NOT same as given (returned old)", result.isSameAs(entity),
 				is(equalTo(false)));
 		assertThat("Result value is previous value", result.getValue(), is(equalTo(originalValue)));
-		last = result;
+
+		assertThat("Event generated", eventCaptor.getValue(), is(notNullValue()));
+		assertThat("Event is STORED", eventCaptor.getValue().getTopic(),
+				is(equalTo(entityEventTopic(LocalState.class.getSimpleName(), STORED.toString()))));
 	}
 
 	@Test
@@ -258,14 +419,16 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		LocalState entity = dao.get(dao.save(
 				new LocalState(UUID.randomUUID().toString(), LocalStateType.Int32, originalValue)));
 
+		dao.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+
 		// WHEN
+		replayAll();
 		LocalState result = dao.getAndSave(entity);
 
 		// THEN
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given (no change)", result.isSameAs(entity), is(equalTo(true)));
 		assertThat("Result value is previous value", result.getValue(), is(equalTo(originalValue)));
-		last = result;
 	}
 
 }
