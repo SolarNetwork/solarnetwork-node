@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.domain;
 
+import java.util.Objects;
+
 /**
  * Operations to work with {@link LocalState} entities.
  *
@@ -199,5 +201,24 @@ public interface LocalStateOperations {
 	 * @return the previous state value
 	 */
 	Object getAndSaveLocalState(String key, LocalStateType type, Object value);
+
+	/**
+	 * Save a local state value, returning {@code true} if {@code value} is
+	 * different from the state's previous value.
+	 *
+	 * @param key
+	 *        the key of the state to update
+	 * @param type
+	 *        the type to use
+	 * @param value
+	 *        the value to set
+	 * @return {@code true} if {@code value} is <b>not</b> the same as the
+	 *         previously persisted state value for key {@code key}, or
+	 *         {@code false} if {@code value} is unchanged from the previous
+	 *         value
+	 */
+	default boolean changeLocalState(String key, LocalStateType type, Object value) {
+		return !Objects.equals(value, getAndSaveLocalState(key, type, value));
+	}
 
 }
