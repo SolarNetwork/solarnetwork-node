@@ -102,7 +102,7 @@ public enum LocalStateType {
 	 *        the value to encode
 	 * @return the encoded value, or {@code null} if {@code value} is
 	 *         {@code null} or cannot be encoded for any reason
-	 * @see #decode(Object)
+	 * @see #decode(byte[])
 	 */
 	public byte[] encode(Object value) {
 		if ( value == null ) {

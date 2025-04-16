@@ -196,9 +196,6 @@ public interface LocalStateOperations {
 	 *        the type to use
 	 * @param value
 	 *        the value to set
-	 * @param expectedValue
-	 *        the value the state must NOT exist as in order to update it to
-	 *        {@code value}
 	 * @return the previous state value
 	 */
 	Object getAndSaveLocalState(String key, LocalStateType type, Object value);

@@ -173,6 +173,15 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 		this.data = encodeValue(type, value);
 	}
 
+	/**
+	 * Decode a data value of a given type.
+	 *
+	 * @param type
+	 *        the type to decode the value as
+	 * @param data
+	 *        the value bytes to decode
+	 * @return the decoded value
+	 */
 	public static Object decodeValue(LocalStateType type, byte[] data) {
 		if ( type == null || data == null ) {
 			return null;
@@ -180,6 +189,15 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 		return type.decode(data);
 	}
 
+	/**
+	 * Encode a value of a given type.
+	 *
+	 * @param type
+	 *        the type to encode the value as
+	 * @param value
+	 *        the value to encode
+	 * @return the encoded data value
+	 */
 	public static byte[] encodeValue(LocalStateType type, Object value) {
 		if ( type == null || value == null ) {
 			return null;
