@@ -206,6 +206,46 @@ public interface LocalStateOperations {
 	 * Save a local state value, returning {@code true} if {@code value} is
 	 * different from the state's previous value.
 	 *
+	 * <p>
+	 * The type will be detected based on the given value.
+	 * </p>
+	 *
+	 * @param key
+	 *        the key of the state to update
+	 * @param value
+	 *        the value to set
+	 * @return {@code true} if {@code value} is <b>not</b> the same as the
+	 *         previously persisted state value for key {@code key}, or
+	 *         {@code false} if {@code value} is unchanged from the previous
+	 *         value
+	 */
+	default boolean changeLocalState(String key, Object value) {
+		return !Objects.equals(value, getAndSaveLocalState(key, value));
+	}
+
+	/**
+	 * Save a local state value, returning {@code true} if {@code value} is
+	 * different from the state's previous value.
+	 *
+	 * @param key
+	 *        the key of the state to update
+	 * @param type
+	 *        the {@link LocalStateType} key to use
+	 * @param value
+	 *        the value to set
+	 * @return {@code true} if {@code value} is <b>not</b> the same as the
+	 *         previously persisted state value for key {@code key}, or
+	 *         {@code false} if {@code value} is unchanged from the previous
+	 *         value
+	 */
+	default boolean changeLocalState(String key, String type, Object value) {
+		return !Objects.equals(value, getAndSaveLocalState(key, type, value));
+	}
+
+	/**
+	 * Save a local state value, returning {@code true} if {@code value} is
+	 * different from the state's previous value.
+	 *
 	 * @param key
 	 *        the key of the state to update
 	 * @param type
