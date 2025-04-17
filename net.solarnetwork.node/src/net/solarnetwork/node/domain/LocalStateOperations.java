@@ -34,6 +34,17 @@ import java.util.Objects;
 public interface LocalStateOperations {
 
 	/**
+	 * Test if a local state exists.
+	 *
+	 * @param key
+	 *        the key of the state to test
+	 * @return {@code true} if the local state exists
+	 */
+	default boolean hasLocalState(String key) {
+		return localState(key, null) != null;
+	}
+
+	/**
 	 * Get a local state value.
 	 *
 	 * @param key
