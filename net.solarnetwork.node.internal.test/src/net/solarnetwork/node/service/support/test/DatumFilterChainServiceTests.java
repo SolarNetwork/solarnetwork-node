@@ -22,13 +22,18 @@
 
 package net.solarnetwork.node.service.support.test;
 
-import static java.util.Collections.emptyMap;
-import static org.easymock.EasyMock.eq;
+import static java.lang.Boolean.TRUE;
+import static java.util.Collections.singletonMap;
+import static net.solarnetwork.node.service.support.DatumFilterChainService.EXECUTED_FILTER_CHAINS_PARAM;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.same;
 import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -37,8 +42,13 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
@@ -77,7 +87,8 @@ public class DatumFilterChainServiceTests {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
 
 		xforms = new ArrayList<>();
-		chain = new DatumFilterChainService(TEST_UID, xforms);
+		chain = new DatumFilterChainService(UUID.randomUUID().toString(), xforms);
+		chain.setUid(chain.getSettingUid());
 		chain.setOpModesService(opModesService);
 	}
 
@@ -277,7 +288,9 @@ public class DatumFilterChainServiceTests {
 		SimpleDatum outDatum = d.copyWithId(
 				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
 		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
-		expect(xform.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum);
+
+		final Capture<Map<String, Object>> parametersCaptor = Capture.newInstance();
+		expect(xform.filter(same(d), same(s), capture(parametersCaptor))).andReturn(outDatum);
 
 		// WHEN
 		replayAll();
@@ -285,6 +298,9 @@ public class DatumFilterChainServiceTests {
 		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
+		assertThat("Parameters provided with execution map", parametersCaptor.getValue(),
+				hasEntry(EXECUTED_FILTER_CHAINS_PARAM, singletonMap(chain, TRUE)));
+
 		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
 		NodeDatum out = (NodeDatum) result;
 		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
@@ -311,16 +327,18 @@ public class DatumFilterChainServiceTests {
 		final SimpleDatum d = createTestDatum();
 		final DatumSamples s = new DatumSamples(d.getSamples());
 
+		final Capture<Map<String, Object>> parametersCaptor = EasyMock.newCapture(CaptureType.ALL);
+
 		// filter returns NodeDatum instance
 		SimpleDatum outDatum = d.copyWithId(
 				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
 		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
-		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum);
+		expect(xform1.filter(same(d), same(s), capture(parametersCaptor))).andReturn(outDatum);
 
 		// second filter does not return NodeDatum instance
 		DatumSamples out2 = new DatumSamples(outDatum.getSamples());
 		out2.putStatusSampleValue("bim", "bam");
-		expect(xform2.filter(same(outDatum), same(outDatum), eq(emptyMap()))).andReturn(out2);
+		expect(xform2.filter(same(outDatum), same(outDatum), capture(parametersCaptor))).andReturn(out2);
 
 		// WHEN
 		replayAll();
@@ -328,6 +346,12 @@ public class DatumFilterChainServiceTests {
 		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
+		assertThat("Parameters passed to each xform", parametersCaptor.getValues(), hasSize(2));
+		for ( Map<String, Object> params : parametersCaptor.getValues() ) {
+			assertThat("Parameters provided with execution map", params,
+					hasEntry(EXECUTED_FILTER_CHAINS_PARAM, singletonMap(chain, TRUE)));
+		}
+
 		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
 		NodeDatum out = (NodeDatum) result;
 		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
@@ -353,17 +377,20 @@ public class DatumFilterChainServiceTests {
 		final SimpleDatum d = createTestDatum();
 		final DatumSamples s = new DatumSamples(d.getSamples());
 
+		final Capture<Map<String, Object>> parametersCaptor = EasyMock.newCapture(CaptureType.ALL);
+
 		// filter returns NodeDatum instance
 		SimpleDatum outDatum = d.copyWithId(
 				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
 		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
-		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum);
+		expect(xform1.filter(same(d), same(s), capture(parametersCaptor))).andReturn(outDatum);
 
 		// second filter also returns NodeDatum instance
 		SimpleDatum outDatum2 = d.copyWithId(DatumId.nodeId(d.getObjectId(), d.getSourceId(),
 				outDatum.getTimestamp().plusSeconds(1)));
 		outDatum2.putSampleValue(DatumSamplesType.Status, "bim", "bam");
-		expect(xform2.filter(same(outDatum), same(outDatum), eq(emptyMap()))).andReturn(outDatum2);
+		expect(xform2.filter(same(outDatum), same(outDatum), capture(parametersCaptor)))
+				.andReturn(outDatum2);
 
 		// WHEN
 		replayAll();
@@ -371,6 +398,12 @@ public class DatumFilterChainServiceTests {
 		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
+		assertThat("Parameters passed to each xform", parametersCaptor.getValues(), hasSize(2));
+		for ( Map<String, Object> params : parametersCaptor.getValues() ) {
+			assertThat("Parameters provided with execution map", params,
+					hasEntry(EXECUTED_FILTER_CHAINS_PARAM, singletonMap(chain, TRUE)));
+		}
+
 		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
 		NodeDatum out = (NodeDatum) result;
 		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
@@ -398,15 +431,17 @@ public class DatumFilterChainServiceTests {
 		final SimpleDatum d = createTestDatum();
 		final DatumSamples s = new DatumSamples(d.getSamples());
 
+		final Capture<Map<String, Object>> parametersCaptor = EasyMock.newCapture(CaptureType.ALL);
+
 		// filter throws exception
 		final RuntimeException ex = new RuntimeException("Boom!");
-		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andThrow(ex);
+		expect(xform1.filter(same(d), same(s), capture(parametersCaptor))).andThrow(ex);
 
 		// but configured to continue, so second filter processes
 		SimpleDatum outDatum2 = d.copyWithId(
 				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
 		outDatum2.putSampleValue(DatumSamplesType.Status, "bim", "bam");
-		expect(xform2.filter(same(d), same(s), eq(emptyMap()))).andReturn(outDatum2);
+		expect(xform2.filter(same(d), same(s), capture(parametersCaptor))).andReturn(outDatum2);
 
 		// WHEN
 		replayAll();
@@ -414,6 +449,12 @@ public class DatumFilterChainServiceTests {
 		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
+		assertThat("Parameters passed to each xform", parametersCaptor.getValues(), hasSize(2));
+		for ( Map<String, Object> params : parametersCaptor.getValues() ) {
+			assertThat("Parameters provided with execution map", params,
+					hasEntry(EXECUTED_FILTER_CHAINS_PARAM, singletonMap(chain, TRUE)));
+		}
+
 		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
 		NodeDatum out = (NodeDatum) result;
 		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum2))));
@@ -444,7 +485,7 @@ public class DatumFilterChainServiceTests {
 
 		// filter throws exception
 		final RuntimeException ex = new RuntimeException("Boom!");
-		expect(xform1.filter(same(d), same(s), eq(emptyMap()))).andThrow(ex);
+		expect(xform1.filter(same(d), same(s), anyObject())).andThrow(ex);
 
 		// WHEN
 		replayAll();
@@ -457,6 +498,93 @@ public class DatumFilterChainServiceTests {
 		}
 
 		verify(xform1, xform2);
+	}
+
+	@Test
+	public void chain_cycle() {
+		// GIVEN
+		DatumFilterService xform = EasyMock.createMock(DatumFilterService.class);
+		expect(xform.getUid()).andReturn(TEST_UID).anyTimes();
+
+		xforms.add(chain); // adding own chain to chain: cycle!
+		xforms.add(xform);
+		chain.setTransformUids(new String[] { chain.getUid(), TEST_UID });
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter returns NodeDatum instance
+		SimpleDatum outDatum = d.copyWithId(
+				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
+		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
+
+		final Capture<Map<String, Object>> parametersCaptor = Capture.newInstance();
+		expect(xform.filter(same(d), same(s), capture(parametersCaptor))).andReturn(outDatum);
+
+		// WHEN
+		replayAll();
+		replay(xform);
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		// THEN
+		assertThat("Parameters provided with execution map", parametersCaptor.getValue(),
+				hasEntry(EXECUTED_FILTER_CHAINS_PARAM, singletonMap(chain, TRUE)));
+
+		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
+		NodeDatum out = (NodeDatum) result;
+		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
+		assertThat("Datum ID from filter output", out, is(equalTo(outDatum)));
+		assertThat("Datum samples from filter output", out.asSampleOperations(),
+				is(equalTo(outDatum.getSamples())));
+
+		verify(xform);
+	}
+
+	@Test
+	public void chain_nested_cycle() {
+		// GIVEN
+		DatumFilterService xform = EasyMock.createMock(DatumFilterService.class);
+		expect(xform.getUid()).andReturn(TEST_UID).anyTimes();
+
+		DatumFilterChainService chain2 = new DatumFilterChainService(UUID.randomUUID().toString(),
+				Arrays.asList(chain, xform));
+		chain2.setUid(chain2.getSettingUid());
+		chain2.setTransformUids(new String[] { chain.getUid(), TEST_UID });
+
+		xforms.add(chain2); // adding own chain2 -> chain: cycle!
+		chain.setTransformUids(new String[] { chain2.getUid() });
+
+		final SimpleDatum d = createTestDatum();
+		final DatumSamples s = new DatumSamples(d.getSamples());
+
+		// filter returns NodeDatum instance
+		SimpleDatum outDatum = d.copyWithId(
+				DatumId.nodeId(d.getObjectId(), d.getSourceId(), d.getTimestamp().plusSeconds(1)));
+		outDatum.putSampleValue(DatumSamplesType.Status, "foo", "bar");
+
+		final Capture<Map<String, Object>> parametersCaptor = Capture.newInstance();
+		expect(xform.filter(same(d), same(s), capture(parametersCaptor))).andReturn(outDatum);
+
+		// WHEN
+		replayAll();
+		replay(xform);
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		// THEN
+		Map<DatumFilterChainService, Boolean> expectedExecMap = new IdentityHashMap<>(2);
+		expectedExecMap.put(chain, TRUE);
+		expectedExecMap.put(chain2, TRUE);
+		assertThat("Parameters provided with execution map", parametersCaptor.getValue(),
+				hasEntry(EXECUTED_FILTER_CHAINS_PARAM, expectedExecMap));
+
+		assertThat("NodeDatum returned", result, is(instanceOf(NodeDatum.class)));
+		NodeDatum out = (NodeDatum) result;
+		assertThat("Datum is not same instance as filter output", out, is(not(sameInstance(outDatum))));
+		assertThat("Datum ID from filter output", out, is(equalTo(outDatum)));
+		assertThat("Datum samples from filter output", out.asSampleOperations(),
+				is(equalTo(outDatum.getSamples())));
+
+		verify(xform);
 	}
 
 }
