@@ -61,6 +61,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
 public class DatumFilterChainService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
+	/** Parameter name for internally tracking filter chain invocations. */
 	public static final String EXECUTED_FILTER_CHAINS_PARAM = "__FilterChainInstances";
 
 	private final String settingUid;
