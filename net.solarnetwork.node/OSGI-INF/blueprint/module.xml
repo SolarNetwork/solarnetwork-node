@@ -77,6 +77,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="localStateDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.LocalStateDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedJob" availability="optional">
 		<reference-listener bind-method="registerJob" unbind-method="unregisterJob" ref="managedJobsListener"/>
 	</reference-list>
@@ -702,6 +708,7 @@
 					<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
 				</bean>			
 			</property>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</service>
 	
@@ -734,6 +741,15 @@
 					<property name="sticky" value="true"/>
 				</bean>
 			</argument>
+		</bean>
+	</service>
+	
+	<!-- 
+		Local State Service
+	 -->
+	<service interface="net.solarnetwork.node.service.LocalStateService">
+		<bean class="net.solarnetwork.node.runtime.DefaultLocalStateService">
+			<argument ref="localStateDao"/>
 		</bean>
 	</service>
 	

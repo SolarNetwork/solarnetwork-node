@@ -57,7 +57,7 @@ import net.solarnetwork.service.support.ExpressionServiceExpression;
  * </p>
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class SimpleDatumExpressionService extends BaseIdentifiable implements InstructionHandler {
 
@@ -133,6 +133,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 		ExpressionRoot root = new ExpressionRoot(d, null, null, datumService, opModesService,
 				service(getMetadataService()), service(getLocationService()));
 		root.setTariffScheduleProviders(tariffScheduleProviders);
+		root.setLocalStateDao(getLocalStateDao());
 
 		ExpressionConfig config = new ExpressionConfig("result", DatumSamplesType.Status, expression,
 				expressionService.getUid());

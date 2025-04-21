@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -54,11 +55,14 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  *
  * @author matt
- * @version 1.7
+ * @version 1.8
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
+
+	/** Parameter name for internally tracking filter chain invocations. */
+	public static final String EXECUTED_FILTER_CHAINS_PARAM = "__FilterChainInstances";
 
 	private final String settingUid;
 	private final List<DatumFilterService> transformServices;
@@ -229,15 +233,24 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		Map<String, Object> p = parameters;
+		final Map<String, Object> p = (parameters != null ? parameters : new HashMap<>(8));
+
+		// check for chain cycles (chain invoking own chain)
+		@SuppressWarnings("unchecked")
+		Map<DatumFilterChainService, Boolean> executedChains = ((Map<DatumFilterChainService, Boolean>) p
+				.computeIfAbsent(EXECUTED_FILTER_CHAINS_PARAM,
+						k -> new IdentityHashMap<DatumFilterChainService, Boolean>(2)));
+		if ( executedChains.putIfAbsent(this, Boolean.TRUE) != null ) {
+			log.warn("Cyclic invocation of DatumFilterChain [{}] with datum {}: aborting chain.",
+					getUid(), datum);
+			return samples;
+		}
+
 		DatumSamplesOperations out = samples;
 		Datum outDatum = datum;
 		if ( staticService != null ) {
-			if ( p == null ) {
-				p = new HashMap<>(8);
-			}
 			try {
-				out = staticService.filter(outDatum, out, parameters);
+				out = staticService.filter(outDatum, out, p);
 				if ( out == null ) {
 					incrementStats(start, samples, out);
 					return null;
@@ -257,7 +270,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 			if ( transformServices != null ) {
 				for ( DatumFilterService s : transformServices ) {
 					try {
-						out = s.filter(outDatum, out, parameters);
+						out = s.filter(outDatum, out, p);
 						if ( out == null ) {
 							incrementStats(start, samples, out);
 							return null;
@@ -286,9 +299,6 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 				}
 				DatumFilterService s = findService(uid);
 				if ( s != null ) {
-					if ( p == null ) {
-						p = new HashMap<>(8);
-					}
 					try {
 						out = s.filter(outDatum, out, p);
 						if ( out == null ) {

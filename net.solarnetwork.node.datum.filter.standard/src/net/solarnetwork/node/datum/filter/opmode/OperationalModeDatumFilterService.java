@@ -56,7 +56,7 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 2.0
  */
 public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
@@ -90,6 +90,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()),
 				getOpModesService(), service(getMetadataService()), service(getLocationService()));
 		root.setTariffScheduleProviders(getTariffScheduleProviders());
+		root.setLocalStateDao(getLocalStateDao());
 		DatumSamplesOperations s = samplesForEvaluation(samples, configs);
 		if ( s instanceof MutableDatumSamplesOperations ) {
 			evaluateExpressions((MutableDatumSamplesOperations) s, configs, root, services,

@@ -41,6 +41,8 @@
 	
 	<osgi:reference id="securityTokenService" interface="net.solarnetwork.node.service.SecurityTokenService"/>	
 
+	<osgi:reference id="localStateService" interface="net.solarnetwork.node.service.LocalStateService"/>	
+
 	<osgi:reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>	
 	
 	<osgi:reference id="setupService" interface="net.solarnetwork.node.setup.SetupService" availability="optional"/>

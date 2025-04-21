@@ -39,6 +39,7 @@
 					<value>#{T(net.solarnetwork.node.setup.SetupService).TOPIC_NETWORK_ASSOCIATION_ACCEPTED}</value>
 					<value>#{T(net.solarnetwork.node.dao.SettingDao).EVENT_TOPIC_SETTING_CHANGED}</value>
 					<value>#{T(net.solarnetwork.node.Constants).EVENT_TOPIC_CONFIGURATION_CHANGED}</value>
+					<value>net/solarnetwork/dao/*</value>
 				</array>
 			</entry>
 		</service-properties>

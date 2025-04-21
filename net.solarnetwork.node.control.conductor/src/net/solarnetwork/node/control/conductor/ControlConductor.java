@@ -1,21 +1,21 @@
 /* ==================================================================
  * ControlConductor.java - 4/04/2023 6:29:17 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -58,9 +58,9 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Control that orchestrates a set of control tasks.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ControlConductor extends BaseIdentifiable
 		implements SettingSpecifierProvider, InstructionHandler {
@@ -70,7 +70,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * The instruction parameter for the date to orchestrate the controls at.
-	 * 
+	 *
 	 * <p>
 	 * The format of this parameter is the same as
 	 * {@link Instruction#PARAM_EXECUTION_DATE}.
@@ -86,7 +86,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param reactorService
 	 *        the reactor service
 	 * @param instructionService
@@ -231,6 +231,7 @@ public class ControlConductor extends BaseIdentifiable
 			if ( expr != null ) {
 				ExpressionRoot root = new ExpressionRoot(null, null, instrParams, service(datumService),
 						service(opModesService));
+				root.setLocalStateDao(getLocalStateDao());
 				controlValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
 						null, Object.class);
 			}
@@ -309,7 +310,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Get the task configurations.
-	 * 
+	 *
 	 * @return the configurations
 	 */
 	public ControlTaskConfig[] getTaskConfigs() {
@@ -318,7 +319,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Set the task configurations.
-	 * 
+	 *
 	 * @param taskConfigs
 	 *        the configurations to set
 	 */
@@ -328,7 +329,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Get the number of configured {@code taskConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code taskConfigs} elements
 	 */
 	public int getTaskConfigsCount() {
@@ -338,12 +339,12 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Adjust the number of configured {@code taskConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ControlTaskConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code taskConfigs} elements.
 	 */
@@ -354,7 +355,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Get the datum service.
-	 * 
+	 *
 	 * @return the datum service
 	 */
 	public OptionalService<DatumService> getDatumService() {
@@ -363,7 +364,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Set the datum service.
-	 * 
+	 *
 	 * @param datumService
 	 *        the datum service
 	 */
@@ -373,7 +374,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Get the operational modes service.
-	 * 
+	 *
 	 * @return the opModesService
 	 */
 	public OptionalService<OperationalModesService> getOpModesService() {
@@ -382,7 +383,7 @@ public class ControlConductor extends BaseIdentifiable
 
 	/**
 	 * Set the operational modes service.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the opModesService to set
 	 */

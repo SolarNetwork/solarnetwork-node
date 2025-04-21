@@ -153,7 +153,7 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 					});
 		}
 
-		return new BasicFilterResults<>(results, totalResultCount,
+		return new BasicFilterResults<Metric, MetricKey>(results, totalResultCount,
 				(filter.getOffset() != null ? filter.getOffset() : 0), results.size());
 	}
 

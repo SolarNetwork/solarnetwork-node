@@ -1,21 +1,21 @@
 /* ==================================================================
  * DatumStreamReactor.java - 3/02/2022 9:19:38 AM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -67,9 +67,9 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Service to monitor a datum stream and issue an instruction to a control with
  * a value resulting from evaluating an expression.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DatumStreamReactor extends BaseIdentifiable
 		implements SettingSpecifierProvider, EventHandler {
@@ -87,6 +87,13 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	private Instruction lastInstruction;
 	private InstructionStatus lastInstructionResult;
+
+	/**
+	 * Constructor.
+	 */
+	public DatumStreamReactor() {
+		super();
+	}
 
 	@Override
 	public void handleEvent(Event event) {
@@ -199,6 +206,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 		final Iterable<ExpressionService> services = services(getExpressionServices());
 		ExpressionRoot root = ExpressionRoot.of(datum, service(datumService), service(opModesService),
 				config.getMinValue(), config.getMaxValue(), parameters);
+		root.setLocalStateDao(getLocalStateDao());
 		final ExpressionServiceExpression expr;
 		try {
 			expr = config.getExpression(services);
@@ -314,7 +322,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set an executor to use for internal tasks.
-	 * 
+	 *
 	 * @param executor
 	 *        the executor
 	 */
@@ -324,7 +332,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Get the source ID regular expression.
-	 * 
+	 *
 	 * @return the source ID expression, or {@literal null} for including all
 	 *         source IDs
 	 */
@@ -334,7 +342,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set the source ID regular expression.
-	 * 
+	 *
 	 * @param sourceIdRegex
 	 *        a pattern to match against source IDs; if defined then this datum
 	 *        will only be generated for controls with matching source ID
@@ -346,7 +354,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Get the source ID regular expression as a string.
-	 * 
+	 *
 	 * @return the source ID expression string, or {@literal null} for including
 	 *         all source IDs
 	 */
@@ -357,13 +365,13 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set the source ID regular expression as a string.
-	 * 
+	 *
 	 * <p>
 	 * Errors compiling {@code sourceIdRegex} into a {@link Pattern} will be
 	 * silently ignored, causing the regular expression to be set to
 	 * {@literal null}.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdRegex
 	 *        a pattern to match against source IDs; if defined then this datum
 	 *        will only be generated for controls with matching source ID
@@ -384,7 +392,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Get the control property configuration.
-	 * 
+	 *
 	 * @return the configuration, never {@literal null}
 	 */
 	public ControlPropertyConfig getConfig() {
@@ -393,7 +401,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set the instruction service.
-	 * 
+	 *
 	 * @param instructionExecutionService
 	 *        the service to set
 	 */
@@ -404,7 +412,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set the datum service.
-	 * 
+	 *
 	 * @param datumService
 	 *        the service to set
 	 */
@@ -414,7 +422,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Get the instruction topic.
-	 * 
+	 *
 	 * @return the instruction topic, never {@literal null}
 	 */
 	public String getInstructionTopic() {
@@ -423,7 +431,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set the instruction topic.
-	 * 
+	 *
 	 * @param instructionTopic
 	 *        the instruction topic to set; if {@literal null} then
 	 *        {@link #DEFAULT_INSTRUCTION_TOPIC} will be set instead
@@ -435,7 +443,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Get the operational modes service.
-	 * 
+	 *
 	 * @return the service
 	 */
 	public OptionalService<OperationalModesService> getOpModesService() {
@@ -444,7 +452,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 	/**
 	 * Set the operational modes service.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the service to set
 	 */

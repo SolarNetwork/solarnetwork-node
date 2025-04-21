@@ -63,6 +63,12 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
 	</bean>
 
+	<bean id="localStateDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.LocalStateDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Services -->
 
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
@@ -128,6 +134,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+			<property name="localStateDao" ref="localStateDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 
