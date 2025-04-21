@@ -88,6 +88,13 @@ public class DatumStreamReactor extends BaseIdentifiable
 	private Instruction lastInstruction;
 	private InstructionStatus lastInstructionResult;
 
+	/**
+	 * Constructor.
+	 */
+	public DatumStreamReactor() {
+		super();
+	}
+
 	@Override
 	public void handleEvent(Event event) {
 		// validate configuration and extract datum property for input load
