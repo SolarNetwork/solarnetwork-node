@@ -30,6 +30,7 @@ import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +71,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 2.8
+ * @version 2.9
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot
@@ -367,7 +368,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
-	 * Test if a "latest" datum is available for a given source ID.
+	 * Test if any "latest" datum are available for a given source ID pattern.
 	 *
 	 * <p>
 	 * This can be used to test if {@link #latestMatching(String)} will return a
@@ -384,21 +385,63 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
-	 * Test if a "latest" unfiltered datum is available for a given source ID.
+	 * Test if any "latest" datum is available for a set of source ID patterns.
 	 *
 	 * <p>
-	 * This can be used to test if {@link #latestMatching(String)} will return a
-	 * non-null value.
+	 * This can be used to test if {@link #latestMatching(Collection<String>)}
+	 * will return a non-null value.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        a collection of Ant-style source ID patterns of the datum to look
+	 *        for
+	 * @return {@literal true} if {@link #latestMatching(Collection<String>)}
+	 *         for the given {@code sourceIdPattern} will return a non-null
+	 *         value
+	 * @since 2.9
+	 */
+	public boolean hasLatestMatching(Collection<String> sourceIdPatterns) {
+		return latestMatching(sourceIdPatterns) != null;
+	}
+
+	/**
+	 * Test if any "latest" unfiltered datum are available for a given source ID
+	 * pattern.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #unfilteredLatestMatching(String)}
+	 * will return a non-null value.
 	 * </p>
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return {@literal true} if {@link #latestMatching(String)} for the given
-	 *         {@code sourceIdPattern} will return a non-null value
+	 * @return {@literal true} if {@link #unfilteredLatestMatching(String)} for
+	 *         the given {@code sourceIdPattern} will return a non-null value
 	 * @since 2.6
 	 */
 	public boolean hasUnfilteredLatestMatching(String sourceIdPattern) {
 		return unfilteredLatestMatching(sourceIdPattern) != null;
+	}
+
+	/**
+	 * Test if any "latest" unfiltered datum are available for a set of source
+	 * ID patterns.
+	 *
+	 * <p>
+	 * This can be used to test if {@link #unfilteredLatestMatching(String)}
+	 * will return a non-null value.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the collection of Ant-style source ID patterns of the datum to
+	 *        look for
+	 * @return {@literal true} if
+	 *         {@link #unfilteredLatestMatching(Collection<String>)} for the
+	 *         given {@code sourceIdPattern} will return a non-null value
+	 * @since 2.9
+	 */
+	public boolean hasUnfilteredLatestMatching(Collection<String> sourceIdPatterns) {
+		return unfilteredLatestMatching(sourceIdPatterns) != null;
 	}
 
 	/**
@@ -419,6 +462,24 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Get the latest available datum matching a set of source ID patterns, as
+	 * {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.9
+	 */
+	public Collection<DatumExpressionRoot> latestMatching(Collection<String> sourceIdPatterns) {
+		return latestMatching(datumService, sourceIdPatterns);
+	}
+
+	/**
 	 * Get the latest available unfiltered datum matching a given source ID
 	 * pattern, as {@link DatumExpressionRoot} instances.
 	 *
@@ -436,12 +497,40 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		return latestMatching(datumService != null ? datumService.unfiltered() : null, sourceIdPattern);
 	}
 
+	/**
+	 * Get the latest available unfiltered datum matching a set of source ID
+	 * patterns, as {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.9
+	 */
+	public Collection<DatumExpressionRoot> unfilteredLatestMatching(
+			Collection<String> sourceIdPatterns) {
+		return latestMatching(datumService != null ? datumService.unfiltered() : null, sourceIdPatterns);
+	}
+
 	private Collection<DatumExpressionRoot> latestMatching(DatumHistorian history,
 			String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
-		Set<String> pats = singleton(sourceIdPattern);
+		return latestMatching(history, singleton(sourceIdPattern));
+	}
+
+	private Collection<DatumExpressionRoot> latestMatching(DatumHistorian history,
+			Collection<String> sourceIdPatterns) {
+		if ( history == null || sourceIdPatterns == null ) {
+			return emptyList();
+		}
+		Set<String> pats = (sourceIdPatterns instanceof Set<?> ? (Set<String>) sourceIdPatterns
+				: new LinkedHashSet<>(sourceIdPatterns));
 		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return emptyList();
@@ -454,8 +543,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
-	 * Test if a "latest" datum is available for a given source ID, excluding
-	 * the {@link #getSourceId()} source ID.
+	 * Test if any "latest" datum are available for a source ID pattern,
+	 * excluding the {@link #getSourceId()} source ID.
 	 *
 	 * <p>
 	 * This can be used to test if {@link #latestOthersMatching(String)} will
@@ -464,16 +553,37 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return {@literal true} if {@link #latestMatching(String)} for the given
-	 *         {@code sourceIdPattern} will return a non-null value
+	 * @return {@literal true} if {@link #latestOthersMatching(String)} for the
+	 *         given {@code sourceIdPattern} will return a non-null value
 	 */
 	public boolean hasLatestOthersMatching(String sourceIdPattern) {
 		return latestOthersMatching(sourceIdPattern) != null;
 	}
 
 	/**
-	 * Test if a "latest" unfiltered datum is available for a given source ID,
+	 * Test if any "latest" datum are available for a set of source ID patterns,
 	 * excluding the {@link #getSourceId()} source ID.
+	 *
+	 * <p>
+	 * This can be used to test if
+	 * {@link #latestOthersMatching(Collection<String>)} will return a non-null
+	 * value.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return {@literal true} if
+	 *         {@link #latestOthersMatching(Collection<String>)} for the given
+	 *         {@code sourceIdPattern} will return a non-null value
+	 * @since 2.9
+	 */
+	public boolean hasLatestOthersMatching(Collection<String> sourceIdPatterns) {
+		return latestOthersMatching(sourceIdPatterns) != null;
+	}
+
+	/**
+	 * Test if any "latest" unfiltered datum are available for a given source ID
+	 * pattern, excluding the {@link #getSourceId()} source ID.
 	 *
 	 * <p>
 	 * This can be used to test if
@@ -483,12 +593,34 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return {@literal true} if {@link #latestMatching(String)} for the given
+	 * @return {@literal true} if
+	 *         {@link #unfilteredLatestOthersMatching(String)} for the given
 	 *         {@code sourceIdPattern} will return a non-null value
 	 * @since 2.6
 	 */
 	public boolean hasUnfilteredLatestOthersMatching(String sourceIdPattern) {
 		return unfilteredLatestOthersMatching(sourceIdPattern) != null;
+	}
+
+	/**
+	 * Test if any "latest" unfiltered datum are available for a set of source
+	 * ID patterns, excluding the {@link #getSourceId()} source ID.
+	 *
+	 * <p>
+	 * This can be used to test if
+	 * {@link #unfilteredLatestOthersMatching(Collection<String>)} will return a
+	 * non-null value.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return {@literal true} if
+	 *         {@link #unfilteredLatestOthersMatching(Collection<String>)} for
+	 *         the given {@code sourceIdPatterns} will return a non-null value
+	 * @since 2.9
+	 */
+	public boolean hasUnfilteredLatestOthersMatching(Collection<String> sourceIdPatterns) {
+		return unfilteredLatestOthersMatching(sourceIdPatterns) != null;
 	}
 
 	/**
@@ -507,6 +639,25 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 */
 	public Collection<DatumExpressionRoot> latestOthersMatching(String sourceIdPattern) {
 		return latestOthersMatching(datumService, sourceIdPattern);
+	}
+
+	/**
+	 * Get the latest available datum matching a set of source ID patterns,
+	 * excluding the {@link #getSourceId()} source ID, as
+	 * {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.9
+	 */
+	public Collection<DatumExpressionRoot> latestOthersMatching(Collection<String> sourceIdPatterns) {
+		return latestOthersMatching(datumService, sourceIdPatterns);
 	}
 
 	/**
@@ -529,12 +680,42 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 				sourceIdPattern);
 	}
 
+	/**
+	 * Get the latest available unfiltered datum matching a set of source ID
+	 * patterns, excluding the {@link #getSourceId()} source ID, as
+	 * {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.9
+	 */
+	public Collection<DatumExpressionRoot> unfilteredLatestOthersMatching(
+			Collection<String> sourceIdPatterns) {
+		return latestOthersMatching(datumService != null ? datumService.unfiltered() : null,
+				sourceIdPatterns);
+	}
+
 	private Collection<DatumExpressionRoot> latestOthersMatching(DatumHistorian history,
 			String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
-		Set<String> pats = singleton(sourceIdPattern);
+		return latestOthersMatching(history, singleton(sourceIdPattern));
+	}
+
+	private Collection<DatumExpressionRoot> latestOthersMatching(DatumHistorian history,
+			Collection<String> sourceIdPatterns) {
+		if ( history == null || sourceIdPatterns == null ) {
+			return emptyList();
+		}
+		Set<String> pats = (sourceIdPatterns instanceof Set<?> ? (Set<String>) sourceIdPatterns
+				: new LinkedHashSet<>(sourceIdPatterns));
 		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return emptyList();
@@ -569,6 +750,25 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Get the latest available datum matching a set of source ID patterns,
+	 * including this instance, as {@link DatumExpressionRoot} instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return the matching datum, never {@literal null} and always having at
+	 *         least one value (this instance)
+	 * @since 2.9
+	 */
+	public Collection<DatumExpressionRoot> selfAndLatestMatching(Collection<String> sourceIdPatterns) {
+		return selfAndLatestMatching(datumService, sourceIdPatterns);
+	}
+
+	/**
 	 * Get the latest available unfiltered datum matching a given source ID
 	 * pattern, including this instance, as {@link DatumExpressionRoot}
 	 * instances.
@@ -589,12 +789,43 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 				sourceIdPattern);
 	}
 
+	/**
+	 * Get the latest available unfiltered datum matching a set of source ID
+	 * patterns, including this instance, as {@link DatumExpressionRoot}
+	 * instances.
+	 *
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 *
+	 * @param sourceIdPatterns
+	 *        the set of Ant-style source ID patterns of the datum to look for
+	 * @return the matching datum, never {@literal null} and always having at
+	 *         least one value (this instance)
+	 * @since 2.9
+	 */
+	public Collection<DatumExpressionRoot> selfAndUnfilteredLatestMatching(
+			Collection<String> sourceIdPatterns) {
+		return selfAndLatestMatching(datumService != null ? datumService.unfiltered() : null,
+				sourceIdPatterns);
+	}
+
 	private Collection<DatumExpressionRoot> selfAndLatestMatching(DatumHistorian history,
 			String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
-		Set<String> pats = singleton(sourceIdPattern);
+		return selfAndLatestMatching(history, singleton(sourceIdPattern));
+	}
+
+	private Collection<DatumExpressionRoot> selfAndLatestMatching(DatumHistorian history,
+			Collection<String> sourceIdPatterns) {
+		if ( history == null || sourceIdPatterns == null ) {
+			return emptyList();
+		}
+		Set<String> pats = (sourceIdPatterns instanceof Set<?> ? (Set<String>) sourceIdPatterns
+				: new LinkedHashSet<>(sourceIdPatterns));
 		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return singleton(this);
