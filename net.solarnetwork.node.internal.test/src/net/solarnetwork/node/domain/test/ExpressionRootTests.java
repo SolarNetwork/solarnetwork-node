@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -67,7 +68,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * Test cases for the {@link ExpressionRoot} class.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ExpressionRootTests {
 
@@ -329,6 +330,43 @@ public class ExpressionRootTests {
 				is(new BigDecimal("210")));
 		assertThat("Expression resolves matching unfiltered datum and evaluates projection", result2,
 				is(new BigDecimal("44200")));
+	}
+
+	@Test
+	public void unfilteredLatestMatching_multi() {
+		// GIVEN
+		ExpressionRoot root = createTestRoot();
+
+		SimpleDatum d1 = SimpleDatum.nodeDatum("foo/0_1");
+		d1.putSampleValue(Instantaneous, "aa", 100);
+		d1.putSampleValue(Accumulating, "bb", 200);
+
+		SimpleDatum d2 = SimpleDatum.nodeDatum("foo/0_2");
+		d2.putSampleValue(Instantaneous, "aa", 110);
+		d2.putSampleValue(Accumulating, "bb", 220);
+
+		SimpleDatum d3 = SimpleDatum.nodeDatum("foo/1_1");
+		d3.putSampleValue(Instantaneous, "aa", 111);
+		d3.putSampleValue(Accumulating, "bb", 222);
+
+		SimpleDatum d4 = SimpleDatum.nodeDatum("foo/2_1");
+		d4.putSampleValue(Instantaneous, "aa", 222);
+		d4.putSampleValue(Accumulating, "bb", 333);
+
+		List<NodeDatum> matches = Arrays.asList(new NodeDatum[] { d1, d2, d4 });
+		expect(datumService.unfiltered()).andReturn(unfilteredDatumHistorian).anyTimes();
+		expect(unfilteredDatumHistorian.offset(new LinkedHashSet<>(asList("foo/0*", "foo/2*")),
+				root.getTimestamp(), 0, NodeDatum.class)).andReturn(matches).anyTimes();
+
+		// WHEN
+		replayAll();
+		BigDecimal result = expressionService.evaluateExpression(
+				"sum(unfilteredLatestMatching({'foo/0*', 'foo/2*'}).![aa])", null, root, null,
+				BigDecimal.class);
+
+		// THEN
+		assertThat("Expression resolves matching unfiltered datum and evaluates projection", result,
+				is(new BigDecimal("432")));
 	}
 
 	@Test
