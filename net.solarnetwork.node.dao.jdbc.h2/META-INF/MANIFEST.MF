@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: H2 Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.h2
 Bundle-Description: Provides automated maintenance tasks for the H2 database.
-Bundle-Version: 2.0.2
+Bundle-Version: 2.0.3
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.h2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -11,7 +11,7 @@ Import-Package:
  javax.sql,
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.dao;version="[2.1,3.0)",
- net.solarnetwork.node.dao.jdbc;version="[2.2,3.0)",
+ net.solarnetwork.node.dao.jdbc;version="[2.7,3.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.setup;version="[1.13,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
