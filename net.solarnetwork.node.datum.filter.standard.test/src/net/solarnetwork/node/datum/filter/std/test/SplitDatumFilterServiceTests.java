@@ -1,21 +1,21 @@
 /* ==================================================================
  * SplitDatumFilterServiceTests.java - 30/03/2023 2:27:04 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -55,9 +55,9 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link SplitDatumFilterService} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SplitDatumFilterServiceTests {
 
@@ -256,6 +256,64 @@ public class SplitDatumFilterServiceTests {
 		expected2.setTags(in.getTags());
 		assertThat("Output 2 properties copied",
 				(DatumSamples) outputSources.get("bar/2").asSampleOperations(), is(equalTo(expected2)));
+	}
+
+	@Test
+	public void split_augmentedSample() {
+		// GIVEN
+		SimpleDatum in = createTestDatum(SOURCE_ID_1);
+
+		// @formatter:off
+		xform.setPropertySourceMappings(new PatternKeyValuePair[] {
+				new PatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
+				new PatternKeyValuePair("^a", OUT_SOURCE_ID_2),
+		});
+		// @formatter:on
+
+		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true).times(2);
+
+		// WHEN
+		replayAll();
+
+		// create a new samples instance, with an additional property not present in the Datum
+		// as this is how earlier filters may have modified the property state
+		final String augmentPropertyName = "aNewProperty";
+		DatumSamples samples = new DatumSamples(in.asSampleOperations());
+		samples.putInstantaneousSampleValue(augmentPropertyName, 123);
+		DatumSamplesOperations result = xform.filter(in, samples, null);
+
+		// THEN
+		assertThat("Input swallowed", result, is(nullValue()));
+		List<NodeDatum> output = datumCaptor.getValues();
+		assertThat("Output datum generated", output, hasSize(2));
+		Map<String, NodeDatum> outputSources = output.stream()
+				.collect(toMap(NodeDatum::getSourceId, identity()));
+		assertThat("Expected output sources generated", outputSources.keySet(),
+				containsInAnyOrder(OUT_SOURCE_ID_1, OUT_SOURCE_ID_2));
+
+		for ( NodeDatum out : output ) {
+			assertThat(String.format("Timestamp %s copied from input", out.getObjectId()),
+					out.getTimestamp(), is(equalTo(in.getTimestamp())));
+		}
+
+		DatumSamples expected1 = new DatumSamples();
+		expected1.putInstantaneousSampleValue(PROP_1, 1);
+		expected1.putAccumulatingSampleValue(PROP_3, 3);
+		expected1.setTags(in.getTags());
+		assertThat("Output 1 properties copied",
+				(DatumSamples) outputSources.get(OUT_SOURCE_ID_1).asSampleOperations(),
+				is(equalTo(expected1)));
+
+		DatumSamples expected2 = new DatumSamples();
+		expected2.putInstantaneousSampleValue(PROP_2, 2);
+		expected2.putInstantaneousSampleValue(augmentPropertyName,
+				samples.getI().get(augmentPropertyName));
+		expected2.putStatusSampleValue(PROP_5, "5");
+		expected2.setTags(in.getTags());
+		assertThat("Output 2 properties copied",
+				(DatumSamples) outputSources.get(OUT_SOURCE_ID_2).asSampleOperations(),
+				is(equalTo(expected2)));
 	}
 
 }

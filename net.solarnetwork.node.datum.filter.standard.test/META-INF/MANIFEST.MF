@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Datum Sample Filter Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.filter.standard.test
 Automatic-Module-Name: net.solarnetwork.node.datum.samplefilter.test
-Bundle-Version: 3.7.0
+Bundle-Version: 3.8.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.datum.filter.standard;bundle-version="[3.9,4.0)"
+Fragment-Host: net.solarnetwork.node.datum.filter.standard;bundle-version="[3.13,4.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.common.expr.spel;version="[2.0,3.0)",
