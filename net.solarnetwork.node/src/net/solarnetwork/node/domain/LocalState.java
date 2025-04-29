@@ -34,7 +34,7 @@ import net.solarnetwork.domain.Differentiable;
  * A persistent local state entity.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.23
  */
 @JsonIgnoreProperties({ "data", "id" })
@@ -148,12 +148,11 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 		if ( data != null ) {
 			builder.append(", data=");
 			builder.append(Arrays.toString(data));
-			builder.append(", ");
 		}
 
 		Object val = getValue();
 		if ( val != null ) {
-			builder.append(", value =");
+			builder.append(", value=");
 			builder.append(val);
 		}
 

@@ -199,7 +199,33 @@ Then here are some example expressions and the results they would produce:
 # Virtual meter metadata
 
 Virtual meters require keeping track of the meter reading value over time along with the previously
-captured value. This plugin uses the [SolarNetwork datum metadata API][meta-api] for this, storing
+captured value. This plugin manages three [Local State][local-state] entities per virtual meter.
+The entity keys are based on this pattern:
+
+```
+vm:SOURCE_ID.METER_PROPERTY_NAME:METADATA_NAME
+```
+
+The CAPITALIZED parameters in that pattern represent:
+
+| Parameter | Description |
+|:----------|:------------|
+| `SOURCE_ID` | The source ID of the datum being filtered. |
+| `METER_PROPERTY_NAME` | The **output** reading property name, either explicitly configured or derived from the input property name + time unit. |
+| `METADATA_NAME` | One of `date`, `value`, or `reading`, representing the millisecond Unix epoch timestamp, the input value, and the output reading of the virtual meter.  |
+
+For example, continuing the `irradianceHours` example evaulating against a datum with a source ID `meter/1`,
+the local state entities managed by the virtual meter would look like:
+
+| Local State key | Type | Value |
+|:----------------|:-----|------:|
+| `vm:meter/1.irradianceHours:date`    | `Int64`   | `1745877900000` |
+| `vm:meter/1.irradianceHours:value`   | `Decimal` | `1361` |
+| `vm:meter/1.irradianceHours:reading` | `Decimal` | `12390980.1231` |
+
+## Virtual meter legacy metadata
+
+Virtual meters used to keep track of their metadata using the [SolarNetwork datum metadata API][meta-api], storing
 three metadata properties under a property key named for the virtual meter property name. For
 example, continuing the `irradianceHours` example, an example set of datum metadata would look like:
 
@@ -215,9 +241,13 @@ example, continuing the `irradianceHours` example, an example set of datum metad
 }
 ```
 
+This metadata will be automatically copied to Local State entities, after which the metadata will not be
+updated any more.
+
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [Datum]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/datum/Datum.java
+[local-state]: https://solarnetwork.github.io/solarnode-handbook/users/local-state/
 [meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-add
 [node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
 [tariff-filter]: ../net.solarnetwork.node.datum.filter.tariff
