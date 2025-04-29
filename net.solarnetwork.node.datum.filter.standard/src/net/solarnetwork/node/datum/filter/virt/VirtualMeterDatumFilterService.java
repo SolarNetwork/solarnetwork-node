@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
@@ -61,7 +62,6 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
@@ -79,13 +79,13 @@ import net.solarnetwork.util.NumberUtils;
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
-	/** The datum metadata key for a virtual meter sample value. */
+	/** The legacy datum metadata key for a virtual meter sample value. */
 	public static final String VIRTUAL_METER_VALUE_KEY = "vm-value";
 
-	/** The datum metadata key for a virtual meter reading date. */
+	/** The legacy datum metadata key for a virtual meter reading date. */
 	public static final String VIRTUAL_METER_DATE_KEY = "vm-date";
 
-	/** The datum metadata key for a virtual meter reading value. */
+	/** The legacy datum metadata key for a virtual meter reading value. */
 	public static final String VIRTUAL_METER_READING_KEY = "vm-reading";
 
 	/**
@@ -180,11 +180,9 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status",
-				statusValue(Locale.getDefault(Locale.Category.DISPLAY))));
+				statusValue(Locale.getDefault(Locale.Category.DISPLAY)), true, true));
 		populateBaseSampleTransformSupportSettings(results);
 		populateStatusSettings(results);
-
-		results.add(new BasicTextFieldSettingSpecifier("virtualMeterIdentifier", null));
 
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
 		List<VirtualMeterConfig> meterConfsList = (template ? singletonList(new VirtualMeterConfig())
@@ -234,7 +232,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 			}
 			buf.append(ms.getMessage("status.row",
 					new Object[] { me.getKey(),
-							DateUtils.DISPLAY_DATE_LONG_TIME_SHORT.format(info.getDate()),
+							DateUtils.DISPLAY_DATE_LONG_TIME_SHORT
+									.format(info.getDate().atZone(ZoneId.systemDefault())),
 							nf.format(info.getValue()), nf.format(info.getReading()) },
 					locale));
 		}
