@@ -38,6 +38,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.dao.Entity;
 import net.solarnetwork.dao.GenericDao;
@@ -51,7 +52,7 @@ import net.solarnetwork.domain.SortDescriptor;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends AbstractJdbcDao<T>
 		implements GenericDao<T, K> {
@@ -95,6 +96,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	/** A UTC based Calendar for managing time based column values. */
 	protected static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
+	/**
+	 * An event property name for a {@code DataSource} URI.
+	 *
+	 * @since 2.2
+	 */
+	public static final String DATASOURCE_URL_PROP = "dataSourceUrl";
 
 	private final Class<? extends T> objectType;
 	private final Class<? extends K> keyType;
@@ -227,6 +235,12 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 			return;
 		}
 		Map<String, Object> props = GenericDao.createEntityEventProperties(id, entity);
+		String url = getJdbcTemplate().execute((ConnectionCallback<String>) conn -> {
+			return conn.getMetaData().getURL();
+		});
+		if ( url != null ) {
+			props.put(DATASOURCE_URL_PROP, url);
+		}
 		String topic = entityEventTopic(eventType);
 		if ( topic != null ) {
 			Event event = new Event(topic, props);

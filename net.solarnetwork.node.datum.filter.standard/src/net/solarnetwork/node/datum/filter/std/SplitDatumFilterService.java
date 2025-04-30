@@ -55,7 +55,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that splits datum into multiple new datum streams.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SplitDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
@@ -91,11 +91,11 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 		final Map<String, SimpleDatum> sources = new HashMap<>(4);
 		for ( PatternKeyValuePair mapping : mappings ) {
-			populateMatchingDatumProperties(datum, parameters, DatumSamplesType.Instantaneous, sources,
-					mapping);
-			populateMatchingDatumProperties(datum, parameters, DatumSamplesType.Accumulating, sources,
-					mapping);
-			populateMatchingDatumProperties(datum, parameters, DatumSamplesType.Status, sources,
+			populateMatchingDatumProperties(datum, samples, parameters, DatumSamplesType.Instantaneous,
+					sources, mapping);
+			populateMatchingDatumProperties(datum, samples, parameters, DatumSamplesType.Accumulating,
+					sources, mapping);
+			populateMatchingDatumProperties(datum, samples, parameters, DatumSamplesType.Status, sources,
 					mapping);
 		}
 
@@ -113,14 +113,14 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		return result;
 	}
 
-	private void populateMatchingDatumProperties(Datum datum, Map<String, Object> parameters,
-			DatumSamplesType samplesType, Map<String, SimpleDatum> sources,
-			PatternKeyValuePair mapping) {
+	private void populateMatchingDatumProperties(Datum datum, DatumSamplesOperations samples,
+			Map<String, Object> parameters, DatumSamplesType samplesType,
+			Map<String, SimpleDatum> sources, PatternKeyValuePair mapping) {
 		final String outputSourceId = resolvePlaceholders(mapping.getValue(), parameters);
 		if ( outputSourceId == null || outputSourceId.isEmpty() ) {
 			return;
 		}
-		Map<String, ?> props = datum.asSampleOperations().getSampleData(samplesType);
+		Map<String, ?> props = samples.getSampleData(samplesType);
 		if ( props != null ) {
 			for ( Entry<String, ?> e : props.entrySet() ) {
 				String[] match = mapping.keyMatches(e.getKey());
@@ -128,7 +128,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 					sources.computeIfAbsent(outputSourceId, k -> {
 						SimpleDatum sd = new SimpleDatum(new DatumId(datum.getKind(),
 								datum.getObjectId(), k, datum.getTimestamp()), new DatumSamples());
-						sd.setTags(datum.asSampleOperations().getTags());
+						sd.setTags(samples.getTags());
 						return sd;
 					}).putSampleValue(samplesType, e.getKey(), e.getValue());
 				}

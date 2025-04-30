@@ -31,21 +31,29 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.dao.LocalStateDao;
 import net.solarnetwork.node.datum.filter.std.DatumFilterSupport;
+import net.solarnetwork.node.domain.LocalState;
+import net.solarnetwork.node.domain.LocalStateType;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.DatumFilterService;
@@ -57,26 +65,63 @@ import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.DateUtils;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Samples transform service that simulates an accumulating meter property,
  * derived from another property.
  *
  * @author matt
- * @version 2.6
+ * @version 2.7
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
-	/** The datum metadata key for a virtual meter sample value. */
+	/** The legacy datum metadata key for a virtual meter sample value. */
 	public static final String VIRTUAL_METER_VALUE_KEY = "vm-value";
 
-	/** The datum metadata key for a virtual meter reading date. */
+	/** The legacy datum metadata key for a virtual meter reading date. */
 	public static final String VIRTUAL_METER_DATE_KEY = "vm-date";
 
-	/** The datum metadata key for a virtual meter reading value. */
+	/** The legacy datum metadata key for a virtual meter reading value. */
 	public static final String VIRTUAL_METER_READING_KEY = "vm-reading";
+
+	/**
+	 * String template for a {@link LocalState} key, given source ID and
+	 * "suffix" parameters.
+	 *
+	 * @see #LOCAL_STATE_SUFFIX_DATE
+	 * @see #LOCAL_STATE_SUFFIX_VALUE
+	 * @see #LOCAL_STATE_SUFFIX_READING
+	 * @since 2.7
+	 */
+	public static final String LOCAL_STATE_KEY_TEMPLATE = "vm:%s:%s";
+
+	/**
+	 * Virtual meter date suffix value for the {@link #LOCAL_STATE_KEY_TEMPLATE}
+	 * template.
+	 *
+	 * @since 2.7
+	 */
+	public static final String LOCAL_STATE_SUFFIX_DATE = "date";
+
+	/**
+	 * Virtual meter value suffix value for the
+	 * {@link #LOCAL_STATE_KEY_TEMPLATE} template.
+	 *
+	 * @since 2.7
+	 */
+	public static final String LOCAL_STATE_SUFFIX_VALUE = "value";
+
+	/**
+	 * Virtual meter reading suffix value for the
+	 * {@link #LOCAL_STATE_KEY_TEMPLATE} template.
+	 *
+	 * @since 2.7
+	 */
+	public static final String LOCAL_STATE_SUFFIX_READING = "reading";
 
 	/**
 	 * The input and reading "diff" parameter name template.
@@ -89,10 +134,11 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	private static final Logger log = LoggerFactory.getLogger(VirtualMeterDatumFilterService.class);
 
-	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetas = new ConcurrentHashMap<>(8,
-			0.9f, 2);
 	private final ConcurrentMap<String, PropertySamples> sourceSamples = new ConcurrentHashMap<>(8, 0.9f,
 			2);
+
+	private final ConcurrentMap<String, VirtualMeterInfo> infos = new ConcurrentHashMap<>(8, 0.9f, 2);
+
 	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private VirtualMeterConfig[] virtualMeterConfigs;
 	private VirtualMeterExpressionConfig[] expressionConfigs;
@@ -133,7 +179,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 
-		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
+		results.add(0, new BasicTitleSettingSpecifier("status",
+				statusValue(Locale.getDefault(Locale.Category.DISPLAY)), true, true));
 		populateBaseSampleTransformSupportSettings(results);
 		populateStatusSettings(results);
 
@@ -173,33 +220,28 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		return results;
 	}
 
-	private String statusValue() {
+	private String statusValue(Locale locale) {
+		final MessageSource ms = getMessageSource();
 		StringBuilder buf = new StringBuilder();
-		for ( Map.Entry<String, GeneralDatumMetadata> me : sourceMetas.entrySet() ) {
-			if ( buf.length() > 0 ) {
-				buf.append("; ");
+		NumberFormat nf = NumberFormat.getNumberInstance(locale);
+		nf.setGroupingUsed(true);
+		for ( Map.Entry<String, VirtualMeterInfo> me : infos.entrySet() ) {
+			VirtualMeterInfo info = me.getValue();
+			if ( info.getDate() == null || info.getValue() == null || info.getReading() == null ) {
+				continue;
 			}
-			buf.append(me.getKey()).append(": ");
-			Map<String, Map<String, Object>> pms = me.getValue().getPropertyInfo();
-			boolean hasMeter = false;
-			if ( pms != null ) {
-				for ( Map.Entry<String, Map<String, Object>> pmEntry : pms.entrySet() ) {
-					Map<String, Object> pm = pmEntry.getValue();
-					if ( pm.containsKey(VIRTUAL_METER_READING_KEY) ) {
-						if ( hasMeter ) {
-							buf.append(", ");
-						}
-						hasMeter = true;
-						buf.append(pmEntry.getKey()).append(" = ")
-								.append(pm.get(VIRTUAL_METER_READING_KEY));
-					}
-				}
-			}
-			if ( !hasMeter ) {
-				buf.append("N/A");
-			}
+			buf.append(ms.getMessage("status.row",
+					new Object[] { me.getKey(),
+							DateUtils.DISPLAY_DATE_LONG_TIME_SHORT
+									.format(info.getDate().atZone(ZoneId.systemDefault())),
+							nf.format(info.getValue()), nf.format(info.getReading()) },
+					locale));
 		}
-		return buf.toString();
+		if ( buf.length() < 1 ) {
+			return "N/A";
+		}
+		return (ms.getMessage("status.start", null, locale) + buf.toString()
+				+ ms.getMessage("status.end", null, locale));
 	}
 
 	@Override
@@ -221,18 +263,109 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		return s;
 	}
 
-	private GeneralDatumMetadata metadata(final DatumMetadataService service, final String sourceId) {
-		return sourceMetas.computeIfAbsent(sourceId, k -> {
-			log.info("Requesting datum metadata for source [{}]", sourceId);
-			GeneralDatumMetadata m = service.getSourceMetadata(sourceId);
-			if ( m == null ) {
-				log.info("No existing datum metadata found for source [{}]", sourceId);
-				m = new GeneralDatumMetadata();
-			} else if ( log.isInfoEnabled() ) {
-				log.info("Existing datum metadata found for source [{}]: {}", sourceId,
-						m.getPropertyInfo());
+	private void saveInfo(LocalStateDao dao, Instant date, String key, VirtualMeterInfo info) {
+		if ( dao == null || date == null || key == null || info == null ) {
+			return;
+		}
+		if ( info.getDate() != null ) {
+			dao.compareAndChange(
+					new LocalState(String.format(LOCAL_STATE_KEY_TEMPLATE, key, LOCAL_STATE_SUFFIX_DATE),
+							date, LocalStateType.Int64, info.getDate().toEpochMilli()));
+		}
+		if ( info.getValue() != null ) {
+			dao.compareAndChange(new LocalState(
+					String.format(LOCAL_STATE_KEY_TEMPLATE, key, LOCAL_STATE_SUFFIX_VALUE), date,
+					LocalStateType.Decimal, info.getValue()));
+		}
+		if ( info.getReading() != null ) {
+			dao.compareAndChange(new LocalState(
+					String.format(LOCAL_STATE_KEY_TEMPLATE, key, LOCAL_STATE_SUFFIX_READING), date,
+					LocalStateType.Decimal, info.getReading()));
+		}
+	}
+
+	private VirtualMeterInfo info(final String sourceId, final VirtualMeterConfig config,
+			final DatumMetadataService service) {
+		final String meterPropName = config.readingPropertyName();
+		final String key = sourceId + '.' + meterPropName;
+		final LocalStateDao dao = service(getLocalStateDao());
+		return infos.computeIfAbsent(key, k -> {
+			log.info("Initalizing virtual meter info for [{}]", k);
+			if ( dao != null ) {
+				LocalState dateState = dao
+						.get(String.format(LOCAL_STATE_KEY_TEMPLATE, key, LOCAL_STATE_SUFFIX_DATE));
+				if ( dateState != null && dateState.getData() != null ) {
+					Object dateVal = dateState.getValue();
+					if ( dateVal instanceof Number ) {
+						Instant date = Instant.ofEpochMilli(((Number) dateVal).longValue());
+						LocalState valueState = dao.get(
+								String.format(LOCAL_STATE_KEY_TEMPLATE, key, LOCAL_STATE_SUFFIX_VALUE));
+						LocalState readingState = dao.get(String.format(LOCAL_STATE_KEY_TEMPLATE, key,
+								LOCAL_STATE_SUFFIX_READING));
+						if ( valueState != null && valueState.getData() != null && readingState != null
+								&& readingState.getData() != null ) {
+							Object valueVal = valueState.getValue();
+							Object readingVal = readingState.getValue();
+							if ( valueVal instanceof Number && readingVal instanceof Number ) {
+								VirtualMeterInfo info = new VirtualMeterInfo();
+								info.setDate(date);
+								info.setValue(NumberUtils.bigDecimalForNumber((Number) valueVal));
+								info.setReading(NumberUtils.bigDecimalForNumber((Number) readingVal));
+								return info;
+							}
+						}
+					}
+				}
 			}
-			return m;
+
+			// fall back to metadata for backwards compatibility
+			if ( service != null ) {
+				try {
+					final GeneralDatumMetadata metadata = service.getSourceMetadata(sourceId);
+					if ( metadata != null ) {
+						BigDecimal prevVal = metadata.getInfoBigDecimal(meterPropName,
+								VIRTUAL_METER_VALUE_KEY);
+						Long prevDate = null;
+						BigDecimal prevReading = null;
+						if ( config.getConfig() != null ) {
+							// reset meter reading to this value
+							prevReading = new BigDecimal(config.getConfig());
+						} else {
+							prevDate = metadata.getInfoLong(meterPropName, VIRTUAL_METER_DATE_KEY);
+							prevReading = metadata.getInfoBigDecimal(meterPropName,
+									VIRTUAL_METER_READING_KEY);
+						}
+
+						if ( prevDate != null && prevReading != null && prevVal != null ) {
+							VirtualMeterInfo info = new VirtualMeterInfo();
+							info.setDate(Instant.ofEpochMilli(prevDate));
+							info.setValue(prevVal);
+							info.setReading(prevReading);
+							log.info("Migrating virtual meter metadata [{}] to local state entities: {}",
+									meterPropName, info);
+							saveInfo(dao, Instant.ofEpochMilli(prevDate), key, info);
+							return info;
+						}
+					}
+				} catch ( RuntimeException e ) {
+					// catch IO errors and let slide
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					if ( root instanceof IOException ) {
+						log.warn("Communication error acquiring metadata for source {}: {}", sourceId,
+								root.toString());
+					} else {
+						log.error("Error accessing metadata for source {}: {}", sourceId,
+								root.toString(), root);
+					}
+					return null;
+				}
+			}
+
+			VirtualMeterInfo info = new VirtualMeterInfo();
+			return info;
 		});
 	}
 
@@ -252,37 +385,9 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 	private void populateDatumProperties(Datum d, DatumSamples samples, VirtualMeterConfig[] meterConfs,
 			Map<String, Object> parameters) {
 		final DatumMetadataService service = OptionalService.service(datumMetadataService);
-		if ( service == null ) {
-			// the metadata service is required for virtual meters
-			log.warn("DatumMetadataService is required for vitual meters, but not available");
-			return;
-		}
-		final GeneralDatumMetadata metadata;
-		try {
-			metadata = metadata(service, d.getSourceId());
-		} catch ( RuntimeException e ) {
-			// catch IO errors and let slide
-			Throwable root = e;
-			while ( root.getCause() != null ) {
-				root = root.getCause();
-			}
-			if ( root instanceof IOException ) {
-				log.warn("Communication error acquiring metadata for source {}: {}", d.getSourceId(),
-						root.toString());
-			} else {
-				log.error("Error accessing metadata for source {}: {}", d.getSourceId(), root.toString(),
-						root);
-			}
-			return;
-		}
-		if ( metadata == null ) {
-			// should not happen, more to let the compiler know what we're expecting
-			log.error("Metadata not available for virtual meters");
-			return;
-		}
 
-		final long date = d.getTimestamp() != null ? d.getTimestamp().toEpochMilli()
-				: System.currentTimeMillis();
+		final Instant date = d.getTimestamp() != null ? d.getTimestamp()
+				: Instant.ofEpochMilli(System.currentTimeMillis());
 
 		for ( VirtualMeterConfig config : meterConfs ) {
 			if ( config.getPropertyKey() == null || config.getPropertyKey().isEmpty()
@@ -298,9 +403,9 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 						d.getSourceId(), meterPropName, config.getPropertyKey());
 				continue;
 			}
+
 			final BigDecimal currVal = samples.getSampleBigDecimal(config.getPropertyType(),
 					config.getPropertyKey());
-			final PropertySamples propSamples = samplesForConfig(config, d.getSourceId());
 			if ( currVal == null ) {
 				log.debug(
 						"Source {} {} property [{}] not available, cannot populate virtual meter reading",
@@ -308,48 +413,56 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 				continue;
 			}
 
+			final PropertySamples propSamples = samplesForConfig(config, d.getSourceId());
+
 			synchronized ( config ) {
-				GeneralDatumMetadata metadataOut = new GeneralDatumMetadata();
-				BigDecimal prevVal = metadata.getInfoBigDecimal(meterPropName, VIRTUAL_METER_VALUE_KEY);
-				Long prevDate = null;
+				final VirtualMeterInfo info = info(d.getSourceId(), config, service);
+				if ( info == null ) {
+					log.debug(
+							"Source {} {} property [{}] info not available, cannot populate virtual meter reading",
+							d.getSourceId(), config.getPropertyType(), config.getPropertyKey());
+					continue;
+				}
+
+				BigDecimal prevVal = info.getValue();
+				Instant prevDate = null;
 				BigDecimal prevReading = null;
 				if ( config.getConfig() != null ) {
 					// reset meter reading to this value
 					prevReading = new BigDecimal(config.getConfig());
 				} else {
-					prevDate = metadata.getInfoLong(meterPropName, VIRTUAL_METER_DATE_KEY);
-					prevReading = metadata.getInfoBigDecimal(meterPropName, VIRTUAL_METER_READING_KEY);
+					prevDate = info.getDate();
+					prevReading = info.getReading();
 				}
 				if ( prevDate == null || prevVal == null || prevReading == null ) {
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							prevReading != null ? prevReading.toString() : config.getMeterReading());
+					info.setDate(date);
+					info.setValue(currVal);
+					info.setReading(prevReading != null ? prevReading
+							: config.getMeterReading() != null ? new BigDecimal(config.getMeterReading())
+									: BigDecimal.ZERO);
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
 					}
-					log.info("Virtual meter {}.{} status: {}", d.getSourceId(), meterPropName,
-							metadataOut.getPropertyInfo());
-				} else if ( prevDate > date ) {
+					log.info("Virtual meter {}.{} status: {}", d.getSourceId(), meterPropName, info);
+				} else if ( prevDate.isAfter(date) ) {
 					log.warn(
 							"Source [{}] virtual meter [{}] reading date [{}] newer than sample date [{}] by {}ms, will not populate reading",
-							d.getSourceId(), meterPropName, new Date(prevDate), new Date(date),
-							(prevDate - date));
+							d.getSourceId(), meterPropName, prevDate, date,
+							ChronoUnit.MILLIS.between(date, prevDate));
 					continue;
 				} else if ( config.getMaxAgeSeconds() > 0
-						&& (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {
+						&& ChronoUnit.SECONDS.between(prevDate, date) > config.getMaxAgeSeconds() ) {
 					log.warn(
 							"Source [{}] virtual meter [{}] previous reading date [{}] greater than allowed age {}s, will not populate reading",
-							d.getSourceId(), meterPropName, new Date(prevDate),
-							config.getMaxAgeSeconds());
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
+							d.getSourceId(), meterPropName, prevDate, config.getMaxAgeSeconds());
+					info.setDate(date);
+					info.setValue(currVal);
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
 					}
 				} else {
 					final int scale = config.getVirtualMeterScale();
-					final BigDecimal msDiff = new BigDecimal(date - prevDate);
+					final BigDecimal msDiff = new BigDecimal(ChronoUnit.MILLIS.between(prevDate, date));
 					final BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
 					BigDecimal meterDiff;
 					BigDecimal newReading = null;
@@ -359,7 +472,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 						VirtualMeterExpressionRootImpl root = new VirtualMeterExpressionRootImpl(d,
 								samples, params, service(getDatumService()),
 								service(getMetadataService()), service(getLocationService()), config,
-								prevDate, date, prevVal, currVal, prevReading);
+								prevDate.toEpochMilli(), date.toEpochMilli(), prevVal, currVal,
+								prevReading);
 						root.setTariffScheduleProviders(getTariffScheduleProviders());
 						root.setLocalStateDao(getLocalStateDao());
 						populateExpressionDatumProperties(samples,
@@ -420,10 +534,9 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 						continue;
 					}
 
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							newReading.toPlainString());
+					info.setDate(date);
+					info.setValue(currVal);
+					info.setReading(newReading);
 
 					// add our "input diff" and "reading diff" value as a transform parameter, for future transforms to access
 					if ( parameters != null ) {
@@ -439,28 +552,14 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 					}
 					log.debug(
 							"Source [{}] virtual meter [{}] adds {} from {} value {} \u2192 {} over {}ms to reach {}",
-							d.getSourceId(), meterPropName, meterDiff, config.getPropertyType(), prevVal,
-							currVal, msDiff, newReading);
+							d.getSourceId(), meterPropName, meterDiff.toPlainString(),
+							config.getPropertyType(), prevVal.toPlainString(), currVal.toPlainString(),
+							msDiff.toPlainString(), newReading.toPlainString());
 				}
 
-				metadata.merge(metadataOut, true);
-				try {
-					service.addSourceMetadata(d.getSourceId(), metadataOut);
-					config.setConfig(null); // remove any manual reset
-				} catch ( RuntimeException e ) {
-					// catch IO errors and let slide
-					Throwable root = e;
-					while ( root.getCause() != null ) {
-						root = root.getCause();
-					}
-					if ( root instanceof IOException ) {
-						log.warn(
-								"Communication error posting metadata for source {} virutal meter {}: {}",
-								d.getSourceId(), meterPropName, root.toString());
-					} else {
-						throw e;
-					}
-				}
+				final String key = d.getSourceId() + '.' + meterPropName;
+				saveInfo(service(getLocalStateDao()), date, key, info);
+				config.setConfig(null); // remove any manual reset
 			}
 		}
 	}

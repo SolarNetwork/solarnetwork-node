@@ -31,12 +31,15 @@ import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
@@ -52,6 +55,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.service.support.BasicIdentifiable;
@@ -68,12 +72,15 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class H2OnlineBackupService extends BasicIdentifiable implements EventHandler, JobService {
 
 	/** The {@code backupDelaySecs} property default value. */
 	public static final int DEFAULT_BACKUP_DELAY_SECS = 10;
+
+	/** A special "all databases" URL. */
+	private static final String ALL_DATASOURCE_URL = "db://all";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -83,7 +90,8 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 	private Path temporaryDestinationPath;
 	private int backupDelaySecs;
 
-	private ScheduledFuture<?> backupFuture;
+	// a mapping of data source URL -> scheduled future
+	private final ConcurrentMap<String, ScheduledFuture<?>> backupFutures;
 
 	/**
 	 * Constructor.
@@ -99,6 +107,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 		this.destinationPath = Paths.get("var", "db-bak");
 		this.temporaryDestinationPath = Paths.get("var", "work");
 		this.backupDelaySecs = DEFAULT_BACKUP_DELAY_SECS;
+		this.backupFutures = new ConcurrentHashMap<>(4, 0.9f, 2);
 		setUid(getSettingUid());
 	}
 
@@ -151,32 +160,77 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 			} else {
 				message = "entity changed";
 			}
-			backupSoon(message);
+			Object dataSourceUrl = event.getProperty(BaseJdbcGenericDao.DATASOURCE_URL_PROP);
+			if ( dataSourceUrl != null ) {
+				backupSoon(message, dataSourceUrl.toString());
+			} else {
+				backupSoon(message);
+			}
 		}
 	}
 
 	private void backupSoon(String reasonMessage) {
+		backupSoon(reasonMessage, ALL_DATASOURCE_URL);
+	}
+
+	private synchronized void backupSoon(String reasonMessage, String dataSourceUrl) {
 		if ( taskScheduler == null ) {
 			taskScheduler = new ConcurrentTaskScheduler();
 		}
+
+		final ScheduledFuture<?> backupFuture = backupFutures.get(dataSourceUrl);
+		final ScheduledFuture<?> allBackupFuture = backupFutures.get(ALL_DATASOURCE_URL);
+
 		if ( backupFuture != null ) {
 			if ( !backupFuture.isDone() && !backupFuture.cancel(false) ) {
+				return;
+			}
+		} else if ( allBackupFuture != null ) {
+			// all backup previously scheduled; re-schedule all
+			if ( !allBackupFuture.isDone() && !allBackupFuture.cancel(false) ) {
 				return;
 			}
 		} else {
 			log.info("Scheduling database backup sync after {} event.", reasonMessage);
 		}
-		backupFuture = taskScheduler.schedule(new Runnable() {
 
-			@Override
-			public void run() {
-				log.info("Performing database backup...");
-				backup();
-				backupFuture = null;
-				log.info("Database backup complete.");
+		final String backupDataSourceUrl = (allBackupFuture != null ? ALL_DATASOURCE_URL
+				: dataSourceUrl);
+
+		final Runnable task = () -> {
+			final String dbDisplay = ALL_DATASOURCE_URL.equals(backupDataSourceUrl) ? "ALL"
+					: backupDataSourceUrl;
+			log.info("Performing {} database backup...", dbDisplay);
+			backup(backupDataSourceUrl);
+			backupFutures.remove(backupDataSourceUrl);
+			log.info("Database {} backup complete.", dbDisplay);
+		};
+
+		final Instant ts = Instant
+				.ofEpochMilli(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(backupDelaySecs));
+
+		if ( ALL_DATASOURCE_URL.equals(backupDataSourceUrl) ) {
+			// remove any specific databases, as we're backing up ALL
+			for ( Map.Entry<String, ScheduledFuture<?>> e : backupFutures.entrySet() ) {
+				e.getValue().cancel(false);
 			}
-
-		}, new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(backupDelaySecs)));
+			backupFutures.clear();
+			ScheduledFuture<?> f = taskScheduler.schedule(task, ts);
+			backupFutures.compute(backupDataSourceUrl, (k, v) -> {
+				if ( v != null && v != f ) {
+					v.cancel(false);
+				}
+				return f;
+			});
+		} else {
+			ScheduledFuture<?> f = taskScheduler.schedule(task, ts);
+			backupFutures.compute(backupDataSourceUrl, (k, v) -> {
+				if ( v != null && v != f ) {
+					v.cancel(false);
+				}
+				return f;
+			});
+		}
 	}
 
 	/**
@@ -189,6 +243,11 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 	 * </p>
 	 */
 	public void backup() {
+		backup(ALL_DATASOURCE_URL);
+	}
+
+	private void backup(String dataSourceUrl) {
+		final boolean all = ALL_DATASOURCE_URL.equals(dataSourceUrl);
 		final Set<String> completedUrls = new LinkedHashSet<>();
 		for ( DataSource dataSource : dataSources ) {
 			JdbcOperations jdbcOps = new JdbcTemplate(dataSource);
@@ -198,6 +257,9 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 				public Void doInConnection(Connection con) throws SQLException, DataAccessException {
 					con.setAutoCommit(true);
 					String url = con.getMetaData().getURL();
+					if ( !all && !dataSourceUrl.equals(url) ) {
+						return null;
+					}
 					if ( completedUrls.contains(url) ) {
 						return null;
 					}
