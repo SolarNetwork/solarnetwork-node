@@ -7,7 +7,7 @@ Bundle-Description: Service to periodically "ping" a device to let the device kn
  that SolarNode is running.
 Bundle-Version: 5.0.1
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",

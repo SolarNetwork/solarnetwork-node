@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.setup.web
 Automatic-Module-Name: net.solarnetwork.node.setup.web
 Bundle-Version: 4.11.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-ClassPath: WEB-INF/classes/
 Web-ContextPath: /
 Eclipse-ExtensibleAPI: true

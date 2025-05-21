@@ -6,7 +6,7 @@ Bundle-Description: Collect generation data from eGauge devices.
 Automatic-Module-Name: net.solarnetwork.node.datum.egauge.ws
 Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
  net.solarnetwork.node.datum.egauge.ws;version="2.1.0",
  net.solarnetwork.node.datum.egauge.ws.client;version="2.0.0"

@@ -6,7 +6,7 @@ Bundle-Description: Support for testing setup packages.
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.mockpkg
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.node;version="[2.0,3.0)",

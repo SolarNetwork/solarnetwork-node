@@ -8,7 +8,7 @@ Bundle-Description: Service to monitor demand conditions (consumption) and gener
  keeps generation at or below current consumption levels.
 Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",

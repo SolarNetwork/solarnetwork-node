@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.datum.filter.standard
 Bundle-Description: Services to filter out unwanted datum, or datum properties, from collected datum samples.
 Bundle-Version: 3.13.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.dao;version="[2.3,3.0)",

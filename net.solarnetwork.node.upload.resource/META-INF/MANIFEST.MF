@@ -5,7 +5,7 @@ Bundle-Description: Watch for file changes in a directory to be copied to a Stor
 Bundle-SymbolicName: net.solarnetwork.node.upload.resource
 Bundle-Version: 3.1.0
 Automatic-Module-Name: net.solarnetwork.node.upload.resource
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain.datum;version="[2.0,3.0)",

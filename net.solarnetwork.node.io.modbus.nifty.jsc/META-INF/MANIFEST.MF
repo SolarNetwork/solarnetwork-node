@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty.jsc
 Bundle-Version: 2.3.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty.jsc
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  com.fazecast.jSerialComm;version="[2.9,3.0)",
  io.netty.channel;version="[4.2,5.0)",
