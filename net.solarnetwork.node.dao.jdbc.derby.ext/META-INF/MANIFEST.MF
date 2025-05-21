@@ -7,5 +7,5 @@ Bundle-Description: Provides SolarNode extensions to the Apache Derby database e
 Bundle-Version: 1.1.2
 Bundle-Vendor: SolarNetwork
 Fragment-Host: org.apache.servicemix.bundles.derby;bundle-version="[10.12,11)"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: net.solarnetwork.node.dao.jdbc.derby.ext;version="1.0.0"

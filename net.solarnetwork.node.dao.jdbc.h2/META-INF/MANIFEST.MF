@@ -6,7 +6,7 @@ Bundle-Description: Provides automated maintenance tasks for the H2 database.
 Bundle-Version: 2.0.3
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.h2
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  javax.sql,
  net.solarnetwork.node;version="[2.0,3.0)",

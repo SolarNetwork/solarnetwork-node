@@ -5,10 +5,10 @@ Bundle-SymbolicName: net.solarnetwork.node.hw.rfid.test
 Automatic-Module-Name: net.solarnetwork.node.hw.rfid.test
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Fragment-Host: net.solarnetwork.node.hw.rfid;bundle-version="[3.0,4.0)"
 Import-Package: 
- net.solarnetwork.node.test;version="[1.7,2.0)",
+ net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)"

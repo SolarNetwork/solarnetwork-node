@@ -8,7 +8,7 @@ Bundle-Description: Service that periodically makes a HTTP request to an arbitra
  cannot be established.
 Bundle-Version: 3.0.1
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  javax.net.ssl,
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",

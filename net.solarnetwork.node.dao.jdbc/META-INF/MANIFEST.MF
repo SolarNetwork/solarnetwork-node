@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.dao.jdbc
 Bundle-Description: Provides standardized database storage infrastructure for the SolarNode application.
 Bundle-Version: 3.5.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
  net.solarnetwork.node.dao.jdbc;version="2.7.0"
 Import-Package: 

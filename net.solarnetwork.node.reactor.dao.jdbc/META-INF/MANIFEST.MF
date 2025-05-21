@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.reactor.dao.jdbc
 Bundle-Description: Database storage cache for SolarNet instruction requests.
 Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.core.type;version="[2.4,3.0)",

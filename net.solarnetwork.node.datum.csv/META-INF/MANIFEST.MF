@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.datum.csv
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.csv
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.codec;version="[2.3,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.1,2.0)",

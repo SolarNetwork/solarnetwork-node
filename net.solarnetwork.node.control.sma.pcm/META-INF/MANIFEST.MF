@@ -8,7 +8,7 @@ Bundle-Description: Dynamically adjust the maximum power output of SMA inverters
  directly and it also supports automated adjustments via the Demand Balancer control. 
 Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",

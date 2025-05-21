@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.datum.sma.yasdi4j
 Bundle-Description: Collect generation data from SMA inverts using the SMANet protocol via yasdi4j.
 Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  de.michaeldenk.yasdi4j;version="[0.1.5,2.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",

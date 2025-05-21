@@ -7,7 +7,7 @@ Bundle-SymbolicName: net.solarnetwork.node.dao.mqtt.jdbc
 Bundle-Version: 3.1.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.dao.mqtt.jdbc
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  javax.sql,
  net.solarnetwork.common.mqtt;version="[3.0,4.0)",

@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.hw.idealpower
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.idealpower
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
  net.solarnetwork.node.hw.idealpower.pc;version="3.0.0"
 Import-Package: 

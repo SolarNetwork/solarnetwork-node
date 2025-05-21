@@ -3,25 +3,25 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support - Serial (Nifty Modbus PJC)
 Bundle-Description: Modbus serial (RTU) support using Nifty Modbus and PureJavaComm.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty.pjc
-Bundle-Version: 1.0.5
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty.pjc
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  com.sun.jna;version="[5.5,6.0)",
  com.sun.jna.ptr;version="[5.5,6.0)",
  com.sun.jna.win32;version="[5.5,6.0)",
- io.netty.channel;version="[4.1,5.0)",
- io.netty.channel.oio;version="[4.1,5.0)",
- io.netty.util.concurrent;version="[4.1,5.0)",
+ io.netty.channel;version="[4.2,5.0)",
+ io.netty.channel.oio;version="[4.2,5.0)",
+ io.netty.util.concurrent;version="[4.2,5.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.io.modbus;version="[0.17,2.0)",
- net.solarnetwork.io.modbus.netty.handler;version="[0.17,2.0)",
- net.solarnetwork.io.modbus.netty.msg;version="[0.17,2.0)",
- net.solarnetwork.io.modbus.rtu;version="[0.17,2.0)",
- net.solarnetwork.io.modbus.rtu.pjc;version="[0.17,2.0)",
- net.solarnetwork.io.modbus.rtu.netty;version="[0.17,2.0)",
- net.solarnetwork.io.modbus.serial;version="[0.17,2.0)",
+ net.solarnetwork.io.modbus;version="[0.18,2.0)",
+ net.solarnetwork.io.modbus.netty.handler;version="[0.18,2.0)",
+ net.solarnetwork.io.modbus.netty.msg;version="[0.18,2.0)",
+ net.solarnetwork.io.modbus.rtu;version="[0.18,2.0)",
+ net.solarnetwork.io.modbus.rtu.pjc;version="[0.18,2.0)",
+ net.solarnetwork.io.modbus.rtu.netty;version="[0.18,2.0)",
+ net.solarnetwork.io.modbus.serial;version="[0.18,2.0)",
  net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
  net.solarnetwork.node.io.modbus.nifty;version="[0.2,2.0)",
  net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
