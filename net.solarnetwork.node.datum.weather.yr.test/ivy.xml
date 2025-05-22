@@ -6,7 +6,7 @@
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.16,)"/>
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
 		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />

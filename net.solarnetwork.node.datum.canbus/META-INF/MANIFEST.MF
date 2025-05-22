@@ -5,7 +5,7 @@ Bundle-Description: Collect data from a CAN bus network.
 Bundle-SymbolicName: net.solarnetwork.node.datum.canbus
 Bundle-Version: 3.1.0
 Automatic-Module-Name: net.solarnetwork.node.datum.canbus
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  javax.measure;version="[2.0,3.0)",
  javax.measure.format;version="[2.0,3.0)",

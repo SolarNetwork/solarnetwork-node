@@ -6,9 +6,9 @@ Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.io.modbus.server;bundle-version="[4.1,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server.test
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
- net.solarnetwork.node.test;version="[1.7,2.0)",
+ net.solarnetwork.node.test;version="[2.0,3.0)",
  net.solarnetwork.test;version="[1.7,2.0)",
  org.easymock;version="[3.6,4.0)",
  org.hamcrest;version="[1.1,2.0)",

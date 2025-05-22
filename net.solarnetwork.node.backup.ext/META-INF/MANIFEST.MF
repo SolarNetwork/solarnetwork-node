@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.backup.ext
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.backup.ext
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.backup;version="[2.0,3.0)",

@@ -6,11 +6,11 @@ Automatic-Module-Name: net.solarnetwork.node.datum.samplefilter.test
 Bundle-Version: 3.8.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.datum.filter.standard;bundle-version="[3.13,4.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.expr.spel;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
- net.solarnetwork.node.test;version="[1.7,2.0)",
+ net.solarnetwork.node.test;version="[2.0,3.0)",
  net.solarnetwork.test;version="[1.7,2.0)",
  org.easymock;version="[3.6,4.0)",
  org.hamcrest;version="[1.3,2.0)",
