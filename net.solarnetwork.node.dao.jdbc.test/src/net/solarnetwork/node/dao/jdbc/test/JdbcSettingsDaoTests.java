@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.test;
 
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
@@ -504,9 +505,9 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		Instant before = null;
 		Instant after = null;
 		for ( int i = 0; i < count; i += 1 ) {
-			before = Instant.now();
+			before = Instant.now().truncatedTo(MILLIS);
 			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
-			after = Instant.now();
+			after = Instant.now().truncatedTo(MILLIS);
 			Thread.sleep(200);
 		}
 
@@ -531,9 +532,9 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		Thread.sleep(200);
 
 		// the modification date is set by the DAO, so have to box the update by time to verify date
-		Instant before = Instant.now();
+		Instant before = Instant.now().truncatedTo(MILLIS);
 		settingDao.storeSetting(TEST_KEY + 2, TEST_TYPE, TEST_VALUE + " updated");
-		Instant after = Instant.now();
+		Instant after = Instant.now().truncatedTo(MILLIS);
 
 		// WHEN
 		Date result = settingDao.getMostRecentModificationDate();
