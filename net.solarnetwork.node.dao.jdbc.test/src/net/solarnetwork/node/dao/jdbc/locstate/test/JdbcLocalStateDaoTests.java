@@ -104,6 +104,14 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		EasyMock.verify(eventAdmin);
 	}
 
+	private void tick() {
+		try {
+			Thread.sleep(10);
+		} catch ( InterruptedException e ) {
+			// ignore and continue
+		}
+	}
+
 	private void assertEntityEvent(Event event, GenericDao.EntityEventType expectedType,
 			LocalState expectedEntity) {
 		assertThat("Event generated", event, is(notNullValue()));
@@ -237,6 +245,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// WHEN
 		replayAll();
+		tick();
 		LocalState result = dao.compareAndSave(entity, null);
 
 		// THEN
@@ -259,6 +268,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// WHEN
 		replayAll();
+		tick();
 		// update to 3 ONLY IF currently 2
 		entity.setValue(3);
 		LocalState result = dao.compareAndSave(entity, originalValue);
@@ -281,6 +291,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// WHEN
 		replayAll();
+		tick();
 		// update to 3 ONLY IF currently 2
 		entity.setValue(3);
 		LocalState result = dao.compareAndSave(entity, 2);
@@ -305,6 +316,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// WHEN
 		replayAll();
+		tick();
 		LocalState result = dao.compareAndChange(entity);
 
 		// THEN
@@ -327,6 +339,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// WHEN
 		replayAll();
+		tick();
 		// update to 3
 		LocalState update = entity.clone();
 		update.setValue(3);
@@ -350,6 +363,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// WHEN
 		replayAll();
+		tick();
 		// update to 1 (same as previous)
 		LocalState update = entity.clone();
 		LocalState result = dao.compareAndChange(update);
