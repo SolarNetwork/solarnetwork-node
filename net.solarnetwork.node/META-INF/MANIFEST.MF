@@ -5,13 +5,13 @@ Bundle-SymbolicName: net.solarnetwork.node
 Automatic-Module-Name: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 3.24.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
  net.solarnetwork.node;version="2.0.0",
- net.solarnetwork.node.backup;version="2.1.0",
- net.solarnetwork.node.dao;version="2.4.0",
+ net.solarnetwork.node.backup;version="2.1.1",
+ net.solarnetwork.node.dao;version="3.0.0",
  net.solarnetwork.node.domain;version="2.11.1",
  net.solarnetwork.node.domain.datum;version="1.2.1",
  net.solarnetwork.node.job;version="2.1.1",
@@ -38,16 +38,16 @@ Import-Package:
  javax.xml.xpath,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.1,2.0)",
- net.solarnetwork.dao;version="[2.1,3.0)",
- net.solarnetwork.domain;version="[2.6,3.0)",
- net.solarnetwork.domain.datum;version="[2.13,3.0)",
+ net.solarnetwork.dao;version="[3.0,4.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.domain.tariff;version="[1.1,2.0)",
- net.solarnetwork.io;version="[2.2.0,3.0)",
+ net.solarnetwork.io;version="[3.0,4.0)",
  net.solarnetwork.security;version="[2.0,3.0)",
  net.solarnetwork.service;version="[1.1,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.14,3.0)",
  org.apache.commons.codec;version="[1.7,2.0)",
