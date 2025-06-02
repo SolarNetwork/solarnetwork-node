@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Serial Communication Support (RXTX)
 Bundle-Description: SolarNode serial communication API implementation using the RXTX framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.serial.rxtx
-Bundle-Version: 4.0.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.serial.rxtx
 Bundle-RequiredExecutionEnvironment: JavaSE-11
@@ -19,7 +19,7 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec;version="[1.4,2.0)",

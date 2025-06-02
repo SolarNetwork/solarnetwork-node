@@ -16,10 +16,10 @@
 		<dependency org="net.java.dev.jna" name="jna" rev="5.6.0" />
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
 	    <dependency org="net.solarnetwork.external" name="net.solarnetwork.external.pjc" rev="[1.0,)"/>
-	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
-	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial" rev="[3.0,)"/>
+	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[4.0,)"/>
+	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial" rev="[5.0,)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
-		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
+		<dependency org="org.osgi" name="org.osgi.service.event" rev="1.4.1"/>
 		<dependency org="org.springframework" name="spring-context" rev="5.3.24"/>
 	</dependencies>
 </ivy-module>

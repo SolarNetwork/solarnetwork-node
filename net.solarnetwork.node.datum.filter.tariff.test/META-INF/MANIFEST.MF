@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Tariff Datum FIlter Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.filter.tariff.test
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.datum.filter.tariff;bundle-version="[3.2,4.0)"
+Fragment-Host: net.solarnetwork.node.datum.filter.tariff;bundle-version="[4.0,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.filter.tariff.test
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 

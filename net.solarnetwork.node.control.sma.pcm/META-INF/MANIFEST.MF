@@ -6,17 +6,17 @@ Automatic-Module-Name: net.solarnetwork.node.control.sma.pcm
 Bundle-Description: Dynamically adjust the maximum power output of SMA inverters 
  by controlling an attached SMA Power Control Module. This control can be used 
  directly and it also supports automated adjustments via the Demand Balancer control. 
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
@@ -24,7 +24,7 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.aopalliance.aop;version="1.0.0",

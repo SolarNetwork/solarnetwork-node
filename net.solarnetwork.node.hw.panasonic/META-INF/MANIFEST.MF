@@ -4,7 +4,7 @@ Bundle-Name: Panasonic Device Support
 Bundle-Description: Hardware support for Panasonic devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.panasonic
 Automatic-Module-Name: net.solarnetwork.node.hw.panasonic
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SoalrNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
@@ -17,14 +17,14 @@ Import-Package:
  com.fasterxml.jackson.databind.module;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.type;version="[2.4,3.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans.factory;version="[5.3,6.0)",

@@ -3,26 +3,26 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Schneider Electric PM5100 Meter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.schneider.pm5100
 Bundle-Description: Collect data from Schneider Electric PM51XX series power meters.
-Bundle-Version: 4.1.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.schneider.pm5100
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.hw.schneider.meter;version="[4.0,5.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.10,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",

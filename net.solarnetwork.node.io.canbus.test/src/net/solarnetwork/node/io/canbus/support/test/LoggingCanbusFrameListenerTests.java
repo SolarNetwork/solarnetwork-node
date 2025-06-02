@@ -1,21 +1,21 @@
 /* ==================================================================
  * LoggingCanbusFrameListenerTests.java - 9/05/2022 2:22:53 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -50,7 +50,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link LoggingCanbusFrameListener} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -76,7 +76,7 @@ public class LoggingCanbusFrameListenerTests {
 		assertThat("Log data captured one line", logData, not(isEmptyOrNullString()));
 
 		Pattern logPat = Pattern.compile(
-				"# \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\n\\(\\d+\\.\\d{6}\\) can0 (\\d+)#([0-9A-F]*)");
+				"# \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3,6}Z\n\\(\\d+\\.\\d{6}\\) can0 (\\d+)#([0-9A-F]*)");
 		Matcher m = logPat.matcher(logData.trim());
 		assertThat("Log line formatted with comment and timestamp, address, hex data", m.matches(),
 				equalTo(true));
@@ -103,7 +103,7 @@ public class LoggingCanbusFrameListenerTests {
 		String logData = FileCopyUtils.copyToString(Files.newBufferedReader(tmpFile));
 		assertThat("Log data captured one line", logData, not(isEmptyOrNullString()));
 		Pattern logPat = Pattern.compile(
-				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z \\(\\d+\\.\\d{6}\\) can0 (\\d+)#([0-9A-F]*)");
+				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3,6}Z \\(\\d+\\.\\d{6}\\) can0 (\\d+)#([0-9A-F]*)");
 		Matcher m = logPat.matcher(logData.trim());
 		assertThat("Log line formatted with comment and timestamp, address, hex data", m.matches(),
 				equalTo(true));
@@ -146,7 +146,7 @@ public class LoggingCanbusFrameListenerTests {
 				.split("\n");
 		assertThat("Log data compressed and captured all lines", logData, arrayWithSize(16));
 		Pattern logPat = Pattern.compile(
-				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z \\((\\d+)\\.(\\d{6})\\) can0 (\\d+)#([0-9A-F]*)");
+				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3,6}Z \\((\\d+)\\.(\\d{6})\\) can0 (\\d+)#([0-9A-F]*)");
 		for ( int i = 0; i < logData.length; i++ ) {
 			Matcher m = logPat.matcher(logData[i].trim());
 			assertThat(

@@ -51,8 +51,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -82,7 +83,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * WeatherFlow Tempest datum source reading UDP messages.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements MultiDatumDataSource,
 		SettingSpecifierProvider, ServiceLifecycleObserver, SettingsChangeObserver {
@@ -227,7 +228,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 	private synchronized void start() {
 		log.info("Starting Tempest UDP listener for source [{}]", sourceId);
 		startupFuture = null;
-		EventLoopGroup group = new NioEventLoopGroup();
+		EventLoopGroup group = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 		Bootstrap b = new Bootstrap();
 		b.group(group).channel(NioDatagramChannel.class).option(ChannelOption.SO_BROADCAST, true)
 				.handler(new ServerInitializer());

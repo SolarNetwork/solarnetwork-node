@@ -4,19 +4,19 @@ Bundle-Name: Controls Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.controls
 Automatic-Module-Name: net.solarnetwork.node.datum.controls
 Bundle-Description: Collect samples from configured controls into datum streams.
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.10,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: M-Bus Communication Support (jMBus)
 Bundle-Description: SolarNode M-Bus API implementation using the jMBus framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.mbus.jmbus
-Bundle-Version: 2.4.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.mbus.jmbus
 Bundle-RequiredExecutionEnvironment: JavaSE-11
@@ -14,7 +14,7 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.5,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.5,3.0)",
  org.openmuc.jmbus;version="[3.2,4.0)",

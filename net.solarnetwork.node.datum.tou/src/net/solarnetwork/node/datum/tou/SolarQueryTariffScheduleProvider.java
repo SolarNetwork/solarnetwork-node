@@ -519,7 +519,7 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 
 		final ZoneId zone = timeZone(agg);
 
-		final List<Tariff> tariffs = new ArrayList<>(
+		final List<Tariff> tariffs = new ArrayList<Tariff>(
 				datum.getReturnedResultCount() != null ? datum.getReturnedResultCount() : 32);
 		for ( AggregateStreamDatum d : datum ) {
 			List<Tariff.Rate> rates = new ArrayList<>(propNamesCount);

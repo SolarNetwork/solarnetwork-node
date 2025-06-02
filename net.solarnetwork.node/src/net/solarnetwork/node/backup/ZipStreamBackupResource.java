@@ -30,9 +30,9 @@ import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.Cleaner;
 import java.util.zip.ZipEntry;
 import org.apache.commons.io.input.TeeInputStream;
+import net.solarnetwork.node.Constants;
 
 /**
  * A zip input stream backup resource.
@@ -42,8 +42,6 @@ import org.apache.commons.io.input.TeeInputStream;
  * @since 1.46
  */
 public class ZipStreamBackupResource implements BackupResource {
-
-	private static final Cleaner cleaner = Cleaner.create();
 
 	private final InputStream stream;
 	private final ZipEntry entry;
@@ -106,7 +104,7 @@ public class ZipStreamBackupResource implements BackupResource {
 			return new BufferedInputStream(new FileInputStream(tempFile));
 		}
 		tempFile = File.createTempFile(entry.getName(), ".tmp");
-		cleaner.register(this, new TempFileCleaner(tempFile));
+		Constants.cleaner().register(this, new TempFileCleaner(tempFile));
 		final BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
 		return new TeeInputStream(new FilterInputStream(stream) {
 

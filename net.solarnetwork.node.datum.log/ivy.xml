@@ -13,9 +13,9 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.15,)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.13,)"/>
-		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[4.0,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[4.0,)"/>
+		<dependency org="org.osgi" name="org.osgi.service.event" rev="1.4.1"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
 	</dependencies>
 </ivy-module>

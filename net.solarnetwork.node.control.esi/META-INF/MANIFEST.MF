@@ -3,18 +3,18 @@ Bundle-ManifestVersion: 2
 Bundle-Name: ESI Facility Integration
 Bundle-Description: Components to integrate with a SolarNetwork ESI Facility.
 Bundle-SymbolicName: net.solarnetwork.node.control.esi
-Bundle-Version: 0.4.0
+Bundle-Version: 0.5.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.esi
 Bundle-RequiredExecutionEnvironment: JavaSE-11
-Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=11))"
 Bundle-ClassPath: .,lib/esi-api-0.2.0.jar
 Import-Package: 
  com.google.protobuf;version="[3.7,4)",
  javax.annotation;version="[1.2,2)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
@@ -23,7 +23,7 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",

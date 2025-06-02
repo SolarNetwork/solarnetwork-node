@@ -1,21 +1,21 @@
 /* ==================================================================
  * GpsdClientService.java - 11/11/2019 5:09:34 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -57,7 +57,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
@@ -79,9 +81,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * GPSd client component.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class GpsdClientService extends BasicIdentifiable implements GpsdClientConnection,
 		SettingsChangeObserver, SettingSpecifierProvider, GpsdMessageHandler {
@@ -130,7 +132,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param mapper
 	 *        the JSON mapper to use for parsing messages
 	 * @param taskScheduler
@@ -159,7 +161,8 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 		tf.setDaemon(true);
 
 		Bootstrap b = new Bootstrap();
-		b.group(new NioEventLoopGroup(0, tf)).channel(NioSocketChannel.class)
+		EventLoopGroup group = new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory());
+		b.group(group).channel(NioSocketChannel.class)
 				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
 						(int) TimeUnit.SECONDS.toMillis(DEFAULT_RECONNECT_SECONDS))
 				.option(ChannelOption.SO_KEEPALIVE, true)
@@ -200,7 +203,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Call once after properties configured to initialize at a future date.
-	 * 
+	 *
 	 * @return a future that completes when connected
 	 */
 	public Future<?> startupLater() {
@@ -548,7 +551,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the GPSd host to connect to.
-	 * 
+	 *
 	 * @return the host name or IP address; defaults to {@link #DEFAULT_HOST}
 	 */
 	public String getHost() {
@@ -557,7 +560,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the GPSd host to connect to.
-	 * 
+	 *
 	 * @param host
 	 *        the host to set
 	 */
@@ -567,7 +570,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the GPSd port to connect to.
-	 * 
+	 *
 	 * @return the port; defaults to {@link #DEFAULT_PORT}
 	 */
 	public int getPort() {
@@ -576,7 +579,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the GPSd port to connect to.
-	 * 
+	 *
 	 * @param port
 	 *        the port to set
 	 */
@@ -586,7 +589,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the delay in seconds before an automatic reconnection is attempted.
-	 * 
+	 *
 	 * @return the seconds; defaults to {@link #DEFAULT_RECONNECT_SECONDS}
 	 */
 	public int getReconnectSeconds() {
@@ -595,7 +598,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the delay in seconds before an automatic reconnection is attempted.
-	 * 
+	 *
 	 * @param reconnectSeconds
 	 *        the seconds to set
 	 */
@@ -606,7 +609,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 	/**
 	 * Get the maximum number of seconds to wait for the client to gracefully
 	 * shutdown.
-	 * 
+	 *
 	 * @return the seconds; defaults to {@link #DEFAULT_SHUTDOWN_SECONDS}
 	 */
 	public int getShutdownSeconds() {
@@ -616,7 +619,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 	/**
 	 * Set the maximum number of seconds to wait for the client to gracefully
 	 * shutdown.
-	 * 
+	 *
 	 * @param shutdownSeconds
 	 *        the seconds to set
 	 */
@@ -626,7 +629,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the maximum number of seconds to wait for a command response.
-	 * 
+	 *
 	 * @return the seconds; defaults to
 	 *         {@link #DEFAULT_RESPONSE_TIMEOUT_SECONDS}
 	 */
@@ -636,7 +639,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the maximum number of seconds to wait for a command response.
-	 * 
+	 *
 	 * @param responseTimeoutSeconds
 	 *        the seconds to set
 	 */
@@ -646,7 +649,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the "auto watch" mode flag.
-	 * 
+	 *
 	 * @return {@literal true} to automatically issue a {@literal ?WATCH}
 	 *         command when connecting to GPSd; default is
 	 *         {@link #DEFAULT_AUTO_WATCH}
@@ -657,7 +660,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the "auto watch" mode flag.
-	 * 
+	 *
 	 * @param autoWatch
 	 *        the mode to set
 	 */
@@ -667,7 +670,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the message handler.
-	 * 
+	 *
 	 * @return the handler, or {@literal null}
 	 */
 	public GpsdMessageHandler getMessageHandler() {
@@ -676,7 +679,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the message handler.
-	 * 
+	 *
 	 * @param messageHandler
 	 *        the handler to set
 	 */
@@ -686,7 +689,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the {@link EventAdmin} service.
-	 * 
+	 *
 	 * @return the EventAdmin service
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -695,7 +698,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set an {@link EventAdmin} service to use.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the EventAdmin to use
 	 */
@@ -705,7 +708,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Get the GPS week rollover compensation mode.
-	 * 
+	 *
 	 * @return the mode; defaults to {@link #DEFAULT_GPS_ROLLOVER_COMPENSATION}
 	 */
 	public boolean isGpsRolloverCompensation() {
@@ -714,7 +717,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Set the GPS week rollover compensation mode.
-	 * 
+	 *
 	 * @param gpsRolloverCompensation
 	 *        {@literal true} if the GPS date should be compensated for hardware
 	 *        that does not correctly handle week rollover peiods (every 20

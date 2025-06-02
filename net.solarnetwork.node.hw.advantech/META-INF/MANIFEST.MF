@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Advantech Hardware Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.advantech
 Bundle-Description: Hardware support for Advantech devices.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.advantech
 Bundle-RequiredExecutionEnvironment: JavaSE-11
@@ -11,6 +11,6 @@ Export-Package:
  net.solarnetwork.node.hw.advantech.adam;version="3.0.0"
 Import-Package: 
  net.solarnetwork.node.domain;version="[2.0,3.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)"

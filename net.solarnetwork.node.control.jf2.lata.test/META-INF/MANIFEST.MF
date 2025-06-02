@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Unit tests for JF2 LATA
 Bundle-SymbolicName: net.solarnetwork.node.control.jf2.lata.test
 Automatic-Module-Name: net.solarnetwork.node.control.jf2.lata.test
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.control.jf2.lata;bundle-version="[5.0,6.0)"
+Fragment-Host: net.solarnetwork.node.control.jf2.lata;bundle-version="[6.0,7.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  gnu.io,

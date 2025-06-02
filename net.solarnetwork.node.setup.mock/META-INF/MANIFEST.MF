@@ -2,12 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mock Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup.mock
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",

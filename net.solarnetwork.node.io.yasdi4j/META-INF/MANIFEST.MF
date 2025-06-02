@@ -4,7 +4,7 @@ Bundle-Name: SMA yasdi4j Support
 Bundle-SymbolicName: net.solarnetwork.node.io.yasdi4j
 Automatic-Module-Name: net.solarnetwork.node.io.yasdi4j
 Bundle-Description: Communication support for SMA devices using the yasdi4j framework.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
@@ -13,7 +13,7 @@ Import-Package:
  de.michaeldenk.yasdi4j;version="0.1.5",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[1.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.asm;version="[5.3,6.0)",

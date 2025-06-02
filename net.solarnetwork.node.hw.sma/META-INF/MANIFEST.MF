@@ -4,7 +4,7 @@ Bundle-Name: SMA Core Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.sma
 Automatic-Module-Name: net.solarnetwork.node.hw.sma
 Bundle-Description: Hardware support for SMA devices.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
@@ -15,13 +15,13 @@ Export-Package:
  net.solarnetwork.node.hw.sma.protocol;version="1.0.0",
  net.solarnetwork.node.hw.sma.sunnynet;version="1.0.0"
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)";resolution:=optional,
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)";resolution:=optional,
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)";resolution:=optional,
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)";resolution:=optional,
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",

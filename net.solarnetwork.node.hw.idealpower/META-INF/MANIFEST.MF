@@ -3,15 +3,15 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Ideal Power Hardware Support
 Bundle-Description: Hardware support for Ideal Power devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.idealpower
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.idealpower
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
  net.solarnetwork.node.hw.idealpower.pc;version="3.0.0"
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.util;version="[2.0,3.0)"

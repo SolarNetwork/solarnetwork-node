@@ -3,12 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Web Proxy Setup
 Bundle-Description: Dynamic HTTP proxy support for local network services within SolarNode web setup.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web.proxy
-Bundle-Version: 3.0.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.web.proxy
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-ClassPath: WEB-INF/classes/
-Fragment-Host: net.solarnetwork.node.setup.web;bundle-version="[4.0,5.0)"
+Fragment-Host: net.solarnetwork.node.setup.web;bundle-version="[5.0,6.0)"
 Export-Package: 
  net.solarnetwork.node.setup.web.proxy;version="2.0.1"
 Import-Package: 

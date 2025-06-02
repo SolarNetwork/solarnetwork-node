@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: AMS TSL2591 Light Sensor Data Source
 Bundle-Description: Collect data from AMS GSS TSL2591 series ambient light sensors.
 Bundle-SymbolicName: net.solarnetwork.node.datum.ams.tsl2591
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Automatic-Module-Name: net.solarnetwork.noe.datum.ams.tsl2591
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.hw.ams.lux.tsl2591;version="[2.0,3.0)",
@@ -19,7 +19,7 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",

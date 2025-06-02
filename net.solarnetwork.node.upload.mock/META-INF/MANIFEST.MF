@@ -3,14 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock SolarNet Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.mock
 Bundle-Description: Mock upload service for SolarNode developers.
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Automatic-Module-Name: net.solarnetwork.node.upload.mock
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",

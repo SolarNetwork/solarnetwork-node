@@ -9,7 +9,7 @@ Automatic-Module-Name: net.solarnetwork.node.setup.mockpkg
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.node;version="[2.0,3.0)",
+ net.solarnetwork.node;version="[2.1,3.0)",
  net.solarnetwork.node.service;version="[1.8,2.0)",
  net.solarnetwork.node.service.support;version="[1.4,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",

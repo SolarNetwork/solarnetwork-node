@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarFlux Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.flux
 Bundle-Description: Upload datump created by other SolarNode plugins to a SolarFlux-compatible MQTT server.
-Bundle-Version: 3.3.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.flux
 Bundle-RequiredExecutionEnvironment: JavaSE-11
@@ -18,19 +18,19 @@ Import-Package:
  javax.net.ssl,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.mqtt;version="[3.0,4.0)",
- net.solarnetwork.common.mqtt.dao;version="[2.0,3.0)",
+ net.solarnetwork.common.mqtt.dao;version="[3.0,4.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.dao;version="[2.0,3.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.dao;version="[3.0,4.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec.binary;version="[1.11,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",

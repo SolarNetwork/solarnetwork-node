@@ -1,3 +1,4 @@
+
 <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
     <info organisation="net.solarnetwork.node.test" module="${bundle.name}">
     	<extends organisation="net.solarnetwork.node"
@@ -6,12 +7,13 @@
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[3.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="2.2.10"/>
+		<dependency org="com.sun.xml.bind" name="jaxb-ri" rev="2.3.9"/>
+		<dependency org="jakarta.xml.bind" name="jakarta.xml.bind-api" rev="2.3.3" />
 		<dependency org="javax.activation" name="activation" rev="1.1.1"/>
-		<dependency org="systems.uom" name="systems-quantity" rev="2.0-SNAPSHOT"/>
-		<dependency org="systems.uom" name="systems-ucum" rev="2.0-SNAPSHOT"/>
+		<dependency org="systems.uom" name="systems-quantity" rev="2.0.2"/>
+		<dependency org="systems.uom" name="systems-ucum" rev="2.0.2"/>
     </dependencies>
 </ivy-module>

@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CurrentCost Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.currentcost.test
 Automatic-Module-Name: net.solarnetwork.node.hw.currentcost.test
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.hw.currentcost;bundle-version="[5.0,6.0)"
+Fragment-Host: net.solarnetwork.node.hw.currentcost;bundle-version="[6.0,7.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  gnu.io,

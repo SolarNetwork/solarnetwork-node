@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Setup Tests
 Bundle-SymbolicName: net.solarnetwork.node.setup.test
 Automatic-Module-Name: net.solarnetwork.node.setup.test
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.setup;bundle-version="[3.0,4.0)"
+Fragment-Host: net.solarnetwork.node.setup;bundle-version="[4.0,5.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  javax.servlet;version="3.0.0",

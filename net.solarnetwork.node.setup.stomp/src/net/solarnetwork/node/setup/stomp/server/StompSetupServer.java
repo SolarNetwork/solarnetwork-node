@@ -1,21 +1,21 @@
 /* ==================================================================
  * StompSetupServer.java - 4/08/2021 11:33:02 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,7 +39,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.stomp.StompSubframeAggregator;
@@ -57,9 +58,9 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * A STOMP protocol server for SolarNode Setup, using Netty.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class StompSetupServer extends BaseIdentifiable
 		implements SettingsChangeObserver, SettingSpecifierProvider {
@@ -91,7 +92,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param serverService
 	 *        the server service
 	 * @param objectMapper
@@ -173,8 +174,9 @@ public class StompSetupServer extends BaseIdentifiable
 				final int port = StompSetupServer.this.port;
 				final String bindAddress = StompSetupServer.this.bindAddress;
 				final ThreadFactory tf = new DefaultThreadFactory("STOMP-Setup:" + port, true);
-				bossGroup = new NioEventLoopGroup(tf);
-				workerGroup = new NioEventLoopGroup(tf);
+
+				bossGroup = new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
+				workerGroup = new MultiThreadIoEventLoopGroup(tf, NioIoHandler.newFactory());
 				try {
 					ServerBootstrap b = new ServerBootstrap();
 					// @formatter:off
@@ -252,7 +254,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Get the task scheduler.
-	 * 
+	 *
 	 * @return the task scheduler
 	 */
 	public TaskScheduler getTaskScheduler() {
@@ -261,7 +263,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Set the task scheduler.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 */
@@ -271,7 +273,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Get the startup delay.
-	 * 
+	 *
 	 * @return the startup delay, in seconds; defaults tO
 	 *         {@link #DEFAULT_STARTUP_DELAY_SECS}
 	 */
@@ -281,7 +283,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Set the startup delay.
-	 * 
+	 *
 	 * @param startupDelay
 	 *        the delay to set, in seconds
 	 */
@@ -291,7 +293,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Get the address to bind to.
-	 * 
+	 *
 	 * @return the address; defaults to {@link #DEFAULT_BIND_ADDRESS}
 	 */
 	public String getBindAddress() {
@@ -300,7 +302,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	/**
 	 * Set the address to bind to.
-	 * 
+	 *
 	 * @param bindAddress
 	 *        the address to set
 	 */

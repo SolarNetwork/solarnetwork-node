@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OpenWeatherMap Weather
 Bundle-Description: Collect weather data from the OpenWeatherMap.
 Bundle-SymbolicName: net.solarnetwork.node.datum.weather.owm
-Bundle-Version: 3.0.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.weather.owm
 Bundle-RequiredExecutionEnvironment: JavaSE-11
@@ -12,9 +12,9 @@ Import-Package:
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="1.0.0",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
- net.solarnetwork.io;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
+ net.solarnetwork.io;version="[3.0,4.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
@@ -25,7 +25,7 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[5.3,6.0)",

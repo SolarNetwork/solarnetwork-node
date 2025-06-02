@@ -3,10 +3,10 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock SystemConfigure instruction handlers
 Bundle-SymbolicName: net.solarnetwork.node.setup.system.mock
 Bundle-Description: Mock instruction handlers for testing setup integration.
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.system.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)"
