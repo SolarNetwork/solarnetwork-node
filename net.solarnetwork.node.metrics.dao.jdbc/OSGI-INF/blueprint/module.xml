@@ -61,6 +61,7 @@
 	
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
 		<bean class="net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider">
+			<argument value="net.solarnetwork.node.metrics.dao.jdbc.JdbcTableBackupResourceProvider"/>
 			<argument>
 				<bean class="org.springframework.jdbc.core.JdbcTemplate">
 					<property name="dataSource" ref="dataSource"/>
