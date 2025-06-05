@@ -79,7 +79,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 
 		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
+		if ( db.getDatabaseType() == EmbeddedDatabaseType.DERBY ) {
 			String dbType = db.getDatabaseType().toString().toLowerCase();
 			dao.setInitSqlResource(new ClassPathResource(format("%s-locstate-init.sql", dbType),
 					JdbcLocalStateDao.class));

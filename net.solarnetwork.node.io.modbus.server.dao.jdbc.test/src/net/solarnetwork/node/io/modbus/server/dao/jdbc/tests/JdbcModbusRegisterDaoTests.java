@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.modbus.server.dao.jdbc.tests;
 
-import static java.lang.String.format;
 import static net.solarnetwork.node.io.modbus.server.dao.BasicModbusRegisterFilter.forServerId;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
@@ -35,8 +34,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
@@ -65,12 +62,6 @@ public class JdbcModbusRegisterDaoTests extends AbstractNodeTest {
 		dao = new JdbcModbusRegisterDao();
 
 		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-modbus-server-init.sql", dbType),
-					JdbcModbusRegisterDao.class));
-			dao.setSqlResourcePrefix(format("%s-register", dbType));
-		}
 		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();

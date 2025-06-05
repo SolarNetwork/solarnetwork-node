@@ -109,7 +109,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	 */
 	public JdbcSettingDao() {
 		super();
-		setSqlResourcePrefix("derby-settings");
+		setSqlResourcePrefix("settings");
 	}
 
 	@Override

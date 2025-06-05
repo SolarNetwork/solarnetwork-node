@@ -19,8 +19,8 @@
 	<!-- Configuration -->
 
 	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.dao.mqtt.jdbc">
-		<beans:prop key="JdbcMqttMessageDao.initSqlResource">classpath:/net/solarnetwork/node/dao/mqtt/jdbc/derby-message-init.sql</beans:prop>
-		<beans:prop key="JdbcMqttMessageDao.sqlResourcePrefix">derby-message</beans:prop>
+		<beans:prop key="JdbcMqttMessageDao.initSqlResource">classpath:/net/solarnetwork/node/dao/mqtt/jdbc/message-init.sql</beans:prop>
+		<beans:prop key="JdbcMqttMessageDao.sqlResourcePrefix">message</beans:prop>
 		<beans:prop key="JdbcMqttMessageDao.maxCountPingFail">10000</beans:prop>
 	</osgix:cm-properties>
 

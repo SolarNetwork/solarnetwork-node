@@ -20,7 +20,7 @@
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="dao.jdbc.reactor.cfg" persistent-id="net.solarnetwork.node.dao.jdbc.reactor">
-		<beans:prop key="JdbcInstructionDao.sqlResourcePrefix">derby-instruction</beans:prop>
+		<beans:prop key="JdbcInstructionDao.sqlResourcePrefix">instruction</beans:prop>
 	</osgix:cm-properties>
 
 	<!-- Service References -->
