@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -125,6 +126,41 @@ public class MetricHarvesterDatumFilterServiceTests {
 		assertThat("Metric name is from prop config", m.getName(), is(equalTo(pConfig.getMetricName())));
 		assertThat("Metric value is from datum", m.getValue(), is(
 				equalTo(d.getSampleDouble(DatumSamplesType.Instantaneous, pConfig.getPropertyKey()))));
+	}
+
+	@Test
+	public void harvest_withUnitSlope() {
+		// GIVEN
+		MetricHarvesterPropertyConfig pConfig = new MetricHarvesterPropertyConfig("watts",
+				DatumSamplesType.Instantaneous, "metric.1");
+		pConfig.setUnitSlope(new BigDecimal("0.001"));
+		service.setPropertyConfigs(new MetricHarvesterPropertyConfig[] { pConfig });
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+
+		Capture<Metric> metricCaptor = Capture.newInstance();
+		expect(metricDao.save(capture(metricCaptor))).andAnswer(() -> {
+			return metricCaptor.getValue().getId();
+		});
+
+		// WHEN
+		replayAll();
+		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
+
+		// THEN
+		assertThat("Input samples returned", result, is(sameInstance(d.getSamples())));
+
+		Metric m = metricCaptor.getValue();
+		assertThat("Metric persisted", m, is(notNullValue()));
+		assertThat("Metric timestamp is datum timestamp", m.getTimestamp(),
+				is(equalTo(d.getTimestamp())));
+		assertThat("Metric type is 'sample'", m.getType(), is(equalTo(Metric.METRIC_TYPE_SAMPLE)));
+		assertThat("Metric name is from prop config", m.getName(), is(equalTo(pConfig.getMetricName())));
+		assertThat("Metric value is from datum", m.getValue(),
+				is(equalTo(
+						d.getSampleBigDecimal(DatumSamplesType.Instantaneous, pConfig.getPropertyKey())
+								.multiply(pConfig.getUnitSlope()).doubleValue())));
 	}
 
 	@Test
