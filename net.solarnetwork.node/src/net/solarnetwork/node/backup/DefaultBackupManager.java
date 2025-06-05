@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultBackupManager.java - Mar 27, 2013 9:17:24 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -61,9 +61,9 @@ import net.solarnetwork.util.UnionIterator;
 
 /**
  * Default implementation of {@link BackupManager}.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -410,7 +410,9 @@ public class DefaultBackupManager implements BackupManager {
 								}
 
 							});
-							break;
+							if ( resourceHandled ) {
+								break;
+							}
 						}
 					}
 					if ( !resourceHandled ) {
@@ -501,7 +503,7 @@ public class DefaultBackupManager implements BackupManager {
 	/**
 	 * Set a collection of {@link BackupService} instances to allow backing up
 	 * and restoring with.
-	 * 
+	 *
 	 * @param backupServices
 	 *        the backup services to use
 	 */
@@ -512,7 +514,7 @@ public class DefaultBackupManager implements BackupManager {
 	/**
 	 * Set a collection of {@link BackupResourceProvider} instances that provide
 	 * the resources to be backed up.
-	 * 
+	 *
 	 * @param resourceProviders
 	 *        the resource providers to backup resources from
 	 */
@@ -522,7 +524,7 @@ public class DefaultBackupManager implements BackupManager {
 
 	/**
 	 * Set the executor service to use for tasks.
-	 * 
+	 *
 	 * @param executorService
 	 *        the service to use
 	 */
@@ -535,7 +537,7 @@ public class DefaultBackupManager implements BackupManager {
 	 * a backup has been previously marked for restoration. This delay gives the
 	 * platform time to boot up and register the backup resource providers and
 	 * other services required to perform the restore.
-	 * 
+	 *
 	 * @param backupRestoreDelaySeconds
 	 *        The number of seconds to delay attempting to restore from backup.
 	 * @since 1.1
@@ -546,7 +548,7 @@ public class DefaultBackupManager implements BackupManager {
 
 	/**
 	 * Set the key of the preferred backup service to use.
-	 * 
+	 *
 	 * @param preferredBackupServiceKey
 	 *        the service key to set
 	 * @since 1.4

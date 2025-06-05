@@ -34,6 +34,7 @@ Import-Package:
  javax.xml,
  javax.xml.bind,
  javax.xml.bind.annotation,
+ javax.xml.bind.annotation.adapters,
  javax.xml.namespace,
  javax.xml.transform,
  javax.xml.transform.stream,

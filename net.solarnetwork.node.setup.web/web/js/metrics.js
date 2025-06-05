@@ -173,7 +173,7 @@ $(document).ready(function metricsManagement() {
 		const rounded = metric.value.toFixed(3);
 		const comps = rounded.match(NUM_COMPONENTS);
 		const whole = Number(comps[1]);
-		const frac = comps[2] ? Number(comps[2].replace(/0+$/, '')) : undefined;
+		const frac = comps[2] ? comps[2].replace(/0+$/, '') : undefined;
 		
 		itemEl.find('[data-tprop=valueWhole]').text(whole.toLocaleString());
 		itemEl.find('[data-tprop=valueFraction]').text(frac ? frac : '');

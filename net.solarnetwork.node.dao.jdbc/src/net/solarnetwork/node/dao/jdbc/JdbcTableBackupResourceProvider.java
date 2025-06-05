@@ -65,7 +65,7 @@ import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
  * Backup support for JDBC tables.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
@@ -259,6 +259,18 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		final String tableName = StringUtils.stripFilenameExtension(resource.getBackupPath());
 		if ( tableName == null || tableName.length() < 1 ) {
 			return false;
+		}
+		if ( tableNames != null ) {
+			boolean tableSupported = false;
+			for ( String supportedTableName : tableNames ) {
+				if ( supportedTableName.equalsIgnoreCase(tableName) ) {
+					tableSupported = true;
+					break;
+				}
+			}
+			if ( !tableSupported ) {
+				return false;
+			}
 		}
 		return transactionTemplate.execute(new TransactionCallback<Boolean>() {
 

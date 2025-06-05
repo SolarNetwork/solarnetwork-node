@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Metrics DAO (JDBC)
 Bundle-Description: Metrics data persistence using JDBC.
 Bundle-SymbolicName: net.solarnetwork.node.metrics.dao.jdbc
-Bundle-Version: 1.3.1
+Bundle-Version: 1.3.2
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.metrics.dao.jdbc
 Bundle-RequiredExecutionEnvironment: JavaSE-11
