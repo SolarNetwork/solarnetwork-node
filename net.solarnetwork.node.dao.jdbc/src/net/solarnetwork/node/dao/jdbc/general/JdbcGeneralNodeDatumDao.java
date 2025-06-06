@@ -1,21 +1,21 @@
 /* ==================================================================
  * JdbcGeneralNodeDatumDao.java - Aug 26, 2014 7:03:34 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -68,9 +68,9 @@ import net.solarnetwork.util.StatCounter;
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
  * {@link NodeDatum} domain objects.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		implements DatumDao, SettingSpecifierProvider, PingTest {
@@ -85,7 +85,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
 
 	/** The default classpath Resource for the {@code initSqlResource}. */
-	public static final String DEFAULT_INIT_SQL = "derby-generalnodedatum-init.sql";
+	public static final String DEFAULT_INIT_SQL = "generalnodedatum-init.sql";
 
 	/** The default value for the {@code sqlGetTablesVersion} property. */
 	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
@@ -96,7 +96,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * The {@code maxCountPingFail} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final int DEFAULT_MAX_COUNT_PING_FAIL = 10000;
@@ -124,14 +124,14 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * A source ID for log messages posted as datum.
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final String LOG_SOURCE_ID = "log";
 
 	/**
 	 * A source ID prefix for log messages posted as datum.
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
@@ -147,7 +147,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 */
 	public JdbcGeneralNodeDatumDao() {
 		super();
-		setSqlResourcePrefix("derby-generalnodedatum");
+		setSqlResourcePrefix("generalnodedatum");
 		setTableName(TABLE_GENERAL_NODE_DATUM);
 		setTablesVersion(DEFAULT_TABLES_VERSION);
 		setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
@@ -156,7 +156,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	@Override
-	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, noRollbackFor = DuplicateKeyException.class)
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED,
+			noRollbackFor = DuplicateKeyException.class)
 	public void storeDatum(NodeDatum datum) {
 		try {
 			storeDomainObject(datum);
@@ -288,7 +289,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Get the object mapper.
-	 * 
+	 *
 	 * @return the mapper
 	 */
 	public ObjectMapper getObjectMapper() {
@@ -297,7 +298,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Set the object mapper.
-	 * 
+	 *
 	 * @param objectMapper
 	 *        the mapper to set
 	 */
@@ -308,7 +309,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * Execute a SQL update to delete data that has already been "uploaded" and
 	 * is older than a specified number of hours.
-	 * 
+	 *
 	 * <p>
 	 * This executes SQL from the {@code sqlDeleteOld} property, setting a
 	 * single timestamp parameter as the current time minus {@code hours} hours.
@@ -316,14 +317,14 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * the rows in the "datum" table that have been uploaded and are older than
 	 * the specified number of hours. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
-	 * DELETE FROM solarnode.sn_some_datum p WHERE p.id IN 
-	 * (SELECT pd.id FROM solarnode.sn_some_datum pd 
-	 * INNER JOIN solarnode.sn_some_datum_upload u 
+	 * DELETE FROM solarnode.sn_some_datum p WHERE p.id IN
+	 * (SELECT pd.id FROM solarnode.sn_some_datum pd
+	 * INNER JOIN solarnode.sn_some_datum_upload u
 	 * ON u.power_datum_id = pd.id WHERE pd.created &lt; ?)
 	 * </pre>
-	 * 
+	 *
 	 * @param hours
 	 *        the number of hours hold to delete
 	 * @return the number of rows deleted
@@ -349,14 +350,14 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * Find datum entities that have not been uploaded to a specific
 	 * destination.
-	 * 
+	 *
 	 * <p>
 	 * This executes SQL from the {@code findForUploadSql} property. It uses the
 	 * {@code maxFetchForUpload} property to limit the number of rows returned,
 	 * so the call may not return all rows available from the database (this is
 	 * to conserve memory and process the data in small batches).
 	 * </p>
-	 * 
+	 *
 	 * @param rowMapper
 	 *        a {@link RowMapper} implementation to instantiate entities from
 	 *        found rows
@@ -387,7 +388,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Find datum entities.
-	 * 
+	 *
 	 * @param sqlResource
 	 *        The name of the SQL resource to use. See
 	 *        {@link #getSqlResource(String)}
@@ -423,7 +424,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * Create a {@link PreparedStatementSetter} that sets the primary key values
 	 * on a statement.
-	 * 
+	 *
 	 * @param created
 	 *        The created date of the datum.
 	 * @param sourceId
@@ -446,13 +447,13 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Store a new domain object using the {@link #SQL_RESOURCE_INSERT} SQL.
-	 * 
+	 *
 	 * <p>
 	 * If {@link #isIgnoreMockData()} returns {@literal true} and {@code datum}
 	 * is an instance of {@link Mock} then this method will not persist the
 	 * object and will simply return {@code -1}.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to persist
 	 */
@@ -474,7 +475,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * {@inheritDoc}
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	@Override
@@ -488,14 +489,14 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Mark a Datum as uploaded.
-	 * 
+	 *
 	 * <p>
 	 * This method will call
 	 * {@link #updateDatumUpload(Instant, Object, Instant)} passing in
 	 * {@link NodeDatum#getTimestamp()}, {@link NodeDatum#getSourceId()}, and
 	 * {@code timestamp}.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the datum that was uploaded
 	 * @param timestamp
@@ -507,18 +508,18 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Mark a Datum as uploaded.
-	 * 
+	 *
 	 * <p>
 	 * This method will execute the {@link #SQL_RESOURCE_UPDATE_UPLOADED} SQL
 	 * setting the following parameters:
 	 * </p>
-	 * 
+	 *
 	 * <ol>
 	 * <li>Timestamp parameter based on {@code timestamp}</li>
 	 * <li>Timestamp parameter based on {@code created}</li>
 	 * <li>Object parameter based on {@code id}</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param created
 	 *        the date the object was created
 	 * @param id
@@ -548,7 +549,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * Post an {@link Event} for the {@link DatumDao#EVENT_TOPIC_DATUM_STORED}
 	 * topic.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum that was stored
 	 * @since 1.3
@@ -561,12 +562,12 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * Create a new {@link DatumDao#EVENT_TOPIC_DATUM_STORED} {@link Event}
 	 * object out of a {@link Datum}.
-	 * 
+	 *
 	 * <p>
 	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
 	 * properties.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to create the event for
 	 * @return the new Event instance
@@ -635,7 +636,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 			log.warn("Error finding datum row count.", e);
 		}
 		return getMessageSource().getMessage("status.msg",
-				new Object[] { 
+				new Object[] {
 						rowCount,
 						stats.get(DatumDaoStat.DatumStored),
 						stats.get(DatumDaoStat.DatumUploaded),
@@ -647,7 +648,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Get the maximum number of datum to fetch for upload at one time.
-	 * 
+	 *
 	 * @return the maximum number of datum rows to fetch
 	 */
 	public int getMaxFetchForUpload() {
@@ -657,11 +658,11 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * The maximum number of rows to return in the
 	 * {@link #findDatumNotUploaded(RowMapper)} method.
-	 * 
+	 *
 	 * <p>
 	 * Defaults to {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.
 	 * </p>
-	 * 
+	 *
 	 * @param maxFetchForUpload
 	 *        the maximum upload value
 	 */
@@ -671,7 +672,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Get the flag to ignore mock data.
-	 * 
+	 *
 	 * @return {@literal true} to not store any mock data
 	 */
 	public boolean isIgnoreMockData() {
@@ -681,12 +682,12 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/**
 	 * Set a flag to not actually store any domain object that implements the
 	 * {@link Mock} interface.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal true}, but during development it can be useful
 	 * to configure this as {@literal false} for testing.
 	 * </p>
-	 * 
+	 *
 	 * @param ignoreMockData
 	 *        the ignore mock data value
 	 */
@@ -696,7 +697,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Get the maximum number of messages to store before failing ping tests.
-	 * 
+	 *
 	 * @return the maximum count, or {@literal 0} to disable the test; defaults
 	 *         to {@link #DEFAULT_MAX_COUNT_PING_FAIL}
 	 * @since 2.1
@@ -707,7 +708,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/**
 	 * Set the maximum number of messages to store before failing ping tests.
-	 * 
+	 *
 	 * @param maxCountPingFail
 	 *        the maximum count, or {@literal 0} to disable the test
 	 * @since 2.1

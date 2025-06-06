@@ -19,7 +19,7 @@
 	<!-- Configuration -->
 
 	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.io.modbus.server.dao.jdbc">
-		<beans:prop key="JdbcModbusServerDao.initSqlResource">classpath:/net/solarnetwork/node/io/modbus/server/dao/jdbc/h2-modbus-server-init.sql</beans:prop>
+		<beans:prop key="JdbcModbusServerDao.initSqlResource">classpath:/net/solarnetwork/node/io/modbus/server/dao/jdbc/register-init.sql</beans:prop>
 		<beans:prop key="JdbcModbusServerDao.sqlResourcePrefix">register</beans:prop>
 	</osgix:cm-properties>
 

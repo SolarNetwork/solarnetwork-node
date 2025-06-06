@@ -20,7 +20,7 @@
 
 	<osgix:cm-properties id="dao.jdbc.cfg"
 		persistent-id="net.solarnetwork.node.dao.jdbc">
-		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql</beans:prop>
+		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/settings-init.sql</beans:prop>
 		<beans:prop key="reset.sqlStateRegex">900(28|31)</beans:prop>
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
@@ -28,13 +28,13 @@
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS(?!DB6).*</beans:prop>
 		<beans:prop key="shutdown.sqlStateRegex">XSDB6</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
-		<beans:prop key="JdbcSettingDao.sqlResourcePrefix">derby-settings</beans:prop>
-		<beans:prop key="JdbcSecurityTokenDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/sectok/derby-sectok-init.sql</beans:prop>
-		<beans:prop key="JdbcSecurityTokenDao.sqlResourcePrefix">derby-sectok</beans:prop>
-		<beans:prop key="JdbcLocalStateDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/locstate/derby-locstate-init.sql</beans:prop>
-		<beans:prop key="JdbcLocalStateDao.sqlResourcePrefix">derby-locstate</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/generalnodedatum-init.sql</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">generalnodedatum</beans:prop>
+		<beans:prop key="JdbcSettingDao.sqlResourcePrefix">settings</beans:prop>
+		<beans:prop key="JdbcSecurityTokenDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/sectok/sectok-init.sql</beans:prop>
+		<beans:prop key="JdbcSecurityTokenDao.sqlResourcePrefix">sectok</beans:prop>
+		<beans:prop key="JdbcLocalStateDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/locstate/locstate-init.sql</beans:prop>
+		<beans:prop key="JdbcLocalStateDao.sqlResourcePrefix">locstate</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.uploadedTrimHours">4</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>

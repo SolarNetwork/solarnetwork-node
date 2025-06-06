@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS solarnode.modbus_server_meta (
 
 CREATE TABLE IF NOT EXISTS solarnode.modbus_server_register (
 	server_id			VARCHAR(256) NOT NULL,
-	unit_id				TINYINT NOT NULL,
-	block_type			TINYINT NOT NULL,
+	unit_id				SMALLINT NOT NULL,
+	block_type			SMALLINT NOT NULL,
 	addr				INTEGER NOT NULL,
 	created				TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	modified			TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

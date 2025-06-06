@@ -1,28 +1,27 @@
 /* ==================================================================
  * JdbcSecurityTokenDaoTests.java - 6/09/2023 3:43:03 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.sectok.test;
 
-import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -37,8 +36,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.sectok.JdbcSecurityTokenDao;
 import net.solarnetwork.node.domain.SecurityToken;
@@ -47,7 +44,7 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
 
 /**
  * Test cases for the {@link JdbcSecurityTokenDao} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -63,12 +60,6 @@ public class JdbcSecurityTokenDaoTests extends AbstractNodeTest {
 		dao = new JdbcSecurityTokenDao();
 
 		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-sectok-init.sql", dbType),
-					JdbcSecurityTokenDao.class));
-			dao.setSqlResourcePrefix(format("%s-sectok", dbType));
-		}
 		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();

@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.test
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.test
 Bundle-Version: 3.3.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="[3.4,4.0)"
+Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="[3.6,4.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
