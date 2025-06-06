@@ -94,8 +94,6 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		dao = new JdbcSettingDao();
 		dao.setDataSource(dataSource);
 		dao.setTransactionTemplate(txTemplate);
-		dao.setSqlResourcePrefix(
-				String.format("%s-settings", testDatabase.getDatabaseType().toLowerCase()));
 
 		eventAdminMock = EasyMock.createMock(EventAdmin.class);
 		dao.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdminMock));

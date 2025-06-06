@@ -36,7 +36,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,6 +50,7 @@ import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.test.context.transaction.BeforeTransaction;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.dao.jdbc.ColumnCsvMetaData;
@@ -76,8 +77,8 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 	}
 
 	private void importData(final String tableName) {
-		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedHashMap<String, ColumnCsvMetaData>(
-				8);
+		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedCaseInsensitiveMap<ColumnCsvMetaData>(
+				8, Locale.ROOT);
 		jdbcTemplate.execute(new ConnectionCallback<Object>() {
 
 			@Override

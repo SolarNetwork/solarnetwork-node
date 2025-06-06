@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.dao.jdbc.locstate.test;
 
-import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static net.solarnetwork.dao.GenericDao.ENTITY_EVENT_ENTITY_ID_PROPERTY;
 import static net.solarnetwork.dao.GenericDao.entityEventTopic;
@@ -46,7 +45,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
@@ -54,7 +52,6 @@ import net.solarnetwork.node.dao.jdbc.locstate.JdbcLocalStateDao;
 import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.LocalStateType;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
@@ -74,13 +71,6 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 		dao = new JdbcLocalStateDao();
 
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
-
-		if ( TestEmbeddedDatabase.DERBY_TYPE.equalsIgnoreCase(testDatabase.getDatabaseType()) ) {
-			String dbType = testDatabase.getDatabaseType();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-locstate-init.sql", dbType),
-					JdbcLocalStateDao.class));
-			dao.setSqlResourcePrefix(format("%s-locstate", dbType));
-		}
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);

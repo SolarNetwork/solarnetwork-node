@@ -23,6 +23,7 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import static java.lang.String.format;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,12 +34,16 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.dao.Entity;
 import net.solarnetwork.dao.GenericDao;
@@ -52,7 +57,7 @@ import net.solarnetwork.domain.SortDescriptor;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends AbstractJdbcDao<T>
 		implements GenericDao<T, K> {
@@ -107,37 +112,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	private final Class<? extends T> objectType;
 	private final Class<? extends K> keyType;
 	private final RowMapper<T> rowMapper;
+	private final String entityName;
+
+	private boolean disableDataSourcePrefixDetection;
 
 	/**
-	 * Constructor.
-	 *
-	 * @param objectType
-	 *        the entity type
-	 * @param keyType
-	 *        the key type
-	 * @param rowMapper
-	 *        a mapper to use when mapping entity query result rows to entity
-	 *        objects
-	 * @throws IllegalArgumentException
-	 *         if any parameter is {@literal null}
-	 */
-	public BaseJdbcGenericDao(Class<? extends T> objectType, Class<? extends K> keyType,
-			RowMapper<T> rowMapper) {
-		super();
-		if ( objectType == null ) {
-			throw new IllegalArgumentException("The objectType parameter must not be null.");
-		}
-		if ( keyType == null ) {
-			throw new IllegalArgumentException("The keyType parameter must not be null.");
-		}
-		this.objectType = objectType;
-		this.keyType = keyType;
-		this.rowMapper = rowMapper;
-	}
-
-	/**
-	 * Init with an an entity name and table version, deriving various names
-	 * based on conventions.
+	 * Construct with an an entity name and table version, deriving various
+	 * names based on conventions.
 	 *
 	 * @param objectType
 	 *        the entity type
@@ -157,7 +138,16 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 */
 	public BaseJdbcGenericDao(Class<? extends T> objectType, Class<? extends K> keyType,
 			RowMapper<T> rowMapper, String tableNameTemplate, String entityName, int version) {
-		this(objectType, keyType, rowMapper);
+		if ( objectType == null ) {
+			throw new IllegalArgumentException("The objectType parameter must not be null.");
+		}
+		if ( keyType == null ) {
+			throw new IllegalArgumentException("The keyType parameter must not be null.");
+		}
+		this.objectType = objectType;
+		this.keyType = keyType;
+		this.rowMapper = rowMapper;
+		this.entityName = entityName;
 		setSqlResourcePrefix(format(SQL_RESOURCE_PREFIX, entityName));
 		setTableName(format(tableNameTemplate, entityName));
 		setTablesVersion(version);
@@ -187,6 +177,55 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 */
 	protected RowMapper<T> getRowMapper() {
 		return rowMapper;
+	}
+
+	@Override
+	protected JdbcTemplate createJdbcTemplate(DataSource dataSource) {
+		if ( !disableDataSourcePrefixDetection && entityName != null ) {
+			try (Connection conn = dataSource.getConnection()) {
+				String product = conn.getMetaData().getDatabaseProductName();
+				if ( product != null ) {
+					String prefix = null;
+					String productLc = product.toLowerCase(Locale.ROOT);
+					if ( productLc.contains("postgres") ) {
+						prefix = "postgres";
+					} else if ( productLc.contains("h2") ) {
+						prefix = "h2";
+					}
+					if ( prefix != null ) {
+						log.info("Detected SQL resource prefix [{}] for entity {} from database type {}",
+								prefix, entityName, product);
+						String currPrefix = getSqlResourcePrefix();
+						if ( currPrefix == null ) {
+							setSqlResourcePrefix(prefix + "-" + entityName);
+						} else if ( !currPrefix.contains(prefix) ) {
+							setSqlResourcePrefix(prefix + "-" + currPrefix);
+						}
+						Resource initResource = getInitSqlResource();
+						if ( initResource != null && !initResource.getFilename().startsWith(prefix) ) {
+							// look for prefix-specific init resource to change to
+							try {
+								Resource prefixInitResource = initResource
+										.createRelative(prefix + "-" + initResource.getFilename());
+								if ( prefixInitResource.exists() ) {
+									log.info("Detected SQL init resource [{}] for entity {}",
+											prefixInitResource.getFilename(), entityName);
+									setInitSqlResource(prefixInitResource);
+								}
+							} catch ( Exception e ) {
+								log.debug(
+										"Error detecting SQL init resource for entity {} from database type {}",
+										entityName, product);
+							}
+						}
+					}
+				}
+			} catch ( Exception e ) {
+				log.warn("Error detecting SQL resource prefix for entity {} from DataSource: {}",
+						entityName, e.toString());
+			}
+		}
+		return super.createJdbcTemplate(dataSource);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -509,6 +548,29 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 			return null;
 		}
 		return new UUID(hi, lo);
+	}
+
+	/**
+	 * Get the "disable DataSource prefix detection" mode.
+	 *
+	 * @return {@code true} to prevent automatic SQL resource prefix detection
+	 *         when {@link #setDataSource(javax.sql.DataSource)} is called
+	 * @since 2.4
+	 */
+	public boolean isDisableDataSourcePrefixDetection() {
+		return disableDataSourcePrefixDetection;
+	}
+
+	/**
+	 * Set the "disable DataSource prefix detection" mode.
+	 *
+	 * @param disableDataSourcePrefixDetection
+	 *        {@code true} to prevent automatic SQL resource prefix detection
+	 *        when {@link #setDataSource(javax.sql.DataSource)} is called
+	 * @since 2.4
+	 */
+	public void setDisableDataSourcePrefixDetection(boolean disableDataSourcePrefixDetection) {
+		this.disableDataSourcePrefixDetection = disableDataSourcePrefixDetection;
 	}
 
 }

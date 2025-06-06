@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.dao.mqtt.jdbc.test;
 
-import static java.lang.String.format;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,10 +37,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
 import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
@@ -52,8 +49,7 @@ import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao;
 import net.solarnetwork.node.dao.mqtt.jdbc.MqttMessageDaoStat;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test cases for the {@link JdbcMqttMessageDao} class.
@@ -61,25 +57,14 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * @author matt
  * @version 1.0
  */
-public class JdbcMqttMessageDaoTests extends AbstractNodeTest {
-
-	private TestEmbeddedDatabase dataSource;
+public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
 
 	private JdbcMqttMessageDao dao;
 	private BasicMqttMessageEntity last;
 
-	@Before
+	@BeforeTransaction
 	public void setup() throws IOException {
 		dao = new JdbcMqttMessageDao();
-
-		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() == EmbeddedDatabaseType.DERBY ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-message-init.sql", dbType),
-					JdbcMqttMessageDao.class));
-			dao.setSqlResourcePrefix(format("%s-message", dbType));
-		}
-		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
