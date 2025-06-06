@@ -80,7 +80,7 @@ public abstract class AbstractNodeTest extends AbstractJUnit4SpringContextTests 
 	 * @return the database builder
 	 * @since 1.1
 	 */
-	protected TestEmbeddedDatabase createEmbeddedDatabase(String environmentTypeKey) {
+	protected static TestEmbeddedDatabase createEmbeddedDatabase(String environmentTypeKey) {
 		TestEmbeddedDatabaseFactoryBean factory = new TestEmbeddedDatabaseFactoryBean(
 				environmentTypeKey);
 		try {
