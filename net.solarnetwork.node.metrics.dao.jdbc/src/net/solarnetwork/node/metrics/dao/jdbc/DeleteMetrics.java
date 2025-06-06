@@ -26,6 +26,7 @@ import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.SqlProvider;
 import net.solarnetwork.node.metrics.dao.MetricFilter;
@@ -35,7 +36,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate {@code DELETE} SQL for metric values based on a filter.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DeleteMetrics implements PreparedStatementCreator, SqlProvider {
 
@@ -92,10 +93,10 @@ public class DeleteMetrics implements PreparedStatementCreator, SqlProvider {
 
 	private int prepareWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.hasStartDate() ) {
-			stmt.setObject(++p, filter.getStartDate());
+			stmt.setTimestamp(++p, Timestamp.from(filter.getStartDate()));
 		}
 		if ( filter.hasEndDate() ) {
-			stmt.setObject(++p, filter.getEndDate());
+			stmt.setTimestamp(++p, Timestamp.from(filter.getEndDate()));
 		}
 		if ( filter.hasTypeCriteria() ) {
 			Array a = con.createArrayOf("VARCHAR", filter.getTypes());

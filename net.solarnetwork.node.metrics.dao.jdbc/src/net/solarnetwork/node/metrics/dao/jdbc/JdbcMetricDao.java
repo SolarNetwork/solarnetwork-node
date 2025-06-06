@@ -29,6 +29,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -58,7 +59,7 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link MetricDao}.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 		implements MetricDao, SettingSpecifierProvider {
@@ -233,12 +234,12 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 
 	@Override
 	protected Object[] primaryKeyArguments(MetricKey id) {
-		return new Object[] { id.getTimestamp(), id.getType(), id.getName() };
+		return new Object[] { Timestamp.from(id.getTimestamp()), id.getType(), id.getName() };
 	}
 
 	@Override
 	protected void setStoreStatementValues(Metric obj, PreparedStatement ps) throws SQLException {
-		ps.setObject(1, obj.getTimestamp());
+		ps.setTimestamp(1, Timestamp.from(obj.getTimestamp()));
 		ps.setString(2, obj.getType());
 		ps.setString(3, obj.getName());
 		ps.setDouble(4, obj.getValue());

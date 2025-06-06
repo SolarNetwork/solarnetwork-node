@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -49,11 +50,9 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
@@ -68,8 +67,7 @@ import net.solarnetwork.node.metrics.domain.Metric;
 import net.solarnetwork.node.metrics.domain.MetricAggregate;
 import net.solarnetwork.node.metrics.domain.MetricKey;
 import net.solarnetwork.node.metrics.domain.ParameterizedMetricAggregate;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test cases for the {@link
@@ -77,9 +75,7 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * @author matt
  * @version 1.2
  */
-public class JdbcMetricDaoTests extends AbstractNodeTest {
-
-	private TestEmbeddedDatabase dataSource;
+public class JdbcMetricDaoTests extends AbstractNodeTransactionalTest {
 
 	private JdbcOperations jdbcOps;
 
@@ -90,23 +86,14 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 	public void setup() throws IOException {
 		dao = new JdbcMetricDao();
 
-		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() != EmbeddedDatabaseType.H2 ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(
-					new ClassPathResource(format("%s-metric-init.sql", dbType), JdbcMetricDao.class));
-			dao.setSqlResourcePrefix(format("%s-metric", dbType));
-		}
-		dataSource = db;
-
 		DatabaseSetup setup = new DatabaseSetup();
-		setup.setDataSource(dataSource);
+		setup.setDataSource(testDatabase.getDatabase());
 		setup.init();
 
-		dao.setDataSource(dataSource);
+		dao.setDataSource(testDatabase.getDatabase());
 		dao.init();
 
-		jdbcOps = new JdbcTemplate(dataSource);
+		jdbcOps = new JdbcTemplate(testDatabase.getDatabase());
 	}
 
 	@Test
@@ -401,7 +388,16 @@ public class JdbcMetricDaoTests extends AbstractNodeTest {
 				"ts, mtype, mname");
 		assertThat("Expected row count after delete", rowsAfter, hasSize(rowCount * types.length - 6));
 		assertThat("Expected rows deleted", rowsAfter.stream().noneMatch((row) -> {
-			Instant ts = ((OffsetDateTime) row.get("ts")).toInstant();
+			Instant ts = null;
+			Object rowTs = row.get("ts");
+			if ( rowTs instanceof OffsetDateTime ) {
+				ts = ((OffsetDateTime) rowTs).toInstant();
+			} else if ( rowTs instanceof Timestamp ) {
+				ts = ((Timestamp) rowTs).toInstant();
+			} else {
+				throw new IllegalStateException(
+						String.format("Timestamp value [%s] not supported", rowTs.getClass()));
+			}
 			return ("t1".equals(row.get("type")) && ts.isBefore(filter.getEndDate()));
 		}), is(equalTo(true)));
 

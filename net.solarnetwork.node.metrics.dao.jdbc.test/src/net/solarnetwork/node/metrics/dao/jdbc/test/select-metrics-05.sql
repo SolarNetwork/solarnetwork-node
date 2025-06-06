@@ -3,6 +3,6 @@ SELECT ts, mtype, mname, val FROM (
 	FROM solarnode.mtr_metric
 	WHERE ts >= ?
 		AND ts < ?
-	ORDER BY ts DESC, mtype, mname
+	ORDER BY mtype, mname, ts DESC
 ) m
 ORDER BY mtype, mname

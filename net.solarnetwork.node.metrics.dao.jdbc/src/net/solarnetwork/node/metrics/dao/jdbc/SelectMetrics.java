@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -42,7 +43,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate {@code SELECT} SQL for metric values based on a filter.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class SelectMetrics implements PreparedStatementCreator, PreparedStatementSetter, SqlProvider {
 
@@ -122,7 +123,7 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 		buf.append("FROM solarnode.mtr_metric\n");
 		sqlWhere(buf);
 		if ( filter.isMostRecent() ) {
-			buf.append("ORDER BY ts DESC, mtype, mname\n");
+			buf.append("ORDER BY mtype, mname, ts DESC\n");
 			buf.append(") m\n");
 		}
 	}
@@ -272,10 +273,10 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 			}
 		}
 		if ( filter.hasStartDate() ) {
-			stmt.setObject(++p, filter.getStartDate());
+			stmt.setTimestamp(++p, Timestamp.from(filter.getStartDate()));
 		}
 		if ( filter.hasEndDate() ) {
-			stmt.setObject(++p, filter.getEndDate());
+			stmt.setTimestamp(++p, Timestamp.from(filter.getEndDate()));
 		}
 		if ( filter.hasTypeCriteria() ) {
 			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.getTypes());
