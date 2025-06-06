@@ -42,10 +42,10 @@ import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -71,7 +71,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	private JdbcGeneralNodeDatumDao dao;
 	private EventAdmin eventAdmin;
 
-	@Before
+	@BeforeTransaction
 	public void setup() {
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 
@@ -388,9 +388,10 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
-	public void updateUnchangedSamples() {
+	public void updateUploaded_unchangedSamples() {
 		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
+		EasyMock.expectLastCall().times(2);
 
 		replayAll();
 
@@ -403,7 +404,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		// mark as uploaded
 		dao.setDatumUploaded(datum, Instant.now().truncatedTo(MILLIS), "test", "test_id");
 
-		// now update
+		// now update with same data; should leave uploaded as it was
 		dao.storeDatum(datum);
 
 		String jdata = jdbcTemplate.queryForObject(
@@ -414,8 +415,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		List<NodeDatum> local = dao.getDatumNotUploaded("test");
 		assertThat(local, hasSize(0));
 
-		assertThat("Event captured", captor.getValues(), hasSize(1));
+		assertThat("Event captured", captor.getValues(), hasSize(2));
 		assertDatumStoredEventEqualsDatum(captor.getValues().get(0), datum);
+		assertDatumStoredEventEqualsDatum(captor.getValues().get(1), datum);
 	}
 
 }

@@ -48,11 +48,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
@@ -82,7 +82,7 @@ public class JdbcMetricDaoTests extends AbstractNodeTransactionalTest {
 	private JdbcMetricDao dao;
 	private Metric last;
 
-	@Before
+	@BeforeTransaction
 	public void setup() throws IOException {
 		dao = new JdbcMetricDao();
 
