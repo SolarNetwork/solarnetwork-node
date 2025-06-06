@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Locale;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
@@ -49,7 +48,6 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesContainer;
-import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.dao.DatumDao;
@@ -70,7 +68,7 @@ import net.solarnetwork.util.StatCounter;
  * {@link NodeDatum} domain objects.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		implements DatumDao, SettingSpecifierProvider, PingTest {
@@ -156,24 +154,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	@Override
-	@Transactional(readOnly = false, propagation = Propagation.REQUIRED,
-			noRollbackFor = DuplicateKeyException.class)
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public void storeDatum(NodeDatum datum) {
-		try {
-			storeDomainObject(datum);
-		} catch ( DuplicateKeyException e ) {
-			List<NodeDatum> existing = findDatum(SQL_RESOURCE_FIND_FOR_PRIMARY_KEY,
-					preparedStatementSetterForPrimaryKey(datum.getTimestamp(), datum.getSourceId()),
-					rowMapper());
-			if ( existing.size() > 0 ) {
-				// only update if the samples have changed
-				DatumSamplesOperations existingSamples = existing.get(0).asSampleOperations();
-				DatumSamplesOperations newSamples = datum.asSampleOperations();
-				if ( newSamples.differsFrom(existingSamples) ) {
-					updateDomainObject(datum, getSqlResource(SQL_RESOURCE_UPDATE_DATA));
-				}
-			}
-		}
+		storeDomainObject(datum);
 	}
 
 	@Override
@@ -280,7 +263,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		if ( datum.getKind() == ObjectDatumKind.Location ) {
 			ps.setObject(++col, datum.getObjectId());
 		} else {
-			ps.setNull(++col, Types.CHAR);
+			ps.setNull(++col, Types.BIGINT);
 		}
 
 		String json = jsonForSamples(datum);
