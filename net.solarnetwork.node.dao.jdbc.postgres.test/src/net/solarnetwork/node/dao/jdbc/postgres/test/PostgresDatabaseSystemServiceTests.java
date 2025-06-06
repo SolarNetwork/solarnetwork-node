@@ -68,7 +68,7 @@ public class PostgresDatabaseSystemServiceTests {
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
-		setup.setInitSqlResource(new ClassPathResource("derby-init.sql", DatabaseSetup.class));
+		setup.setInitSqlResource(new ClassPathResource("settings-init.sql", DatabaseSetup.class));
 		setup.init();
 
 		service = new PostgresDatabaseSystemService(Collections.singleton(dataSource));
