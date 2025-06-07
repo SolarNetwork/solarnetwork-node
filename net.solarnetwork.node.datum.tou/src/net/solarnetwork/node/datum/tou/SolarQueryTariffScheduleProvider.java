@@ -108,7 +108,7 @@ import net.solarnetwork.web.service.HttpRequestCustomizerService;
  * {@link TariffSchedule}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implements TariffScheduleProvider,
 		SettingSpecifierProvider, DatumDateFunctions, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -519,7 +519,7 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 
 		final ZoneId zone = timeZone(agg);
 
-		final List<Tariff> tariffs = new ArrayList<>(
+		final List<Tariff> tariffs = new ArrayList<Tariff>(
 				datum.getReturnedResultCount() != null ? datum.getReturnedResultCount() : 32);
 		for ( AggregateStreamDatum d : datum ) {
 			List<Tariff.Rate> rates = new ArrayList<>(propNamesCount);
