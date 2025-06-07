@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.dao.jdbc.locstate.test;
 
-import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static net.solarnetwork.dao.GenericDao.ENTITY_EVENT_ENTITY_ID_PROPERTY;
 import static net.solarnetwork.dao.GenericDao.entityEventTopic;
@@ -43,19 +42,16 @@ import java.util.UUID;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.locstate.JdbcLocalStateDao;
 import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.LocalStateType;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
@@ -64,28 +60,17 @@ import net.solarnetwork.service.StaticOptionalService;
  * @author matt
  * @version 1.0
  */
-public class JdbcLocalStateDaoTests extends AbstractNodeTest {
-
-	private TestEmbeddedDatabase dataSource;
+public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 
 	private EventAdmin eventAdmin;
 
 	private JdbcLocalStateDao dao;
 
-	@Before
+	@BeforeTransaction
 	public void setup() throws IOException {
 		dao = new JdbcLocalStateDao();
 
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
-
-		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() == EmbeddedDatabaseType.DERBY ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-locstate-init.sql", dbType),
-					JdbcLocalStateDao.class));
-			dao.setSqlResourcePrefix(format("%s-locstate", dbType));
-		}
-		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
@@ -298,6 +283,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTest {
 
 		// THEN
 		assertThat("Result returned", result, is(equalTo(entity)));
+
 		assertThat("Result NOT same as given", result.isSameAs(entity), is(equalTo(false)));
 		assertThat("Result value is previous (unchanged) value)", result.getValue(),
 				is(equalTo(originalValue)));

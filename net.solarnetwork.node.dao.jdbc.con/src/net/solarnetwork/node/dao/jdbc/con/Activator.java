@@ -9,21 +9,21 @@ import org.osgi.service.cm.ConfigurationAdmin;
 
 /**
  * Bundle activator.
- * 
+ *
  * <p>
  * This activator will look for a {@link ConfigurationAdmin} service, and if
  * found initialize a {@link DefaultDataSourceConfigurer} to set up a default
  * data source configuration if one does not already exist.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class Activator implements BundleActivator {
 
 	/**
 	 * A system property key for the startup sleep time, in milliseconds.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	private static final String SYS_PROP_STARTUP_SLEEP = "net.solarnetwork.node.dao.jdbc.con.startupSleepMs";
@@ -45,7 +45,8 @@ public class Activator implements BundleActivator {
 					if ( caRef != null ) {
 						ConfigurationAdmin ca = bundleContext.getService(caRef);
 						if ( ca != null ) {
-							DefaultDataSourceConfigurer configurer = new DefaultDataSourceConfigurer(ca);
+							DefaultDataSourceConfigurer configurer = new DefaultDataSourceConfigurer(
+									bundleContext, ca);
 							configurer.init();
 						}
 					}

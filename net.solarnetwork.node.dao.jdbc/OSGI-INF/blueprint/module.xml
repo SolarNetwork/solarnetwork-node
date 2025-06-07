@@ -20,7 +20,6 @@
 
 	<osgix:cm-properties id="dao.jdbc.cfg"
 		persistent-id="net.solarnetwork.node.dao.jdbc">
-		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/settings-init.sql</beans:prop>
 		<beans:prop key="reset.sqlStateRegex">900(28|31)</beans:prop>
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
@@ -28,13 +27,6 @@
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS(?!DB6).*</beans:prop>
 		<beans:prop key="shutdown.sqlStateRegex">XSDB6</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/generalnodedatum-init.sql</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">generalnodedatum</beans:prop>
-		<beans:prop key="JdbcSettingDao.sqlResourcePrefix">settings</beans:prop>
-		<beans:prop key="JdbcSecurityTokenDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/sectok/sectok-init.sql</beans:prop>
-		<beans:prop key="JdbcSecurityTokenDao.sqlResourcePrefix">sectok</beans:prop>
-		<beans:prop key="JdbcLocalStateDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/locstate/locstate-init.sql</beans:prop>
-		<beans:prop key="JdbcLocalStateDao.sqlResourcePrefix">locstate</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.uploadedTrimHours">4</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>
@@ -157,11 +149,10 @@
 	<bean id="databaseSetup" class="net.solarnetwork.node.dao.jdbc.DatabaseSetup"
 		init-method="init" depends-on="restoreFromBackupHandler shutdownHandler">
 		<property name="dataSource" ref="dataSource" />
-		<property name="initSqlResource" value="${DatabaseSetup.initSqlResource}" />
+		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/dao/jdbc/settings-init.sql" />
 	</bean>
 
 	<bean id="settingDao" class="net.solarnetwork.node.dao.jdbc.JdbcSettingDao">
-		<property name="sqlResourcePrefix" value="${JdbcSettingDao.sqlResourcePrefix}" />
 		<property name="dataSource" ref="dataSource" />
 		<property name="eventAdmin" ref="eventAdmin" />
 		<property name="transactionTemplate">
@@ -193,8 +184,7 @@
 		init-method="init">
 		<property name="dataSource" ref="dataSource" />
 		<property name="eventAdmin" ref="eventAdmin" />
-		<property name="initSqlResource" value="${JdbcSecurityTokenDao.initSqlResource}" />
-		<property name="sqlResourcePrefix" value="${JdbcSecurityTokenDao.sqlResourcePrefix}" />
+		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/dao/jdbc/sectok/sectok-init.sql" />
 	</bean>
 	
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
@@ -227,8 +217,7 @@
 		init-method="init">
 		<property name="dataSource" ref="dataSource" />
 		<property name="eventAdmin" ref="eventAdmin" />
-		<property name="initSqlResource" value="${JdbcLocalStateDao.initSqlResource}" />
-		<property name="sqlResourcePrefix" value="${JdbcLocalStateDao.sqlResourcePrefix}" />
+		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/dao/jdbc/locstate/locstate-init.sql" />
 	</bean>
 	
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
@@ -262,8 +251,7 @@
 		<property name="objectMapper" ref="objectMapper" />
 		<property name="dataSource" ref="dataSource" />
 		<property name="eventAdmin" ref="eventAdmin" />
-		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}" />
-		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}" />
+		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/dao/jdbc/general/generalnodedatum-init.sql" />
 		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
 	

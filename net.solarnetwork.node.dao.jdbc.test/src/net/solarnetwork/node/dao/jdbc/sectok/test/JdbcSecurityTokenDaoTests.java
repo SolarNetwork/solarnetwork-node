@@ -34,13 +34,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.junit.Before;
 import org.junit.Test;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.sectok.JdbcSecurityTokenDao;
 import net.solarnetwork.node.domain.SecurityToken;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test cases for the {@link JdbcSecurityTokenDao} class.
@@ -48,19 +47,14 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * @author matt
  * @version 1.0
  */
-public class JdbcSecurityTokenDaoTests extends AbstractNodeTest {
-
-	private TestEmbeddedDatabase dataSource;
+public class JdbcSecurityTokenDaoTests extends AbstractNodeTransactionalTest {
 
 	private JdbcSecurityTokenDao dao;
 	private SecurityToken last;
 
-	@Before
+	@BeforeTransaction
 	public void setup() throws IOException {
 		dao = new JdbcSecurityTokenDao();
-
-		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);

@@ -25,7 +25,6 @@ package net.solarnetwork.node.io.modbus.server.dao.jdbc;
 import static java.lang.String.format;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +33,7 @@ import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterFilter;
@@ -47,7 +47,7 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link ModbusRegisterDao}.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEntity, ModbusRegisterKey>
 		implements ModbusRegisterDao, SettingSpecifierProvider {
@@ -128,8 +128,8 @@ public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEnti
 		ps.setInt(2, obj.getUnitId());
 		ps.setInt(3, obj.getBlockType().getCode());
 		ps.setInt(4, obj.getAddress());
-		ps.setObject(5, obj.getCreated(), Types.TIMESTAMP);
-		ps.setObject(6, obj.getModified(), Types.TIMESTAMP);
+		JdbcUtils.setUtcTimestampStatementValue(ps, 5, obj.getCreated());
+		JdbcUtils.setUtcTimestampStatementValue(ps, 6, obj.getModified());
 		ps.setShort(7, obj.getValue());
 	}
 

@@ -40,6 +40,7 @@ import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
 import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
 import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.service.PingTest;
 import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -181,7 +182,8 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	@Override
 	protected void setStoreStatementValues(MqttMessageEntity obj, PreparedStatement ps)
 			throws SQLException {
-		setInstantParameter(ps, 1, obj.getCreated() != null ? obj.getCreated() : Instant.now());
+		JdbcUtils.setUtcTimestampStatementValue(ps, 1,
+				obj.getCreated() != null ? obj.getCreated() : Instant.now());
 		setUpdateStatementValues(obj, ps, 1);
 	}
 
@@ -220,7 +222,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		@Override
 		public MqttMessageEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
 			Long id = rs.getLong(1);
-			Instant created = getInstantColumn(rs, 2);
+			Instant created = JdbcUtils.getUtcTimestampColumnValue(rs, 2);
 			String dest = rs.getString(3);
 			String topic = rs.getString(4);
 			boolean retained = rs.getBoolean(5);

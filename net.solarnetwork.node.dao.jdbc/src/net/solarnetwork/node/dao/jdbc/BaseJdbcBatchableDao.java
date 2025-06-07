@@ -46,7 +46,7 @@ import net.solarnetwork.dao.Entity;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.29
  */
 public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJdbcGenericDao<T, K>
@@ -54,24 +54,6 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 
 	private TransactionTemplate transactionTemplate;
 	private String sqlForUpdateSuffix = " FOR UPDATE";
-
-	/**
-	 * Constructor.
-	 *
-	 * @param objectType
-	 *        the entity type
-	 * @param keyType
-	 *        the key type
-	 * @param rowMapper
-	 *        a mapper to use when mapping entity query result rows to entity
-	 *        objects
-	 * @throws IllegalArgumentException
-	 *         if any parameter is {@literal null}
-	 */
-	public BaseJdbcBatchableDao(Class<? extends T> objectType, Class<? extends K> keyType,
-			RowMapper<T> rowMapper) {
-		super(objectType, keyType, rowMapper);
-	}
 
 	/**
 	 * Init with an an entity name and table version, deriving various names

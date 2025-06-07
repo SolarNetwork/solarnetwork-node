@@ -1,21 +1,21 @@
 /* ==================================================================
  * PreparedStatementCsvReaderTests.java - 6/10/2016 1:13:32 PM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,11 +36,10 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -48,8 +47,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.dao.jdbc.ColumnCsvMetaData;
@@ -60,22 +61,24 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test cases for the {@link PreparedStatementCsvReader} class.
- * 
+ *
  * @author matt
  * @version 1.1
  */
 public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTest {
 
-	@Before
+	@BeforeTransaction
 	public void setup() {
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
 		setup.init();
+
+		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/init-csv-data.sql", false);
 	}
 
 	private void importData(final String tableName) {
-		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedHashMap<String, ColumnCsvMetaData>(
-				8);
+		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedCaseInsensitiveMap<ColumnCsvMetaData>(
+				8, Locale.ROOT);
 		jdbcTemplate.execute(new ConnectionCallback<Object>() {
 
 			@Override
@@ -130,7 +133,6 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 	@Test
 	public void importTable() throws Exception {
 		final String tableName = "SOLARNODE.TEST_CSV_IO";
-		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
 		importData(tableName);
 		final AtomicInteger row = new AtomicInteger(0);
 		final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
@@ -184,7 +186,6 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 	@Test
 	public void updateTable() throws Exception {
 		final String tableName = "SOLARNODE.TEST_CSV_IO";
-		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
 		importData(tableName);
 
 		txTemplate.execute(new TransactionCallbackWithoutResult() {

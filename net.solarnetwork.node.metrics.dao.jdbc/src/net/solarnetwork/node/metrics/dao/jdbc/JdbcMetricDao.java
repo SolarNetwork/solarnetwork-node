@@ -23,12 +23,14 @@
 package net.solarnetwork.node.metrics.dao.jdbc;
 
 import static java.lang.String.format;
+import static java.time.ZoneOffset.UTC;
 import static net.solarnetwork.node.metrics.dao.jdbc.Constants.TABLE_NAME_TEMPALTE;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -58,7 +60,7 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link MetricDao}.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 		implements MetricDao, SettingSpecifierProvider {
@@ -233,12 +235,12 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 
 	@Override
 	protected Object[] primaryKeyArguments(MetricKey id) {
-		return new Object[] { id.getTimestamp(), id.getType(), id.getName() };
+		return new Object[] { id.getTimestamp().atOffset(UTC), id.getType(), id.getName() };
 	}
 
 	@Override
 	protected void setStoreStatementValues(Metric obj, PreparedStatement ps) throws SQLException {
-		ps.setObject(1, obj.getTimestamp());
+		ps.setObject(1, obj.getTimestamp().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		ps.setString(2, obj.getType());
 		ps.setString(3, obj.getName());
 		ps.setDouble(4, obj.getValue());

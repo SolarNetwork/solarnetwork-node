@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 import java.util.Map;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
@@ -39,15 +39,17 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  */
 public class DatabaseSetupTest extends AbstractNodeTransactionalTest {
 
-	@Test
-	public void createDatabaseSetup() {
+	@BeforeTransaction
+	public void setup() {
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
 		setup.setInitSqlResource(new ClassPathResource("settings-init.sql", DatabaseSetup.class));
 		setup.init();
+	}
 
-		JdbcOperations jdbcOps = this.jdbcTemplate;
-		Map<String, ?> results = jdbcOps.queryForMap(
+	@Test
+	public void createDatabaseSetup() {
+		Map<String, ?> results = jdbcTemplate.queryForMap(
 				"SELECT * FROM solarnode.sn_settings WHERE skey = ?", "solarnode.sn_settings.version");
 		log.debug("Got sn_settings.version record {}", results);
 		assertNotNull(results);
