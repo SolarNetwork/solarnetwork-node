@@ -45,8 +45,9 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
@@ -60,7 +61,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * server.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CannelloniCanbusConnection extends BasicIdentifiable
 		implements CanbusConnection, SettingsChangeObserver {
@@ -136,8 +137,8 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 		tf.setDaemon(true);
 
 		Bootstrap b = new Bootstrap();
-		b.group(new NioEventLoopGroup(0, tf)).channel(NioDatagramChannel.class)
-				.option(ChannelOption.SO_BROADCAST, true)
+		b.group(new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory()))
+				.channel(NioDatagramChannel.class).option(ChannelOption.SO_BROADCAST, true)
 				.handler(new CannelloniChannelInitializer(new CanbusFrameHandler()));
 		return b;
 	}
