@@ -22,6 +22,7 @@
 		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.derby" rev="10.12.1.1_1" conf="runtime"/>
 		<dependency org="com.h2database" name="h2" rev="2.3.232" conf="runtime"/>
 		<dependency org="com.zaxxer" name="HikariCP" rev="6.3.0" conf="runtime"/>
+		<dependency org="org.postgresql" name="postgresql" rev="42.7.6" conf="runtime"/>
 
 		<exclude module="com.springsource.slf4j.api"/>
     </dependencies>

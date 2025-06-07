@@ -24,7 +24,7 @@ package net.solarnetwork.node.metrics.dao.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.node.metrics.domain.Metric;
 
@@ -60,11 +60,11 @@ public class MetricRowMapper implements RowMapper<Metric> {
 
 	@Override
 	public Metric mapRow(ResultSet rs, int rowNum) throws SQLException {
-		Instant ts = JdbcUtils.instantColumn(rs, 1);
+		OffsetDateTime ts = rs.getObject(1, OffsetDateTime.class);
 		String type = rs.getString(2);
 		String name = rs.getString(3);
 		double val = rs.getDouble(4);
-		return Metric.metricValue(ts, type, name, val);
+		return Metric.metricValue(ts.toInstant(), type, name, val);
 	}
 
 }

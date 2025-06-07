@@ -61,14 +61,14 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * </dl>
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class DatabaseSetup {
 
 	/**
 	 * The default classpath resource for the {@code initSqlResource} property.
 	 */
-	public static final String DEFAULT_INIT_SQL_RESOURCE = "derby-init.sql";
+	public static final String DEFAULT_INIT_SQL_RESOURCE = "settings-init.sql";
 
 	/** The default value for the {@code sqlGetTablesVersion} property. */
 	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM "
@@ -110,13 +110,14 @@ public class DatabaseSetup {
 	private class JdbcDao extends AbstractJdbcDao<NodeDatum> {
 
 		private JdbcDao() {
+			super();
 			setDataSource(DatabaseSetup.this.dataSource);
 			setInitSqlResource(DatabaseSetup.this.initSqlResource);
 			setSchemaName(JdbcDaoConstants.SCHEMA_NAME);
 			setTableName(JdbcDaoConstants.TABLE_SETTINGS);
 			setTablesVersion(TABLES_VERSION);
 			setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
-			setSqlResourcePrefix("derby-init");
+			setSqlResourcePrefix("settings");
 		}
 
 		@Override

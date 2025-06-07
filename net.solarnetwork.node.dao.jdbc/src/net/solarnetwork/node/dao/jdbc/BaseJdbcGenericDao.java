@@ -23,22 +23,25 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import static java.lang.String.format;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.dao.Entity;
 import net.solarnetwork.dao.GenericDao;
@@ -57,8 +60,8 @@ import net.solarnetwork.domain.SortDescriptor;
 public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparable<K>>
 		extends AbstractJdbcDao<T> implements GenericDao<T, K> {
 
-	/** Prefix format for SQL resources, e.g. {@code derby-N}. */
-	public static final String SQL_RESOURCE_PREFIX = "derby-%s";
+	/** Default prefix format for SQL resources. */
+	public static final String SQL_RESOURCE_PREFIX = "%s";
 
 	/**
 	 * The default SQL format for the {@code sqlGetTablesVersion} property. The
@@ -107,37 +110,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	private final Class<? extends T> objectType;
 	private final Class<? extends K> keyType;
 	private final RowMapper<T> rowMapper;
+	private final String entityName;
+
+	private boolean disableDataSourcePrefixDetection;
 
 	/**
-	 * Constructor.
-	 *
-	 * @param objectType
-	 *        the entity type
-	 * @param keyType
-	 *        the key type
-	 * @param rowMapper
-	 *        a mapper to use when mapping entity query result rows to entity
-	 *        objects
-	 * @throws IllegalArgumentException
-	 *         if any parameter is {@literal null}
-	 */
-	public BaseJdbcGenericDao(Class<? extends T> objectType, Class<? extends K> keyType,
-			RowMapper<T> rowMapper) {
-		super();
-		if ( objectType == null ) {
-			throw new IllegalArgumentException("The objectType parameter must not be null.");
-		}
-		if ( keyType == null ) {
-			throw new IllegalArgumentException("The keyType parameter must not be null.");
-		}
-		this.objectType = objectType;
-		this.keyType = keyType;
-		this.rowMapper = rowMapper;
-	}
-
-	/**
-	 * Init with an an entity name and table version, deriving various names
-	 * based on conventions.
+	 * Construct with an an entity name and table version, deriving various
+	 * names based on conventions.
 	 *
 	 * @param objectType
 	 *        the entity type
@@ -157,7 +136,16 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 */
 	public BaseJdbcGenericDao(Class<? extends T> objectType, Class<? extends K> keyType,
 			RowMapper<T> rowMapper, String tableNameTemplate, String entityName, int version) {
-		this(objectType, keyType, rowMapper);
+		if ( objectType == null ) {
+			throw new IllegalArgumentException("The objectType parameter must not be null.");
+		}
+		if ( keyType == null ) {
+			throw new IllegalArgumentException("The keyType parameter must not be null.");
+		}
+		this.objectType = objectType;
+		this.keyType = keyType;
+		this.rowMapper = rowMapper;
+		this.entityName = entityName;
 		setSqlResourcePrefix(format(SQL_RESOURCE_PREFIX, entityName));
 		setTableName(format(tableNameTemplate, entityName));
 		setTablesVersion(version);
@@ -187,6 +175,55 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 */
 	protected RowMapper<T> getRowMapper() {
 		return rowMapper;
+	}
+
+	@Override
+	protected JdbcTemplate createJdbcTemplate(DataSource dataSource) {
+		if ( !disableDataSourcePrefixDetection && entityName != null ) {
+			try (Connection conn = dataSource.getConnection()) {
+				String product = conn.getMetaData().getDatabaseProductName();
+				if ( product != null ) {
+					String prefix = null;
+					String productLc = product.toLowerCase(Locale.ROOT);
+					if ( productLc.contains("postgres") ) {
+						prefix = "postgres";
+					} else if ( productLc.contains("h2") ) {
+						prefix = "h2";
+					}
+					if ( prefix != null ) {
+						log.info("Detected SQL resource prefix [{}] for entity {} from database type {}",
+								prefix, entityName, product);
+						String currPrefix = getSqlResourcePrefix();
+						if ( currPrefix == null ) {
+							setSqlResourcePrefix(prefix + "-" + entityName);
+						} else if ( !currPrefix.contains(prefix) ) {
+							setSqlResourcePrefix(prefix + "-" + currPrefix);
+						}
+						Resource initResource = getInitSqlResource();
+						if ( initResource != null && !initResource.getFilename().startsWith(prefix) ) {
+							// look for prefix-specific init resource to change to
+							try {
+								Resource prefixInitResource = initResource
+										.createRelative(prefix + "-" + initResource.getFilename());
+								if ( prefixInitResource.exists() ) {
+									log.info("Detected SQL init resource [{}] for entity {}",
+											prefixInitResource.getFilename(), entityName);
+									setInitSqlResource(prefixInitResource);
+								}
+							} catch ( Exception e ) {
+								log.debug(
+										"Error detecting SQL init resource for entity {} from database type {}",
+										entityName, product);
+							}
+						}
+					}
+				}
+			} catch ( Exception e ) {
+				log.warn("Error detecting SQL resource prefix for entity {} from DataSource: {}",
+						entityName, e.toString());
+			}
+		}
+		return super.createJdbcTemplate(dataSource);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -416,9 +453,11 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        {@literal true} for descending order, {@literal false} for
 	 *        ascending
 	 * @return the SQL clause
+	 * @deprecated use {@link JdbcUtils#sqlOrderClause(String, boolean)}
 	 */
+	@Deprecated
 	public static String sqlOrderClause(String columnName, boolean descending) {
-		return columnName + " " + (descending ? "DESC" : "ASC");
+		return JdbcUtils.sqlOrderClause(columnName, descending);
 	}
 
 	@Override
@@ -441,15 +480,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        the time to set
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use
+	 *             {@link JdbcUtils#setUtcTimestampStatementValue(PreparedStatement, int, Instant)}
 	 */
+	@Deprecated
 	public static void setInstantParameter(PreparedStatement stmt, int parameterIndex, Instant time)
 			throws SQLException {
-		if ( time == null ) {
-			stmt.setNull(parameterIndex, Types.TIMESTAMP);
-		} else {
-			stmt.setTimestamp(parameterIndex, new Timestamp(time.toEpochMilli()),
-					(Calendar) UTC_CALENDAR.clone());
-		}
+		JdbcUtils.setUtcTimestampStatementValue(stmt, parameterIndex, time);
 	}
 
 	/**
@@ -462,10 +499,11 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 * @return the new instant, or {@literal null} if the column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use {@link JdbcUtils#getUtcTimestampColumnValue(ResultSet, int)}
 	 */
+	@Deprecated
 	public static Instant getInstantColumn(ResultSet rs, int columnIndex) throws SQLException {
-		Timestamp ts = rs.getTimestamp(columnIndex, (Calendar) UTC_CALENDAR.clone());
-		return ts != null ? Instant.ofEpochMilli(ts.getTime()) : null;
+		return JdbcUtils.getUtcTimestampColumnValue(rs, columnIndex);
 	}
 
 	/**
@@ -480,11 +518,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        the UUID to set
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use
+	 *             {@link JdbcUtils#setUuidParameters(PreparedStatement, int, UUID)}
 	 */
+	@Deprecated
 	public static void setUuidParameters(PreparedStatement stmt, int parameterIndex, UUID uuid)
 			throws SQLException {
-		stmt.setLong(parameterIndex, uuid.getMostSignificantBits());
-		stmt.setLong(parameterIndex + 1, uuid.getLeastSignificantBits());
+		JdbcUtils.setUuidParameters(stmt, parameterIndex, uuid);
 	}
 
 	/**
@@ -498,17 +538,34 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 * @return the new UUID, or {@literal null} if either column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use {@link JdbcUtils#getUuidColumns(ResultSet, int)}
 	 */
+	@Deprecated
 	public static UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
-		long hi = rs.getLong(columnIndex);
-		if ( rs.wasNull() ) {
-			return null;
-		}
-		long lo = rs.getLong(columnIndex + 1);
-		if ( rs.wasNull() ) {
-			return null;
-		}
-		return new UUID(hi, lo);
+		return JdbcUtils.getUuidColumns(rs, columnIndex);
+	}
+
+	/**
+	 * Get the "disable DataSource prefix detection" mode.
+	 *
+	 * @return {@code true} to prevent automatic SQL resource prefix detection
+	 *         when {@link #setDataSource(javax.sql.DataSource)} is called
+	 * @since 2.4
+	 */
+	public boolean isDisableDataSourcePrefixDetection() {
+		return disableDataSourcePrefixDetection;
+	}
+
+	/**
+	 * Set the "disable DataSource prefix detection" mode.
+	 *
+	 * @param disableDataSourcePrefixDetection
+	 *        {@code true} to prevent automatic SQL resource prefix detection
+	 *        when {@link #setDataSource(javax.sql.DataSource)} is called
+	 * @since 2.4
+	 */
+	public void setDisableDataSourcePrefixDetection(boolean disableDataSourcePrefixDetection) {
+		this.disableDataSourcePrefixDetection = disableDataSourcePrefixDetection;
 	}
 
 }

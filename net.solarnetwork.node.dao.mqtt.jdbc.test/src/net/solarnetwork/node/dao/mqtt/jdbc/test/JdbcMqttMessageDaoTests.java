@@ -1,28 +1,27 @@
 /* ==================================================================
  * JdbcMqttMessageDaoTests.java - 11/06/2021 6:51:21 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.dao.mqtt.jdbc.test;
 
-import static java.lang.String.format;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,10 +37,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
 import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
@@ -52,34 +49,22 @@ import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao;
 import net.solarnetwork.node.dao.mqtt.jdbc.MqttMessageDaoStat;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test cases for the {@link JdbcMqttMessageDao} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
-public class JdbcMqttMessageDaoTests extends AbstractNodeTest {
-
-	private TestEmbeddedDatabase dataSource;
+public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
 
 	private JdbcMqttMessageDao dao;
 	private BasicMqttMessageEntity last;
 
-	@Before
+	@BeforeTransaction
 	public void setup() throws IOException {
 		dao = new JdbcMqttMessageDao();
-
-		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-message-init.sql", dbType),
-					JdbcMqttMessageDao.class));
-			dao.setSqlResourcePrefix(format("%s-message", dbType));
-		}
-		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);

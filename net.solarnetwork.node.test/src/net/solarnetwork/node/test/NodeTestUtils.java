@@ -1,7 +1,7 @@
 /* ==================================================================
- * JdbcUtils.java - 14/07/2024 11:22:24 am
+ * NodeTestUtils.java - 5/06/2025 11:57:45 am
  *
- * Copyright 2024 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,46 +20,35 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.metrics.dao.jdbc;
+package net.solarnetwork.node.test;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
- * JDBC utility methods.
+ * Node test utilities.
  *
  * @author matt
  * @version 1.0
+ * @since 2.0
  */
-public final class JdbcUtils {
-
-	private JdbcUtils() {
-		// not available
-	}
+public final class NodeTestUtils {
 
 	/**
-	 * Get an {@link Instant} from a JDBC result set.
+	 * Load test environment properties.
 	 *
-	 * @param rs
-	 *        the result set
-	 * @param col
-	 *        the column number
-	 * @return the instance, or {@literal null}
-	 * @throws SQLException
-	 *         if the column cannot be treated as an instant
+	 * @return the properties
 	 */
-	public static Instant instantColumn(ResultSet rs, int col) throws SQLException {
-		try {
-			return rs.getObject(col, Instant.class);
-		} catch ( SQLException e ) {
-			Timestamp ts = rs.getTimestamp(col);
-			if ( ts != null ) {
-				return ts.toInstant();
-			}
+	public static Properties loadEnvironmentProperties() {
+		Properties props = new Properties();
+		try (InputStream in = NodeTestUtils.class.getClassLoader()
+				.getResourceAsStream("env.properties")) {
+			props.load(in);
+		} catch ( IOException e ) {
+			// we'll ignore this
 		}
-		return null;
+		return props;
 	}
 
 }

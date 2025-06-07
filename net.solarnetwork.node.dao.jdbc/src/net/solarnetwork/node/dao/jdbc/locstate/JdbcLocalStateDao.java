@@ -34,6 +34,7 @@ import java.util.Objects;
 import org.springframework.jdbc.core.ConnectionCallback;
 import net.solarnetwork.node.dao.LocalStateDao;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.SecurityToken;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -139,8 +140,8 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 		Instant mod = obj.getModified() != null ? obj.getModified()
 				: obj.getCreated() == null ? cre : Instant.now();
 		ps.setString(1, obj.getId());
-		setInstantParameter(ps, 2, cre);
-		setInstantParameter(ps, 3, mod);
+		JdbcUtils.setUtcTimestampStatementValue(ps, 2, cre);
+		JdbcUtils.setUtcTimestampStatementValue(ps, 3, mod);
 		ps.setString(4, String.valueOf(obj.getType().getKey()));
 		ps.setBytes(5, obj.getData());
 	}

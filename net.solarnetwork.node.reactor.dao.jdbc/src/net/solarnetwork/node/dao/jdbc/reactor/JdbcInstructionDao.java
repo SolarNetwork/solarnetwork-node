@@ -1,21 +1,21 @@
 /* ==================================================================
  * JdbcInstructionDao.java - Feb 28, 2011 3:11:51 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,15 +23,16 @@
 package net.solarnetwork.node.dao.jdbc.reactor;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
+import static net.solarnetwork.node.dao.jdbc.JdbcUtils.setUtcTimestampStatementValue;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.BasicInstructionStatus;
 import net.solarnetwork.node.reactor.Instruction;
@@ -53,9 +55,9 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 
 /**
  * JDBC implementation of {@link JdbcInstructionDao}.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements InstructionDao {
 
@@ -72,7 +74,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	public static final String TABLE_INSTRUCTION_STATUS = "sn_instruction_status";
 
 	/** The default classpath Resource for the {@code initSqlResource}. */
-	public static final String DEFAULT_INIT_SQL = "derby-instruction-init.sql";
+	public static final String DEFAULT_INIT_SQL = "instruction-init.sql";
 
 	/** The default value for the {@code sqlGetTablesVersion} property. */
 	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = '"
@@ -104,7 +106,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	/**
 	 * The classpath Resource for the SQL template for performing a
 	 * compare-and-set update on an InstructionStatus.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String RESOURCE_SQL_COMPARE_AND_SET_INSTRUCTION_STATUS = "compare-set-status";
@@ -124,7 +126,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	/**
 	 * The classpath Resource for the SQL template for selecting Instruction by
 	 * state and two parameter values.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE_AND_2_PARAMS = "select-for-state-two-params";
@@ -144,7 +146,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	/**
 	 * The default value for the {@code maxInstructionStatusParamLength}
 	 * property.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final int DEFAULT_MAX_INSTRUCTION_STATUS_PARAM_LENGTH = 1024;
@@ -159,7 +161,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 		setTableName(TABLE_INSTRUCTION);
 		setTablesVersion(DEFAULT_TABLES_VERSION);
 		setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
-		setSqlResourcePrefix("derby-instruction");
+		setSqlResourcePrefix("instruction");
 		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
 		setUseAutogeneratedKeys(false);
 	}
@@ -225,14 +227,14 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	@Override
 	protected void setStoreStatementValues(Instruction instruction, PreparedStatement ps)
 			throws SQLException {
-		int col = 1;
-		ps.setObject(col++, instruction.getId());
-		ps.setString(col++, instruction.getInstructorId());
-		ps.setTimestamp(col++, Timestamp.from(instruction.getInstructionDate()));
-		ps.setString(col++, instruction.getTopic());
+		int col = 0;
+		ps.setObject(++col, instruction.getId());
+		ps.setString(++col, instruction.getInstructorId());
+		setUtcTimestampStatementValue(ps, ++col, instruction.getInstructionDate());
+		ps.setString(++col, instruction.getTopic());
 
 		Instant executeAt = instruction.getExecutionDate();
-		ps.setTimestamp(col++, Timestamp.from(executeAt != null ? executeAt : Instant.now()));
+		setUtcTimestampStatementValue(ps, ++col, executeAt != null ? executeAt : Instant.now());
 	}
 
 	@Override
@@ -262,10 +264,10 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 			if ( bi == null || currInstructorId == null || !bi.getId().equals(currId)
 					|| !bi.getInstructorId().equals(currInstructorId) ) {
 				InstructionStatus status = new BasicInstructionStatus(currId,
-						InstructionState.valueOf(rs.getString(5)), rs.getTimestamp(6).toInstant(),
+						InstructionState.valueOf(rs.getString(5)), JdbcUtils.getUtcTimestampColumnValue(rs, 6),
 						(rs.getString(8) == null ? null : InstructionState.valueOf(rs.getString(8))),
 						JsonUtils.getStringMap(rs.getString(7)));
-				bi = new BasicInstruction(currId, rs.getString(3), rs.getTimestamp(4).toInstant(),
+				bi = new BasicInstruction(currId, rs.getString(3), JdbcUtils.getUtcTimestampColumnValue(rs, 4),
 						currInstructorId, status);
 				results.add(bi);
 			}
@@ -292,7 +294,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 
 	/**
 	 * Encode status result parameters as JSON.
-	 * 
+	 *
 	 * @param status
 	 *        the status to encode the result parameters for
 	 * @return the JSON string, or {@literal null} if there are no parameters to
@@ -340,15 +342,10 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<Instruction> findInstructionsForState(InstructionState state) {
-		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE),
-				new ResultSetExtractor<List<Instruction>>() {
-
-					@Override
-					public List<Instruction> extractData(ResultSet rs)
-							throws SQLException, DataAccessException {
-						return extractInstructions(rs);
-					}
-				}, state.toString());
+		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE), ps -> {
+			ps.setString(1, state.toString());
+			JdbcUtils.setUtcTimestampStatementValue(ps, 2, Instant.now());
+		}, (ResultSetExtractor<List<Instruction>>) rs -> extractInstructions(rs));
 	}
 
 	@Override
@@ -394,9 +391,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 				final String sql = getSqlResource(RESOURCE_SQL_DELETE_OLD);
 				log.debug("Preparing SQL to delete old instructions [{}] with hours [{}]", sql, hours);
 				PreparedStatement ps = con.prepareStatement(sql);
-				Calendar c = Calendar.getInstance();
-				c.add(Calendar.HOUR, -hours);
-				ps.setTimestamp(1, new Timestamp(c.getTimeInMillis()), c);
+				JdbcUtils.setUtcTimestampStatementValue(ps, 1, Instant.now().minus(hours, ChronoUnit.HOURS));
 				ps.setString(2, Instruction.LOCAL_INSTRUCTION_ID);
 				return ps;
 			}
@@ -405,11 +400,11 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 
 	/**
 	 * Set a maximum length for all instruction status result parameter values.
-	 * 
+	 *
 	 * <p>
 	 * This is to help work around exceedingly long error message parameters.
 	 * </p>
-	 * 
+	 *
 	 * @param maxInstructionStatusParamLength
 	 *        the maximum length; defaults to
 	 *        {@link #DEFAULT_MAX_INSTRUCTION_STATUS_PARAM_LENGTH}

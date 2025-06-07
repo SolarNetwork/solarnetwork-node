@@ -16,13 +16,6 @@
 		http://www.springframework.org/schema/tx
 		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
-	<!-- Configuration -->
-
-	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.io.modbus.server.dao.jdbc">
-		<beans:prop key="JdbcModbusServerDao.initSqlResource">classpath:/net/solarnetwork/node/io/modbus/server/dao/jdbc/h2-modbus-server-init.sql</beans:prop>
-		<beans:prop key="JdbcModbusServerDao.sqlResourcePrefix">register</beans:prop>
-	</osgix:cm-properties>
-
 	<!-- Service References -->
 
 	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=modbus-server)"/>
@@ -75,8 +68,6 @@
 	
 	<!-- Supporting Services -->
 
-	<ctx:property-placeholder properties-ref="cfg" />
-
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
 		<property name="dataSource" ref="dataSource" />
 	</bean>
@@ -94,8 +85,7 @@
 	<bean id="modbusRegisterDao" class="net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcModbusRegisterDao" init-method="init">
 		<property name="dataSource" ref="dataSource" />
 		<property name="eventAdmin" ref="eventAdmin" />
-		<property name="initSqlResource" value="${JdbcModbusServerDao.initSqlResource}" />
-		<property name="sqlResourcePrefix" value="${JdbcModbusServerDao.sqlResourcePrefix}" />
+		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/io/modbus/server/dao/jdbc/register-init.sql" />
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcModbusRegisterDao"/>

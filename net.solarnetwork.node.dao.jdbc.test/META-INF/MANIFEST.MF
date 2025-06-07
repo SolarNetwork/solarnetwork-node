@@ -21,4 +21,5 @@ Import-Package:
  org.springframework.jdbc.datasource.embedded;version="[5.3,6.0)",
  org.springframework.test.context;version="[5.3,6.0)",
  org.springframework.test.context.junit4;version="[5.3,6.0)",
+ org.springframework.test.context.transaction;version="[5.3,6.0)",
  org.springframework.transaction.annotation;version="[5.3,6.0)"

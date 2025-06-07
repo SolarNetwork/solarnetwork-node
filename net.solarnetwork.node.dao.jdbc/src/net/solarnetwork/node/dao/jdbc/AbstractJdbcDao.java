@@ -425,13 +425,13 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * <p>
 	 * For example, if by querying the current version is reported as {@code 1}
 	 * and the {@link #getTablesVersion()} value is {@code 3}, and the
-	 * {@link #getSqlResourcePrefix()} is {@code derby-mytable}, the following
-	 * SQL resources will be exectued:
+	 * {@link #getSqlResourcePrefix()} is {@code mytable}, the following SQL
+	 * resources will be exectued:
 	 * </p>
 	 *
 	 * <ol>
-	 * <li>derby-mytable-update-2.sql</li>
-	 * <li>derby-mytable-update-3.sql</li>
+	 * <li>mytable-update-2.sql</li>
+	 * <li>mytable-update-3.sql</li>
 	 * </ol>
 	 *
 	 * <p>

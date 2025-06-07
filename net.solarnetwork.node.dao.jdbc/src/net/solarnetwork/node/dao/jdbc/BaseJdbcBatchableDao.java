@@ -56,24 +56,6 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Compar
 	private String sqlForUpdateSuffix = " FOR UPDATE";
 
 	/**
-	 * Constructor.
-	 *
-	 * @param objectType
-	 *        the entity type
-	 * @param keyType
-	 *        the key type
-	 * @param rowMapper
-	 *        a mapper to use when mapping entity query result rows to entity
-	 *        objects
-	 * @throws IllegalArgumentException
-	 *         if any parameter is {@literal null}
-	 */
-	public BaseJdbcBatchableDao(Class<? extends T> objectType, Class<? extends K> keyType,
-			RowMapper<T> rowMapper) {
-		super(objectType, keyType, rowMapper);
-	}
-
-	/**
 	 * Init with an an entity name and table version, deriving various names
 	 * based on conventions.
 	 *

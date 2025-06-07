@@ -198,12 +198,8 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 				: dataSourceUrl);
 
 		final Runnable task = () -> {
-			final String dbDisplay = ALL_DATASOURCE_URL.equals(backupDataSourceUrl) ? "ALL"
-					: backupDataSourceUrl;
-			log.info("Performing {} database backup...", dbDisplay);
 			backup(backupDataSourceUrl);
 			backupFutures.remove(backupDataSourceUrl);
-			log.info("Database {} backup complete.", dbDisplay);
 		};
 
 		final Instant ts = Instant
@@ -268,6 +264,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 						log.debug("Ignoring DataSource {}", url);
 						return null;
 					}
+					log.info("Performing {} database backup...", dbName);
 					String archiveName = String.format("%s.zip", dbName);
 					Path tmpDestPath = temporaryDestinationPath.resolve(archiveName);
 					log.debug("Backing up [{}] database to [{}]", dbName, tmpDestPath);

@@ -28,13 +28,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
@@ -70,6 +73,33 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 */
 	public AbstractBatchableJdbcDao() {
 		super();
+	}
+
+	@Override
+	protected JdbcTemplate createJdbcTemplate(DataSource dataSource) {
+		try (Connection conn = dataSource.getConnection()) {
+			String product = conn.getMetaData().getDatabaseProductName();
+			if ( product != null ) {
+				String prefix = null;
+				String productLc = product.toLowerCase(Locale.ROOT);
+				if ( productLc.contains("postgres") ) {
+					prefix = "postgres";
+				} else if ( productLc.contains("h2") ) {
+					prefix = "h2";
+				}
+				if ( prefix != null ) {
+					log.info("Detected SQL resource prefix [{}] for from database type {}", prefix,
+							product);
+					String currPrefix = getSqlResourcePrefix();
+					if ( !currPrefix.contains(prefix) ) {
+						setSqlResourcePrefix(prefix + "-" + currPrefix);
+					}
+				}
+			}
+		} catch ( Exception e ) {
+			log.warn("Error detecting SQL resource prefix for from DataSource: {}", e.toString());
+		}
+		return super.createJdbcTemplate(dataSource);
 	}
 
 	/**
