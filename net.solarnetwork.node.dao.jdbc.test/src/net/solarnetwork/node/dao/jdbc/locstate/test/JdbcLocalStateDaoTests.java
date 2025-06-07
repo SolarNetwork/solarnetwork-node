@@ -283,6 +283,7 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 
 		// THEN
 		assertThat("Result returned", result, is(equalTo(entity)));
+
 		assertThat("Result NOT same as given", result.isSameAs(entity), is(equalTo(false)));
 		assertThat("Result value is previous (unchanged) value)", result.getValue(),
 				is(equalTo(originalValue)));

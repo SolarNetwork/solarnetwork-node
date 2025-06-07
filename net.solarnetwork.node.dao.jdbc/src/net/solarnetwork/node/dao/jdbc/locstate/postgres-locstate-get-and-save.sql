@@ -1,6 +1,10 @@
 WITH ins AS (
-	SELECT *
-	FROM (VALUES (?::text, ?::timestamptz, ?::timestamptz, ?::CHARACTER, ?::BYTEA)) 
+	SELECT * FROM (VALUES (
+			  CAST(? AS VARCHAR)
+			, CAST(? AS TIMESTAMP WITH TIME ZONE)
+			, CAST(? AS TIMESTAMP WITH TIME ZONE)
+			, CAST(? AS CHARACTER)
+			, CAST(? AS BYTEA))) 
 	AS s(skey, created, modified, stype, sdata)
 ), prev AS (
 	SELECT s.skey, s.created, s.modified, s.stype, s.sdata

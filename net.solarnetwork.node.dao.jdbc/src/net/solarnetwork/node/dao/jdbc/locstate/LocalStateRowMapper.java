@@ -22,11 +22,11 @@
 
 package net.solarnetwork.node.dao.jdbc.locstate;
 
-import static net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao.getInstantColumn;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import org.springframework.jdbc.core.RowMapper;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.LocalStateType;
 import net.solarnetwork.node.domain.SecurityToken;
@@ -65,8 +65,8 @@ public class LocalStateRowMapper implements RowMapper<LocalState> {
 	@Override
 	public LocalState mapRow(ResultSet rs, int rowNum) throws SQLException {
 		String key = rs.getString(1);
-		Instant created = getInstantColumn(rs, 2);
-		Instant modified = getInstantColumn(rs, 3);
+		Instant created = JdbcUtils.getUtcTimestampColumnValue(rs, 2);
+		Instant modified = JdbcUtils.getUtcTimestampColumnValue(rs, 3);
 		String typeKey = rs.getString(4);
 		byte[] data = rs.getBytes(5);
 		LocalState state = new LocalState(key, created);

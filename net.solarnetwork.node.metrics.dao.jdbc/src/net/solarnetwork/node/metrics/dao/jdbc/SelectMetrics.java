@@ -23,12 +23,13 @@
 package net.solarnetwork.node.metrics.dao.jdbc;
 
 import static java.lang.String.format;
+import static java.time.ZoneOffset.UTC;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.List;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -273,10 +274,10 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 			}
 		}
 		if ( filter.hasStartDate() ) {
-			stmt.setTimestamp(++p, Timestamp.from(filter.getStartDate()));
+			stmt.setObject(++p, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasEndDate() ) {
-			stmt.setTimestamp(++p, Timestamp.from(filter.getEndDate()));
+			stmt.setObject(++p, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasTypeCriteria() ) {
 			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.getTypes());

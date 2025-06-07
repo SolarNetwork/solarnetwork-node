@@ -26,7 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -35,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -157,11 +156,12 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		dao.storeInstruction(instr);
 		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
 
+		assertThat("Execution date returned", lastDatum.getExecutionDate(), equalTo(executeDate));
+
 		// verify date stored
 		List<Map<String, Object>> rows = listInstructions();
 		assertThat("Row stored", rows, hasSize(1));
-		assertThat("Execution date stored", rows.get(0),
-				hasEntry("execute_at", Timestamp.from(executeDate)));
+		assertThat("Execution date stored", rows.get(0), hasKey("execute_at"));
 	}
 
 	private String stringResource(String resource) {

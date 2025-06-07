@@ -25,12 +25,17 @@ package net.solarnetwork.node.dao.jdbc;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
@@ -356,6 +361,116 @@ public abstract class JdbcUtils {
 			return null;
 		}
 		return sql.split(";\\s*");
+	}
+
+	/**
+	 * Set an {@link Instant} as a timestamp statement parameter.
+	 *
+	 * <p>
+	 * The column type is assumed to be {@code TIMESTAMP} whose values are
+	 * stored in UTC.
+	 * </p>
+	 *
+	 * @param stmt
+	 *        the statement
+	 * @param parameterIndex
+	 *        the statement parameter index to set
+	 * @param time
+	 *        the time to set
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.3
+	 */
+	public static void setUtcTimestampStatementValue(PreparedStatement stmt, int parameterIndex, Instant time)
+			throws SQLException {
+		if ( time == null ) {
+			stmt.setNull(parameterIndex, Types.TIMESTAMP);
+		} else {
+			LocalDateTime ldt = time.atZone(ZoneOffset.UTC).toLocalDateTime();
+			stmt.setObject(parameterIndex, ldt, Types.TIMESTAMP);
+		}
+	}
+
+	/**
+	 * Get an {@link Instant} from a timestamp result set column.
+	 *
+	 * <p>
+	 * The column type is assumed to be {@code TIMESTAMP} whose values are
+	 * stored in UTC.
+	 * </p>
+	 *
+	 * @param rs
+	 *        the result set
+	 * @param columnIndex
+	 *        the column index
+	 * @return the new instant, or {@literal null} if the column was null
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.3
+	 */
+	public static Instant getUtcTimestampColumnValue(ResultSet rs, int columnIndex) throws SQLException {
+		LocalDateTime ltd = rs.getObject(columnIndex, LocalDateTime.class);
+		return (ltd != null ? ltd.toInstant(ZoneOffset.UTC) : null);
+	}
+
+	/**
+	 * Set a {@link UUID} as a pair of long statement parameters.
+	 *
+	 * @param stmt
+	 *        the statement
+	 * @param parameterIndex
+	 *        the statement parameter index to set the UUID upper bits; the
+	 *        lower bits will be set on parameter {@code parameterIndex + 1}
+	 * @param uuid
+	 *        the UUID to set
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.3
+	 */
+	public static void setUuidParameters(PreparedStatement stmt, int parameterIndex, UUID uuid)
+			throws SQLException {
+		stmt.setLong(parameterIndex, uuid.getMostSignificantBits());
+		stmt.setLong(parameterIndex + 1, uuid.getLeastSignificantBits());
+	}
+
+	/**
+	 * Get a {@link UUID} from a pair of long result set columns.
+	 *
+	 * @param rs
+	 *        the result set
+	 * @param columnIndex
+	 *        the column index of the UUID upper bits; the lower bits will be
+	 *        read from column {@code columnIndex + 1}
+	 * @return the new UUID, or {@literal null} if either column was null
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.3
+	 */
+	public static UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
+		long hi = rs.getLong(columnIndex);
+		if ( rs.wasNull() ) {
+			return null;
+		}
+		long lo = rs.getLong(columnIndex + 1);
+		if ( rs.wasNull() ) {
+			return null;
+		}
+		return new UUID(hi, lo);
+	}
+
+	/**
+	 * Get a single SQL order clause for a given column and direction.
+	 *
+	 * @param columnName
+	 *        the column name
+	 * @param descending
+	 *        {@literal true} for descending order, {@literal false} for
+	 *        ascending
+	 * @return the SQL clause
+	 * @since 1.3
+	 */
+	public static String sqlOrderClause(String columnName, boolean descending) {
+		return columnName + " " + (descending ? "DESC" : "ASC");
 	}
 
 }

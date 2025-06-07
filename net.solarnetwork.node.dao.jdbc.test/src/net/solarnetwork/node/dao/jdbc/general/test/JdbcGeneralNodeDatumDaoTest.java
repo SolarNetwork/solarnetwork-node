@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.general.test;
 
+import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expectLastCall;
@@ -32,7 +33,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -374,7 +374,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		String jdata = jdbcTemplate.queryForObject(
 				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
-				String.class, Timestamp.from(datum.getTimestamp()), datum.getSourceId());
+				String.class, datum.getTimestamp().atOffset(UTC).toLocalDateTime(), datum.getSourceId());
 		assertThat("jdata", jdata,
 				equalTo("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123},\"t\":[\"foo\"]}"));
 
@@ -409,7 +409,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		String jdata = jdbcTemplate.queryForObject(
 				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
-				String.class, Timestamp.from(datum.getTimestamp()), datum.getSourceId());
+				String.class, datum.getTimestamp().atOffset(UTC).toLocalDateTime(), datum.getSourceId());
 		assertThat("jdata", jdata, equalTo("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123}}"));
 
 		List<NodeDatum> local = dao.getDatumNotUploaded("test");

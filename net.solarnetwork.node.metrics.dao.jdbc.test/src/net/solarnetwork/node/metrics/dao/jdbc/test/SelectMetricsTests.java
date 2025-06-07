@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.metrics.dao.jdbc.test;
 
+import static java.time.ZoneOffset.UTC;
 import static net.solarnetwork.node.test.MatcherUtils.equalToTextResource;
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.capture;
@@ -35,7 +36,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -93,8 +94,8 @@ public class SelectMetricsTests {
 		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
 				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
-		ps.setTimestamp(1, Timestamp.from(filter.getStartDate()));
-		ps.setTimestamp(2, Timestamp.from(filter.getEndDate()));
+		ps.setObject(1, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		ps.setObject(2, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 
 		// WHEN
 		replayAll();
@@ -137,8 +138,8 @@ public class SelectMetricsTests {
 		ps.setObject(1, ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_25.numberParameter(0));
 		ps.setObject(2, ParameterizedMetricAggregate.METRIC_TYPE_QUANTILE_75.numberParameter(0));
 
-		ps.setTimestamp(3, Timestamp.from(filter.getStartDate()));
-		ps.setTimestamp(4, Timestamp.from(filter.getEndDate()));
+		ps.setObject(3, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		ps.setObject(4, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 
 		expect(conn.createArrayOf(eq("VARCHAR"), aryEq(new String[] { filter.getType() })))
 				.andReturn(textArray);
@@ -170,8 +171,8 @@ public class SelectMetricsTests {
 		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
 				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
-		ps.setTimestamp(1, Timestamp.from(filter.getStartDate()));
-		ps.setTimestamp(2, Timestamp.from(filter.getEndDate()));
+		ps.setObject(1, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		ps.setObject(2, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		ps.setLong(3, filter.getOffset());
 		ps.setInt(4, filter.getMax());
 
@@ -201,8 +202,8 @@ public class SelectMetricsTests {
 		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
 				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
-		ps.setTimestamp(1, Timestamp.from(filter.getStartDate()));
-		ps.setTimestamp(2, Timestamp.from(filter.getEndDate()));
+		ps.setObject(1, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		ps.setObject(2, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 
 		// WHEN
 		replayAll();
@@ -232,8 +233,8 @@ public class SelectMetricsTests {
 		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
 				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
-		ps.setTimestamp(1, Timestamp.from(filter.getStartDate()));
-		ps.setTimestamp(2, Timestamp.from(filter.getEndDate()));
+		ps.setObject(1, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		ps.setObject(2, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		ps.setLong(3, filter.getOffset());
 		ps.setInt(4, filter.getMax());
 
@@ -262,8 +263,8 @@ public class SelectMetricsTests {
 		expect(conn.prepareStatement(capture(sqlCaptor), eq(ResultSet.TYPE_FORWARD_ONLY),
 				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).andReturn(ps);
 		ps.setFetchSize(SelectMetrics.DEFAULT_FETCH_SIZE);
-		ps.setTimestamp(1, Timestamp.from(filter.getStartDate()));
-		ps.setTimestamp(2, Timestamp.from(filter.getEndDate()));
+		ps.setObject(1, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		ps.setObject(2, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 
 		// WHEN
 		replayAll();

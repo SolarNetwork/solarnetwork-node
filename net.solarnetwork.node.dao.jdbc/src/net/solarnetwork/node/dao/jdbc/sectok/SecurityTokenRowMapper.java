@@ -22,11 +22,11 @@
 
 package net.solarnetwork.node.dao.jdbc.sectok;
 
-import static net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao.getInstantColumn;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import org.springframework.jdbc.core.RowMapper;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.domain.SecurityToken;
 
 /**
@@ -62,7 +62,7 @@ public class SecurityTokenRowMapper implements RowMapper<SecurityToken> {
 	@Override
 	public SecurityToken mapRow(ResultSet rs, int rowNum) throws SQLException {
 		String tokenId = rs.getString(1);
-		Instant created = getInstantColumn(rs, 2);
+		Instant created = JdbcUtils.getUtcTimestampColumnValue(rs, 2);
 		String tokenSecret = rs.getString(3);
 		String name = rs.getString(4);
 		String description = rs.getString(5);

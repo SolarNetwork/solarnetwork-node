@@ -476,6 +476,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				final int mask = SettingFlag.maskForSet(EnumSet.of(SettingFlag.IgnoreModificationDate));
 				stmt.setInt(1, mask);
 				stmt.setInt(2, mask);
+				stmt.setMaxRows(1);
 				return stmt;
 			}
 		}, new ResultSetExtractor<Date>() {

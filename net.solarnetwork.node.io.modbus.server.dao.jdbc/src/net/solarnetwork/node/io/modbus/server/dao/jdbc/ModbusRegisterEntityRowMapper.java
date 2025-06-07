@@ -24,8 +24,9 @@ package net.solarnetwork.node.io.modbus.server.dao.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.time.Instant;
 import org.springframework.jdbc.core.RowMapper;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterKey;
@@ -55,12 +56,12 @@ public class ModbusRegisterEntityRowMapper implements RowMapper<ModbusRegisterEn
 		ModbusRegisterBlockType blockType = ModbusRegisterBlockType
 				.forCode(Byte.toUnsignedInt(rs.getByte(3)));
 		int addr = rs.getInt(4);
-		Timestamp created = rs.getTimestamp(5);
-		Timestamp modified = rs.getTimestamp(6);
+		Instant created = JdbcUtils.getUtcTimestampColumnValue(rs, 5);
+		Instant modified = JdbcUtils.getUtcTimestampColumnValue(rs, 6);
 		short val = rs.getShort(7);
 		ModbusRegisterEntity result = new ModbusRegisterEntity(
-				new ModbusRegisterKey(serverId, unitId, blockType, addr), created.toInstant());
-		result.setModified(modified.toInstant());
+				new ModbusRegisterKey(serverId, unitId, blockType, addr), created);
+		result.setModified(modified);
 		result.setValue(val);
 		return result;
 	}

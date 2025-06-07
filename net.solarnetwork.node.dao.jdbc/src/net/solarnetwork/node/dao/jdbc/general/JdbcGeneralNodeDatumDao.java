@@ -23,16 +23,15 @@
 package net.solarnetwork.node.dao.jdbc.general;
 
 import static java.lang.String.format;
+import static net.solarnetwork.node.dao.jdbc.JdbcUtils.setUtcTimestampStatementValue;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +51,7 @@ import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.domain.Mock;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -161,10 +161,10 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	@Override
 	protected void setUpdateStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
-		int col = 1;
-		ps.setString(col++, jsonForSamples(datum));
-		ps.setTimestamp(col++, Timestamp.from(datum.getTimestamp()));
-		ps.setString(col++, datum.getSourceId());
+		int col = 0;
+		ps.setString(++col, jsonForSamples(datum));
+		setUtcTimestampStatementValue(ps, ++col, datum.getTimestamp());
+		ps.setString(++col, datum.getSourceId());
 	}
 
 	@Override
@@ -188,7 +188,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 					log.trace("Handling result row " + rowNum);
 				}
 				int col = 0;
-				Instant ts = rs.getTimestamp(++col).toInstant();
+				Instant ts = JdbcUtils.getUtcTimestampColumnValue(rs, ++col);
 				String sourceId = rs.getString(++col);
 				Long locationId = (Long) rs.getObject(++col);
 
@@ -255,10 +255,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	@Override
 	protected void setStoreStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 0;
-		ps.setTimestamp(++col,
-				Timestamp
-						.from(datum.getTimestamp() == null ? Instant.now().truncatedTo(ChronoUnit.MILLIS)
-								: datum.getTimestamp().truncatedTo(ChronoUnit.MILLIS)));
+		setUtcTimestampStatementValue(ps, ++col,
+				datum.getTimestamp() == null ? Instant.now().truncatedTo(ChronoUnit.MILLIS)
+						: datum.getTimestamp().truncatedTo(ChronoUnit.MILLIS));
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
 		if ( datum.getKind() == ObjectDatumKind.Location ) {
 			ps.setObject(++col, datum.getObjectId());
@@ -320,9 +319,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 				String sql = getSqlResource(SQL_RESOURCE_DELETE_OLD);
 				log.debug("Preparing SQL to delete old datum [{}] with hours [{}]", sql, hours);
 				PreparedStatement ps = con.prepareStatement(sql);
-				Calendar c = Calendar.getInstance();
-				c.add(Calendar.HOUR, -hours);
-				ps.setTimestamp(1, new Timestamp(c.getTimeInMillis()), c);
+				setUtcTimestampStatementValue(ps, 1, Instant.now().minus(hours, ChronoUnit.HOURS));
 				return ps;
 			}
 		});
@@ -422,7 +419,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 			@Override
 			public void setValues(PreparedStatement ps) throws SQLException {
-				ps.setTimestamp(1, Timestamp.from(created));
+				setUtcTimestampStatementValue(ps, 1, created);
 				ps.setString(2, sourceId);
 			}
 		};
@@ -518,10 +515,10 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 				PreparedStatement ps = con
 						.prepareStatement(getSqlResource(SQL_RESOURCE_UPDATE_UPLOADED));
-				int col = 1;
-				ps.setTimestamp(col++, Timestamp.from(timestamp));
-				ps.setTimestamp(col++, Timestamp.from(created));
-				ps.setObject(col++, id);
+				int col = 0;
+				setUtcTimestampStatementValue(ps, ++col, timestamp);
+				setUtcTimestampStatementValue(ps, ++col, created);
+				ps.setObject(++col, id);
 				return ps;
 			}
 		});

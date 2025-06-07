@@ -27,8 +27,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -455,9 +453,11 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 *        {@literal true} for descending order, {@literal false} for
 	 *        ascending
 	 * @return the SQL clause
+	 * @deprecated use {@link JdbcUtils#sqlOrderClause(String, boolean)}
 	 */
+	@Deprecated
 	public static String sqlOrderClause(String columnName, boolean descending) {
-		return columnName + " " + (descending ? "DESC" : "ASC");
+		return JdbcUtils.sqlOrderClause(columnName, descending);
 	}
 
 	@Override
@@ -480,15 +480,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 *        the time to set
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use
+	 *             {@link JdbcUtils#setUtcTimestampStatementValue(PreparedStatement, int, Instant)}
 	 */
+	@Deprecated
 	public static void setInstantParameter(PreparedStatement stmt, int parameterIndex, Instant time)
 			throws SQLException {
-		if ( time == null ) {
-			stmt.setNull(parameterIndex, Types.TIMESTAMP);
-		} else {
-			stmt.setTimestamp(parameterIndex, new Timestamp(time.toEpochMilli()),
-					(Calendar) UTC_CALENDAR.clone());
-		}
+		JdbcUtils.setUtcTimestampStatementValue(stmt, parameterIndex, time);
 	}
 
 	/**
@@ -501,10 +499,11 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 * @return the new instant, or {@literal null} if the column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use {@link JdbcUtils#getUtcTimestampColumnValue(ResultSet, int)}
 	 */
+	@Deprecated
 	public static Instant getInstantColumn(ResultSet rs, int columnIndex) throws SQLException {
-		Timestamp ts = rs.getTimestamp(columnIndex, (Calendar) UTC_CALENDAR.clone());
-		return ts != null ? Instant.ofEpochMilli(ts.getTime()) : null;
+		return JdbcUtils.getUtcTimestampColumnValue(rs, columnIndex);
 	}
 
 	/**
@@ -519,11 +518,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 *        the UUID to set
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use
+	 *             {@link JdbcUtils#setUuidParameters(PreparedStatement, int, UUID)}
 	 */
+	@Deprecated
 	public static void setUuidParameters(PreparedStatement stmt, int parameterIndex, UUID uuid)
 			throws SQLException {
-		stmt.setLong(parameterIndex, uuid.getMostSignificantBits());
-		stmt.setLong(parameterIndex + 1, uuid.getLeastSignificantBits());
+		JdbcUtils.setUuidParameters(stmt, parameterIndex, uuid);
 	}
 
 	/**
@@ -537,17 +538,11 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 * @return the new UUID, or {@literal null} if either column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
+	 * @deprecated use {@link JdbcUtils#getUuidColumns(ResultSet, int)}
 	 */
+	@Deprecated
 	public static UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
-		long hi = rs.getLong(columnIndex);
-		if ( rs.wasNull() ) {
-			return null;
-		}
-		long lo = rs.getLong(columnIndex + 1);
-		if ( rs.wasNull() ) {
-			return null;
-		}
-		return new UUID(hi, lo);
+		return JdbcUtils.getUuidColumns(rs, columnIndex);
 	}
 
 	/**

@@ -22,11 +22,12 @@
 
 package net.solarnetwork.node.metrics.dao.jdbc;
 
+import static java.time.ZoneOffset.UTC;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.Types;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.SqlProvider;
 import net.solarnetwork.node.metrics.dao.MetricFilter;
@@ -93,10 +94,10 @@ public class DeleteMetrics implements PreparedStatementCreator, SqlProvider {
 
 	private int prepareWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.hasStartDate() ) {
-			stmt.setTimestamp(++p, Timestamp.from(filter.getStartDate()));
+			stmt.setObject(++p, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasEndDate() ) {
-			stmt.setTimestamp(++p, Timestamp.from(filter.getEndDate()));
+			stmt.setObject(++p, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasTypeCriteria() ) {
 			Array a = con.createArrayOf("VARCHAR", filter.getTypes());

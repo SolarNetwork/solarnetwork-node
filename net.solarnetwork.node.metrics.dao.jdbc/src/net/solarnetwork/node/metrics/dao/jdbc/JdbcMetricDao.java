@@ -23,13 +23,14 @@
 package net.solarnetwork.node.metrics.dao.jdbc;
 
 import static java.lang.String.format;
+import static java.time.ZoneOffset.UTC;
 import static net.solarnetwork.node.metrics.dao.jdbc.Constants.TABLE_NAME_TEMPALTE;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -234,12 +235,12 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 
 	@Override
 	protected Object[] primaryKeyArguments(MetricKey id) {
-		return new Object[] { Timestamp.from(id.getTimestamp()), id.getType(), id.getName() };
+		return new Object[] { id.getTimestamp().atOffset(UTC), id.getType(), id.getName() };
 	}
 
 	@Override
 	protected void setStoreStatementValues(Metric obj, PreparedStatement ps) throws SQLException {
-		ps.setTimestamp(1, Timestamp.from(obj.getTimestamp()));
+		ps.setObject(1, obj.getTimestamp().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		ps.setString(2, obj.getType());
 		ps.setString(3, obj.getName());
 		ps.setDouble(4, obj.getValue());

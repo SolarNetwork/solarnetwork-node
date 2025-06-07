@@ -23,15 +23,16 @@
 package net.solarnetwork.node.dao.jdbc.reactor;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
+import static net.solarnetwork.node.dao.jdbc.JdbcUtils.setUtcTimestampStatementValue;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
+import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.BasicInstructionStatus;
 import net.solarnetwork.node.reactor.Instruction;
@@ -225,14 +227,14 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	@Override
 	protected void setStoreStatementValues(Instruction instruction, PreparedStatement ps)
 			throws SQLException {
-		int col = 1;
-		ps.setObject(col++, instruction.getId());
-		ps.setString(col++, instruction.getInstructorId());
-		ps.setTimestamp(col++, Timestamp.from(instruction.getInstructionDate()));
-		ps.setString(col++, instruction.getTopic());
+		int col = 0;
+		ps.setObject(++col, instruction.getId());
+		ps.setString(++col, instruction.getInstructorId());
+		setUtcTimestampStatementValue(ps, ++col, instruction.getInstructionDate());
+		ps.setString(++col, instruction.getTopic());
 
 		Instant executeAt = instruction.getExecutionDate();
-		ps.setTimestamp(col++, Timestamp.from(executeAt != null ? executeAt : Instant.now()));
+		setUtcTimestampStatementValue(ps, ++col, executeAt != null ? executeAt : Instant.now());
 	}
 
 	@Override
@@ -262,10 +264,10 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 			if ( bi == null || currInstructorId == null || !bi.getId().equals(currId)
 					|| !bi.getInstructorId().equals(currInstructorId) ) {
 				InstructionStatus status = new BasicInstructionStatus(currId,
-						InstructionState.valueOf(rs.getString(5)), rs.getTimestamp(6).toInstant(),
+						InstructionState.valueOf(rs.getString(5)), JdbcUtils.getUtcTimestampColumnValue(rs, 6),
 						(rs.getString(8) == null ? null : InstructionState.valueOf(rs.getString(8))),
 						JsonUtils.getStringMap(rs.getString(7)));
-				bi = new BasicInstruction(currId, rs.getString(3), rs.getTimestamp(4).toInstant(),
+				bi = new BasicInstruction(currId, rs.getString(3), JdbcUtils.getUtcTimestampColumnValue(rs, 4),
 						currInstructorId, status);
 				results.add(bi);
 			}
@@ -340,15 +342,10 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<Instruction> findInstructionsForState(InstructionState state) {
-		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE),
-				new ResultSetExtractor<List<Instruction>>() {
-
-					@Override
-					public List<Instruction> extractData(ResultSet rs)
-							throws SQLException, DataAccessException {
-						return extractInstructions(rs);
-					}
-				}, state.toString());
+		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE), ps -> {
+			ps.setString(1, state.toString());
+			JdbcUtils.setUtcTimestampStatementValue(ps, 2, Instant.now());
+		}, (ResultSetExtractor<List<Instruction>>) rs -> extractInstructions(rs));
 	}
 
 	@Override
@@ -394,9 +391,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 				final String sql = getSqlResource(RESOURCE_SQL_DELETE_OLD);
 				log.debug("Preparing SQL to delete old instructions [{}] with hours [{}]", sql, hours);
 				PreparedStatement ps = con.prepareStatement(sql);
-				Calendar c = Calendar.getInstance();
-				c.add(Calendar.HOUR, -hours);
-				ps.setTimestamp(1, new Timestamp(c.getTimeInMillis()), c);
+				JdbcUtils.setUtcTimestampStatementValue(ps, 1, Instant.now().minus(hours, ChronoUnit.HOURS));
 				ps.setString(2, Instruction.LOCAL_INSTRUCTION_ID);
 				return ps;
 			}
