@@ -4,7 +4,7 @@ Bundle-Name: Mock Control
 Bundle-SymbolicName: net.solarnetwork.node.control.mock
 Automatic-Module-Name: net.solarnetwork.node.control.mock
 Bundle-Description: Control simulator to be used for development and testing.
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
