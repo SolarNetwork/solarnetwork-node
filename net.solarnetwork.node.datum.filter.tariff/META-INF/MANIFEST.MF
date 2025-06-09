@@ -5,7 +5,7 @@ Bundle-Description: Add a time-of-use tariff to datum based on a spreadsheet tar
 Bundle-SymbolicName: net.solarnetwork.node.datum.filter.tariff
 Bundle-Version: 3.3.0
 Automatic-Module-Name: net.solarnetwork.node.datum.filter.tariff
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-Vendor: SolarNetwork
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",

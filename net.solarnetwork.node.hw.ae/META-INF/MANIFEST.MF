@@ -6,7 +6,7 @@ Bundle-Description: Hardware support for Advanced Energy devices.
 Bundle-Version: 4.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.ae
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.hw.ae.inverter.nx;version="2.2.0",
  net.solarnetwork.node.hw.ae.inverter.tx;version="2.2.0"

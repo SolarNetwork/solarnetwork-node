@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.hw.rfid
 Automatic-Module-Name: net.solarnetwork.node.hw.rfid
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Main-Class: net.solarnetwork.node.hw.rfid.RfidSocketReader
 Import-Package: 
  javax.net,

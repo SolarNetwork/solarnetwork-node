@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.hw.eig
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.eig
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.hw.eig.meter;version="3.0.0"
 Import-Package: 

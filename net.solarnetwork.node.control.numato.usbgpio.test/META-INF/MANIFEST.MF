@@ -6,7 +6,7 @@ Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.control.numato.usbgpio;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.control.numato.usbgpio.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.io.serial.pjc;version="[2.0,3.0)";resolution:=optional,
  net.solarnetwork.node.test;version="[2.0,3.0)",

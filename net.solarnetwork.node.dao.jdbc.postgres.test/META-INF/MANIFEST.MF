@@ -6,7 +6,7 @@ Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.dao.jdbc.postgres;bundle-version="[1.0.0,2.0.0)"
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.postgres.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.zaxxer.hikari;version="[5.1,7.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",

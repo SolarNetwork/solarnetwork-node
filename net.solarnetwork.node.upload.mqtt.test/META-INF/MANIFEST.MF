@@ -6,7 +6,7 @@ Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[3.2,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.upload.mqtt.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  io.moquette;version="[0.16,1.0)",
  io.moquette.broker;version="[0.16,1.0)",

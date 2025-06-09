@@ -6,7 +6,7 @@ Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.setup.stomp;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.setup.stomp.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.databind.module;version="[2.10.1,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",

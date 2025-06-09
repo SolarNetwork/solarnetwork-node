@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.control.jf2.lata.test
 Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.control.jf2.lata;bundle-version="[5.0,6.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  gnu.io,
  net.solarnetwork.node.io.serial.rxtx;version="[3.0,4.0)",

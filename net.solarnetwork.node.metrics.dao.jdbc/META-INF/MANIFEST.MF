@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.metrics.dao.jdbc
 Bundle-Version: 1.4.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.metrics.dao.jdbc
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  javax.sql,
  net.solarnetwork.common.osgi.event;version="[1.0,2.0)",

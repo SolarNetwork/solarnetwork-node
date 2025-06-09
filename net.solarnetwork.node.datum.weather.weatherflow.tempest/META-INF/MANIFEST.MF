@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.datum.weather.weatherflow.tempest
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.weather.weatherflow.tempest
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.10,3.0)",
  com.fasterxml.jackson.databind;version="[2.10,3.0)",

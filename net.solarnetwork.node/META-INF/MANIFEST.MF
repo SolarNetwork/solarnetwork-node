@@ -7,7 +7,7 @@ Bundle-Description: The core of the SolarNode framework that provides basic
  infrastructure for all of the SolarNode application.
 Bundle-Version: 3.24.2
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node;version="2.0.0",
  net.solarnetwork.node.backup;version="2.1.1",

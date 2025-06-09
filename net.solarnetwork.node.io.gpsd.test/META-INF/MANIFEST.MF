@@ -6,7 +6,7 @@ Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.io.gpsd;bundle-version="[3.1,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.databind.node;version="[2.8,3.0)",
  io.netty.handler.logging;version="[4.2,5.0)",

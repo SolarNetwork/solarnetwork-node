@@ -6,7 +6,7 @@ Bundle-Description: Hardware support for AMS AG devices.
 Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.ams
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.hw.ams.lux.tsl2591;version="2.0.0"
 Import-Package: 

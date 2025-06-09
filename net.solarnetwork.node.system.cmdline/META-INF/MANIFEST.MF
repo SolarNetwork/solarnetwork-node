@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.system.cmdline
 Bundle-Description: Provides core system services such as restart and reboot features.
 Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.node;version="[2.0,3.0)",

@@ -6,7 +6,7 @@ Bundle-Description: Upload datump created by other SolarNode plugins to a SolarF
 Bundle-Version: 3.3.2
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.flux
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.10,3.0)",
  com.fasterxml.jackson.core;version="[2.10,3.0)",

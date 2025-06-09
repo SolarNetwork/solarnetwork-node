@@ -6,7 +6,7 @@ Bundle-Description: General support for HTTP integrations.
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.http
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.1,2.0)",
  net.solarnetwork.node.service;version="[1.5,2.0)",

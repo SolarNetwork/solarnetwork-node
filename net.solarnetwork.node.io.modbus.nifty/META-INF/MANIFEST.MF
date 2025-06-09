@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty
 Bundle-Version: 2.4.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.io.modbus.nifty;version="0.8.0",
  net.solarnetwork.node.io.modbus.nifty.tcp;version="0.6.0"

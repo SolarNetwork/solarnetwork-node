@@ -4,7 +4,7 @@ Bundle-Name: Modbus Communication Support - Serial (modbus4j JSC)
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.modbus4j.jsc
 Bundle-Version: 2.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.modbus4j.jsc
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fazecast.jSerialComm;version="[2.9,3.0)",
  com.serotonin.modbus4j;version="[3.1,4.0)",

@@ -6,7 +6,7 @@ Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.datum.tou;bundle-version="[1.0.0,2.0.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.dao.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,3.0)",

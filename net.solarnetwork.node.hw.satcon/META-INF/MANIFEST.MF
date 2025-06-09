@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.hw.satcon
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.satcon
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: net.solarnetwork.node.hw.satcon;version="3.0.0"
 Import-Package: 
  net.solarnetwork.domain;version="[2.0,3.0)",

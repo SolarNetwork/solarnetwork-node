@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.control.modbus
 Bundle-Description: Service to control arbitrary Modbus-accessible devices.
 Bundle-Version: 4.2.1
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",

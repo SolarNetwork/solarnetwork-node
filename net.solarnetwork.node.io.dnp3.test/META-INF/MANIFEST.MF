@@ -6,7 +6,7 @@ Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.io.dnp3;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.dnp3.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.automatak.dnp3.mock;version="2.3.2",
  net.solarnetwork.node.test;version="[2.0,3.0)",

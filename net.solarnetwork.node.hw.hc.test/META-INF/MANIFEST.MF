@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.hw.hc.test
 Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.hw.hc;bundle-version="[4.0,5.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.hamcrest;version="1.3.0",

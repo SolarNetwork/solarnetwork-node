@@ -5,7 +5,7 @@ Bundle-Description: Collect data from AMS GSS TSL2591 series ambient light senso
 Bundle-SymbolicName: net.solarnetwork.node.datum.ams.tsl2591
 Bundle-Version: 3.1.0
 Automatic-Module-Name: net.solarnetwork.noe.datum.ams.tsl2591
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",

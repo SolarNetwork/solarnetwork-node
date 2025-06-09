@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty.pjc
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty.pjc
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.sun.jna;version="[5.5,6.0)",
  com.sun.jna.ptr;version="[5.5,6.0)",

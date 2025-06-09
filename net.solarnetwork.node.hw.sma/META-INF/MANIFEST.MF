@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.hw.sma
 Bundle-Description: Hardware support for SMA devices.
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.hw.sma;version="2.0.0",
  net.solarnetwork.node.hw.sma.domain;version="2.0.0",

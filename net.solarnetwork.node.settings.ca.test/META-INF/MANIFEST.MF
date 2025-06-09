@@ -6,7 +6,7 @@ Bundle-Version: 3.3.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.settings.ca;bundle-version="[3.4,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.settings.ca.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",

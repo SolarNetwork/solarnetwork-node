@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.io.mbus.jmbus
 Bundle-Version: 2.4.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.mbus.jmbus
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.io.mbus;version="[1.0,2.0)",
  net.solarnetwork.node.io.mbus.support;version="[1.0,2.0)",

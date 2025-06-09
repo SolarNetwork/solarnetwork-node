@@ -6,10 +6,10 @@ Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.datum.csv;bundle-version="[1.0,2.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.csv.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- javax.servlet;version="3.0.0",
- javax.servlet.http;version="3.0.0",
+ jakarta.servlet;version="6.1.0",
+ jakarta.servlet.http;version="6.1.0",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  net.solarnetwork.test;version="[1.7,2.0)",
  net.solarnetwork.web.service.support;version="[1.0,2.0)",

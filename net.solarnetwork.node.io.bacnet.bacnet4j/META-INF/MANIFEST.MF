@@ -6,7 +6,7 @@ Bundle-Description: SolarNode BACnet API implementation using the BACnet4J frame
 Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.bacnet.bacnet4j
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.serotonin.bacnet4j;version="[6.0,7.0)",
  com.serotonin.bacnet4j.apdu;version="[6.0,7.0)",

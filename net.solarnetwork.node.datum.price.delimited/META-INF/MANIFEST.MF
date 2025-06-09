@@ -7,7 +7,7 @@ Bundle-SymbolicName: net.solarnetwork.node.datum.price.delimited
 Automatic-Module-Name: net.solarnetwork.node.datum.price.delimited
 Bundle-Version: 3.0.3
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.datum.price.delimited;version="2.0.2"
 Import-Package: 

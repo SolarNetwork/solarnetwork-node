@@ -7,7 +7,7 @@ Bundle-Description: Developer SolarNode setup service to work with the SolarNode
  application without requiring an approved X.509 certificate.
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)"

@@ -6,7 +6,7 @@ Bundle-Version: 2.0.2
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.dao.jdbc.h2;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.h2.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.zaxxer.hikari;version="[5.1,7.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",

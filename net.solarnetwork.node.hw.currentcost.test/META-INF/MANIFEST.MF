@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.hw.currentcost.test
 Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.hw.currentcost;bundle-version="[5.0,6.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  gnu.io,
  net.solarnetwork.node.test;version="[2.0,3.0)",

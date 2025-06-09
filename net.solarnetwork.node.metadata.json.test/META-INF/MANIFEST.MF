@@ -6,10 +6,10 @@ Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.metadata.json;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.metadata.json.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- javax.servlet;version="3.0.0",
- javax.servlet.http;version="3.0.0",
+ jakarta.servlet;version="6.1.0",
+ jakarta.servlet.http;version="6.1.0",
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",
