@@ -1,21 +1,21 @@
 /* ==================================================================
  * JdbcInstructionDaoTests.java - Oct 1, 2011 11:55:54 AM
- * 
+ *
  * Copyright 2007 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,7 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -35,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -49,10 +48,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
@@ -67,7 +66,7 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test case for the {@link JdbcInstructionDao} class.
- * 
+ *
  * @author matt
  * @version 2.2
  */
@@ -83,7 +82,7 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 	private Instruction lastDatum;
 
-	@Before
+	@BeforeTransaction
 	public void setUp() throws Exception {
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
@@ -157,11 +156,12 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		dao.storeInstruction(instr);
 		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
 
+		assertThat("Execution date returned", lastDatum.getExecutionDate(), equalTo(executeDate));
+
 		// verify date stored
 		List<Map<String, Object>> rows = listInstructions();
 		assertThat("Row stored", rows, hasSize(1));
-		assertThat("Execution date stored", rows.get(0),
-				hasEntry("execute_at", Timestamp.from(executeDate)));
+		assertThat("Execution date stored", rows.get(0), hasKey("execute_at"));
 	}
 
 	private String stringResource(String resource) {

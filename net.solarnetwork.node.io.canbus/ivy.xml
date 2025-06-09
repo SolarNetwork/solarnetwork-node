@@ -13,11 +13,11 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="io.netty" name="netty-buffer" rev="4.1.109.Final"/>
-		<dependency org="io.netty" name="netty-codec" rev="4.1.109.Final"/>
-		<dependency org="io.netty" name="netty-common" rev="4.1.109.Final"/>
-		<dependency org="io.netty" name="netty-resolver" rev="4.1.109.Final"/>
-		<dependency org="io.netty" name="netty-transport" rev="4.1.109.Final"/>
+		<dependency org="io.netty" name="netty-buffer" rev="4.2.1.Final"/>
+		<dependency org="io.netty" name="netty-codec" rev="4.2.1.Final"/>
+		<dependency org="io.netty" name="netty-common" rev="4.2.1.Final"/>
+		<dependency org="io.netty" name="netty-resolver" rev="4.2.1.Final"/>
+		<dependency org="io.netty" name="netty-transport" rev="4.2.1.Final"/>
 		<dependency org="javax.measure" name="unit-api" rev="2.0" />
 		<dependency org="javax.xml.bind" name="jaxb-api" rev="2.2.12"/>
        	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.15,)"/>

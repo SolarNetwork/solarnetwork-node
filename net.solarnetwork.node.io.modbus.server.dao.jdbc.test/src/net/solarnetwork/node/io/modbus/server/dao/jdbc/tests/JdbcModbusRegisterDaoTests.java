@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.modbus.server.dao.jdbc.tests;
 
-import static java.lang.String.format;
 import static net.solarnetwork.node.io.modbus.server.dao.BasicModbusRegisterFilter.forServerId;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
@@ -33,10 +32,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.test.context.transaction.BeforeTransaction;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
@@ -44,8 +41,7 @@ import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterKey;
 import net.solarnetwork.node.io.modbus.server.dao.jdbc.JdbcModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.dao.jdbc.ModbusServerDaoStat;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.node.test.TestEmbeddedDatabase;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test cases for the {@link JdbcModbusRegisterDao} class.
@@ -53,25 +49,14 @@ import net.solarnetwork.node.test.TestEmbeddedDatabase;
  * @author matt
  * @version 1.1
  */
-public class JdbcModbusRegisterDaoTests extends AbstractNodeTest {
-
-	private TestEmbeddedDatabase dataSource;
+public class JdbcModbusRegisterDaoTests extends AbstractNodeTransactionalTest {
 
 	private JdbcModbusRegisterDao dao;
 	private ModbusRegisterEntity last;
 
-	@Before
+	@BeforeTransaction
 	public void setup() throws IOException {
 		dao = new JdbcModbusRegisterDao();
-
-		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
-		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
-			String dbType = db.getDatabaseType().toString().toLowerCase();
-			dao.setInitSqlResource(new ClassPathResource(format("%s-modbus-server-init.sql", dbType),
-					JdbcModbusRegisterDao.class));
-			dao.setSqlResourcePrefix(format("%s-register", dbType));
-		}
-		dataSource = db;
 
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);

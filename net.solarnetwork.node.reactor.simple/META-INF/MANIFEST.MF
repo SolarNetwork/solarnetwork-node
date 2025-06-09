@@ -4,7 +4,7 @@ Bundle-Name: Core Reactor Service
 Bundle-SymbolicName: net.solarnetwork.node.reactor.simple
 Automatic-Module-Name: net.solarnetwork.node.reactor.simple
 Bundle-Description: Handle SolarNet instruction messages and execute them asynchronously.
-Bundle-Version: 3.1.0
+Bundle-Version: 3.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 

@@ -35,12 +35,10 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -194,15 +192,14 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 						: schemaName + '.' + tableName);
 
 				// get oldest available date from table
-				Timestamp oldestDate = findOldestDate(conn, fullTableName);
+				Instant oldestDate = findOldestDate(conn, fullTableName);
 				if ( oldestDate == null ) {
 					log.debug("Oldest date not found on table {}.{}; cannot trim data", schemaName,
 							tableName);
 					return 0;
 				}
 
-				Timestamp deleteDate = new Timestamp(
-						oldestDate.getTime() + TimeUnit.MINUTES.toMillis(trimMinutes));
+				Instant deleteDate = oldestDate.plus(trimMinutes, ChronoUnit.MINUTES);
 				int deleted = deleteOlderThan(conn, fullTableName, deleteDate);
 				log.debug("Trimmed {} rows from {} older than {} to free space", deleted, fullTableName,
 						deleteDate);
@@ -233,26 +230,15 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 * @return
 	 * @throws SQLException
 	 */
-	private Timestamp findOldestDate(final Connection conn, final String fullTableName)
+	private Instant findOldestDate(final Connection conn, final String fullTableName)
 			throws SQLException {
 		String oldestDateSql = String.format(OLDEST_DATE_QUERY_TEMPLATE, dateColumnName, fullTableName);
 
-		Timestamp oldestDate = null;
-		PreparedStatement oldestDateStmt = null;
-		ResultSet oldestDateRs = null;
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		try {
-			oldestDateStmt = conn.prepareStatement(oldestDateSql);
-			oldestDateRs = oldestDateStmt.executeQuery();
-			if ( oldestDateRs.next() ) {
-				oldestDate = oldestDateRs.getTimestamp(1, cal);
-			}
-		} finally {
-			if ( oldestDateRs != null ) {
-				oldestDateRs.close();
-			}
-			if ( oldestDateStmt != null ) {
-				oldestDateStmt.close();
+		Instant oldestDate = null;
+		try (PreparedStatement stmt = conn.prepareStatement(oldestDateSql);
+				ResultSet rs = stmt.executeQuery()) {
+			if ( rs.next() ) {
+				oldestDate = JdbcUtils.getUtcTimestampColumnValue(rs, 1);
 			}
 		}
 		return oldestDate;
@@ -277,23 +263,16 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 */
-	private int deleteOlderThan(final Connection conn, final String fullTableName, final Timestamp date)
+	private int deleteOlderThan(final Connection conn, final String fullTableName, final Instant date)
 			throws SQLException {
 		log.debug("Trimming rows from {} older than {} to free space", fullTableName, date);
 		String oldestDateSql = String.format(DELETE_BY_DATE_QUERY_TEMPLATE, fullTableName,
 				dateColumnName);
 
-		PreparedStatement deleteStmt = null;
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		try {
-			deleteStmt = conn.prepareStatement(oldestDateSql);
-			deleteStmt.setTimestamp(1, date, cal);
-			int count = deleteStmt.executeUpdate();
+		try (PreparedStatement stmt = conn.prepareStatement(oldestDateSql)) {
+			JdbcUtils.setUtcTimestampStatementValue(stmt, 1, date);
+			int count = stmt.executeUpdate();
 			return count;
-		} finally {
-			if ( deleteStmt != null ) {
-				deleteStmt.close();
-			}
 		}
 	}
 

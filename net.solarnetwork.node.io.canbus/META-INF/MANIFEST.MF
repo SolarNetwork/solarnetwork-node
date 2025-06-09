@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Communication Support
 Bundle-Description: Communication support for the CAN bus protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.canbus
-Bundle-Version: 3.1.0
+Bundle-Version: 3.2.0
 Automatic-Module-Name: net.solarnetwork.node.io.canbus
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: 
@@ -16,17 +16,17 @@ Export-Package:
  net.solarnetwork.node.io.canbus.util;version="1.0.0"
 Import-Package: 
  com.sun.xml.bind.v2;resolution:=optional,
- io.netty.bootstrap;version="[4.1,5.0)",
- io.netty.buffer;version="[4.1,5.0)",
- io.netty.channel;version="[4.1,5.0)",
- io.netty.channel.nio;version="[4.1,5.0)",
- io.netty.channel.socket;version="[4.1,5.0)",
- io.netty.channel.socket.nio;version="[4.1,5.0)",
- io.netty.handler.codec;version="[4.1,5.0)",
- io.netty.handler.codec.json;version="[4.1,5.0)",
- io.netty.handler.codec.string;version="[4.1,5.0)",
- io.netty.resolver;version="[4.1,5.0)",
- io.netty.util.concurrent;version="[4.1,5.0)",
+ io.netty.bootstrap;version="[4.2,5.0)",
+ io.netty.buffer;version="[4.2,5.0)",
+ io.netty.channel;version="[4.2,5.0)",
+ io.netty.channel.nio;version="[4.2,5.0)",
+ io.netty.channel.socket;version="[4.2,5.0)",
+ io.netty.channel.socket.nio;version="[4.2,5.0)",
+ io.netty.handler.codec;version="[4.2,5.0)",
+ io.netty.handler.codec.json;version="[4.2,5.0)",
+ io.netty.handler.codec.string;version="[4.2,5.0)",
+ io.netty.resolver;version="[4.2,5.0)",
+ io.netty.util.concurrent;version="[4.2,5.0)",
  javax.measure;version="[2.0,3.0)",
  javax.measure.format;version="[2.0,3.0)",
  javax.measure.quantity;version="[2.0,3.0)",

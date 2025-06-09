@@ -1,8 +1,0 @@
- SCHEMANAME TABLENAME             ESTIMSPACESAVING DISKSIZE 
- ---------- --------------------- ---------------- -------- 
- SOLARNODE  SN_SETTINGS                          0    24576
- SOLARNODE  SN_INSTRUCTION_STATUS                0    12288
- SOLARNODE  SN_INSTRUCTION_PARAM                 0    40960
- SOLARNODE  SN_INSTRUCTION                       0    16384
- SOLARNODE  SN_GENERAL_LOC_DATUM                 0     8192
- SOLARNODE  SN_GENERAL_NODE_DATUM           638976 63418368

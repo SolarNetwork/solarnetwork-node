@@ -65,7 +65,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class MockNodeControlProvider extends BaseIdentifiable implements NodeControlProvider,
 		InstructionHandler, SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -163,6 +163,9 @@ public class MockNodeControlProvider extends BaseIdentifiable implements NodeCon
 		}
 		// look for a parameter name that matches a control ID
 		final String controlId = getControlId();
+		if ( controlId == null || controlId.isEmpty() ) {
+			return null;
+		}
 		InstructionState result = null;
 		for ( String paramName : instruction.getParameterNames() ) {
 			if ( controlId.equals(paramName) ) {
