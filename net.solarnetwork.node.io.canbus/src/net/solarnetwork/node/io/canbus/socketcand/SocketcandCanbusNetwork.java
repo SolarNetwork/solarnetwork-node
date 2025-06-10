@@ -33,7 +33,6 @@ import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -215,7 +214,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 			final TaskScheduler taskScheduler = getTaskScheduler();
 			if ( stop != null && taskScheduler != null ) {
 				log.info("Scheduling CAN bus [{}] capture to stop at {}", this.busName, stop);
-				this.stopFuture = taskScheduler.schedule(this, Date.from(stop));
+				this.stopFuture = taskScheduler.schedule(this, stop);
 			} else {
 				this.stopFuture = null;
 			}

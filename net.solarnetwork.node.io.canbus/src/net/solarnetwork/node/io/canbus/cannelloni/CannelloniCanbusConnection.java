@@ -25,7 +25,7 @@ package net.solarnetwork.node.io.canbus.cannelloni;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -364,7 +364,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 						}
 					}
 				}
-			}, new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
+			}, Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(delay));
 			connectFuture = f;
 			//TODO postClientStatusChangeEvent(CannelloniClientStatus.ConnectionScheduled);
 			return f;
