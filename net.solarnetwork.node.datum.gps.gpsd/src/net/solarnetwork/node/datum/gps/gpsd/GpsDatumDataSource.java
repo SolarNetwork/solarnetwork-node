@@ -61,7 +61,7 @@ import net.solarnetwork.util.NumberUtils;
  * Datum data source for GPS data collected from a {@link GpsdClientConnection}.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class GpsDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
@@ -79,7 +79,6 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	public static final double DEFAULT_MAX_LAT_LON_ERROR_METERS = 10.0;
 
 	private final OptionalFilterableService<GpsdClientConnection> client;
-	private OptionalService<LocationService> locationService;
 	private String sourceId;
 	private boolean updateNodeLocation = false;
 	private double nodeLocationUpdateMaxLatLonErrorMeters = DEFAULT_MAX_LAT_LON_ERROR_METERS;
@@ -185,7 +184,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 				return;
 			}
 		}
-		LocationService locService = OptionalService.service(locationService);
+		LocationService locService = OptionalService.service(getLocationService());
 		if ( locService != null ) {
 			net.solarnetwork.domain.Location loc = locationForTpvMessage(message);
 			if ( loc != null ) {
@@ -319,7 +318,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		if ( conn == null ) {
 			Map<String, ?> filters = null;
 			if ( client instanceof FilterableService ) {
-				filters = ((FilterableService) client).getPropertyFilters();
+				filters = client.getPropertyFilters();
 			}
 			if ( filters != null && !filters.isEmpty() ) {
 				return "No GPSd Connection available matching: " + delimitedStringFromMap(filters);
@@ -372,27 +371,6 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
-	}
-
-	/**
-	 * Set the location service.
-	 *
-	 * @return the location service
-	 * @since 1.2
-	 */
-	public OptionalService<LocationService> getLocationService() {
-		return locationService;
-	}
-
-	/**
-	 * Get the location service.
-	 *
-	 * @param locationService
-	 *        the location service to set
-	 * @since 1.2
-	 */
-	public void setLocationService(OptionalService<LocationService> locationService) {
-		this.locationService = locationService;
 	}
 
 	/**
