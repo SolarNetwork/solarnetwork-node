@@ -8,8 +8,8 @@ Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.weather.weatherflow.tempest
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.core;version="[2.10,3.0)",
- com.fasterxml.jackson.databind;version="[2.10,3.0)",
+ com.fasterxml.jackson.core;version="[2.15,3.0)",
+ com.fasterxml.jackson.databind;version="[2.15,3.0)",
  io.netty.bootstrap;version="[4.1,5.0)",
  io.netty.buffer;version="[4.1,5.0)",
  io.netty.channel;version="[4.1,5.0)",
@@ -41,8 +41,8 @@ Import-Package:
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)",
- org.springframework.scheduling;version="[5.3,6.0)"
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.scheduling;version="[6.2,7.0)"

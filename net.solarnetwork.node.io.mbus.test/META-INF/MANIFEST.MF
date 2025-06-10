@@ -15,4 +15,4 @@ Import-Package:
  org.junit.runner;version="[4.5,5.0)",
  org.openmuc.jmbus.wireless;version="3.2.1",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.util;version="[6.2,7.0)"

@@ -19,9 +19,9 @@ Import-Package:
  org.mortbay.jetty;version="6.1.26",
  org.mortbay.jetty.handler;version="6.1.26",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.test.annotation;version="[5.3,6.0)",
- org.springframework.test.context;version="[5.3,6.0)",
- org.springframework.test.context.junit4;version="[5.3,6.0)",
- org.springframework.test.context.support;version="[5.3,6.0)",
- org.springframework.test.context.transaction;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.test.annotation;version="[6.2,7.0)",
+ org.springframework.test.context;version="[6.2,7.0)",
+ org.springframework.test.context.junit4;version="[6.2,7.0)",
+ org.springframework.test.context.support;version="[6.2,7.0)",
+ org.springframework.test.context.transaction;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

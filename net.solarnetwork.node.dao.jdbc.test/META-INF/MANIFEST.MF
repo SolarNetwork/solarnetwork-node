@@ -8,18 +8,18 @@ Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="[3.6,4.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.15,3.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",
  org.hamcrest;version="[1.1,2.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.springframework.beans.factory.annotation;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.jdbc.core;version="[5.3,6.0)",
- org.springframework.jdbc.core.simple;version="[5.3,6.0)",
- org.springframework.jdbc.datasource.embedded;version="[5.3,6.0)",
- org.springframework.test.context;version="[5.3,6.0)",
- org.springframework.test.context.junit4;version="[5.3,6.0)",
- org.springframework.test.context.transaction;version="[5.3,6.0)",
- org.springframework.transaction.annotation;version="[5.3,6.0)"
+ org.springframework.beans.factory.annotation;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.jdbc.core;version="[6.2,7.0)",
+ org.springframework.jdbc.core.simple;version="[6.2,7.0)",
+ org.springframework.jdbc.datasource.embedded;version="[6.2,7.0)",
+ org.springframework.test.context;version="[6.2,7.0)",
+ org.springframework.test.context.junit4;version="[6.2,7.0)",
+ org.springframework.test.context.transaction;version="[6.2,7.0)",
+ org.springframework.transaction.annotation;version="[6.2,7.0)"

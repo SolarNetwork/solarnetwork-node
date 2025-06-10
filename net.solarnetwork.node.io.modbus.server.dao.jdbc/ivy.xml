@@ -19,10 +19,10 @@
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc" rev="[3.3,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[5.2,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus.server" rev="[4.2,)"/>
-		<dependency org="org.springframework" name="spring-beans" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-context" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-core" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-jdbc" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-tx" rev="5.3.24"/>
+		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-context" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-core" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-jdbc" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-tx" rev="6.2.6"/>
 	</dependencies>
 </ivy-module>

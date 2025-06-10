@@ -11,7 +11,7 @@ Import-Package:
  net.solarnetwork.node.backup;version="[1.6,3.0)",
  net.solarnetwork.node.settings;version="[1.6,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core.io;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

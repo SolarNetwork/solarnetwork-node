@@ -8,10 +8,10 @@ Bundle-Description: Service to find location details, such as price or weather l
 Bundle-Version: 4.0.0
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.core;version="[2.4,3.0)",
- com.fasterxml.jackson.databind;version="[2.4,3.0)",
- com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
- com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
+ com.fasterxml.jackson.core;version="[2.15,3.0)",
+ com.fasterxml.jackson.databind;version="[2.15,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.15,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.15,3.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",
@@ -27,7 +27,7 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.5,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.beans.propertyeditors;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)"
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.beans.propertyeditors;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)"

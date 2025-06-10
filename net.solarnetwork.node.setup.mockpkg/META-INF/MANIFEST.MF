@@ -15,5 +15,5 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.util;version="[2.8,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.core.task;version="[5.3,6.0)",
+ org.springframework.core.task;version="[6.2,7.0)",
  org.springframework.util;version="5.3.24"

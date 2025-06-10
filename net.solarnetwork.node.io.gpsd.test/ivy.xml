@@ -9,6 +9,6 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="io.netty" name="netty-handler" rev="4.1.109.Final"/>
+		<dependency org="io.netty" name="netty-handler" rev="4.2.2.Final"/>
     </dependencies>
 </ivy-module>

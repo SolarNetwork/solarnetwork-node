@@ -15,7 +15,7 @@
 			<artifact name="org.eclipse.paho.client.mqttv3" type="jar"/>
 		</dependency>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.mqtt.netty" rev="[4.0,)"/>
-		<dependency org="org.springframework" name="spring-tx" rev="5.3.24"/>
+		<dependency org="org.springframework" name="spring-tx" rev="6.2.6"/>
 		<dependency org="org.skyscreamer" name="jsonassert" rev="1.5.0" />
     </dependencies>
 </ivy-module>
