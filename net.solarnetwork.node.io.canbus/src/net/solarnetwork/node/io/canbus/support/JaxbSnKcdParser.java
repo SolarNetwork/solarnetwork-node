@@ -1,21 +1,21 @@
 /* ==================================================================
  * JaxbSnKcdParser.java - 13/09/2019 6:08:07 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,11 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.UnmarshalException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -40,6 +35,11 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.UnmarshalException;
+import jakarta.xml.bind.Unmarshaller;
 import net.solarnetwork.io.StreamUtils;
 import net.solarnetwork.node.io.canbus.KcdParser;
 import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
@@ -47,9 +47,9 @@ import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
 /**
  * Implementation of {@link KcdParser} that uses JAXB to parse the
  * SolarNetwork-extended <i>SN-Definition-Datum.xsd</i> KDC XML.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class JaxbSnKcdParser implements KcdParser {
 
@@ -61,7 +61,7 @@ public class JaxbSnKcdParser implements KcdParser {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @throws RuntimeException
 	 *         if the KCD JAXB context or XML Schema cannot be loaded
 	 */
@@ -71,7 +71,7 @@ public class JaxbSnKcdParser implements KcdParser {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param validating
 	 *        {@literal true} to enable schema validation
 	 * @throws RuntimeException
@@ -195,11 +195,11 @@ public class JaxbSnKcdParser implements KcdParser {
 
 	/**
 	 * Parse KCD data from an input stream, using a given file name.
-	 * 
+	 *
 	 * <p>
 	 * GZIP encoded streams are supported and will be automatically detected.
 	 * </p>
-	 * 
+	 *
 	 */
 	@Override
 	public NetworkDefinitionType parseKcd(InputStream in, boolean validate) throws IOException {
@@ -224,7 +224,7 @@ public class JaxbSnKcdParser implements KcdParser {
 
 	/**
 	 * Get the validating flag.
-	 * 
+	 *
 	 * @return {@literal true} if the XML should be validated against the
 	 *         <i>SN-Definition-Datum.xsd</i> schema
 	 */
@@ -234,7 +234,7 @@ public class JaxbSnKcdParser implements KcdParser {
 
 	/**
 	 * Set the validating flag.
-	 * 
+	 *
 	 * @param validating
 	 *        {@literal true} if the XML should be validated against the
 	 *        <i>SN-Definition-Datum.xsd</i> schema

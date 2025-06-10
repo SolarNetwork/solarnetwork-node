@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Communication Support
 Bundle-Description: Communication support for the CAN bus protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.canbus
-Bundle-Version: 3.2.0
+Bundle-Version: 4.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.canbus
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
@@ -27,14 +27,14 @@ Import-Package:
  io.netty.handler.codec.string;version="[4.2,5.0)",
  io.netty.resolver;version="[4.2,5.0)",
  io.netty.util.concurrent;version="[4.2,5.0)",
+ jakarta.xml.bind;version="[4.0,5.0)",
+ jakarta.xml.bind.annotation;version="[4.0,5.0)",
+ jakarta.xml.bind.annotation.adapters;version="[4.0,5.0)",
  javax.measure;version="[2.0,3.0)",
  javax.measure.format;version="[2.0,3.0)",
  javax.measure.quantity;version="[2.0,3.0)",
  javax.measure.spi;version="[2.0,3.0)",
  javax.xml,
- jakarta.xml.bind;version="[4.0,5.0)",
- jakarta.xml.bind.annotation;version="[4.0,5.0)",
- javax.xml.bind.annotation.adapters,
  javax.xml.namespace,
  javax.xml.transform,
  javax.xml.transform.stream,

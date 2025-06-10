@@ -26,10 +26,10 @@ import static java.util.stream.Collectors.toSet;
 import static net.solarnetwork.service.FilterableService.filterPropValue;
 import static net.solarnetwork.service.FilterableService.setFilterProp;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +63,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * {@link DatumDataSource} implementations.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSupport
 		implements SettingsChangeObserver, ServiceLifecycleObserver, CanbusFrameListener {
@@ -129,7 +129,8 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 			log.info("Scheduling CAN bus [{}] connectivity check for {}ms", busName,
 					connectionCheckFrequency);
 			connectionCheckFuture = taskScheduler.scheduleWithFixedDelay(new ConnectionCheck(),
-					new Date(System.currentTimeMillis() + 10000L), connectionCheckFrequency);
+					Instant.ofEpochMilli(System.currentTimeMillis() + 10000L),
+					Duration.ofMillis(connectionCheckFrequency));
 		}
 	}
 
