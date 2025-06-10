@@ -23,10 +23,10 @@
 package net.solarnetwork.node.runtime.test;
 
 import static org.easymock.EasyMock.capture;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

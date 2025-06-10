@@ -9,6 +9,6 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.20,)"/>
+		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.22,)"/>
     </dependencies>
 </ivy-module>

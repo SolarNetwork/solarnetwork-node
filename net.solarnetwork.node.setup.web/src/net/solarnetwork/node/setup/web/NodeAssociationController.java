@@ -32,7 +32,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -52,6 +51,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
@@ -72,7 +72,7 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.settings.SettingSpecifierProvider;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller used to associate a node with a SolarNet account.

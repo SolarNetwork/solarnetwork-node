@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.setup.web.support;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.jsp.JspException;
 import org.springframework.web.servlet.tags.UrlTag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.jsp.JspException;
 
 /**
  * Extension of Spring's {@code UrlTag} to support automatically injecting a

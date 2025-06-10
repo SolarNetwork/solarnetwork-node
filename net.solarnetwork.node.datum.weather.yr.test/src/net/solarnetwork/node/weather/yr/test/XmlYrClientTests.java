@@ -1,21 +1,21 @@
 /* ==================================================================
  * XmlYrClientTests.java - 19/05/2017 4:11:04 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -35,8 +35,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
@@ -44,14 +45,16 @@ import net.solarnetwork.node.domain.datum.DayDatum;
 import net.solarnetwork.node.weather.yr.XmlYrClient;
 import net.solarnetwork.node.weather.yr.YrAtmosphericDatum;
 import net.solarnetwork.node.weather.yr.YrDayDatum;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link XmlYrClient} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
-public class XmlYrClientTests extends AbstractHttpClientTests {
+public class XmlYrClientTests extends AbstractHttpServerTests {
 
 	private static final String NZ_TZ_ID = "Pacific/Auckland";
 
@@ -71,18 +74,17 @@ public class XmlYrClientTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertEquals("GET", request.getMethod());
 				assertEquals("Request path", "/place/test/identifier/forecast_hour_by_hour.xml",
-						request.getPathInfo());
-				respondWithXmlResource(response, "forecast_hour_by_hour-01.xml");
-				response.flushBuffer();
+						request.getHttpURI().getPath());
+				respondWithXmlResource(request, response, "forecast_hour_by_hour-01.xml");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		List<AtmosphericDatum> results = client.getHourlyForecast(TEST_YR_LOC_IDENTIFIER);
 		assertThat("Request handled", handler.isHandled(), equalTo(true));
@@ -118,18 +120,17 @@ public class XmlYrClientTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertEquals("GET", request.getMethod());
 				assertEquals("Request path", "/place/test/identifier/forecast.xml",
-						request.getPathInfo());
-				respondWithXmlResource(response, "forecast-01.xml");
-				response.flushBuffer();
+						request.getHttpURI().getPath());
+				respondWithXmlResource(request, response, "forecast-01.xml");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		List<DayDatum> results = client.getTenDayForecast(TEST_YR_LOC_IDENTIFIER);
 		assertThat("Request handled", handler.isHandled(), equalTo(true));

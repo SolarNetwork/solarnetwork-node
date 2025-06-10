@@ -1,21 +1,21 @@
 /* ==================================================================
  * UserMetadataServiceTests.java - 7/05/2021 3:20:50 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,15 +26,16 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,18 +46,18 @@ import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.service.support.UserMetadataService;
 import net.solarnetwork.node.setup.SetupService;
-import net.solarnetwork.node.test.internal.AbstractHttpClientTests;
-import net.solarnetwork.node.test.internal.TestHttpHandler;
 import net.solarnetwork.security.Snws2AuthorizationBuilder;
 import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link UserMetadataService} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class UserMetadataServiceTests extends AbstractHttpClientTests {
+public class UserMetadataServiceTests extends AbstractHttpServerTests {
 
 	private SetupService setupService;
 	private NodeAppConfiguration appConfig;
@@ -64,7 +65,7 @@ public class UserMetadataServiceTests extends AbstractHttpClientTests {
 
 	@Override
 	@Before
-	public void setup() throws Exception {
+	public void setup() {
 		super.setup();
 		setupService = EasyMock.createMock(SetupService.class);
 
@@ -75,12 +76,16 @@ public class UserMetadataServiceTests extends AbstractHttpClientTests {
 
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
 		factory.setFeaturesToDisable(asList(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
-		service.setObjectMapper(factory.getObject());
+		try {
+			service.setObjectMapper(factory.getObject());
+		} catch ( Exception e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
 	@After
-	public void teardown() throws Exception {
+	public void teardown() {
 		super.teardown();
 		EasyMock.verify(setupService);
 	}
@@ -97,18 +102,17 @@ public class UserMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/solarquery/api/v1/sec/users/meta"));
-				respondWithJsonResource(response, "meta-01.json");
-				response.flushBuffer();
+				respondWithJsonResource(request, response, "meta-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -145,24 +149,23 @@ public class UserMetadataServiceTests extends AbstractHttpClientTests {
 			private final String p = "/solarquery/api/v1/sec/users/meta";
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(p));
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(p));
 
-				long reqDate = request.getDateHeader("Date");
+				long reqDate = request.getHeaders().getDateField("Date");
 				String auth = new Snws2AuthorizationBuilder(token).saveSigningKey(secret)
 						.host("localhost:" + getHttpServerPort()).path(p)
 						.date(Instant.ofEpochMilli(reqDate)).build();
-				assertThat("Request auth", request.getHeader("Authorization"), equalTo(auth));
+				assertThat("Request auth", request.getHeaders().get("Authorization"), equalTo(auth));
 
-				respondWithJsonResource(response, "meta-01.json");
-				response.flushBuffer();
+				respondWithJsonResource(request, response, "meta-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();

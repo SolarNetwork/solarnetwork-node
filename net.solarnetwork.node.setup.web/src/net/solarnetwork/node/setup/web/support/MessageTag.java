@@ -25,10 +25,10 @@ package net.solarnetwork.node.setup.web.support;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.regex.Pattern;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 
 /**
  * JSP tag for resolving a message from an existing {@link MessageSource}.

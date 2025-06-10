@@ -78,13 +78,13 @@ import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.LimitedSizeDeque;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
-import net.solarnetwork.web.service.HttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService;
 
 /**
  * Read data from a CSV-formatted resource and generate one or more datum.
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class CsvDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,

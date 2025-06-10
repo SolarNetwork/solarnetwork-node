@@ -23,11 +23,6 @@
 package net.solarnetwork.node.setup.web.security;
 
 import java.io.IOException;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -49,11 +44,16 @@ import org.springframework.util.MimeType;
 import org.springframework.util.unit.DataSize;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.node.domain.AuthenticatedToken;
-import net.solarnetwork.web.security.AuthenticationData;
-import net.solarnetwork.web.security.AuthenticationDataFactory;
-import net.solarnetwork.web.security.SecurityHttpServletRequestWrapper;
-import net.solarnetwork.web.security.SecurityTokenAuthenticationEntryPoint;
+import net.solarnetwork.web.jakarta.security.AuthenticationData;
+import net.solarnetwork.web.jakarta.security.AuthenticationDataFactory;
+import net.solarnetwork.web.jakarta.security.SecurityHttpServletRequestWrapper;
+import net.solarnetwork.web.jakarta.security.SecurityTokenAuthenticationEntryPoint;
 
 /**
  * Authentication filter for "SolarNetworkWS" style authentication.

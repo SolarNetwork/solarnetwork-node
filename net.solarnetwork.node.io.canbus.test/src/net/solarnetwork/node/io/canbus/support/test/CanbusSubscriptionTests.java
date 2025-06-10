@@ -23,8 +23,8 @@
 package net.solarnetwork.node.io.canbus.support.test;
 
 import static net.solarnetwork.node.io.canbus.CanbusConnection.DATA_FILTER_NONE;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 import java.time.Duration;
 import org.junit.Test;
 import net.solarnetwork.node.io.canbus.support.CanbusSubscription;

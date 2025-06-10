@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import net.solarnetwork.node.setup.web.support.LoginKey;
 import net.solarnetwork.node.setup.web.support.LoginKeyHelper;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller to support alternative login methods, designed for integration

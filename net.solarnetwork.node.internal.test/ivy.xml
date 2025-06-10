@@ -6,13 +6,11 @@
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
-		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.20,)"/>
+		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.22,)"/>
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
-		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
-		<dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26"/>
+		<dependency org="org.eclipse.jetty" name="jetty-server" rev="12.0.22"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.expr.spel" rev="[3.0,)"/>
     </dependencies>
 </ivy-module>

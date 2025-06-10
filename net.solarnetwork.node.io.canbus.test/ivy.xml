@@ -9,8 +9,8 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="4.0.5"/>
 		<dependency org="jakarta.activation" name="jakarta.activation-api" rev="2.1.2"/>
+		<dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="4.0.5"/>
 		<dependency org="systems.uom" name="systems-quantity" rev="2.0-SNAPSHOT"/>
 		<dependency org="systems.uom" name="systems-ucum" rev="2.0-SNAPSHOT"/>
     </dependencies>

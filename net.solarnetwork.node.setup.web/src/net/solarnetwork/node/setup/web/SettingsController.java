@@ -59,8 +59,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,6 +79,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
@@ -108,8 +108,8 @@ import net.solarnetwork.settings.SettingSpecifierProviderInfo;
 import net.solarnetwork.settings.support.BasicSettingSpecifierProviderInfo;
 import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.util.StringNaturalSortComparator;
-import net.solarnetwork.web.domain.Response;
-import net.solarnetwork.web.support.MultipartFileResource;
+import net.solarnetwork.web.jakarta.domain.Response;
+import net.solarnetwork.web.jakarta.support.MultipartFileResource;
 
 /**
  * Web controller for the settings UI.

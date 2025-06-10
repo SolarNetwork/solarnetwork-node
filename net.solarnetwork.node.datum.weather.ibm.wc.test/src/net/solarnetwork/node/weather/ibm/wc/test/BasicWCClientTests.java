@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.Fields;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
@@ -22,19 +22,19 @@ import net.solarnetwork.node.weather.ibm.wc.BasicWCClient;
 import net.solarnetwork.node.weather.ibm.wc.DailyDatumPeriod;
 import net.solarnetwork.node.weather.ibm.wc.HourlyDatumPeriod;
 import net.solarnetwork.node.weather.ibm.wc.MeasurementUnit;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 import net.solarnetwork.util.DateUtils;
 
 /**
  * Test cases for the {@link BasicWCClient} class.
- * 
+ *
  * @author matt frost
  * @version 2.0
  */
-public class BasicWCClientTests extends AbstractHttpClientTests {
+public class BasicWCClientTests extends AbstractHttpServerTests {
 
 	private BasicWCClient c;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Before
 	public void additionalSetup() {
@@ -56,21 +56,23 @@ public class BasicWCClientTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertEquals("GET", request.getMethod());
-				assertEquals("Path", "/v3/wx/forecast/hourly/1day", request.getRequestURI());
-				assertEquals("icaoCode", "NZDA", request.getParameter("icaoCode"));
-				assertEquals("language", "en-US", request.getParameter("language"));
-				assertEquals("format", "json", request.getParameter("format"));
-				assertEquals("units", "m", request.getParameter("units"));
-				assertEquals("apiKey", "abc1234", request.getParameter("apiKey"));
-				respondWithResource(response, "2day_hourly.json");
-				response.flushBuffer();
+				assertEquals("Path", "/v3/wx/forecast/hourly/1day", request.getHttpURI().getPath());
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertEquals("icaoCode", "NZDA", queryParams.getValue("icaoCode"));
+				assertEquals("language", "en-US", queryParams.getValue("language"));
+				assertEquals("format", "json", queryParams.getValue("format"));
+				assertEquals("units", "m", queryParams.getValue("units"));
+				assertEquals("apiKey", "abc1234", queryParams.getValue("apiKey"));
+				respondWithJsonResource(request, response, "2day_hourly.json");
 				return true;
 			}
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 		List<AtmosphericDatum> datum = c.readHourlyForecast("NZDA", "abc1234", HourlyDatumPeriod.ONEDAY)
 				.stream().collect(Collectors.toList());
 		log.debug("Parsed datum: [\n\t{}\n]",
@@ -103,22 +105,24 @@ public class BasicWCClientTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertEquals("GET", request.getMethod());
-				assertEquals("Path", "/v3/wx/forecast/daily/10day", request.getRequestURI());
-				assertEquals("icaoCode", "NZDA", request.getParameter("icaoCode"));
-				assertEquals("language", "en-US", request.getParameter("language"));
-				assertEquals("format", "json", request.getParameter("format"));
-				assertEquals("units", "m", request.getParameter("units"));
-				assertEquals("apiKey", "abc1234", request.getParameter("apiKey"));
-				respondWithResource(response, "7day_daily.json");
-				response.flushBuffer();
+				assertEquals("Path", "/v3/wx/forecast/daily/10day", request.getHttpURI().getPath());
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertEquals("icaoCode", "NZDA", queryParams.getValue("icaoCode"));
+				assertEquals("language", "en-US", queryParams.getValue("language"));
+				assertEquals("format", "json", queryParams.getValue("format"));
+				assertEquals("units", "m", queryParams.getValue("units"));
+				assertEquals("apiKey", "abc1234", queryParams.getValue("apiKey"));
+				respondWithJsonResource(request, response, "7day_daily.json");
 				return true;
 			}
 		};
 
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 		List<DayDatum> datum = c.readDailyForecast("NZDA", "abc1234", DailyDatumPeriod.TENDAY).stream()
 				.collect(Collectors.toList());
 		log.debug("Parsed datum: [\n\t{}\n]",

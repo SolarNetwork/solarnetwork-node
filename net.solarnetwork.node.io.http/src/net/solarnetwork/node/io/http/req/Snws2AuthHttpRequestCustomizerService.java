@@ -33,14 +33,14 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.ByteList;
 import net.solarnetwork.util.ObjectUtils;
-import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
-import net.solarnetwork.web.support.AuthorizationV2RequestInterceptor;
+import net.solarnetwork.web.jakarta.security.AuthorizationCredentialsProvider;
+import net.solarnetwork.web.jakarta.support.AuthorizationV2RequestInterceptor;
 
 /**
  * HTTP request customizer for SNWS2 token authorization.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.2
  */
 public class Snws2AuthHttpRequestCustomizerService extends BaseHttpRequestCustomizerService {

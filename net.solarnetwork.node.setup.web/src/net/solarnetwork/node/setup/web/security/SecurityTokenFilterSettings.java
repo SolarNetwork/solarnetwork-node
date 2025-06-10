@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 import org.springframework.util.unit.DataSize;
-import net.solarnetwork.web.security.SecurityHttpServletRequestWrapper;
+import net.solarnetwork.web.jakarta.security.SecurityHttpServletRequestWrapper;
 
 /**
  * Configurable settings for security token filters.

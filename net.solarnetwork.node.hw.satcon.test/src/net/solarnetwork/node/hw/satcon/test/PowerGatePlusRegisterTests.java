@@ -23,8 +23,8 @@
 package net.solarnetwork.node.hw.satcon.test;
 
 import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
 import java.util.List;
 import org.junit.Test;
 import net.solarnetwork.node.hw.satcon.PowerGatePlusRegister;

@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.setup.SetupService;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * REST controller for node configuration.

@@ -33,29 +33,29 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.metadata.json.JsonNodeMetadataService;
 import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link JsonNodeMetadataService} class.
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
+public class JsonNodeMetadataServiceTests extends AbstractHttpServerTests {
 
 	private static final Long TEST_NODE_ID = UUID.randomUUID().getMostSignificantBits();
 
@@ -89,17 +89,17 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/v1/sec/nodes/meta"));
-				respondWithJsonResource(response, "node-meta-01.json");
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(),
+						equalTo("/api/v1/sec/nodes/meta"));
+				respondWithJsonResource(request, response, "node-meta-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -130,19 +130,19 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 			private boolean handled = false;
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Handled only once", handled, is(false));
 				handled = true;
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/v1/sec/nodes/meta"));
-				respondWithJsonResource(response, "node-meta-01.json");
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(),
+						equalTo("/api/v1/sec/nodes/meta"));
+				respondWithJsonResource(request, response, "node-meta-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -167,17 +167,17 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 			private int count = 0;
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/v1/sec/nodes/meta"));
-				respondWithJsonResource(response, String.format("node-meta-0%d.json", ++count));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(),
+						equalTo("/api/v1/sec/nodes/meta"));
+				respondWithJsonResource(request, response, String.format("node-meta-0%d.json", ++count));
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -217,29 +217,28 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 			private int count = 0;
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/v1/sec/nodes/meta"));
+				assertThat("Request path", request.getHttpURI().getPath(),
+						equalTo("/api/v1/sec/nodes/meta"));
 				int cnt = ++count;
 				if ( cnt == 1 ) {
 					assertThat("Request method", request.getMethod(), equalTo("GET"));
-					respondWithJsonResource(response, "node-meta-01.json");
+					respondWithJsonResource(request, response, "node-meta-01.json");
 				} else if ( cnt == 2 ) {
 					assertThat("Request method", request.getMethod(), equalTo("POST"));
-					String body = FileCopyUtils.copyToString(
-							new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8));
+					String body = getRequestBody(request);
 					assertThat("Body is updated metadata", body, is(equalTo(
 							"{\"m\":{\"bim\":\"bam\"},\"pm\":{\"wham\":{\"bam\":\"thankyoumam\"}}}")));
-					respondWithJson(response, "{\"success\":true}");
+					respondWithJson(request, response, "{\"success\":true}");
 				} else {
-					response.sendError(422);
+					response.setStatus(422);
 				}
-				response.flushBuffer();
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -281,28 +280,27 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/v1/sec/nodes/meta"));
+				assertThat("Request path", request.getHttpURI().getPath(),
+						equalTo("/api/v1/sec/nodes/meta"));
 				final int reqNum = counter.getAndIncrement();
 				assertThat("No more than 2 requets made", reqNum, is(lessThan(3)));
 				if ( reqNum == 0 ) {
 					assertThat("Request 1 method", request.getMethod(), equalTo("GET"));
-					respondWithJsonResource(response, "node-meta-03.json");
+					respondWithJsonResource(request, response, "node-meta-03.json");
 				} else if ( reqNum == 1 ) {
 					assertThat("Request 2 method", request.getMethod(), equalTo("POST"));
-					String body = FileCopyUtils.copyToString(
-							new InputStreamReader(request.getInputStream(), StandardCharsets.UTF_8));
+					String body = getRequestBody(request);
 					assertThat("Body is updated metadata", body,
 							is(equalTo("{\"m\":{\"foo\":\"bar\"}}")));
-					respondWithJson(response, "{\"success\":true}");
+					respondWithJson(request, response, "{\"success\":true}");
 				}
-				response.flushBuffer();
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();

@@ -24,11 +24,11 @@ package net.solarnetwork.node.datum.filter.tariff.test;
 
 import static java.util.Collections.emptyMap;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

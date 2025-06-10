@@ -1,21 +1,21 @@
 /* ==================================================================
  * MotionCameraControlTests.java - 21/10/2019 10:37:58 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,10 +25,11 @@ package net.solarnetwork.node.control.camera.motion.test;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,10 +39,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,14 +59,16 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link MotionCameraControl} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
-public class MotionCameraControlTests extends AbstractHttpClientTests {
+public class MotionCameraControlTests extends AbstractHttpServerTests {
 
 	private TaskScheduler scheduler;
 
@@ -75,7 +79,7 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 
 	@Override
 	@Before
-	public void setup() throws Exception {
+	public void setup() {
 		super.setup();
 
 		scheduler = EasyMock.createMock(TaskScheduler.class);
@@ -89,7 +93,7 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 
 	@Override
 	@After
-	public void teardown() throws Exception {
+	public void teardown() {
 		super.teardown();
 		if ( mocks != null ) {
 			EasyMock.verify(mocks.toArray(new Object[mocks.size()]));
@@ -115,18 +119,17 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Snapshot request method", request.getMethod(), equalTo("GET"));
-				assertThat("Snapshot Request path", request.getPathInfo(),
+				assertThat("Snapshot Request path", request.getHttpURI().getPath(),
 						equalTo("/1/action/snapshot"));
-				respondWithText(response, "OK");
-				response.flushBuffer();
+				respondWithText(request, response, "OK");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Instruction signal = InstructionUtils.createLocalInstruction(InstructionHandler.TOPIC_SIGNAL,
@@ -145,18 +148,17 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Snapshot request method", request.getMethod(), equalTo("GET"));
-				assertThat("Snapshot Request path", request.getPathInfo(),
+				assertThat("Snapshot Request path", request.getHttpURI().getPath(),
 						equalTo("/2/action/snapshot"));
-				respondWithText(response, "OK");
-				response.flushBuffer();
+				respondWithText(request, response, "OK");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Map<String, String> signalParams = new HashMap<>(2);
@@ -178,18 +180,17 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Snapshot request method", request.getMethod(), equalTo("GET"));
-				assertThat("Snapshot Request path", request.getPathInfo(),
+				assertThat("Snapshot Request path", request.getHttpURI().getPath(),
 						equalTo("/2/action/snapshot"));
 				response.setStatus(404);
-				response.flushBuffer();
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Map<String, String> signalParams = new HashMap<>(2);
@@ -250,7 +251,7 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		assertThat("Snapshot job service", snapJob.getService(), sameInstance(control));
 
 		Trigger jobTrigger = trigCaptor.getValue();
-		PeriodicTrigger expectedTrigger = new PeriodicTrigger(123, TimeUnit.SECONDS);
+		PeriodicTrigger expectedTrigger = new PeriodicTrigger(Duration.ofSeconds(123));
 		expectedTrigger.setFixedRate(true);
 		assertThat("Snapshot job trigger is simple", jobTrigger, equalTo(expectedTrigger));
 

@@ -23,12 +23,12 @@
 package net.solarnetwork.node.io.canbus.support.test;
 
 import static java.lang.String.format;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;

@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.setup.web;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Web constants.

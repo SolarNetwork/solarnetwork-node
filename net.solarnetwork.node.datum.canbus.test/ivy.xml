@@ -9,10 +9,10 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.1"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.15.3"/>
+		<dependency org="jakarta.activation" name="jakarta.activation-api" rev="2.1.2"/>
+		<dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="4.0.5"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.expr.spel" rev="[3.0,)"/>
-		<dependency org="org.glassfish.jaxb" name="jaxb-runtime" rev="2.2.10"/>
-		<dependency org="javax.activation" name="activation" rev="1.1.1"/>
 		<dependency org="systems.uom" name="systems-quantity" rev="2.0.2"/>
 		<dependency org="systems.uom" name="systems-ucum" rev="2.0.2"/>
     </dependencies>

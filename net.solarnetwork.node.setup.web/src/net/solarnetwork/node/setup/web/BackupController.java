@@ -46,7 +46,7 @@ import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller for backup support.

@@ -1,21 +1,21 @@
 /* ==================================================================
  * JsonDatumMetadataService.java - Oct 6, 2014 12:25:40 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,9 +26,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -65,15 +67,15 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * JSON based web service implementation of {@link DatumMetadataService}.
- * 
+ *
  * <p>
  * This implementation caches the metadata for each source using
  * {@link SettingsService} using the {@link SettingResourceHandler} API, saving
  * one JSON resource per source ID.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport
 		implements DatumMetadataService, SettingResourceHandler, SettingSpecifierProvider,
@@ -90,14 +92,14 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * The default {@code datumStreamMetadataCacheSeconds} property value.
-	 * 
+	 *
 	 * @since 1.7
 	 */
 	public static final int DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS = 86400;
 
 	/**
 	 * The instruction topic to clear locally cached datum source metadata.
-	 * 
+	 *
 	 * @since 2.3
 	 */
 	public static final String DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC = "DatumSourceMetadataClearCache";
@@ -105,11 +107,11 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	/**
 	 * The instruction parameter for an optional comma-delimited list of source
 	 * IDs.
-	 * 
+	 *
 	 * <p>
 	 * If not provided, then "all available" source IDs is assumed.
 	 * </p>
-	 * 
+	 *
 	 * @since 2.3
 	 */
 	public static final String SOURCE_IDS_PARAM = "sourceIds";
@@ -128,7 +130,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingsService
 	 *        the settings service to use
 	 * @param taskScheduler
@@ -140,7 +142,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingsService
 	 *        the settings service to use
 	 * @param taskScheduler
@@ -172,11 +174,11 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Create a new cached metadata instance.
-	 * 
+	 *
 	 * <p>
 	 * This method is designed to support unit tests.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID
 	 * @param meta
@@ -296,7 +298,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 				persistTask.cancel(false);
 			}
 			persistTask = taskScheduler.schedule(this,
-					new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delaySeconds)));
+					Instant.now().truncatedTo(ChronoUnit.MILLIS).plusSeconds(delaySeconds));
 		}
 
 		@Override
@@ -342,9 +344,9 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 			log.info("{}cheduling metdata synchroniztion at {} seconds", (cancelled ? "Res" : "S"),
 					updateThrottleSeconds);
 			syncTask = taskScheduler.scheduleWithFixedDelay(this,
-					new Date(System.currentTimeMillis()
-							+ TimeUnit.SECONDS.toMillis(updateThrottleSeconds)),
-					TimeUnit.SECONDS.toMillis(updateThrottleSeconds));
+					Instant.now().truncatedTo(ChronoUnit.MILLIS)
+							.plusSeconds(TimeUnit.SECONDS.toMillis(updateThrottleSeconds)),
+					Duration.ofSeconds(updateThrottleSeconds));
 		}
 	}
 
@@ -620,7 +622,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Get the setting DAO.
-	 * 
+	 *
 	 * @return the settingDao the setting DAO
 	 */
 	public SettingDao getSettingDao() {
@@ -629,12 +631,12 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Set the setting DAO.
-	 * 
+	 *
 	 * <p>
 	 * This is used for backwards compatibility in migrating cached metadata
 	 * from the DAO to setting resources.
 	 * </p>
-	 * 
+	 *
 	 * @param settingDao
 	 *        the settingDao to set
 	 */
@@ -644,7 +646,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Get the SolarIn relative source-level metadata base URL path.
-	 * 
+	 *
 	 * @return the metadata base URL path
 	 */
 	public String getBaseUrl() {
@@ -653,7 +655,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Set the SolarIn relative source-level metadata base URL path.
-	 * 
+	 *
 	 * @param baseUrl
 	 *        the metadata base URL path to use
 	 */
@@ -663,7 +665,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Get the update throttle seconds.
-	 * 
+	 *
 	 * @return the seconds to coalesce updates to SolarNetwork by; defaults to
 	 *         {@link #DEFAULT_UPDATE_THROTTLE_SECONDS}
 	 * @since 1.5
@@ -674,7 +676,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	/**
 	 * Set the update throttle seconds.
-	 * 
+	 *
 	 * <p>
 	 * When greater than {@literal 0} then limit the number of updates posted to
 	 * SolarNetwork to at most this many seconds apart. This can be useful for
@@ -683,7 +685,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	 * seconds has passed since the last update, the current metadata value will
 	 * be posted.
 	 * </p>
-	 * 
+	 *
 	 * @param updateThrottleSeconds
 	 *        the seconds to coalesce updates to SolarNetwork by
 	 * @since 1.5
@@ -695,7 +697,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	/**
 	 * Get the amount of seconds to wait after an update occurs before
 	 * persisting the metadata locally.
-	 * 
+	 *
 	 * @return the seconds; defaults to
 	 *         {@link #DEFAULT_UPDATE_PERSIST_DELAY_SECONDS}
 	 * @since 1.6
@@ -707,7 +709,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	/**
 	 * Set the amount of seconds to wait after an update occurs before
 	 * persisting the metadata locally.
-	 * 
+	 *
 	 * <p>
 	 * When greater than {@literal 0} then when updates occur they will not
 	 * immediately be persisted locally. Instead the service will wait this many
@@ -719,7 +721,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	 * setting can be set to a small value to ensure the changes are persisted
 	 * relatively quickly, instead of waiting for {@code updateThrottleSeconds}.
 	 * </p>
-	 * 
+	 *
 	 * @param updatePersistDelaySeconds
 	 *        the updatePersistDelaySeconds to set
 	 * @since 1.6
@@ -731,7 +733,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	/**
 	 * Get the maximum number of seconds to cache datum stream metadata before
 	 * fetching it again from SolarIn.
-	 * 
+	 *
 	 * @return the seconds, defaults to
 	 *         {@link #DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS}
 	 * @since 1.7
@@ -743,7 +745,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	/**
 	 * Set the maximum number of seconds to cache datum stream metadata before
 	 * fetching it again from SolarIn.
-	 * 
+	 *
 	 * @param datumStreamMetadataCacheSeconds
 	 *        the number of seconds to set
 	 * @since 1.7

@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller to manage the initial home screen.

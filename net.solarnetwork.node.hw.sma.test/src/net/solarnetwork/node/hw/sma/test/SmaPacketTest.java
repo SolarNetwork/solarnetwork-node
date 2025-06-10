@@ -26,6 +26,10 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.util.List;
+import org.apache.commons.codec.binary.Hex;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sma.protocol.SmaChannel;
 import net.solarnetwork.node.hw.sma.protocol.SmaChannelParam;
 import net.solarnetwork.node.hw.sma.protocol.SmaChannelType;
@@ -34,10 +38,6 @@ import net.solarnetwork.node.hw.sma.protocol.SmaCommand;
 import net.solarnetwork.node.hw.sma.protocol.SmaControl;
 import net.solarnetwork.node.hw.sma.protocol.SmaPacket;
 import net.solarnetwork.node.hw.sma.protocol.SmaUserDataField;
-import org.apache.commons.codec.binary.Hex;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test cases for {@link SmaPacket}.

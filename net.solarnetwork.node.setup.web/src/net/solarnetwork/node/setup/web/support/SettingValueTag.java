@@ -23,9 +23,9 @@
 package net.solarnetwork.node.setup.web.support;
 
 import java.io.IOException;
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.TagSupport;
 import org.apache.taglibs.standard.util.EscapeXML;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.TagSupport;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;

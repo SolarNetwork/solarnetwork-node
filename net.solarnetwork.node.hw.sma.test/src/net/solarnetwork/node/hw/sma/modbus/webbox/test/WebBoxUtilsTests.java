@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

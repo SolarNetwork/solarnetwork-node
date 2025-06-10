@@ -27,9 +27,9 @@ import static net.solarnetwork.domain.InstructionStatus.InstructionState.Complet
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
