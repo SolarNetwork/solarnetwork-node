@@ -64,6 +64,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.io.ProvidedOutputStream;
 import net.solarnetwork.security.AbstractAuthorizationBuilder;

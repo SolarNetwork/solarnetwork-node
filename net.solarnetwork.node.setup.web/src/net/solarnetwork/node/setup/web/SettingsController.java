@@ -29,7 +29,6 @@ import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
 import static net.solarnetwork.node.setup.web.support.WebServiceControllerSupport.responseOutputStream;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.StringUtils.naturalSortCompare;
-import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -115,7 +114,7 @@ import net.solarnetwork.web.jakarta.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.12
+ * @version 3.0
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -385,8 +384,8 @@ public class SettingsController {
 	 *        the request
 	 * @return the manage factory view name
 	 */
-	@RequestMapping(value = { "/manage",
-			"/filters/manage" }, method = RequestMethod.GET, params = "!key")
+	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET,
+			params = "!key")
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUid,
 			ModelMap model, HttpServletRequest req) {
 		final SettingsService service = service(settingsServiceTracker);
@@ -564,7 +563,7 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<String> addConfiguration(
+	public Result<String> addConfiguration(
 			@RequestParam(value = "uid", required = true) String factoryUid,
 			@RequestParam(value = "name", required = false) String instanceUid) {
 		final SettingsService service = service(settingsServiceTracker);
@@ -572,7 +571,7 @@ public class SettingsController {
 		if ( service != null ) {
 			result = service.addProviderFactoryInstance(factoryUid, instanceUid);
 		}
-		return response(result);
+		return success(result);
 	}
 
 	/**
@@ -586,14 +585,14 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> deleteConfiguration(
+	public Result<Object> deleteConfiguration(
 			@RequestParam(value = "uid", required = true) String factoryUid,
 			@RequestParam(value = "instance", required = true) String instanceUid) {
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			service.deleteProviderFactoryInstance(factoryUid, instanceUid);
 		}
-		return response(null);
+		return success(null);
 	}
 
 	/**
@@ -607,14 +606,14 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> resetConfiguration(
+	public Result<Object> resetConfiguration(
 			@RequestParam(value = "uid", required = true) String factoryUid,
 			@RequestParam(value = "instance", required = true) String instanceUid) {
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			service.resetProviderFactoryInstance(factoryUid, instanceUid);
 		}
-		return response(null);
+		return success(null);
 	}
 
 	/**
@@ -626,7 +625,7 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "/manage/removeall", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> removeAllConfigurations(
+	public Result<Object> removeAllConfigurations(
 			@RequestParam(value = "uid", required = true) String factoryUid) {
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
@@ -634,7 +633,7 @@ public class SettingsController {
 					.getProvidersForFactory(factoryUid);
 			service.removeProviderFactoryInstances(factoryUid, instances.keySet());
 		}
-		return response(null);
+		return success(null);
 	}
 
 	/**
@@ -646,7 +645,7 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> saveSettings(CleanSupportSettingsCommand command) {
+	public Result<Void> saveSettings(CleanSupportSettingsCommand command) {
 		final SettingsService service = service(settingsServiceTracker);
 		SettingsCommand cmd = command;
 		if ( service != null ) {
@@ -662,7 +661,7 @@ public class SettingsController {
 			}
 			service.updateSettings(cmd);
 		}
-		return response(null);
+		return success(null);
 	}
 
 	/**
@@ -680,8 +679,8 @@ public class SettingsController {
 	@RequestMapping(value = "/export", method = RequestMethod.GET)
 	@ResponseBody
 	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
-			HttpServletResponse response,
-			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING, required = false) final String acceptEncoding)
+			HttpServletResponse response, @RequestHeader(name = HttpHeaders.ACCEPT_ENCODING,
+					required = false) final String acceptEncoding)
 			throws IOException {
 		final SettingsService service = service(settingsServiceTracker);
 		final Long nodeId = identityService.getNodeId();
@@ -777,7 +776,8 @@ public class SettingsController {
 	public void exportSettingsResources(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
 			@RequestParam("key") String key, HttpServletResponse response,
-			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING, required = false) final String acceptEncoding)
+			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING,
+					required = false) final String acceptEncoding)
 			throws IOException {
 		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {

@@ -80,8 +80,6 @@
 		</beans:property>
 	</beans:bean>
 	
-	<beans:bean id="exceptionSupportFilter" class="net.solarnetwork.node.setup.web.support.ExceptionSupportFilter"/>
-
 	<authentication-manager alias="authenticationManager">
 		<authentication-provider user-service-ref="userDetailsService">			
 			<password-encoder ref="passwordEncoder"/>

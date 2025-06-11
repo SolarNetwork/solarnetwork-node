@@ -59,7 +59,7 @@ import net.solarnetwork.web.jakarta.security.SecurityTokenAuthenticationEntryPoi
  * Authentication filter for "SolarNetworkWS" style authentication.
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 3.3
  */
 public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter implements Filter {
@@ -121,7 +121,7 @@ public class SecurityTokenAuthenticationFilter extends OncePerRequestFilter impl
 		AuthenticationData data;
 		try {
 			data = AuthenticationDataFactory.authenticationDataForAuthorizationHeader(request);
-		} catch ( net.solarnetwork.web.security.SecurityException e ) {
+		} catch ( net.solarnetwork.web.jakarta.security.SecurityException e ) {
 			deny(request, response, new MaxUploadSizeExceededException(
 					(int) settings.getMaxRequestBodySize().toBytes(), e));
 			return;
