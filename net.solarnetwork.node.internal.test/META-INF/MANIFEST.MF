@@ -8,7 +8,7 @@ Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node;bundle-version="[3.23,4.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.databind.module;version="[2.15,3.0)",
+ com.fasterxml.jackson.databind.module;version="[2.19,3.0)",
  jakarta.servlet;version="6.1.0",
  jakarta.servlet.http;version="6.1.0",
  net.solarnetwork.common.expr.spel;version="[2.0,3.0)",

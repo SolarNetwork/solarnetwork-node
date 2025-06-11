@@ -8,11 +8,11 @@ Bundle-Version: 3.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.core;version="[2.15,3.0)",
- com.fasterxml.jackson.core.type;version="[2.15,3.0)",
- com.fasterxml.jackson.databind;version="[2.15,3.0)",
- com.fasterxml.jackson.databind.annotation;version="[2.15,3.0)",
- com.fasterxml.jackson.databind.ser.std;version="[2.15,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.core.type;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.19,3.0)",
  javax.sql,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",

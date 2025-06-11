@@ -15,7 +15,7 @@ Export-Package:
  net.solarnetwork.node.hw.sunspec.meter;version="3.1.0",
  net.solarnetwork.node.hw.sunspec.support;version="3.3.0"
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.15,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
  net.solarnetwork.codec;version="[2.3,3.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.domain.datum;version="[2.0,3.0)",

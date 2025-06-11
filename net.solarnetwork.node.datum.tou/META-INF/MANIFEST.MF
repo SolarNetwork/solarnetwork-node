@@ -8,9 +8,9 @@ Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.tou
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.core;version="[2.15,3.0)",
- com.fasterxml.jackson.databind;version="[2.15,3.0)",
- com.fasterxml.jackson.dataformat.cbor;version="[2.15,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.dataformat.cbor;version="[2.19,3.0)",
  net.solarnetwork.codec;version="[2.4,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.1,2.0)",
  net.solarnetwork.domain;version="[2.4,3.0)",

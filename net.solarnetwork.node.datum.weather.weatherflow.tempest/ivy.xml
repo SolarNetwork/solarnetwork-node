@@ -13,7 +13,7 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.1" />
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.19.0" />
 		<dependency org="io.netty" name="netty-buffer" rev="4.2.2.Final"/>
 		<dependency org="io.netty" name="netty-codec" rev="4.2.2.Final"/>
 		<dependency org="io.netty" name="netty-common" rev="4.2.2.Final"/>

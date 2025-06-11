@@ -13,7 +13,7 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.1" />
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.19.0" />
 		<dependency org="com.h2database" name="h2" rev="2.1.210"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>

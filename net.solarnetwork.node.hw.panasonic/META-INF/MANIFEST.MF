@@ -10,12 +10,12 @@ Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.hw.panasonic.battery;version="1.0.0"
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.15,3.0)",
- com.fasterxml.jackson.core;version="[2.15,3.0)",
- com.fasterxml.jackson.databind;version="[2.15,3.0)",
- com.fasterxml.jackson.databind.deser.std;version="[2.15,3.0)",
- com.fasterxml.jackson.databind.module;version="[2.15,3.0)",
- com.fasterxml.jackson.databind.type;version="[2.15,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.deser.std;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.module;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.type;version="[2.19,3.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.domain.datum;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",

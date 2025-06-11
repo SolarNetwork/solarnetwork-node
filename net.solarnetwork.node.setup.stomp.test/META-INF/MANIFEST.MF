@@ -8,7 +8,7 @@ Fragment-Host: net.solarnetwork.node.setup.stomp;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.setup.stomp.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.databind.module;version="[2.15,3.0)",
+ com.fasterxml.jackson.databind.module;version="[2.19,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  net.solarnetwork.test;version="[1.5,2.0)",

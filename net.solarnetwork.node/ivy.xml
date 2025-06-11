@@ -13,8 +13,8 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.1" />
-		<dependency org="com.fasterxml.jackson.datatype" name="jackson-datatype-jsr310" rev="2.10.1"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.19.0" />
+		<dependency org="com.fasterxml.jackson.datatype" name="jackson-datatype-jsr310" rev="2.19.0"/>
 		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.8.3"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
 		<dependency org="commons-io" name="commons-io" rev="2.4"/>
