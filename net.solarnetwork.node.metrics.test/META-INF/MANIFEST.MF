@@ -8,8 +8,8 @@ Fragment-Host: net.solarnetwork.node.metrics;bundle-version="[1.1,2.0)"
 Automatic-Module-Name: net.solarnetwork.node.metrics.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.databind.annotation,
- net.solarnetwork.common.expr.spel;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
+ net.solarnetwork.common.expr.spel;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.2,2.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",
