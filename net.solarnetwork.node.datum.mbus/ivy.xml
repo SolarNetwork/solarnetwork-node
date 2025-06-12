@@ -17,6 +17,6 @@
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.mbus" rev="[2.2,)"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 	</dependencies>
 </ivy-module>

@@ -18,7 +18,7 @@
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.2,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc" rev="[3.6,)"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
 		<dependency org="org.springframework" name="spring-jdbc" rev="6.2.6"/>
 	</dependencies>

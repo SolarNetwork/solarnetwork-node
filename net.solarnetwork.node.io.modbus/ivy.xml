@@ -15,7 +15,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
        	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.15,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
- 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
+ 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 		<dependency org="org.springframework" name="spring-context" rev="6.2.6"/>
 	</dependencies>
 </ivy-module>
