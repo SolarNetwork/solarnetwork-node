@@ -94,7 +94,7 @@
 		<intercept-message pattern="/**" access="hasRole('USER')" />
 	</websocket-message-broker>
 
-	<beans:bean id="authTokenEntryPoint" class="net.solarnetwork.web.security.SecurityTokenAuthenticationEntryPoint">
+	<beans:bean id="authTokenEntryPoint" class="net.solarnetwork.web.jakarta.security.SecurityTokenAuthenticationEntryPoint">
 		<beans:property name="handlerExceptionResolver" ref="exceptionHandlerExceptionResolver"/>
 	</beans:bean>
 
