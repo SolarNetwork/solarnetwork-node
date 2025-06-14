@@ -36,8 +36,6 @@ Import-Package:
  javax.annotation;version="[1.0,2.0)",
  javax.crypto,
  javax.crypto.spec,
- net.sf.packtag.servlet;version="[4.0,5.0)",
- net.sf.packtag.tag;version="[4.0,5.0)",
  net.solarnetwork.codec;version="[2.3,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.dao;version="[2.3,3.0)",

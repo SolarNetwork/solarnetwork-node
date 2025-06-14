@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (c) 2002 Solarnetwork.net Dev Team
-  
-  This program is free software; you can redistribute it and/or 
-  modify it under the terms of the GNU General Public License as 
-  published by the Free Software Foundation; either version 2 of 
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of
   the License, or (at your option) any later version.
-  
-  This program is distributed in the hope that it will be useful, 
-  but WITHOUT ANY WARRANTY; without even the implied warranty of 
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
   General Public License for more details.
-  
-  You should have received a copy of the GNU General Public License 
-  along with this program; if not, write to the Free Software 
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
   02111-1307 USA
 -->
 <web-app xmlns="http://java.sun.com/xml/ns/javaee"
@@ -29,14 +29,14 @@
 		<param-name>contextClass</param-name>
 		<param-value>net.solarnetwork.web.gemini.NonValidatingServerOsgiBundleXmlWebApplicationContext</param-value>
 	</context-param>
-	
+
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
 			/WEB-INF/*-context.xml
 		</param-value>
 	</context-param>
-	
+
 	<!-- Multipart filter before security filter, to support CSRF on multipart/form-data -->
 	<filter>
 		<filter-name>MultipartFilter</filter-name>
@@ -51,14 +51,14 @@
 		<filter-name>MultipartFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
+
 	<!-- Security Filter -->
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter-mapping>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<servlet-name>setup</servlet-name>
@@ -75,26 +75,12 @@
 			<param-value>UTF-8</param-value>
 		</init-param>
 	</filter>
-	
+
 	<filter-mapping>
 		<filter-name>Set Character Encoding</filter-name>
 		<url-pattern>/*</url-pattern>
-	</filter-mapping>	
-	
-	<!-- pack:tag servlet for packed, cached resources -->
-	<servlet>
-		<description>This is the servlet needed for cache.type servlet, returns the packed resources</description>
-		<display-name>PackServlet</display-name>
-		<servlet-name>PackServlet</servlet-name>
-		<servlet-class>net.sf.packtag.servlet.PackServlet</servlet-class>
-	</servlet>
+	</filter-mapping>
 
-	<servlet-mapping>
-		<servlet-name>PackServlet</servlet-name>
-		<url-pattern>/css-pack/*</url-pattern>
-		<url-pattern>/js-pack/*</url-pattern>
-	</servlet-mapping>
-	
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
@@ -109,7 +95,7 @@
 		<load-on-startup>1</load-on-startup>
 		<async-supported>true</async-supported>
 	</servlet>
-	
+
 	<servlet-mapping>
 		<servlet-name>jsp</servlet-name>
 		<url-pattern>/WEB-INF/jsp/*</url-pattern>
@@ -119,11 +105,11 @@
 		<servlet-name>setup</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
-	
+
 	<welcome-file-list>
 		<welcome-file>hello</welcome-file>
 	</welcome-file-list>
-	
+
 	<jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
