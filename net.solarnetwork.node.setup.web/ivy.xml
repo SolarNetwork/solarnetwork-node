@@ -14,7 +14,6 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
-		<dependency org="commons-fileupload" name="commons-fileupload" rev="1.3.3" />
 		<dependency org="commons-io" name="commons-io" rev="2.4" />
 		<dependency org="jakarta.validation" name="jakarta.validation-api" rev="2.0.1" />
 		<dependency org="javax.annotation" name="javax.annotation-api" rev="1.3.2" />
@@ -27,6 +26,7 @@
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.23,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.metrics" rev="[1.2,)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
+		<!-- TODO: see if necessary dependency org="org.apache.tomcat" name="tomcat-coyote" rev="11.0.7"/-->
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
 		<dependency org="org.springframework" name="spring-context" rev="6.2.6"/>
