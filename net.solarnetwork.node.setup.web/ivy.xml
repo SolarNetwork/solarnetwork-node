@@ -25,7 +25,6 @@
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.web.jakarta" rev="[2.0,3.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.23,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.metrics" rev="[1.2,)"/>
-		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<!-- TODO: see if necessary dependency org="org.apache.tomcat" name="tomcat-coyote" rev="11.0.7"/-->
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
