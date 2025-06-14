@@ -164,4 +164,6 @@ Import-Package:
  org.springframework.web.servlet.view;version="[6.2,7.0)",
  org.springframework.web.socket.messaging;version="[6.2,7.0)",
  org.springframework.web.socket.server.standard;version="[6.2,7.0)",
- org.springframework.web.util;version="[6.2,7.0)"
+ org.springframework.web.util;version="[6.2,7.0)",
+ org.thymeleaf;version="[3.1,4.0)",
+ org.thymeleaf.spring6;version="[3.1,4.0)"
