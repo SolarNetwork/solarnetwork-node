@@ -42,8 +42,7 @@
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
-		<bean class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
-			<argument ref="httpClient"/>
+		<bean class="org.springframework.http.client.JettyClientHttpRequestFactory">
 			<property name="readTimeout" value="60000"/>
 		</bean>
 	</service>
