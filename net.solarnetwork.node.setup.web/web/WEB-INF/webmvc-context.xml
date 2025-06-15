@@ -68,7 +68,7 @@
 		<property name="order" value="2" />
 		<property name="mappings">
 			<props>
-				<prop key="/**/*.do">urlViewController</prop>
+				<prop key="/**.do">urlViewController</prop>
 			</props>
 		</property>
 	</bean>
