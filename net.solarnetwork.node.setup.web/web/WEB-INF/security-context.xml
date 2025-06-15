@@ -36,7 +36,6 @@
 		<intercept-url pattern='/*.do' access="permitAll"/>
 		<intercept-url pattern='/pub/**' access="permitAll"/>
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')"/>
-	    <custom-filter ref="exceptionSupportFilter" before="FIRST"/>
 	    <custom-filter ref="associationFilter" after="FIRST" />
 	    <custom-filter ref="loginKeyAuthFilter" before="LOGIN_PAGE_FILTER"/>
 		<form-login login-page="/login.do" default-target-url="/a/home"
