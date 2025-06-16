@@ -28,7 +28,7 @@
 	</http>
 	
 	<!-- Configure Spring Security -->
-	<http auto-config="true" use-expressions="true">
+	<http auto-config="true" use-expressions="true" use-authorization-manager="false">
 		<headers>
 			<frame-options disabled="true"/>
 		</headers>
