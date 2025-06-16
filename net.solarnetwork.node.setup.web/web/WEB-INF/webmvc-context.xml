@@ -75,7 +75,29 @@
 
 	<bean id="urlViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
 
-	<!-- If Tiles view not found, try a bean name (xml, json below) -->
+	<bean id="templateResolver" class="org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver">
+		<property name="prefix" value="/WEB-INF/templates/"/>
+		<property name="suffix" value=".html"/>
+		<property name="templateMode" value="HTML"/>
+		<property name="cacheable" value="${thymleaf.templates.cache.enabled}"/>
+	</bean>
+	    
+	<bean id="templateEngine" class="org.thymeleaf.spring6.SpringTemplateEngine">
+		<property name="templateResolver" ref="templateResolver"/>
+		<property name="enableSpringELCompiler" value="true"/>
+		<property name="additionalDialects">
+			<set>
+				<bean class="org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect"/>
+			</set>
+		</property>
+	</bean>
+	
+	<bean class="org.thymeleaf.spring6.view.ThymeleafViewResolver">
+		<property name="templateEngine" ref="templateEngine"/>
+		<property name="order" value="1" />
+	</bean>
+
+	<!-- If view not found, try a bean name (xml, json below) -->
 	<bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver">
 		<property name="order" value="2"/>
 	</bean>
