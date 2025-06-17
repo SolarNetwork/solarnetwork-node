@@ -25,7 +25,9 @@ package net.solarnetwork.node.setup.web.thymeleaf;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.thymeleaf.dialect.AbstractProcessorDialect;
+import org.thymeleaf.dialect.IExpressionObjectDialect;
 import org.thymeleaf.dialect.IProcessorDialect;
+import org.thymeleaf.expression.IExpressionObjectFactory;
 import org.thymeleaf.processor.IProcessor;
 import org.thymeleaf.standard.processor.StandardXmlNsTagProcessor;
 import org.thymeleaf.templatemode.TemplateMode;
@@ -36,7 +38,8 @@ import org.thymeleaf.templatemode.TemplateMode;
  * @author matt
  * @version 1.0
  */
-public class SolarNodeDialect extends AbstractProcessorDialect implements IProcessorDialect {
+public class SolarNodeDialect extends AbstractProcessorDialect
+		implements IProcessorDialect, IExpressionObjectDialect {
 
 	/** The dialect name. */
 	public static final String NAME = "SolarNode";
@@ -46,6 +49,8 @@ public class SolarNodeDialect extends AbstractProcessorDialect implements IProce
 
 	/** The default processor precedence. */
 	public static final int DEFAULT_ROCESSOR_PRECEDENCE = 2000;
+
+	private final SolarNodeExperssionObjectFactory expressionObjectFactory;
 
 	/**
 	 * Constructor.
@@ -66,16 +71,23 @@ public class SolarNodeDialect extends AbstractProcessorDialect implements IProce
 	 */
 	public SolarNodeDialect(int processorPrecedence) {
 		super(NAME, PREFIX, processorPrecedence);
+		this.expressionObjectFactory = new SolarNodeExperssionObjectFactory();
 	}
 
 	@Override
 	public Set<IProcessor> getProcessors(String dialectPrefix) {
 		var result = new LinkedHashSet<IProcessor>(8);
 		result.add(new ResourcesElementTagProcessor(dialectPrefix));
+		result.add(new MessageElementTagProcessor(dialectPrefix));
 
 		// remove the xmlns:snode from output
 		result.add(new StandardXmlNsTagProcessor(TemplateMode.HTML, dialectPrefix));
 		return result;
+	}
+
+	@Override
+	public IExpressionObjectFactory getExpressionObjectFactory() {
+		return expressionObjectFactory;
 	}
 
 }

@@ -26,7 +26,6 @@ import org.thymeleaf.context.ITemplateContext;
 import org.thymeleaf.engine.AttributeName;
 import org.thymeleaf.engine.EngineEventUtils;
 import org.thymeleaf.model.IProcessableElementTag;
-import org.thymeleaf.processor.element.IElementTagStructureHandler;
 import org.thymeleaf.standard.expression.FragmentExpression;
 import org.thymeleaf.standard.expression.IStandardExpression;
 import org.thymeleaf.standard.expression.StandardExpressionExecutionContext;
@@ -47,20 +46,109 @@ public final class ThymeleafUtils {
 	public static final int DEFAULT_PROCESSOR_PRECEDENCE = 500;
 
 	/**
-	 * Evaluate an expression.
+	 * Evaluate an attribute expression for a string result.
 	 *
 	 * @param context
+	 *        the context
 	 * @param tag
+	 *        the tag
 	 * @param attributeName
-	 * @param attributeValue
-	 * @param structureHandler
+	 *        the attribute name
 	 * @param restrictedExpressionExecution
-	 * @return
+	 *        {@code true} to evaluate in restricted mode
+	 * @return the evaluation result
+	 */
+	public static String evaulateStringAttributeExpression(final ITemplateContext context,
+			final IProcessableElementTag tag, final String attributeName,
+			final boolean restrictedExpressionExecution) {
+		if ( !tag.hasAttribute(attributeName) ) {
+			return null;
+		}
+		String expr = tag.getAttributeValue(attributeName);
+		Object val = evaulateAttributeExpression(context, tag,
+				tag.getAttribute(attributeName).getAttributeDefinition().getAttributeName(), expr,
+				false);
+		return (val != null ? val.toString() : null);
+	}
+
+	/**
+	 * Evaluate an attribute expression for an integer result.
+	 *
+	 * @param context
+	 *        the context
+	 * @param tag
+	 *        the tag
+	 * @param attributeName
+	 *        the attribute name
+	 * @param restrictedExpressionExecution
+	 *        {@code true} to evaluate in restricted mode
+	 * @return the evaluation result
+	 */
+	public static Integer evaulateIntegerAttributeExpression(final ITemplateContext context,
+			final IProcessableElementTag tag, final String attributeName,
+			final boolean restrictedExpressionExecution) {
+		if ( !tag.hasAttribute(attributeName) ) {
+			return null;
+		}
+		String expr = tag.getAttributeValue(attributeName);
+		Object val = evaulateAttributeExpression(context, tag,
+				tag.getAttribute(attributeName).getAttributeDefinition().getAttributeName(), expr,
+				false);
+		if ( val instanceof Integer n ) {
+			return n;
+		} else if ( val != null ) {
+			try {
+				return Integer.valueOf(val.toString());
+			} catch ( NumberFormatException e ) {
+				// ignore
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Evaluate an attribute expression.
+	 *
+	 * @param context
+	 *        the context
+	 * @param tag
+	 *        the tag
+	 * @param attributeName
+	 *        the attribute name
+	 * @param restrictedExpressionExecution
+	 *        {@code true} to evaluate in restricted mode
+	 * @return the evaluation result
+	 */
+	public static Object evaulateAttributeExpression(final ITemplateContext context,
+			final IProcessableElementTag tag, final String attributeName,
+			final boolean restrictedExpressionExecution) {
+		if ( !tag.hasAttribute(attributeName) ) {
+			return null;
+		}
+		String expr = tag.getAttributeValue(attributeName);
+		return evaulateAttributeExpression(context, tag,
+				tag.getAttribute(attributeName).getAttributeDefinition().getAttributeName(), expr,
+				false);
+	}
+
+	/**
+	 * Evaluate an attribute value expression.
+	 *
+	 * @param context
+	 *        the context
+	 * @param tag
+	 *        the tag
+	 * @param attributeName
+	 *        the attribute name
+	 * @param attributeValue
+	 *        the attribute value
+	 * @param restrictedExpressionExecution
+	 *        {@code true} to evaluate in restricted mode
+	 * @return the evaluation result
 	 */
 	public static Object evaulateAttributeExpression(final ITemplateContext context,
 			final IProcessableElementTag tag, final AttributeName attributeName,
-			final String attributeValue, final IElementTagStructureHandler structureHandler,
-			final boolean restrictedExpressionExecution) {
+			final String attributeValue, final boolean restrictedExpressionExecution) {
 		final Object expressionResult;
 
 		if ( attributeValue != null ) {
