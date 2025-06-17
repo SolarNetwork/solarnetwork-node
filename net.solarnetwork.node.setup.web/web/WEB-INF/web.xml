@@ -97,11 +97,6 @@
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>jsp</servlet-name>
-		<url-pattern>/WEB-INF/jsp/*</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
 		<servlet-name>setup</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
@@ -109,13 +104,5 @@
 	<welcome-file-list>
 		<welcome-file>hello</welcome-file>
 	</welcome-file-list>
-
-	<jsp-config>
-		<jsp-property-group>
-			<url-pattern>*.jsp</url-pattern>
-			<include-prelude>/WEB-INF/jsp/prelude.jsp</include-prelude>
-			<trim-directive-whitespaces>true</trim-directive-whitespaces>
-		</jsp-property-group>
-	</jsp-config>
 
 </web-app>
