@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeObjects.java - 18/06/2025 6:17:26 am
+ * SolarNodeUtils.java - 18/06/2025 6:17:26 am
  *
  * Copyright 2025 SolarNetwork.net Dev Team
  *
@@ -28,12 +28,12 @@ package net.solarnetwork.node.setup.web.thymeleaf;
  * @author matt
  * @version 1.0
  */
-public final class SolarNodeObjects {
+public final class SolarNodeUtils {
 
 	/** The instance. */
-	public static final SolarNodeObjects INSTANCE = new SolarNodeObjects();
+	public static final SolarNodeUtils INSTANCE = new SolarNodeUtils();
 
-	private SolarNodeObjects() {
+	private SolarNodeUtils() {
 		super();
 	}
 

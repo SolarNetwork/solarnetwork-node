@@ -35,10 +35,10 @@ import org.thymeleaf.expression.IExpressionObjectFactory;
 public class SolarNodeExperssionObjectFactory implements IExpressionObjectFactory {
 
 	/** The {@code snObjects} object. */
-	public static final String SN_OBJECTS_EXPRESSION_OBJECT_NAME = "snObjects";
+	public static final String SN_UTILS_EXPRESSION_OBJECT_NAME = "snUtils";
 
 	private static final Set<String> ALL_EXPRESSION_OBJECT_NAMES = Set
-			.of(SN_OBJECTS_EXPRESSION_OBJECT_NAME);
+			.of(SN_UTILS_EXPRESSION_OBJECT_NAME);
 
 	/**
 	 * Constructor.
@@ -59,8 +59,8 @@ public class SolarNodeExperssionObjectFactory implements IExpressionObjectFactor
 
 	@Override
 	public Object buildObject(IExpressionContext context, String expressionObjectName) {
-		if ( SN_OBJECTS_EXPRESSION_OBJECT_NAME.equals(expressionObjectName) ) {
-			return SolarNodeObjects.INSTANCE;
+		if ( SN_UTILS_EXPRESSION_OBJECT_NAME.equals(expressionObjectName) ) {
+			return SolarNodeUtils.INSTANCE;
 		}
 		return null;
 	}
