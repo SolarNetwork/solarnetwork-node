@@ -72,23 +72,23 @@
 							<li><a class="dropdown-item" href="/a/datum-sources"
 								data-th-classappend="${navloc == 'datum-sources'}?active"
 								data-th-href="@{/a/datum-sources}"
-								data-th-text="link.datum-sources">Datum Sources</a></li>
+								data-th-text="#{link.datum-sources}">Datum Sources</a></li>
 							<li><a class="dropdown-item" href="/a/logging"
 								data-th-classappend="${navloc == 'logging'}?active"
 								data-th-href="@{/a/logging}"
-								data-th-text="link.logging">Logging</a></li>
+								data-th-text="#{link.logging}">Logging</a></li>
 							<li><a class="dropdown-item" href="/a/opmodes"
 								data-th-classappend="${navloc == 'opmodes'}?active"
 								data-th-href="@{/a/opmodes}"
-								data-th-text="link.opmodes">Operational Modes</a></li>
+								data-th-text="#{link.opmodes}">Operational Modes</a></li>
 							<li><a class="dropdown-item" href="/a/local-state"
 								data-th-classappend="${navloc == 'locstate'}?active"
 								data-th-href="@{/a/local-state}"
-								data-th-text="link.locstate">Local State</a></li>
+								data-th-text="#{link.locstate}">Local State</a></li>
 							<li><a class="dropdown-item" href="/a/settings/backups"
 								data-th-classappend="${navloc == 'backups'}?active"
 								data-th-href="@{/a/settings/backups}"
-								data-th-text="link.backups">Backups</a></li>
+								data-th-text="#{link.backups}">Backups</a></li>
 						</ul>
 					</li>
 	
@@ -98,7 +98,7 @@
 								   navloc == 'cert'
 								|| navloc == 'plugins'
 								|| navloc == 'packages'
-								}?active}"
+								}?active"
 							data-th-text="#{link.system}"
 							>
 							System
@@ -182,7 +182,7 @@
 								data-th-text="#{link.change-password}"
 								>Change Password</a></li>
 							<li><a class="dropdown-item" href="/a/user/change-username"
-								data-th-href="/a/user/change-username"
+								data-th-href="@{/a/user/change-username}"
 								data-th-text="#{link.change-username}"
 								>Change Username</a></li>
 							<li><a class="dropdown-item logout" href="#"
