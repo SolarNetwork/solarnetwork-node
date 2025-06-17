@@ -84,10 +84,12 @@
 	    
 	<bean id="templateEngine" class="org.thymeleaf.spring6.SpringTemplateEngine">
 		<property name="templateResolver" ref="templateResolver"/>
-		<property name="enableSpringELCompiler" value="true"/>
+		<!-- disabled from class loading issues from OsgiServletContextClassLoader -->
+		<property name="enableSpringELCompiler" value="false"/>
 		<property name="additionalDialects">
 			<set>
 				<bean class="org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect"/>
+				<bean class="net.solarnetwork.node.setup.web.thymeleaf.SolarNodeDialect"/>
 			</set>
 		</property>
 	</bean>
@@ -95,6 +97,7 @@
 	<bean class="org.thymeleaf.spring6.view.ThymeleafViewResolver">
 		<property name="templateEngine" ref="templateEngine"/>
 		<property name="order" value="1" />
+		<property name="characterEncoding" value="UTF-8"/>
 	</bean>
 
 	<!-- If view not found, try a bean name (xml, json below) -->

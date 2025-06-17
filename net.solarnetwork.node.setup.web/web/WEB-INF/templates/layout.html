@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html data-th-fragment="layout (title, body, footer, navloc)" 
 	xmlns:th="http://www.thymeleaf.org"
-	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
 	<head>
 	    <title data-th-replace="${title}">SolarNode</title>
 		<link rel="icon" type="image/png" data-th-href="@{/img/favicon.png}" href="../../img/favicon.png">
@@ -40,8 +41,8 @@
 		<script src="../../js/cli-console.js" data-th-src="@{/js/cli-console.js}"></script>
 		<script src="../../js/sectoks.js" data-th-src="@{/js/sectoks.js}"></script>
 		<script src="../../js/locstate.js" data-th-src="@{/js/locstate.js}"></script>
-		<setup:resources type="application/javascript" sec:authorize="!hasRole('ROLE_USER')" />
-		<setup:resources type="application/javascript" role='USER' sec:authorize access="hasRole('ROLE_USER')" />
+		<snode:resources type="application/javascript" sec:authorize="!hasRole('ROLE_USER')" />
+		<snode:resources type="application/javascript" role='USER' sec:authorize access="hasRole('ROLE_USER')" />
 	</head>
 	<body>
 		<a id="top" aria-hidden="true"></a>
@@ -64,7 +65,7 @@
 				Status alert.
 			</div>
 		</div>
-		<div class="container" data-th-replace="${body}">
+		<div class="container" id="body-container" data-th-insert="${body}">
 			Body content here.
 		</div>
 
@@ -119,7 +120,7 @@
 		</div>
 
 		<!-- Application scoped setup resource integration support  -->
-		<setup:resources role="USER" type="text/html" inline="true" scope="Application"/>
+		<snode:resources role="USER" type="text/html" inline="true" scope="Application"/>
 		
 		<footer data-th-replace="${footer}">
 		</footer>
