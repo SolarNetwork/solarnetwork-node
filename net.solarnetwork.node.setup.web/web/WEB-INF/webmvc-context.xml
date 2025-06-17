@@ -84,6 +84,9 @@
 	    
 	<bean id="templateEngine" class="org.thymeleaf.spring6.SpringTemplateEngine">
 		<property name="templateResolver" ref="templateResolver"/>
+		<property name="linkBuilder">
+			<bean class="net.solarnetwork.node.setup.web.thymeleaf.SolarNodeLinkBuilder"/>
+		</property>
 		<!-- disabled from class loading issues from OsgiServletContextClassLoader -->
 		<property name="enableSpringELCompiler" value="false"/>
 		<property name="additionalDialects">
