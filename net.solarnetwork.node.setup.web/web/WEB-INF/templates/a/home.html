@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{footer-top :: content}, 'home')}">
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'home')}">
 <head>
     <title data-th-text="#{home.title}">SolarNode</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,7 @@
 	<link rel="stylesheet" href="../../css/fonts.css">
 	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
 </head>
-<body>
-<main data-th-remove="tag">
+<body data-th-remove="tag">
 
 <section>
 	<p class="lead" data-th-utext="#{home.intro-loggedin(${#authentication.name})}">
@@ -128,6 +127,5 @@
 	</div>
 </section>
 
-</main>
 </body>
 </html>
