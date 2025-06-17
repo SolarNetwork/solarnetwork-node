@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'settings')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{settings.factories.title}">SolarNode Components</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section id="factories">
+	<h2>
+		<a id="components-section" href="#components-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-remove="tag" data-th-text="#{settings.factories.title}">Components</span>
+	</h2>
+	<div data-th-remove="tag" data-th-switch="${#lists.isEmpty(factories)}">
+		<div data-th-case="false" data-th-remove="tag">
+			<p data-th-text="#{settings.factories.intro}">
+				Components listing.
+			</p>
+			<div class="container">
+				<div class="row setting-components">
+					<div class="col">
+						<div data-th-each="factory,factoryStatus : ${factories}" class="row my-3 justify-content-between align-items-center">
+							<!--  ${factory.factoryUid} -->
+							<div class="col">
+								<div class="row">
+									<div class="col-2 col-sm-1">
+										<span class="badge rounded-pill text-bg-primary"
+											title="Instance count"
+											data-th-classappend="${#lists.isEmpty(factory.settingSpecifierProviderInstanceIds)}?invisible"
+											data-th-title="#{settings.factories.instanceCount.caption}"
+											data-th-text="${#lists.size(factory.settingSpecifierProviderInstanceIds)}"
+											>0</span>
+									</div>
+									<div class="col"><strong><snode:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></div>
+								</div>
+							</div>
+							<div class="col-auto">
+								<a class="btn btn-light" href="/a/settings/manage?uid=xyz"
+									data-th-href="@{/a/settings/manage(uid=${factory.factoryUid})}">
+									<i class="bi bi-pencil-square"></i>
+									<span data-th-remove="tag" data-th-text="#{settings.factory.manage.label}">Manage</span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<p data-th-case="*" data-th-text="#{settings.factories.none}">
+			No components.
+		</p>
+	</div>
+</section>
+
+</body>
+</html>
