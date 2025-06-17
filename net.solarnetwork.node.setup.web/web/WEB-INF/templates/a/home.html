@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{}, 'home')}">
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{footer-top :: content}, 'home')}">
 <head>
     <title data-th-text="#{home.title}">SolarNode</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="../../css/bootstrap.css">
-	<link rel="stylesheet" href="../../css/bootstrap-theme.css">
-	<link rel="stylesheet" href="../../css/dataTables.bootstrap.css">
-	<link rel="stylesheet" href="../../css/global.css">
-	<link rel="stylesheet" href="../../css/edit-node.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
 </head>
 <body>
 <main data-th-remove="tag">

@@ -66,7 +66,12 @@
 			</div>
 		</div>
 		<div class="container" id="body-container" data-th-insert="${body}">
-			Body content here.
+			<div data-th-replace="${body}">
+				Body content here.
+			</div>
+			<div data-th-replace="${footer}">
+				Footer content here.
+			</div>
 		</div>
 
 		<!-- System lock overlay -->
