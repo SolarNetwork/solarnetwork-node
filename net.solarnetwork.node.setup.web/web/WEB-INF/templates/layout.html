@@ -42,7 +42,7 @@
 		<script src="../../js/sectoks.js" data-th-src="@{/js/sectoks.js}"></script>
 		<script src="../../js/locstate.js" data-th-src="@{/js/locstate.js}"></script>
 		<snode:resources type="application/javascript" sec:authorize="!hasRole('ROLE_USER')" />
-		<snode:resources type="application/javascript" role='USER' sec:authorize access="hasRole('ROLE_USER')" />
+		<snode:resources type="application/javascript" role='USER' sec:authorize="hasRole('ROLE_USER')" />
 	</head>
 	<body>
 		<a id="top" aria-hidden="true"></a>
@@ -128,6 +128,7 @@
 		<snode:resources role="USER" type="text/html" inline="true" scope="Application"/>
 		
 		<footer data-th-replace="${footer}">
+			Footer content here.
 		</footer>
 	</body>
 </html>
