@@ -13,7 +13,7 @@
 	<script src="../../js-lib/jquery.form.js"></script>
 	<script src="../../js-lib/bootstrap.bundle.js"></script>
 </head>
-<body data-th-fragment="navbar" data-th-remove="tags"
+<body data-th-fragment="navbar" data-th-remove="tag"
 	data-th-with="isLoggedIn=${#authentication != null && #authorization.expression('hasRole(''ROLE_USER'')') ? true : false},homeUrl=${isLoggedIn ? '/a/home' : '/'}">
 	<div class="navbar navbar-expand-md bg-body-tertiary mb-3">
 		<div class="container-fluid">
@@ -195,7 +195,6 @@
 	</div>
 
 	<form id="logout-form" method="post" action="/logout" data-th-action="@{/logout}" data-th-if="${isLoggedIn}">
-		<input type="hidden" name="_csrf" value="" data-th-name="${_csrf.parameterName}" data-th-value="${_csrf.token}" data-th-if="${__csrf}">
 	</form>
 	<form id="restart-modal" data-bs-backdrop="static" data-bs-keyboard="false" action="/a/home/restart" method="post"
 			data-th-action="@{/a/home/restart}"
@@ -230,7 +229,6 @@
 				<input type="hidden" name="reboot" value="false"/>
 			</div>
 		</div>
-		<input type="hidden" name="_csrf" value="" data-th-name="${_csrf.parameterName}" data-th-value="${_csrf.token}" data-th-if="${__csrf}">
 	</form>
 	<form id="reset-modal" data-bs-backdrop="static" data-bs-keyboard="false" action="/a/home/reset" method="post"
 			data-th-action="@{/a/home/reset}"
@@ -267,7 +265,6 @@
 				<input type="hidden" name="reboot" value="false"/>
 			</div>
 		</div>
-		<input type="hidden" name="_csrf" value="" data-th-name="${_csrf.parameterName}" data-th-value="${_csrf.token}" data-th-if="${__csrf}">
 	</form>
 </body>
 </html>
