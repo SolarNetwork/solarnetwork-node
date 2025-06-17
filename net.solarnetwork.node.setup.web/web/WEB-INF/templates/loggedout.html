@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{}, 'login')}">
+<head>
+    <title data-th-text="#{loggedoff.title}">Logged Out</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body>
+<main class="container content-absolute">
+	<div class="row justify-content-center content-vertical-center">
+		<div class="col-auto">	
+			<p class="lead" data-th-utext="#{loggedoff.intro}">
+				You're logged off.
+			</p>
+			<div class="d-grid">
+				<a class="btn btn-primary" href="/login.do"
+					data-th-href="@{/login.do}"
+					data-th-text="#{login.label}">Login</a>
+			</div>
+		</div>
+	</div>
+</main>
+</body>
+</html>
