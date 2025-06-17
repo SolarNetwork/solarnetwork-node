@@ -5,18 +5,17 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="base-path" content="/">
 	<meta name="authenticated" content="true">
-		<link rel="stylesheet" href="../../css/bootstrap.css">
-		<link rel="stylesheet" href="../../css/solarnode.css">
-		<link rel="stylesheet" href="../../css/fonts.css">
-		<link rel="stylesheet" href="../../css/bootstrap-icons.css">	
-		<script src="../../js-lib/jquery-3.7.1.js"></script>
-		<script src="../../js-lib/jquery.form.js"></script>
-		<script src="../../js-lib/bootstrap.bundle.js"></script>
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+	<script src="../../js-lib/jquery-3.7.1.js"></script>
+	<script src="../../js-lib/jquery.form.js"></script>
+	<script src="../../js-lib/bootstrap.bundle.js"></script>
 </head>
-<body>
-	<div class="navbar navbar-expand-md bg-body-tertiary mb-3"
-		data-th-fragment="navbar"
-		data-th-with="isLoggedIn=${#authentication != null && #authorization.expression('hasRole(''ROLE_USER'')') ? true : false},homeUrl=${isLoggedIn ? '/a/home' : '/'}">
+<body data-th-fragment="navbar" data-th-remove="tags"
+	data-th-with="isLoggedIn=${#authentication != null && #authorization.expression('hasRole(''ROLE_USER'')') ? true : false},homeUrl=${isLoggedIn ? '/a/home' : '/'}">
+	<div class="navbar navbar-expand-md bg-body-tertiary mb-3">
 		<div class="container-fluid">
 			<a class="navbar-brand" href="/" data-th-href="@{${homeUrl}}">
 				<img src="../../img/logo-node.svg" alt="SolarNode" data-th-alt="#{app.name}" width="143" height="28"/>
@@ -24,7 +23,7 @@
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-content" 
 				aria-controls="navbar-content" aria-expanded="false" 
 				aria-label="Toggle"
-				data-th-aria-label="@{nav.toggle.title}"
+				data-th-aria-label="#{nav.toggle.title}"
 				>
 				<span class="navbar-toggler-icon"></span>
 			</button>
@@ -200,7 +199,7 @@
 	</form>
 	<form id="restart-modal" data-bs-backdrop="static" data-bs-keyboard="false" action="/a/home/restart" method="post"
 			data-th-action="@{/a/home/restart}"
-			data-th-classappend="modal fade"
+			data-th-classappend="'modal fade'"
 			data-th-if="${isLoggedIn}"
 			>
 		<div class="modal-dialog">
@@ -235,12 +234,12 @@
 	</form>
 	<form id="reset-modal" data-bs-backdrop="static" data-bs-keyboard="false" action="/a/home/reset" method="post"
 			data-th-action="@{/a/home/reset}"
-			data-th-classappend="modal fade"
+			data-th-classappend="'modal fade'"
 			data-th-if="${isLoggedIn}">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h3 class="modal-title" data-th-text="${reset.title}">Reset</h3>
+					<h3 class="modal-title" data-th-text="#{reset.title}">Reset</h3>
 					<button type="button" class="btn-close start" data-bs-dismiss="modal" aria-label="Close"
 						data-th-aria-label="#{close.label}"></button>
 				</div>
