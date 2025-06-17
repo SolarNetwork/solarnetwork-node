@@ -22,18 +22,13 @@
 
 package net.solarnetwork.node.setup.web.thymeleaf;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static net.solarnetwork.node.setup.SetupResourceProvider.WEB_CONSUMER_TYPE;
 import static net.solarnetwork.node.setup.web.WebConstants.X_FORWARDED_PATH_MODEL_ATTR;
 import static net.solarnetwork.node.setup.web.thymeleaf.ThymeleafUtils.DEFAULT_PROCESSOR_PRECEDENCE;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.util.UriUtils;
@@ -52,16 +47,15 @@ import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.node.setup.SetupResourceScope;
 import net.solarnetwork.node.setup.SetupResourceService;
-import net.solarnetwork.util.StringUtils;
 
 /**
  * Element processor to generate HTML tags for supported {@link SetupResource}
  * values.
  *
  * <p>
- * When rendering inline content, all properties provided via
- * {@link #setProperties(Map)} will be added as {@code data-} attributes to
- * whatever element name is configured via {@link #setWrapperElement(String)}).
+ * When rendering inline content, all properties provided via the
+ * {@code properties} attribute will be added as {@code data-} attributes to
+ * whatever element name is configured via {@code wrapperElement} attribute).
  * Similarly, any {@code data-} attributes added directly to the tag will be
  * added as well, as will any {@code id} attribute.
  * </p>
@@ -71,8 +65,6 @@ import net.solarnetwork.util.StringUtils;
  */
 public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 		implements IElementTagProcessor {
-
-	public static final int DEFAULT_PRECEDENCE = 100;
 
 	/** The element name. */
 	public static final String ELEMENT_NAME = "resources";
@@ -86,10 +78,8 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 	/** The scope attribute name. */
 	public static final String SCOPE_ATTRIBUTE_NAME = "scope";
 
-	/** The inline attribute name. */
-	public static final String INLINE_ATTRIBUTE_NAME = "inline";
-
-	private static final Logger log = LoggerFactory.getLogger(ResourcesElementTagProcessor.class);
+	/** The provider attribute name. */
+	public static final String PROVIDER_ATTRIBUTE_NAME = "provider";
 
 	/**
 	 * Constructor.
@@ -114,36 +104,31 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 			return;
 		}
 
-		final SetupResourceProvider provider = setupResourceProvider(tag);
+		final SetupResourceProvider provider = setupResourceProvider(context, tag);
 
 		Collection<SetupResource> resources = (provider != null
-				? provider.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE,
-						context.getLocale())
-				: setupResourceService.getSetupResourcesForConsumer(
-						SetupResourceProvider.WEB_CONSUMER_TYPE, context.getLocale()));
+				? provider.getSetupResourcesForConsumer(WEB_CONSUMER_TYPE, context.getLocale())
+				: setupResourceService.getSetupResourcesForConsumer(WEB_CONSUMER_TYPE,
+						context.getLocale()));
 
 		if ( resources == null || resources.isEmpty() ) {
 			structureHandler.removeElement();
 			return;
 		}
 
-		final String role = tag.hasAttribute(ROLE_ATTRIBUTE_NAME)
-				? tag.getAttributeValue(ROLE_ATTRIBUTE_NAME)
-				: null;
+		final String role = tag.getAttributeValue(ROLE_ATTRIBUTE_NAME);
 
-		final String type = tag.hasAttribute(TYPE_ATTRIBUTE_NAME)
-				? tag.getAttributeValue(TYPE_ATTRIBUTE_NAME)
-				: null;
+		final String type = tag.getAttributeValue(TYPE_ATTRIBUTE_NAME);
 
-		final boolean inline = tag.hasAttribute(INLINE_ATTRIBUTE_NAME)
-				? StringUtils.parseBoolean(tag.getAttributeValue(INLINE_ATTRIBUTE_NAME))
-				: false;
-
-		String baseUrl = (role == null ? "/rsrc/" : "/a/rsrc/");
+		final String baseUrl = (role == null ? "/rsrc/" : "/a/rsrc/");
 
 		final String forwardedPath = context.containsVariable(X_FORWARDED_PATH_MODEL_ATTR)
 				? context.getVariable(X_FORWARDED_PATH_MODEL_ATTR).toString()
 				: null;
+
+		final IModelFactory modelFactory = context.getModelFactory();
+
+		final IModel output = modelFactory.createModel();
 
 		for ( SetupResource rsrc : resources ) {
 			if ( !type.equals(rsrc.getContentType()) ) {
@@ -155,66 +140,51 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 			if ( !hasRequiredScope(context, tag, rsrc) ) {
 				continue;
 			}
-			if ( inline ) {
-				writeInlineResource(structureHandler, rsrc);
-			} else {
-				String url = context.buildLink(baseUrl
-						+ UriUtils.encodePathSegment(rsrc.getResourceUID(), StandardCharsets.UTF_8),
-						null);
 
-				if ( forwardedPath != null && forwardedPath.startsWith("/") ) {
-					StringBuilder buf = new StringBuilder(forwardedPath);
-					if ( !(forwardedPath.endsWith("/") || url.startsWith("/")) ) {
-						buf.append('/');
-					}
-					buf.append(url);
-					url = buf.toString();
+			String url = context.buildLink(
+					baseUrl + UriUtils.encodePathSegment(rsrc.getResourceUID(), StandardCharsets.UTF_8),
+					null);
+
+			if ( forwardedPath != null && forwardedPath.startsWith("/") ) {
+				StringBuilder buf = new StringBuilder(forwardedPath);
+				if ( !(forwardedPath.endsWith("/") || url.startsWith("/")) ) {
+					buf.append('/');
 				}
+				buf.append(url);
+				url = buf.toString();
+			}
 
-				final IModelFactory modelFactory = context.getModelFactory();
-				final IModel output = modelFactory.createModel();
-
-				if ( SetupResource.JAVASCRIPT_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
-					output.add(modelFactory.createOpenElementTag("script",
-							Map.of("type", rsrc.getContentType(), "src", url),
-							AttributeValueQuotes.DOUBLE, false));
-					output.add(modelFactory.createCloseElementTag("script"));
-				} else if ( SetupResource.CSS_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
-					output.add(modelFactory.createStandaloneElementTag("link",
-							Map.of("type", "text/css", "rel", "stylesheet", "href", url),
-							AttributeValueQuotes.DOUBLE, false, false));
-				} else if ( rsrc.getContentType().startsWith("image/") ) {
-					output.add(modelFactory.createStandaloneElementTag("img", Map.of("src", url),
-							AttributeValueQuotes.DOUBLE, false, false));
-				}
-
-				structureHandler.replaceWith(output, false);
+			if ( SetupResource.JAVASCRIPT_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
+				output.add(modelFactory.createOpenElementTag("script",
+						Map.of("type", rsrc.getContentType(), "src", url), AttributeValueQuotes.DOUBLE,
+						false));
+				output.add(modelFactory.createCloseElementTag("script"));
+			} else if ( SetupResource.CSS_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
+				output.add(modelFactory.createStandaloneElementTag("link",
+						Map.of("type", "text/css", "rel", "stylesheet", "href", url),
+						AttributeValueQuotes.DOUBLE, false, false));
+			} else if ( rsrc.getContentType().startsWith("image/") ) {
+				output.add(modelFactory.createStandaloneElementTag("img", Map.of("src", url),
+						AttributeValueQuotes.DOUBLE, false, false));
 			}
 		}
 
+		structureHandler.replaceWith(output, false);
 	}
 
-	private SetupResourceProvider setupResourceProvider(IProcessableElementTag tag) {
-		if ( !tag.hasAttribute("provider") ) {
+	private SetupResourceProvider setupResourceProvider(ITemplateContext context,
+			IProcessableElementTag tag) {
+		if ( !tag.hasAttribute(PROVIDER_ATTRIBUTE_NAME) ) {
 			return null;
 		}
-		// TODO
-		return null;
-	}
-
-	private void writeInlineResource(IElementTagStructureHandler structureHandler, SetupResource rsrc) {
-		try (Reader in = new InputStreamReader(rsrc.getInputStream(), UTF_8)) {
-			StringBuilder tmp = new StringBuilder(4096);
-			char[] buffer = new char[4096];
-			int bytesRead = -1;
-			while ( (bytesRead = in.read(buffer)) != -1 ) {
-				tmp.append(buffer, 0, bytesRead);
-			}
-			structureHandler.replaceWith(tmp, false);
-		} catch ( IOException e ) {
-			throw new RuntimeException(
-					"Error generating inline SetupResource [%s]: %s".formatted(rsrc, e.toString()));
+		String providerExpr = tag.getAttributeValue(PROVIDER_ATTRIBUTE_NAME);
+		Object providerVal = ThymeleafUtils.evaulateAttributeExpression(context, tag,
+				tag.getAttribute(PROVIDER_ATTRIBUTE_NAME).getAttributeDefinition().getAttributeName(),
+				providerExpr, false);
+		if ( providerVal instanceof SetupResourceProvider p ) {
+			return p;
 		}
+		return null;
 	}
 
 	private boolean hasRequiredyRole(ITemplateContext context, SetupResource rsrc) {
