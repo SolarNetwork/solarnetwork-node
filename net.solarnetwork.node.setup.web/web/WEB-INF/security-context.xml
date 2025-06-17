@@ -93,6 +93,12 @@
 		<intercept-message pattern="/**" access="hasRole('USER')" />
 	</websocket-message-broker>
 
+	<!--
+		This post-processor is to make XorCsrf work with messaging, see
+		https://github.com/spring-projects/spring-security/issues/17260
+	 -->
+	<beans:bean class="net.solarnetwork.node.setup.web.support.WebsocketXorCsrfChannelBeanPostProcessor"/>
+
 	<beans:bean id="authTokenEntryPoint" class="net.solarnetwork.web.jakarta.security.SecurityTokenAuthenticationEntryPoint">
 		<beans:property name="handlerExceptionResolver" ref="exceptionHandlerExceptionResolver"/>
 	</beans:bean>
