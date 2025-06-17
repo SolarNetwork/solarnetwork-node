@@ -114,7 +114,7 @@ import net.solarnetwork.web.jakarta.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -214,7 +214,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDER_FACTORIES, factories);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 		}
-		return "settings-list";
+		return "settings/settings-list";
 	}
 
 	/**
@@ -240,7 +240,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 		}
-		return "services";
+		return "settings/services";
 	}
 
 	/**
@@ -276,7 +276,7 @@ public class SettingsController {
 				model.put(KEY_BACKUPS, backups);
 			}
 		}
-		return "backups";
+		return "settings/backups";
 	}
 
 	private static final Comparator<SettingResourceInfo> SETTING_RESOURCE_SORT_BY_NAME = (o1, o2) -> {
@@ -370,7 +370,7 @@ public class SettingsController {
 			model.put(KEY_USER_PROVIDER_FACTORIES, userFactories);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 		}
-		return "filters-list";
+		return "settings/filters-list";
 	}
 
 	/**
@@ -407,8 +407,8 @@ public class SettingsController {
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUid));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
-		return (req.getRequestURI().contains("/filters/") ? "filters-factory-settings-list"
-				: "factory-settings-list");
+		return (req.getRequestURI().contains("/filters/") ? "settings/filters-factory-settings-list"
+				: "settings/factory-settings-list");
 	}
 
 	/**
@@ -549,7 +549,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUid));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
-		return "factory-settings-instance";
+		return "settings/factory-settings-instance";
 	}
 
 	/**
