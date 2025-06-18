@@ -22,19 +22,27 @@
 
 package net.solarnetwork.node.setup.web.thymeleaf;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.solarnetwork.node.setup.SetupResourceProvider.WEB_CONSUMER_TYPE;
 import static net.solarnetwork.node.setup.web.WebConstants.X_FORWARDED_PATH_MODEL_ATTR;
 import static net.solarnetwork.node.setup.web.thymeleaf.ThymeleafUtils.DEFAULT_PROCESSOR_PRECEDENCE;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.util.UriUtils;
 import org.thymeleaf.context.ITemplateContext;
+import org.thymeleaf.engine.AttributeName;
 import org.thymeleaf.extras.springsecurity6.auth.AuthUtils;
 import org.thymeleaf.model.AttributeValueQuotes;
+import org.thymeleaf.model.IAttribute;
 import org.thymeleaf.model.IModel;
 import org.thymeleaf.model.IModelFactory;
 import org.thymeleaf.model.IProcessableElementTag;
@@ -47,6 +55,7 @@ import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.node.setup.SetupResourceScope;
 import net.solarnetwork.node.setup.SetupResourceService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Element processor to generate HTML tags for supported {@link SetupResource}
@@ -78,8 +87,26 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 	/** The scope attribute name. */
 	public static final String SCOPE_ATTRIBUTE_NAME = "scope";
 
+	/** The inline attribute name. */
+	public static final String INLINE_ATTRIBUTE_NAME = "inline";
+
 	/** The provider attribute name. */
 	public static final String PROVIDER_ATTRIBUTE_NAME = "provider";
+
+	/** The properties attribute name. */
+	public static final String PROPERTIES_ATTRIBUTE_NAME = "properties";
+
+	/** The wrapper element attribute name. */
+	public static final String WRAPPER_ELEMENT_ATTRIBUTE_NAME = "wrapperElement";
+
+	/** The wrapper class element attribute name. */
+	public static final String WRAPPER_CLASS_ATTRIBUTE_NAME = "wrapperClass";
+
+	/** The id element attribute name. */
+	public static final String ID_ATTRIBUTE_NAME = "id";
+
+	/** The data element attribute prefix. */
+	public static final String DATA_ATTRIBUTE_PREFIX = "data-";
 
 	/**
 	 * Constructor.
@@ -120,6 +147,10 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 
 		final String type = tag.getAttributeValue(TYPE_ATTRIBUTE_NAME);
 
+		final boolean inline = StringUtils.parseBoolean(tag.getAttributeValue(INLINE_ATTRIBUTE_NAME));
+
+		final String wrapperElementName = tag.getAttributeValue(WRAPPER_ELEMENT_ATTRIBUTE_NAME);
+
 		final String baseUrl = (role == null ? "/rsrc/" : "/a/rsrc/");
 
 		final String forwardedPath = context.containsVariable(X_FORWARDED_PATH_MODEL_ATTR)
@@ -127,6 +158,21 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 				: null;
 
 		final IModelFactory modelFactory = context.getModelFactory();
+
+		if ( inline && wrapperElementName != null ) {
+			Map<String, String> dynamicAttributes = dynamicAttributes(context, tag);
+			String wrapperClass = tag.getAttributeValue(WRAPPER_CLASS_ATTRIBUTE_NAME);
+			if ( wrapperClass != null ) {
+				dynamicAttributes.put("class", wrapperClass);
+			}
+			structureHandler.removeElement();
+			structureHandler
+					.insertImmediatelyAfter(
+							modelFactory
+									.createModel(modelFactory.createOpenElementTag(wrapperElementName,
+											dynamicAttributes, AttributeValueQuotes.DOUBLE, false)),
+							false);
+		}
 
 		final IModel output = modelFactory.createModel();
 
@@ -139,6 +185,17 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 			}
 			if ( !hasRequiredScope(context, tag, rsrc) ) {
 				continue;
+			}
+			if ( inline ) {
+				String body = generateInlineResource(structureHandler, rsrc);
+				if ( wrapperElementName == null ) {
+					structureHandler.replaceWith(body, false);
+				} else {
+					structureHandler.insertImmediatelyAfter(modelFactory
+							.createModel(modelFactory.createCloseElementTag(wrapperElementName)), false);
+				}
+				// only one inline resource allowed, so stop here
+				return;
 			}
 
 			String url = context.buildLink(
@@ -172,6 +229,30 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 		structureHandler.replaceWith(output, false);
 	}
 
+	private Map<String, String> dynamicAttributes(ITemplateContext context, IProcessableElementTag tag) {
+		Map<String, String> result = new HashMap<>(8);
+		if ( tag.hasAttribute(PROPERTIES_ATTRIBUTE_NAME) ) {
+			AttributeName propAttrName = tag.getAttribute(PROPERTIES_ATTRIBUTE_NAME)
+					.getAttributeDefinition().getAttributeName();
+			Object propVal = ThymeleafUtils.evaulateAttributeExpression(context, tag, propAttrName,
+					tag.getAttributeValue(propAttrName), false);
+			if ( propVal instanceof Map<?, ?> m ) {
+				for ( Entry<?, ?> e : m.entrySet() ) {
+					result.put(e.getKey().toString(), e.getValue().toString());
+				}
+			}
+		}
+		if ( tag.hasAttribute(ID_ATTRIBUTE_NAME) ) {
+			result.put(ID_ATTRIBUTE_NAME, tag.getAttributeValue(ID_ATTRIBUTE_NAME));
+		}
+		for ( IAttribute attr : tag.getAllAttributes() ) {
+			if ( attr.getAttributeCompleteName().startsWith(DATA_ATTRIBUTE_PREFIX) ) {
+				result.put(attr.getAttributeCompleteName(), attr.getValue());
+			}
+		}
+		return result;
+	}
+
 	private SetupResourceProvider setupResourceProvider(ITemplateContext context,
 			IProcessableElementTag tag) {
 		if ( !tag.hasAttribute(PROVIDER_ATTRIBUTE_NAME) ) {
@@ -185,6 +266,22 @@ public class ResourcesElementTagProcessor extends AbstractElementTagProcessor
 			return p;
 		}
 		return null;
+	}
+
+	private String generateInlineResource(IElementTagStructureHandler structureHandler,
+			SetupResource rsrc) {
+		try (Reader in = new InputStreamReader(rsrc.getInputStream(), UTF_8)) {
+			StringBuilder tmp = new StringBuilder(4096);
+			char[] buffer = new char[4096];
+			int bytesRead = -1;
+			while ( (bytesRead = in.read(buffer)) != -1 ) {
+				tmp.append(buffer, 0, bytesRead);
+			}
+			return tmp.toString();
+		} catch ( IOException e ) {
+			throw new RuntimeException(
+					"Error generating inline SetupResource [%s]: %s".formatted(rsrc, e.toString()));
+		}
 	}
 
 	private boolean hasRequiredyRole(ITemplateContext context, SetupResource rsrc) {
