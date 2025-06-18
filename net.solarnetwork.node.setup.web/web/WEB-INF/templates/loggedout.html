@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{}, 'login')}">
 <head>
-    <title data-th-text="#{loggedoff.title}">Logged Out</title>
+    <title data-th-text="#{app.title(#{loggedoff.title})}">Logged Out</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="../../css/bootstrap.css">
 	<link rel="stylesheet" href="../../css/solarnode.css">
