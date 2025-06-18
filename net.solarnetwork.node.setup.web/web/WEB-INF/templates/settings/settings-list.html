@@ -2,7 +2,7 @@
 <html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'settings')}"
 	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
 <head>
-    <title data-th-text="#{settings.factories.title}">SolarNode Components</title>
+    <title data-th-text="#{app.title(#{settings.factories.title})}">SolarNode Components</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="../../../css/bootstrap.css">
 	<link rel="stylesheet" href="../../../css/solarnode.css">
@@ -19,7 +19,7 @@
 	</h2>
 	<div data-th-remove="tag" data-th-switch="${#lists.isEmpty(factories)}">
 		<div data-th-case="false" data-th-remove="tag">
-			<p data-th-text="#{settings.factories.intro}">
+			<p data-th-utext="#{settings.factories.intro}">
 				Components listing.
 			</p>
 			<div class="container">
