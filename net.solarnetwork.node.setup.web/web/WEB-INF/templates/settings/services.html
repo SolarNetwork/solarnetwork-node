@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'settings')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{settings.providers.title})}">SolarNode Services</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section id="settings" data-th-if="${not #lists.isEmpty(providers)}">
+	<h2>
+		<a id="settings-section" href="#settings-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-remove="tag" data-th-text="#{settings.providers.title}">Services</span>
+	</h2>
+	<p data-th-utext="#{settings.providers.intro}">
+		Services are listed here.
+	</p>
+
+	<form action="/a/settings/save" method="post" data-th-action="@{/a/settings/save}">
+		<div class="form-actions d-grid my-5">
+			<button type="button" class="btn btn-primary settings-save" id="submit" disabled data-th-text="#{settings.save}">Save</button>
+		</div>
+
+		<fieldset data-th-each="provider, providerStatus : ${providers}">
+			<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${provider.settingUid} + ' --&gt;'"></span>
+			
+			<legend>
+				<a data-th-id="${provider.settingUid}"
+					class="anchor"
+					data-th-href="${provider.settingUid}"
+					aria-hidden="true"
+					><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+				<snode:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
+			</legend>
+			<p><snode:message key="desc" messageSource="${provider.messageSource}" text=""/></p>
+			
+			
+			<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
+				<div data-th-replace="~{settings/setting-control :: content('s'+${providerStatus.index}+'i'+${settingStatus.index})}"></div>
+			</div>
+
+			<div class="alert alert-warning"
+				data-th-if="${providerException != null}"
+				data-th-text="#{settings.error.provider.exception(${providerException.cause.message})}">
+				An error occurred.
+			</div>
+
+			<div class="row mb-3" data-th-if="${settingResources != null and not #lists.isEmpty(settingResources[provider.settingUid])}">
+				<label class="col-sm-4 col-md-3 col-form-label" for="settings-resource-ident-xyz"
+						data-th-for="'settings-resource-ident-' + ${providerStatus.index}"
+						data-th-text="#{settings.io.exportResource.label}">
+					Export Resource
+				</label>
+				<div class="col-sm-7 col-md-8">
+					<div class="input-group">
+						<select class="form-select settings-resource-ident" id="settings-resource-ident-xyz"
+								data-th-id="'settings-resource-ident-' + ${providerStatus.index}">
+							<option data-th-each="resource : ${settingResources[provider.settingUid]}"
+								data-th-data-handler="${resource.handlerKey}"
+								data-th-data-key="${resource.key}"
+								data-th-text="${resource.name}"
+								>The Resource</option>
+						</select>
+						<button type="button" class="btn btn-primary settings-resource-export"
+							data-th-data-action="@{/a/settings/exportResources}"
+							data-th-data-target="'#settings-resource-ident-' + ${providerStatus.index}"
+							data-th-text="#{settings.io.export.button}"
+							>Export</button>
+					</div>
+				</div>
+			</div>
+		</fieldset>
+	</form>
+	<script data-th-inline="javascript">
+	$(function() {
+		$('#submit').on('click', function() {
+			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
+				success: /*[[#{settings.save.success.msg}]]*/ 'Saved',
+				error:   /*[[#{settings.save.error.msg}]]*/ 'Error saving settings.',
+				title:   /*[[#{settings.save.result.title}]]*/ 'Setttings have been saved.',
+				button:  /*[[#{ok.label}]]*/ 'OK'
+			});
+		});
+	});
+	</script>
+</section>
+
+<div data-th-replace="~{settings/note-popover :: form}"></div>
+</body>
+</html>
