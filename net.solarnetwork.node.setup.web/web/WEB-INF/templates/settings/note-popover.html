@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Note</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body>
+<form id="edit-setting-note-modal" class="dynamic" action="/a/settings/notes" method="post"
+		data-bs-backdrop="static" data-bs-keyboard="false"
+		data-th-classappend="'modal fade'"
+		data-th-action="@{/a/settings/notes}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{settings.note.edit.title}">Edit</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+					data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-text="#{settings.note.edit.intro}">
+					Edit note here.
+				</p>
+				<label class="form-label" for="edit-setting-note-help" id="edit-setting-note-name"></label>
+				<div class="card card-body bg-light" id="edit-setting-note-help">
+					<span class="form-text"></span>
+				</div>
+
+				<label class="form-label mt-3" for="edit-setting-note-note" data-th-text="#{note.label}">Note</label>
+				<textarea id="edit-setting-note-note" name="values[0].note" class="form-control" maxlength="4096"></textarea>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary" data-th-text="#{settings.note.edit.save.label}">Save</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" id="edit-setting-note-provider" name="values[0].providerKey" value="">
+	<input type="hidden" id="edit-setting-note-instance" name="values[0].instanceKey" value="">
+	<input type="hidden" id="edit-setting-note-key" name="values[0].key" value="">
+</form>
+</body>
+</html>
