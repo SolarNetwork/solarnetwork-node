@@ -151,7 +151,7 @@ public final class ThymeleafUtils {
 			final String attributeValue, final boolean restrictedExpressionExecution) {
 		final Object expressionResult;
 
-		if ( attributeValue != null ) {
+		if ( attributeValue != null && !attributeValue.isBlank() ) {
 			final IStandardExpression expression = EngineEventUtils.computeAttributeExpression(context,
 					tag, attributeName, attributeValue);
 			if ( expression != null && expression instanceof FragmentExpression ) {
@@ -168,7 +168,7 @@ public final class ThymeleafUtils {
 				expressionResult = expression.execute(context, expressionExecutionContext);
 			}
 		} else {
-			expressionResult = null;
+			expressionResult = attributeValue;
 		}
 
 		return expressionResult;
