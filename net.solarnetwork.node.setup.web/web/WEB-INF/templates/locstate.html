@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'locstate')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{locstate.title})}">SolarNode Local State</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<h2 data-th-text="#{locstate.title}">Local State</h2>
+	<p data-th-utext="#{locstate.intro}">About Local State.</p>
+	<div class="d-flex justify-content-end">
+		<button type="button" class="btn btn-primary" data-bs-target="#local-state-edit-modal" data-bs-toggle="modal">
+			<i class="bi bi-plus-lg"></i>
+			<span data-th-text="#{locstate.action.create}">Create</span>
+		</button>
+	</div>
+</section>
+<section class="init">
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
+    </div>
+</section>
+<section id="local-state" class="hidden ready">
+	<p class="none" data-th-utext="#{locstate.intro.none}">
+		No Local State is available.
+	</p>
+	<table class="table table-sm some hidden" id="locstate-list">
+		<thead>
+			<tr>
+				<th data-th-text="#{locstate.entity.key.label}">Key</th>
+				<th data-th-text="#{locstate.entity.created.label}">Created</th>
+				<th data-th-text="#{locstate.entity.modified.label}">Modified</th>
+				<th data-th-text="#{locstate.entity.type.label}">Type</th>
+				<th data-th-text="#{locstate.entity.value.label}">Value</th>
+			</tr>
+			<tr class="template item">
+				<td><a href="#" class="edit-link" data-tprop="key"></a></td>
+				<td data-tprop="createdDate"></td>
+				<td data-tprop="modifiedDate"></td>
+				<td data-tprop="typeDisplay"></td>
+				<td>
+					<span data-tprop="valueDisplay"></span>
+				</td>
+			</tr>
+		</thead>
+		<tbody class="list-container">
+		</tbody>
+	</table>
+</section>
+
+<form id="local-state-edit-modal" class="modal modal-lg fade" action="/a/local-state" method="post"
+		data-th-action="@{/a/local-state}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{locstate.edit.title}">Edit Local State</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-text="#{locstate.edit.intro}">Use this form to edit Local State.</p>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="edit-local-state-modal-key" data-th-text="#{locstate.entity.key.label}">
+						Key
+					</label>
+					<input type="text" name="key" id="edit-local-state-modal-key"
+						class="form-control" value=""/>
+				</div>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="edit-local-state-modal-type" data-th-text="#{locstate.entity.type.label}">
+						Type
+					</label>
+					<select name="type" id="edit-local-state-modal-name" class="form-control">
+						<option value="" data-th-text="#{locstate.entity.type.auto}">Auto</option>
+						<option value="Boolean" data-th-text="#{locstate.entity.type.Boolean}">Boolean</option>
+						<option value="Integer" data-th-text="#{locstate.entity.type.Integer}">Integer</option>
+						<option value="Int32" data-th-text="#{locstate.entity.type.Int32}">Int32</option>
+						<option value="Int64" data-th-text="#{locstate.entity.type.Int64}">Int64</option>
+						<option value="Integer" data-th-text="#{locstate.entity.type.Integer}">Integer</option>
+						<option value="Decimal" data-th-text="#{locstate.entity.type.Decimal}">Decimal</option>
+						<option value="Float32" data-th-text="#{locstate.entity.type.Float32}">Float32</option>
+						<option value="Float64" data-th-text="#{locstate.entity.type.Float64}">Float64</option>
+						<option value="String" data-th-text="#{locstate.entity.type.String}">String</option>
+						<option value="Mapping" data-th-text="#{locstate.entity.type.Mapping}">Mapping</option>
+					</select>
+					<div class="form-text" data-th-utext="#{locstate.type.help}">
+						Choose a type.
+					</div>
+				</div>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="edit-local-state-modal-value" data-th-text="#{locstate.entity.value.label}">
+						Value
+					</label>
+					<textarea name="value" id="edit-local-state-modal-value"
+						class="form-control" maxLength="8000"></textarea>
+				</div>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" class="btn btn-danger pull-left" name="delete" data-th-title="#{locstate.action.delete}">
+					<i class="bi bi-trash3"></i>
+					<span data-th-text="#{locstate.action.delete}"></span>
+				</button>
+				<div>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+					<button type="submit" class="btn btn-primary" data-th-text="#{locstate.action.save}">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+
+</body>
+</html>
