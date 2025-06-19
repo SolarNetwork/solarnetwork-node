@@ -23,8 +23,8 @@
 <body data-th-fragment="content (settingId)" data-th-remove="tag"
 	data-th-with="settingValue = ${#snUtils.settingValue(settingsService, provider, setting)}">
 
-	<snode:resources data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}"
-		role="USER" type="text/html" inline="true"
+	<snode:inlineResources data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}"
+		role="USER" type="text/html"
 		provider="${setting.setupResourceProvider}"
 		properties="${setting.setupResourceProperties}"
 		wrapperElement="div"

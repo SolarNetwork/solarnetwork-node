@@ -78,6 +78,7 @@ public class SolarNodeDialect extends AbstractProcessorDialect
 	public Set<IProcessor> getProcessors(String dialectPrefix) {
 		var result = new LinkedHashSet<IProcessor>(8);
 		result.add(new ResourcesElementTagProcessor(dialectPrefix));
+		result.add(new InlineResourcesElementModelProcessor(dialectPrefix));
 		result.add(new MessageElementTagProcessor(dialectPrefix));
 
 		// remove the xmlns:snode from output

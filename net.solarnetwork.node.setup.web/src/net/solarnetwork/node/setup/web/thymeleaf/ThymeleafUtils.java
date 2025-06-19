@@ -22,9 +22,14 @@
 
 package net.solarnetwork.node.setup.web.thymeleaf;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Predicate;
 import org.thymeleaf.context.ITemplateContext;
 import org.thymeleaf.engine.AttributeName;
 import org.thymeleaf.engine.EngineEventUtils;
+import org.thymeleaf.exceptions.TemplateProcessingException;
+import org.thymeleaf.model.IAttribute;
 import org.thymeleaf.model.IProcessableElementTag;
 import org.thymeleaf.standard.expression.FragmentExpression;
 import org.thymeleaf.standard.expression.IStandardExpression;
@@ -173,4 +178,51 @@ public final class ThymeleafUtils {
 
 		return expressionResult;
 	}
+
+	/**
+	 * Process all attributes as expressions.
+	 *
+	 * @param context
+	 *        the context
+	 * @param tag
+	 *        the tag
+	 * @return the evaluated attributes, never {@literal null}
+	 */
+	public static Map<String, Object> dynamicAttributes(ITemplateContext context,
+			IProcessableElementTag tag) {
+		return dynamicAttributes(context, tag, null);
+	}
+
+	/**
+	 * Process all attributes as expressions.
+	 *
+	 * @param context
+	 *        the context
+	 * @param tag
+	 *        the tag
+	 * @param filter
+	 *        an optional filter; when provided only attributes that the filter
+	 *        confirms will be included
+	 * @return the evaluated attributes, never {@literal null}
+	 */
+	public static Map<String, Object> dynamicAttributes(ITemplateContext context,
+			IProcessableElementTag tag, Predicate<IAttribute> filter) {
+		Map<String, Object> result = new HashMap<>(8);
+		for ( IAttribute attr : tag.getAllAttributes() ) {
+			if ( filter == null || filter.test(attr) ) {
+				Object propVal = null;
+				try {
+					propVal = ThymeleafUtils.evaulateAttributeExpression(context, tag,
+							attr.getAttributeDefinition().getAttributeName(), attr.getValue(), false);
+				} catch ( TemplateProcessingException e ) {
+					propVal = attr.getValue();
+				}
+				if ( propVal != null ) {
+					result.put(attr.getAttributeCompleteName(), propVal);
+				}
+			}
+		}
+		return result;
+	}
+
 }
