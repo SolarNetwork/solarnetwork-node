@@ -11,4 +11,4 @@ requests==2.32.3
 scipy==1.14.1
 six==1.16.0
 tzdata==2024.2
-urllib3==2.2.3
+urllib3==2.5.0
