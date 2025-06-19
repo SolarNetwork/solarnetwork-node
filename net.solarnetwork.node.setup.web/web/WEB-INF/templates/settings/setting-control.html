@@ -66,7 +66,7 @@
 			
 			<div data-th-case="net.solarnetwork.settings.ToggleSettingSpecifier" data-th-remove="tag">
 			    <button type="button" class="toggle col-sm-3 btn"
-			    	data-th-classappend="${settingValue eq setting.trueValue ? 'btn-success' : 'btn-light'}"
+			    	data-th-classappend="${settingValue eq setting.trueValue ? 'btn-success active' : 'btn-light'}"
 			    	data-th-id="${settingId}"
 			    	data-th-text="${settingValue eq  setting.trueValue} ? #{settings.toggle.on} : #{settings.toggle.off}">
 			    	On
