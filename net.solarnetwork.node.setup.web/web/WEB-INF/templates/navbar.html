@@ -18,7 +18,9 @@
 	<div class="navbar navbar-expand-md bg-body-tertiary mb-3">
 		<div class="container-fluid">
 			<a class="navbar-brand" href="/" data-th-href="@{${homeUrl}}">
-				<img src="../../img/logo-node.svg" alt="SolarNode" data-th-alt="#{app.name}" width="143" height="28"/>
+				<img src="../../img/logo-node.svg" alt="SolarNode" width="143" height="28"
+					data-th-src="@{/img/logo-node.svg}" 
+					data-th-alt="#{app.name}">
 			</a>
 			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-content" 
 				aria-controls="navbar-content" aria-expanded="false" 
