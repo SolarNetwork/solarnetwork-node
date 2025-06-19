@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{footer-top :: content}, 'settings-component')}">
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'settings-component')}">
 <head>
     <title data-th-text="#{app.title(#{settings.component.title(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})})}">SolarNode</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,7 @@
 	<link rel="stylesheet" href="../../../css/fonts.css">
 	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
 </head>
-<body>
-<main data-th-remove="tag">
+<body data-th-remove="tag">
 
 <section class="intro">
 	<h2 data-th-text="#{settings.factory.title(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
@@ -397,6 +396,5 @@ $(function() {
 
 <div data-th-replace="~{settings/note-popover :: form}"></div>
 
-</main>
 </body>
 </html>
