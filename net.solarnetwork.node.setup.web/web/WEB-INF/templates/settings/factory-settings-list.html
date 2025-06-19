@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::main}, ~{footer-top :: content}, 'settings-component')}">
+<head>
+    <title data-th-text="#{app.title(#{settings.component.title(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})})}">SolarNode</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body>
+<main data-th-remove="tag">
+
+<section class="intro">
+	<h2 data-th-text="#{settings.factory.title(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
+		My Device component
+	</h2>
+	<!--/*/ <th:block th:with="serviceDesc = ${#snUtils.message('desc', '', factory.messageSource, #locale)}"> /*/-->
+	<p class="lead" data-th-unless="${#strings.isEmpty(serviceDesc)}" data-th-utext="${serviceDesc}">
+		Description here.
+	</p>
+    <!--/*/ </th:block> /*/-->
+   	<p data-th-utext="#{settings.factory.intro(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
+		Use this page to configure My Device components.
+	</p>
+	<div class="row action-progress-bar justify-content-between g-2">
+		<div class="col-auto">
+			<a href="/a/settings" data-th-href="${navloc eq 'filters-component'} ? @{/a/settings/filters} : @{/a/settings}" class="btn btn-secondary text-nowrap">
+				<i class="bi bi-arrow-left"></i>
+				<!--/*/ <th:block th:utext="${navloc eq 'filters-component'} ? #{settings.factory.back.filters.label} : #{settings.factory.back.label}"> /*/-->
+				Back
+    			<!--/*/ </th:block> /*/-->
+			</a>
+		</div>
+		<div class="col-auto">
+			<div class="row g-2">
+				<!--/*/ <th:block th:unless="${#maps.isEmpty(providers)}"> /*/-->
+					<div class="col-auto">
+						<button type="button" class="btn btn-secondary text-nowrap" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
+							<i class="bi bi-trash3"></i>
+							<!--/*/ <th:block th:utext="#{settings.factory.removeall.label(${#maps.size(providers)}, ${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}"> /*/-->
+							Remove All
+    						<!--/*/ </th:block> /*/-->
+						</button>
+					</div>
+					<div class="col-auto">
+						<a type="button" class="btn btn-secondary text-nowrap" 
+								href="/a/settings/exportFactory?uid=com.example.service"
+								data-th-href="@{/a/settings/exportFactory(uid=${factory.factoryUid})}"
+								data-th-title="#{settings.factory.downloadSettings.caption}">
+							<i class="bi bi-file-arrow-down"></i>
+							<!--/*/ <th:block th:utext="#{settings.factory.downloadSettings.label(${#maps.size(providers)}, ${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}"> /*/-->
+							Export Settings
+    						<!--/*/ </th:block> /*/-->
+						</a>
+					</div>
+    			<!--/*/ </th:block> /*/-->
+				<div class="col-auto">
+					<button type="button" class="btn btn-primary text-nowrap" id="add" data-bs-toggle="modal" data-bs-target="#add-component-instance-modal">
+						<i class="bi bi-plus-lg"></i>
+						<!--/*/ <th:block th:utext="#{settings.factory.add(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}"> /*/-->
+						Add
+   						<!--/*/ </th:block> /*/-->
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section id="settings" class="carousel slide mb-5" data-interval="0">
+	<form action="@{/a/settings/save}" method="post">
+		<div data-th-unless="${#maps.isEmpty(providers)}"
+				class="form-actions row justify-content-between align-items-baseline bg-light border-top border-bottom my-3 py-3">
+			<div class="col-auto">
+				<button type="button" class="btn btn-primary text-nowrap settings-save" id="submit" disabled
+					data-th-text="#{settings.save}">Save</button>
+			</div>
+			<div class="col">
+				<div data-th-if="${#maps.size(providers) gt 1}"
+						class="page-indicators gap-2 d-flex flex-wrap justify-content-end">
+					<button data-th-each="instance, instanceStatus : ${providers}"
+						type="button" data-bs-target="#settings"
+						data-th-data-bs-slide-to="${instanceStatus.index}"
+						data-th-data-instance-key="${instance.key}"
+						class="btn"
+						data-th-classappend="${instanceStatus.index eq 0} ? btn-warning : btn-secondary"
+						data-th-text="${instance.key}">1</button>
+				</div>
+			</div>
+		</div>
+
+		<div class="carousel-inner">
+			<!--/*/ <th:block th:each="instance, instanceStatus : ${providers}"> /*/-->
+
+			<fieldset class="carousel-item" data-th-classappend="${instanceStatus.index eq 0}?active"
+				data-th-with="provider = ${instance.value}, instanceId = ${provider.factoryInstanceUID}"
+				>
+				<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${provider.settingUid} + ' --&gt;'"></span>
+				<div class="instance-content"
+						data-th-data-bs-target="@{/a/settings/manage}"
+						data-th-data-factory-uid="${factory.factoryUid}"
+						data-th-data-instance-key="${instance.key}">
+				    <div class="progress" role="progressbar">
+						<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+				    </div>
+				</div>
+				<div class="row my-3">
+					<div class="col-sm-9 offset-sm-3"
+							data-th-with="instanceKeyIsNumber = ${instance.key.matches('[0-9]+')}">
+						<button type="button" class="btn btn-danger delete-factory-instance"
+								data-th-data-bs-target="@{/a/settings/manage/delete}"
+								data-th-data-factory-uid="${factory.factoryUid}"
+								data-th-data-instance-key="${instance.key}"
+								>
+							<!--/*/ <th:block th:utext="${instanceKeyIsNumber} 
+										? #{settings.factory.delete(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)}, ${instance.key})}
+										: #{settings.factory.delete.simple(${instance.key})}"> /*/-->
+								Delete Component 1
+	   						<!--/*/ </th:block> /*/-->
+						</button>
+						<button type="button" class="btn btn-primary reset-factory-instance"
+								data-th-data-bs-target="@{/a/settings/manage/reset}"
+								data-th-data-factory-uid="${factory.factoryUid}"
+								data-th-data-instance-key="${instance.key}"
+								>
+							<!--/*/ <th:block th:utext="${instanceKeyIsNumber} 
+										? #{settings.factory.reset(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)}, ${instance.key})}
+										: #{settings.factory.reset.simple(${instance.key})}"> /*/-->
+								Reset Component 1
+	   						<!--/*/ </th:block> /*/-->
+						</button>
+					</div>
+				</div>
+			</fieldset>
+			<!--/*/ </th:block> /*/-->
+		</div>
+	</form>
+</section>
+<script data-th-inline="javascript">
+$(function() {
+	$('#submit').on('click', function() {
+		SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
+			success: /*[[#{settings.save.success.msg}]]*/   'Saved',
+			error:   /*[[#{settings.save.error.msg}]]*/     'Error',
+			title:   /*[[#{settings.save.result.title}]]*/  'Result',
+			button:  /*[[#{ok.label}]]*/                    'OK',
+		});
+	});
+	SolarNode.Settings.reset();
+});
+</script>
+<div id="alert-delete" class="alert alert-danger alert-dismissible my-3 hidden">
+	<button type="button" class="btn-close" data-bs-dismiss="alert" data-th-aria-label="#{close.label}"></button>
+	<h4 data-th-text="#{settings.factory.delete.alert.title}">Delete Alert</h4>
+	<p data-th-utext="#{settings.factory.delete.alert.msg}">
+		Are you sure you want to do delete?
+	</p>
+	<button type="button" class="btn btn-danger submit" data-th-text="#{delete.label}">
+		Delete
+	</button>
+</div>
+<div id="alert-reset" class="alert alert-danger alert-dismissible my-3 hidden">
+	<button type="button" class="btn-close" data-bs-dismiss="alert" data-th-aria-label="#{close.label}"></button>
+	<h4 data-th-text="#{settings.factory.reset.alert.title}">Reset</h4>
+	<p data-th-utext="#{settings.factory.reset.alert.msg}">
+		Are you sure you want to reset?
+	</p>
+	<button type="button" class="btn btn-danger submit" data-th-text="#{reset.label}">
+		Reset
+	</button>
+</div>
+<form id="remove-all-component-instance-modal" class="modal fade dynamic"
+		data-th-action="@{/a/settings/manage/removeall}" method="post">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{settings.factory.removeall.title}">Remove All</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{settings.factory.removeall.intro(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
+					Are you sure you want to remove all?
+				</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{cancel.label}">
+					Cancel
+				</button>
+				<button type="submit" class="btn btn-danger" data-th-text="#{settings.factory.removeall.remove.label}">
+					Remove All
+				</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="uid" value="${factory.factoryUid}"/>
+</form>
+<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
+		data-th-action="@{/a/location}" method="get">
+	<div class="modal-dialog modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{lookup.price.title}">Lookup Price</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-text="#{lookup.price.intro}">
+					Look up price here.
+				</p>
+				<div class="input-group my-3">
+					<input type="text" class="form-control" maxlength="64" name="query" data-th-placeholder="#{lookup.price.search.placeholder}">
+					<button type="submit" class="btn btn-primary" data-th-data-loading-text="#{lookup.searching.label}">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status" data-th-text="#{lookup.action.search}">Search</span>
+					</button>
+				</div>
+
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th data-th-text="#{lookup.price.sourceName}">Source</th>
+							<th data-th-text="#{lookup.price.locationName}">Name</th>
+							<th data-th-text="#{lookup.price.country}">Country</th>
+							<th data-th-text="#{lookup.price.region}">Region</th>
+							<th data-th-text="#{lookup.price.currency}">Currency</th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sourceId"></td>
+							<td data-tprop="m.name"></td>
+							<td data-tprop="location.country"></td>
+							<td data-tprop="location.region"></td>
+							<td data-tprop="m.currency"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+				<label id="price-lookup-selected-label" class="hidden">
+					<!--/*/ <th:block th:text="#{lookup.selected.label}"> /*/-->
+						Lookup
+  						<!--/*/ </th:block> /*/-->
+					<span id="price-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</a>
+				<button type="button" class="btn btn-primary choose" disabled="disabled" data-th-text="#{lookup.action.choose}">
+					Choose
+				</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="tags" value="price"/>
+</form>
+<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
+		data-th-action="@{/a/location}" method="get">
+	<div class="modal-dialog modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{lookup.weather.title}">Lookup Weather</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{lookup.weather.intro}">
+					Look up weather here.
+				</p>
+				<div class="input-group my-3">
+					<input type="text" class="form-control" maxlength="64" name="query" data-th-placeholder="#{lookup.weather.search.placeholder}">
+					<button type="submit" class="btn btn-primary" data-th-data-loading-text="#{lookup.searching.label}">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status" data-th-text="#{lookup.action.search}">Search</span>
+					</button>
+				</div>
+
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th data-th-text="#{lookup.weather.sourceName}">Source</th>
+							<th data-th-text="#{lookup.weather.country}">Country</th>
+							<th data-th-text="#{lookup.weather.region}">Region</th>
+							<th data-th-text="#{lookup.weather.locality}">Locality</th>
+							<th data-th-text="#{lookup.weather.postalCode}">Postal Code</th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sourceId"></td>
+							<td data-tprop="location.country"></td>
+							<td data-tprop="location.region"></td>
+							<td data-tprop="location.locality"></td>
+							<td data-tprop="location.postalCode"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+				<label id="weather-lookup-selected-label" class="hidden">
+					<!--/*/ <th:block th:text="#{lookup.selected.label}"> /*/-->
+						Lookup
+  					<!--/*/ </th:block> /*/-->
+					<span id="weather-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</a>
+				<button type="button" class="btn btn-primary choose" disabled="disabled" data-th-text="#{lookup.action.choose}">
+					Choose
+				</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="tags" value="weather"/>
+</form>
+<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
+		data-th-action="@{/a/location}" method="get">
+	<div class="modal-dialog modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{lookup.co2.title}">Lookup CO2</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{lookup.co2.intro}">
+					Look up CO2 here.
+				</p>
+				<div class="input-group my-3">
+					<input type="text" class="form-control" maxlength="64" name="query" data-th-placeholder="#{lookup.co2.search.placeholder}"/>
+					<button type="submit" class="btn btn-primary" data-th-data-loading-text="#{lookup.searching.label}">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status" data-th-text="#{lookup.action.search}">Search</span>
+					</button>
+				</div>
+
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th data-th-text="#{lookup.co2.sourceName}">Source</th>
+							<th data-th-text="#{lookup.co2.locationName}">Location</th>
+							<th data-th-text="#{lookup.co2.country}">Country</th>
+							<th data-th-text="#{lookup.co2.region}">Region</th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sourceId"></td>
+							<td data-tprop="m.name"></td>
+							<td data-tprop="location.country"></td>
+							<td data-tprop="location.region"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+				<label id="co2-lookup-selected-label" class="hidden">
+					<!--/*/ <th:block th:text="#{lookup.selected.label}"> /*/-->
+						Lookup
+  					<!--/*/ </th:block> /*/-->
+					<span id="co2-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</a>
+				<button type="button" class="btn btn-primary choose" disabled="disabled" data-th-text="#{lookup.action.choose}">
+					Choose
+				</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="tags" value="co2"/>
+</form>
+<form id="add-component-instance-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/settings/manage/add'/>" method="post">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{settings.factory.add(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
+					Add Component
+				</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{settings.factory.add.intro}">
+					Add new component.
+				</p>
+				<p class="text-secondary name-error"><small data-th-text="#{settings.factory.add.caption}">Add</small></p>
+				<div class="col-12">
+					<input type="text" class="form-control name-error" maxlength="32" name="name" id="add-component-instance-name"
+						data-th-placeholder="#{settings.factory.add.placeholder}">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<input type="hidden" name="uid" data-th-value="${factory.factoryUid}"/>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary" data-th-text="#{settings.factory.add.label}">Add</button>
+			</div>
+		</div>
+	</div>
+</form>
+
+<div data-th-replace="~{settings/note-popover :: form}"></div>
+
+</main>
+</body>
+</html>

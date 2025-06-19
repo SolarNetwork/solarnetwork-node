@@ -11,7 +11,7 @@
 	groupSettingId - an optional group setting ID
 	groupIndex - an optional group index
 */-->
-<html xmlns:th="http://www.thymeleaf.org" xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<html xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
 <head>
     <title>Edit Note</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +20,7 @@
 	<link rel="stylesheet" href="../../../css/fonts.css">
 	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
 </head>
-<body data-th-fragment="content (settingId)"
+<body data-th-fragment="content (settingId)" data-th-remove="tag"
 	data-th-with="settingValue = ${#snUtils.settingValue(settingsService, provider, setting)}">
 
 	<snode:resources data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}"
@@ -29,12 +29,12 @@
 		properties="${setting.setupResourceProperties}"
 		wrapperElement="div"
 		wrapperClass="form-group setup-resource-container"
-		data-th-id="${'cg-' + settingId}"
+		id="${'cg-' + settingId}"
 		data-provider-id="${provider.settingUid}"
 		data-setting-id="${settingId}"
 		data-instance-id="${instanceId}"
 		data-group-index="${groupIndex}"
-		></snode:resources>
+		/>
 
 	<div class="row mb-3" data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')}"
 		data-th-id="${'cg-' + settingId}">
@@ -261,9 +261,9 @@
 			</div>
 			
 			<div data-th-case="net.solarnetwork.node.settings.LocationLookupSettingSpecifier" data-th-remove="tag">
-				<span id="${settingId}">
+				<span data-th-id="${settingId}">
 					<span class="setting-value"
-						data-th-text="${#strings.isEmpty(setting.sourceName)} ? #{lookup.selected.item(${setting.locationName}, ${setting.sourceName})}">
+						data-th-text="${not #strings.isEmpty(setting.sourceName)} ? #{lookup.selected.item(${setting.locationName}, ${setting.sourceName})}">
 						Location Name
 					</span>
 					<button type="button" class="btn btn-primary" data-th-text="#{settings.change}">

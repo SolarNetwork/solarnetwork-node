@@ -26,7 +26,7 @@
 				<div class="row setting-components">
 					<div class="col">
 						<div data-th-each="factory,factoryStatus : ${factories}" class="row my-3 justify-content-between align-items-center">
-							<!--  ${factory.factoryUid} -->
+							<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${factory.factoryUid} + ' --&gt;'"></span>
 							<div class="col">
 								<div class="row">
 									<div class="col-2 col-sm-1">
