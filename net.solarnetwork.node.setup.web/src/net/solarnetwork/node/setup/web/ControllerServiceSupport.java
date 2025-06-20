@@ -23,8 +23,8 @@
 package net.solarnetwork.node.setup.web;
 
 import static net.solarnetwork.service.OptionalService.service;
-import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.context.request.WebRequest;
@@ -73,16 +73,20 @@ public class ControllerServiceSupport {
 	 */
 	public static final String METRIC_DAO_ATTRIBUTE = "metricDao";
 
-	@Resource(name = "systemService")
+	@Autowired
+	@Qualifier("systemService")
 	private OptionalService<SystemService> systemService;
 
-	@Resource(name = "platformPackageService")
+	@Autowired
+	@Qualifier("platformPackageService")
 	private OptionalService<PlatformPackageService> platformPackageService;
 
-	@Resource(name = "pluginService")
+	@Autowired
+	@Qualifier("pluginService")
 	private OptionalService<PluginService> pluginService;
 
-	@Resource(name = "metricDao")
+	@Autowired
+	@Qualifier("metricDao")
 	private OptionalService<MetricDao> metricDao;
 
 	@Autowired
