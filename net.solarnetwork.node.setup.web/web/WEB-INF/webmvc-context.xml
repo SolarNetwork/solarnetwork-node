@@ -35,6 +35,10 @@
 			<bean class="org.springframework.security.web.method.annotation.CsrfTokenArgumentResolver"/>
 		</mvc:argument-resolvers>
 	</mvc:annotation-driven>
+	
+	<mvc:interceptors>
+		<bean class="net.solarnetwork.node.setup.web.support.StatusMessageHandlerInterceptor"/>
+	</mvc:interceptors>
 
 	<mvc:cors>
 		<mvc:mapping path="/pub/**"

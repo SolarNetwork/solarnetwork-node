@@ -53,15 +53,15 @@
 				</a>
 			</div>
 		</div>
-		<div class="container" data-th-if="${statusMessageKey}">
-			<div class="alert alert-success" data-th-utext="${#strings.startsWith(statusMessageKey, 'registration.')}
-				? #{__${statusMessageKey}__(${#authentication.principal.username})}
-				: #{__${statusMessageKey}__(${statusMessageKeyParam0})}">
+		<div class="container" data-th-if="${session != null && session.statusMessageKey != null}">
+			<div class="alert alert-success" data-th-utext="${#strings.startsWith(session.statusMessageKey, 'registration.')}
+				? #{__${session.statusMessageKey}__(${#authentication.principal.username})}
+				: #{__${session.statusMessageKey}__(${session.statusMessageParam0})}">
 				Status alert.
 			</div>
 		</div>
-		<div class="container" data-th-if="${errorMessageKey}">
-			<div class="alert alert-warning" data-th-utext="#{__${errorMessageKey}__(${errorMessageKeyParam0})}">
+		<div class="container" data-th-if="${session != null && session.errorMessageKey != null}">
+			<div class="alert alert-warning" data-th-utext="#{__${session.errorMessageKey}__(${session.errorMessageParam0})}">
 				Status alert.
 			</div>
 		</div>
