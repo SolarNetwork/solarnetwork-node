@@ -1,21 +1,21 @@
 /* ==================================================================
  * BackupController.java - 2/11/2016 8:39:46 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,8 +31,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,9 +50,9 @@ import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller for backup support.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @Controller
 @RequestMapping("/a/backups")
@@ -60,7 +60,8 @@ public class BackupController extends BaseSetupController {
 
 	private Future<Backup> importTask;
 
-	@Resource(name = "backupManager")
+	@Autowired
+	@Qualifier("backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
 
 	@Autowired
@@ -75,8 +76,8 @@ public class BackupController extends BaseSetupController {
 
 	/**
 	 * Get a list of all available backups from the active backup service.
-	 * 
-	 * @return All avaialble backups.
+	 *
+	 * @return All available backups.
 	 */
 	@RequestMapping(value = { "", "/" }, method = RequestMethod.GET)
 	@ResponseBody
@@ -95,7 +96,7 @@ public class BackupController extends BaseSetupController {
 
 	/**
 	 * Create a new backup.
-	 * 
+	 *
 	 * @return the backup
 	 */
 	@RequestMapping(value = "/create", method = RequestMethod.POST)
@@ -111,7 +112,7 @@ public class BackupController extends BaseSetupController {
 
 	/**
 	 * Import a backup into the system.
-	 * 
+	 *
 	 * @param file
 	 *        The backup archive to import. The archive should be one returned
 	 *        from a previous call to
@@ -140,7 +141,7 @@ public class BackupController extends BaseSetupController {
 	/**
 	 * Check on the last import task, returning the backup {@code key} if the
 	 * import completed.
-	 * 
+	 *
 	 * @return The response.
 	 */
 	@RequestMapping(value = "/import", method = RequestMethod.GET)
@@ -158,7 +159,7 @@ public class BackupController extends BaseSetupController {
 
 	/**
 	 * Get information about a backup.
-	 * 
+	 *
 	 * @param key
 	 *        The key of the backup to get the information for.
 	 * @param locale
@@ -182,7 +183,7 @@ public class BackupController extends BaseSetupController {
 
 	/**
 	 * Restore a backup.
-	 * 
+	 *
 	 * @param options
 	 *        the options
 	 * @param locale

@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,7 +56,7 @@ import net.solarnetwork.web.jakarta.domain.Response;
  * Controller to manage the installed bundles via an OBR.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @ServiceAwareController
 @RequestMapping("/a/plugins")
@@ -113,7 +113,8 @@ public class PluginController {
 
 	}
 
-	@Resource(name = "pluginService")
+	@Autowired
+	@Qualifier("pluginService")
 	private OptionalService<PluginService> pluginService;
 
 	@Autowired(required = true)

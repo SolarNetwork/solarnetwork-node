@@ -23,7 +23,8 @@
 package net.solarnetwork.node.setup.web;
 
 import static net.solarnetwork.domain.Result.success;
-import javax.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,14 +39,15 @@ import net.solarnetwork.web.jakarta.domain.Response;
  * Controller to manage the initial home screen.
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  * @since 1.23
  */
 @ServiceAwareController
 @RequestMapping("/a/home")
 public class HomeController {
 
-	@Resource(name = "systemService")
+	@Autowired
+	@Qualifier("systemService")
 	private OptionalService<SystemService> systemService;
 
 	/**

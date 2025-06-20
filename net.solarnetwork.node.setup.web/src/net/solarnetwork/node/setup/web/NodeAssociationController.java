@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
-import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -79,7 +79,7 @@ import net.solarnetwork.web.jakarta.domain.Response;
  *
  * @author maxieduncan
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -135,19 +135,24 @@ public class NodeAssociationController extends BaseSetupController {
 	@Autowired
 	private UserService userService;
 
-	@Resource(name = "authenticationManager")
+	@Autowired
+	@Qualifier("authenticationManager")
 	private AuthenticationManager authenticationManager;
 
-	@Resource(name = "settingsService")
+	@Autowired
+	@Qualifier("settingsService")
 	private OptionalService<SettingsService> settingsServiceTracker;
 
-	@Resource(name = "backupManager")
+	@Autowired
+	@Qualifier("backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
 
-	@Resource(name = "networkLinks")
+	@Autowired
+	@Qualifier("networkLinks")
 	private Map<String, String> networkURLs = new HashMap<String, String>(4);
 
-	@Resource(name = "associationSettingProviders")
+	@Autowired
+	@Qualifier("associationSettingProviders")
 	private OptionalServiceCollection<SettingSpecifierProvider> settingProviders;
 
 	/**
