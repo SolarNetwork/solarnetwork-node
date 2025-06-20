@@ -11,7 +11,7 @@
 		<meta name="csrf_header" content="X-CSRF-TOKEN" data-th-content="${_csrf.headerName}" data-th-if="${_csrf}">
 		<meta name="base-path" content="/" data-th-content="@{/}">
 		<meta name="authenticated" content="true" sec:authorize="hasRole('ROLE_USER')">
-		<meta name="nodeId" data-th-content="${identityService.nodeId}" sec:authorize="hasRole('ROLE_USER')">
+		<meta name="nodeId" data-th-content="${identityService != null ? identityService.nodeId : ''}" sec:authorize="hasRole('ROLE_USER')">
 		<link rel="stylesheet" href="../../css/bootstrap.css" data-th-href="@{/css/bootstrap.css}">
 		<link rel="stylesheet" href="../../css/solarnode.css" data-th-href="@{/css/solarnode.css}">
 		<link rel="stylesheet" href="../../css/fonts.css" data-th-href="@{/css/fonts.css}">
