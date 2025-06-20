@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'backups')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{backups.title})}">SolarNode Backups</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section>
+	<h2>
+		<a id="settings-backup-section" href="#settings-backup-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-text="#{settings.io.title}">Settings Backup</span>
+	</h2>
+	<p data-th-utext="#{settings.io.intro(@{#backup-section})}">
+		Manage settings backups here.
+	</p>
+
+	<div class="row">
+		<label class="col-sm-4 col-md-3 col-form-label" for="export.btn" data-th-text="#{settings.io.export.label}">
+			Export
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<a class="btn btn-primary" id="export.btn" href="/a/settings/export" data-th-href="@{/a/settings/export}"
+					data-th-text="#{settings.io.export.button}">
+				Export
+			</a>
+		</div>
+	</div>
+	<form class="row mt-3" action="/a/settings/import" method="post" enctype="multipart/form-data"
+			data-th-action="@{/a/settings/import}">
+		<label class="col-sm-4 col-md-3 col-form-label" for="import.field" data-th-text="#{settings.io.import.label}">
+			Import
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<div class="input-group mb-3">
+				<input class="form-control" id="import.field" type="file" name="file" aria-describedby="settings-il-import-button" required>
+				<button class="btn btn-primary" id="settings-il-import-button" type="submit" data-th-text="#{settings.io.import.button}">Import</button>
+			</div>
+		</div>
+	</form>
+	<form class="row mt-3" data-th-unless="${#lists.isEmpty(settingResourceList)}">
+		<label class="col-sm-4 col-md-3 col-form-label" for="settings-resource-ident" data-th-text="#{settings.io.exportResource.label}">
+			Export Resource
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<div class="input-group">
+				<select class="form-select settings-resource-ident" id="settings-io-export-ident">
+					<option data-th-each="resource : ${settingResourceList}"
+							data-th-data-handler="${resource.handlerKey}"
+							data-th-data-key="${resource.key}"
+							data-th-text="${resource.name}">My Resource</option>
+				</select>
+				<button type="button" class="btn btn-primary settings-resource-export"
+					data-th-data-action="@{/a/settings/exportResources}"
+					data-target="#settings-io-export-ident"
+					data-th-text="#{settings.io.export.button}">Export</button>
+			</div>
+		</div>
+	</form>
+	<div class="row mt-3" data-th-unless="${#lists.isEmpty(settingsBackups)}">
+		<label class="col-sm-4 col-md-3 col-form-label" for="auto-backups" data-th-text="#{settings.autobackup.label}">
+			Auto Backups
+		</label>
+		<div class="col-sm-7 col-md-8 pt-1">
+			<p data-th-each="backup, backupStatus : ${settingsBackups}">
+ 					<a class="btn btn-sm btn-link" href="/a/settings/export?backup=my.backup"
+ 							data-th-href="@{/a/settings/export(backup=${backup.backupKey})}"
+ 							data-th-text="#{settings.autobackup.download.button(${backup.standardDateString})}">
+					Backup XYZ
+				</a>
+			</p>
+		</div>
+		<div class="col-sm-1 mt-1">
+			<button type="button" class="help-popover help-icon" tabindex="-1"
+					data-th-data-bs-content="#{settings.autobackup.info}"
+					data-bs-html="true"
+					data-th-title="#{help.label}">
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
+			</button>
+		</div>
+	</div>
+</section>
+
+<section class="intro">
+	<h2>
+		<a id="backup-section" href="#backup-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-text="#{backup.title}">Full Backup</span>
+	</h2>
+	<p data-th-unless="${backupManager}" data-th-text="#{backup.unavailable}">
+		No BackupManager available.
+	</p>
+
+	<!--/*/ <th:block th:if="${backupManager}"> /*/-->
+	<p data-th-utext="#{backup.intro(@{#settings-backup-section})}">
+		Manage full backups here.
+	</p>
+
+	<form id="backups-choose-backup-form" action="/a/settings/save" method="post"
+			data-th-action="@{/a/settings/save}">
+			
+		<!--/*/ <th:block th:with="provider = ${backupManager}"> /*/-->
+		<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
+			<div data-th-replace="~{settings/setting-control :: content('bm0i'+${settingStatus.index})}"></div>
+		</div>
+   		 <!--/*/ </th:block> /*/-->
+		
+		<!--/*/ <th:block th:if="${backupService}" th:with="provider = ${backupService.settingSpecifierProvider}"> /*/-->
+		<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
+			<div data-th-replace="~{settings/setting-control :: content('bs0i'+${settingStatus.index})}"></div>
+		</div>
+   		<!--/*/ </th:block> /*/-->
+		
+		<div class="form-actions d-grid my-5">
+			<button type="button" class="btn btn-primary settings-save" id="backups-apply-settings" disabled
+					data-th-text="#{backup.settings.save}">Save</button>
+		</div>
+	</form>		
+	<script data-th-inline="javascript">
+	$(function() {
+		$('#backups-apply-settings').on('click', function() {
+			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
+				success: /*[[#{settings.save.success.msg}]]*/ 'Saved',
+				error:   /*[[#{settings.save.error.msg}]]*/ 'Error saving settings.',
+				title:   /*[[#{settings.save.result.title}]]*/ 'Setttings have been saved.',
+				button:  /*[[#{ok.label}]]*/ 'OK',
+			});
+		});
+	});
+	</script>
+
+	<form class="row mt-5" id="create-backup-form" action="/a/backups/create" method="post"
+			data-th-action="@{/a/backups/create}">
+		<label class="col-sm-4 col-md-3 col-form-label" for="backup-backups" data-th-text="#{backup.now.label}">
+			Backup Now
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<button class="btn btn-primary" type="submit" id="backup-now-btn" data-loading-text=" ">
+				<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+				<span role="status" data-th-text="#{backup.now.button}">Backup</span>
+			</button>
+		</div>
+		<div class="col-sm-1 mt-1">
+			<button type="button" class="help-popover help-icon" tabindex="-1"
+				data-th-title="#{help.label}" 
+				data-th-data-bs-content="#{backup.now.caption}"
+				data-bs-html="true">
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
+			</button>
+		</div>
+	</form>
+
+	<form class="row mt-3" id="backup-list-form" action="/a/settings/exportBackup"
+			data-th-action="@{/a/settings/exportBackup}">
+		<label class="col-sm-4 col-md-3 col-form-label" for="backup-backups" data-th-text="#{backup.backups.label}">
+			Backups
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<div class="row g-3">
+				<div class="col-sm-6">
+					<select name="backup" class="form-select" id="backup-backups">
+						<option data-th-each="backup, backupStatus : ${backups}"
+								data-th-value="${backup.key}"
+								data-th-text="#{backup.backups.backup.label(${backup.nodeId}, ${#dates.format(backup.date, 'dd MMM yyyy HH:mm')})} + (${backup.qualifier} ? ('&mdash;' + ${backup.qualifier}) : '')">
+						</option>
+					</select>
+				</div>
+				<div class="col-auto">
+					<button type="submit" class="btn btn-primary" data-th-text="#{backup.download.button}">
+						Download
+					</button>
+				</div>
+				<div class="col-auto">
+					<button type="button" class="btn btn-warning" id="backup-restore-button" data-th-text="#{backup.restore.button}">
+						Restore
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-1 mt-1">
+			<button type="button" class="help-popover help-icon" tabindex="-1"
+					data-th-title="#{help.label}" 
+					data-bs-content="#{backup.backups.info}"
+					data-bs-html="true">
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
+			</button>
+		</div>
+	</form>
+
+	<form class="row mt-3" action="<setup:url value='/a/settings/importBackup'/>" method="post" enctype="multipart/form-data">
+		<label class="col-sm-4 col-md-3 col-form-label" for="backup-import-field" data-th-text="#{backup.import.label}">
+			Import
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<div class="input-group">
+				<input class="form-control" id="backup-import-field" type="file" name="file" aria-describedby="backup-import-button" required>
+				<button class="btn btn-primary" id="backup-import-button" type="submit" data-th-text="#{backup.import.button}">Import</button>
+			</div>
+		</div>
+		<div class="col-sm-1 mt-1">
+			<button type="button" class="help-popover help-icon" tabindex="-1"
+					data-th-title="#{help.label}" 
+					data-th-data-bs-content="#{backup.import.info}"
+					data-bs-html="true">
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
+			</button>
+		</div>
+	</form>
+	<form id="backup-restore-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false"
+			action="/a/backups/restore" method="post"
+			data-th-action="@{/a/backups/restore}">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title" data-th-text="#{backup.restore.title}">Restore</h3>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+				</div>
+				<div class="modal-body">
+					<p data-th-utext="#{backup.restore.intro}">Restore backups here.</p>
+					<div id="backup-restore-list-container" class="menu-list noselect"
+						data-th-data-msg-items="#{items}"
+						data-th-data-msg-item="#{item}"></div>
+					<div class="progress hidden" role="progressbar">
+						<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+			    	</div>
+				</div>
+				<div class="modal-footer">
+					<input type="hidden" name="key" value=""/>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+					<button type="submit" class="btn btn-danger ladda-button expand-right" data-th-text="#{backup.restore.button}">Restore</button>
+				</div>
+			</div>
+		</div>
+	</form>
+    <!--/*/ </th:block> /*/-->
+</section>
+
+</body>
+</html>
