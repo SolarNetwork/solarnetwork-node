@@ -115,7 +115,7 @@
 								data-th-href="@{/a/packages}"
 								data-th-text="#{link.packages}">Packages</a></li>
 							<li data-th-if="${platformPackageService}"><a class="dropdown-item" href="/a/plugins"  id="link-plugins"
-								data-th-classappend="${navloc == 'plugins' ?active}"
+								data-th-classappend="${navloc == 'plugins'}?active"
 								data-th-href="@{/a/plugins}"
 								data-th-text="#{link.plugins}">Plugins</a></li>
 							<li role="separator" data-th-if="${systemService}"><hr class="dropdown-divider"></li>
