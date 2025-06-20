@@ -141,7 +141,7 @@ public class PackageController {
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
-		return "packages/list";
+		return "packages";
 	}
 
 	private UnsupportedOperationException serviceNotAvailable(Locale locale) {

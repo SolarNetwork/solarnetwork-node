@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'packages')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{packages.title})}">SolarNode Packages</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<p data-th-utext="#{packages.intro}">Packages here.</p>
+	<div class="row justify-content-end">
+		<div class="col-auto">
+			<button id="packages-refresh" class="btn btn-primary"
+				data-th-data-loading-text="#{packages.refreshing.message}">
+				<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+				<span role="status" data-th-text="#{packages.refresh.link}">Refresh</span>
+			</button>
+		</div>
+	</div>
+</section>
+<div class="init">
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
+    </div>
+</div>
+<div class="ready hidden">
+
+	<section id="packages-upgradable" class="hidden">
+		<h2 data-th-text="#{packages.upgradable.title}">Upgradable Packages</h2>
+		<div class="row justify-content-between">
+			<div class="col-auto">
+				<p data-th-utext="#{packages.upgradable.intro}">Upgradable packages here.</p>
+			</div>
+			<form class="col-auto">
+				<button type="button" class="btn btn-info" 
+						data-bs-target="#packages-upgrade-modal"
+						data-bs-toggle="modal" data-th-text="#{packages.upgrade.button}">Upgrade All</button>
+			</form>
+		</div>
+		<div class="row template hbox" style="align-items: center;">
+			<div class="col-md-8">
+				<button class="btn btn-link edit-item" data-tprop="name">My package</button>
+			</div>
+			<div class="col-md-4">
+				<span data-tprop="version">1.2.3</span>
+			</div>
+		</div>
+		<div class="list-content">
+		</div>
+	</section>
+
+	<section id="packages-installed" data-th-data-msg-remove="#{package.remove.button}">
+		<h2 id="installed-packages" data-th-text="#{packages.installed.title}">Installed Packages</h2>
+		<div class="row justify-content-between">
+			<div class="col-md-9">
+				<p data-th-utext="#{packages.installed.intro}">Installed packages here.</p>
+			</div>
+			<form class="col-md-3 text-right form-inline">
+				<input type="search" id="installedSearchFilter" 
+						class="form-control search-query"
+						data-th-placeholder="#{packages.filter.label}"
+						value="solarnode">
+			</form>
+		</div>
+		
+		<div class="row template hbox" style="align-items: center;">
+			<div class="col-md-8">
+				<button class="btn btn-link edit-item" data-tprop="name">My package</button>
+			</div>
+			<div class="col-md-4">
+				<span data-tprop="version">1.2.3</span>
+			</div>
+		</div>
+		<div class="list-content"></div>
+	</section>
+	
+	<section id="packages">
+		<h2 id="available-packages" data-th-text="#{packages.available.title}">Available Packages</h2>
+		<div class="row">
+			<div class="col-md-9">
+				<p data-th-utext="#{packages.available.intro}">Available packages here.</p>
+			</div>
+			<form class="col-md-3 text-right form-inline">
+				<input type="search" id="availableSearchFilter" 
+						class="form-control search-query"
+						data-th-placeholder="#{packages.filter.label}"
+						value="solarnode">
+			</form>
+		</div>
+		<div class="row template hbox" style="align-items: center;">
+			<div class="col-md-8">
+				<button class="btn btn-link edit-item" data-tprop="name">My package</button>
+			</div>
+			<div class="col-md-4">
+				<span data-tprop="version">1.2.3</span>
+			</div>
+		</div>
+		<div class="list-content"></div>
+	</section>
+</div>
+
+<div class="hidden">
+	<div id="more-packages"><div class="row">
+		<div class="col-md-12"><p class="test-muted" data-th-utext="#{packages.more.message}">More...</p></div>
+	</div></div>
+</div>
+
+
+<form id="packages-upgrade-modal" class="packages modal fade" action="/a/packages/upgrade" method="post"
+		data-th-action="@{/a/packages/upgrade}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{packages.upgrade.title}">Upgrade Packages</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body before">
+				<p data-th-text="#{packages.upgrade.intro}">Upgrade packages here.</p>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="success" data-th-utext="#{packages.upgrade.success}">Success.</p>
+				<p class="error hidden" data-th-utext="#{packages.upgrade.error}">Error.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-warning hidden after success restart"
+						data-th-title="#{link.restart}"
+						data-th-if="${systemService}" data-th-text="#{link.restart}">
+					Restart
+				</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary before"
+						data-th-data-loading-text="#{packages.upgrading.message}">					
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status" data-th-text="#{packages.upgrade.button}">Upgrade All</span>
+				</button>
+			</div>
+		</div>
+	</div>
+</form>
+
+<form id="package-install-modal" class="packages modal fade" action="/a/packages/install" method="post"
+		data-th-action="@{/a/packages/install}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{package.install.title}">Install Package</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body before">
+				<p data-th-utext="#{package.install.intro}">Install package here.</p>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="success" data-th-utext="#{package.install.success}">Success.</p>
+				<p class="error hidden" data-th-utext="#{package.install.error}">Error.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-warning hidden after success restart"
+						data-th-title="#{link.restart}"
+						data-th-if="${systemService}"
+						data-th-text="#{link.restart}">
+					Restart
+				</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary before"
+						data-th-data-loading-text="#{package.installing.message}">
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status" data-th-text=#{package.install.button}>Install</span>
+				</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="name">
+</form>
+
+<form id="package-remove-modal" class="packages modal fade" action="/a/packages/remove" method="post"
+		data-th-action="@{/a/packages/remove}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{package.remove.title}">Remove Package</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body before">
+				<p data-th-utext="#{package.remove.intro}">Remove package here.</p>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="success" data-th-utext="#{package.remove.success}">Success.</p>
+				<p class="error hidden" data-th-utext="#{package.remove.error}">Error.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-warning hidden after success restart"
+						data-th-title="#{link.restart}"
+						data-th-if="${systemService}"
+						data-th-text="#{link.restart}">
+					Restart
+				</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-danger ladda-button expand-right before"
+						data-th-data-loading-text="#{package.removing.message}">						
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status" data-th-text="#{package.remove.button}">Remove</span>
+				</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="name">
+</form>
+
+</body>
+</html>
