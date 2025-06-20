@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'cert')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{certs.home.title})}">SolarNode Certificates</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<h2 data-th-text="#{certs.home.title}">Certificates</h2>
+<p data-th-utext="#{certs.home.intro}">Manage certificates.</p>
+
+<table class="table">
+	<thead>
+		<tr>
+			<th data-th-text="#{certs.status.label}">Status</th>
+			<th data-th-text="#{certs.subject.label}">Subject</th>
+			<th data-th-text="#{certs.serialNumber.label}">Serial Number</th>
+			<th data-th-text="#{certs.expiration.label}">Expiration</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+				<span class="label label-danger" data-th-if="${nodeCertExpired}" data-th-text="#{certs.status.expired}">Expired</span>
+				<span class="label label-success" data-th-if="${nodeCertValid}" data-th-text="#{certs.status.valid}">Valid</span>
+				<span class="label label-warning" data-th-unless="${nodeCertExpired or nodeCertValid}" data-th-text="#{certs.status.pending}">Pending</span>
+			</td>
+			<td>
+				
+				<!--/*/ <th:block th:if="${nodeCert}"> /*/-->
+				<span data-th-text="${nodeCert.subjectDN}" data-th-remove="tag">UID=1,O=SolarNetwork</span><br/>
+				<small class="test-muted col-md-6">
+					<span data-th-text="#{certs.subject.issuedby}" data-th-remove="tag">Issued By</span>
+					<span> </span>
+					<em data-th-text="${nodeCert.issuerDN}">CN=CA,O=SolarNetwork</em>
+				</small>
+    			<!--/*/ </th:block> /*/-->
+			</td>
+			<td data-th-text="${nodeCertSerialNumber}">
+				1234
+			</td>
+			<td>
+				<span data-th-if="${nodeCertValid}" data-th-remove="tag"
+						data-th-text="${#dates.format(nodeCert.notAfter, 'dd MMM yyyy HH:mm')}">2000-01-01</span>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<div class="row">
+	<div class="col-md-12">
+		<a class="btn btn-secondary" id="btn-view-node-csr" href="/a/certs/nodeCSR"
+				data-th-href="@{/a/certs/nodeCSR}"
+				data-th-text="#{certs.action.csr}">
+			View CSR
+		</a>
+		<a class="btn" id="btn-view-node-csr" href="#import-cert-modal" data-bs-toggle="modal"
+				data-th-classappend="${nodeCertValid} ? btn-secondary : btn-primary"
+				data-th-text="#{certs.action.import}">
+			Import
+		</a>
+		<a class="btn btn-secondary" id="btn-renew-node-cert" href="/a/certs/renew"
+				data-th-href="@{/a/certs/renew}"
+				data-th-if="${nodeCert}"
+				data-th-text="#{certs.action.renew}">
+			Renew
+		</a>
+		<a class="btn" id="btn-export-node-cert" href="/a/certs/nodeCert"
+				data-th-classappend="${nodeCertValid} ? btn-secondary : btn-primary"
+				data-th-href="@{/a/certs/nodeCert}"
+				data-th-text="#{certs.action.view}">
+			View
+		</a>
+	</div>
+</div>
+
+<form id="import-cert-modal" class="modal fade" action="<setup:url value='/a/certs/import'/>" method="post" enctype="multipart/form-data">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{certs.import.title}">Import Certificates</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{certs.import.intro}">Import certificates here.</p>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="import-cert-file" data-th-text="#{certs.import.file.label}">
+						File
+					</label>
+					<input class="form-control" id="import-cert-file" type="file" name="file">
+				</div>
+
+				<div class="alert alert-info mb-3" data-th-text="#{certs.import.xor}">
+					Import either a file or text, but not both.
+				</div>
+		
+				<div class="col-12">
+					<label class="form-label" for="import-cert-text" data-th-text="#{certs.import.text.label}">
+						Import Text
+					</label>
+					<textarea name="text" id="import-cert-text" rows="6" class="form-control cert"
+							data-th-placeholder="#{certs.import.text.placeholder}"></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary" data-th-text="#{certs.action.import}">Import</button>
+			</div>
+		</div>
+	</div>
+</form>
+
+<div id="view-csr-modal" class="modal fade dynamic">
+	<div class="modal-dialog">
+		<div class="modal-content">
+		 	<div class="modal-header">
+		 		<h3 class="modal-title" data-th-text="#{certs.csr.title}">CSR</h3>
+		 		<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+		 	</div>
+		 	<div class="modal-body">
+		 		<p data-th-utext="#{certs.csr.intro}">Export CSR here.</p>
+		 		<pre class="cert" id="modal-csr-container"></pre>
+		 	</div>
+		 	<div class="modal-footer">
+		 		<button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+		 	</div>
+		</div>
+	</div>
+</div>
+
+<form id="export-cert-modal" class="modal fade dynamic" action="/a/certs/nodeCert" method="get"
+		data-th-action="@{/a/certs/nodeCert}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{certs.export.title}">Export Certificates</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{certs.export.intro}">Export certificates here.</p>
+		
+				<pre class="cert" id="modal-cert-container"></pre>
+		
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" name="chain" value="true" id="export-cert-chain">
+					<label class="form-check-label" for="export-cert-chain" data-th-text="#{certs.export.chain.label}">Export Chain</label>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary" data-th-text="#{certs.action.export}">Export</button>
+			</div>
+		</div>
+	</div>
+	<input type="hidden" name="download" value="true"/>
+</form>
+
+<form id="renew-cert-modal" class="modal fade dynamic" action="/a/certs/renew" method="post"
+		data-th-action="@{/a/certs/renew}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{certs.renew.title}">Renew Certificate</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body start">
+				<p data-th-utext="#{certs.renew.intro}">Renew certificate here.</p>
+		
+				<div class="col-12 mb-3">
+					<label class="form-label" for="renew-cert-password" data-th-text="#{certs.renew.password.label}">
+						Password
+					</label>
+					<input class="form-control" id="renew-cert-password" type="password" name="password" required="required">
+				</div>
+		
+				<div class="col-12 mb-3">
+					<label class="form-label" for="renew-cert-password-again" data-th-text="#{certs.renew.password-again.label}">
+						Password Again
+					</label>
+					<input class="form-control" id="renew-cert-password-again" type="password" name="passwordAgain" required="required">
+				</div>
+				
+				<div class="alert alert-danger" id="renew-cert-error-password-again" style="display: none;"
+						data-th-text="#{certs.renew.password.mismatch}">
+					The passwords do not match.
+				</div>
+			</div>
+			<div class="modal-body success" style="display: none;">
+				<p data-th-text="#{certs.renew.success}">Renew successful.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary start" data-th-text="#{certs.action.renew}">Renew</button>
+			</div>
+		</div>
+	</div>
+</form>
+
+</body>
+</html>

@@ -47,7 +47,7 @@ import net.solarnetwork.node.setup.web.support.ServiceAwareController;
  * Controller for node certificate management.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @ServiceAwareController
 @RequestMapping("/a/certs")
@@ -144,7 +144,7 @@ public class NodeCertificatesController extends BaseSetupController {
 		}
 		model.addAttribute("nodeCertExpired", expired);
 		model.addAttribute("nodeCertValid", valid);
-		return "certs/home";
+		return "certs";
 	}
 
 	/**
