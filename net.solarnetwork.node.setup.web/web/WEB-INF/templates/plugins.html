@@ -81,11 +81,13 @@
 			<div class="modal-footer">
 				<input type="hidden" name="uid" value=""/>
 				<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-primary ladda-button expand-right hide-while-restarting"
-					data-th-data-msg-error="#{plugin.install.error}"
-					data-th-data-msg-success="#{plugin.install.success}"
-					data-th-data-loading-text="#{plugin.installing.message}"
-					data-th-text="#{plugin.install.button}">Install</button>
+				<button type="submit" class="btn btn-primary hide-while-restarting"
+						data-th-data-msg-error="#{plugin.install.error}"
+						data-th-data-msg-success="#{plugin.install.success}"
+						data-th-data-loading-text="#{plugin.installing.message}">
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span data-th-text="#{plugin.install.button}">Install</span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -120,11 +122,13 @@
 			<div class="modal-footer">
 				<input type="hidden" name="uid" value=""/>
 				<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-danger ladda-button expand-right hide-while-restarting"
+				<button type="submit" class="btn btn-danger hide-while-restarting"
 					data-th-data-msg-error="#{plugin.remove.error}"
 					data-th-data-msg-success="#{plugin.remove.success}"
-					data-th-data-loading-text="#{plugin.removing.message}"
-					data-th-text="#{plugin.remove.button}">Remove</button>
+					data-th-data-loading-text="#{plugin.removing.message}">
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span data-th-text="#{plugin.remove.button}">Remove</span>
+				</button>
 			</div>
 		</div>
 	</div>

@@ -233,7 +233,10 @@
 				<div class="modal-footer">
 					<input type="hidden" name="key" value=""/>
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-					<button type="submit" class="btn btn-danger ladda-button expand-right" data-th-text="#{backup.restore.button}">Restore</button>
+					<button type="submit" class="btn btn-danger">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span data-th-text="#{backup.restore.button}">Restore</span>
+					</button>
 				</div>
 			</div>
 		</div>
