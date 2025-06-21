@@ -99,7 +99,7 @@ $(document).ready(function() {
 	
 	// auto-save the preferred backup service when changing that option,
 	// and then auto-reload the screen to show the updated settings form
-	$('#associate-choose-backup-form #cg-bmi0 input[type=radio]').on('change', function(event) {
+	$('#associate-choose-backup-form #cg-bm0i0 input[type=radio]').on('change', function(event) {
 		var form = this;
 		
 		// delay for settings logic to get applied
