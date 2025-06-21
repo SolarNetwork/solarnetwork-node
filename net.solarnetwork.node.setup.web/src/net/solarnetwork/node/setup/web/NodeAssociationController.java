@@ -37,8 +37,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.keygen.KeyGenerators;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
@@ -52,6 +54,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
@@ -154,6 +157,9 @@ public class NodeAssociationController extends BaseSetupController {
 	@Autowired
 	@Qualifier("associationSettingProviders")
 	private OptionalServiceCollection<SettingSpecifierProvider> settingProviders;
+
+	@Autowired
+	private HttpSessionSecurityContextRepository securityContextRepository;
 
 	/**
 	 * Default constructor.
@@ -293,12 +299,17 @@ public class NodeAssociationController extends BaseSetupController {
 	 *        the association identity
 	 * @param model
 	 *        the view model
+	 * @param request
+	 *        the request
+	 * @param response
+	 *        the response
 	 * @return the view name
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
 	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
 			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
-			@ModelAttribute(KEY_IDENTITY) NetworkAssociation identity, Model model) {
+			@ModelAttribute(KEY_IDENTITY) NetworkAssociation identity, Model model,
+			HttpServletRequest request, HttpServletResponse response) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
@@ -340,7 +351,10 @@ public class NodeAssociationController extends BaseSetupController {
 				UsernamePasswordAuthenticationToken loginReq = new UsernamePasswordAuthenticationToken(
 						user.getUsername(), user.getPassword());
 				Authentication auth = authenticationManager.authenticate(loginReq);
-				SecurityContextHolder.getContext().setAuthentication(auth);
+				SecurityContext context = SecurityContextHolder.createEmptyContext();
+				context.setAuthentication(auth);
+				SecurityContextHolder.setContext(context);
+				securityContextRepository.saveContext(context, request, response);
 			}
 			return "associate/setup-success";
 		} catch ( Exception e ) {
