@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'new-node')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{node.setup.restore.imported.title})}">SolarNode Restore Backup</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="my-3">
+	<form action="/associate/restoreBackup" method="post" id="associate-restore-backup-form"
+			data-th-action="@{/associate/restoreBackup}">
+		<p data-th-utext="#{node.setup.restore.imported.intro}">Restore backup here.</p>	
+		<fieldset id="associate-restore-list-container" class="menu-list noselect"
+			data-th-data-msg-items="#{items}"
+			data-th-data-msg-item="#{item}"></fieldset>
+		<div class="progress hidden" role="progressbar">
+			<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+	   	</div>		
+		<div class="row mt-3">
+			<div class="d-grid">
+				<button type="submit" class="btn btn-primary">
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status" data-th-text="#{node.setup.restore.restore}">Restore</span>
+				</button>
+			</div>
+		</div>
+	</form>
+</section>
+
+</body>
+</html>

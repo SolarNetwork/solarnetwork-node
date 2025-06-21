@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'new-node')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{new-node.title})}">SolarNode Associate</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<p class="lead" data-th-utext="#{new-node.intro}"></p>
+
+<section>
+	<p data-th-utext="#{node.setup.code.intro(${networkLinks['solaruser'] + '/u/sec/my-nodes'})}"
+			data-th-if="${networkLinks != null and #maps.containsKey(networkLinks, 'solaruser')}">
+		My Nodes
+	</p>
+	
+	<p data-th-utext="#{node.setup.restore.option(@{/associate/restore})}">
+		Restore Backup
+	</p>
+	
+	<form action="/associate/preview" method="post" data-th-action="@{/associate/preview}" data-th-object="${command}">
+		<div class="alert alert-danger" data-th-if="${#fields.hasAnyErrors()}">
+			<div data-th-each="err : ${#fields.allErrors()}" data-th-utext="${err}"></div>
+		</div>
+		<fieldset class="row g-3" data-th-classappend="${#fields.hasAnyErrors()}?error">
+			<textarea id="invitation-code" name="verificationCode" 
+				data-th-placeholder="#{node.setup.code.verificationCode.placeholder}"
+				class="form-control font-monospace"
+				style="min-height: 10rem;" required></textarea>
+			<div data-th-remove="tag" data-th-if="${#fields.hasErrors('verificationCode')}" data-th-errors="*{verificationCode}"></div>
+			<button type="submit" class="btn btn-primary" data-th-text="#{node.setup.code.verify}">Verify</button>
+		</fieldset>
+	</form>
+</section>
+
+<!--/*/ <th:block th:unless="${#lists.isEmpty(providers)}"> /*/-->
+<section id="settings" style="margin-top: 4rem;">
+	<h2>
+		<a id="settings-section" href="#settings-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>			
+		<span data-th-text="#{node.setup.settings.providers.title}">Settings</span>
+	</h2>
+	<p data-th-utext="#{node.setup.settings.providers.intro}">Settings here.</p>	
+
+	<form action="/associate/configure" method="post" data-th-action="@{/associate/configure}">
+		<fieldset data-th-each="provider, providerStatus : ${providers}">
+			<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${provider.settingUid} + ' --&gt;'"></span>
+			<legend>
+				<a data-th-id="${provider.settingUid}" 
+					class="anchor" 
+					data-th-href="@{${'#' + provider.settingUid}}"
+					aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+				<snode:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
+			</legend>
+			<p><snode:message key="desc" messageSource="${provider.messageSource}" text=""/></p>
+			
+			<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
+				<div data-th-replace="~{settings/setting-control :: content('s'+${providerStatus.index}+'i'+${settingStatus.index})}"></div>
+			</div>
+
+			<div class="alert alert-warning"
+				data-th-if="${providerException != null}"
+				data-th-text="#{settings.error.provider.exception(${providerException.cause.message})}">
+				An error occurred.
+			</div>
+		</fieldset>
+
+		<div class="row my-3">
+			<div class="col-sm-9 offset-sm-3">
+				<button type="button" class="btn btn-primary" id="submit" data-th-text="#{settings.save}">Save</button>
+			</div>
+		</div>
+	</form>
+</section>
+<script data-th-inline="javascript">
+$(function() {
+	$('#submit').on('click', function() {
+		SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
+			success: /*[[#{settings.save.success.msg}]]*/ 'Saved',
+			error:   /*[[#{settings.save.error.msg}]]*/ 'Error saving settings.',
+			title:   /*[[#{settings.save.result.title}]]*/ 'Setttings have been saved.',
+			button:  /*[[#{ok.label}]]*/ 'OK',
+		});
+	});
+});
+</script>
+<!--/*/ </th:block> /*/-->
+
+</body>
+</html>

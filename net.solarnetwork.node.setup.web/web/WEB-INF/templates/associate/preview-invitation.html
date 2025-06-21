@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'new-node')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{preview-invitation.title})}">SolarNode Preview Invitation</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<p class="lead" data-th-utext="#{preview-invitation.lead}">Preview invitation here.</p>
+<p data-th-utext="#{preview-invitation.intro}">Preview invitation here.</p>
+
+<form action="/associate/verify" method="post" data-th-action="@{/associate/verify}" data-th-object="${details}">
+	<fieldset>
+		<div class="row">
+			<label class="col-sm-4 col-md-3 col-form-label" for="invitation-host" data-th-text="#{node.setup.identity.service}">Service</label>
+			<div class="col-sm-7 col-md-8">
+				<div class="plaintext-form-value" id="invitation-host" data-th-text="*{host}">example.com</div>
+			</div>
+		</div>
+		<div class="row mt-3">
+			<label class="col-sm-4 col-md-3 col-form-label" for="invitation-username" data-th-text="#{node.setup.identity.username}">Username</label>
+			<div class="col-sm-7 col-md-8">
+				<div class="plaintext-form-value" id="invitation-username" data-th-text="*{username}">username@example.com</div>
+			</div>
+		</div>
+		<div class="row mt-3">
+			<label class="col-sm-4 col-md-3 col-form-label" for="invitation-identity" data-th-text="#{node.setup.identity.identity}">Identity</label>
+			<div class="col-sm-7 col-md-8">
+				<div class="plaintext-form-value" id="invitation-identity" data-th-utext="*{identityKey}">
+					example.com identity here.
+				</div>
+			</div>
+		</div>
+		<div class="row mt-5">
+			<div class="col offset-sm-4 offset-md-3">
+				<a href="/associate" data-th-action="@{/associate}" class="btn btn-secondary" data-th-text="#{cancel.label}">Cancel</a>
+				<button type="submit" class="btn btn-primary" data-th-text="#{continue.label}">Continue</button>
+			</div>
+		</div>
+	</fieldset>
+</form>
+
+</body>
+</html>
