@@ -76,7 +76,7 @@ public class HostAliasController {
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
-		return "hosts/home";
+		return "hosts";
 	}
 
 	private SystemService systemService(Locale locale) {
