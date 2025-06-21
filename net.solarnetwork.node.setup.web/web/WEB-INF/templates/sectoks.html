@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<!--/*
+	Inputs:
+
+	tokens 				- list of SecurityToken instances
+*/-->
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'sectoks')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{sectoks.title})}">SolarNode Metrics</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<h2 data-th-text="#{sectoks.title}">Security Tokens</h2>
+	<p data-th-utext="#{sectoks.intro(${#lists.size(tokens)})}">
+		Security tokens here.
+	</p>
+	<div class="d-flex justify-content-end">
+		<button type="button" class="btn btn-primary" data-bs-target="#create-security-token-modal" data-bs-toggle="modal">
+			<i class="bi bi-plus-lg"></i>
+			<span data-th-text="#{sectoks.action.create}">Create</span>
+		</button>
+	</div>
+</section>
+<section id="sectoks">
+	<table class="table" data-th-unless="${#lists.isEmpty(tokens)}">
+		<thead>
+			<tr>
+				<th data-th-text="#{sectoks.token.id.label}">ID</th>
+				<th data-th-text="#{sectoks.token.created.label}">Created</th>
+				<th data-th-text="#{sectoks.token.name.label}">Name</th>
+				<th data-th-text="#{sectoks.token.description.label}">Description</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr data-th-each="token : ${tokens}">
+				<td><a href="#edit-security-token-modal" class="edit-link"
+					data-th-data-token-id="${token.id}"
+					data-th-data-token-name="${token.name}"
+					data-th-data-token-description="${token.description}"
+					data-th-text="${token.id}"
+					>my.token</a></td>
+				<td data-th-text="${#temporals.format(token.created.atZone(T(java.time.ZoneId).systemDefault()).toLocalDate())}">2000-01-01</td>
+				<td data-th-text="${token.name}">Name</td>
+				<td data-th-text="${token.description}">Description</td>
+			</tr>
+		</tbody>
+	</table>
+</section>
+
+<form id="create-security-token-modal" class="modal fade" action="/a/security-tokens" method="post" data-th-action="@{/a/security-tokens}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{sectoks.create.title}">Create Security Token</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body before">
+				<p data-th-utext="#{sectoks.create.intro}">Create security token here.</p>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-name" data-th-text="#{sectoks.token.name.label}">
+						Name
+					</label>
+					<input type="text" name="name" id="create-security-token-modal-name" class="form-control" maxLength="128" value="">
+				</div>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-description" data-th-text="#{sectoks.token.description.label}">
+						Description
+					</label>
+					<input type="text" name="description" id="create-security-token-modal-description" class="form-control" maxLength="256" value="">
+				</div>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="alert alert-success" data-th-utext="#{sectoks.created.intro}">Created.</p>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-id" data-th-text="#{sectoks.token.id.label}">
+						ID
+					</label>
+					<input type="text" name="tokenId" id="create-security-token-modal-id" class="form-control" value="" readonly>
+				</div>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-secret" data-th-text="#{sectoks.token.secret.label}">
+						Secret
+					</label>
+					<input type="text" name="tokenSecret" id="create-security-token-modal-secret" class="form-control" value="" readonly>
+				</div>
+				<p class="text-center">
+					<a class="btn btn-success btn-lg" href="#" id="create-token-download-csv" download="node-token-credentials.csv">
+						<i class="bi bi-download"></i>
+						<span data-th-text="#{sectoks.action.csvdownload}">Download</span>
+					</a>
+				</p>
+				<p class="alert alert-warning" data-th-utext="#{sectoks.created.warning}">Warning.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+				<button type="submit" class="btn btn-primary" data-th-text="#{sectoks.action.create}">Create</button>
+			</div>
+		</div>
+	</div>
+</form>
+
+<form id="edit-security-token-modal" class="modal fade" action="/a/security-tokens" method="post" data-th-action="@{/a/security-tokens}">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="#{sectoks.edit.title}">Edit Security Token</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body">
+				<p data-th-utext="#{sectoks.edit.intro}">Edit security token here.</p>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-id" data-th-text="#{sectoks.token.id.label}">
+						ID
+					</label>
+					<input type="text" name="id" id="create-security-token-modal-id" class="form-control" value="" readonly>
+				</div>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-name" data-th-text="#{sectoks.token.name.label}">
+						Name
+					</label>
+					<input type="text" name="name" id="create-security-token-modal-name" class="form-control" maxLength="128" value="">
+				</div>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-description" data-th-text="#{sectoks.token.description.label}">
+						Description
+					</label>
+					<input type="text" name="description" id="create-security-token-modal-description" class="form-control" maxLength="256" value="" />
+				</div>
+			</div>
+			<div class="modal-footer justify-content-between">
+				<button type="button" class="btn btn-danger pull-left" name="delete" title="<fmt:message key='sectoks.action.delete'/>">
+					<i class="bi bi-trash3"></i>
+					<span data-th-text="#{sectoks.action.delete}">Delete</span>
+				</button>
+				<div>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+					<button type="submit" class="btn btn-primary" data-th-text="#{sectoks.action.update}">Update</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+
+</body>
+</html>
