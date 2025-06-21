@@ -177,7 +177,7 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
-		return "plugins/list";
+		return "plugins";
 	}
 
 	/**
