@@ -32,7 +32,7 @@
 			<legend>
 				<a data-th-id="${provider.settingUid}"
 					class="anchor"
-					data-th-href="${provider.settingUid}"
+					data-th-href="@{${'#' + provider.settingUid}}"
 					aria-hidden="true"
 					><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 				<snode:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
