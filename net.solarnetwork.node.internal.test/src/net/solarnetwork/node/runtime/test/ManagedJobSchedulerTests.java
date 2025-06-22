@@ -1,21 +1,21 @@
 /* ==================================================================
  * ManagedJobSchedulerTests.java - 15/10/2021 9:31:23 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,8 +34,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.osgi.service.cm.ConfigurationEvent.CM_UPDATED;
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
@@ -73,7 +74,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
  * Test cases for the {@link ManagedJobScheduler} class.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -217,7 +218,7 @@ public class ManagedJobSchedulerTests {
 
 		// schedule startup task
 		Capture<Runnable> startupTaskCaptor = Capture.newInstance();
-		Capture<Date> startupTaskDelayCaptor = Capture.newInstance();
+		Capture<Instant> startupTaskDelayCaptor = Capture.newInstance();
 		TestScheduledFuture startupTaskFuture = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(startupTaskCaptor), capture(startupTaskDelayCaptor)))
 				.andReturn((ScheduledFuture) startupTaskFuture);
@@ -627,7 +628,7 @@ public class ManagedJobSchedulerTests {
 		assertThat("Scheduled trigger is cron", trigCaptor.getValue(),
 				is(new CronTrigger(managedJob.getSchedule())));
 		assertThat("Scheduled task cancelled from reschedule", future.isCancelled(), is(true));
-		PeriodicTrigger expectedTrigger = new PeriodicTrigger(1000, TimeUnit.MILLISECONDS);
+		PeriodicTrigger expectedTrigger = new PeriodicTrigger(Duration.ofMillis(1000));
 		expectedTrigger.setFixedRate(true);
 		assertThat("Rescheduled trigger is periodic from settings update", trigCaptor2.getValue(),
 				is(expectedTrigger));
