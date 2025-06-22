@@ -7,7 +7,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
 		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="2.0.0"/>
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="3.0.0"/>
 
 		<!-- Testing support -->
     </dependencies>

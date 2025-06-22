@@ -5,7 +5,7 @@
     		location="../${test.bundle.name}/ivy.xml"/>
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="3.0.0"/>
 
 		<dependency org="org.postgresql" name="postgresql" rev="42.7.6"/>
 
