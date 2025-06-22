@@ -1,21 +1,18 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Modbus Toggle Control
-Bundle-SymbolicName: net.solarnetwork.node.control.modbus.toggle
-Automatic-Module-Name: net.solarnetwork.node.control.modbus.toggle
-Bundle-Description: Service to control arbitrary Modbus-accessible digital switches, 
- turning the switches on or off.
-Bundle-Version: 6.0.0
+Bundle-Name: Virtual Controls
+Bundle-Description: Virtual controls configured from other controls.
+Bundle-SymbolicName: net.solarnetwork.node.control.virtual
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Automatic-Module-Name: net.solarnetwork.node.control.virtual
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
- net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
- net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
@@ -27,11 +24,7 @@ Import-Package:
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.asm;version="[6.2,7.0)",
- org.springframework.beans;version="[6.2,7.0)",
- org.springframework.beans.factory;version="[6.2,7.0)",
- org.springframework.context;version="[6.2,7.0)",
- org.springframework.context.support;version="[6.2,7.0)",
- org.springframework.core;version="[6.2,7.0)",
- org.springframework.core.io;version="[6.2,7.0)",
- org.springframework.expression;version="[6.2,7.0)"
+ org.springframework.beans.factory;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)"

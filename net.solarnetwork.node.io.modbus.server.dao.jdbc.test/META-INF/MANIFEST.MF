@@ -4,7 +4,7 @@ Bundle-Name: Modbus Server Persistence (JDBC) Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server.dao.jdbc.test
 Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.io.modbus.server.dao.jdbc;bundle-version="[1.1.2,2.0)"
+Fragment-Host: net.solarnetwork.node.io.modbus.server.dao.jdbc;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server.dao.jdbc.tests
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

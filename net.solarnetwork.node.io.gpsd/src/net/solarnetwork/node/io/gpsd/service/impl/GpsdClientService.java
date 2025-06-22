@@ -57,6 +57,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -160,8 +161,8 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 		tf.setDaemon(true);
 
 		Bootstrap b = new Bootstrap();
-		b.group(new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory()))
-				.channel(NioSocketChannel.class)
+		EventLoopGroup group = new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory());
+		b.group(group).channel(NioSocketChannel.class)
 				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
 						(int) TimeUnit.SECONDS.toMillis(DEFAULT_RECONNECT_SECONDS))
 				.option(ChannelOption.SO_KEEPALIVE, true)

@@ -40,7 +40,7 @@ import net.solarnetwork.node.service.LockTimeoutException;
  * </p>
  *
  * @author matt
- * @version 3.1
+ * @version 4.0
  */
 public class ModbusConnectionSupport extends AbstractModbusConnection implements ModbusConnection {
 
@@ -98,7 +98,17 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+	public BitSet readDiscreteValues(int address, int count) throws IOException {
+		return null;
+	}
+
+	@Override
+	public BitSet readDiscreteValues(int[] addresses, int count) throws IOException {
+		return null;
+	}
+
+	@Override
+	public void writeDiscreteValues(int[] addresses, BitSet bits) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -110,16 +120,6 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 
 	@Override
 	public BitSet readInputDiscreteValues(final int address, final int count) {
-		return null;
-	}
-
-	@Override
-	public BitSet readDiscreetValues(final int address, final int count) {
-		return null;
-	}
-
-	@Override
-	public BitSet readDiscreetValues(final int[] addresses, final int count) {
 		return null;
 	}
 

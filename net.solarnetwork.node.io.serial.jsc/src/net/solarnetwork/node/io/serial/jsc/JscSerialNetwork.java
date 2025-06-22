@@ -1,21 +1,21 @@
 /* ==================================================================
  * JscSerialNetwork.java - 31/08/2020 7:46:36 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -48,9 +48,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * jSerialComm implementation of {@link SerialNetwork}.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JscSerialNetwork extends BasicIdentifiable
 		implements ConfigurableSerialNetwork, SettingSpecifierProvider {
@@ -139,7 +139,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 		/**
 		 * Construct with {@link SerialParameters}.
-		 * 
+		 *
 		 * @param parameters
 		 *        the parameters
 		 */
@@ -166,16 +166,11 @@ public class JscSerialNetwork extends BasicIdentifiable
 			}
 		}
 
-		@Override
-		protected void finalize() throws Throwable {
-			releaseLock(); // as a catch-all
-			super.finalize();
-		}
 	}
 
 	/**
 	 * Acquire the port lock, returning if lock acquired.
-	 * 
+	 *
 	 * @throws LockTimeoutException
 	 *         if the lock cannot be obtained
 	 */
@@ -229,7 +224,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the default settings.
-	 * 
+	 *
 	 * @return the settings
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
@@ -251,7 +246,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the serial parameters.
-	 * 
+	 *
 	 * @param serialParams
 	 *        the serial parameters
 	 */
@@ -266,7 +261,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the timeout value.
-	 * 
+	 *
 	 * @return the timeout
 	 */
 	public long getTimeout() {
@@ -275,7 +270,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the timeout value.
-	 * 
+	 *
 	 * @param timeout
 	 *        the timeout
 	 */
@@ -285,7 +280,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the time unit.
-	 * 
+	 *
 	 * @return the time unit
 	 */
 	public TimeUnit getUnit() {
@@ -294,7 +289,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the time unit.
-	 * 
+	 *
 	 * @param unit
 	 *        the time unit
 	 */
@@ -304,7 +299,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Get the lock-on-open flag.
-	 * 
+	 *
 	 * @return {@literal true} to use a thread lock when opening the connection,
 	 *         releasing the lock when closing the connection; defaults to
 	 *         {@link #DEFAULT_LOCK_ON_OPEN}
@@ -315,7 +310,7 @@ public class JscSerialNetwork extends BasicIdentifiable
 
 	/**
 	 * Set the lock-on-open flag.
-	 * 
+	 *
 	 * @param lockOnOpen
 	 *        {@literal true} to use a thread lock when opening the connection,
 	 *        releasing the lock when closing the connection

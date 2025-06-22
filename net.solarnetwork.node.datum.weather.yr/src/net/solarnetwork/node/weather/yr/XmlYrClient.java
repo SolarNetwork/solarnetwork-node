@@ -1,21 +1,21 @@
 /* ==================================================================
  * XmlYrClient.java - 19/05/2017 3:27:03 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,9 +54,9 @@ import net.solarnetwork.node.service.support.XmlServiceSupport;
 
 /**
  * Implementation of {@link YrClient} that queries XML weather resources.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
@@ -81,12 +81,12 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
 	/**
 	 * Post-configuration initialization method.
-	 * 
+	 *
 	 * <p>
 	 * This method must be called once after all properties have been
 	 * configured, before any other method is called.
 	 * </p>
-	 * 
+	 *
 	 */
 	@Override
 	public void init() {
@@ -379,7 +379,7 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 		private void addStatus(String s) {
 			Integer count = statusValues.get(s);
 			if ( count == null ) {
-				count = new Integer(1);
+				count = Integer.valueOf(1);
 			} else {
 				count = count.intValue() + 1;
 			}
@@ -405,7 +405,7 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
 	/**
 	 * Set the base URL for the Yr service.
-	 * 
+	 *
 	 * @param baseUrl
 	 *        the baseUrl to set
 	 */

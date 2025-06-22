@@ -10,8 +10,8 @@ Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
- net.solarnetwork.node.io.modbus;version="4.4.0",
- net.solarnetwork.node.io.modbus.support;version="4.3.0"
+ net.solarnetwork.node.io.modbus;version="5.0.0",
+ net.solarnetwork.node.io.modbus.support;version="5.0.0"
 Import-Package: 
  net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",

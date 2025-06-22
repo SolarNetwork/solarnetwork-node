@@ -37,7 +37,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  *
  * @author matt
- * @version 2.1
+ * @version 3.0
  * @since 2.16
  */
 public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusConnection {
@@ -78,7 +78,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	}
 
 	@Override
-	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+	public void writeDiscreteValues(final int[] addresses, final BitSet bits) {
 		final IntShortMap data = getData();
 		for ( int i = 0; i < addresses.length; i++ ) {
 			data.putValue(addresses[i], bits.get(i) ? (short) 1 : (short) 0);

@@ -46,11 +46,11 @@ import net.solarnetwork.dao.Entity;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 1.29
  */
-public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJdbcGenericDao<T, K>
-		implements BatchableDao<T> {
+public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Comparable<K>>
+		extends BaseJdbcGenericDao<T, K> implements BatchableDao<T> {
 
 	private TransactionTemplate transactionTemplate;
 	private String sqlForUpdateSuffix = " FOR UPDATE";

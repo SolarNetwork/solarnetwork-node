@@ -123,6 +123,7 @@ public class GpsdServerTestSupport {
 		if ( mapper == null ) {
 			mapper = createObjectMapper();
 		}
+
 		gpsdBossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
 		gpsdWorkerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 

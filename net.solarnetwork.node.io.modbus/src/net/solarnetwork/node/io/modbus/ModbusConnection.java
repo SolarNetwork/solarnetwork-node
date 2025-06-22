@@ -37,7 +37,7 @@ import net.solarnetwork.node.service.LockTimeoutException;
  * </p>
  *
  * @author matt
- * @version 3.2
+ * @version 4.0
  * @since 2.0
  */
 public interface ModbusConnection extends Closeable {
@@ -75,7 +75,7 @@ public interface ModbusConnection extends Closeable {
 	 * </p>
 	 *
 	 * <p>
-	 * This method by default invokes {@link #readDiscreetValues(int, int)} for
+	 * This method by default invokes {@link #readDiscreteValues(int, int)} for
 	 * backwards compatibility.
 	 * </p>
 	 *
@@ -88,34 +88,7 @@ public interface ModbusConnection extends Closeable {
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	default BitSet readDiscreteValues(int address, int count) throws IOException {
-		return readDiscreetValues(address, count);
-	}
-
-	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 *
-	 * <p>
-	 * This uses a Modbus function code {@literal 1} request.
-	 * </p>
-	 *
-	 * <p>
-	 * This method is required but deprecated to preserve backwards
-	 * compatibility.
-	 * </p>
-	 *
-	 * @param address
-	 *        the 0-based Modbus register address to read
-	 * @param count
-	 *        the count of discreet registers to read
-	 * @return BitSet, with indexes set from {@literal 0} to a {@code count - 1}
-	 * @since 1.1
-	 * @throws IOException
-	 *         if any communication error occurs
-	 * @deprecated since 3.1 use {@link #readDiscreteValues(int, int)}
-	 */
-	@Deprecated
-	BitSet readDiscreetValues(int address, int count) throws IOException;
+	BitSet readDiscreteValues(int address, int count) throws IOException;
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
@@ -126,7 +99,7 @@ public interface ModbusConnection extends Closeable {
 	 * </p>
 	 *
 	 * <p>
-	 * This method by default invokes {@link #readDiscreetValues(int, int)} for
+	 * This method by default invokes {@link #readDiscreteValues(int, int)} for
 	 * backwards compatibility.
 	 * </p>
 	 *
@@ -139,35 +112,7 @@ public interface ModbusConnection extends Closeable {
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	default BitSet readDiscreteValues(int[] addresses, int count) throws IOException {
-		return readDiscreetValues(addresses, count);
-	}
-
-	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 *
-	 * <p>
-	 * This uses a Modbus function code {@literal 1} request. The returned set
-	 * will have a size equal to {@code addresses.length * count}.
-	 * </p>
-	 *
-	 * <p>
-	 * This method is required but deprecated to preserve backwards
-	 * compatibility.
-	 * </p>
-	 *
-	 * @param addresses
-	 *        the 0-based Modbus register addresses to read
-	 * @param count
-	 *        the count of coils to read with each address
-	 * @return BitSet, with each {@code count} indexes for each index in the
-	 *         {@code addresses} parameter
-	 * @throws IOException
-	 *         if any communication error occurs
-	 * @deprecated since 3.1 use {@link #readDiscreteValues(int[], int)}
-	 */
-	@Deprecated
-	BitSet readDiscreetValues(int[] addresses, int count) throws IOException;
+	BitSet readDiscreteValues(int[] addresses, int count) throws IOException;
 
 	/**
 	 * Write values of a set of "coil" type registers, via a BitSet.
@@ -181,7 +126,7 @@ public interface ModbusConnection extends Closeable {
 	 *
 	 * <p>
 	 * This method by default invokes
-	 * {@link #writeDiscreetValues(int[], BitSet)} for backwards compatibility.
+	 * {@link #writeDiscreteValues(int[], BitSet)} for backwards compatibility.
 	 * </p>
 	 *
 	 * @param addresses
@@ -192,36 +137,7 @@ public interface ModbusConnection extends Closeable {
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	default void writeDiscreteValues(int[] addresses, BitSet bits) throws IOException {
-		writeDiscreetValues(addresses, bits);
-	}
-
-	/**
-	 * Write values of a set of "coil" type registers, via a BitSet.
-	 *
-	 * <p>
-	 * This uses a Modbus function code {@literal 5} request, once for each
-	 * address in {@code addresses}. Each address at index <em>i</em>
-	 * corresponds to the value of bit at index <em>i</em>. Thus bits
-	 * {@literal 0} to {@code addresses.length - 1} are used.
-	 * </p>
-	 *
-	 * <p>
-	 * This method is required but deprecated to preserve backwards
-	 * compatibility.
-	 * </p>
-	 *
-	 * @param addresses
-	 *        the Modbus register addresses to start writing to
-	 * @param bits
-	 *        the bits to write, each index corresponding to an index in
-	 *        {@code addresses}
-	 * @throws IOException
-	 *         if any communication error occurs
-	 * @deprecated since 3.1 use {@link #writeDiscreteValues(int[], BitSet)}
-	 */
-	@Deprecated
-	void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException;
+	void writeDiscreteValues(int[] addresses, BitSet bits) throws IOException;
 
 	/**
 	 * Write values of a set of "coil" type registers, via a BitSet.

@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusHeartbeatJob.java - Mar 22, 2014 4:02:14 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -46,11 +46,11 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 /**
  * Periodically set a Modbus "coil" type register to a specific value, to act as
  * a "heartbeat" to the device so it knows the SolarNode is alive and well.
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>address</dt>
  * <dd>The Modbus address of the coil-type register to use.</dd>
@@ -64,9 +64,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * <dd>The {@link MessageSource} to use to support
  * {@link SettingSpecifierProvider}.</dd>
  * </dl>
- * 
+ *
  * @author matt
- * @version 4.0
+ * @version 4.1
  */
 public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
@@ -92,7 +92,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param modbusNetwork
 	 *        the network to use
 	 * @throws IllegalArgumentException
@@ -149,7 +149,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-				conn.writeDiscreetValues(addresses, bits);
+				conn.writeDiscreteValues(addresses, bits);
 				return true;
 			}
 		});
@@ -197,7 +197,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Get the modbus network.
-	 * 
+	 *
 	 * @return the modbusNetwork
 	 */
 	public OptionalFilterableService<ModbusNetwork> getModbusNetwork() {
@@ -206,7 +206,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Set the address.
-	 * 
+	 *
 	 * @param address
 	 *        the address
 	 */
@@ -216,7 +216,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Get the address.
-	 * 
+	 *
 	 * @return the address
 	 */
 	public Integer getAddress() {
@@ -225,7 +225,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Get the unit ID.
-	 * 
+	 *
 	 * @return the unit ID
 	 */
 	public Integer getUnitId() {
@@ -234,7 +234,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Set the unit ID.
-	 * 
+	 *
 	 * @param unitId
 	 *        the unit ID
 	 */
@@ -244,7 +244,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Get the register value.
-	 * 
+	 *
 	 * @return the register value
 	 */
 	public Boolean getRegisterValue() {
@@ -253,7 +253,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
 	/**
 	 * Set the register value.
-	 * 
+	 *
 	 * @param registerValue
 	 *        value
 	 */

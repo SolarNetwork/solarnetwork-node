@@ -8,7 +8,7 @@ Automatic-Module-Name: net.solarnetwork.node.io.s3
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.common.s3;version="[2.0,3.0)",
+ net.solarnetwork.common.s3;version="[3.0,4.0)",
  net.solarnetwork.common.s3.sdk;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",

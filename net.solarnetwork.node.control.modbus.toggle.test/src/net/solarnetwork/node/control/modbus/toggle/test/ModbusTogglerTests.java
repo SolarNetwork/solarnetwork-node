@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusTogglerTests.java - 16/03/2018 2:07:17 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -59,7 +59,7 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link ModbusToggler} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -155,7 +155,7 @@ public class ModbusTogglerTests {
 
 		BitSet writeBitSet = new BitSet();
 		writeBitSet.set(0);
-		conn.writeDiscreetValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
+		conn.writeDiscreteValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
 
 		// when
 		replayAll();
@@ -193,7 +193,7 @@ public class ModbusTogglerTests {
 
 		BitSet writeBitSet = new BitSet();
 		writeBitSet.set(0, false);
-		conn.writeDiscreetValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
+		conn.writeDiscreteValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
 
 		// when
 		replayAll();
@@ -233,7 +233,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreteValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -279,7 +279,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, false);
-		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreteValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -326,7 +326,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreteValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -347,7 +347,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet).times(2);
+		expect(conn.readDiscreteValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet).times(2);
 
 		// when
 		replayAll();
