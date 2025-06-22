@@ -12,7 +12,7 @@ Import-Package:
  com.fasterxml.jackson.core;version="[2.19,3.0)",
  com.fasterxml.jackson.databind;version="[2.19,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.common.s3;version="[2.0,3.0)",
+ net.solarnetwork.common.s3;version="[3.0,4.0)",
  net.solarnetwork.common.s3.sdk;version="[2.0,3.0)",
  net.solarnetwork.io;version="[3.0,4.0)",
  net.solarnetwork.node;version="[2.0,3.0)",
