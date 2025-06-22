@@ -14,6 +14,7 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 	    <dependency org="net.solarnetwork.common" name="net.solarnetwork.common.s3" rev="4.0.0"/>
+	    <dependency org="net.solarnetwork.common" name="net.solarnetwork.common.s3.sdk" rev="3.0.0"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.17.0"/>
 		<dependency org="org.osgi" name="org.osgi.framework" rev="1.10.0"/>
