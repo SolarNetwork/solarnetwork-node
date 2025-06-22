@@ -15,8 +15,8 @@ Export-Package:
  net.solarnetwork.node.hw.sma.protocol;version="1.0.0",
  net.solarnetwork.node.hw.sma.sunnynet;version="1.0.0"
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.dao;version="[2.0,3.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",

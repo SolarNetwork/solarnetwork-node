@@ -8,13 +8,13 @@ Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.wifi
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans.factory;version="[6.2,7.0)",

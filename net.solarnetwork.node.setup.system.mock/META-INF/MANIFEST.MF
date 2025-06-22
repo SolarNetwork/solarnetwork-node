@@ -8,5 +8,5 @@ Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.system.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)"

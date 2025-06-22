@@ -9,8 +9,8 @@ Automatic-Module-Name: net.solarnetwork.node.datum.battery.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.domain.tariff;version="[1.1,2.0)",
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
@@ -22,7 +22,7 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",

@@ -9,7 +9,7 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
 
 		<!-- Testing support -->
-		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.22,)"/>
+		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="2.0.0"/>
 
 		<exclude module="commons-logging"/>
 		<exclude module="com.springsource.slf4j.api"/>

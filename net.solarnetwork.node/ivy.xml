@@ -16,10 +16,10 @@
 		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.19.0" />
 		<dependency org="com.fasterxml.jackson.datatype" name="jackson-datatype-jsr310" rev="2.19.0"/>
 		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.8.3"/>
-		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
+		<dependency org="commons-codec" name="commons-codec" rev="1.17.0"/>
 		<dependency org="commons-io" name="commons-io" rev="2.4"/>
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.28,)"/>
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.osgi" rev="[2.2,)"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.0.0"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.osgi" rev="3.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
