@@ -41,7 +41,6 @@ import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -79,7 +78,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * encountered then copy the file to a {@link ResourceStorageService}.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, ProgressListener<Resource> {
@@ -439,8 +438,8 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 												}
 											}
 										};
-										ScheduledFuture<?> future = scheduler.schedule(saveTask,
-												new Date(System.currentTimeMillis() + delay));
+										ScheduledFuture<?> future = scheduler.schedule(saveTask, Instant
+												.ofEpochMilli(System.currentTimeMillis() + delay));
 										futureRef.set(future);
 										return future;
 									});
