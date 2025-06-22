@@ -9,7 +9,7 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="3.0.0"/>
 
 		<!-- Testing support -->
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial.rxtx" rev="[5.0,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial.rxtx" rev="5.0.0"/>
 		<exclude module="com.springsource.slf4j.api"/>
     </dependencies>
 </ivy-module>
