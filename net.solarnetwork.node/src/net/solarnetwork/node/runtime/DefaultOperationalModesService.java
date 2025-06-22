@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultOperationalModesService.java - 20/12/2018 10:16:02 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,6 +26,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -33,7 +34,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -74,9 +74,9 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Default implementation of {@link OperationalModesService}.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
 		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
@@ -99,7 +99,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * An expiration value meaning "no expiration".
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public static final Long NO_EXPIRATION = -1L;
@@ -127,7 +127,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingDao
 	 *        the setting DAO to persist operational mode changes with
 	 * @param eventAdmin
@@ -142,7 +142,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param modeCache
 	 *        the cache to use for active mode tracking
 	 * @param settingDao
@@ -160,7 +160,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param modeCache
 	 *        the cache to use for active mode tracking
 	 * @param registeredModes
@@ -194,7 +194,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 					// wait for settings service to appear
 					synchronized ( DefaultOperationalModesService.this ) {
 						startupScheduledFuture = taskScheduler.schedule(this,
-								new Date(System.currentTimeMillis() + startupDelay));
+								Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay));
 					}
 					return;
 				}
@@ -214,15 +214,15 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		};
 		if ( taskScheduler != null && startupDelay > 0 && startupScheduledFuture == null ) {
 			startupScheduledFuture = taskScheduler.schedule(task,
-					new Date(System.currentTimeMillis() + startupDelay));
+					Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay));
 		} else {
 			task.run();
 		}
 		if ( taskScheduler != null && autoExpireScheduledFuture == null ) {
 			autoExpireScheduledFuture = taskScheduler.scheduleWithFixedDelay(new AutoExpireModesTask(),
-					new Date(System.currentTimeMillis() + startupDelay
+					Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay
 							+ this.autoExpireModesFrequency * 1000L),
-					this.autoExpireModesFrequency * 1000L);
+					Duration.ofSeconds(this.autoExpireModesFrequency));
 		}
 	}
 
@@ -309,7 +309,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Manually run the auto-expire task.
-	 * 
+	 *
 	 * <p>
 	 * This is primarily designed to support testing.
 	 * </p>
@@ -593,7 +593,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Create an operational modes changed event.
-	 * 
+	 *
 	 * @param activeModes
 	 *        the active modes
 	 * @return the event
@@ -608,7 +608,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Post an event.
-	 * 
+	 *
 	 * @param event
 	 *        the event to post
 	 */
@@ -622,12 +622,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * A startup delay before posting an event of the active operational modes.
-	 * 
+	 *
 	 * <p>
 	 * Note this requires a {@link #setTaskScheduler(TaskScheduler)} to be
 	 * configured if set to anything &gt; {@literal 0}.
 	 * </p>
-	 * 
+	 *
 	 * @param startupDelay
 	 *        a startup delay, in milliseconds, or {@literal 0} for no delay;
 	 *        defaults to {@link #DEFAULT_STARTUP_DELAY}
@@ -638,12 +638,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Configure a task scheduler.
-	 * 
+	 *
 	 * <p>
 	 * This is required by {@link #setStartupDelay(long)} as well as for
 	 * supporting auto-expiring modes.
 	 * </p>
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        a task executor
 	 * @see #setStartupDelay(long)
@@ -655,7 +655,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	/**
 	 * Set the frequency, in seconds, at which to look for auto-expired
 	 * operational modes.
-	 * 
+	 *
 	 * @param autoExpireModesFrequency
 	 *        the frequency, in seconds
 	 * @throws IllegalArgumentException
@@ -671,7 +671,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Get the transaction manager.
-	 * 
+	 *
 	 * @return the transaction manager to use
 	 * @since 1.3
 	 */
@@ -681,7 +681,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	/**
 	 * Set the transaction manager.
-	 * 
+	 *
 	 * @param transactionManager
 	 *        the transaction manager to use
 	 * @since 1.3
