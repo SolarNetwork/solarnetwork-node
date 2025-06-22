@@ -31,7 +31,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +58,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * Datum data source for the TSL2591 light sensor.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -230,7 +229,8 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 		};
 		log.info("Scheduling TSL2591 sensor {} configuration for {}ms from now.", deviceName,
 				configureDelay);
-		getTaskScheduler().schedule(r, new Date(System.currentTimeMillis() + configureDelay));
+		getTaskScheduler().schedule(r,
+				Instant.ofEpochMilli(System.currentTimeMillis() + configureDelay));
 	}
 
 	private synchronized void configureDevice() throws IOException {
