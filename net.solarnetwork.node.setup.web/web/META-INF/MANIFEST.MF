@@ -33,7 +33,6 @@ Import-Package:
  jakarta.validation.metadata;version="3.0",
  jakarta.websocket;version="2.2.0",
  jakarta.websocket.server;version="2.2.0",
- javax.annotation;version="[1.0,2.0)",
  javax.crypto,
  javax.crypto.spec,
  net.solarnetwork.codec;version="[2.3,3.0)",
