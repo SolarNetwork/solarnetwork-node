@@ -1,21 +1,21 @@
 /* ==================================================================
  * WatchdogTests.java - 3/09/2019 9:09:43 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,11 +23,9 @@
 package net.solarnetwork.node.control.stabiliti30c.test;
 
 import static net.solarnetwork.node.io.modbus.ModbusWriteFunction.WriteHoldingRegister;
-import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.captureLong;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,7 +33,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import java.io.IOException;
-import java.util.Date;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ScheduledFuture;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -51,9 +50,9 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link Watchdog} class.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class WatchdogTests {
 
@@ -115,10 +114,10 @@ public class WatchdogTests {
 	public void startupSchedulesTask() {
 		// GIVEN
 		Capture<Runnable> taskCaptor = Capture.newInstance();
-		Capture<Date> dateCaptor = Capture.newInstance();
-		Capture<Long> delayCaptor = Capture.newInstance();
+		Capture<Instant> dateCaptor = Capture.newInstance();
+		Capture<Duration> delayCaptor = Capture.newInstance();
 		expect(taskScheduler.scheduleWithFixedDelay(capture(taskCaptor), capture(dateCaptor),
-				captureLong(delayCaptor))).andReturn(scheduledFuture());
+				capture(delayCaptor))).andReturn(scheduledFuture());
 
 		// WHEN
 		replayAll();
@@ -127,17 +126,17 @@ public class WatchdogTests {
 
 		// THEN
 		assertThat("Task scheduled", taskCaptor, notNullValue());
-		assertThat("Task start date", dateCaptor.getValue().getTime(),
+		assertThat("Task start date", dateCaptor.getValue().toEpochMilli(),
 				greaterThanOrEqualTo(now + TEST_STARTUP_DELAY * 1000L));
-		assertThat("Task delay", delayCaptor.getValue(), equalTo(TEST_UPDATE_FREQ * 1000L));
+		assertThat("Task delay", delayCaptor.getValue(), equalTo(Duration.ofSeconds(TEST_UPDATE_FREQ)));
 	}
 
 	@Test
 	public void runTaskWritesTimeoutSecondsToWatchdogRegister() throws IOException {
 		// GIVEN
 		Capture<Runnable> taskCaptor = Capture.newInstance();
-		expect(taskScheduler.scheduleWithFixedDelay(capture(taskCaptor), anyObject(Date.class),
-				anyLong())).andReturn(scheduledFuture());
+		expect(taskScheduler.scheduleWithFixedDelay(capture(taskCaptor), anyObject(Instant.class),
+				anyObject(Duration.class))).andReturn(scheduledFuture());
 
 		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
