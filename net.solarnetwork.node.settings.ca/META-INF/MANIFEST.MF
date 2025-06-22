@@ -13,7 +13,7 @@ Import-Package:
  net.solarnetwork.io;version="[3.0,4.0)",
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.backup;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.6,3.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",

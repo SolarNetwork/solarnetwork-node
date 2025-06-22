@@ -11,7 +11,7 @@ Import-Package:
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.domain.datum;version="[3.0,4.0)",
- net.solarnetwork.node.dao;version="[2.4,3.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.10,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
