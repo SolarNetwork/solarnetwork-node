@@ -1,21 +1,21 @@
 /* ==================================================================
  * WebProxyServletTests.java - 26/03/2019 2:55:40 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,26 +24,27 @@ package net.solarnetwork.node.setup.web.proxy.test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStreamReader;
-import java.util.zip.GZIPOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.util.FileCopyUtils;
+import jakarta.servlet.ServletException;
 import net.solarnetwork.node.setup.web.proxy.SimpleWebProxyConfiguration;
 import net.solarnetwork.node.setup.web.proxy.WebProxyServlet;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link WebProxyServlet} class.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class WebProxyServletTests extends AbstractHttpServerTests {
 
@@ -62,13 +63,17 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 
 	@Before
 	@Override
-	public void setup() throws Exception {
+	public void setup() {
 		super.setup();
 		configuration = new SimpleWebProxyConfiguration();
 		configuration.setProxyPath("bar");
 		configuration.setProxyTargetUri(getHttpServerBaseUrl());
 		servlet = new WebProxyServlet(configuration, PROXY_PATH_PREFIX);
-		servlet.init();
+		try {
+			servlet.init();
+		} catch ( ServletException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Test
@@ -78,17 +83,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "application/json; charset=utf-8", json.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithJson(request, response, json);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -107,17 +111,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -136,17 +139,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -165,17 +167,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -194,17 +195,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -225,22 +225,17 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				ByteArrayOutputStream byos = new ByteArrayOutputStream();
-				try (GZIPOutputStream out = new GZIPOutputStream(byos)) {
-					FileCopyUtils.copy(new ByteArrayInputStream(html.getBytes("UTF-8")), out);
-				}
-				response.setHeader("Content-Encoding", "gzip");
-				respondWithContent(response, "text/html; charset=utf-8", byos.toByteArray());
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				response.getHeaders().put("Content-Encoding", "gzip");
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -261,17 +256,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -292,17 +286,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -323,17 +316,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -352,17 +344,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -381,17 +372,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithContent(response, "text/html; charset=utf-8", html.getBytes("UTF-8"));
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithHtml(request, response, html);
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);
@@ -412,17 +402,16 @@ public class WebProxyServletTests extends AbstractHttpServerTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo(PROXIED_PATH));
-				respondWithResource(response, "test-html-01.html", "text/html; charset=utf-8");
-				response.flushBuffer();
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo(PROXIED_PATH));
+				respondWithResource(request, response, "test-html-01.html", "text/html; charset=utf-8");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// when
 		MockHttpServletRequest req = new MockHttpServletRequest("GET", REQUEST_PATH);

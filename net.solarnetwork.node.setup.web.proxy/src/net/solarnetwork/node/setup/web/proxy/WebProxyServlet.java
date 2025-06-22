@@ -1,21 +1,21 @@
 /* ==================================================================
  * WebProxyServlet.java - 25/03/2019 9:10:44 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,11 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
@@ -51,12 +46,17 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * HTTP proxy servlet configured via a {@link WebProxyConfiguration}.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class WebProxyServlet extends ProxyServlet {
 
@@ -98,7 +98,7 @@ public class WebProxyServlet extends ProxyServlet {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param configuration
 	 *        the configuration
 	 * @param proxyPathPrefix
@@ -152,12 +152,10 @@ public class WebProxyServlet extends ProxyServlet {
 		}
 		for ( HttpCookie cookie : cookies ) {
 			Cookie responseCookie = new Cookie(cookie.getName(), cookie.getValue());
-			responseCookie.setComment(cookie.getComment());
 			responseCookie.setMaxAge((int) cookie.getMaxAge());
 			responseCookie.setPath(path);
 			responseCookie.setHttpOnly(cookie.isHttpOnly());
 			responseCookie.setSecure(cookie.getSecure());
-			responseCookie.setVersion(cookie.getVersion());
 			LOG.debug("Remapped cookie {} path to {}", cookie, proxyPath);
 			servletResponse.addCookie(responseCookie);
 		}
@@ -410,7 +408,7 @@ public class WebProxyServlet extends ProxyServlet {
 
 	/**
 	 * Get the proxy configuration.
-	 * 
+	 *
 	 * @return the configuration
 	 */
 	public WebProxyConfiguration getConfiguration() {
@@ -419,7 +417,7 @@ public class WebProxyServlet extends ProxyServlet {
 
 	/**
 	 * Get the in-use proxy path.
-	 * 
+	 *
 	 * @return the proxy path
 	 */
 	public String getProxyPath() {
@@ -428,7 +426,7 @@ public class WebProxyServlet extends ProxyServlet {
 
 	/**
 	 * Get the in-use proxy target URI.
-	 * 
+	 *
 	 * @return the proxy target URI
 	 */
 	public String getProxyTargetUri() {
