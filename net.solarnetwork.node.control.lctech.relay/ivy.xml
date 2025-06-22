@@ -15,7 +15,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial" rev="5.0.0"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.lctech" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.lctech" rev="3.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.service.event" rev="1.4.1"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
