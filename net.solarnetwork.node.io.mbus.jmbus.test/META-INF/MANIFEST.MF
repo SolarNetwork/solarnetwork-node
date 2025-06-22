@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: M-Bus Communication Support (jMBus) Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.mbus.jmbus.test
 Bundle-Version: 3.0.0
-Fragment-Host: net.solarnetwork.node.io.mbus.jmbus;bundle-version="[2.0,3.0)"
+Fragment-Host: net.solarnetwork.node.io.mbus.jmbus;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.mbus.jmbus.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
