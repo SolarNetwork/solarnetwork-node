@@ -1,21 +1,21 @@
 /* ==================================================================
  * CozIrDatumDataSource.java - 28/08/2020 11:03:50 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,7 +28,6 @@ import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -66,9 +65,9 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Data source for CozIR series CO2 sensors.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<AtmosphericDatum>
 		implements DatumDataSource, SettingSpecifierProvider, SettingsChangeObserver,
@@ -106,7 +105,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -326,7 +325,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 		if ( taskScheduler != null ) {
 			log.info("Scheduling altitude calibration for 15s from now.");
 			altitudeCalibrationFuture = taskScheduler.schedule(task,
-					new Date(System.currentTimeMillis() + 15000L));
+					Instant.ofEpochMilli(System.currentTimeMillis() + 15000L));
 		} else {
 			task.run();
 		}
@@ -347,7 +346,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	/**
 	 * Calibrate the CO2 level to "fresh air" level.
-	 * 
+	 *
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
@@ -366,7 +365,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	/**
 	 * Get the CO2 calibration schedule to use.
-	 * 
+	 *
 	 * @return the cron schedule
 	 */
 	public String getCo2CalibrationSchedule() {
@@ -375,7 +374,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	/**
 	 * Set the CO2 calibration schedule to use.
-	 * 
+	 *
 	 * @param co2CalibrationSchedule
 	 *        the cron schedule to set
 	 */
@@ -386,14 +385,14 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 	/**
 	 * Set the altitude to use for configuring the CO2 compensation value of the
 	 * sensor.
-	 * 
+	 *
 	 * <p>
 	 * This is configured as a string to allow for placeholders via the
 	 * configured {@link PlaceholderService}. After resolving any placeholders
 	 * an integer value is expected representing the altitude of the sensor, in
 	 * meters.
 	 * </p>
-	 * 
+	 *
 	 * @param altitude
 	 *        the altitude to set, as a decimal number; placeholders are
 	 *        supported
@@ -404,7 +403,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	/**
 	 * Get the scheduler.
-	 * 
+	 *
 	 * @return the scheduler
 	 */
 	public OptionalService<TaskScheduler> getScheduler() {
@@ -413,7 +412,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	/**
 	 * Set the scheduler.
-	 * 
+	 *
 	 * @param scheduler
 	 *        the scheduler
 	 */
