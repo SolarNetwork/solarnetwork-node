@@ -7,8 +7,5 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="3.0.0"/>
-
-		<!-- Testing support -->
-		<dependency org="javax.annotation" name="javax.annotation-api" rev="1.3.2" />
     </dependencies>
 </ivy-module>
