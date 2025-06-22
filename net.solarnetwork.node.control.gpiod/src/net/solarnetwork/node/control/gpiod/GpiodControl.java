@@ -1,21 +1,21 @@
 /* ==================================================================
  * GpiodControl.java - 1/06/2023 10:35:30 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -78,9 +77,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Datum data source for the Linux gpiod library.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GpiodControl extends BaseIdentifiable implements NodeControlProvider, InstructionHandler,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -101,7 +100,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the event admin
 	 * @param taskScheduler
@@ -326,7 +325,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 				configureDelay);
 		if ( taskScheduler != null ) {
 			configureFuture = taskScheduler.schedule(r,
-					new Date(System.currentTimeMillis() + configureDelay));
+					Instant.ofEpochMilli(System.currentTimeMillis() + configureDelay));
 		} else {
 			r.run();
 		}
@@ -531,7 +530,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Get configure delay.
-	 * 
+	 *
 	 * @return the delay, in milliseconds; defaults to
 	 *         {@link #DEFAULT_CONFIGURE_DELAY}
 	 */
@@ -541,7 +540,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Set the configure delay.
-	 * 
+	 *
 	 * @param configureDelay
 	 *        the delay to set
 	 */
@@ -551,7 +550,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Get the GPIO device.
-	 * 
+	 *
 	 * @return the device, either as a full system device path or a number
 	 */
 	public String getGpioDevice() {
@@ -560,7 +559,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Set the GPIO device.
-	 * 
+	 *
 	 * @param gpioDevice
 	 *        the device to set, either as a full system device path or a number
 	 */
@@ -570,7 +569,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public GpiodPropertyConfig[] getPropConfigs() {
@@ -579,7 +578,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Get the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -589,7 +588,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -599,12 +598,12 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link GpiodPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
