@@ -4,7 +4,7 @@ Bundle-Name: Command Line System Service
 Bundle-SymbolicName: net.solarnetwork.node.system.cmdline
 Automatic-Module-Name: net.solarnetwork.node.system.cmdline
 Bundle-Description: Provides core system services such as restart and reboot features.
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

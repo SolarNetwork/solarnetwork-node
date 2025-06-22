@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Camera Control via Motion
 Bundle-Description: Capture camera images via the Motion system tool.
 Bundle-SymbolicName: net.solarnetwork.node.control.camera.motion
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.camera.motion
 Bundle-RequiredExecutionEnvironment: JavaSE-17

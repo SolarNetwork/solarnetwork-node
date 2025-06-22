@@ -4,7 +4,7 @@ Bundle-Name: M-Bus Datum Source
 Bundle-Description: Collect data from arbitrary M-Bus devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.mbus
 Automatic-Module-Name: net.solarnetwork.node.datum.mbus
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

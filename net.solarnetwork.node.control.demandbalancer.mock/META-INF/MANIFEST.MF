@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock Generation Limit Control
 Bundle-SymbolicName: net.solarnetwork.node.control.demandbalancer.mock
 Automatic-Module-Name: net.solarnetwork.node.control.demandbalancer.mock
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

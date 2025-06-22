@@ -4,7 +4,7 @@ Bundle-Name: Schneider Electric Hardware Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.schneider
 Automatic-Module-Name: net.solarnetwork.node.hw.schneider
 Bundle-Description: Hardware support for Schneider Electric devices.
-Bundle-Version: 4.0.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

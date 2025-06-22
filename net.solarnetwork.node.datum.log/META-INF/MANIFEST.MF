@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Log Datum Source
 Bundle-Description: Generate a datum stream from SolarNode log events.
 Bundle-SymbolicName: net.solarnetwork.node.datum.log
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.log
 Bundle-RequiredExecutionEnvironment: JavaSE-17

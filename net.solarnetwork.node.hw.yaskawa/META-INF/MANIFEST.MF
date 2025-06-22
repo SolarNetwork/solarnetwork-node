@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Yaskawa Device Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.yaskawa
 Bundle-Description: Hardware support for Yaskawa devices.
-Bundle-Version: 3.2.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Automatic-Module-Name: net.solarnetwork.node.hw.yaskawa

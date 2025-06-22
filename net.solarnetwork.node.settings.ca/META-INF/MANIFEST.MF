@@ -4,7 +4,7 @@ Bundle-Name: Core Settings Support
 Bundle-SymbolicName: net.solarnetwork.node.settings.ca
 Automatic-Module-Name: net.solarnetwork.node.settings.ca
 Bundle-Description: Provides persistent storage of user-customized SolarNode settings.
-Bundle-Version: 3.5.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

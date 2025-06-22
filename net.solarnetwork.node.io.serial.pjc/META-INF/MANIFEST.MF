@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Serial Communication Support (PJC)
 Bundle-Description: SolarNode serial communication API implementation using the PureJavaComm framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.serial.pjc
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.serial.pjc
 Bundle-RequiredExecutionEnvironment: JavaSE-17

@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.control.loadshedder
 Automatic-Module-Name: net.solarnetwork.node.control.loadshedder
 Bundle-Description: Service to monitor demand conditions (consumption) and make adjustments \
  to another switch-based control to limit demand to a maximum level.
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

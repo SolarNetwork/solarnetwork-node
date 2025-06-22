@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: GSS CozIR CO2 Sensor Data Source
 Bundle-Description: Collect data from Electro GSS CozIR series CO2 sensors.
 Bundle-SymbolicName: net.solarnetwork.node.datum.gss.cozir
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.gss.cozir
 Bundle-RequiredExecutionEnvironment: JavaSE-17

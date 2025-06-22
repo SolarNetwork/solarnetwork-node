@@ -4,7 +4,7 @@ Bundle-Name: JF2 LATA Switch Control
 Bundle-SymbolicName: net.solarnetwork.node.control.jf2.lata
 Automatic-Module-Name: net.solarnetwork.node.control.jf2.lata
 Bundle-Description: Control the digital switches on a LATA device.
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

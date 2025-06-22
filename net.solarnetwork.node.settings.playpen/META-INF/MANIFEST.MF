@@ -5,7 +5,7 @@ Bundle-Description: Explore the SolarNode Settings system to learn how SolarNode
  can be configured at runtime.
 Bundle-SymbolicName: net.solarnetwork.node.settings.playpen
 Automatic-Module-Name: net.solarnetwork.node.settings.playpen
-Bundle-Version: 3.3.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

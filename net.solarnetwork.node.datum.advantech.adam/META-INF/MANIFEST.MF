@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Advantech ADAM Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.advantech.adam
 Bundle-Description: Collect generation data from Advantech ADAM series devices.
-Bundle-Version: 4.1.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.daum.advantech.adam
 Bundle-RequiredExecutionEnvironment: JavaSE-17

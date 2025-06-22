@@ -4,7 +4,7 @@ Bundle-Name: Setup via STOMP
 Bundle-Description: Provides a TCP server using the STOMP protocol for setup 
  integration with external applications.
 Bundle-SymbolicName: net.solarnetwork.node.setup.stomp
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.stomp
 Bundle-RequiredExecutionEnvironment: JavaSE-17

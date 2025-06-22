@@ -4,7 +4,7 @@ Bundle-Name: SMA Core Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.sma
 Automatic-Module-Name: net.solarnetwork.node.hw.sma
 Bundle-Description: Hardware support for SMA devices.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Environmental Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.sunspec.environmental
 Bundle-Description: Collect data from SunSpec compatible Modbus environmental sensors.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.sunspec.environmental
 Bundle-RequiredExecutionEnvironment: JavaSE-17

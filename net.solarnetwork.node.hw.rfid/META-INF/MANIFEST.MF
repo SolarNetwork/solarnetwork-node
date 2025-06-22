@@ -4,7 +4,7 @@ Bundle-Name: RFID Reader
 Bundle-Description: Support for scanning RFID cards.
 Bundle-SymbolicName: net.solarnetwork.node.hw.rfid
 Automatic-Module-Name: net.solarnetwork.node.hw.rfid
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Main-Class: net.solarnetwork.node.hw.rfid.RfidSocketReader

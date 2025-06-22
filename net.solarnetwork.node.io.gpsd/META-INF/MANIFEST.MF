@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: GPSd Communication Support
 Bundle-Description: Communication support for the GPSd network protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.gpsd
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd
 Bundle-RequiredExecutionEnvironment: JavaSE-17

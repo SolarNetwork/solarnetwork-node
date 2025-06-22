@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: GPSd GPS Data Source
 Bundle-Description: Collect GPS data from a GPSd daemon.
 Bundle-SymbolicName: net.solarnetwork.node.datum.gps.gpsd
-Bundle-Version: 3.2.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.datum.gps.gpsd
 Bundle-RequiredExecutionEnvironment: JavaSE-17

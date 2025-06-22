@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support - Serial (Nifty Modbus PJC)
 Bundle-Description: Modbus serial (RTU) support using Nifty Modbus and PureJavaComm.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty.pjc
-Bundle-Version: 1.1.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty.pjc
 Bundle-RequiredExecutionEnvironment: JavaSE-17

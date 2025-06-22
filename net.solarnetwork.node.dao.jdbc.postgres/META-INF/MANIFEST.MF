@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Postgres Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.postgres
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.postgres
 Bundle-RequiredExecutionEnvironment: JavaSE-17

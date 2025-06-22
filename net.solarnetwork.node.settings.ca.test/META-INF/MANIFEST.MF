@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Configuration Admin Settings Tests
 Bundle-SymbolicName: net.solarnetwork.node.settings.ca.test
-Bundle-Version: 3.3.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.settings.ca;bundle-version="[3.4,4.0)"
+Fragment-Host: net.solarnetwork.node.settings.ca;bundle-version="[4.0,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.settings.ca.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

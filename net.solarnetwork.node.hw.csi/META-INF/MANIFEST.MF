@@ -4,7 +4,7 @@ Bundle-Name: Canadian Solar Inc Hardware Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.csi
 Automatic-Module-Name: net.solarnetwork.node.hw.csi
 Bundle-Description: Hardware support for Canadian Solar Inc devices.
-Bundle-Version: 3.2.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

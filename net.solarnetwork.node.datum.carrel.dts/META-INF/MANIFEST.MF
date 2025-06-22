@@ -4,7 +4,7 @@ Bundle-Name: Carrel-Electrade Meter Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.datum.carrel.dts
 Automatic-Module-Name: net.solarnetwork.node.datum.carrel.dts
 Bundle-Description: Collect consumption data from Carrel-Electrade watt meters.
-Bundle-Version: 4.1.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

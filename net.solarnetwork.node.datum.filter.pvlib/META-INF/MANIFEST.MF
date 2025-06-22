@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: pvlib Datum Filter
 Bundle-Description: Calculate solar characteristics like POA irradiance from GHI data.
 Bundle-SymbolicName: net.solarnetwork.node.datum.filter.pvlib
-Bundle-Version: 1.2.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.filter.pvlib
 Bundle-RequiredExecutionEnvironment: JavaSE-17

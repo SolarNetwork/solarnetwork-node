@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Operational Mode Controller
 Bundle-Description: Respond to operational mode changes by executing changes in other controls.
 Bundle-SymbolicName: net.solarnetwork.node.control.opmode
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.opmode
 Bundle-RequiredExecutionEnvironment: JavaSE-17

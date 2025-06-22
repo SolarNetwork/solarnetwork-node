@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Time of Use Datum Source
 Bundle-Description: Generate a datum stream from a time-of-use tariff schedule.
 Bundle-SymbolicName: net.solarnetwork.node.datum.tou
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.tou
 Bundle-RequiredExecutionEnvironment: JavaSE-17

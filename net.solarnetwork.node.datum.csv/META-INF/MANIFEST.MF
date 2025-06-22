@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CSV Datum Source
 Bundle-Description: Parse a CSV resource into a datum stream.
 Bundle-SymbolicName: net.solarnetwork.node.datum.csv
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.csv
 Bundle-RequiredExecutionEnvironment: JavaSE-17

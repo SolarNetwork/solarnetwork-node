@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.setup.developer
 Automatic-Module-Name: net.solarnetwork.node.setup.developer
 Bundle-Description: Developer SolarNode setup service to work with the SolarNode 
  application without requiring an approved X.509 certificate.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

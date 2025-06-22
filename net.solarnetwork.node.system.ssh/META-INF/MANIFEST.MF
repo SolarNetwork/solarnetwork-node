@@ -4,7 +4,7 @@ Bundle-Name: System SSH Support
 Bundle-SymbolicName: net.solarnetwork.node.system.ssh
 Automatic-Module-Name: net.solarnetwork.node.setup.ssh
 Bundle-Description: Provides core system remote administration support via SSH.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

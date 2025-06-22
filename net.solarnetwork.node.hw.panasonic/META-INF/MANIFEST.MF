@@ -4,7 +4,7 @@ Bundle-Name: Panasonic Device Support
 Bundle-Description: Hardware support for Panasonic devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.panasonic
 Automatic-Module-Name: net.solarnetwork.node.hw.panasonic
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SoalrNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

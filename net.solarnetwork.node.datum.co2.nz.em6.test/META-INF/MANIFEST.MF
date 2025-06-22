@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Carbon Tracking (NZ em6) Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.co2.nz.em6.test
-Bundle-Version: 1.0.0
-Fragment-Host: net.solarnetwork.node.datum.co2.nz.em6;bundle-version="[1.0,2.0)"
+Bundle-Version: 2.0.0
+Fragment-Host: net.solarnetwork.node.datum.co2.nz.em6;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.co2.nz.em6.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

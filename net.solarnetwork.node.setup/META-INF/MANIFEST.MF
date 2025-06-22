@@ -4,7 +4,7 @@ Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
 Automatic-Module-Name: net.solarnetwork.node.setup
 Bundle-Description: Provides core SolarNode setup infrastructure support.
-Bundle-Version: 3.0.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

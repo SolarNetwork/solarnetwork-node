@@ -4,7 +4,7 @@ Bundle-Name: Deson Electric Hardware Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.deson
 Automatic-Module-Name: net.solarnetwork.node.hw.deson
 Bundle-Description: Hardware support for Deson Electric devices.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

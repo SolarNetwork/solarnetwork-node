@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Elkor Hardware Support
 Bundle-Description: Hardware support for Elkor devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.elkor
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.elkor
 Bundle-RequiredExecutionEnvironment: JavaSE-17

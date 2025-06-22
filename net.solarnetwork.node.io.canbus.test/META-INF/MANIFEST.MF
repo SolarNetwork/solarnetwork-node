@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Communication Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.canbus.test
-Bundle-Version: 4.0.0
-Fragment-Host: net.solarnetwork.node.io.canbus;bundle-version="[4.0,5.0)"
+Bundle-Version: 5.0.0
+Fragment-Host: net.solarnetwork.node.io.canbus;bundle-version="[5.0,6.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.canbus.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Server Persistence (JDBC) Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server.dao.jdbc.test
-Bundle-Version: 1.1.1
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.io.modbus.server.dao.jdbc;bundle-version="[1.1.2,2.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server.dao.jdbc.tests

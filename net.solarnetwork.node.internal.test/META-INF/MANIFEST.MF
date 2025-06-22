@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Core Internal Tests
 Bundle-SymbolicName: net.solarnetwork.node.internal.test
 Automatic-Module-Name: net.solarnetwork.node.internal.test
-Bundle-Version: 3.13.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node;bundle-version="[3.23,4.0)"
+Fragment-Host: net.solarnetwork.node;bundle-version="[4.0,5.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.databind.module;version="[2.19,3.0)",

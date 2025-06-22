@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode ESI Control Tests
 Bundle-SymbolicName: net.solarnetwork.node.control.esi.test
-Bundle-Version: 0.2.0
+Bundle-Version: 0.5.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.control.esi;bundle-version="[0.2,1.0)"
+Fragment-Host: net.solarnetwork.node.control.esi;bundle-version="[0.5,1.0)"
 Automatic-Module-Name: net.solarnetwork.node.control.esi.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

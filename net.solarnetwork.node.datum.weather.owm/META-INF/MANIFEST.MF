@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OpenWeatherMap Weather
 Bundle-Description: Collect weather data from the OpenWeatherMap.
 Bundle-SymbolicName: net.solarnetwork.node.datum.weather.owm
-Bundle-Version: 3.0.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.weather.owm
 Bundle-RequiredExecutionEnvironment: JavaSE-17

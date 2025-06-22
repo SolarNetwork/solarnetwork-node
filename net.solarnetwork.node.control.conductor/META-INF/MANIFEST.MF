@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Control Conductor
 Bundle-Description: Orchestrate the execution of sets of tasks.
 Bundle-SymbolicName: net.solarnetwork.node.control.conductor
-Bundle-Version: 1.1.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.conductor
 Bundle-RequiredExecutionEnvironment: JavaSE-17

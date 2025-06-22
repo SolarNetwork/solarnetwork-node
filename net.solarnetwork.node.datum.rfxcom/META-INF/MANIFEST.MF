@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.datum.rfxcom
 Automatic-Module-Name: net.solarnetwork.node.datum.rfxcom
 Bundle-Description: Collect data from energy meter devices via the RFXCOM \
  RFXtrx433 wireless transceiver.
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

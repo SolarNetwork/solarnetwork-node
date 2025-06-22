@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Numato USB GPIO Control
 Bundle-Description: Control GPIO states on a Numato USB GPIO module.
 Bundle-SymbolicName: net.solarnetwork.node.control.numato.usbgpio
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.numato.usbgpio
 Bundle-RequiredExecutionEnvironment: JavaSE-17

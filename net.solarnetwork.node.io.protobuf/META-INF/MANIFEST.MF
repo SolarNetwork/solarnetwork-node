@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Protobuf I/O
 Bundle-SymbolicName: net.solarnetwork.node.io.protobuf
 Bundle-Description: SolarNode support for the Protobuf serialization protocol.
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.protobuf
 Bundle-RequiredExecutionEnvironment: JavaSE-17

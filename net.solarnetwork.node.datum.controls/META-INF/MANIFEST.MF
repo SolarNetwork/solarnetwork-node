@@ -4,7 +4,7 @@ Bundle-Name: Controls Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.controls
 Automatic-Module-Name: net.solarnetwork.node.datum.controls
 Bundle-Description: Collect samples from configured controls into datum streams.
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

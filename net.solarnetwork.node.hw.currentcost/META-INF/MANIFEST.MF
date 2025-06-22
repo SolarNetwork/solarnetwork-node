@@ -4,7 +4,7 @@ Bundle-Name: CurrentCost Support
 Bundle-Description: Hardware support for CurrentCost devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.currentcost
 Automatic-Module-Name: net.solarnetwork.node.hw.currentcost
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

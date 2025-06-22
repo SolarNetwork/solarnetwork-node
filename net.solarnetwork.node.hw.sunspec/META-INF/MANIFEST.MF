@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.sunspec
 Bundle-Description: Hardware support for SunSpec devices.
-Bundle-Version: 4.5.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.sunspec
 Bundle-RequiredExecutionEnvironment: JavaSE-17

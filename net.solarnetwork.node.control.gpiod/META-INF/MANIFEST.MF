@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: GPIO Device Control
 Bundle-Description: Read and write digital IO on Linux GPIO devices.
 Bundle-SymbolicName: net.solarnetwork.node.control.gpiod
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.gpiod
 Bundle-RequiredExecutionEnvironment: JavaSE-17

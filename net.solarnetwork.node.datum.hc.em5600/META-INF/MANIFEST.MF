@@ -4,7 +4,7 @@ Bundle-Name: Hsiang Cheng Electric EM56XX Meter Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.datum.hc.em5600
 Automatic-Module-Name: net.solarnetwork.node.datum.hc.em5600
 Bundle-Description: Collect AC electricity data from Hsiang Cheng EM56XX series meter devices.
-Bundle-Version: 4.1.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Database Connection
 Bundle-Description: Provides database storage connection configuration for the SolarNode application.
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.con
-Bundle-Version: 1.2.0
+Bundle-Version: 2.0.0
 Bundle-Activator: net.solarnetwork.node.dao.jdbc.con.Activator
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17

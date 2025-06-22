@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Log4j2 Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.setup.log4j2.test
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.setup.log4j2;bundle-version="[1.0.0,2.0.0)"
+Fragment-Host: net.solarnetwork.node.setup.log4j2;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.setup.log4j2.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

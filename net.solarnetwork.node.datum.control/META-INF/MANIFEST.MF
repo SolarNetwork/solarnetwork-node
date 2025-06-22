@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Control Datum Source
 Bundle-Description: Generate datum from configured SolarNode controls.
 Bundle-SymbolicName: net.solarnetwork.node.datum.control
-Bundle-Version: 3.1.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.control
 Bundle-RequiredExecutionEnvironment: JavaSE-17

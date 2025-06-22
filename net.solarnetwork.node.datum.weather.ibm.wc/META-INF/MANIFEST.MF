@@ -4,7 +4,7 @@ Bundle-Name: IBM Weather Channel
 Bundle-Description: Collect weather data from IBM Weather Channel.
 Bundle-SymbolicName: net.solarnetwork.node.datum.weather.ibm.wc
 Automatic-Module-Name: net.solarnetwork.node.weather.ibm.wc
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

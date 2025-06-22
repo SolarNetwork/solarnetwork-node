@@ -4,7 +4,7 @@ Bundle-Name: Core Security
 Bundle-SymbolicName: net.solarnetwork.node.setup.security
 Automatic-Module-Name: net.solarnetwork.node.setup.security
 Bundle-Description: Default node authentication and authorization provider.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

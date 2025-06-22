@@ -6,7 +6,7 @@ Automatic-Module-Name: net.solarnetwork.node.io.modbus
 Bundle-Description: SolarNode API for the Modbus network protocol. Another 
  plugin that implements this API must be provided, for example the Jamod 
  plugin.
-Bundle-Version: 5.3.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

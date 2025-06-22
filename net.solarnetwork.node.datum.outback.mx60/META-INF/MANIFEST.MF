@@ -4,7 +4,7 @@ Bundle-Name: Outback MX60 Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.datum.outback.mx60
 Automatic-Module-Name: net.solarnetwork.node.datum.outback.mx60
 Bundle-Description: Collect generation data from Outback MX60 inverters.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

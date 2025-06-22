@@ -6,7 +6,7 @@ Bundle-SymbolicName: net.solarnetwork.node.io.serial
 Bundle-Description: SolarNode API for serial network communication. Another 
  plugin that implements this API must be provided, for example the RXTX 
  plugin.
-Bundle-Version: 4.2.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

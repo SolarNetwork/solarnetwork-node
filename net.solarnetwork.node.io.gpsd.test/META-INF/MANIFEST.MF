@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: GPSd integration tests
 Bundle-SymbolicName: net.solarnetwork.node.io.gpsd.test
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.io.gpsd;bundle-version="[3.1,4.0)"
+Fragment-Host: net.solarnetwork.node.io.gpsd;bundle-version="[4.0,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

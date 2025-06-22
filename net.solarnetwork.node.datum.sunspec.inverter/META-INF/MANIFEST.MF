@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Inverter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.sunspec.inverter
 Bundle-Description: Collect data from SunSpec compatible Modbus inverters.
-Bundle-Version: 4.3.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.sunspec.inverter
 Bundle-RequiredExecutionEnvironment: JavaSE-17

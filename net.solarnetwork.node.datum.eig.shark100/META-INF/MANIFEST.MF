@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Electro Industries/GaugeTech Shark 100 Meter Data Source
 Bundle-Description: Collect data from Electro Industries/GaugeTech Shark 100 series meter devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.eig.shark100
-Bundle-Version: 4.1.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.eig.shark100
 Bundle-RequiredExecutionEnvironment: JavaSE-17

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Electro Industries/GaugeTech Hardware Support
 Bundle-Description: Hardware support for Electro Industries/GaugeTech devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.eig
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.eig
 Bundle-RequiredExecutionEnvironment: JavaSE-17

@@ -4,7 +4,7 @@ Bundle-Name: Yr Weather
 Bundle-SymbolicName: net.solarnetwork.node.datum.weather.yr
 Automatic-Module-Name: net.solarnetwork.node.weather.yr
 Bundle-Description: Collect weather data from Yr.
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 

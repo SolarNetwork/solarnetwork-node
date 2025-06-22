@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Tariff Datum Filter
 Bundle-Description: Add a time-of-use tariff to datum based on a spreadsheet tariff schedule.
 Bundle-SymbolicName: net.solarnetwork.node.datum.filter.tariff
-Bundle-Version: 3.3.0
+Bundle-Version: 4.0.0
 Automatic-Module-Name: net.solarnetwork.node.datum.filter.tariff
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-Vendor: SolarNetwork

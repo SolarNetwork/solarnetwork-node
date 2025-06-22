@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock Package Service
 Bundle-SymbolicName: net.solarnetwork.node.setup.mockpkg
 Bundle-Description: Support for testing setup packages.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.mockpkg
 Bundle-RequiredExecutionEnvironment: JavaSE-17

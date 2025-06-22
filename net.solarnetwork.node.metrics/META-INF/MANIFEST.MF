@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Metrics Core
 Bundle-Description: Support for local metrics collection and querying.
 Bundle-SymbolicName: net.solarnetwork.node.metrics
-Bundle-Version: 1.2.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.metrics
 Bundle-RequiredExecutionEnvironment: JavaSE-17

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock GPSd Communication Support
 Bundle-Description: A mock implementation of a GPSd server for testing purposes.
 Bundle-SymbolicName: net.solarnetwork.node.io.gpsd.mock
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.control.modbus.toggle
 Automatic-Module-Name: net.solarnetwork.node.control.modbus.toggle
 Bundle-Description: Service to control arbitrary Modbus-accessible digital switches, 
  turning the switches on or off.
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

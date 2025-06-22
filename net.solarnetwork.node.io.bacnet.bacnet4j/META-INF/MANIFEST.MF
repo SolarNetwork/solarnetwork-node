@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: BACnet Communication (BACnet4J)
 Bundle-SymbolicName: net.solarnetwork.node.io.bacnet.bacnet4j
 Bundle-Description: SolarNode BACnet API implementation using the BACnet4J framework.
-Bundle-Version: 2.2.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.bacnet.bacnet4j
 Bundle-RequiredExecutionEnvironment: JavaSE-17

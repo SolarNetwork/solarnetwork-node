@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: S3 Storage Support
 Bundle-Description: Support for S3 storage.
 Bundle-SymbolicName: net.solarnetwork.node.io.s3
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.s3
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

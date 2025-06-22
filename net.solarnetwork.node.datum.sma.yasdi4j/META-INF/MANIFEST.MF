@@ -4,7 +4,7 @@ Bundle-Name: SMA Power Datum DataSource (yasdi4j)
 Bundle-SymbolicName: net.solarnetwork.node.datum.sma.yasdi4j
 Automatic-Module-Name: net.solarnetwork.node.datum.sma.yasdi4j
 Bundle-Description: Collect generation data from SMA inverts using the SMANet protocol via yasdi4j.
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
