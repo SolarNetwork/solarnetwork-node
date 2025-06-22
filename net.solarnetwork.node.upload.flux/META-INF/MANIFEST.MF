@@ -18,7 +18,7 @@ Import-Package:
  javax.net.ssl,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.mqtt;version="[3.0,4.0)",
- net.solarnetwork.common.mqtt.dao;version="[2.0,3.0)",
+ net.solarnetwork.common.mqtt.dao;version="[3.0,4.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.dao;version="[3.0,4.0)",
  net.solarnetwork.domain;version="[3.0,4.0)",
