@@ -29,7 +29,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +82,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * GPSd client component.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class GpsdClientService extends BasicIdentifiable implements GpsdClientConnection,
 		SettingsChangeObserver, SettingSpecifierProvider, GpsdMessageHandler {
@@ -408,7 +407,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 						}
 					}
 				}
-			}, new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
+			}, Instant.ofEpochMilli(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
 			connectFuture = f;
 			postClientStatusChangeEvent(GpsdClientStatus.ConnectionScheduled);
 			return f;
