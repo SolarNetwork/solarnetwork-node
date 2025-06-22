@@ -28,7 +28,6 @@ import java.net.URLConnection;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -45,7 +44,7 @@ import net.solarnetwork.util.StringUtils;
  * Basic JSON client implementation of {@link SolcastClient}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JsonSolcastClient extends JsonHttpClientSupport
 		implements ConfigurableSolcastClient, Consumer<URLConnection> {
@@ -133,8 +132,7 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 				} else if ( !ts.isAfter(now) && (mostRecentOnOrBeforeNow == null
 						|| ts.isAfter(mostRecentOnOrBeforeNow.getTimestamp())) ) {
 					DatumSamples s = new DatumSamples();
-					for ( Iterator<Entry<String, JsonNode>> itr = node.fields(); itr.hasNext(); ) {
-						Entry<String, JsonNode> f = itr.next();
+					for ( final Entry<String, JsonNode> f : node.properties() ) {
 						String fieldName = f.getKey();
 						JsonNode n = f.getValue();
 						if ( "period_end".equals(fieldName) ) {
