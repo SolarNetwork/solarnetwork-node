@@ -13,8 +13,8 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
-		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
-		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
+		<dependency org="org.osgi" name="org.osgi.framework" rev="1.10.0"/>
+		<dependency org="org.osgi" name="org.osgi.service.event" rev="1.4.1"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
 	</dependencies>
 </ivy-module>
