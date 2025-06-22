@@ -193,7 +193,7 @@
 		</div>
 	</form>
 
-	<form class="row mt-3" action="<setup:url value='/a/settings/importBackup'/>" method="post" enctype="multipart/form-data">
+	<form class="row mt-3" action="/a/settings/importBackup" method="post" enctype="multipart/form-data" data-th-action="@{/a/settings/importBackup}">
 		<label class="col-sm-4 col-md-3 col-form-label" for="backup-import-field" data-th-text="#{backup.import.label}">
 			Import
 		</label>
@@ -212,34 +212,33 @@
 			</button>
 		</div>
 	</form>
-	<form id="backup-restore-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false"
-			action="/a/backups/restore" method="post"
-			data-th-action="@{/a/backups/restore}">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3 class="modal-title" data-th-text="#{backup.restore.title}">Restore</h3>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-				</div>
-				<div class="modal-body">
-					<p data-th-utext="#{backup.restore.intro}">Restore backups here.</p>
-					<div id="backup-restore-list-container" class="menu-list noselect"
-						data-th-data-msg-items="#{items}"
-						data-th-data-msg-item="#{item}"></div>
-					<div class="progress hidden" role="progressbar">
-						<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-			    	</div>
-				</div>
-				<div class="modal-footer">
-					<input type="hidden" name="key" value=""/>
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-					<button type="submit" class="btn btn-danger">
-						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
-						<span data-th-text="#{backup.restore.button}">Restore</span>
-					</button>
-				</div>
-			</div>
+	<form id="backup-restore-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = backup-restore-modal,
+			action =@{/a/backups/restore}, 
+			title = #{backup.restore.title},
+			body = ~{::#backup-restore-modal//.modal-body}, 
+			footer = ~{::#backup-restore-modal//.modal-footer},
+			staticModal = true)}">
+
+		<div class="modal-body">
+			<p data-th-utext="#{backup.restore.intro}">Restore backups here.</p>
+			<div id="backup-restore-list-container" class="menu-list noselect"
+				data-th-data-msg-items="#{items}"
+				data-th-data-msg-item="#{item}"></div>
+			<div class="progress hidden" role="progressbar">
+				<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+	    	</div>
 		</div>
+
+		<div class="modal-footer">
+			<input type="hidden" name="key" value=""/>
+			<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+			<button type="submit" class="btn btn-danger">
+				<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+				<span data-th-text="#{backup.restore.button}">Restore</span>
+			</button>
+		</div>
+
 	</form>
     <!--/*/ </th:block> /*/-->
 </section>

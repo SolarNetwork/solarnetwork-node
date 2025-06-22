@@ -42,37 +42,38 @@
 	</table>
 </section>
 
-<div id="datum-sources-datum-detail-modal" class="modal modal-lg fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title" data-th-text="#{datum-sources.datum.details.title}">Datum Source Datum Details</h3>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p data-th-utext="#{datum-sources.datum.details.intro}">
-					Datum Source datum details are shown here.
-				</p>
-				<table class="table table-sm some">
-					<thead>
-						<tr>
-							<th data-th-text="#{datum.property.label}">Property</th>
-							<th data-th-text="#{datum.property.value.label}">Value</th>
-						</tr>
-						<tr class="template item">
-							<th data-tprop="propName"></th>
-							<td data-tprop="propVal"></td>
-						</tr>
-					</thead>
-					<tbody class="list-container">
-					</tbody>
-				</table>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-			</div>
-		</div>
+<div id="datum-sources-datum-detail-modal" data-th-replace="~{inc/modals :: modal(
+			id = datum-sources-datum-detail-modal, 
+			title = #{datum-sources.datum.details.title},
+			body = ~{::#datum-sources-datum-detail-modal//.modal-body}, 
+			footer = ~{::#datum-sources-datum-detail-modal//.modal-footer},
+			additionalClass = modal-lg,
+			staticModal = true)}">
+
+	<div class="modal-body">
+		<p data-th-utext="#{datum-sources.datum.details.intro}">
+			Datum Source datum details are shown here.
+		</p>
+		<table class="table table-sm some">
+			<thead>
+				<tr>
+					<th data-th-text="#{datum.property.label}">Property</th>
+					<th data-th-text="#{datum.property.value.label}">Value</th>
+				</tr>
+				<tr class="template item">
+					<th data-tprop="propName"></th>
+					<td data-tprop="propVal"></td>
+				</tr>
+			</thead>
+			<tbody class="list-container">
+			</tbody>
+		</table>
 	</div>
+
+	<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+	</div>
+
 </div>
 
 </body>

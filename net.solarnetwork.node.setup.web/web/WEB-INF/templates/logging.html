@@ -43,58 +43,57 @@
 	</table>
 </section>
 
-<form id="edit-logger-level-modal" class="modal modal-lg fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false"
-		action="/a/logging/levels" method="post"
-		data-th-action="@{/a/logging/levels}">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title" data-th-text="#{logging.levels.edit.title}">Edit Level</h3>
-				<button type="button" class="btn-close" data-bs-dismiss="modal"
-						data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p data-th-utext="#{logging.levels.edit.intro}">
-					About logging levels.
-				</p>
-				<label class="form-label" for="logging-logger-levels-logger" data-th-text="#{logging.levels.logger.label}">Logger</label>
-				<input class="form-control" type="text" maxlength="256" name="logger" id="logging-logger-levels-logger" aria-describedby="logging-logger-levels-logger-help">
-				<div class="form-text" id="logging-logger-levels-logger-help" data-th-utext="#{logging.levels.logger.caption}">
-					Caption about logger.
-				</div>
+<form id="edit-logger-level-modal" data-th-action="@{/a/logging/levels}" data-th-replace="~{inc/modals :: modal_form(
+			id = edit-logger-level-modal,
+			action = @{/a/logging/levels}, 
+			title = #{logging.levels.edit.title},
+			body = ~{::#edit-logger-level-modal//.modal-body}, 
+			footer = ~{::#edit-logger-level-modal//.modal-footer},
+			additionalClass = modal-lg,
+			staticModal = true)}">
 
-				<label class="form-label mt-3" for="logging-logger-levels-level" data-th-text="#{logging.levels.level.label}">Level</label>
-				<select class="form-select" name="level" id="logging-logger-levels-level" aria-describedby="logging-logger-levels-level-help">
-					<option value="trace" data-th-text="#{logging.levels.TRACE.label}">TRACE</option>
-					<option value="debug" data-th-text="#{logging.levels.DEBUG.label}">DEBUG</option>
-					<option value="info" selected data-th-text="#{logging.levels.INFO.label}">INFO</option>
-					<option value="warn" data-th-text="#{logging.levels.WARN.label}">WARN</option>
-					<option value="error" data-th-text="#{logging.levels.ERROR.label}">ERROR</option>
-					<option value="off" data-th-text="#{logging.levels.OFF.label}">OFF</option>
-					<option value="inherit" data-th-text="#{logging.levels.INHERIT.label}">INHERIT</option>
-				</select>
-				<span class="form-text" id="logging-logger-levels-level-help" data-th-text="#{logging.levels.level.caption}">
-					Caption about levels.
-				</span>
-
-				<p class="create mt-3" data-th-utext="#{logging.levels.edit.loggers.intro}">
-					About editing logging levels.
-				</p>
-				<select class="create form-select" name="loggers" readonly size="10" id="logging-loggers">
-					<option value="trace" data-th-text="#{logging.levels.TRACE.label}">TRACE</option>
-					<option value="debug" data-th-text="#{logging.levels.DEBUG.label}">DEBUG</option>
-					<option value="info" selected data-th-text="#{logging.levels.INFO.label}">INFO</option>
-					<option value="warn" data-th-text="#{logging.levels.WARN.label}">WARN</option>
-					<option value="error" data-th-text="#{logging.levels.ERROR.label}">ERROR</option>
-					<option value="off" data-th-text="#{logging.levels.OFF.label}">OFF</option>
-				</select>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-primary" data-th-text="#{logging.levels.edit.save.label}">Save</button>
-			</div>
+	<div class="modal-body">
+		<p data-th-utext="#{logging.levels.edit.intro}">
+			About logging levels.
+		</p>
+		<label class="form-label" for="logging-logger-levels-logger" data-th-text="#{logging.levels.logger.label}">Logger</label>
+		<input class="form-control" type="text" maxlength="256" name="logger" id="logging-logger-levels-logger" aria-describedby="logging-logger-levels-logger-help">
+		<div class="form-text" id="logging-logger-levels-logger-help" data-th-utext="#{logging.levels.logger.caption}">
+			Caption about logger.
 		</div>
+
+		<label class="form-label mt-3" for="logging-logger-levels-level" data-th-text="#{logging.levels.level.label}">Level</label>
+		<select class="form-select" name="level" id="logging-logger-levels-level" aria-describedby="logging-logger-levels-level-help">
+			<option value="trace" data-th-text="#{logging.levels.TRACE.label}">TRACE</option>
+			<option value="debug" data-th-text="#{logging.levels.DEBUG.label}">DEBUG</option>
+			<option value="info" selected data-th-text="#{logging.levels.INFO.label}">INFO</option>
+			<option value="warn" data-th-text="#{logging.levels.WARN.label}">WARN</option>
+			<option value="error" data-th-text="#{logging.levels.ERROR.label}">ERROR</option>
+			<option value="off" data-th-text="#{logging.levels.OFF.label}">OFF</option>
+			<option value="inherit" data-th-text="#{logging.levels.INHERIT.label}">INHERIT</option>
+		</select>
+		<span class="form-text" id="logging-logger-levels-level-help" data-th-utext="#{logging.levels.level.caption}">
+			Caption about levels.
+		</span>
+
+		<p class="create mt-3" data-th-utext="#{logging.levels.edit.loggers.intro}">
+			About editing logging levels.
+		</p>
+		<select class="create form-select" name="loggers" readonly size="10" id="logging-loggers">
+			<option value="trace" data-th-text="#{logging.levels.TRACE.label}">TRACE</option>
+			<option value="debug" data-th-text="#{logging.levels.DEBUG.label}">DEBUG</option>
+			<option value="info" selected data-th-text="#{logging.levels.INFO.label}">INFO</option>
+			<option value="warn" data-th-text="#{logging.levels.WARN.label}">WARN</option>
+			<option value="error" data-th-text="#{logging.levels.ERROR.label}">ERROR</option>
+			<option value="off" data-th-text="#{logging.levels.OFF.label}">OFF</option>
+		</select>
 	</div>
+
+	<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+		<button type="submit" class="btn btn-primary" data-th-text="#{logging.levels.edit.save.label}">Save</button>
+	</div>
+
 </form>
 
 </body>

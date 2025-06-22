@@ -48,28 +48,27 @@
 	</table>
 </section>
 
-<form id="add-opmodes-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false"
-		action="/a/opmodes/active" method="post"
-		data-th-action="@{/a/opmodes/active}">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title" data-th-text="#{opmodes.add.title}">Add Operational Mode</h3>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p data-th-utext="#{opmodes.add.intro}">
-					About adding an Operational Mode.
-				</p>
-				<label class="form-label" for="opmodes-modes" data-th-text="#{opmodes.modes.label}">Modes</label>
-				<input class="form-control" id="opmodes-modes" type="text" maxlength="512" name="modes">
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-primary" data-th-text="#{opmodes.add.label}">Save</button>
-			</div>
-		</div>
+<form id="add-opmodes-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = add-opmodes-modal, 
+			action = @{/a/opmodes/active}, 
+			title = #{opmodes.add.title},
+			body = ~{::#add-opmodes-modal//.modal-body}, 
+			footer = ~{::#add-opmodes-modal//.modal-footer},
+			staticModal = true)}">
+
+	<div class="modal-body">
+		<p data-th-utext="#{opmodes.add.intro}">
+			About adding an Operational Mode.
+		</p>
+		<label class="form-label" for="opmodes-modes" data-th-text="#{opmodes.modes.label}">Modes</label>
+		<input class="form-control" id="opmodes-modes" type="text" maxlength="512" name="modes">
 	</div>
+
+	<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+		<button type="submit" class="btn btn-primary" data-th-text="#{opmodes.add.label}">Save</button>
+	</div>
+
 </form>
 
 </body>

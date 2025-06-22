@@ -51,87 +51,82 @@
 	<div class="list-content"></div>
 </section>
 
-<form id="plugin-preview-install-modal" class="modal fade dynamic" action="/a/plugins/install" method="post"
-		data-th-action="@{/a/plugins/install}">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title"
-						data-th-data-msg-install="#{plugin.install.button}" 
-						data-th-text="#{plugin.install.title}">Install Plugin</h3>
-				<button type="button" class="btn-close without-restart" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p class="hide-while-restarting" data-th-utext="#{plugin.install.intro}">Restarting...</p>
-				<div class="hide-while-restarting" id="plugin-preview-install-list"></div>
-				<div class="restart-required hide-while-restarting hide alert alert-warning"
-						data-th-utext="#{plugin.install.restartRequired.warning}">
-					Restart required.
-				</div>
-				<div class="restarting hidden alert alert-info">
-					<span data-th-text="#{plugin.install.success}"></span>
-					<span> </span>
-					<span data-th-text="#{restart.underway}"></span>
-				</div>
-				<div class="progress hidden" role="progressbar">
-					<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
-			    </div>
-			    <div class="message-container hide-while-restarting"></div>
-			</div>
-			<div class="modal-footer">
-				<input type="hidden" name="uid" value=""/>
-				<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-primary hide-while-restarting"
-						data-th-data-msg-error="#{plugin.install.error}"
-						data-th-data-msg-success="#{plugin.install.success}"
-						data-th-data-loading-text="#{plugin.installing.message}">
-					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
-					<span data-th-text="#{plugin.install.button}">Install</span>
-				</button>
-			</div>
+<form id="plugin-preview-install-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = plugin-preview-install-modal,
+			action = @{/a/plugins/install}, 
+			title = #{plugin.install.title},
+			body = ~{::#plugin-preview-install-modal//.modal-body}, 
+			footer = ~{::#plugin-preview-install-modal//.modal-footer})}">
+
+	<div class="modal-body">
+		<p class="hide-while-restarting" data-th-utext="#{plugin.install.intro}">Restarting...</p>
+		<div class="hide-while-restarting" id="plugin-preview-install-list"></div>
+		<div class="restart-required hide-while-restarting hide alert alert-warning"
+				data-th-utext="#{plugin.install.restartRequired.warning}">
+			Restart required.
 		</div>
+		<div class="restarting hidden alert alert-info">
+			<span data-th-text="#{plugin.install.success}"></span>
+			<span> </span>
+			<span data-th-text="#{restart.underway}"></span>
+		</div>
+		<div class="progress hidden" role="progressbar">
+			<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
+	    </div>
+	    <div class="message-container hide-while-restarting"></div>
 	</div>
+
+	<div class="modal-footer">
+		<input type="hidden" name="uid" value=""/>
+		<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+		<button type="submit" class="btn btn-primary hide-while-restarting"
+				data-th-data-msg-error="#{plugin.install.error}"
+				data-th-data-msg-success="#{plugin.install.success}"
+				data-th-data-loading-text="#{plugin.installing.message}">
+			<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+			<span data-th-text="#{plugin.install.button}">Install</span>
+		</button>
+	</div>
+
 </form>
 
-<form id="plugin-preview-remove-modal" class="modal fade dynamic" action="/a/plugins/remove" method="post"
-		data-th-action="@{/a/plugins/remove}">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title" data-th-data-msg-remove="#{plugin.remove.button}"
-						data-th-text="#{plugin.remove.title}">Remove Plugin</h3>
-				<button type="button" class="btn-close without-restart" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p class="hide-while-restarting" data-th-utext="#{plugin.remove.intro}">Remove plugins here.</p>
-				<div class="hide-while-restarting" id="plugin-preview-remove-list"></div>
-				<div class="restart-required hide-while-restarting hide alert alert-warning"
-						data-th-utext="#{plugin.install.restartRequired.warning}">
-					Restart required.
-				</div>
-				<div class="restarting hidden alert alert-info">
-					<span data-th-text="#{plugin.remove.success}"></span>
-					<span> </span>
-					<span data-th-text="#{restart.underway}"></span>
-				</div>
-				<div class="progress hidden" role="progressbar">
-					<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-			    </div>
-			    <div class="message-container hide-while-restarting"></div>
-			</div>
-			<div class="modal-footer">
-				<input type="hidden" name="uid" value=""/>
-				<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-danger hide-while-restarting"
-					data-th-data-msg-error="#{plugin.remove.error}"
-					data-th-data-msg-success="#{plugin.remove.success}"
-					data-th-data-loading-text="#{plugin.removing.message}">
-					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
-					<span data-th-text="#{plugin.remove.button}">Remove</span>
-				</button>
-			</div>
+<form id="plugin-preview-remove-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = plugin-preview-remove-modal,
+			action = @{/a/plugins/remove}, 
+			title = #{plugin.remove.title},
+			body = ~{::#plugin-preview-remove-modal//.modal-body}, 
+			footer = ~{::#plugin-preview-remove-modal//.modal-footer})}">
+
+	<div class="modal-body">
+		<p class="hide-while-restarting" data-th-utext="#{plugin.remove.intro}">Remove plugins here.</p>
+		<div class="hide-while-restarting" id="plugin-preview-remove-list"></div>
+		<div class="restart-required hide-while-restarting hide alert alert-warning"
+				data-th-utext="#{plugin.install.restartRequired.warning}">
+			Restart required.
 		</div>
+		<div class="restarting hidden alert alert-info">
+			<span data-th-text="#{plugin.remove.success}"></span>
+			<span> </span>
+			<span data-th-text="#{restart.underway}"></span>
+		</div>
+		<div class="progress hidden" role="progressbar">
+			<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+	    </div>
+	    <div class="message-container hide-while-restarting"></div>
 	</div>
+
+	<div class="modal-footer">
+		<input type="hidden" name="uid" value=""/>
+		<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+		<button type="submit" class="btn btn-danger hide-while-restarting"
+			data-th-data-msg-error="#{plugin.remove.error}"
+			data-th-data-msg-success="#{plugin.remove.success}"
+			data-th-data-loading-text="#{plugin.removing.message}">
+			<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+			<span data-th-text="#{plugin.remove.button}">Remove</span>
+		</button>
+	</div>
+
 </form>
 
 </body>

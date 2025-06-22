@@ -169,32 +169,31 @@ $(function() {
 		Reset
 	</button>
 </div>
-<form id="remove-all-component-instance-modal" class="modal fade dynamic"
-		data-th-action="@{/a/settings/manage/removeall}" method="post">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title" data-th-text="#{settings.factory.removeall.title}">Remove All</h3>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p data-th-utext="#{settings.factory.removeall.intro(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
-					Are you sure you want to remove all?
-				</p>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{cancel.label}">
-					Cancel
-				</button>
-				<button type="submit" class="btn btn-danger" data-th-text="#{settings.factory.removeall.remove.label}">
-					Remove All
-				</button>
-			</div>
-		</div>
+<form id="remove-all-component-instance-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = remove-all-component-instance-modal,
+			action = @{/a/settings/manage/removeall}, 
+			title = #{settings.factory.removeall.title},
+			body = ~{::#remove-all-component-instance-modal//.modal-body}, 
+			footer = ~{::#remove-all-component-instance-modal//.modal-footer})}">
+
+	<div class="modal-body">
+		<p data-th-utext="#{settings.factory.removeall.intro(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
+			Are you sure you want to remove all?
+		</p>
 	</div>
-	<input type="hidden" name="uid" data-th-value="${factory.factoryUid}"/>
+
+	<div class="modal-footer">
+		<input type="hidden" name="uid" data-th-value="${factory.factoryUid}"/>
+		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{cancel.label}">
+			Cancel
+		</button>
+		<button type="submit" class="btn btn-danger" data-th-text="#{settings.factory.removeall.remove.label}">
+			Remove All
+		</button>
+	</div>
+
 </form>
-<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
+<form class="modal modal-lg fade lookup-modal sn-loc-lookup-modal price-lookup-modal"
 		data-th-action="@{/a/location}" method="get">
 	<div class="modal-dialog modal-dialog-scrollable">
 		<div class="modal-content">
@@ -252,7 +251,7 @@ $(function() {
 	</div>
 	<input type="hidden" name="tags" value="price"/>
 </form>
-<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
+<form class="modal modal-lg fade lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
 		data-th-action="@{/a/location}" method="get">
 	<div class="modal-dialog modal-dialog-scrollable">
 		<div class="modal-content">
@@ -310,7 +309,7 @@ $(function() {
 	</div>
 	<input type="hidden" name="tags" value="weather"/>
 </form>
-<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
+<form class="modal modal-lg fade lookup-modal sn-loc-lookup-modal co2-lookup-modal"
 		data-th-action="@{/a/location}" method="get">
 	<div class="modal-dialog modal-dialog-scrollable">
 		<div class="modal-content">
@@ -366,34 +365,31 @@ $(function() {
 	</div>
 	<input type="hidden" name="tags" value="co2"/>
 </form>
-<form id="add-component-instance-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false"
-		action="/a/settings/manage/add"
-		data-th-action="@{/a/settings/manage/add}" method="post">
-	<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h3 class="modal-title" data-th-text="#{settings.factory.add(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})}">
-					Add Component
-				</h3>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
-			</div>
-			<div class="modal-body">
-				<p data-th-utext="#{settings.factory.add.intro}">
-					Add new component.
-				</p>
-				<p class="text-secondary name-error"><small data-th-text="#{settings.factory.add.caption}">Add</small></p>
-				<div class="col-12">
-					<input type="text" class="form-control name-error" maxlength="32" name="name" id="add-component-instance-name"
-						data-th-placeholder="#{settings.factory.add.placeholder}">
-				</div>
-			</div>
-			<div class="modal-footer">
-				<input type="hidden" name="uid" data-th-value="${factory.factoryUid}"/>
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
-				<button type="submit" class="btn btn-primary" data-th-text="#{settings.factory.add.label}">Add</button>
-			</div>
+<form id="add-component-instance-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = add-component-instance-modal,
+			action = @{/a/settings/manage/add}, 
+			title = #{settings.factory.add(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})},
+			body = ~{::#add-component-instance-modal//.modal-body}, 
+			footer = ~{::#add-component-instance-modal//.modal-footer},
+			staticModal = true)}">
+
+	<div class="modal-body">
+		<p data-th-utext="#{settings.factory.add.intro}">
+			Add new component.
+		</p>
+		<p class="text-secondary name-error"><small data-th-text="#{settings.factory.add.caption}">Add</small></p>
+		<div class="col-12">
+			<input type="text" class="form-control name-error" maxlength="32" name="name" id="add-component-instance-name"
+				data-th-placeholder="#{settings.factory.add.placeholder}">
 		</div>
 	</div>
+
+	<div class="modal-footer">
+		<input type="hidden" name="uid" data-th-value="${factory.factoryUid}"/>
+		<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+		<button type="submit" class="btn btn-primary" data-th-text="#{settings.factory.add.label}">Add</button>
+	</div>
+
 </form>
 
 <div data-th-replace="~{settings/note-popover :: form}"></div>
