@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!--/*
+	Variables:
+	
+	title	 			- page title (string)
+	body				- main content (fragment)
+	footer				- footer content (fragment)
+	navloc				- navigation key (string)
+	
+	Optional variables (for named-argument invocation):
+	
+	headExtra 			- additional content for <head> (fragment)
+*/-->
 <html data-th-fragment="layout (title, body, footer, navloc)" 
 	xmlns:th="http://www.thymeleaf.org"
 	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
@@ -43,6 +55,8 @@
 		<script src="../../js/locstate.js" data-th-src="@{/js/locstate.js}"></script>
 		<snode:resources type="application/javascript" sec:authorize="!hasRole('ROLE_USER')" />
 		<snode:resources type="application/javascript" role='USER' sec:authorize="hasRole('ROLE_USER')" />
+		<!--/*/ <th:block th:utext="${headExtra}"> /*/-->
+    	<!--/*/ </th:block> /*/-->		
 	</head>
 	<body>
 		<a id="top" aria-hidden="true"></a>
