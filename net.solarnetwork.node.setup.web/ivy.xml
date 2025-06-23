@@ -15,13 +15,12 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="commons-codec" name="commons-codec" rev="1.17.0"/>
 		<dependency org="commons-io" name="commons-io" rev="2.4" />
-		<dependency org="jakarta.validation" name="jakarta.validation-api" rev="2.0.1" />
-		<dependency org="jakarata.servlet" name="jakarta.servlet-api" rev="6.1.0" />
+		<dependency org="jakarta.validation" name="jakarta.validation-api" rev="3.0.2" />
+		<dependency org="jakarta.servlet" name="jakarta.servlet-api" rev="6.1.0" />
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.0.0"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.web.jakarta" rev="2.0.6"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.metrics" rev="[1.2,)"/>
-		<!-- TODO: see if necessary dependency org="org.apache.tomcat" name="tomcat-coyote" rev="11.0.7"/-->
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.metrics" rev="2.0.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
 		<dependency org="org.springframework" name="spring-context" rev="6.2.6"/>
@@ -31,8 +30,10 @@
 		<dependency org="org.springframework" name="spring-webmvc" rev="6.2.6"/>
 		<dependency org="org.springframework" name="spring-websocket" rev="6.2.6"/>
 		<dependency org="org.springframework.security" name="spring-security-core" rev="6.4.5"/>
-		<dependency org="org.springframework.security" name="spring-security-messaging" rev="6.4.5" conf="runtime"/>
-		<dependency org="org.springframework.security" name="spring-security-taglibs" rev="6.4.5" conf="runtime"/>
+		<dependency org="org.springframework.security" name="spring-security-messaging" rev="6.4.5"/>
 		<dependency org="org.springframework.security" name="spring-security-web" rev="6.4.5"/>
+		<dependency org="org.thymeleaf" name="thymeleaf" rev="3.1.2.RELEASE"/>
+		<dependency org="org.thymeleaf" name="thymeleaf-spring6" rev="3.1.2.RELEASE"/>
+		<dependency org="org.thymeleaf.extras" name="thymeleaf-extras-springsecurity6" rev="3.1.2.RELEASE"/>
     </dependencies>
 </ivy-module>
