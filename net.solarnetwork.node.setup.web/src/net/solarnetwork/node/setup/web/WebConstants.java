@@ -52,7 +52,7 @@ public interface WebConstants {
 	/**
 	 * View model attribute name for a forwarded-path.
 	 *
-	 * @since1.1
+	 * @since 1.1
 	 */
 	String X_FORWARDED_PATH_MODEL_ATTR = "XForwardedPath";
 

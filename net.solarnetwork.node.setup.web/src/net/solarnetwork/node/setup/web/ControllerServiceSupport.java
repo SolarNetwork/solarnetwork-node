@@ -102,7 +102,7 @@ public class ControllerServiceSupport {
 	/**
 	 * Add any {@code X-Forwarded-Path} HTTP header to the model.
 	 *
-	 * @param req
+	 * @param request
 	 *        the request
 	 * @return the header value, or {@code null}
 	 * @since 2.4
