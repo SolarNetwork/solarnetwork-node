@@ -68,7 +68,7 @@
 </section>
 
 <section id="settings" class="carousel slide mb-5" data-interval="0">
-	<form action="@{/a/settings/save}" method="post">
+	<form data-th-action="@{/a/settings/save}" method="post">
 		<div data-th-unless="${#maps.isEmpty(providers)}"
 				class="form-actions row justify-content-between align-items-baseline bg-light border-top border-bottom my-3 py-3">
 			<div class="col-auto">
