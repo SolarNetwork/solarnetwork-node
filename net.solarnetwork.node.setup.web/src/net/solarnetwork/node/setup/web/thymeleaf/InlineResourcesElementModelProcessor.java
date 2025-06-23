@@ -168,6 +168,9 @@ public class InlineResourcesElementModelProcessor extends AbstractElementModelPr
 				if ( PROPERTIES_ATTRIBUTE_NAME.equals(e.getKey())
 						&& e.getValue() instanceof Map<?, ?> m ) {
 					for ( Entry<?, ?> pe : m.entrySet() ) {
+						if ( pe.getKey() == null || pe.getValue() == null ) {
+							continue;
+						}
 						wrapperAttributes.put(DATA_ATTRIBUTE_PREFIX + pe.getKey().toString(),
 								pe.getValue().toString());
 					}
