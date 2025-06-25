@@ -15,7 +15,6 @@ Export-Package:
  net.solarnetwork.node.io.canbus.support;version="2.2.0",
  net.solarnetwork.node.io.canbus.util;version="1.0.0"
 Import-Package: 
- com.sun.xml.bind.v2;resolution:=optional,
  io.netty.bootstrap;version="[4.2,5.0)",
  io.netty.buffer;version="[4.2,5.0)",
  io.netty.channel;version="[4.2,5.0)",
@@ -52,6 +51,7 @@ Import-Package:
  net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
+ org.glassfish.jaxb.runtime.v2;version="[4.0,5.0)";resolution:=optional,
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[6.2,7.0)",
