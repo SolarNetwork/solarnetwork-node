@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -60,7 +60,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * A STOMP protocol server for SolarNode Setup, using Netty.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class StompSetupServer extends BaseIdentifiable
 		implements SettingsChangeObserver, SettingSpecifierProvider {
@@ -158,7 +158,7 @@ public class StompSetupServer extends BaseIdentifiable
 		if ( taskScheduler != null ) {
 			log.info("Will start STOMP setup server on port {} in {} seconds", port, startupDelay);
 			startupFuture = taskScheduler.schedule(startupTask,
-					new Date(System.currentTimeMillis() + startupDelay * 1000L));
+					Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
 		} else {
 			startupTask.run();
 		}
@@ -196,8 +196,8 @@ public class StompSetupServer extends BaseIdentifiable
 					if ( taskScheduler != null ) {
 						log.info("Will start STOMP setup server on port {} in {} seconds", port,
 								startupDelay);
-						startupFuture = taskScheduler.schedule(this,
-								new Date(System.currentTimeMillis() + startupDelay * 1000L));
+						startupFuture = taskScheduler.schedule(this, Instant
+								.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
 					}
 				}
 			}
