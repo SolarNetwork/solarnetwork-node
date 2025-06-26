@@ -58,9 +58,9 @@ import org.osgi.service.event.EventAdmin;
 import org.springframework.test.context.transaction.BeforeTransaction;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.dao.BasicBatchOptions;
-import net.solarnetwork.node.dao.BatchableDao;
-import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
+import net.solarnetwork.dao.BasicBatchOptions;
+import net.solarnetwork.dao.BatchableDao;
+import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.JdbcSettingDao;
@@ -74,7 +74,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link JdbcSettingDao}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 

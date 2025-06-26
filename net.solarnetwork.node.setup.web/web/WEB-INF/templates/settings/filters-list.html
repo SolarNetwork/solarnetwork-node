@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'filters')}">
+<head>
+    <title data-th-text="#{app.title(#{filters.title})}">SolarNode Filters</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<p data-th-utext="#{filters.intro}">
+		Filters information here.
+	</p>
+</section>
+
+<p>Global factories: <span data-th-text="${globalFactories.class}"></span></p>
+<p>Providers: <span data-th-text="${providers.class}"></span></p>
+<p>User factories: <span data-th-text="${userFactories.class}"></span></p>
+
+<!--/*/ <th:block th:unless="${#lists.isEmpty(globalFactories) and #lists.isEmpty(providers)}"> /*/-->
+
+<section id="global mb-3">
+	<h2>
+		<a id="global-section" href="#global-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>			
+		<!--/*/ <th:block th:text="#{filters.global.title}"> /*/-->
+		Global Filters
+		<!--/*/ </th:block> /*/-->
+	</h2>
+	<p data-th-utext="#{filters.global.intro}">
+		About Global Filters.
+	</p>
+
+	<div class="container" data-th-unless="${#lists.isEmpty(globalFactories)}">
+		<div class="row setting-components">
+			<div class="col">
+				<div class="row my-3 justify-content-between align-items-center"
+						data-th-each="factory, factoryStatus : ${globalFactories}">
+					<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${factory.factoryUid} + ' --&gt;'"></span>
+					<div class="col">
+						<div class="row">
+							<div class="col-2 col-sm-1">
+								<span class="badge rounded-pill text-bg-primary"
+									data-th-classappend="${#lists.isEmpty(factory.settingSpecifierProviderInstanceIds)}?invisible"
+									data-th-title="#{settings.factories.instanceCount.caption}"
+									data-th-text="${#lists.size(factory.settingSpecifierProviderInstanceIds)}">1</span>
+							</div>
+							<div class="col"><strong data-th-text="${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)}">My Filter</strong></div>
+						</div>
+					</div>
+					<div class="col-auto">
+						<a class="btn btn-light" href="/a/settings/filters/manage?uid=com.example.service"
+								data-th-href="@{/a/settings/filters/manage(uid=${factory.factoryUid})}">
+							<i class="bi bi-pencil-square"></i> 
+							<!--/*/ <th:block th:text="#{settings.factory.manage.label}"> /*/-->
+							Manage
+							<!--/*/ </th:block> /*/-->
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!--/*/ <th:block th:unless="${#lists.isEmpty(providers)}"> /*/-->
+	<form action="/a/settings/save" data-th-action="@{/a/settings/save}" class="mt-5" method="post">
+		<div class="form-actions d-grid my-5">
+			<button type="button" class="btn btn-primary settings-save" id="submit" disabled
+				data-th-text="#{settings.save}">Save</button>
+		</div>
+		<fieldset class="mt-5" data-th-each="provider, providerStatus : ${providers}">
+			<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${provider.settingUid} + ' --&gt;'"></span>
+			<h2>
+				<a data-th-id="${provider.settingUid}" 
+					class="anchor" 
+					data-th-href="${provider.settingUid}"
+					aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+				<!--/*/ <th:block th:text="${#snUtils.message('title', provider.displayName, provider.messageSource, #locale)}"> /*/-->
+				My Filter Service
+				<!--/*/ </th:block> /*/-->
+			</h2>
+			<p data-th-with="providerDescription = ${#snUtils.message('desc', '', provider.messageSource, #locale)}"
+					data-th-utext="${providerDescription}">
+				About My Filter Service here.
+			</p>
+			<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
+				<div data-th-replace="~{settings/setting-control :: content('s'+${providerStatus.index}+'i'+${settingStatus.index})}"></div>
+			</div>
+		</fieldset>
+	</form>
+	<script data-th-inline="javascript">
+	$(function() {
+		$('#submit').on('click', function() {
+			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
+				success: /*[[#{settings.save.success.msg}]]*/ 'Saved',
+				error:   /*[[#{settings.save.error.msg}]]*/ 'Error saving settings.',
+				title:   /*[[#{settings.save.result.title}]]*/ 'Setttings have been saved.',
+				button:  /*[[#{ok.label}]]*/ 'OK',
+			});
+		});
+		SolarNode.Settings.reset();
+	});
+	</script>			
+	<!--/*/ </th:block> /*/-->
+</section>
+
+<!--/*/ </th:block> /*/-->
+
+
+<section id="user" class="mb-5" data-th-unless="${#lists.isEmpty(userFactories)}">
+	<h2>
+		<a id="user-section" href="#user-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>			
+		<!--/*/ <th:block th:text="#{filters.user.title}"> /*/-->
+		User Filters
+		<!--/*/ </th:block> /*/-->
+	</h2>
+	<p data-th-utext="#{filters.user.intro}">
+		User filters here.
+	</p>
+	<div class="container">
+		<div class="row setting-components">
+			<div class="col">
+				<div class="row my-3 justify-content-between align-items-center"
+						data-th-each="factory, factoryStatus : ${userFactories}">
+					<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${factory.factoryUid} + ' --&gt;'"></span>
+					<div class="col">
+						<div class="row">
+							<div class="col-2 col-sm-1">
+								<span class="badge rounded-pill text-bg-primary${fn:length(factory.settingSpecifierProviderInstanceIds) lt 1 ? ' invisible' : ''}"
+									data-th-title="#{settings.factories.instanceCount.caption}"
+									data-th-text="${#lists.size(factory.settingSpecifierProviderInstanceIds)}">1</span>
+							</div>
+							<div class="col"><strong data-th-text="${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)}">My Filter</strong></div>
+						</div>
+					</div>
+					<div class="col-auto">
+						<a class="btn btn-light" href="/a/settings/filters/manage?uid=com.example.service"
+								data-th-href="@{/a/settings/filters/manage(uid=${factory.factoryUid})}">
+							<i class="bi bi-pencil-square"></i> 
+							<!--/*/ <th:block th:text="#{settings.factory.manage.label}"> /*/-->
+							Manage
+							<!--/*/ </th:block> /*/-->
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+
+<div data-th-replace="~{settings/note-popover :: form}"></div>

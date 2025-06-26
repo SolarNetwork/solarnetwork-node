@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicEm6ApiClientTests.java - 10/03/2023 1:04:23 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,19 +24,20 @@ package net.solarnetwork.node.datum.co2.nz.em6.test;
 
 import static java.lang.String.format;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.codec.JsonUtils;
@@ -44,14 +45,16 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.datum.co2.nz.em6.BasicEm6ApiClient;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test casees for the {@link BasicEm6ApiClient} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class BasicEm6ApiClientTests extends AbstractHttpClientTests {
+public class BasicEm6ApiClientTests extends AbstractHttpServerTests {
 
 	private BasicEm6ApiClient client;
 
@@ -61,23 +64,22 @@ public class BasicEm6ApiClientTests extends AbstractHttpClientTests {
 	}
 
 	@Test
-	public void currentCarbonIntensity() throws Exception {
+	public void currentCarbonIntensity() {
 		// GIVEN
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo(BasicEm6ApiClient.CURRENT_CARBON_INTENSITY_PATH));
-				respondWithJsonResource(response, "current_carbon_intensity-01.json");
-				response.flushBuffer();
+				respondWithJsonResource(request, response, "current_carbon_intensity-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> results = client.currentCarbonIntensity();

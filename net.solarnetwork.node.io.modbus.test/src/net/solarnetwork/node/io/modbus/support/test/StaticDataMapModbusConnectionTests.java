@@ -23,9 +23,9 @@
 package net.solarnetwork.node.io.modbus.support.test;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusConnection;

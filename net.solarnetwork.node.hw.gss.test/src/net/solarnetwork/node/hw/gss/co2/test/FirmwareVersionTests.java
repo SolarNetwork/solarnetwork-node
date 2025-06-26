@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.gss.co2.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import org.junit.Test;

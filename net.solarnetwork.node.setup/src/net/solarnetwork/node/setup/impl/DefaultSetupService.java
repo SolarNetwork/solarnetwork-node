@@ -114,7 +114,7 @@ import net.solarnetwork.util.DateUtils;
  * </dl>
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler, PingTest {
@@ -716,7 +716,7 @@ public class DefaultSetupService extends XmlServiceSupport
 		}
 		final Instant now = Instant.now();
 		final ZoneId zone = ZoneId.systemDefault();
-		String certDisplayName = String.format("%s (0x%x)", nodeCert.getSubjectDN(),
+		String certDisplayName = String.format("%s (0x%x)", nodeCert.getSubjectX500Principal(),
 				nodeCert.getSerialNumber());
 		Instant expires = nodeCert.getNotAfter().toInstant();
 		boolean ok = true;

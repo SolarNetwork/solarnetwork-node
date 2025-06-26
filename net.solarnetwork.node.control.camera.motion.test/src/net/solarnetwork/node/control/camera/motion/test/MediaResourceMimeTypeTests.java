@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.control.camera.motion.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import net.solarnetwork.node.control.camera.motion.MediaResourceMimeType;
 

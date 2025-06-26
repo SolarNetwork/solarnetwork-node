@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Test cases for the Numato USB GPIO control.
 Bundle-SymbolicName: net.solarnetwork.node.control.numato.usbgpio.test
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.control.numato.usbgpio;bundle-version="[2.0,3.0)"
+Fragment-Host: net.solarnetwork.node.control.numato.usbgpio;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.control.numato.usbgpio.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.io.serial.pjc;version="[2.0,3.0)";resolution:=optional,
  net.solarnetwork.node.test;version="[2.0,3.0)",

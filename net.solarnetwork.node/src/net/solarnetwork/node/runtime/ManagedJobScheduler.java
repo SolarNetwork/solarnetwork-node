@@ -28,10 +28,10 @@ import static net.solarnetwork.util.CollectionUtils.dictionaryForMap;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static org.osgi.framework.Constants.SERVICE_PID;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -92,7 +92,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * </p>
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ManagedJobScheduler implements ServiceLifecycleObserver, ConfigurationListener, PingTest {
 
@@ -349,7 +349,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		if ( startupTask != null ) {
 			startupTask.cancel(true);
 		}
-		startupTask = taskScheduler.schedule(new StartupTask(), new Date(startTime));
+		startupTask = taskScheduler.schedule(new StartupTask(), Instant.ofEpochMilli(startTime));
 	}
 
 	@Override

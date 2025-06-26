@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.hw.yaskawa.ecb.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketEnvelope;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketHeader;

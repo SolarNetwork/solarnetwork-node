@@ -14,7 +14,7 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
-	<reference-list id="httpReqCustomizers" interface="net.solarnetwork.web.service.HttpRequestCustomizerService" availability="optional"/>
+	<reference-list id="httpReqCustomizers" interface="net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService" availability="optional"/>
 	
 	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
@@ -42,8 +42,7 @@
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
-		<bean class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
-			<argument ref="httpClient"/>
+		<bean class="org.springframework.http.client.JettyClientHttpRequestFactory">
 			<property name="readTimeout" value="60000"/>
 		</bean>
 	</service>
@@ -53,7 +52,7 @@
 	<bean id="httpReqCustChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService</value>
+				<value>net.solarnetwork.web.jakarta.service.support.ChainHttpRequestCustomizerService</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -70,7 +69,7 @@
 	<osgix:managed-service-factory factory-pid="net.s10k.http.customizer.chain" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.web.service.HttpRequestCustomizerService</beans:value>
+			<beans:value>net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
@@ -88,7 +87,7 @@
 	<bean id="httpReqCustBasicAuthMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService</value>
+				<value>net.solarnetwork.web.jakarta.service.support.BasicAuthHttpRequestCustomizerService</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -105,7 +104,7 @@
 	<osgix:managed-service-factory factory-pid="net.s10k.http.customizer.auth.basic" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.web.service.HttpRequestCustomizerService</beans:value>
+			<beans:value>net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
@@ -140,7 +139,7 @@
 	<osgix:managed-service-factory factory-pid="net.s10k.http.customizer.auth.snws2" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.web.service.HttpRequestCustomizerService</beans:value>
+			<beans:value>net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>

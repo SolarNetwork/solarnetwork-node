@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SolarNode Modals</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body>
+
+<!-- 
+	Additional helper variables used:
+	
+	additionalClass - can be used to provide additional class values.
+	staticModal     - variable can be used to add static properties.
+ -->
+<div data-th-fragment="modal(id, title, body, footer)"
+		data-th-id="${id}"
+		class="modal fade"
+		data-th-classappend="${additionalClass}"
+		data-th-attr="data-bs-backdrop=${staticModal}?static,data-bs-keyboard=${staticModal}?false">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="${title}">Modal</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body" data-th-replace="${body}">
+				<p>Modal body.</p>
+			</div>
+			<div class="modal-footer" data-th-replace="${footer}">
+				<p>Modal footer.</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 
+	Additional helper variables used:
+	
+	additionalClass - can be used to provide additional class values.
+	enctype         - the enctype value
+	method          - override the default 'post' method
+	staticModal     - variable can be used to add static properties.
+ -->
+<form data-th-fragment="modal_form(id, action, title, body, footer)"
+		data-th-id="${id}"
+		class="modal fade"
+		data-th-classappend="${additionalClass}"
+		data-th-action="${action}"
+		data-th-attr="data-bs-backdrop=${staticModal}?static,data-bs-keyboard=${staticModal}?false"
+		data-th-enctype="${enctype}"
+		data-th-method="${method} ? ${method} : 'post'">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title" data-th-text="${title}">Modal Form</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" data-th-aria-label="#{close.label}"></button>
+			</div>
+			<div class="modal-body" data-th-replace="${body}">
+				<p>Modal body.</p>
+			</div>
+			<div class="modal-footer" data-th-replace="${footer}">
+				<p>Modal footer.</p>
+			</div>
+		</div>
+	</div>
+</form>
+
+</body>
+</html>

@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Schneider Electric Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.schneider.test
 Automatic-Module-Name: net.solarnetwork.node.hw.schneider.test
-Bundle-Version: 4.0.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.hw.schneider;bundle-version="[4.0,5.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Fragment-Host: net.solarnetwork.node.hw.schneider;bundle-version="[5.0,6.0)"
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.test;version="[2.0,3.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  org.easymock;version="[3.6,4.0)",
  org.hamcrest;version="[1.3,2.0)",
  org.junit;version="[4.5,5.0)",

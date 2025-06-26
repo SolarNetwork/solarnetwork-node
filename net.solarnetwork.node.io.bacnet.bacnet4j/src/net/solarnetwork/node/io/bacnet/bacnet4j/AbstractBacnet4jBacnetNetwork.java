@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -220,7 +219,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 						startupDelay);
 			}
 			startupFuture = scheduler.schedule(task,
-					new Date(System.currentTimeMillis() + startupDelay));
+					Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay));
 		} else {
 			task.run();
 		}
@@ -464,7 +463,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 		synchronized ( this ) {
 			if ( subscriptionFuture == null ) {
 				subscriptionFuture = taskScheduler.scheduleAtFixedRate(new SubscriptionResubscriber(),
-						SUBSCRIPTION_CHECK_PERIOD);
+						Duration.ofMillis(SUBSCRIPTION_CHECK_PERIOD));
 			}
 		}
 	}

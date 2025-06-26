@@ -17,6 +17,7 @@
 		<prop key="mail.sender">nobody@localhost.localdomain</prop>
 		<prop key="link.solaruser">https://data.solarnetwork.net/solaruser</prop>
 		<prop key="security.maxRequestBodySize">10485760</prop>
+		<prop key="thymleaf.templates.cache.enabled">true</prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->

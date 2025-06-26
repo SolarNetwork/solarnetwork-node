@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingsUserService.java - 27/07/2016 8:09:01 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -62,6 +62,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.dao.BasicBatchOptions;
+import net.solarnetwork.dao.BatchableDao.BatchCallback;
+import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -69,9 +72,6 @@ import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
 import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
-import net.solarnetwork.node.dao.BasicBatchOptions;
-import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
-import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.service.IdentityService;
@@ -81,9 +81,9 @@ import net.solarnetwork.node.setup.UserService;
 
 /**
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class SettingsUserService implements UserService, UserDetailsService, BackupResourceProvider {
 
@@ -98,7 +98,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * The default value for the {@code usersFilePath} property.
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final String DEFAULT_USERS_FILE_PATH = "conf/users.json";
@@ -116,7 +116,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingDao
 	 *        The setting DAO to use.
 	 * @param identityService
@@ -233,7 +233,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Test if some user exists.
-	 * 
+	 *
 	 * <p>
 	 * This implementation returns {@literal true} only if either:
 	 * </p>
@@ -244,7 +244,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 	 * {@link #GRANTED_AUTH_USER} exists along with a {@link #SETTING_TYPE_USER}
 	 * for the same key</li>
 	 * </ol>
-	 * 
+	 *
 	 * {@inheritDoc}
 	 */
 	@Override
@@ -287,7 +287,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Update the active user's password.
-	 * 
+	 *
 	 * @param existingPassword
 	 *        The existing password.
 	 * @param newPassword
@@ -556,7 +556,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Get the configured {@link SettingDao}.
-	 * 
+	 *
 	 * @return The DAO.
 	 */
 	public SettingDao getSettingDao() {
@@ -565,7 +565,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Get the configured password encoder.
-	 * 
+	 *
 	 * @return The password encoder.
 	 */
 	public PasswordEncoder getPasswordEncoder() {
@@ -574,7 +574,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Get the users file path.
-	 * 
+	 *
 	 * @return the users file path
 	 * @since 2.2
 	 */
@@ -584,7 +584,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Set the users file path.
-	 * 
+	 *
 	 * @param usersFilePath
 	 *        the users file path to set
 	 * @since 2.2
@@ -596,7 +596,7 @@ public class SettingsUserService implements UserService, UserDetailsService, Bac
 
 	/**
 	 * Set a message source for backup localized messages.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 * @since 2.2

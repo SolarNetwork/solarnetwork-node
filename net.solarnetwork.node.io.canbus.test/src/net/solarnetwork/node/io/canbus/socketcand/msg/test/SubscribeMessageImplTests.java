@@ -24,8 +24,8 @@ package net.solarnetwork.node.io.canbus.socketcand.msg.test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import org.junit.Test;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;

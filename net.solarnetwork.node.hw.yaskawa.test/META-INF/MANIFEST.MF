@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Yaskawa Device Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.yaskawa.test
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.hw.yaskawa;bundle-version="[3.0,4.0)"
+Fragment-Host: net.solarnetwork.node.hw.yaskawa;bundle-version="[4.0,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.hw.yaskawa.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",

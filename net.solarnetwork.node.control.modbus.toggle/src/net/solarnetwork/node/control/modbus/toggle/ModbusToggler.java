@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusToggler.java - Jul 15, 2013 7:48:20 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -62,9 +62,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
- * 
+ *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusToggler extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -91,7 +91,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Get the discreet values, as a Boolean.
-	 * 
+	 *
 	 * @return Boolean for the switch status, or {@literal null} if not known
 	 */
 	private SimpleNodeControlInfoDatum currentValue() throws IOException {
@@ -117,7 +117,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
 				if ( function == ModbusWriteFunction.WriteCoil
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
-					BitSet bits = conn.readDiscreetValues(address, 1);
+					BitSet bits = conn.readDiscreteValues(address, 1);
 					return (bits != null ? bits.get(0) : null);
 				}
 
@@ -139,7 +139,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Set the modbus register to a true/false value.
-	 * 
+	 *
 	 * @param desiredValue
 	 *        the desired value to set
 	 * @return {@literal true} if the write succeeded
@@ -159,7 +159,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue);
-					conn.writeDiscreetValues(new int[] { address }, bits);
+					conn.writeDiscreteValues(new int[] { address }, bits);
 					return true;
 				}
 
@@ -345,7 +345,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Get the Modbus write function to use.
-	 * 
+	 *
 	 * @return the write function
 	 * @since 1.3
 	 */
@@ -355,7 +355,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Set the write function to use.
-	 * 
+	 *
 	 * @param function
 	 *        the function to write to Modbus with
 	 * @since 1.3
@@ -366,7 +366,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Get the Modbus function code to use as a string.
-	 * 
+	 *
 	 * @return the Modbus function code as a string
 	 * @since 1.3
 	 */
@@ -376,7 +376,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Set the Modbus function to use as a string.
-	 * 
+	 *
 	 * @param function
 	 *        the Modbus function
 	 * @since 1.3
@@ -401,7 +401,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 * @since 1.3
 	 */
@@ -411,7 +411,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 * @since 1.3

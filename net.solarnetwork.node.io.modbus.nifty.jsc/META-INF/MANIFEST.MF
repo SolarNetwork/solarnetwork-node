@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support - Serial (Nifty Modbus JSC)
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty.jsc
-Bundle-Version: 2.3.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty.jsc
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fazecast.jSerialComm;version="[2.9,3.0)",
  io.netty.channel;version="[4.2,5.0)",
@@ -19,19 +19,19 @@ Import-Package:
  net.solarnetwork.io.modbus.rtu.jsc;version="[0.18,2.0)",
  net.solarnetwork.io.modbus.rtu.netty;version="[0.18,2.0)",
  net.solarnetwork.io.modbus.serial;version="[0.18,2.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
  net.solarnetwork.node.io.modbus.nifty;version="[0.2,2.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.node.service;version="[1.2,2.0)",
  net.solarnetwork.node.service.support;version="[1.2,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.1,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.4,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.messaging;version="[5.3,6.0)",
- org.springframework.messaging.simp;version="[5.3,6.0)"
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.messaging;version="[6.2,7.0)",
+ org.springframework.messaging.simp;version="[6.2,7.0)"

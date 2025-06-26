@@ -1,21 +1,21 @@
 /* ==================================================================
  * PackageController.java - 27/10/2023 6:00:18 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,10 +27,10 @@ import static net.solarnetwork.domain.Result.success;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.Future;
-import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -45,9 +45,9 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Controller to manage the installed packages.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.4
  */
 @ServiceAwareController
@@ -72,7 +72,7 @@ public class PackageController {
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param installedPackages
 		 *        the installed packages
 		 * @param availablePackages
@@ -91,7 +91,7 @@ public class PackageController {
 
 		/**
 		 * Get the installed packages.
-		 * 
+		 *
 		 * @return the installed packages
 		 */
 		public Iterable<PlatformPackage> getInstalledPackages() {
@@ -100,7 +100,7 @@ public class PackageController {
 
 		/**
 		 * Get the available packages.
-		 * 
+		 *
 		 * @return the available packages
 		 */
 		public Iterable<PlatformPackage> getAvailablePackages() {
@@ -109,7 +109,7 @@ public class PackageController {
 
 		/**
 		 * Get the upgradable packages.
-		 * 
+		 *
 		 * @return the upgradable packages
 		 */
 		public Iterable<PlatformPackage> getUpgradablePackages() {
@@ -118,7 +118,8 @@ public class PackageController {
 
 	}
 
-	@Resource(name = "platformPackageService")
+	@Autowired
+	@Qualifier("platformPackageService")
 	private OptionalService<PlatformPackageService> platformPackageService;
 
 	@Autowired(required = true)
@@ -135,12 +136,12 @@ public class PackageController {
 
 	/**
 	 * List packages.
-	 * 
+	 *
 	 * @return the packages list view name
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
-		return "packages/list";
+		return "packages";
 	}
 
 	private UnsupportedOperationException serviceNotAvailable(Locale locale) {
@@ -150,7 +151,7 @@ public class PackageController {
 
 	/**
 	 * Refresh available packages.
-	 * 
+	 *
 	 * @param locale
 	 *        the desired locale
 	 * @return the result
@@ -174,7 +175,7 @@ public class PackageController {
 
 	/**
 	 * List packages.
-	 * 
+	 *
 	 * @param filter
 	 *        an optional filter to filter packages by name
 	 * @param locale
@@ -203,7 +204,7 @@ public class PackageController {
 
 	/**
 	 * Upgrade all packages.
-	 * 
+	 *
 	 * @param locale
 	 *        the desired locale
 	 * @return the result
@@ -230,7 +231,7 @@ public class PackageController {
 
 	/**
 	 * Install a package.
-	 * 
+	 *
 	 * @param name
 	 *        the name of the package to install
 	 * @param locale
@@ -266,7 +267,7 @@ public class PackageController {
 
 	/**
 	 * Remove a package.
-	 * 
+	 *
 	 * @param name
 	 *        the name of the package to remove
 	 * @param locale
@@ -300,7 +301,7 @@ public class PackageController {
 
 	/**
 	 * Set the message source.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source to set
 	 */
@@ -310,7 +311,7 @@ public class PackageController {
 
 	/**
 	 * Set the platform package service.
-	 * 
+	 *
 	 * @param platformPackageService
 	 *        the service to set
 	 */

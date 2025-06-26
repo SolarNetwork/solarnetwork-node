@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: GPSd integration tests
 Bundle-SymbolicName: net.solarnetwork.node.io.gpsd.test
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.io.gpsd;bundle-version="[3.1,4.0)"
+Fragment-Host: net.solarnetwork.node.io.gpsd;bundle-version="[4.0,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.databind.node;version="[2.8,3.0)",
+ com.fasterxml.jackson.databind.node;version="[2.19,3.0)",
  io.netty.handler.logging;version="[4.2,5.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",

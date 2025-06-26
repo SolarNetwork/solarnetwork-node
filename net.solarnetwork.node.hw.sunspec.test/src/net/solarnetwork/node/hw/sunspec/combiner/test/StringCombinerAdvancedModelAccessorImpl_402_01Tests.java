@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.hw.sunspec.combiner.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import java.util.List;
 import org.junit.Test;
 import org.slf4j.Logger;

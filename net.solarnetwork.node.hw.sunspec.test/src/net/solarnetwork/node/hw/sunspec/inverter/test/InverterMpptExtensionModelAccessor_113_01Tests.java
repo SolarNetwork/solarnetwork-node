@@ -23,11 +23,11 @@
 package net.solarnetwork.node.hw.sunspec.inverter.test;
 
 import static net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState.Mppt;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;

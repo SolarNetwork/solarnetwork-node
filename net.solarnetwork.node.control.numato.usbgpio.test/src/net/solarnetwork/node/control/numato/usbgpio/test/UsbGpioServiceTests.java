@@ -24,8 +24,8 @@ package net.solarnetwork.node.control.numato.usbgpio.test;
 
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;

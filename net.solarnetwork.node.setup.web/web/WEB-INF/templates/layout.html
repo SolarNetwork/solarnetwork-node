@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!--/*
+	Variables:
+	
+	title	 			- page title (string)
+	body				- main content (fragment)
+	footer				- footer content (fragment)
+	navloc				- navigation key (string)
+	
+	Optional variables (for named-argument invocation):
+	
+	headExtra 			- additional content for <head> (fragment)
+*/-->
+<html data-th-fragment="layout (title, body, footer, navloc)" 
+	xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+	<head>
+	    <title data-th-replace="${title}">SolarNode</title>
+		<link rel="icon" type="image/png" data-th-href="@{/img/favicon.png}" href="../../img/favicon.png">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="csrf" content="" data-th-content="${_csrf.token}" data-th-if="${_csrf}">
+		<meta name="csrf_header" content="X-CSRF-TOKEN" data-th-content="${_csrf.headerName}" data-th-if="${_csrf}">
+		<meta name="base-path" content="/" data-th-content="@{/}">
+		<meta name="authenticated" content="true" sec:authorize="hasRole('ROLE_USER')">
+		<meta name="nodeId" data-th-content="${identityService != null ? identityService.nodeId : ''}" sec:authorize="hasRole('ROLE_USER')">
+		<link rel="stylesheet" href="../../css/bootstrap.css" data-th-href="@{/css/bootstrap.css}">
+		<link rel="stylesheet" href="../../css/solarnode.css" data-th-href="@{/css/solarnode.css}">
+		<link rel="stylesheet" href="../../css/fonts.css" data-th-href="@{/css/fonts.css}">
+		<link rel="stylesheet" href="../../css/bootstrap-icons.css" data-th-href="@{/css/bootstrap-icons.css}">	
+		<script src="../../js-lib/jquery-3.7.1.js" data-th-src="@{/js-lib/jquery-3.7.1.js}"></script>
+		<script src="../../js-lib/jquery.form.js" data-th-src="@{/js-lib/jquery.form.js}"></script>
+		<script src="../../js-lib/bootstrap.bundle.js" data-th-src="@{/js-lib/bootstrap.bundle.js}"></script>
+		<script src="../../js-lib/moment.js" data-th-src="@{/js-lib/moment.js}"></script>
+		<script src="../../js-lib/stop.js" data-th-src="@{/js-lib/stomp.js}"></script>
+		<script src="../../js-lib/d3v4.js" data-th-src="@{/js-lib/d3v4.js}"></script>
+		<script src="../../js/global.js" data-th-src="@{/js/global.js}"></script>
+		<script src="../../js/global-websocket.js" data-th-src="@{/js/global-websocket.js}"></script>
+		<script src="../../js/backups.js" data-th-src="@{/js/backups.js}"></script>
+		<script src="../../js/datum.js" data-th-src="@{/js/datum.js}"></script>
+		<script src="../../js/datum-sources.js" data-th-src="@{/js/datum-sources.js}"></script>
+		<script src="../../js/certs.js" data-th-src="@{/js/certs.js}"></script>
+		<script src="../../js/hosts.js" data-th-src="@{/js/hosts.js}"></script>
+		<script src="../../js/login.js" data-th-src="@{/js/login.js}"></script>
+		<script src="../../js/metrics.js" data-th-src="@{/js/metrics.js}"></script>
+		<script src="../../js/settings.js" data-th-src="@{/js/settings.js}"></script>
+		<script src="../../js/new-node.js" data-th-src="@{/js/new-node.js}"></script>
+		<script src="../../js/packages.js" data-th-src="@{/js/packages.js}"></script>
+		<script src="../../js/plugins.js" data-th-src="@{/js/plugins.js}"></script>
+		<script src="../../js/datum-charts.js" data-th-src="@{/js/datum-charts.js}"></script>
+		<script src="../../js/logging.js" data-th-src="@{/js/logging.js}"></script>
+		<script src="../../js/opmodes.js" data-th-src="@{/js/opmodes.js}"></script>
+		<script src="../../js/cli-console.js" data-th-src="@{/js/cli-console.js}"></script>
+		<script src="../../js/sectoks.js" data-th-src="@{/js/sectoks.js}"></script>
+		<script src="../../js/locstate.js" data-th-src="@{/js/locstate.js}"></script>
+		<snode:resources type="application/javascript" sec:authorize="!hasRole('ROLE_USER')" />
+		<snode:resources type="application/javascript" role='USER' sec:authorize="hasRole('ROLE_USER')" />
+		<!--/*/ <th:block th:utext="${headExtra}"> /*/-->
+    	<!--/*/ </th:block> /*/-->		
+	</head>
+	<body>
+		<a id="top" aria-hidden="true"></a>
+		<div class="navbar navbar-expand-md bg-body-tertiary mb-3" data-th-replace="~{navbar :: navbar}">
+			<div class="container-fluid">
+				<a class="navbar-brand" href="/">
+					<img src="../../img/logo-node.svg" alt="SolarNode" width="143" height="28"/>
+				</a>
+			</div>
+		</div>
+		<div class="container" data-th-if="${session != null && session.statusMessageKey != null}">
+			<div class="alert alert-success" data-th-utext="${#strings.startsWith(session.statusMessageKey, 'registration.')}
+				? #{__${session.statusMessageKey}__(${#authentication.principal.username})}
+				: #{__${session.statusMessageKey}__(${session.statusMessageParam0})}">
+				Status alert.
+			</div>
+		</div>
+		<div class="container" data-th-if="${session != null && session.errorMessageKey != null}">
+			<div class="alert alert-warning" data-th-utext="#{__${session.errorMessageKey}__(${session.errorMessageParam0})}">
+				Status alert.
+			</div>
+		</div>
+		<div class="container" id="body-container" data-th-insert="${body}">
+			<div data-th-replace="${body}">
+				Body content here.
+			</div>
+			<div data-th-replace="${footer}">
+				Footer content here.
+			</div>
+		</div>
+
+		<!-- System lock overlay -->
+		<form id="platform-lock-modal" class="dynamic" data-th-classappend="'modal fade'"
+			action="/pub/platform/state" method="get"
+			data-th-action="@{/pub/platform/state}" data-bs-backdrop="static"
+			data-bs-keyboard="false">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h3 class="modal-title info-title"
+							data-th-text="#{platform.lock.title}">Platform update in
+							progress...</h3>
+					</div>
+					<div class="modal-body">
+						<p class="info-message hide-while-restarting"></p>
+						<div
+							class="restart-required hide-while-restarting hide alert alert-warning"
+							data-th-utext="#{platform.lock.restartRequired.warning}">
+							Restart required.</div>
+						<div class="restarting hidden alert alert-info"
+							data-th-utext="|#{platform.lock.taskComplete.msg} #{restart.underway}|">
+							Task complete. SolarNode is restarting...</div>
+						<div class="progress" role="progressbar">
+							<div
+								class="progress-bar progress-bar-striped progress-bar-animated"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	
+		<!-- Generic progress overlay -->
+		<div id="generic-progress-modal" class="dynamic" data-th-classappend="'modal fade'"
+			data-bs-backdrop="static" data-bs-keyboard="false">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h3 class="modal-title info-title" data-default-message="Progress" 
+							data-th-data-default-message="#{generic.progress.title}"></h3>
+					</div>
+					<div class="modal-body">
+						<p class="info-message" data-default-message="Progress" 
+							data-th-data-default-message="#{generic.progress.message}"></p>
+						<div class="progress" role="progressbar">
+							<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
+					    </div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Application scoped setup resource integration support  -->
+		<snode:resources role="USER" type="text/html" inline="true" scope="Application"/>
+		
+		<footer data-th-replace="${footer}">
+			Footer content here.
+		</footer>
+	</body>
+</html>

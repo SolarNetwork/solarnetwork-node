@@ -30,9 +30,9 @@ import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_
 import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;

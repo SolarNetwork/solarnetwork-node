@@ -1,21 +1,21 @@
 /* ==================================================================
  * StaticDataReadonlyModbusConnection.java - 8/10/2018 8:25:30 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,13 +31,13 @@ import net.solarnetwork.util.IntShortMap;
 
 /**
  * {@link ModbusConnection} for reading static data.
- * 
+ *
  * <p>
  * This class can be useful in tests working with Modbus connections.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 3.0
  * @since 2.16
  */
 public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSupport {
@@ -46,7 +46,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	/**
 	 * Construct with the data.
-	 * 
+	 *
 	 * @param data
 	 *        the starting data
 	 */
@@ -57,7 +57,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the starting data, starting from Modbus register address
 	 *        {@literal 0}
@@ -69,7 +69,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the starting data
 	 * @param address
@@ -82,7 +82,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the starting data
 	 * @param address
@@ -97,7 +97,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	/**
 	 * Get the data map.
-	 * 
+	 *
 	 * @return the data
 	 */
 	protected IntShortMap getData() {
@@ -138,16 +138,16 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	@Override
 	public BitSet readInputDiscreteValues(final int address, final int count) {
-		return readDiscreetValues(address, count);
+		return readDiscreteValues(address, count);
 	}
 
 	@Override
-	public BitSet readDiscreetValues(final int address, final int count) {
-		return readDiscreetValues(new int[] { address }, count);
+	public BitSet readDiscreteValues(final int address, final int count) {
+		return readDiscreteValues(new int[] { address }, count);
 	}
 
 	@Override
-	public BitSet readDiscreetValues(final int[] addresses, final int count) {
+	public BitSet readDiscreteValues(final int[] addresses, final int count) {
 		BitSet out = new BitSet();
 		for ( int i = 0, w = 0; i < addresses.length; i++ ) {
 			final int d = data.getValue(addresses[i]);

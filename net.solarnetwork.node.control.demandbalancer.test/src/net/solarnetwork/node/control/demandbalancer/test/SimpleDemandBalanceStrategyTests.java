@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.control.demandbalancer.test;
 
-import net.solarnetwork.node.control.demandbalancer.SimpleDemandBalanceStrategy;
 import org.junit.Assert;
 import org.junit.Test;
+import net.solarnetwork.node.control.demandbalancer.SimpleDemandBalanceStrategy;
 
 /**
  * Test cases for the {@link SimpleDemandBalanceStrategy} class.

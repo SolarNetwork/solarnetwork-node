@@ -3,10 +3,10 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus IO Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.test
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.test
-Bundle-Version: 5.0.0
+Bundle-Version: 6.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.io.modbus;bundle-version="[5.0,6.0)"
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Fragment-Host: net.solarnetwork.node.io.modbus;bundle-version="[6.0,7.0)"
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.hamcrest;version="[1.1,2.0)",

@@ -55,10 +55,10 @@ import net.solarnetwork.domain.SortDescriptor;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 2.4
+ * @version 3.0
  */
-public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends AbstractJdbcDao<T>
-		implements GenericDao<T, K> {
+public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparable<K>>
+		extends AbstractJdbcDao<T> implements GenericDao<T, K> {
 
 	/** Default prefix format for SQL resources. */
 	public static final String SQL_RESOURCE_PREFIX = "%s";

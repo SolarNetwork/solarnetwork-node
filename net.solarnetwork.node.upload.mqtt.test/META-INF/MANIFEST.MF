@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MQTT upload tests
 Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt.test
-Bundle-Version: 2.2.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[3.2,4.0)"
+Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[4.0,5.0)"
 Automatic-Module-Name: net.solarnetwork.node.upload.mqtt.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  io.moquette;version="[0.16,1.0)",
  io.moquette.broker;version="[0.16,1.0)",
@@ -28,5 +28,5 @@ Import-Package:
  org.junit.runner;version="[4.5,5.0)",
  org.skyscreamer.jsonassert;version="[1.5,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.dao;version="[5.3,6.0)",
- org.springframework.scheduling.concurrent;version="[5.3,6.0)"
+ org.springframework.dao;version="[6.2,7.0)",
+ org.springframework.scheduling.concurrent;version="[6.2,7.0)"

@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller for user related tasks.

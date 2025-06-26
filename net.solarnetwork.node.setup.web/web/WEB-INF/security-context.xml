@@ -6,7 +6,7 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/security
-		http://www.springframework.org/schema/security/spring-security-5.8.xsd">
+		http://www.springframework.org/schema/security/spring-security-6.4.xsd">
 
 	<http security="none" pattern="/hello" />
 	
@@ -28,7 +28,7 @@
 	</http>
 	
 	<!-- Configure Spring Security -->
-	<http auto-config="true" use-expressions="true">
+	<http auto-config="true" use-expressions="true" use-authorization-manager="false">
 		<headers>
 			<frame-options disabled="true"/>
 		</headers>
@@ -36,7 +36,6 @@
 		<intercept-url pattern='/*.do' access="permitAll"/>
 		<intercept-url pattern='/pub/**' access="permitAll"/>
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')"/>
-	    <custom-filter ref="exceptionSupportFilter" before="FIRST"/>
 	    <custom-filter ref="associationFilter" after="FIRST" />
 	    <custom-filter ref="loginKeyAuthFilter" before="LOGIN_PAGE_FILTER"/>
 		<form-login login-page="/login.do" default-target-url="/a/home"
@@ -80,8 +79,6 @@
 		</beans:property>
 	</beans:bean>
 	
-	<beans:bean id="exceptionSupportFilter" class="net.solarnetwork.node.setup.web.support.ExceptionSupportFilter"/>
-
 	<authentication-manager alias="authenticationManager">
 		<authentication-provider user-service-ref="userDetailsService">			
 			<password-encoder ref="passwordEncoder"/>
@@ -96,7 +93,13 @@
 		<intercept-message pattern="/**" access="hasRole('USER')" />
 	</websocket-message-broker>
 
-	<beans:bean id="authTokenEntryPoint" class="net.solarnetwork.web.security.SecurityTokenAuthenticationEntryPoint">
+	<!--
+		This post-processor is to make XorCsrf work with messaging, see
+		https://github.com/spring-projects/spring-security/issues/17260
+	 -->
+	<beans:bean class="net.solarnetwork.node.setup.web.support.WebsocketXorCsrfChannelBeanPostProcessor"/>
+
+	<beans:bean id="authTokenEntryPoint" class="net.solarnetwork.web.jakarta.security.SecurityTokenAuthenticationEntryPoint">
 		<beans:property name="handlerExceptionResolver" ref="exceptionHandlerExceptionResolver"/>
 	</beans:bean>
 

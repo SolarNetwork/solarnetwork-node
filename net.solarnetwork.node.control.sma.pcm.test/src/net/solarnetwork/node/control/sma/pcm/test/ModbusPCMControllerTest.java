@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusPCMControllerTest.java - Mar 23, 2014 1:23:09 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,9 +27,9 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
@@ -54,9 +54,9 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Unit tests for the {@link ModbusPCMController} class.
- * 
+ *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusPCMControllerTest {
 
@@ -107,7 +107,7 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		conn.writeDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(expectedBitSet));
+		conn.writeDiscreteValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(expectedBitSet));
 
 		replay(modbus, conn);
 
@@ -141,7 +141,7 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		expect(conn.readDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(1))).andReturn(expectedBitSet);
+		expect(conn.readDiscreteValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(1))).andReturn(expectedBitSet);
 
 		replay(modbus, conn);
 
@@ -168,7 +168,7 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		expect(conn.readDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(1))).andReturn(expectedBitSet);
+		expect(conn.readDiscreteValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(1))).andReturn(expectedBitSet);
 
 		replay(modbus, conn);
 
@@ -234,7 +234,7 @@ public class ModbusPCMControllerTest {
 
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		conn.writeDiscreetValues(aryEq(new int[] { 0x4000, 0x4002, 0x4004, 0x4006 }),
+		conn.writeDiscreteValues(aryEq(new int[] { 0x4000, 0x4002, 0x4004, 0x4006 }),
 				eq(expectedBitSet));
 
 		replay(modbus, conn);

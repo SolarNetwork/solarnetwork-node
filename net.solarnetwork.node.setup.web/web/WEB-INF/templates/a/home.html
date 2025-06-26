@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'home')}">
+<head>
+    <title data-th-text="#{home.title}">SolarNode</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section>
+	<p class="lead" data-th-utext="#{home.intro-loggedin(${#authentication.name})}">
+		Welcome to SolarNode.
+	</p>
+</section>
+
+<section id="external-node-links" class="hidden">
+	<h2>
+		<a id="links" href="#links"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>	
+		<span data-th-remove="tag"	data-th-utext="#{home.external-links.title}">Links</span>
+	</h2>	
+	<p data-th-text="#{home.external-links.intro}">
+		Here are some links.
+	</p>
+	<dl class="row">
+		<dt class="col-sm-3 node-dashboard hidden" data-th-text="#{home.external-links.dashboard.title}">
+			Dashboard
+		</dt>
+		<dd class="col-sm-9 node-dashboard hidden" data-th-utext="#{home.external-links.dashboard.info}">
+			The dashbaord lets you see your data.
+		</dd>
+		<dt class="col-sm-3 node-dataview hidden" data-th-text="#{home.external-links.dataview.title}">
+			Data View
+		</dt>
+		<dd class="col-sm-9 node-dataview hidden" data-th-utext="#{home.external-links.dataview.info}">
+			The data view shows recent data.
+		</dd>
+		<dt class="col-sm-3 dev-apitool hidden" data-th-text="#{home.external-links.apitool.title}">
+			API Explorer
+		</dt>
+		<dd class="col-sm-9 dev-apitool hidden" data-th-utext="#{home.external-links.apitool.info}">
+			API Explorer lets you explore the API.
+		</dd>
+	</dl>
+</section>
+
+<section id="datum-activity-charts" class="hidden">
+	<h2>
+		<a id="charts" href="#charts"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>			
+		<span data-th-remove="tag" data-th-text="#{datum.charts.title}">Charts</span>
+	</h2>
+	<div id="datum-activity-charts-container"></div>
+	<div class="clearfix"></div>
+</section>
+
+<section id="datum-activity-seenprops" class="hidden">
+	<h2>
+		<a id="datum-props" href="#datum-props"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-remove="tag" data-th-text="#{datum.activity.seenprops.title}">Properties</span>
+	</h2>	
+	<p data-th-utext="#{datum.activity.seenprops.intro}">
+		See your recent datum properties here.
+	</p>
+	<div class="container datum-activity-seenprops">
+		<div class="row fw-bold border-bottom">
+			<div class="col-4" data-th-text="#{datum.sourceId.label}">Source ID</div>
+			<div class="col-3" data-th-text="#{datum.created.label}">Created</div>
+			<div class="col-5" data-th-text="#{datum.properties.label}">Properties</div>
+		</div>
+		<div class="row activity template brief-showcase border-bottom">
+			<div class="col-4 py-2" data-tprop="sourceId"></div>
+			<div class="col-3 py-2" data-tprop="date"></div>
+			<div class="col-5 py-2">
+				<dl class="row datum-props hidden">
+					<dt class="col-sm-5 col-md-7 col-lg-8 datum-prop template" data-tprop="propName"></dt>
+					<dd class="col-sm-7 col-md-5 col-lg-4 datum-prop template" data-tprop="propValue"></dd>
+				</dl>
+			</div>
+		</div>
+		<div class="activity-container"></div>
+	</div>
+</section>
+
+<section id="datum-activity" class="hidden">
+	<h2>
+		<a id="datum-activity" href="#datum-activity"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-remove="tag" data-th-text="#{datum.activity.title}">Activity</span>
+	</h2>	
+	
+	<p data-th-utext="#{datum.activity.intro}">
+		See the activity here.
+	</p>
+	
+	<div class="container datum-activity">
+		<div class="row fw-bold border-bottom">
+			<div class="col-3">
+				<span data-th-remove="tag" data-th-text="#{datum.created.label}">Created</span>
+				<span> / </span>
+				<span data-th-remove="tag" data-th-text="#{datum.activity.eventAndType.label}">Event Type</span>
+			</div>
+			<div class="col-4" data-th-text="#{datum.sourceId.label}">Source ID</div>
+			<div class="col-5" data-th-text="#{datum.properties.label}">Properties</div>
+		</div>
+		<div class="row activity template brief-showcase border-bottom">
+			<div class="col-3 py-2">
+				<div data-tprop="date"></div>
+				<div class="text-nowrap mt-3">
+					<i class="event-icon hidden"></i>
+					<span data-tprop="type"></span>
+				</div>
+			</div>
+			<div class="col-4 py-2" data-tprop="sourceId"></div>
+			<div class="col-5 py-2">
+				<dl class="datum-props hidden">
+					<dt class="datum-prop template" data-tprop="propName"></dt>
+					<dd class="datum-prop template" data-tprop="propValue"></dd>
+				</dl>
+			</div>
+		</div>
+		<div class="activity-container"></div>
+	</div>
+</section>
+
+</body>
+</html>

@@ -2,15 +2,15 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Inverter Datum Data Source Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.sunspec.inverter.test
-Bundle-Version: 4.1.0
+Bundle-Version: 5.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.datum.sunspec.inverter;bundle-version="[4.1,5.0)"
+Fragment-Host: net.solarnetwork.node.datum.sunspec.inverter;bundle-version="[5.0,6.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.sunspec.inverter.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.easymock;version="[3.6,4.0)",
  org.hamcrest;version="[1.3,2.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.springframework.core.task.support;version="[5.3,6.0)"
+ org.springframework.core.task.support;version="[6.2,7.0)"

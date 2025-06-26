@@ -24,11 +24,11 @@ package net.solarnetwork.node.datum.bacnet;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -69,7 +69,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generic BACnet device datum data source.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class BacnetDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver, BacnetCovHandler {
@@ -242,7 +242,8 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 			log.info("Scheduling BACnet [{}] connectivity check for {}ms", networkUid,
 					connectionCheckFrequency);
 			connectionCheckFuture = taskScheduler.scheduleWithFixedDelay(new ConnectionCheck(),
-					new Date(System.currentTimeMillis() + 10000L), connectionCheckFrequency);
+					Instant.ofEpochMilli(System.currentTimeMillis() + 10000L),
+					Duration.ofMillis(connectionCheckFrequency));
 		}
 	}
 

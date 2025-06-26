@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    jaxb
+}
+
+dependencies {
+    jaxb 'org.glassfish.jaxb:jaxb-xjc:4.0.4'
+    jaxb 'org.glassfish.jaxb:jaxb-runtime:4.0.4'
+    jaxb 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.1'
+}
+
+task generateJaxb {
+    def jaxbTargetDir = file("../../src")
+    inputs.files fileTree(dir: '../../src/net/solarnetwork/node/io/canbus/schema', include: '*.xsd')
+    outputs.dir jaxbTargetDir
+
+    doLast {
+        jaxbTargetDir.mkdirs()
+        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJC2Task', classpath: configurations.jaxb.asPath)
+        ant.xjc(
+                destdir: jaxbTargetDir,
+                schema: '../../src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xsd',
+                binding: '../../src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xjb.xml',
+                extension: true
+        )
+    }
+}

@@ -3,16 +3,16 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CSV Datum Source
 Bundle-Description: Parse a CSV resource into a datum stream.
 Bundle-SymbolicName: net.solarnetwork.node.datum.csv
-Bundle-Version: 1.2.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.csv
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.codec;version="[2.3,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.1,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
- net.solarnetwork.io;version="[2.1,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
+ net.solarnetwork.io;version="[3.0,4.0)",
  net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.domain;version="[2.1,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
@@ -24,18 +24,18 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.2,3.0)",
- net.solarnetwork.web.service;version="[1.1,2.0)",
+ net.solarnetwork.web.jakarta.service;version="[1.0,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)",
- org.springframework.core.io;version="[5.3,6.0)",
- org.springframework.http;version="[5.3,6.0)",
- org.springframework.http.client;version="[5.3,6.0)",
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.http;version="[6.2,7.0)",
+ org.springframework.http.client;version="[6.2,7.0)",
  org.springframework.util;version="5.3.24",
  org.supercsv.io;version="[2.4,3.0)",
  org.supercsv.prefs;version="[2.4,3.0)",

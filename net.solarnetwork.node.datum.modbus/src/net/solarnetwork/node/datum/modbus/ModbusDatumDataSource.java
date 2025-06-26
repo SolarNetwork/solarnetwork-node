@@ -73,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  *
  * @author matt
- * @version 3.11
+ * @version 3.12
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<Void>,
@@ -426,9 +426,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 								stop = start + range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
 							int max = start + len;
-							@SuppressWarnings("deprecation")
 							BitSet updates = (blockType == ModbusRegisterBlockType.Coil
-									? conn.readDiscreetValues(start, len)
+									? conn.readDiscreteValues(start, len)
 									: conn.readInputDiscreteValues(start, len));
 							for ( int i = start, u = 0; i < max; i++, u++ ) {
 								bits.set(i, updates.get(u));

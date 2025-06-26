@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.hw.sma.modbus.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import org.junit.Test;

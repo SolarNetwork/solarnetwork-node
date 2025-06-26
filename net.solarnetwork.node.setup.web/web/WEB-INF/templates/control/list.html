@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'controls')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{controls.title})}">SolarNode Controls</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<p data-th-if="${#lists.isEmpty(controlIds)}" data-th-utext="#{controls.none.message}">
+	There are no controls.
+</p>
+
+<!--/*/ <th:block th:unless="${#lists.isEmpty(controlIds)}"> /*/-->
+<section class="intro">
+	<h2 data-th-text="#{controls.title}">Controls</h2>	
+	<p data-th-utext="#{controls.intro}">Controls are here.</p>
+</section>
+<section id="providers">
+	<div class="container">
+		<div class="row setting-components">
+			<div class="col">
+				<div class="row my-3 justify-content-between align-items-center"
+						data-th-each="controlId : ${controlIds}">
+					<span data-th-remove="tag" data-th-utext="'&lt;!-- ' +${controlId} + ' --&gt;'"></span>
+					<div class="col">
+						<strong data-th-text="${controlId}">my/control</strong>
+					</div>
+					<div class="col-auto">
+						<a class="btn btn-light" href="/a/controls/manage?id=my/control"
+								data-th-href="@{/a/controls/manage(id=${controlId})}">
+							<i class="bi bi-pencil-square"></i> 
+							<span data-th-text="#{controls.manage.label}">Manage</span>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+<!--/*/ </th:block> /*/-->
+
+</body>
+</html>

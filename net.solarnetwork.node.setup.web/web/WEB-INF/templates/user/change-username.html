@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'user')}">
+<head>
+    <title data-th-text="#{app.title(#{user.changeUsername.title})}">SolarNode Change Username</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<div class="row justify-content-center">
+	<div class="col-md-6">		
+		<div class="hidden alert alert-success" id="change-username-success" data-th-utext="#{user.changeUsername.success}">
+			Username changed.
+		</div>
+		
+		<section class="intro">
+			<p data-th-utext="#{user.changeUsername.intro}">Change username here.</p>
+		</section>
+		
+		<form id="change-username-form" data-th-action="@{/a/user/change-username}" method="post">
+			<fieldset class="row gy-3">
+				<div class="col-12">
+					<label class="form-label" for="old-username" data-th-text="#{user.username.label}">Old Username</label>
+					<input class="form-control" type="text" id="old-username" readonly 
+							data-th-value="${#authentication.principal.username}">
+				</div>
+				<div class="col-12">
+					<label class="form-label" for="login-username" data-th-text="#{user.newUsername.label}">New Username</label>
+					<input class="form-control" type="text" name="username" id="login-username" maxlength="255" required>
+				</div>
+				<div class="col-12">
+					<label class="form-label" for="login-username-again" data-th-text="#{user.newUsernameAgain.label}">Username Again</label>
+					<input class="form-control" type="text" name="usernameAgain" id="login-username-again" maxlength="255">
+				</div>
+				<div class="col-12">
+					<button type="submit" class="btn btn-primary" data-th-text="#{user.action.changeUsername}">Change</button>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+</div>
+
+</body>
+</html>

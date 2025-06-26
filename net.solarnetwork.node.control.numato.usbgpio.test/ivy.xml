@@ -6,7 +6,7 @@
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="3.0.0"/>
 
 		<!-- Testing support -->
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial.pjc" rev="[2.0,)"/>

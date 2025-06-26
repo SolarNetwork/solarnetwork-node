@@ -1,21 +1,21 @@
 /* ==================================================================
  * CsvDatumDataSourceHttpTests.java - 1/04/2023 9:37:56 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,9 +42,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.Fields;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
@@ -53,7 +55,6 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.support.HttpRequestWrapper;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.csv.CsvDatumDataSource;
@@ -63,18 +64,20 @@ import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.test.Assertion;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 import net.solarnetwork.util.ByteList;
-import net.solarnetwork.web.service.HttpRequestCustomizerService;
-import net.solarnetwork.web.service.support.AbstractHttpRequestCustomizerService;
-import net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.support.AbstractHttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.support.BasicAuthHttpRequestCustomizerService;
 
 /**
  * Test cases for the {@link CsvDatumDataSource} class using HTTP resources.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
+public class CsvDatumDataSourceHttpTests extends AbstractHttpServerTests {
 
 	private static final String TEST_SOURCE_ID = "test.source";
 
@@ -82,7 +85,7 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 
 	@Override
 	@Before
-	public void setup() throws Exception {
+	public void setup() {
 		super.setup();
 		dataSource = new CsvDatumDataSource();
 		dataSource.setCharset(StandardCharsets.UTF_8);
@@ -110,19 +113,21 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
-				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-01.csv")));
-				assertThat("Date query parameter", request.getParameter("date"),
+				assertThat("Request path", request.getHttpURI().getPath(), is(equalTo("/test-01.csv")));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Date query parameter", queryParams.getValue("date"),
 						is(equalTo(urlQueryDate)));
-				respondWithCsvResource(response, "test-01.csv");
-				response.flushBuffer();
+				respondWithCsvResource(request, response, "test-01.csv");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> result = dataSource.readMultipleDatum();
@@ -169,19 +174,21 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
-				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-01.csv")));
-				assertThat("Date query parameter", request.getParameter("date"),
+				assertThat("Request path", request.getHttpURI().getPath(), is(equalTo("/test-01.csv")));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Date query parameter", queryParams.getValue("date"),
 						is(equalTo(urlQueryDate)));
-				respondWithCsvResource(response, "test-01.csv");
-				response.flushBuffer();
+				respondWithCsvResource(request, response, "test-01.csv");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> result = dataSource.readMultipleDatum();
@@ -234,21 +241,24 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
-				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-01.csv")));
-				assertThat("Date query parameter", request.getParameter("date"),
+				assertThat("Request path", request.getHttpURI().getPath(), is(equalTo("/test-01.csv")));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Date query parameter", queryParams.getValue("date"),
 						is(equalTo(urlQueryDate)));
-				assertThat("Auth header from customizer", request.getHeader(HttpHeaders.AUTHORIZATION),
+				assertThat("Auth header from customizer",
+						request.getHeaders().get(HttpHeaders.AUTHORIZATION),
 						is(equalTo("Basic Zm9vOmJhcg==")));
-				respondWithCsvResource(response, "test-01.csv");
-				response.flushBuffer();
+				respondWithCsvResource(request, response, "test-01.csv");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> result = dataSource.readMultipleDatum();
@@ -322,26 +332,28 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
-				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-01.csv")));
-				assertThat("Date query parameter", request.getParameter("date"),
+				assertThat("Request path", request.getHttpURI().getPath(), is(equalTo("/test-01.csv")));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Date query parameter", queryParams.getValue("date"),
 						is(equalTo(urlQueryDate)));
 
 				HttpHeaders tmp = new HttpHeaders();
 				tmp.setBasicAuth("flim", "flam", StandardCharsets.UTF_8);
 
 				assertThat("Auth header from customizer using placeholder credentials",
-						request.getHeader(HttpHeaders.AUTHORIZATION),
+						request.getHeaders().get(HttpHeaders.AUTHORIZATION),
 						is(equalTo(tmp.getFirst(HttpHeaders.AUTHORIZATION))));
-				respondWithCsvResource(response, "test-01.csv");
-				response.flushBuffer();
+				respondWithCsvResource(request, response, "test-01.csv");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replay(placeholderService);
@@ -428,20 +440,22 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
-				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-02.csv")));
-				assertThat("Date query parameter", request.getParameter("date"),
+				assertThat("Request path", request.getHttpURI().getPath(), is(equalTo("/test-02.csv")));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Date query parameter", queryParams.getValue("date"),
 						is(equalTo(urlQueryDate)));
-				assertThat("Foo query parameter", request.getParameter("foo"), is(equalTo("bar")));
-				respondWithCsvResource(response, "test-01.csv");
-				response.flushBuffer();
+				assertThat("Foo query parameter", queryParams.getValue("foo"), is(equalTo("bar")));
+				respondWithCsvResource(request, response, "test-01.csv");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> result = dataSource.readMultipleDatum();
@@ -522,24 +536,25 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("POST")));
-				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-01.csv")));
-				assertThat("Date query parameter", request.getParameter("date"),
+				assertThat("Request path", request.getHttpURI().getPath(), is(equalTo("/test-01.csv")));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Date query parameter", queryParams.getValue("date"),
 						is(equalTo(urlQueryDate)));
 
-				String body = StreamUtils.copyToString(request.getInputStream(),
-						StandardCharsets.US_ASCII);
+				String body = getRequestBody(request);
 				assertThat("Body provided", body, is(equalTo("Hello, world.")));
 
-				respondWithCsvResource(response, "test-01.csv");
-				response.flushBuffer();
+				respondWithCsvResource(request, response, "test-01.csv");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> result = dataSource.readMultipleDatum();

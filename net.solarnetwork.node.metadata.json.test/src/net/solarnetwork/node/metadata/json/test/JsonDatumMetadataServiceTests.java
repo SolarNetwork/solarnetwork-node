@@ -1,21 +1,21 @@
 /* ==================================================================
  * JsonDatumMetadataServiceTests.java - 24/08/2018 10:46:19 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -41,9 +41,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -56,12 +56,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.Fields;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,15 +88,17 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 import net.solarnetwork.util.CachedResult;
 
 /**
  * Test cases for the {@link JsonDatumMetadataService} class.
- * 
+ *
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
+public class JsonDatumMetadataServiceTests extends AbstractHttpServerTests {
 
 	private static final Long TEST_NODE_ID = 123L;
 	private static final String TEST_SOUCE_ID = "test.source";
@@ -158,19 +162,21 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
-				respondWithJsonResource(response, "meta-01.json");
-				response.flushBuffer();
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
+				respondWithJsonResource(request, response, "meta-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -269,29 +275,31 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 			private int count = 0;
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				count++;
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
 				if ( count == 1 ) {
 					// initial GET metadata request; none available
 					assertThat("Request method", request.getMethod(), equalTo("GET"));
 				} else {
 					// second POST metadata request
 					assertThat("Request method", request.getMethod(), equalTo("POST"));
-					String body = FileCopyUtils.copyToString(request.getReader());
+					String body = getRequestBody(request);
 					assertThat("JSON body", body, equalTo("{\"m\":{\"foo\":\"bar\"}}"));
 
 				}
-				respondWithJson(response, "{\"success\":true}");
-				response.flushBuffer();
+				respondWithJson(request, response, "{\"success\":true}");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// then persist copy locally as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
@@ -324,7 +332,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
-		// no cached metadata available 
+		// no cached metadata available
 		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.emptyList());
 
@@ -340,23 +348,25 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("POST"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
 
-				String body = FileCopyUtils.copyToString(request.getReader());
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
+
+				String body = getRequestBody(request);
 				assertThat("JSON body", body, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}"));
 
-				respondWithJson(response, "{\"success\":true}");
-				response.flushBuffer();
+				respondWithJson(request, response, "{\"success\":true}");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -398,23 +408,25 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("POST"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
 
-				String body = FileCopyUtils.copyToString(request.getReader());
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
+
+				String body = getRequestBody(request);
 				assertThat("JSON body", body, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}"));
 
-				respondWithJson(response, "{\"success\":true}");
-				response.flushBuffer();
+				respondWithJson(request, response, "{\"success\":true}");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -458,15 +470,18 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				final int i = count.incrementAndGet();
 				assertThat("Request method", request.getMethod(), equalTo("POST"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
 
-				String body = FileCopyUtils.copyToString(request.getReader());
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
+
+				String body = getRequestBody(request);
 				if ( i == 1 ) {
 					assertThat("JSON body", body, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}"));
 				} else {
@@ -475,13 +490,12 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 				}
 
-				respondWithJson(response, "{\"success\":true}");
-				response.flushBuffer();
+				respondWithJson(request, response, "{\"success\":true}");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -534,23 +548,25 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("POST"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
 
-				String body = FileCopyUtils.copyToString(request.getReader());
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
+
+				String body = getRequestBody(request);
 				assertThat("JSON body", body, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bop\"}}"));
 
-				respondWithJson(response, "{\"success\":true}");
-				response.flushBuffer();
+				respondWithJson(request, response, "{\"success\":true}");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();
@@ -649,7 +665,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		// create delayed persist task
 		Capture<Runnable> persistRunCaptor = Capture.newInstance(CaptureType.ALL);
-		Capture<Date> persistDateCaptor = Capture.newInstance(CaptureType.ALL);
+		Capture<Instant> persistDateCaptor = Capture.newInstance(CaptureType.ALL);
 		TestScheduledFuture f1 = new TestScheduledFuture();
 		TestScheduledFuture f2 = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(persistRunCaptor), capture(persistDateCaptor)))
@@ -703,20 +719,22 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(),
+				assertThat("Request path", request.getHttpURI().getPath(),
 						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID + "/stream"));
-				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
-				assertThat("Kind", request.getParameter("kind"), equalTo(ObjectDatumKind.Node.name()));
-				respondWithJsonResource(response, "node-stream-meta-01.json");
-				response.flushBuffer();
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("Source ID", queryParams.getValue("sourceId"), equalTo(TEST_SOUCE_ID));
+				assertThat("Kind", queryParams.getValue("kind"), equalTo(ObjectDatumKind.Node.name()));
+				respondWithJsonResource(request, response, "node-stream-meta-01.json");
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		replayAll();

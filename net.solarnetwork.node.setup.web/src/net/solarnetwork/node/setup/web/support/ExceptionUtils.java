@@ -1,21 +1,21 @@
 /* ==================================================================
  * ExceptionUtils.java - 11/08/2022 3:14:52 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,9 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
-import javax.validation.Validator;
 import org.springframework.context.MessageSource;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -36,13 +33,16 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.validation.beanvalidation.SpringValidatorAdapter;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 import net.solarnetwork.domain.Result;
 
 /**
  * Helpers for dealing with exceptions.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 3.3
  */
 public final class ExceptionUtils {
@@ -53,7 +53,7 @@ public final class ExceptionUtils {
 
 	/**
 	 * Generate an error message from an {@link Errors} instance.
-	 * 
+	 *
 	 * @param e
 	 *        the errors
 	 * @param locale
@@ -80,12 +80,12 @@ public final class ExceptionUtils {
 
 	/**
 	 * Generate an error result from an {@link Errors} instance.
-	 * 
+	 *
 	 * <p>
 	 * The {@code message} will be generated via
 	 * {@link #generateErrorsMessage(Errors, Locale, MessageSource)}.
 	 * </p>
-	 * 
+	 *
 	 * @param <V>
 	 *        the result type
 	 * @param e
@@ -105,12 +105,12 @@ public final class ExceptionUtils {
 
 	/**
 	 * Generate an error result from an {@link Errors} instance.
-	 * 
+	 *
 	 * <p>
 	 * Special handling of {@link ConstraintViolation} is performed to extract
 	 * the error path, and rejected value.
 	 * </p>
-	 * 
+	 *
 	 * @param <V>
 	 *        the result type
 	 * @param e
@@ -162,7 +162,7 @@ public final class ExceptionUtils {
 
 	/**
 	 * Convert a constraint violation exception into a binding result.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param validator

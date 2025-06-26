@@ -23,6 +23,7 @@
 package net.solarnetwork.node.job;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,7 +56,7 @@ import net.solarnetwork.support.PrefixedMessageSource;
  * Simple implementation of {@link ManagedJob}.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SimpleManagedJob extends BaseIdentifiable
 		implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -133,7 +134,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 			try {
 				try {
 					long ms = Long.parseLong(expression);
-					return new PeriodicTrigger(ms);
+					return new PeriodicTrigger(Duration.ofMillis(ms));
 				} catch ( NumberFormatException e ) {
 					// ignore
 				}

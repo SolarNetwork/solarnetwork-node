@@ -1,21 +1,21 @@
 /* ==================================================================
  * Cmdline.java - 17/05/2018 6:43:53 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.yaskawa.ecb.app;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,9 +42,9 @@ import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 
 /**
  * Interactive diagnostic app for the Yaskawa ECB protocol.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class Cmdline {
 
@@ -53,7 +54,7 @@ public class Cmdline {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param serial
 	 *        the serial network to use
 	 */
@@ -107,11 +108,11 @@ public class Cmdline {
 
 	/**
 	 * Send a command.
-	 * 
+	 *
 	 * <p>
 	 * Arguments must be in form: <code>ADDR CMD SUBCMD HEXBODY</code>.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the serial connection to use
 	 * @param arguments
@@ -169,7 +170,7 @@ public class Cmdline {
 
 	/**
 	 * Execute the command.
-	 * 
+	 *
 	 * @param cmd
 	 *        the command to execute
 	 * @throws IOException
@@ -196,7 +197,7 @@ public class Cmdline {
 
 	/**
 	 * Start the app event loop.
-	 * 
+	 *
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
@@ -230,7 +231,7 @@ public class Cmdline {
 
 	/**
 	 * Command-line entry point.
-	 * 
+	 *
 	 * @param args
 	 *        the arguments
 	 */
@@ -238,8 +239,11 @@ public class Cmdline {
 		ConfigurableSerialNetwork serial;
 		try {
 			serial = (ConfigurableSerialNetwork) Cmdline.class.getClassLoader()
-					.loadClass("net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork").newInstance();
-		} catch ( InstantiationException | IllegalAccessException | ClassNotFoundException e1 ) {
+					.loadClass("net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork")
+					.getDeclaredConstructor().newInstance();
+		} catch ( InstantiationException | IllegalAccessException | ClassNotFoundException
+				| IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+				| SecurityException e1 ) {
 			System.err.println("Error loading SerialPortNetwork class: " + e1);
 			System.exit(1);
 			return;

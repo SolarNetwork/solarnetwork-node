@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'new-node')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{node.setup.identity.title})}">SolarNode Verify Identity</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<p class="lead" data-th-utext="#{node.setup.identity.intro(${association.host})}">
+	Host information to verify here.
+</p>
+
+<table class="table">
+	<tbody>
+		<tr>
+			<th data-th-text="#{node.setup.identity.service}">Service</th>
+			<td data-th-text="${association.host}">example.com</td>
+		</tr>
+		<tr>
+			<th data-th-text="#{node.setup.identity.identity}">Identity</th>
+			<td data-th-text="${association.identityKey}">example.com identity</td>
+		</tr>
+		<tr>
+			<th data-th-text="#{node.setup.identity.username}">Username</th>
+			<td data-th-text="${details.username}">username@example.com</td>
+		</tr>
+		<tr>
+			<th data-th-text="#{node.setup.identity.securityPhrase}">Security Phrase</th>
+			<td>
+				<p data-th-text="${association.securityPhrase}">secret phrase</p>
+				<div class="alert alert-warning" data-th-utext="#{node.setup.identity.securityPhrase.caption}">
+					This phrase should match what you created on Service.
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<th data-th-text="#{node.setup.identity.tos}">TOS</th>
+			<td>
+				<div class="overflow-y-auto" style="max-height: 12rem;" data-th-utext="${association.termsOfService}">
+					TOS here.
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p data-th-utext="#{node.setup.identity.end}">
+	More details here.
+</p>
+
+<form action="/associate/confirm" method="post" id="associate-confirm-form" class="my-3" data-th-action="@{/associate/confirm}" data-th-object="${command}">
+	<fieldset>
+		<div class="alert alert-danger" data-th-if="${#fields.hasAnyErrors()}">
+			<div data-th-each="err : ${#fields.allErrors()}" data-th-utext="${err}"></div>
+		</div>
+		<div class="row">
+			<label class="col-sm-4 col-md-3 col-form-label" for="invitation-certpass" data-th-text="#{node.setup.associate.certpass}">
+				Certificate Password
+			</label>
+			<div class="col-sm-8 col-md-9">
+				<input class="form-control" type="password" name="keystorePassword" maxlength="64" id="invitation-certpass" aria-describedby="cert-password-help">
+				<div class="form-text" id="cert-password-help" data-th-utext="#{node.setup.associate.certpass.caption}">Certificate password info.</div>
+			</div>
+		</div>
+		<div class="row mt-3">
+			<label class="col-sm-4 col-md-3 col-form-label" for="invitation-certpass-again" data-th-text="#{node.setup.associate.certpass.again}">
+				Certificate Password Again
+			</label>
+			<div class="col-sm-8 col-md-9">
+				<input class="form-control" type="password" name="keystorePasswordAgain" maxlength="64" id="invitation-certpass-again"
+					data-th-data-tooshort="#{node.setup.associate.certpass.tooshort}"
+					data-th-data-mismatch="#{node.setup.associate.certpass.mismatch}">
+			</div>
+		</div>
+	</fieldset>
+	<div class="row mt-5">
+		<div class="col offset-sm-4 offset-md-3">
+			<div class="alert alert-danger hidden" id="invitation-certpass-reiterate">
+		 		<strong data-th-text="#{node.setup.associate.certpass.reiterate.title}">Password Reiterate</strong>
+		 		<span data-th-remove="tag" data-th-utext="#{node.setup.associate.certpass.reiterate}">
+		 			Really reiterate here.
+		 		</span>
+		 	</div>
+			<a class="btn btn-secondary" href="/associate" data-th-href="@{/associate}" data-th-text="#{cancel.label}">Cancel</a>
+			<button type="submit" class="btn btn-primary" name="confirm" data-th-text="#{node.setup.identity.confirm}">Confirm</button>
+		</div>
+	</div>
+</form>
+
+</body>
+</html>

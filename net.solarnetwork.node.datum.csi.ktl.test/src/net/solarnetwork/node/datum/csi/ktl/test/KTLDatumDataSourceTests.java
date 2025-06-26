@@ -29,10 +29,10 @@ import static net.solarnetwork.node.io.modbus.ModbusReadFunction.ReadInputRegist
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;

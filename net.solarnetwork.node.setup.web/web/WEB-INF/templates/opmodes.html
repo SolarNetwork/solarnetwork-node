@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'opmodes')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{opmodes.title})}">SolarNode Operational Modes</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<h2 data-th-text="#{opmodes.title}">Operational Modes</h2>
+	<p data-th-utext="#{opmodes.intro}">
+		About Operational Modes.
+	</p>
+</section>
+<section id="opmodes">
+	<div class="d-grid justify-content-end">
+		<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-opmodes-modal">
+			<i class="bi bi-plus-lg"></i>
+			<span data-th-text="#{opmodes.action.add}">Add</span>
+		</button>
+	</div>
+	<p class="opmodes-none" data-th-utext="#{opmodes.noActive.intro}">
+		There are no active Operational Modes.
+	</p>
+	<table class="table table-sm table-hover hidden opmodes-some" id="opmodes-active">
+		<thead>
+			<tr>
+				<th data-th-text="#{opmodes.mode.label}">Mode</th>
+				<th></th>
+			</tr>
+			<tr class="template item">
+				<td data-tprop="mode" class="align-middle"></td>
+				<td>
+					<button type="button" class="btn btn-danger" name="delete"
+						data-th-title="#{opmodes.action.delete}">
+						<i class="bi bi-trash3"></i>
+					</button>
+				</td>
+			</tr>
+		</thead>
+		<tbody class="list-container">
+		</tbody>
+	</table>
+</section>
+
+<form id="add-opmodes-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = add-opmodes-modal, 
+			action = @{/a/opmodes/active}, 
+			title = #{opmodes.add.title},
+			body = ~{::#add-opmodes-modal//.modal-body}, 
+			footer = ~{::#add-opmodes-modal//.modal-footer},
+			staticModal = true)}">
+
+	<div class="modal-body">
+		<p data-th-utext="#{opmodes.add.intro}">
+			About adding an Operational Mode.
+		</p>
+		<label class="form-label" for="opmodes-modes" data-th-text="#{opmodes.modes.label}">Modes</label>
+		<input class="form-control" id="opmodes-modes" type="text" maxlength="512" name="modes">
+	</div>
+
+	<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+		<button type="submit" class="btn btn-primary" data-th-text="#{opmodes.add.label}">Save</button>
+	</div>
+
+</form>
+
+</body>
+</html>

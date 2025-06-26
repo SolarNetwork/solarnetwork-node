@@ -3,22 +3,22 @@ Bundle-ManifestVersion: 2
 Bundle-Name: GPSd Communication Support
 Bundle-Description: Communication support for the GPSd network protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.gpsd
-Bundle-Version: 3.1.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.io.gpsd.domain;version="2.0.0",
  net.solarnetwork.node.io.gpsd.service;version="2.0.0",
  net.solarnetwork.node.io.gpsd.service.impl;version="2.0.0",
  net.solarnetwork.node.io.gpsd.util;version="2.0.0"
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.8,3.0)",
- com.fasterxml.jackson.core;version="[2.8,3.0)",
- com.fasterxml.jackson.databind;version="[2.8,3.0)",
- com.fasterxml.jackson.databind.annotation;version="[2.8,3.0)",
- com.fasterxml.jackson.databind.deser.std;version="[2.8,3.0)",
- com.fasterxml.jackson.databind.ser.std;version="[2.8,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.deser.std;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.19,3.0)",
  io.netty.bootstrap;version="[4.2,5.0)",
  io.netty.buffer;version="[4.2,5.0)",
  io.netty.channel;version="[4.2,5.0)",
@@ -32,18 +32,18 @@ Import-Package:
  io.netty.util.concurrent;version="[4.2,5.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans.factory;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)",
- org.springframework.scheduling;version="[5.3,6.0)",
- org.springframework.scheduling.concurrent;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.scheduling;version="[6.2,7.0)",
+ org.springframework.scheduling.concurrent;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

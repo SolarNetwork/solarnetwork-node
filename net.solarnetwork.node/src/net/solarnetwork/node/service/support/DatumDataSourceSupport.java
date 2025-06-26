@@ -24,10 +24,11 @@ package net.solarnetwork.node.service.support;
 
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.service.OptionalService.service;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +61,7 @@ import net.solarnetwork.util.ArrayUtils;
  * extend.
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -264,7 +265,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 					log.warn("Error reading sub-sample datum for {}", DatumDataSourceSupport.this, e);
 				}
 			}
-		}, new Date(System.currentTimeMillis() + subSampleStartDelay), freq);
+		}, Instant.ofEpochMilli(System.currentTimeMillis() + subSampleStartDelay),
+				Duration.ofMillis(freq));
 		this.subSampleFuture = f;
 		return f;
 	}

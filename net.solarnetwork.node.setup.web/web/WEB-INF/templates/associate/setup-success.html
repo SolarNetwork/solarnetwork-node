@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'new-node')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{node.setup.success.title})}">SolarNode Setup Success</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<p class="lead" data-th-utext="#{node.setup.success.intro}">Setup complete.</p>
+
+<table class="table">
+	<tr><th data-th-text="#{node.setup.identity.service}">Service</th><td data-th-text="${details.host}">example.com</td></tr>
+	<tr><th data-th-text="#{node.setup.identity.nodeId}">Node ID</th><td data-th-text="${details.networkId}">123</td></tr>
+	<tr><th data-th-text="#{node.setup.identity.username}">Username</th><td data-th-text="${details.username}">username@example.com</td></tr>
+	<tr data-th-if="${user}">
+		<th data-th-text="#{node.setup.success.user.password}">User password here.</th>
+		<td>
+			<p class="text-danger"><code data-th-text="${user.password}">password123</code></p>
+			<div class="alert alert-warning" data-th-utext="#{node.setup.success.user.intro(@{/a/user/change-password(old=${user.password})})}">
+				Change password now.
+			</div>
+		</td>
+	</tr>
+</table>
+
+<section class="my-3" data-th-switch="${details != null ? details.networkCertificateStatus : ''}">
+	<!--/*/ <th:block th:case="Active"> /*/-->
+	<p data-th-utext="#{node.setup.success.active(@{${association.solarUserServiceURL}/u/sec/my-nodes})}">
+			Active
+	</p>
+	<div class="d-grid">
+		<a class="btn btn-primary" href="/a/home" data-th-href="@{/a/home}" data-th-text="#{node.setup.success.gohome}">
+			Home
+		</a>
+	</div>
+	<!--/*/ </th:block> /*/-->
+
+	<p data-th-case="Requested" data-th-utext="#{node.setup.success.requested(@{${association.solarUserServiceURL}/u/sec/my-nodes}, @{/a/certs})}">
+		Requested
+	</p>
+
+	<p data-th-case="*" data-th-utext="#{node.setup.success.visit(@{${association.solarUserServiceURL}/u/sec/my-nodes}, @{/a/certs})}">
+		Visit
+	</p>
+
+	<!--/*/ <th:block th:if="${csr}"> /*/-->
+	<h2 data-th-text="#{certs.csr.title}">CSR</h2>
+	<p data-th-utext="#{certs.csr.intro}">CSR here.</p>
+	<pre class="cert alert alert-info" data-th-text="${csr}"></pre>
+	<!--/*/ </th:block> /*/-->
+	
+</section>
+
+</body>
+</html>

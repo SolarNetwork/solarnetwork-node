@@ -4,11 +4,11 @@ Bundle-Name: Core Reactor Service
 Bundle-SymbolicName: net.solarnetwork.node.reactor.simple
 Automatic-Module-Name: net.solarnetwork.node.reactor.simple
 Bundle-Description: Handle SolarNet instruction messages and execute them asynchronously.
-Bundle-Version: 3.1.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.reactor;version="[2.2,3.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
@@ -18,18 +18,18 @@ Import-Package:
  net.solarnetwork.util;version="[2.0,3.0)",
  org.aopalliance.aop;version="[1.0,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.aop;version="[5.3,6.0)",
- org.springframework.aop.framework;version="[5.3,6.0)",
- org.springframework.beans.factory;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)",
- org.springframework.core.io;version="[5.3,6.0)",
- org.springframework.dao;version="[5.3,6.0)",
- org.springframework.dao.support;version="[5.3,6.0)",
- org.springframework.jdbc.core;version="[5.3,6.0)",
- org.springframework.jdbc.core.simple;version="[5.3,6.0)",
- org.springframework.jdbc.core.support;version="[5.3,6.0)",
- org.springframework.jdbc.support;version="[5.3,6.0)",
- org.springframework.transaction;version="[5.3,6.0)",
- org.springframework.transaction.annotation;version="[5.3,6.0)"
+ org.springframework.aop;version="[6.2,7.0)",
+ org.springframework.aop.framework;version="[6.2,7.0)",
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.dao;version="[6.2,7.0)",
+ org.springframework.dao.support;version="[6.2,7.0)",
+ org.springframework.jdbc.core;version="[6.2,7.0)",
+ org.springframework.jdbc.core.simple;version="[6.2,7.0)",
+ org.springframework.jdbc.core.support;version="[6.2,7.0)",
+ org.springframework.jdbc.support;version="[6.2,7.0)",
+ org.springframework.transaction;version="[6.2,7.0)",
+ org.springframework.transaction.annotation;version="[6.2,7.0)"

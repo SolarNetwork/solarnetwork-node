@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.io.modbus.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusFunction;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;

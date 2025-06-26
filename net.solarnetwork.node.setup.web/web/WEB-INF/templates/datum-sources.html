@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'datum-sources')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{datum-sources.title})}">SolarNode Datum Sources</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<h2 data-th-text="#{datum-sources.title}">Datum Sources</h2>
+	<p data-th-utext="#{datum-sources.intro}">About Datum Sources here.</p>
+</section>
+<section class="init">
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
+    </div>
+</section>
+<section id="datum-sources" class="hidden ready">
+	<p class="none" data-th-text="#{datum-sources.intro.none}">You do not have any Datum Sources.</p>
+	<table class="table table-sm some hidden" id="datum-sources-list">
+		<thead>
+			<tr>
+				<th data-th-text="#{datum-source.sourceId}">Source</th>
+				<th data-th-text="#{datum-source.name}">Name</th>
+				<th data-th-text="#{datum-source.uid}">Service Name</th>
+				<th data-th-text="#{datum-source.lastPublishDate}">Publish Date</th>
+			</tr>
+			<tr class="template item">
+				<td><code><a href="#" class="datum-source-link" data-tprop="sourceId"></a></code></td>
+				<td data-tprop="displayName"></td>
+				<td data-tprop="uid"></td>
+				<td><button type="button" class="btn btn-link p-0 hidden datum-source-details-link"></button></td>
+			</tr>
+		</thead>
+		<tbody class="list-container">
+		</tbody>
+	</table>
+</section>
+
+<div id="datum-sources-datum-detail-modal" data-th-replace="~{inc/modals :: modal(
+			id = datum-sources-datum-detail-modal, 
+			title = #{datum-sources.datum.details.title},
+			body = ~{::#datum-sources-datum-detail-modal//.modal-body}, 
+			footer = ~{::#datum-sources-datum-detail-modal//.modal-footer},
+			additionalClass = modal-lg,
+			staticModal = true)}">
+
+	<div class="modal-body">
+		<p data-th-utext="#{datum-sources.datum.details.intro}">
+			Datum Source datum details are shown here.
+		</p>
+		<table class="table table-sm some">
+			<thead>
+				<tr>
+					<th data-th-text="#{datum.property.label}">Property</th>
+					<th data-th-text="#{datum.property.value.label}">Value</th>
+				</tr>
+				<tr class="template item">
+					<th data-tprop="propName"></th>
+					<td data-tprop="propVal"></td>
+				</tr>
+			</thead>
+			<tbody class="list-container">
+			</tbody>
+		</table>
+	</div>
+
+	<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-th-replace="~{inc/buttons :: button_close_modal}">Close</button>
+	</div>
+
+</div>
+
+</body>
+</html>

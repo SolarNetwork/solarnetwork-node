@@ -3,17 +3,17 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock Package Service
 Bundle-SymbolicName: net.solarnetwork.node.setup.mockpkg
 Bundle-Description: Support for testing setup packages.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.mockpkg
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.node;version="[2.0,3.0)",
+ net.solarnetwork.node;version="[2.1,3.0)",
  net.solarnetwork.node.service;version="[1.8,2.0)",
  net.solarnetwork.node.service.support;version="[1.4,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.util;version="[2.8,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.core.task;version="[5.3,6.0)",
+ org.springframework.core.task;version="[6.2,7.0)",
  org.springframework.util;version="5.3.24"

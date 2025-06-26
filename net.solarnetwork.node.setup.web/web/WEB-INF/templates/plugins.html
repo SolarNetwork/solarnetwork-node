@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'plugins')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{plugins.title})}">SolarNode Plugins</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<p data-th-utext="#{plugins.intro}">Plugins described here.</p>
+	<div class="text-end">
+	<button type="button" id="plugins-refresh" class="btn btn-primary" 
+		data-th-data-action="@{/a/plugins/refresh}"
+		data-th-data-loading-text="#{plugins.loading.message}">
+		<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+		<span role="status" data-th-text="#{plugins.refresh.button}">Refresh</span>
+	</button>
+	</div>
+</section>
+<section id="plugin-upgrades" class="hidden" 
+		data-th-data-msg-upgrade="#{plugin.upgrade.button}">
+	<h2 data-th-text="#{plugins.upgradable.title}">Upgradable Plugins</h2>
+	<div class="row">
+		<p class="col-md-10" data-th-utext="#{plugins.upgradable.intro}">Plugins upgrade description.</p>
+		<div class="col-md-2 action">
+			<button type="button" id="plugins-upgrade-all" class="btn btn-info" 
+				data-th-data-action="@{/a/plugins/upgradeAll}"
+				data-th-text="#{plugins.upgradeAll.button}">Upgrade All</button>
+		</div>
+	</div>
+	<div class="list-content"></div>
+</section>
+<section id="plugin-installed" class="hidden" 
+		data-th-data-msg-remove="#{plugin.remove.button}"
+		data-th-data-msg-unremovable="#{plugin.unremovable.message}">
+	<h2 data-th-text="#{plugins.installed.title}">Installed Plugins</h2>
+	<p data-th-utext="#{plugins.installed.intro}">Installed plugins here.</p>
+	<div class="list-content"></div>
+</section>
+<section id="plugins" class="hidden" 
+		data-th-data-msg-install="#{plugin.install.button}"
+		data-th-data-msg-upgrade="#{plugin.upgrade.button}"
+		data-th-data-msg-remove="#{plugin.remove.button}">
+	<h2 data-th-text="#{plugins.available.title}">Available Plugins</h2>
+	<p data-th-utext="#{plugins.available.intro}">Available plugins here.</p>
+	<div class="list-content"></div>
+</section>
+
+<form id="plugin-preview-install-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = plugin-preview-install-modal,
+			action = @{/a/plugins/install}, 
+			title = #{plugin.install.title},
+			body = ~{::#plugin-preview-install-modal//.modal-body}, 
+			footer = ~{::#plugin-preview-install-modal//.modal-footer})}">
+
+	<div class="modal-body">
+		<p class="hide-while-restarting" data-th-utext="#{plugin.install.intro}">Restarting...</p>
+		<div class="hide-while-restarting" id="plugin-preview-install-list"></div>
+		<div class="restart-required hide-while-restarting hide alert alert-warning"
+				data-th-utext="#{plugin.install.restartRequired.warning}">
+			Restart required.
+		</div>
+		<div class="restarting hidden alert alert-info">
+			<span data-th-text="#{plugin.install.success}"></span>
+			<span> </span>
+			<span data-th-text="#{restart.underway}"></span>
+		</div>
+		<div class="progress hidden" role="progressbar">
+			<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
+	    </div>
+	    <div class="message-container hide-while-restarting"></div>
+	</div>
+
+	<div class="modal-footer">
+		<input type="hidden" name="uid" value=""/>
+		<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+		<button type="submit" class="btn btn-primary hide-while-restarting"
+				data-th-data-msg-error="#{plugin.install.error}"
+				data-th-data-msg-success="#{plugin.install.success}"
+				data-th-data-loading-text="#{plugin.installing.message}">
+			<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+			<span data-th-text="#{plugin.install.button}">Install</span>
+		</button>
+	</div>
+
+</form>
+
+<form id="plugin-preview-remove-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = plugin-preview-remove-modal,
+			action = @{/a/plugins/remove}, 
+			title = #{plugin.remove.title},
+			body = ~{::#plugin-preview-remove-modal//.modal-body}, 
+			footer = ~{::#plugin-preview-remove-modal//.modal-footer})}">
+
+	<div class="modal-body">
+		<p class="hide-while-restarting" data-th-utext="#{plugin.remove.intro}">Remove plugins here.</p>
+		<div class="hide-while-restarting" id="plugin-preview-remove-list"></div>
+		<div class="restart-required hide-while-restarting hide alert alert-warning"
+				data-th-utext="#{plugin.install.restartRequired.warning}">
+			Restart required.
+		</div>
+		<div class="restarting hidden alert alert-info">
+			<span data-th-text="#{plugin.remove.success}"></span>
+			<span> </span>
+			<span data-th-text="#{restart.underway}"></span>
+		</div>
+		<div class="progress hidden" role="progressbar">
+			<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+	    </div>
+	    <div class="message-container hide-while-restarting"></div>
+	</div>
+
+	<div class="modal-footer">
+		<input type="hidden" name="uid" value=""/>
+		<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</button>
+		<button type="submit" class="btn btn-danger hide-while-restarting"
+			data-th-data-msg-error="#{plugin.remove.error}"
+			data-th-data-msg-success="#{plugin.remove.success}"
+			data-th-data-loading-text="#{plugin.removing.message}">
+			<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+			<span data-th-text="#{plugin.remove.button}">Remove</span>
+		</button>
+	</div>
+
+</form>
+
+</body>
+</html>

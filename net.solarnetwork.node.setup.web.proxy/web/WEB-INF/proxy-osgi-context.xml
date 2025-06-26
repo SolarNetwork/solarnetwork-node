@@ -16,7 +16,7 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.setup.web.proxy.WebProxyConfiguration"/>
 	</bean>
 
-	<bean id="proxyMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	<bean id="proxyMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource" autowire-candidate="false">
 		<property name="basename" value="net.solarnetwork.node.setup.web.proxy.SimpleWebProxyConfiguration"/>
 	</bean>
 

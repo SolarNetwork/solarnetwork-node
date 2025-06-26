@@ -3,10 +3,10 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support (Nifty Modbus)
 Bundle-Description: SolarNode Modbus API implementation using the Nifty Modbus framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty
-Bundle-Version: 2.4.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.io.modbus.nifty;version="0.8.0",
  net.solarnetwork.node.io.modbus.nifty.tcp;version="0.6.0"
@@ -23,20 +23,20 @@ Import-Package:
  net.solarnetwork.io.modbus.serial;version="[0.18,2.0)",
  net.solarnetwork.io.modbus.tcp;version="[0.18,2.0)",
  net.solarnetwork.io.modbus.tcp.netty;version="[0.18,2.0)",
- net.solarnetwork.node.io.modbus;version="[4.4,5.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.3,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.node.service;version="[1.5,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.1,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.4,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)",
- org.springframework.messaging;version="[5.3,6.0)",
- org.springframework.messaging.core;version="[5.3,6.0)",
- org.springframework.messaging.simp;version="[5.3,6.0)",
- org.springframework.messaging.support;version="[5.3,6.0)"
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.messaging;version="[6.2,7.0)",
+ org.springframework.messaging.core;version="[6.2,7.0)",
+ org.springframework.messaging.simp;version="[6.2,7.0)",
+ org.springframework.messaging.support;version="[6.2,7.0)"

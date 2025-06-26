@@ -4,16 +4,16 @@ Bundle-Name: Setup via STOMP
 Bundle-Description: Provides a TCP server using the STOMP protocol for setup 
  integration with external applications.
 Bundle-SymbolicName: net.solarnetwork.node.setup.stomp
-Bundle-Version: 3.0.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.stomp
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.10,3.0)",
- com.fasterxml.jackson.core;version="[2.10,3.0)",
- com.fasterxml.jackson.databind;version="[2.10,3.0)",
- com.fasterxml.jackson.databind.annotation;version="[2.10,3.0)",
- com.fasterxml.jackson.databind.ser.std;version="[2.10,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.19,3.0)",
  io.netty.bootstrap;version="[4.1,5.0)",
  io.netty.buffer;version="[4.1,5.0)",
  io.netty.channel;version="[4.1,5.0)",
@@ -29,8 +29,8 @@ Import-Package:
  io.netty.util.collection;version="[4.1,5.0)",
  io.netty.util.concurrent;version="[4.1,5.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
@@ -39,20 +39,20 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec.digest;version="[1.11,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.asm;version="[5.3,6.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.beans.factory;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core.task;version="[5.3,6.0)",
- org.springframework.scheduling;version="[5.3,6.0)",
- org.springframework.security.authentication;version="[5.8,6.0)",
- org.springframework.security.core;version="[5.8,6.0)",
- org.springframework.security.core.context;version="[5.8,6.0)",
- org.springframework.security.core.userdetails;version="[5.8,6.0)",
- org.springframework.security.crypto.bcrypt;version="[5.8,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.asm;version="[6.2,7.0)",
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core.task;version="[6.2,7.0)",
+ org.springframework.scheduling;version="[6.2,7.0)",
+ org.springframework.security.authentication;version="[6.4,7.0)",
+ org.springframework.security.core;version="[6.4,7.0)",
+ org.springframework.security.core.context;version="[6.4,7.0)",
+ org.springframework.security.core.userdetails;version="[6.4,7.0)",
+ org.springframework.security.crypto.bcrypt;version="[6.4,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

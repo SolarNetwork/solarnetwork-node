@@ -19,7 +19,7 @@
 		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
 	<!-- Combine all /WEB-INF/**/messages.properties into a single message source. -->
-	<bean id="messageSource" class="net.solarnetwork.web.support.PatternMatchingResourceBundleMessagesSource"
+	<bean id="messageSource" class="net.solarnetwork.web.jakarta.support.PatternMatchingResourceBundleMessagesSource"
 		p:cacheSeconds="-1" p:basename="WEB-INF/**/messages"/>
 
 	<ctx:annotation-config/>
@@ -35,6 +35,10 @@
 			<bean class="org.springframework.security.web.method.annotation.CsrfTokenArgumentResolver"/>
 		</mvc:argument-resolvers>
 	</mvc:annotation-driven>
+	
+	<mvc:interceptors>
+		<bean class="net.solarnetwork.node.setup.web.support.StatusMessageHandlerInterceptor"/>
+	</mvc:interceptors>
 
 	<mvc:cors>
 		<mvc:mapping path="/pub/**"
@@ -68,32 +72,44 @@
 		<property name="order" value="2" />
 		<property name="mappings">
 			<props>
-				<prop key="/**/*.do">urlViewController</prop>
+				<prop key="/**.do">urlViewController</prop>
 			</props>
 		</property>
 	</bean>
 
 	<bean id="urlViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
 
-	<!-- Resolves logical view names returned by Controllers to Tiles;
-		a view name to resolve is treated as the name of a tiles definition -->
-	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
-		<property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
+	<bean id="templateResolver" class="org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver">
+		<property name="prefix" value="/WEB-INF/templates/"/>
+		<property name="suffix" value=".html"/>
+		<property name="templateMode" value="HTML"/>
+		<property name="cacheable" value="${thymleaf.templates.cache.enabled}"/>
+	</bean>
+	    
+	<bean id="templateEngine" class="org.thymeleaf.spring6.SpringTemplateEngine">
+		<property name="templateResolver" ref="templateResolver"/>
+		<property name="linkBuilder">
+			<bean class="net.solarnetwork.node.setup.web.thymeleaf.SolarNodeLinkBuilder"/>
+		</property>
+		<!-- disabled from class loading issues from OsgiServletContextClassLoader -->
+		<property name="enableSpringELCompiler" value="false"/>
+		<property name="additionalDialects">
+			<set>
+				<bean class="org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect"/>
+				<bean class="net.solarnetwork.node.setup.web.thymeleaf.SolarNodeDialect"/>
+			</set>
+		</property>
+	</bean>
+	
+	<bean class="org.thymeleaf.spring6.view.ThymeleafViewResolver">
+		<property name="templateEngine" ref="templateEngine"/>
+		<property name="order" value="1" />
+		<property name="characterEncoding" value="UTF-8"/>
 	</bean>
 
-	<!-- If Tiles view not found, try a bean name (xml, json below) -->
+	<!-- If view not found, try a bean name (xml, json below) -->
 	<bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver">
 		<property name="order" value="2"/>
-	</bean>
-
-	<!-- Configures the Tiles layout system -->
-	<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
-		<property name="definitions">
-			<list>
-				<value>/WEB-INF/jsp/layout/layout.xml</value>
-				<value>/WEB-INF/**/views.xml</value>
-			</list>
-		</property>
 	</bean>
 
 	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
@@ -106,7 +122,7 @@
 		<property name="supportedMediaTypes" value="application/json" />
 		<property name="objectMapper" ref="objectMapper"/>
 	</bean>
-	<bean id="simpleCsvHttpMessageConverter" class="net.solarnetwork.web.support.SimpleCsvHttpMessageConverter">
+	<bean id="simpleCsvHttpMessageConverter" class="net.solarnetwork.web.jakarta.support.SimpleCsvHttpMessageConverter">
 		<property name="propertySerializerRegistrar" ref="propertySerializerRegistrar"/>
 	</bean>
 

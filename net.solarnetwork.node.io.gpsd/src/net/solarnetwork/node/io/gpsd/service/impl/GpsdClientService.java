@@ -29,7 +29,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +56,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -82,7 +82,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * GPSd client component.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class GpsdClientService extends BasicIdentifiable implements GpsdClientConnection,
 		SettingsChangeObserver, SettingSpecifierProvider, GpsdMessageHandler {
@@ -160,8 +160,8 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 		tf.setDaemon(true);
 
 		Bootstrap b = new Bootstrap();
-		b.group(new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory()))
-				.channel(NioSocketChannel.class)
+		EventLoopGroup group = new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory());
+		b.group(group).channel(NioSocketChannel.class)
 				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
 						(int) TimeUnit.SECONDS.toMillis(DEFAULT_RECONNECT_SECONDS))
 				.option(ChannelOption.SO_KEEPALIVE, true)
@@ -407,7 +407,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 						}
 					}
 				}
-			}, new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
+			}, Instant.ofEpochMilli(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
 			connectFuture = f;
 			postClientStatusChangeEvent(GpsdClientStatus.ConnectionScheduled);
 			return f;

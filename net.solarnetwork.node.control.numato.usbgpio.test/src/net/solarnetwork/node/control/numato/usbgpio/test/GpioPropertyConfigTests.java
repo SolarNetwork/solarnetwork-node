@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.control.numato.usbgpio.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.util.BitSet;
 import org.junit.Test;
 import net.solarnetwork.node.control.numato.usbgpio.GpioDirection;
