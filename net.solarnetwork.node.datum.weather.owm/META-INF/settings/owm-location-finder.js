@@ -29,8 +29,7 @@ $(document).ready(function() {
 
 	function activeApiKey() {
 		var currParams = modal.data('params'),
-			apiKeySettingId,
-			apiKey;
+			apiKeySettingId;
 		if ( currParams && currParams.settingId ) {
 			apiKeySettingId = offsetSettingId(currParams.settingId, -3);
 
@@ -124,16 +123,18 @@ $(document).ready(function() {
 			selectedLocation = me.data('locationMeta'),
 			currParams = modal.data('params');
 		if ( selectedLocation !== undefined ) {
-			var locNameEl = activeContainer.find('.owm-loc-id'),
+			var locNameEl = activeContainer ? activeContainer.find('.owm-loc-id') : undefined,
 				locSettingId = offsetSettingId(currParams.settingId, -1);
-			showLocationNameResult(selectedLocation, locNameEl);
-			$('input#'+locSettingId).val(selectedLocation.id).trigger('change');
+			if ( locNameEl ) {
+				showLocationNameResult(selectedLocation, locNameEl);
+				$('input#'+locSettingId).val(selectedLocation.id).trigger('change');
+			}
 		}
 		modal.modal('hide');
 	});
 
 	function owmContainer(el) {
-		return $(el).parents('.setup-resource-container');
+		return $(el).parents('[data-provider-id="net.solarnetwork.node.weather.owm.weather"]');
 	}
 
 	function setupOwmIntegration(container) {
@@ -145,15 +146,17 @@ $(document).ready(function() {
 			activeContainer = c;
 	
 			modalBody.find('.alert').remove();
-			modal.data('params', c.data()).modal('show');
+			if ( c ) {
+				modal.data('params', c.data()).modal('show');
+			}
 		});
 		
 		// lookup OWM location name for display
 		container.find('.owm-loc-id').text(function(i, el) {
 			var me = this,
 				container = owmContainer(this),
-				apiKey = container.data().apikey,
-				locId = container.data().lid,
+				apiKey = container ? container.data().apikey : '',
+				locId = container ? container.data().lid : '',
 				url ='https://api.openweathermap.org/data/2.5/weather?id=' +encodeURIComponent(locId)
 					+'&units=metric'
 					+'&appid=' +encodeURIComponent(apiKey);
