@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Metrics Harvester Tests
 Bundle-SymbolicName: net.solarnetwork.node.metrics.harvester.test
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.metrics.harvester;bundle-version="[1.0,2.0)"
+Fragment-Host: net.solarnetwork.node.metrics.harvester;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.metrics.harvester.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.databind.annotation,
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
  net.solarnetwork.common.expr.spel;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.2,2.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",

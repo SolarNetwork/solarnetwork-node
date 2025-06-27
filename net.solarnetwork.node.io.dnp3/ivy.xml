@@ -13,14 +13,13 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-       	<dependency org="com.automatak.dnp3" name="opendnp3-bindings" rev="2.3.2"/>
-       	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.15,)"/>
-		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.opendnp3-bindings" rev="[2.3,3.0)"/>
-       	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
- 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
-		<dependency org="org.springframework" name="spring-beans" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-context" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-context-support" rev="5.3.24"/>
-		<dependency org="org.springframework" name="spring-core" rev="5.3.24"/>
+       	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.0.0"/>
+		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.opendnp3-bindings" rev="2.3.2.SN02"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
+ 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
+		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-context" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-context-support" rev="6.2.6"/>
+		<dependency org="org.springframework" name="spring-core" rev="6.2.6"/>
 	</dependencies>
 </ivy-module>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<!--/*
+	Expects the following request-or-higher properties:
+
+	settingsService - the SettingService
+	provider - the current provider
+	setting - the current setting
+	settingId - the ID to use for the setting input
+	instanceId - the instance ID to use
+	groupSetting - an optional group setting
+	groupSettingId - an optional group setting ID
+	groupIndex - an optional group index
+*/-->
+<html xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title>Edit Note</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-fragment="content (settingId)" data-th-remove="tag"
+	data-th-with="settingValue = ${#snUtils.settingValue(settingsService, provider, setting)}">
+
+	<snode:inlineResources data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}"
+		role="USER" type="text/html"
+		provider="${setting.setupResourceProvider}"
+		properties="${setting.setupResourceProperties}"
+		wrapperElement="div"
+		wrapperClass="form-group setup-resource-container"
+		id="${'cg-' + settingId}"
+		data-provider-id="${provider.settingUid}"
+		data-setting-id="${settingId}"
+		data-instance-id="${instanceId}"
+		data-group-index="${groupIndex}"
+		/>
+
+	<div class="row mb-3" data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')}"
+		data-th-id="${'cg-' + settingId}">
+		<label class="col-sm-4 col-md-3 col-form-label" data-th-for="${settingId}">
+			<snode:message key="${setting.key + '.key'}" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
+		</label>
+		<div class="col-sm-7 col-md-8 setting-content"
+			data-th-classappend="${'setting-content-' + #strings.replace(setting['class'].simpleName, 'Basic', '')}"
+			data-th-switch="${#snUtils.settingType(setting)}">
+			
+			<div data-th-case="net.solarnetwork.settings.SliderSettingSpecifier" data-th-remove="tag">
+				<div data-th-id="${settingId}" class="setting slider mt-2"></div>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addSlider({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						value:    /*[[${settingValue}]]*/          '5',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+						min:      /*[[${setting.minimumValue}]]*/  '0',
+						max:      /*[[${setting.maximumValue}]]*/  '10',
+						step:     /*[[${setting.step}]]*/          '1',
+					});
+				});
+				</script>
+			</div>
+			
+			<div data-th-case="net.solarnetwork.settings.ToggleSettingSpecifier" data-th-remove="tag">
+			    <button type="button" class="toggle col-sm-3 btn"
+			    	data-th-classappend="${settingValue eq setting.trueValue ? 'btn-success active' : 'btn-light'}"
+			    	data-th-id="${settingId}"
+			    	data-th-text="${settingValue eq  setting.trueValue} ? #{settings.toggle.on} : #{settings.toggle.off}">
+			    	On
+			    </button>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addToggle({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						value:    /*[[${settingValue}]]*/          '5',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+						on:       /*[[${setting.trueValue}]]*/     'true',
+						onLabel:  /*[[#{settings.toggle.on}]]*/    'On',
+						off:      /*[[${setting.falseValue}]]*/    'false',
+						offLabel: /*[[#{settings.toggle.off}]]*/   'Off',
+					});
+				});
+				</script>
+			</div>
+
+			<div data-th-case="net.solarnetwork.settings.RadioGroupSettingSpecifier" data-th-remove="tag">
+				<div class="d-flex justify-content-start align-items-center mt-1"
+					data-th-each="entry : ${setting.valueTitles}"
+					data-th-with="help = ${#snUtils.message(entry.key + '.desc', provider.messageSource, #locale)}">
+					<div class="form-check">
+						<input class="form-check-input" type="radio" 
+								data-th-name="${settingId}"
+								data-th-id="${settingId}"
+								data-th-value="${entry.key}"
+								data-th-checked="${settingValue eq  entry.key}">
+						<label class="form-check-label" data-th-for="${settingId}"
+							data-th-text="${entry.value}">My Setting</label>
+					</div>
+
+					<button type="button" class="help-popover help-icon ms-2"
+							data-th-title="#{help.label}"
+							tabindex="-1"
+							data-bs-html="true"
+							data-th-data-bs-content="${help}"
+							data-th-unless="${#strings.isEmpty(help)}">
+						<i class="bi bi-question-circle" aria-hidden="true"></i>
+					</button>
+				</div>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addRadio({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+					});
+				});
+				</script>
+			</div>
+			
+			<div data-th-case="net.solarnetwork.settings.MultiValueSettingSpecifier" data-th-remove="tag">
+				<select class="form-select" data-th-name="${settingId}" data-th-id="${settingId}">
+					<option data-th-each="entry : ${setting.valueTitles}"
+						data-th-value="${entry.key}"
+						data-th-selected="${settingValue eq  entry.key}"
+						data-th-text="${entry.value}"
+						>
+						${entry.value}
+					</option>
+				</select>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addSelect({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+					});
+				});
+				</script>
+			</div>
+			
+			<div data-th-case="net.solarnetwork.settings.TextAreaSettingSpecifier" data-th-remove="tag">
+				<div class="input-group">
+					<textarea data-th-name="${settingId}" data-th-id="${settingId}" class="form-control"
+						data-th-text="${settingValue}"></textarea>
+					<button type="button" class="btn btn-outline-secondary copy" tabindex="-1"
+						data-th-title="#{copy.label}"><i class="bi bi-clipboard2"></i></button>
+				</div>
+				<script data-th-inline="javascript" data-th-if="${setting.direct}">
+				$(function() {
+					SolarNode.Settings.addTextField({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+					});
+				});
+				</script>
+				<button type="button" class="btn btn-primary mt-2 setting-resource-upload"
+					data-th-data-th-unless="${setting.direct}"
+					data-th-data-action="@{/a/settings/importResource}"
+					data-th-data-key="${settingId}"
+					data-th-data-provider="${provider.settingUid}"
+					data-th-data-setting="${setting.key}"
+					data-th-data-instance="${instanceId}"
+					data-th-data-xint="${setting['transient']}"
+					data-th-text="#{settings.resource.upload.action}">
+					Upload
+				</button>
+			</div>
+
+			<div data-th-case="net.solarnetwork.settings.CronExpressionSettingSpecifier" data-th-remove="tag">
+				<div class="row">
+					<div class="col-sm-3">
+						<select class="form-select">
+							<option value="cron" data-th-text="#{settings.schedulePeriod.cron.label}">Cron</option>
+							<option value="ms" data-th-text="#{settings.schedulePeriod.milliseconds.label}">Milliseconds</option>
+							<option value="s" data-th-text="#{settings.schedulePeriod.seconds.label}">Seconds</option>
+							<option value="m" data-th-text="#{settings.schedulePeriod.minutes.label}">Minutes</option>
+							<option value="h" data-th-text="#{settings.schedulePeriod.hours.label}">Hours</option>
+						</select>
+					</div>
+					<div class="col">
+						<div class="input-group">
+							<input type="text"
+								data-th-name="${settingId}"
+								data-th-id="${settingId}"
+								class="form-control"
+								maxLength="4096"
+								data-th-value="${settingValue}"
+								>
+							<button type="button" class="btn btn-outline-secondary copy" tabindex="-1"
+								data-th-title="#{copy.label}"><i class="bi bi-clipboard2"></i></button>
+						</div>
+					</div>
+				</div>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addScheduleField({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+					});
+				});
+				</script>
+			</div>
+			
+			<div data-th-case="net.solarnetwork.settings.TextFieldSettingSpecifier" data-th-remove="tag">
+				<div class="input-group">
+					<input data-th-type="${setting.secureTextEntry} ? password : text"
+						data-th-name="${settingId}"
+						data-th-id="${settingId}"
+						class="form-control" maxLength="4096"
+						data-th-placeholder="${setting.secureTextEntry}?#{settings.secureTextEntry.placeholder}"
+						data-th-value="${not setting.secureTextEntry} ? ${settingValue}"
+						>
+					<!--/*/ <th:block th:unless="${#strings.isEmpty(setting.relatedServiceFilter)}"> /*/-->
+				  <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+				  		data-bs-toggle="dropdown"
+				  		aria-expanded="false"
+				  		data-th-text="#{settings.relatedServiceFilter.choose.label}">Choose</button>
+					<ul class="dropdown-menu dropdown-menu-end setting-related-service"
+						data-th-data-setting-related-service-filter="${setting.relatedServiceFilter}">
+						<!-- Dynamically populated -->
+					</ul>
+					<!--/*/ </th:block> /*/-->
+					<button type="button" class="btn btn-outline-secondary copy" tabindex="-1"
+						data-th-unless="${setting.secureTextEntry}"
+						data-th-title="#{copy.label}"><i class="bi bi-clipboard2"></i></button>
+				</div>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addTextField({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+					});
+				});
+				</script>
+			</div>
+			
+			<div data-th-case="net.solarnetwork.settings.TitleSettingSpecifier" data-th-remove="tag">
+				<div data-th-class="${setting.markup} ? markup : title"
+					data-th-utext="${settingValue}">
+					Setting value here.
+				</div>
+			</div>
+			
+			<div data-th-case="net.solarnetwork.node.settings.LocationLookupSettingSpecifier" data-th-remove="tag">
+				<span data-th-id="${settingId}">
+					<span class="setting-value"
+						data-th-text="${not #strings.isEmpty(setting.sourceName)} ? #{lookup.selected.item(${setting.locationName}, ${setting.sourceName})}">
+						Location Name
+					</span>
+					<button type="button" class="btn btn-primary" data-th-text="#{settings.change}">
+						Change
+					</button>
+				</span>
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addLocationFinder({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key}]]*/           'theSetting',
+						instance: /*[[${instanceId}]]*/            '1',
+						value:    /*[[${settingValue}]]*/          '5',
+						xint:     /*[[${setting["transient"]}]]*/  'true',
+
+						locationType: /*[[${setting.locationTypeKey}]]*/  'weather',
+						sourceName:   /*[[${setting.sourceName}]]*/       'Weather Service',
+						locationName: /*[[${setting.locationName}]]*/     'Anytown',
+						valueLabel:   /*[[#{lookup.selected.item}]]*/     'Lookup',
+					});
+				});
+				</script>
+			</div>
+
+			<div data-th-case="net.solarnetwork.node.settings.FileSettingSpecifier" data-th-remove="tag">
+				<div class="input-group">
+					<input type="file" data-th-name="${settingId}" data-th-id="${settingId}" class="form-control"
+						data-th-multiple="${setting.multiple}"
+						data-th-attr="${not #lists.isEmpty(setting.acceptableFileTypeSpecifiers)} ? accept=${#strings.setJoin(setting.acceptableFileTypeSpecifiers, ',')}"
+						>
+					<button type="button" class="btn btn-primary setting-resource-upload"
+						data-th-data-action="@{/a/settings/importResource}"
+						data-th-data-key="${settingId}"
+						data-th-data-xint="${setting['transient']}"
+						data-th-data-provider="${provider.settingUid}"
+						data-th-data-setting="${setting.key}"
+						data-th-data-instance="${instanceId}"
+						data-th-data-multiple="${!!setting.multiple}"
+						data-th-text="#{settings.resource.upload.action}"
+						>Upload</button>
+				</div>
+			</div>
+
+			<span class="help-inline active-value clean"><span class="text-info">
+				<span data-th-remove="tag" data-th-text="${(#snUtils.instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') and setting.secureTextEntry)
+										|| #snUtils.instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')
+										|| #snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')} ? #{settings.changed.value.label} : #{settings.current.value.label}"
+					>Changed</span>
+				<code class="value" 
+					data-th-unless="${(#snUtils.instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') and setting.secureTextEntry)
+							|| #snUtils.instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')
+							|| #snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')}"
+					data-th-text="${not #snUtils.instanceOf(setting, 'net.solarnetwork.settings.ToggleSettingSpecifier')}
+						? ${settingValue}
+						: (${settingValue eq setting.trueValue}
+							? #{settings.toggle.on}
+							: #{settings.toggle.off})">
+					Value
+				</code>
+			</span></span>
+		</div>
+		<div class="col-sm-1 mt-1"
+				data-th-with="help = ${#snUtils.message(setting.key + '.desc', setting.descriptionArguments, provider.messageSource, #locale)}">
+			<button type="button" class="help-popover help-icon"
+					data-th-unless="${#strings.isEmpty(help)}"
+					data-th-title="#{help.label}"
+					tabindex="-1"
+					data-th-data-bs-content="${help}"
+					data-bs-html="true">
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
+			</button>
+			<button type="button" class="note-popover help-icon"
+					data-th-if="${not setting['transient']
+						and #snUtils.instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')
+						and not #snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')
+						and not(#snUtils.instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier')
+							and not #snUtils.instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier'))}"
+					data-th-title="#{note.label}"
+					tabindex="-1"
+					data-th-data-key="${settingId}"
+					data-th-data-provider-name="${#snUtils.message('title', provider.displayName, provider.messageSource, #locale)}"
+					data-th-data-provider="${provider.settingUid}"
+					data-th-data-setting="${setting.key}"
+					data-th-data-instance="${instanceId}"
+					>
+				<i class="bi bi-sticky" aria-hidden="true"></i>
+			</button>
+		</div>
+	</div>
+
+	<div data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not #strings.isEmpty(setting.key)}" data-th-remove="tag">
+		<div class="row grouped mb-3">
+			<label class="col-sm-4 col-md-3 col-form-label">
+				<snode:message key="${setting.key + '.key'}" messageSource="${provider.messageSource}" text="${setting.key}"/>
+			</label>
+			<div class="col-sm-7 col-md-8">
+				<div class="btn-group" role="group" data-th-if="${setting.dynamic}">
+					<button type="button" class="btn btn-primary group-item-remove">
+						<i class="bi bi-dash-lg"></i>
+					</button>
+					<button type="button" class="btn btn-primary group-item-add">
+						<i class="bi bi-plus-lg"></i>
+					</button>
+				</div>
+				<input type="hidden" 
+					data-th-name="${settingId + 'Count'}"
+					data-th-id="${settingId}"
+					data-th-value="${#lists.size(setting.groupSettings)}" />
+				<script data-th-inline="javascript">
+				$(function() {
+					SolarNode.Settings.addGroupedSetting({
+						key:      /*[[${settingId}]]*/             's1c1i1',
+						provider: /*[[${provider.settingUid}]]*/   'com.example.setting',
+						setting:  /*[[${setting.key + 'Count'}]]*/ 'theSettingCount',
+						instance: /*[[${instanceId}]]*/            '1',
+						indexed:  /*[[${setting.key}]]*/          'theSetting',
+					});
+				});
+				</script>
+			</div>
+			<div class="col-sm-1 mt-1"
+					data-th-with="help = ${#snUtils.message(setting.key + '.desc', provider.messageSource, #locale)}">
+				<button type="button" class=" help-popover help-icon"
+						data-th-if="${not #strings.isEmpty(help)}"
+						data-th-title="#{help.label}"
+						tabindex="-1"
+						data-th-data-bs-content="${help}"
+						data-bs-html="true"
+						>
+					<i class="bi bi-question-circle" aria-hidden="true"></i>
+				</button>
+			</div>
+		</div>
+		<fieldset data-th-id="${settingId + 'g'}" class="pt-3 grouped"
+				data-th-unless="${#lists.isEmpty(setting.groupSettings)}"
+				data-th-with="origSetting = ${setting}, origSettingId = ${settingId}">
+			<div data-th-each="groupedSetting, groupedSettingStatus : ${setting.groupSettings}" data-th-remove="tag">
+				<div data-th-remove="tag" data-th-with="setting = ${groupedSetting},
+					groupSettingId = ${origSettingId},
+					groupSetting = ${origSetting},
+					groupIndex = ${groupedSettingStatus.count}">
+					<div data-th-replace="~{settings/setting-control :: content(${origSettingId + 'g' + groupedSettingStatus.index})}"></div>
+				</div>
+			</div>
+		</fieldset>
+	</div>
+
+	<fieldset class="group" data-th-if="${#snUtils.instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and #strings.isEmpty(setting.key) and not #lists.isEmpty(setting.groupSettings)}"
+			data-th-with="origSetting = ${setting}, origSettingId = ${settingId}">
+		<div data-th-each="groupedSetting, groupedSettingStatus : ${setting.groupSettings}" data-th-remove="tag">
+			<div data-th-remove="tag" data-th-with="setting = ${groupedSetting}">
+				<div data-th-replace="~{settings/setting-control :: content(${origSettingId + 'g' + groupedSettingStatus.index})}"></div>
+			</div>
+		</div>
+	</fieldset>
+
+</body>
+</html>

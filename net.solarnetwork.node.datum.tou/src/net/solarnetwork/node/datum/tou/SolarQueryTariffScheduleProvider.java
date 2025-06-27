@@ -101,14 +101,14 @@ import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
-import net.solarnetwork.web.service.HttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService;
 
 /**
  * Query SolarNetwork for a datum stream and turn it into a
  * {@link TariffSchedule}.
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implements TariffScheduleProvider,
 		SettingSpecifierProvider, DatumDateFunctions, SettingsChangeObserver, ServiceLifecycleObserver {

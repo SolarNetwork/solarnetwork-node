@@ -32,17 +32,17 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
-import net.solarnetwork.web.service.HttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService;
 
 /**
  * Node-specific extension of
  * {@link net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService}.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ChainHttpRequestCustomizerService
-		extends net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService {
+		extends net.solarnetwork.web.jakarta.service.support.ChainHttpRequestCustomizerService {
 
 	/**
 	 * Constructor.

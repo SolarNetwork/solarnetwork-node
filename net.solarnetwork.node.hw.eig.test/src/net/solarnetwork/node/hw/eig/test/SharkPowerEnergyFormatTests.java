@@ -24,7 +24,7 @@ package net.solarnetwork.node.hw.eig.test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import java.math.BigDecimal;
 import org.junit.Test;
 import net.solarnetwork.node.hw.eig.meter.SharkPowerEnergyFormat;

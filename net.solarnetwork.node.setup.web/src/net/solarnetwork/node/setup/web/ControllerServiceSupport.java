@@ -23,10 +23,11 @@
 package net.solarnetwork.node.setup.web;
 
 import static net.solarnetwork.service.OptionalService.service;
-import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.context.request.WebRequest;
 import net.solarnetwork.node.metrics.dao.MetricDao;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.PlatformPackageService;
@@ -39,7 +40,7 @@ import net.solarnetwork.service.OptionalService;
  * Add global services to all MVC controllers.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 1.23
  */
 @ControllerAdvice(annotations = { ServiceAwareController.class })
@@ -72,16 +73,20 @@ public class ControllerServiceSupport {
 	 */
 	public static final String METRIC_DAO_ATTRIBUTE = "metricDao";
 
-	@Resource(name = "systemService")
+	@Autowired
+	@Qualifier("systemService")
 	private OptionalService<SystemService> systemService;
 
-	@Resource(name = "platformPackageService")
+	@Autowired
+	@Qualifier("platformPackageService")
 	private OptionalService<PlatformPackageService> platformPackageService;
 
-	@Resource(name = "pluginService")
+	@Autowired
+	@Qualifier("pluginService")
 	private OptionalService<PluginService> pluginService;
 
-	@Resource(name = "metricDao")
+	@Autowired
+	@Qualifier("metricDao")
 	private OptionalService<MetricDao> metricDao;
 
 	@Autowired
@@ -92,6 +97,19 @@ public class ControllerServiceSupport {
 	 */
 	public ControllerServiceSupport() {
 		super();
+	}
+
+	/**
+	 * Add any {@code X-Forwarded-Path} HTTP header to the model.
+	 *
+	 * @param request
+	 *        the request
+	 * @return the header value, or {@code null}
+	 * @since 2.4
+	 */
+	@ModelAttribute(name = WebConstants.X_FORWARDED_PATH_MODEL_ATTR)
+	public String xForwardedPath(WebRequest request) {
+		return request.getHeader(WebConstants.X_FORWARDED_PATH_HTTP_HEADER);
 	}
 
 	/**

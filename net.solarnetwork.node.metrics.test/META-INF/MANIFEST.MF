@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Metrics Services Tests
 Bundle-SymbolicName: net.solarnetwork.node.metrics.test
-Bundle-Version: 1.1.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.metrics;bundle-version="[1.1,2.0)"
+Fragment-Host: net.solarnetwork.node.metrics;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.metrics.test
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.databind.annotation,
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
  net.solarnetwork.common.expr.spel;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.2,2.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
@@ -16,4 +16,4 @@ Import-Package:
  org.hamcrest;version="[1.1,2.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.util;version="[6.2,7.0)"

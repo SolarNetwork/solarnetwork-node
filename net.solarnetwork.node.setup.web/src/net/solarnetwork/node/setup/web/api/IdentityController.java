@@ -31,7 +31,7 @@ import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.domain.SecurityActor;
 import net.solarnetwork.node.domain.SecurityToken;
 import net.solarnetwork.node.setup.web.support.GlobalExceptionRestController;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * API controller for identity functions.

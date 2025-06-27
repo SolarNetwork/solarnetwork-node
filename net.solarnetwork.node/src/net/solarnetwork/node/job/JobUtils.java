@@ -1,21 +1,21 @@
 /* ==================================================================
  * JobUtils.java - 29/10/2019 11:00:03 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,6 +23,7 @@
 package net.solarnetwork.node.job;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,9 +35,9 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 
 /**
  * Utility methods for working with scheduled jobs.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.71
  */
 public class JobUtils {
@@ -52,14 +53,14 @@ public class JobUtils {
 
 	/**
 	 * Create a trigger from a schedule expression.
-	 * 
+	 *
 	 * <p>
 	 * The {@code expression} can be either an integer number representing a
 	 * {@code timeUnit} frequency or else a cron expression. If
 	 * {@code randomize} is {@literal true} then if the cron expression seconds
 	 * value is a constant value it
 	 * </p>
-	 * 
+	 *
 	 * @param expression
 	 *        the schedule expression
 	 * @param timeUnit
@@ -76,7 +77,8 @@ public class JobUtils {
 			try {
 				try {
 					long frequency = Long.parseLong(expression);
-					PeriodicTrigger trigger = new PeriodicTrigger(frequency, timeUnit);
+					PeriodicTrigger trigger = new PeriodicTrigger(
+							Duration.of(frequency, timeUnit.toChronoUnit()));
 					trigger.setFixedRate(true);
 					return trigger;
 				} catch ( NumberFormatException e ) {

@@ -4,14 +4,14 @@ Bundle-Name: Auto Setup
 Bundle-SymbolicName: net.solarnetwork.node.setup.auto
 Automatic-Module-Name: net.solarnetwork.node.setup.auto
 Bundle-Description: Apply vendor-specific settings when SolarNode starts up.
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.node.backup;version="[1.6,3.0)",
  net.solarnetwork.node.settings;version="[1.6,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core.io;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

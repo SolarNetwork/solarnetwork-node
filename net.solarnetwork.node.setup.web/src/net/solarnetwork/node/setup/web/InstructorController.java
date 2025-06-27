@@ -27,15 +27,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.reactor.Instruction;
@@ -51,7 +52,7 @@ import net.solarnetwork.service.OptionalService;
  * Controller to act as a local Instructor to the local node.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @ServiceAwareController
 @RequestMapping("/a/controls")
@@ -63,10 +64,12 @@ public class InstructorController {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	@Resource(name = "nodeControlProviderList")
+	@Autowired
+	@Qualifier("nodeControlProviderList")
 	private Collection<NodeControlProvider> providers = Collections.emptyList();
 
-	@Resource(name = "instructionExecutionService")
+	@Autowired
+	@Qualifier("instructionExecutionService")
 	private OptionalService<InstructionExecutionService> instructionService;
 
 	/**

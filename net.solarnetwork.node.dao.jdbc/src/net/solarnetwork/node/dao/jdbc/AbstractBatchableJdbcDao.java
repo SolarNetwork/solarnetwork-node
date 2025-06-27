@@ -42,8 +42,8 @@ import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
-import net.solarnetwork.node.dao.BasicBatchResult;
-import net.solarnetwork.node.dao.BatchableDao;
+import net.solarnetwork.dao.BasicBatchResult;
+import net.solarnetwork.dao.BatchableDao;
 
 /**
  * Base class for {@link BatchableDao} implementations.
@@ -51,7 +51,7 @@ import net.solarnetwork.node.dao.BatchableDao;
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport implements BatchableDao<T> {
 
@@ -155,8 +155,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 			return transactionTemplate.execute(new TransactionCallback<BatchResult>() {
 
 				@Override
-				public net.solarnetwork.node.dao.BatchableDao.BatchResult doInTransaction(
-						TransactionStatus status) {
+				public BatchableDao.BatchResult doInTransaction(TransactionStatus status) {
 					return batchProcessInternal(callback, options);
 				}
 			});
@@ -172,7 +171,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
 
 			@Override
-			public net.solarnetwork.node.dao.BatchableDao.BatchResult doInConnection(Connection con)
+			public BatchableDao.BatchResult doInConnection(Connection con)
 					throws SQLException, DataAccessException {
 				PreparedStatement queryStmt = null;
 				ResultSet queryResult = null;

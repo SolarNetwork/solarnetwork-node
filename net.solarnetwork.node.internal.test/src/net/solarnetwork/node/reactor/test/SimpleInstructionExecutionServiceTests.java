@@ -24,8 +24,8 @@ package net.solarnetwork.node.reactor.test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;

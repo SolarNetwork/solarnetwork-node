@@ -24,8 +24,8 @@ package net.solarnetwork.node.hw.schneider.test;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
 import java.util.List;
 import org.junit.Test;
 import org.slf4j.Logger;

@@ -24,7 +24,7 @@ package net.solarnetwork.node.domain.datum.test;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.junit.Test;

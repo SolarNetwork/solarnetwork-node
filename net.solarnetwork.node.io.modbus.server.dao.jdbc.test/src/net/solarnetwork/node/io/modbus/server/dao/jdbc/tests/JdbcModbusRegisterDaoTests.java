@@ -23,11 +23,11 @@
 package net.solarnetwork.node.io.modbus.server.dao.jdbc.tests;
 
 import static net.solarnetwork.node.io.modbus.server.dao.BasicModbusRegisterFilter.forServerId;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

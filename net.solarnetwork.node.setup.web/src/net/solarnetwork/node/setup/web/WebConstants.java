@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.setup.web;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Web constants.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.4
  */
 public interface WebConstants {
@@ -41,6 +41,20 @@ public interface WebConstants {
 
 	/** A UI model key for an error message parameter at index 0. */
 	String UI_MODEL_ERROR_MESSAGE_PARAM0 = UI_MODEL_ERROR_MESSAGE_PARAM + "0";
+
+	/**
+	 * HTTP header name for a forwarded-path.
+	 *
+	 * @since 1.1
+	 */
+	String X_FORWARDED_PATH_HTTP_HEADER = "X-Forwarded-Path";
+
+	/**
+	 * View model attribute name for a forwarded-path.
+	 *
+	 * @since 1.1
+	 */
+	String X_FORWARDED_PATH_MODEL_ATTR = "XForwardedPath";
 
 	/**
 	 * Configure a UI error message on the current HTTP session.

@@ -1,21 +1,21 @@
 /* ==================================================================
  * PowerwallOperationsTests.java - 9/11/2023 3:09:47 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,10 +36,11 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -52,14 +53,16 @@ import net.solarnetwork.domain.datum.EnergyStorageDatum;
 import net.solarnetwork.node.datum.tesla.powerwall.PowerwallOperations;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link PowerwallOperations} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PowerwallOperationsTests extends AbstractHttpClientTests {
+public class PowerwallOperationsTests extends AbstractHttpServerTests {
 
 	private static final Logger log = LoggerFactory.getLogger(PowerwallOperationsTests.class);
 
@@ -69,7 +72,7 @@ public class PowerwallOperationsTests extends AbstractHttpClientTests {
 
 	@Override
 	@Before
-	public void setup() throws Exception {
+	public void setup() {
 		super.setup();
 		username = UUID.randomUUID().toString();
 		password = UUID.randomUUID().toString();
@@ -94,32 +97,31 @@ public class PowerwallOperationsTests extends AbstractHttpClientTests {
 		final TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
-				String path = request.getPathInfo();
+				String path = request.getHttpURI().getPath();
 				switch (path) {
 					case "/api/meters/aggregates":
-						respondWithJsonResource(response, "meters-aggregates-01.json");
+						respondWithJsonResource(request, response, "meters-aggregates-01.json");
 						break;
 
 					case "/api/system_status":
-						respondWithJsonResource(response, "system_status-01.json");
+						respondWithJsonResource(request, response, "system_status-01.json");
 						break;
 
 					case "/api/system_status/soe":
-						respondWithJsonResource(response, "system_status-soe-01.json");
+						respondWithJsonResource(request, response, "system_status-soe-01.json");
 						break;
 
 					default:
 						response.setStatus(HttpStatus.NOT_FOUND.value());
 						break;
 				}
-				response.flushBuffer();
 				return true;
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// WHEN
 		Collection<NodeDatum> datum = ops.datum(sourceId);
@@ -153,7 +155,7 @@ public class PowerwallOperationsTests extends AbstractHttpClientTests {
 		 		wattHours=7986302,
 		 		wattHoursReverse=9273303},
 		 	s={gridConnected=1}}}
-		
+
 		    "battery": {
 		        "last_communication_time": "2023-11-09T15:29:58.897559649+13:00",
 		        "instant_power": 123,
@@ -175,10 +177,10 @@ public class PowerwallOperationsTests extends AbstractHttpClientTests {
 		        "instant_total_current": -0.25
 		    }
 		    {"percentage":87.5}
-		    
+
 		    "nominal_full_pack_energy": 14015,
 		    "nominal_energy_remaining": 12366,
-		    "system_island_state": "SystemGridConnected",		    
+		    "system_island_state": "SystemGridConnected",
 		 */
 		NodeDatum batt = datumMap.get(sourceId + PowerwallOperations.DEFAULT_BATTERY_SUFFIX);
 		DatumSamplesOperations d = batt.asSampleOperations();

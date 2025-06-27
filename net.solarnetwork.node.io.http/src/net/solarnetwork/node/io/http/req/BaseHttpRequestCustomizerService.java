@@ -1,21 +1,21 @@
 /* ==================================================================
  * BaseHttpRequestCustomizerService.java - 3/04/2023 2:26:13 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,14 +28,14 @@ import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
-import net.solarnetwork.web.service.support.AbstractHttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.support.AbstractHttpRequestCustomizerService;
 
 /**
  * Extension of common {@link AbstractHttpRequestCustomizerService} to include
  * some generally useful node service support.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public abstract class BaseHttpRequestCustomizerService extends AbstractHttpRequestCustomizerService {
 
@@ -51,7 +51,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Test if a string has any placeholder within in.
-	 * 
+	 *
 	 * @param s
 	 *        the string to test
 	 * @return {@literal true} if {@code s} has a placeholder template in it
@@ -63,7 +63,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Resolve placeholders using the configured {@link PlaceholderService}.
-	 * 
+	 *
 	 * @param s
 	 *        the string to resolve placeholder values on
 	 * @return the resolved string, or {@literal null} if {@code s} is
@@ -75,7 +75,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Resolve placeholders using the configured {@link PlaceholderService}.
-	 * 
+	 *
 	 * @param s
 	 *        the string to resolve placeholder values on
 	 * @param parameters
@@ -89,7 +89,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Get the placeholder service to use.
-	 * 
+	 *
 	 * @return the service
 	 */
 	public OptionalService<PlaceholderService> getPlaceholderService() {
@@ -98,7 +98,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Set the placeholder service to use.
-	 * 
+	 *
 	 * @param placeholderService
 	 *        the service to set
 	 */
@@ -108,7 +108,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Get an optional collection of {@link ExpressionService}.
-	 * 
+	 *
 	 * @return the optional {@link ExpressionService} collection to use
 	 */
 	public OptionalServiceCollection<ExpressionService> getExpressionServices() {
@@ -117,7 +117,7 @@ public abstract class BaseHttpRequestCustomizerService extends AbstractHttpReque
 
 	/**
 	 * Configure an optional collection of {@link ExpressionService}.
-	 * 
+	 *
 	 * @param expressionServices
 	 *        the optional {@link ExpressionService} collection to use
 	 */

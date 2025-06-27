@@ -189,7 +189,7 @@
 			<property name="httpRequestCustomizer">
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.web.service.HttpRequestCustomizerService"/>
+					<property name="serviceClassName" value="net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService"/>
 					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 				</bean>
 			</property>

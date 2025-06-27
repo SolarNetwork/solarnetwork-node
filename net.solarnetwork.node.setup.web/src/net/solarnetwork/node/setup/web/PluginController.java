@@ -1,28 +1,28 @@
 /* ==================================================================
  * PluginController.java - Apr 21, 2014 10:32:12 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web;
 
-import static net.solarnetwork.web.domain.Response.response;
+import static net.solarnetwork.domain.Result.success;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,16 +32,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginProvisionException;
 import net.solarnetwork.node.setup.PluginProvisionStatus;
@@ -49,13 +50,13 @@ import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.node.setup.SimplePluginQuery;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller to manage the installed bundles via an OBR.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @ServiceAwareController
 @RequestMapping("/a/plugins")
@@ -80,7 +81,7 @@ public class PluginController {
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param availablePlugins
 		 *        the available plugins
 		 * @param installedPlugins
@@ -94,7 +95,7 @@ public class PluginController {
 
 		/**
 		 * Get the available plugins.
-		 * 
+		 *
 		 * @return the available plugins
 		 */
 		public List<Plugin> getAvailablePlugins() {
@@ -103,7 +104,7 @@ public class PluginController {
 
 		/**
 		 * Get the installed plugins.
-		 * 
+		 *
 		 * @return the installed plugins
 		 */
 		public List<Plugin> getInstalledPlugins() {
@@ -112,7 +113,8 @@ public class PluginController {
 
 	}
 
-	@Resource(name = "pluginService")
+	@Autowired
+	@Qualifier("pluginService")
 	private OptionalService<PluginService> pluginService;
 
 	@Autowired(required = true)
@@ -137,7 +139,7 @@ public class PluginController {
 
 	/**
 	 * Handle an {@link IllegalArgumentException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param locale
@@ -153,7 +155,7 @@ public class PluginController {
 
 	/**
 	 * Handle an {@link PluginProvisionException}.
-	 * 
+	 *
 	 * @param e
 	 *        the exception
 	 * @param locale
@@ -170,17 +172,17 @@ public class PluginController {
 
 	/**
 	 * List plugins.
-	 * 
+	 *
 	 * @return the plugins list view name
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
-		return "plugins/list";
+		return "plugins";
 	}
 
 	/**
 	 * Get the provision status.
-	 * 
+	 *
 	 * @param provisionID
 	 *        the provision task ID
 	 * @param knownProgress
@@ -191,7 +193,7 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "/provisionStatus", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<PluginProvisionStatus> status(@RequestParam(value = "id") final String provisionID,
+	public Result<PluginProvisionStatus> status(@RequestParam(value = "id") final String provisionID,
 			@RequestParam(value = "p", required = false) final Integer knownProgress,
 			final Locale locale) {
 		PluginService service = pluginService.service();
@@ -211,7 +213,7 @@ public class PluginController {
 			}
 			int newProgress = Math.round(status.getOverallProgress() * 100f);
 			if ( newProgress > progress || System.currentTimeMillis() > maxTime ) {
-				return response(status);
+				return success(status);
 			}
 			try {
 				Thread.sleep(1000);
@@ -237,7 +239,7 @@ public class PluginController {
 
 	/**
 	 * List plugins.
-	 * 
+	 *
 	 * @param filter
 	 *        the filter
 	 * @param latestOnly
@@ -248,32 +250,32 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<PluginDetails> list(
+	public Result<PluginDetails> list(
 			@RequestParam(value = "filter", required = false) final String filter,
 			@RequestParam(value = "latestOnly", required = false) final Boolean latestOnly,
 			final Locale locale) {
-		return response(pluginDetails(filter, latestOnly, locale));
+		return success(pluginDetails(filter, latestOnly, locale));
 	}
 
 	/**
 	 * Refresh the plugin list.
-	 * 
+	 *
 	 * @return the result
 	 */
 	@RequestMapping(value = "/refresh", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<Boolean> refresh() {
+	public Result<Boolean> refresh() {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
-			return response(Boolean.FALSE);
+			return success(Boolean.FALSE);
 		}
 		service.refreshAvailablePlugins();
-		return response(Boolean.TRUE);
+		return success(Boolean.TRUE);
 	}
 
 	/**
 	 * Install a plugin.
-	 * 
+	 *
 	 * @param uid
 	 *        the UID of the plugin to install
 	 * @param locale
@@ -282,19 +284,19 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "/install", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<PluginProvisionStatus> previewInstall(
-			@RequestParam(value = "uid") final String[] uid, final Locale locale) {
+	public Result<PluginProvisionStatus> previewInstall(@RequestParam(value = "uid") final String[] uid,
+			final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
 			throw new UnsupportedOperationException("PluginService not available");
 		}
 		List<String> uids = Arrays.asList(uid);
-		return response(service.previewInstallPlugins(uids, locale));
+		return success(service.previewInstallPlugins(uids, locale));
 	}
 
 	/**
 	 * Install the latest available version of one or more plugins.
-	 * 
+	 *
 	 * @param uid
 	 *        the UIDs of the plugins to install or upgrade to the latest
 	 *        version; if not provided then upgrade all installed plugins to
@@ -305,7 +307,7 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "/install", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<PluginProvisionStatus> install(
+	public Result<PluginProvisionStatus> install(
 			@RequestParam(value = "uid", required = false) final String[] uid, final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
@@ -317,7 +319,7 @@ public class PluginController {
 		} else {
 			uids = upgradablePluginUids(locale);
 		}
-		return response(service.installPlugins(uids, locale));
+		return success(service.installPlugins(uids, locale));
 	}
 
 	private Set<String> upgradablePluginUids(Locale locale) {
@@ -348,7 +350,7 @@ public class PluginController {
 	/**
 	 * Preview an "upgrade all" operation, where all installed plugins are
 	 * updated to their latest available version.
-	 * 
+	 *
 	 * @param locale
 	 *        the active locale
 	 * @return the provision status
@@ -356,7 +358,7 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "/upgradeAll", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<PluginProvisionStatus> previewUpgradeAll(final Locale locale) {
+	public Result<PluginProvisionStatus> previewUpgradeAll(final Locale locale) {
 		// extract all upgradable plugins
 		Set<String> upgradableUids = upgradablePluginUids(locale);
 
@@ -365,12 +367,12 @@ public class PluginController {
 			throw new UnsupportedOperationException("PluginService not available");
 		}
 
-		return response(service.previewInstallPlugins(upgradableUids, locale));
+		return success(service.previewInstallPlugins(upgradableUids, locale));
 	}
 
 	/**
 	 * Remove a plugin.
-	 * 
+	 *
 	 * @param uid
 	 *        the UID of the plugin to remove
 	 * @param locale
@@ -379,19 +381,19 @@ public class PluginController {
 	 */
 	@RequestMapping(value = "/remove", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<PluginProvisionStatus> remove(@RequestParam(value = "uid") final String uid,
+	public Result<PluginProvisionStatus> remove(@RequestParam(value = "uid") final String uid,
 			final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
 			throw new UnsupportedOperationException("PluginService not available");
 		}
 		Collection<String> uids = Collections.singleton(uid);
-		return response(service.removePlugins(uids, locale));
+		return success(service.removePlugins(uids, locale));
 	}
 
 	/**
 	 * Set the plugin service.
-	 * 
+	 *
 	 * @param pluginService
 	 *        the plugin service
 	 */
@@ -401,7 +403,7 @@ public class PluginController {
 
 	/**
 	 * Set the status poll timeout.
-	 * 
+	 *
 	 * @param statusPollTimeoutMs
 	 *        the timeout, in milliseconds
 	 */
@@ -411,7 +413,7 @@ public class PluginController {
 
 	/**
 	 * Set the message source.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source to set
 	 */

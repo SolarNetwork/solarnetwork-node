@@ -3,14 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Operational Mode Controller
 Bundle-Description: Respond to operational mode changes by executing changes in other controls.
 Bundle-SymbolicName: net.solarnetwork.node.control.opmode
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.opmode
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
@@ -19,12 +19,12 @@ Import-Package:
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans.factory;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core.task;version="[5.3,6.0)"
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core.task;version="[6.2,7.0)"

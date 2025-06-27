@@ -80,7 +80,7 @@ import net.solarnetwork.service.support.ConfigurableSSLService;
  * </p>
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DefaultKeystoreService extends ConfigurableSSLService
 		implements PKIService, BackupResourceProvider {
@@ -252,9 +252,9 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error checking for node certificate", e);
 		} catch ( CertificateExpiredException e ) {
-			log.debug("Certificate {} has expired", x509.getSubjectDN().getName());
+			log.debug("Certificate {} has expired", x509.getSubjectX500Principal().getName());
 		} catch ( CertificateNotYetValidException e ) {
-			log.debug("Certificate {} not valid yet", x509.getSubjectDN().getName());
+			log.debug("Certificate {} not valid yet", x509.getSubjectX500Principal().getName());
 		}
 		return false;
 	}
@@ -316,7 +316,7 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	private void saveTrustedCertificate(X509Certificate cert, String alias) {
 		KeyStore keyStore = loadKeyStore();
 		try {
-			log.info("Installing trusted CA certificate {}", cert.getSubjectDN());
+			log.info("Installing trusted CA certificate {}", cert.getSubjectX500Principal());
 			keyStore.setCertificateEntry(alias, cert);
 			saveKeyStore(keyStore);
 		} catch ( KeyStoreException e ) {
@@ -531,25 +531,32 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 				final int caIdx = chain.length - 1;
 				if ( caCert == null ) {
 					// if we don't have a CA cert yet, install that now
-					log.info("Installing trusted CA certificate {}", chain[caIdx].getSubjectDN());
+					log.info("Installing trusted CA certificate {}",
+							chain[caIdx].getSubjectX500Principal());
 					keyStore.setCertificateEntry(caAlias, chain[caIdx]);
 					caCert = chain[caIdx];
 				} else {
 					// verify CA is the same... maybe we shouldn't do this?
-					if ( !chain[caIdx].getSubjectDN().equals(caCert.getSubjectDN()) ) {
+					if ( !chain[caIdx].getSubjectX500Principal()
+							.equals(caCert.getSubjectX500Principal()) ) {
 						throw new CertificateException(
-								"Chain CA " + chain[caIdx].getSubjectDN().getName()
-										+ " does not match expected " + caCert.getSubjectDN().getName());
+								"Chain CA " + chain[caIdx].getSubjectX500Principal().getName()
+										+ " does not match expected "
+										+ caCert.getSubjectX500Principal().getName());
 					}
-					if ( !chain[caIdx].getIssuerDN().equals(caCert.getIssuerDN()) ) {
-						throw new CertificateException("Chain CA " + chain[caIdx].getIssuerDN().getName()
-								+ " does not match expected " + caCert.getIssuerDN().getName());
+					if ( !chain[caIdx].getIssuerX500Principal()
+							.equals(caCert.getIssuerX500Principal()) ) {
+						throw new CertificateException(
+								"Chain CA " + chain[caIdx].getIssuerX500Principal().getName()
+										+ " does not match expected "
+										+ caCert.getIssuerX500Principal().getName());
 					}
 				}
 				// install intermediate certs...
 				for ( int i = caIdx - 1, j = 1; i > 0; i--, j++ ) {
 					String alias = caAlias + "sub" + j;
-					log.info("Installing trusted intermediate certificate {}", chain[i].getSubjectDN());
+					log.info("Installing trusted intermediate certificate {}",
+							chain[i].getSubjectX500Principal());
 					keyStore.setCertificateEntry(alias, chain[i]);
 				}
 			} catch ( KeyStoreException e ) {
@@ -564,19 +571,20 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		}
 
 		// the issuer must be our CA cert subject...
-		if ( !chain[0].getIssuerDN().equals(chain[1].getSubjectDN()) ) {
-			throw new CertificateException("Issuer " + chain[0].getIssuerDN().getName()
-					+ " does not match expected " + chain[1].getSubjectDN().getName());
+		if ( !chain[0].getIssuerX500Principal().equals(chain[1].getSubjectX500Principal()) ) {
+			throw new CertificateException("Issuer " + chain[0].getIssuerX500Principal().getName()
+					+ " does not match expected " + chain[1].getSubjectX500Principal().getName());
 		}
 
 		// the subject must be our node's existing subject...
-		if ( !chain[0].getSubjectDN().equals(nodeCert.getSubjectDN()) ) {
-			throw new CertificateException("Subject " + chain[0].getIssuerDN().getName()
-					+ " does not match expected " + nodeCert.getSubjectDN().getName());
+		if ( !chain[0].getSubjectX500Principal().equals(nodeCert.getSubjectX500Principal()) ) {
+			throw new CertificateException("Subject " + chain[0].getIssuerX500Principal().getName()
+					+ " does not match expected " + nodeCert.getSubjectX500Principal().getName());
 		}
 
 		log.info("Installing node certificate {} reply {} issued by {}", chain[0].getSerialNumber(),
-				chain[0].getSubjectDN().getName(), chain[0].getIssuerDN().getName());
+				chain[0].getSubjectX500Principal().getName(),
+				chain[0].getIssuerX500Principal().getName());
 		try {
 			keyStore.setKeyEntry(nodeAlias, key, keyPassword.toCharArray(), chain);
 		} catch ( KeyStoreException e ) {

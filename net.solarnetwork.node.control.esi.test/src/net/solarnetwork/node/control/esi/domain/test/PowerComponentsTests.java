@@ -22,12 +22,12 @@
 
 package net.solarnetwork.node.control.esi.domain.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 import java.util.Map;
 import org.junit.Test;
 import net.solarnetwork.node.control.esi.domain.PowerComponents;

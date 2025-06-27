@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusPCMController.java - Jul 10, 2013 7:14:40 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -55,11 +55,11 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 /**
  * Toggle four Modbus "coil" type addresses to control the SMA Power Control
  * Module.
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>d1Address</dt>
  * <dd>The Modbus address for the PCM D1 input.</dd>
@@ -69,13 +69,13 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * <dd>The Modbus address for the PCM D3 input.</dd>
  * <dt>d4Address</dt>
  * <dd>The Modbus address for the PCM D4 input.</dd>
- * 
+ *
  * <dt>eventAdmin</dt>
  * <dd>An {@link EventAdmin} to publish events with.</dd>
  * </dl>
- * 
+ *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusPCMController extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -83,21 +83,21 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	/**
 	 * The suffix added to the configured control ID to handle percent-based PCM
 	 * values.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
 
 	/**
 	 * The default {@code controlId} property value.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public static final String DEFAULT_CONTROL_ID = "/power/pcm/1";
 
 	/**
 	 * The default {@code sampleCacheSeconds} property value.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public static final int DEFAULT_SAMPLE_CACHE_SECS = 1;
@@ -129,18 +129,18 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 	/**
 	 * Get the values of the D1 - D4 discreet values, as a BitSet.
-	 * 
+	 *
 	 * @return BitSet, with index 0 representing D1 and index 1 representing D2,
 	 *         etc.
 	 */
-	private synchronized BitSet currentDiscreetValue() throws IOException {
+	private synchronized BitSet currentDiscreteValue() throws IOException {
 		BitSet result;
 		if ( isCachedSampleExpired() ) {
 			result = performAction(new ModbusConnectionAction<BitSet>() {
 
 				@Override
 				public BitSet doWithConnection(ModbusConnection conn) throws IOException {
-					return conn.readDiscreetValues(addresses, 1);
+					return conn.readDiscreteValues(addresses, 1);
 				}
 			});
 			log.debug("Read discreet PCM values: {}", result);
@@ -155,12 +155,12 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 	/**
 	 * Get the status value of the PCM, as an Integer.
-	 * 
+	 *
 	 * <p>
 	 * This returns the overall vale of the PCM, as an integer between 0 and 15.
 	 * A value of 0 represent a 0% output setting, while 15 represents 100%.
 	 * </p>
-	 * 
+	 *
 	 * @param bits
 	 *        a set with bits corresponding to the configured
 	 *        {@code d[1-4]Address} values
@@ -190,7 +190,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 	/**
 	 * Get the approximate power output setting, from 0 to 100.
-	 * 
+	 *
 	 * <p>
 	 * These values are described in the SMA documentation, it is not a direct
 	 * percentage value derived from the value itself.
@@ -235,7 +235,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * Get the appropriate power output value, from 0 to 15, from an integer
 	 * percentage (0-100). Note that the value is floored, such that the PCM
 	 * value can never be larger than the percentage value passed in.
-	 * 
+	 *
 	 * @param percent
 	 *        an integer percentage from 0-100
 	 * @return a PCM output value from 0-15
@@ -304,7 +304,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 				@Override
 				public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-					conn.writeDiscreetValues(addresses, bits);
+					conn.writeDiscreteValues(addresses, bits);
 					return true;
 				}
 			});
@@ -336,7 +336,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		log.debug("Reading PCM {} status", controlId);
 		SimpleNodeControlInfoDatum result = null;
 		try {
-			Integer value = integerValueForBitSet(currentDiscreetValue());
+			Integer value = integerValueForBitSet(currentDiscreteValue());
 			result = newSimpleNodeControlInfoDatum(controlId, value,
 					controlId.endsWith(PERCENT_CONTROL_ID_SUFFIX));
 		} catch ( Exception e ) {
@@ -398,13 +398,13 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	/**
 	 * Post a {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
 	 * {@link Event}.
-	 * 
+	 *
 	 * <p>
 	 * This method calls
 	 * {@link #createControlCapturedEvent(SimpleNodeControlInfoDatum)} to create
 	 * the actual Event, which may be overridden by extending classes.
 	 * </p>
-	 * 
+	 *
 	 * @param info
 	 *        the {@link NodeControlInfo} to post the event for
 	 * @since 1.2
@@ -422,12 +422,12 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * Create a new
 	 * {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
 	 * {@link Event} object out of a {@link Datum}.
-	 * 
+	 *
 	 * <p>
 	 * This method will populate all simple properties of the given
 	 * {@link Datum} into the event properties.
 	 * </p>
-	 * 
+	 *
 	 * @param info
 	 *        the info to create the event for
 	 * @return the new Event instance
@@ -459,7 +459,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		// get current value
 		BasicTitleSettingSpecifier status = new BasicTitleSettingSpecifier("status", "N/A", true);
 		try {
-			BitSet bits = currentDiscreetValue();
+			BitSet bits = currentDiscreteValue();
 			Integer val = integerValueForBitSet(bits);
 			String binValue = Integer.toBinaryString(val);
 			String padding = "";

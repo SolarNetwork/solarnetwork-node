@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
@@ -72,7 +73,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class H2OnlineBackupService extends BasicIdentifiable implements EventHandler, JobService {
 
@@ -175,7 +176,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 
 	private synchronized void backupSoon(String reasonMessage, String dataSourceUrl) {
 		if ( taskScheduler == null ) {
-			taskScheduler = new ConcurrentTaskScheduler();
+			taskScheduler = new ConcurrentTaskScheduler(Executors.newSingleThreadScheduledExecutor());
 		}
 
 		final ScheduledFuture<?> backupFuture = backupFutures.get(dataSourceUrl);

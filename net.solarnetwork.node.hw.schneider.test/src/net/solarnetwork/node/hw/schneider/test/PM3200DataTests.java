@@ -34,10 +34,10 @@ import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterCurre
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterPowerFactorPhaseA;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterVoltageLineNeutralAverage;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterVoltageLineNeutralPhaseA;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

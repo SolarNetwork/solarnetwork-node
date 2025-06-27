@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'settings-component')}">
+<head>
+    <title data-th-text="#{app.title(#{settings.component.title(${#snUtils.message('title', factory.displayName, factory.messageSource, #locale)})})}">SolarNode</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-replace="~{settings/factory-settings-list-body :: content}">
+</body>
+</html>

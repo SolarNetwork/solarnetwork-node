@@ -1,44 +1,48 @@
-<form id="owm-location-lookup-modal" class="modal dynamic hide fade lookup-modal owm-loc-lookup-modal" method="get"
+<form id="owm-location-lookup-modal" class="modal hide fade lookup-modal owm-loc-lookup-modal" method="get"
 	action="https://api.openweathermap.org/data/2.5/find">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3>OpenWeatherMap location lookup</h3>
-	</div>
-	<div class="modal-body">
-		<p>Use this form to search for the OpenWeatherMap location to collect data for.</p>
-		<div class="form-inline">
-			<input type="text" name="query" class="span4" maxlength="64" placeholder="Search for city, country"/>
-			<button type="submit" class="btn btn-primary ladda-button expand-right" 
-				data-loading-text="Searching">
-				Search
-			</button>
-		</div>
-
-		<table class="table table-striped table-hover hidden search-results">
-			<thead>
-				<tr>
-					<th>Country</th>
-					<th>Location</th>
-					<th>Temperature</th>
-				</tr>
-				<tr class="template">
-					<td data-tprop="sys.country"></td>
-					<td data-tprop="name"></td>
-					<td data-tprop="main.temp"></td>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title">OpenWeatherMap location lookup</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>Use this form to search for the OpenWeatherMap location to collect data for.</p>
+				<div class="input-group mb-3">
+					<input type="text" name="query" class="form-control" maxlength="64" placeholder="Search for city, country">
+					<button type="submit" class="btn btn-primary" data-th-data-loading-text="#{lookup.searching.label}">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status">Search</span>
+					</button>
+				</div>
 		
-		<label id="weather-lookup-selected-label" class="hidden">
-			Selected location: <span id="weather-lookup-selected-container"></span>
-		</label>
-	</div>
-	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal">Close</a>
-		<button type="button" class="btn btn-primary choose" disabled="disabled">
-			Choose
-		</button>
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th>Country</th>
+							<th>Location</th>
+							<th>Temperature</th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sys.country"></td>
+							<td data-tprop="name"></td>
+							<td data-tprop="main.temp"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				
+				<label id="weather-lookup-selected-label" class="hidden">
+					Selected location: <span id="weather-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary choose" disabled="disabled">
+					Choose
+				</button>
+			</div>
+		</div>
 	</div>
 </form>

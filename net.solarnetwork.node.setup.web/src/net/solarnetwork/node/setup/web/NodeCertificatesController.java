@@ -1,21 +1,21 @@
 /* ==================================================================
  * NodeCertificatesController.java - Dec 7, 2012 7:16:19 AM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -45,9 +45,9 @@ import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 
 /**
  * Controller for node certificate management.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @ServiceAwareController
 @RequestMapping("/a/certs")
@@ -69,27 +69,29 @@ public class NodeCertificatesController extends BaseSetupController {
 
 		/**
 		 * Get the issuer DN.
-		 * 
+		 *
 		 * @return the issuer DN
 		 * @see java.security.cert.X509Certificate#getIssuerDN()
 		 */
+		@SuppressWarnings("deprecation")
 		public String getIssuerDN() {
 			return cert.getIssuerDN().getName();
 		}
 
 		/**
 		 * Get the subject DN.
-		 * 
+		 *
 		 * @return the subject DN
 		 * @see java.security.cert.X509Certificate#getSubjectDN()
 		 */
+		@SuppressWarnings("deprecation")
 		public String getSubjectDN() {
 			return cert.getSubjectDN().getName();
 		}
 
 		/**
 		 * Get the valid start date.
-		 * 
+		 *
 		 * @return the start date
 		 * @see java.security.cert.X509Certificate#getNotBefore()
 		 */
@@ -99,7 +101,7 @@ public class NodeCertificatesController extends BaseSetupController {
 
 		/**
 		 * Get the valid end date.
-		 * 
+		 *
 		 * @return the end date
 		 * @see java.security.cert.X509Certificate#getNotAfter()
 		 */
@@ -111,7 +113,7 @@ public class NodeCertificatesController extends BaseSetupController {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param pkiService
 	 *        the PKI service
 	 */
@@ -122,11 +124,12 @@ public class NodeCertificatesController extends BaseSetupController {
 
 	/**
 	 * View the main certs page.
-	 * 
+	 *
 	 * @param model
 	 *        the view model
 	 * @return the view name
 	 */
+	@SuppressWarnings("deprecation")
 	@RequestMapping
 	public String home(Model model) {
 		X509Certificate nodeCert = pkiService.getNodeCertificate();
@@ -141,12 +144,12 @@ public class NodeCertificatesController extends BaseSetupController {
 		}
 		model.addAttribute("nodeCertExpired", expired);
 		model.addAttribute("nodeCertValid", valid);
-		return "certs/home";
+		return "certs";
 	}
 
 	/**
 	 * Return a node's CSR based on its current certificate.
-	 * 
+	 *
 	 * @return a map with the PEM encoded certificate on key {@code csr}
 	 */
 	@RequestMapping(value = "/nodeCSR", method = RequestMethod.GET)
@@ -160,7 +163,7 @@ public class NodeCertificatesController extends BaseSetupController {
 
 	/**
 	 * Return a node's current certificate.
-	 * 
+	 *
 	 * @param download
 	 *        {@literal true} to add a {@literal Content-Disposition} response
 	 *        header
@@ -199,11 +202,11 @@ public class NodeCertificatesController extends BaseSetupController {
 
 	/**
 	 * Import a certificate reply (signed certificate chain).
-	 * 
+	 *
 	 * <p>
 	 * Either a file or raw text can be imported.
 	 * </p>
-	 * 
+	 *
 	 * @param file
 	 *        the certificate file to import
 	 * @param text
@@ -225,7 +228,7 @@ public class NodeCertificatesController extends BaseSetupController {
 
 	/**
 	 * Renew the certificate.
-	 * 
+	 *
 	 * @param password
 	 *        the password of the certificate keystore
 	 * @return the result

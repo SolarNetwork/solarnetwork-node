@@ -25,7 +25,7 @@ package net.solarnetwork.node.io.canbus.cannelloni;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.time.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -45,6 +45,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioIoHandler;
@@ -137,8 +138,8 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 		tf.setDaemon(true);
 
 		Bootstrap b = new Bootstrap();
-		b.group(new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory()))
-				.channel(NioDatagramChannel.class).option(ChannelOption.SO_BROADCAST, true)
+		EventLoopGroup group = new MultiThreadIoEventLoopGroup(0, tf, NioIoHandler.newFactory());
+		b.group(group).channel(NioDatagramChannel.class).option(ChannelOption.SO_BROADCAST, true)
 				.handler(new CannelloniChannelInitializer(new CanbusFrameHandler()));
 		return b;
 	}
@@ -364,7 +365,7 @@ public class CannelloniCanbusConnection extends BasicIdentifiable
 						}
 					}
 				}
-			}, new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
+			}, Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(delay));
 			connectFuture = f;
 			//TODO postClientStatusChangeEvent(CannelloniClientStatus.ConnectionScheduled);
 			return f;

@@ -23,10 +23,10 @@
 package net.solarnetwork.node.setup.web;
 
 import static net.solarnetwork.service.OptionalService.service;
-import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.SetupService;
@@ -36,7 +36,7 @@ import net.solarnetwork.service.OptionalService;
  * Base class for setup controllers.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class BaseSetupController {
 
@@ -49,7 +49,8 @@ public class BaseSetupController {
 	@Autowired
 	private IdentityService identityService;
 
-	@Resource(name = "systemService")
+	@Autowired
+	@Qualifier("systemService")
 	private OptionalService<SystemService> systemService;
 
 	/**

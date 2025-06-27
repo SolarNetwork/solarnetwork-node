@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -266,8 +265,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 						if ( taskScheduler != null ) {
 							log.info("Will start Modbus server [{}] in {} seconds", description(),
 									startupDelay);
-							startupFuture = taskScheduler.schedule(this,
-									new Date(System.currentTimeMillis() + startupDelay * 1000L));
+							startupFuture = taskScheduler.schedule(this, Instant
+									.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
 						}
 					}
 				}
@@ -276,7 +275,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 		if ( taskScheduler != null ) {
 			log.info("Will start Modbus server [{}] in {} seconds", description(), startupDelay);
 			startupFuture = taskScheduler.schedule(startupTask,
-					new Date(System.currentTimeMillis() + startupDelay * 1000L));
+					Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
 		} else {
 			startupTask.run();
 		}

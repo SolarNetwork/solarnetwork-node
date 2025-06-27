@@ -1,21 +1,21 @@
 /* ==================================================================
  * BulkJsonWebPostUploadServiceTests.java - 8/08/2017 7:44:39 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -41,11 +41,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,15 +74,16 @@ import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService;
 import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
 import net.solarnetwork.util.DateUtils;
 
 /**
  * Unit tests for the {@link BulkJsonWebPostUploadService} class.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
+public class BulkJsonWebPostUploadServiceTests extends AbstractHttpServerTests {
 
 	private static final Long TEST_NODE_ID = 123L;
 	private static final String TEST_SOURCE_ID = "test-source";
@@ -124,13 +125,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) {
+			protected void handleJsonPost(Request request, Response response, String json) {
 				// nothing
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		replayAll();
 
@@ -153,11 +153,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	 * 			...
 	 * 		],
 	 * 		"instructions" : [
-	 * 
+	 *
 	 * 		]
 	 * }
 	 * </pre>
-	 
+
 	 */
 
 	private static String snTimestampString(Instant date) {
@@ -172,21 +172,22 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				JSONAssert.assertEquals(
 						"[{\"created\":\"" + snTimestampString(now) + "\",\"sourceId\":\""
 								+ TEST_SOURCE_ID + "\",\"i\":{\"watts\":1},\"a\":{\"wattHours\":2}}]",
 						json, true);
 
-				respondWithJsonString(response, true,
+				respondWithJson(request, response,
 						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"abc123\",\"created\":\""
 								+ snTimestampString(now) + "\",\"sourceId\":\"" + TEST_SOURCE_ID + "\""
-								+ "}]}}");
+								+ "}]}}",
+						true);
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		List<NodeDatum> data = new ArrayList<>();
 		SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());
@@ -233,8 +234,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				DatumProperties props = DatumProperties.propertiesFrom(d, meta);
 				BasicStreamDatum streamDatum = new BasicStreamDatum(meta.getStreamId(), d.getTimestamp(),
 						props);
@@ -243,14 +244,15 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						"[" + service.getObjectMapper().writeValueAsString(streamDatum) + "]", json,
 						true);
 
-				respondWithJsonString(response, true,
+				respondWithJson(request, response,
 						"{\"success\":true,\"data\":{\"datum\":[{\"streamId\":\""
 								+ meta.getStreamId().toString() + "\",\"timestamp\":"
-								+ now.toEpochMilli() + "}]}}");
+								+ now.toEpochMilli() + "}]}}",
+						true);
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		List<NodeDatum> data = new ArrayList<>();
 		data.add(d);
@@ -286,18 +288,18 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				JSONAssert.assertEquals(
 						"[{\"created\":\"" + snTimestampString(now) + "\",\"sourceId\":\""
 								+ TEST_SOURCE_ID + "\",\"i\":{\"watts\":1},\"a\":{\"wattHours\":2}}]",
 						json, true);
 
-				respondWithJsonString(response, true, "{\"success\":true,\"data\":{}}");
+				respondWithJson(request, response, "{\"success\":true,\"data\":{}}", true);
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		List<NodeDatum> data = new ArrayList<>();
 		SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());
@@ -338,8 +340,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				StringBuilder req = new StringBuilder("[");
 				StringBuilder res = new StringBuilder("{\"success\":true,\"data\":{\"datum\":[");
 				int i = 0;
@@ -363,11 +365,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 				res.append("]}}");
 				JSONAssert.assertEquals(req.toString(), json, true);
 
-				respondWithJsonString(response, true, res.toString());
+				respondWithJson(request, response, res.toString(), true);
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// no stream metadata available
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
@@ -415,8 +417,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				StringBuilder req = new StringBuilder("[");
 				StringBuilder res = new StringBuilder("{\"success\":true,\"data\":{\"datum\":[");
 				int i = 0;
@@ -444,11 +446,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 				res.append("]}}");
 				JSONAssert.assertEquals(req.toString(), json, true);
 
-				respondWithJsonString(response, true, res.toString());
+				respondWithJson(request, response, res.toString(), true);
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		// no stream metadata available
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
@@ -519,18 +521,18 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				JSONAssert
 						.assertEquals("[{\"instructionId\":123,\"state\":\"Completed\",\"statusDate\":\""
 								+ nowString + "\"}]", json, true);
 
-				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"123\"}]}}");
+				respondWithJson(request, response,
+						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"123\"}]}}", true);
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		replayAll();
 
@@ -548,26 +550,26 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
 
 			@Override
-			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
-					String json) throws Exception {
+			protected void handleJsonPost(Request request, Response response, String json)
+					throws Exception {
 				JSONAssert.assertEquals("[{\"created\":\"" + snTimestampString(now)
 						+ "\",\"sourceId\":\"" + TEST_SOURCE_ID + "\",\"i\":{\"watts\":1}}]", json,
 						true);
 
 				// @formatter:off
-				respondWithJsonString(response, true,
+				respondWithJson(request, response,
 						"{\"success\":true,\"data\":{\"datum\":[{\"created\":\"" + snTimestampString(now)
 								+ "\",\"sourceId\":\"" + TEST_SOURCE_ID + "\"}],\"instructions\":["
 								+ "{\"id\":123,\"topic\":\"foo\"}"
 								+ ",{\"id\":234,\"topic\":\"bar\",\"parameters\":["
 									+ "{\"name\":\"p1\",\"value\":\"v1\"}"
 									+ ",{\"name\":\"p2\",\"value\":\"v2\"}"
-								+ "]}]}}");
+								+ "]}]}}", true);
 				// @formatter:on
 			}
 
 		};
-		getHttpServer().addHandler(handler);
+		addHandler(handler);
 
 		List<NodeDatum> data = new ArrayList<>();
 		SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());

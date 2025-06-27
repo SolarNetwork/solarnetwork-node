@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicEm6ApiClient.java - 10/03/2023 12:08:51 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,7 +32,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import org.slf4j.Logger;
@@ -49,15 +48,15 @@ import net.solarnetwork.util.NumberUtils;
 
 /**
  * Basic implementation of the {@link Em6ApiClient}.
- * 
+ *
  * <p>
  * Note the {@link NodeDatum} returned by this source will be of type
  * {@link net.solarnetwork.domain.datum.ObjectDatumKind#Location} and will
  * <b>not</b> have a location ID or source ID assigned.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BasicEm6ApiClient extends JsonHttpClientSupport implements Em6ApiClient {
 
@@ -80,7 +79,7 @@ public class BasicEm6ApiClient extends JsonHttpClientSupport implements Em6ApiCl
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param objectMapper
 	 *        the object mapper to use
 	 * @throws IllegalArgumentException
@@ -92,7 +91,7 @@ public class BasicEm6ApiClient extends JsonHttpClientSupport implements Em6ApiCl
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param baseUri
 	 *        the base URI to use
 	 * @param objectMapper
@@ -121,8 +120,7 @@ public class BasicEm6ApiClient extends JsonHttpClientSupport implements Em6ApiCl
 						}
 						final DatumSamples samples = new DatumSamples();
 						Instant ts = null;
-						for ( Iterator<Entry<String, JsonNode>> itr = item.fields(); itr.hasNext(); ) {
-							final Entry<String, JsonNode> prop = itr.next();
+						for ( final Entry<String, JsonNode> prop : item.properties() ) {
 							final String key = prop.getKey();
 							if ( key.endsWith("_prev") || key.equals("trading_period")
 									|| key.equals("trading_date") ) {

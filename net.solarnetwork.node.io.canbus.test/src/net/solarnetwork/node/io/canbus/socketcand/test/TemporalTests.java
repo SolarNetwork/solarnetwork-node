@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.test;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import java.math.BigDecimal;
 import org.hamcrest.Matchers;
 import org.junit.Test;

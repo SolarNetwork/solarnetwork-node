@@ -4,32 +4,32 @@ Bundle-Name: S3 Setup
 Bundle-SymbolicName: net.solarnetwork.node.setup.s3
 Automatic-Module-Name: net.solarnetwork.node.setup.s3
 Bundle-Description: Sync vendor-specific resources from Amazon S3.
-Bundle-Version: 3.0.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.4,3.0)",
- com.fasterxml.jackson.core;version="[2.4,3.0)",
- com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.common.s3;version="[2.0,3.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.common.s3;version="[3.0,4.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.setup;version="[1.12,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec;version="[1.7,2.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",
  org.apache.commons.codec.digest;version="[1.7,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core.io;version="[5.3,6.0)",
- org.springframework.core.task;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.core.task;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

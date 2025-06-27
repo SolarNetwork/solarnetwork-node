@@ -1,21 +1,21 @@
 /* ==================================================================
  * JsonOwmClient.java - 17/09/2018 7:45:49 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -50,9 +50,9 @@ import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 
 /**
  * JSON implementation of {@link OwmClient}
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 
@@ -71,7 +71,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 	}
 
 	private UriComponentsBuilder uriForLocation(String identifier, String path) {
-		return UriComponentsBuilder.fromHttpUrl(baseUrl).path(path).queryParam("id", identifier)
+		return UriComponentsBuilder.fromUriString(baseUrl).path(path).queryParam("id", identifier)
 				.queryParam("mode", "json").queryParam("units", "metric").queryParam("appid", apiKey);
 	}
 
@@ -243,7 +243,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 
 	/**
 	 * Set the OWM API key to use.
-	 * 
+	 *
 	 * @param apiKey
 	 *        the API key
 	 */
@@ -253,12 +253,12 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 
 	/**
 	 * Set the base URL to use.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@link #DEFAULT_API_BASE_URL} which should be sufficient
 	 * for most cases.
 	 * </p>
-	 * 
+	 *
 	 * @param baseUrl
 	 *        the baseUrl to set
 	 */

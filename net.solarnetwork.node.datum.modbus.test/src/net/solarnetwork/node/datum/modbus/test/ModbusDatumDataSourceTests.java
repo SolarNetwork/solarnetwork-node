@@ -75,7 +75,7 @@ import net.solarnetwork.util.ByteUtils;
  * Test cases for the {@link ModbusDatumDataSource} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusDatumDataSourceTests {
 
@@ -635,7 +635,6 @@ public class ModbusDatumDataSourceTests {
 				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
 	public void readDatumWithCoils() throws IOException {
 		// GIVEN
@@ -666,7 +665,7 @@ public class ModbusDatumDataSourceTests {
 
 		final BitSet rawBits = new BitSet();
 		rawBits.set(1);
-		expect(modbusConnection.readDiscreetValues(100, 2)).andReturn(rawBits);
+		expect(modbusConnection.readDiscreteValues(100, 2)).andReturn(rawBits);
 
 		replayAll();
 

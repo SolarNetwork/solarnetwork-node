@@ -3,33 +3,33 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Environmental Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.sunspec.environmental
 Bundle-Description: Collect data from SunSpec compatible Modbus environmental sensors.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.sunspec.environmental
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.10.1,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.6,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.1,2.0)",
  net.solarnetwork.node.hw.sunspec;version="[3.1,4.0)",
  net.solarnetwork.node.hw.sunspec.environmental;version="[1.0,2.0)",
  net.solarnetwork.node.hw.sunspec.support;version="[3.1,4.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
- net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
+ net.solarnetwork.node.io.modbus.support;version="[5.0,6.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)"
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)"

@@ -4,23 +4,23 @@ Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
 Automatic-Module-Name: net.solarnetwork.node.setup
 Bundle-Description: Provides core SolarNode setup infrastructure support.
-Bundle-Version: 3.0.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.4,3.0)",
- com.fasterxml.jackson.core;version="[2.4,3.0)",
- com.fasterxml.jackson.databind;version="[2.4,3.0)",
- com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
  javax.annotation,
  javax.net.ssl,
  javax.security.auth,
  javax.xml.xpath,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.node.backup;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.reactor;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
@@ -33,17 +33,17 @@ Import-Package:
  org.apache.commons.codec.binary;version="[1.7,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.aop;version="[5.3,6.0)",
- org.springframework.aop.framework;version="[5.3,6.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.beans.factory;version="[5.3,6.0)",
- org.springframework.beans.factory.annotation;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core;version="[5.3,6.0)",
- org.springframework.core.io;version="[5.3,6.0)",
- org.springframework.stereotype;version="[5.3,6.0)",
- org.springframework.transaction;version="[5.3,6.0)",
- org.springframework.transaction.annotation;version="[5.3,6.0)",
- org.springframework.transaction.support;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.aop;version="[6.2,7.0)",
+ org.springframework.aop.framework;version="[6.2,7.0)",
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.beans.factory.annotation;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.stereotype;version="[6.2,7.0)",
+ org.springframework.transaction;version="[6.2,7.0)",
+ org.springframework.transaction.annotation;version="[6.2,7.0)",
+ org.springframework.transaction.support;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

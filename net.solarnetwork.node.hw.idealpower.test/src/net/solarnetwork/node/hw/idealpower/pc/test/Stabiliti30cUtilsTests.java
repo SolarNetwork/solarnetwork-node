@@ -24,10 +24,10 @@ package net.solarnetwork.node.hw.idealpower.pc.test;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toCollection;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.SortedSet;

@@ -26,7 +26,6 @@ import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import org.apache.commons.codec.DecoderException;
@@ -47,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Supporting abstract class for WMBus datum data sources.
  *
  * @author alex
- * @version 1.4
+ * @version 1.5
  */
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler, ServiceLifecycleObserver {
@@ -205,7 +204,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		}
 		ConnectTask task = new ConnectTask();
 		if ( getTaskScheduler() != null ) {
-			connectFuture = getTaskScheduler().schedule(task, Date.from(Instant.now().plusSeconds(1)));
+			connectFuture = getTaskScheduler().schedule(task, Instant.now().plusSeconds(1));
 		} else {
 			task.run();
 		}
@@ -254,7 +253,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 							log.info("Will try opening wireless M-Bus connection for {} in 10s",
 									address);
 							connectFuture = getTaskScheduler().schedule(this,
-									Date.from(Instant.now().plusSeconds(10)));
+									Instant.now().plusSeconds(10));
 						}
 					} else {
 						connectFuture = null;

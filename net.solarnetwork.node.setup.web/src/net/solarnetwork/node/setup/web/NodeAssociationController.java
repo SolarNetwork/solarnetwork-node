@@ -31,15 +31,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.keygen.KeyGenerators;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.ui.ModelMap;
@@ -52,6 +53,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
@@ -72,14 +75,14 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.settings.SettingSpecifierProvider;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller used to associate a node with a SolarNet account.
  *
  * @author maxieduncan
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -135,20 +138,28 @@ public class NodeAssociationController extends BaseSetupController {
 	@Autowired
 	private UserService userService;
 
-	@Resource(name = "authenticationManager")
+	@Autowired
+	@Qualifier("authenticationManager")
 	private AuthenticationManager authenticationManager;
 
-	@Resource(name = "settingsService")
+	@Autowired
+	@Qualifier("settingsService")
 	private OptionalService<SettingsService> settingsServiceTracker;
 
-	@Resource(name = "backupManager")
+	@Autowired
+	@Qualifier("backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
 
-	@Resource(name = "networkLinks")
+	@Autowired
+	@Qualifier("networkLinks")
 	private Map<String, String> networkURLs = new HashMap<String, String>(4);
 
-	@Resource(name = "associationSettingProviders")
+	@Autowired
+	@Qualifier("associationSettingProviders")
 	private OptionalServiceCollection<SettingSpecifierProvider> settingProviders;
+
+	@Autowired
+	private HttpSessionSecurityContextRepository securityContextRepository;
 
 	/**
 	 * Default constructor.
@@ -288,12 +299,17 @@ public class NodeAssociationController extends BaseSetupController {
 	 *        the association identity
 	 * @param model
 	 *        the view model
+	 * @param request
+	 *        the request
+	 * @param response
+	 *        the response
 	 * @return the view name
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
 	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
 			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
-			@ModelAttribute(KEY_IDENTITY) NetworkAssociation identity, Model model) {
+			@ModelAttribute(KEY_IDENTITY) NetworkAssociation identity, Model model,
+			HttpServletRequest request, HttpServletResponse response) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
@@ -335,7 +351,10 @@ public class NodeAssociationController extends BaseSetupController {
 				UsernamePasswordAuthenticationToken loginReq = new UsernamePasswordAuthenticationToken(
 						user.getUsername(), user.getPassword());
 				Authentication auth = authenticationManager.authenticate(loginReq);
-				SecurityContextHolder.getContext().setAuthentication(auth);
+				SecurityContext context = SecurityContextHolder.createEmptyContext();
+				context.setAuthentication(auth);
+				SecurityContextHolder.setContext(context);
+				securityContextRepository.saveContext(context, request, response);
 			}
 			return "associate/setup-success";
 		} catch ( Exception e ) {

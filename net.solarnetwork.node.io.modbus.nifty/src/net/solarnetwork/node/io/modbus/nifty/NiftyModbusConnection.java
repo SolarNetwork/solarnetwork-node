@@ -85,7 +85,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class NiftyModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
@@ -156,7 +156,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public BitSet readDiscreetValues(int address, int count) throws IOException {
+	public BitSet readDiscreteValues(int address, int count) throws IOException {
 		if ( !controller.isConnected() ) {
 			throw new IOException(String.format("Connection to %s is closed", describer.get()));
 		}
@@ -209,13 +209,13 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public BitSet readDiscreetValues(int[] addresses, int count) throws IOException {
+	public BitSet readDiscreteValues(int[] addresses, int count) throws IOException {
 		if ( !controller.isConnected() ) {
 			throw new IOException(String.format("Connection to %s is closed", describer.get()));
 		}
 		BitSet result = new BitSet(addresses.length);
 		for ( int i = 0, w = 0; i < addresses.length; i++ ) {
-			BitSet set = readDiscreetValues(addresses[i], count);
+			BitSet set = readDiscreteValues(addresses[i], count);
 			for ( int j = 0; j < count; j++ ) {
 				// map individual bitset index to overall output bitset index
 				result.set(w++, set.get(j));
@@ -225,7 +225,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
+	public void writeDiscreteValues(int[] addresses, BitSet bits) throws IOException {
 		if ( !controller.isConnected() ) {
 			throw new IOException(String.format("Connection to %s is closed", describer.get()));
 		}

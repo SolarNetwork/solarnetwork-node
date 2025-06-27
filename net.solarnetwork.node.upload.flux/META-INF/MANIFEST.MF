@@ -3,43 +3,43 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarFlux Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.flux
 Bundle-Description: Upload datump created by other SolarNode plugins to a SolarFlux-compatible MQTT server.
-Bundle-Version: 3.3.2
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.flux
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.fasterxml.jackson.annotation;version="[2.10,3.0)",
- com.fasterxml.jackson.core;version="[2.10,3.0)",
- com.fasterxml.jackson.databind;version="[2.10,3.0)",
- com.fasterxml.jackson.databind.annotation;version="[2.10,3.0)",
- com.fasterxml.jackson.databind.ser.std;version="[2.10,3.0)",
- com.fasterxml.jackson.dataformat.cbor;version="[2.10,3.0)",
+ com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.19,3.0)",
+ com.fasterxml.jackson.dataformat.cbor;version="[2.19,3.0)",
  javax.net,
  javax.net.ssl,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.mqtt;version="[3.0,4.0)",
- net.solarnetwork.common.mqtt.dao;version="[2.0,3.0)",
+ net.solarnetwork.common.mqtt.dao;version="[3.0,4.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.dao;version="[2.0,3.0)",
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
- net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.dao;version="[3.0,4.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
+ net.solarnetwork.node.dao;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.service;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
- net.solarnetwork.settings.support;version="[2.3,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec.binary;version="[1.11,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[5.3,6.0)",
- org.springframework.beans.factory;version="[5.3,6.0)",
- org.springframework.beans.factory.config;version="[5.3,6.0)",
- org.springframework.context;version="[5.3,6.0)",
- org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.core.task;version="[5.3,6.0)",
- org.springframework.scheduling;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)"
+ org.springframework.beans;version="[6.2,7.0)",
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.beans.factory.config;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core.task;version="[6.2,7.0)",
+ org.springframework.scheduling;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"

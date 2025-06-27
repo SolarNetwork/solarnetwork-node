@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'metrics')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{metrics.title})}">SolarNode Metrics</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<p class="lead" data-th-utext="#{metrics.intro}">Metrics here.</p>
+</section>
+<section class="init">
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
+    </div>
+</section>
+
+<section id="metrics-most-recent" class="hidden">
+	<h2 data-th-text="#{metrics.mostRecent.title}">Recent Metrics</h2>
+	<div class="container">
+		<div class="row fw-bold border-bottom">
+			<div class="col-4" data-th-text="#{metric.ts.label}">Timestamp</div>
+			<div class="col-5" data-th-text="#{metric.name.label}">Name</div>
+			<div class="col-3 text-end"><span class="number-whole"
+				data-th-text="#{metric.value.label}">Value</span><span class="number-dot invisible">.</span><span class="number-fraction"></span></div>
+		</div>
+		<div class="row py-1 border-bottom brief-showcase template item">
+			<div class="col-4" data-tprop="displayTs"></div>
+			<div class="col-5" data-tprop="name"></div>
+			<div class="col-3 text-end"><span class="number-whole" data-tprop="valueWhole"></span><span class="number-dot">.</span><span class="number-fraction" data-tprop="valueFraction"></span></div>
+		</div>
+		<div class="list-container">
+		</div>
+	</div>
+</section>
+
+<section id="metrics-aggregate" class="hidden some"
+		data-th-data-i18n-min="#{metrics.aggregate.min.label}"
+		data-th-data-i18n-max="#{metrics.aggregate.max.label}"
+		data-th-data-i18n-avg="#{metrics.aggregate.avg.label}"
+		data-th-data-i18n-sum="#{metrics.aggregate.sum.label}"
+		data-th-data-i18n-cnt="#{metrics.aggregate.cnt.label}"
+		data-th-data-i18n-q="#{metrics.aggregate.q.label}"
+		>
+	<h2 data-th-text="#{metrics.aggregate.title}">Aggregate</h2>
+	<p data-th-utext="#{metrics.aggregate.intro}">Aggregate metrics here.</p>
+	
+	<form class="row g-3" id="metrics-aggregate-filter-form">
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-from" data-th-text="#{metrics.aggregate.filter.from.label}">From</label>
+			<input type="date" name="start" class="form-control" id="metrics-aggregate-filter-from">
+		</div>
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-to" data-th-text="#{metrics.aggregate.filter.to.label}">To</label>
+			<input type="date" name="end" class="form-control" id="metrics-aggregate-filter-to">
+		</div>
+		<div class="col-sm-2">
+			<label data-th-text="#{metrics.aggregate.filter.stats.label}">Stats</label>
+			<div class="row mt-2">
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="avg" id="metrics-aggregate-filter-agg-avg" checked>
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-avg" data-th-text="#{metrics.aggregate.avg.label}">
+							Average
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="min" id="metrics-aggregate-filter-agg-min" checked>
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-min" data-th-text="#{metrics.aggregate.min.label}">
+							Minimum
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="max" id="metrics-aggregate-filter-agg-max" checked>
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-max" data-th-text="#{metrics.aggregate.max.label}">
+							Maximum
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="sum" id="metrics-aggregate-filter-agg-sum">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-sum" data-th-text="#{metrics.aggregate.sum.label}">
+							Sum
+						</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="aggs" value="cnt" id="metrics-aggregate-filter-agg-cnt">
+						<label class="form-check-label" for="metrics-aggregate-filter-agg-cnt" data-th-text="#{metrics.aggregate.cnt.label}">
+							Count
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-agg-p1-inc"><span data-th-text="#{metrics.aggregate.p1.label}">P1</span>: <span id="metrics-aggregate-filter-agg-p1-disp">25</span>%</label>
+			<div class="row mt-2">
+				<div class="col-auto pe-0">
+					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p1-inc" checked>
+				</div>
+				<div class="col">
+					<input type="range" min="1" max="99" value="25" name="p1" class="form-range" id="metrics-aggregate-filter-agg-p1">
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-2">
+			<label for="metrics-aggregate-filter-agg-p2-inc"><span data-th-text="#{metrics.aggregate.p2.label}">P1</span>: <span id="metrics-aggregate-filter-agg-p2-disp">75</span>%</label>
+			<div class="row mt-2">
+				<div class="col-auto pe-0">
+					<input class="form-check-input" type="checkbox" id="metrics-aggregate-filter-agg-p2-inc" checked>
+				</div>
+				<div class="col">
+					<input type="range" min="1" max="99" value="75" name="p1" class="form-range" id="metrics-aggregate-filter-agg-p2">
+				</div>
+			</div>
+		</div>
+		<div class="col-sm-2">
+			<label class="invisible" data-th-text="#{metrics.aggregate.export.label}">Export</label>
+			<div class="input-group justify-content-end">			
+				<button class="btn btn-outline-secondary form-button-secondary" type="button" id="metrics-aggregate-export"
+					data-th-title="#{metrics.list.export.btn}"><i class="bi bi-download"></i></button>
+				<button class="btn btn-outline-secondary" type="button" id="metrics-aggregate-refresh"
+					data-th-title="#{metrics.list.refresh.btn}"><i class="bi bi-arrow-clockwise"></i></button>
+			</div>
+		</div>
+	</form>
+
+	<div class="container mt-3">
+		<div class="row fw-bold border-bottom">
+			<div class="col-5" data-th-text="#{metric.name.label}">Name</div>
+			<div class="col-4" data-th-text="#{metric.type.label}">Type</div>
+			<div class="col-3 text-end"><span class="number-whole" data-th-text="#{metric.value.label}">Value</span><span class="number-dot invisible">.</span><span class="number-fraction"></span></div>
+		</div>
+		<div class="row py-1 border-bottom template item">
+			<div class="col-5" data-tprop="name"></div>
+			<div class="col-4" data-tprop="displayType"></div>
+			<div class="col-3 text-end"><span class="number-whole" data-tprop="valueWhole"></span><span class="number-dot">.</span><span class="number-fraction" data-tprop="valueFraction"></span></div>
+		</div>
+		<div class="list-container">
+		</div>
+	</div>
+</section>
+
+<section id="metrics" class="hidden ready" data-th-data-i18n-page="#{metrics.list.nav.page.label}">
+	<h2 data-th-text="#{metrics.title}">All Metrics</h2>
+
+	<p class="none" data-th-utext="#{metrics.intro.none}">There are no metrics.</p>
+
+	<div class="row justify-content-between some">
+		<div class="col-md-9">
+			<p data-th-utext="#{metrics.list.intro}">Metrics here.</p>
+		</div>
+		<form class="col-md-3 text-right form-inline">
+			<div class="input-group">			
+				<input type="search" id="metrics-list-filter-name" class="form-control search-query" 
+					data-th-placeholder="#{metrics.list.filter.name.placeholder}" value="">
+				<button class="btn btn-outline-secondary" type="button" id="metrics-list-export"
+					data-th-title="#{metrics.list.export.btn}"><i class="bi bi-download"></i></button>
+				<button class="btn btn-outline-secondary" type="button" id="metrics-list-refresh"
+					data-th-title="#{metrics.list.refresh.btn}"><i class="bi bi-arrow-clockwise"></i></button>
+			</div>
+		</form>
+	</div>
+
+	<div class="container" id="metrics-list">
+		<div class="row fw-bold border-bottom some hidden">
+			<div class="col-1 text-end" data-th-text="#{metric.idx.label}">#</div>
+			<div class="col-3" data-th-text="#{metric.ts.label}">Timestamp</div>
+			<div class="col-4" data-th-text="#{metric.name.label}">Name</div>
+			<div class="col-3 text-end"><span class="number-whole" data-th-text="#{metric.value.label}">Value</span><span class="number-dot invisible">.</span><span class="number-fraction"></span></div>
+		</div>
+		<div class="row py-1 border-bottom template item">
+			<div class="col-1 text-end"data-tprop="idx"></div>
+			<div class="col-3" data-tprop="displayTs"></div>
+			<div class="col-4" data-tprop="name"></div>
+			<div class="col-3 text-end"><span class="number-whole" data-tprop="valueWhole"></span><span class="number-dot">.</span><span class="number-fraction" data-tprop="valueFraction"></span></div>
+		</div>
+		<div class="list-container some hidden">
+		</div>
+	</div>
+	
+	<div class="container text-center mt-3">
+		<div class="row justify-content-md-center">
+			<div class="col-md-auto">
+				<div class="btn-group some" role="group" data-th-aria-label="#{metrics.list.nav.label}">
+					<button id="metrics-list-nav-prev" type="button" class="btn btn-primary" disabled
+							data-th-title="#{metrics.list.nav.prev.label}"><i class="bi bi-chevron-left"></i>
+					</button>
+					<div class="btn-group dropup" role="group">
+						<button id="metrics-list-nav-menu" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" disabled
+								data-th-text="#{metrics.list.nav.select.btn}">
+							Select
+						</button>
+						<ul id="metrics-list-nav-menu-page-container" class="dropdown-menu">
+						</ul>
+					</div>
+					<button id="metrics-list-nav-next" type="button" class="btn btn-primary" disabled
+							data-th-title="#{metrics.list.nav.next.label}"><i class="bi bi-chevron-right"></i></button>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+</body>
+</html>

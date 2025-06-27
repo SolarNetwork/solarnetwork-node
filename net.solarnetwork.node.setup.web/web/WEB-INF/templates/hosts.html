@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'hosts')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{hosts.title})}">SolarNode Host Aliases</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../css/solarnode.css">
+	<link rel="stylesheet" href="../../css/fonts.css">
+	<link rel="stylesheet" href="../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro clearfix">
+	<p data-th-utext="#{hosts.intro}">Hosts here.</p>
+</section>
+<div class="init">
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
+    </div>
+</div>
+<div class="ready hidden">
+	<div class="row justify-content-end">
+		<div class="col-auto">
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#host-add-modal">
+				<i class="bi bi-plus-lg"></i>
+				<span data-th-text="#{host.add.action}">Add</span>
+			</button>
+		</div>
+	</div>
+	<section id="hosts">
+		<div class="row template hbox" style="align-items: center;">
+			<div class="col-md-8">
+				<button class="btn btn-link edit-item" data-tprop="name">myhost</button>
+			</div>
+			<div class="col-md-4">
+				<span data-tprop="address">192.168.1.2</span>
+			</div>
+		</div>
+		<div class="list-content"></div>
+	</section>
+
+</div>
+
+<form id="host-add-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = host-add-modal,
+			action = @{/a/hosts/add}, 
+			title = #{host.add.title},
+			body = ~{::#host-add-modal//.modal-body}, 
+			footer = ~{::#host-add-modal//.modal-footer})}">
+
+		<div class="modal-body before">
+			<p data-th-utext="#{host.add.intro}">Add host alias here.</p>
+			<div class="mb-3">
+				<label class="form-label" for="hosts-add-name" data-th-text="#{host.name.label}">Name</label>
+				<input class="form-control" type="text" maxlength="256" name="name" id="hosts-add-name"
+					required data-th-placeholder="#{host.name.placeholder}">
+			</div>
+			<div class="mb-3">
+				<label class="form-label" for="hosts-add-address" data-th-text="#{host.address.label}">Address</label>
+				<input class="form-control" type="text" maxlength="256" name="address" id="hosts-add-address"
+					required data-th-placeholder="#{host.address.placeholder}">
+			</div>
+		</div>
+		<div class="modal-body after hidden">
+			<p class="error hidden" data-th-utext="#{host.add.error}">Error.</p>
+		</div>
+
+		<div class="modal-footer">
+			<a href="#" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</a>
+			<button type="submit" class="btn btn-primary before"
+					data-th-data-loading-text="#{host.adding.message}">
+				<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+				<span role="status" data-th-text="#{host.add.button}">Add</span>
+			</button>
+		</div>
+
+</form>
+
+<form id="host-remove-modal" data-th-replace="~{inc/modals :: modal_form(
+			id = host-remove-modal,
+			action = @{/a/hosts/remove}, 
+			title = #{host.remove.title},
+			body = ~{::#host-remove-modal//.modal-body}, 
+			footer = ~{::#host-remove-modal//.modal-footer})}">
+
+	<div class="modal-body before">
+		<p data-th-utext="#{host.remove.intro}">Remove host alias here.</p>
+	</div>
+	<div class="modal-body after hidden">
+		<p class="error hidden" data-th-utext="#{host.remove.error}">Error.</p>
+	</div>
+
+	<div class="modal-footer">
+		<input type="hidden" name="name">
+		<a href="#" class="btn btn-secondary" data-bs-dismiss="modal" data-th-text="#{close.label}">Close</a>
+		<button type="submit" class="btn btn-danger before"
+				data-th-data-loading-text="#{host.removing.message}">
+			<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+			<span role="status" data-th-text="#{host.remove.button}">Remove</span>
+		</button>
+	</div>
+
+</form>
+
+</body>
+</html>

@@ -1,21 +1,21 @@
 /* ==================================================================
  * Watchdog.java - 30/08/2019 2:34:44 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,9 +23,9 @@
 package net.solarnetwork.node.control.stabiliti30c;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,9 +47,9 @@ import net.solarnetwork.util.DateUtils;
 /**
  * Component to integrate with the watchdog timer of the Stabiliti 30C series
  * power control system.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierProvider {
 
@@ -81,7 +81,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Callback after properties have been changed.
-	 * 
+	 *
 	 * @param properties
 	 *        the changed properties
 	 */
@@ -93,7 +93,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Startup the watchdog task.
-	 * 
+	 *
 	 * <p>
 	 * Call this method after the properties of this class have been configured,
 	 * to start execution of the watchdog task.
@@ -119,8 +119,9 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 	private synchronized void scheduleTask() {
 		unscheduleTask();
 		task = taskScheduler.scheduleWithFixedDelay(new WatchdogTask(),
-				new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(startupDelaySeconds)),
-				TimeUnit.SECONDS.toMillis(updateFrequency));
+				Instant.ofEpochMilli(
+						System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(startupDelaySeconds)),
+				Duration.ofSeconds(updateFrequency));
 	}
 
 	private class WatchdogTask implements Runnable {
@@ -218,7 +219,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Set the task scheduler to use for the watchdog task.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler
 	 */
@@ -228,7 +229,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Get the watchdog timeout value.
-	 * 
+	 *
 	 * @return the watchdog timeout value, in seconds; defaults to
 	 *         {@link #DEFAULT_TIMEOUT_SECONDS}
 	 */
@@ -238,13 +239,13 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Set the watchdog timeout value.
-	 * 
+	 *
 	 * <p>
 	 * This is the number of seconds the Stabiliti should count down from, and
 	 * if not updated before it reaches zero to shut the system down. This value
 	 * should be larger than the configured {@code updateFrequency}.
 	 * </p>
-	 * 
+	 *
 	 * @param timeoutSeconds
 	 *        the timeout value, in seconds
 	 */
@@ -254,7 +255,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Get the watchdog update frequency.
-	 * 
+	 *
 	 * @return the watchdog update frequency, in seconds; defaults to
 	 *         {@link #DEFAULT_UPDATE_FREQUENCY}
 	 */
@@ -264,14 +265,14 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Set the watchdog update frequency.
-	 * 
+	 *
 	 * <p>
 	 * This is the frequency at which this component should reset the watchdog
 	 * timeout value on the Stabiliti to {@code timeoutSeconds}, essentially
 	 * resetting the count down timer. This value should be smaller than the
 	 * configured {@code timeoutSeconds}.
 	 * </p>
-	 * 
+	 *
 	 * @param updateFrequency
 	 *        the update frequency, in seconds
 	 */
@@ -281,7 +282,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Get the startup delay when scheduling the watchdog task.
-	 * 
+	 *
 	 * @return the startup delay, in seconds; defaluts to
 	 *         {@link #DEFAULT_STARTUP_DELAY_SECONDS}
 	 */
@@ -291,7 +292,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/**
 	 * Get the startup delay for scheduling the watchdog task.
-	 * 
+	 *
 	 * @param startupDelaySeconds
 	 *        the initial startup delay, in seconds
 	 */

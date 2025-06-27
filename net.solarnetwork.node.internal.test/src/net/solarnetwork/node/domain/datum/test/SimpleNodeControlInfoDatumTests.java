@@ -23,10 +23,10 @@
 package net.solarnetwork.node.domain.datum.test;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;

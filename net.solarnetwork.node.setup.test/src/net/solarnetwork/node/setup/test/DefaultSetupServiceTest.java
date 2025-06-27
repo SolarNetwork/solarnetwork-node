@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultSetupServiceTest.java - Dec 6, 2012 4:56:47 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,20 +23,17 @@
 package net.solarnetwork.node.setup.test;
 
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -47,8 +44,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.jcajce.JcaX500NameUtil;
@@ -59,11 +54,15 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.util.MultiMap;
+import org.eclipse.jetty.util.UrlEncoded;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mortbay.jetty.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
@@ -77,14 +76,16 @@ import net.solarnetwork.node.setup.impl.SetupIdentityDao;
 import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
 import net.solarnetwork.pki.bc.BCCertificateService;
 import net.solarnetwork.service.CertificateException;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
+import net.solarnetwork.test.http.TestHttpHandler;
 
 /**
  * Test cases for the {@link DefaultSetupService} class.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class DefaultSetupServiceTest {
+public class DefaultSetupServiceTest extends AbstractHttpServerTests {
 
 	private static final String TEST_CONF_VALUE = "password";
 	private static final String TEST_PW_VALUE = "test.password";
@@ -101,7 +102,6 @@ public class DefaultSetupServiceTest {
 	private SetupIdentityDao setupIdentityDao;
 	private BCCertificateService certService;
 	private DefaultKeystoreService keystoreService;
-	private Server httpServer;
 
 	private DefaultSetupService service;
 
@@ -116,22 +116,18 @@ public class DefaultSetupServiceTest {
 				CA_KEY_PAIR.getPrivate(), TEST_CA_DN);
 	}
 
+	@Override
 	@Before
-	public void setup() throws Exception {
+	public void setup() {
+		super.setup();
+
 		setupIdentityDao = EasyMock.createMock(SetupIdentityDao.class);
 		certService = new BCCertificateService();
 		keystoreService = new DefaultKeystoreService(setupIdentityDao, certService);
 		keystoreService.setKeyStorePath(KEYSTORE_PATH);
 
-		httpServer = new Server(0);
-		httpServer.start();
-
 		service = new DefaultSetupService(setupIdentityDao);
 		service.setPkiService(keystoreService);
-	}
-
-	private int getHttpServerPort() {
-		return httpServer.getConnectors()[0].getLocalPort();
 	}
 
 	private void replayAll() {
@@ -141,7 +137,6 @@ public class DefaultSetupServiceTest {
 	@After
 	public void cleanup() throws Exception {
 		new File(KEYSTORE_PATH).delete();
-		httpServer.stop();
 		EasyMock.verify(setupIdentityDao);
 	}
 
@@ -265,38 +260,43 @@ public class DefaultSetupServiceTest {
 		}
 
 		// now let's renew!
-		AbstractTestHandler handler = new AbstractTestHandler() {
+		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(String target, HttpServletRequest request,
-					HttpServletResponse response, int dispatch) throws Exception {
-				assertEquals("POST", request.getMethod());
-				assertEquals("/solarin/api/v1/sec/cert/renew", target);
-				String password = request.getParameter("password");
-				assertEquals("foobar", password);
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				assertThat(request.getMethod(), is(equalTo("POST")));
+				assertThat(request.getHttpURI().getPath(),
+						is(equalTo("/solarin/api/v1/sec/cert/renew")));
 
-				String keystoreData = request.getParameter("keystore");
-				assertNotNull(keystoreData);
+				MultiMap<String> queryParams = UrlEncoded.decodeQuery(getRequestBody(request));
+
+				String password = queryParams.getValue("password");
+				assertThat(password, is(equalTo("foobar")));
+
+				String keystoreData = queryParams.getValue("keystore");
+				assertThat(password, is(notNullValue()));
+
 				byte[] data = Base64.decodeBase64(keystoreData);
 				KeyStore keyStore = KeyStore.getInstance("pkcs12");
 				keyStore.load(new ByteArrayInputStream(data), password.toCharArray());
 				Certificate cert = keyStore.getCertificate("node");
-				assertNotNull(cert);
-				assertTrue(cert instanceof X509Certificate);
-				X509Certificate nodeCert = (X509Certificate) cert;
-				assertEquals(new X500Principal(TEST_DN), nodeCert.getSubjectX500Principal());
-				assertEquals(CA_CERT.getSubjectX500Principal(), nodeCert.getIssuerX500Principal());
+				assertThat(cert, is(notNullValue()));
+				assertThat(cert, is(instanceOf(X509Certificate.class)));
 
-				response.setContentType("application/json");
-				PrintWriter out = response.getWriter();
-				out.write("{\"success\":true}");
-				out.flush();
-				response.flushBuffer();
+				X509Certificate nodeCert = (X509Certificate) cert;
+				assertThat(nodeCert.getSubjectX500Principal(), is(equalTo(new X500Principal(TEST_DN))));
+				assertThat(nodeCert.getIssuerX500Principal(),
+						is(equalTo(CA_CERT.getSubjectX500Principal())));
+
+				respondWithJson(request, response, """
+						{"success":true}""");
+
 				return true;
 			}
 
 		};
-		httpServer.addHandler(handler);
+		addHandler(handler);
 
 		service.renewNetworkCertificate("foobar");
 	}
@@ -308,27 +308,24 @@ public class DefaultSetupServiceTest {
 				getHttpServerPort(), false, TEST_PW_VALUE);
 		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
 
-		AbstractTestHandler handler = new AbstractTestHandler() {
+		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
-			protected boolean handleInternal(String target, HttpServletRequest request,
-					HttpServletResponse response, int dispatch) throws Exception {
-				assertEquals("GET", request.getMethod());
-				assertEquals("/solarin/identity.do", target);
-				response.setContentType("text/xml");
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				assertThat(request.getMethod(), is(equalTo("GET")));
+				assertThat(request.getHttpURI().getPath(), is(equalTo("/solarin/identity.do")));
 
 				byte[] xml = FileCopyUtils.copyToByteArray(
 						DefaultSetupServiceTest.class.getResourceAsStream("identity-01.xml"));
 
-				OutputStream out = response.getOutputStream();
-				FileCopyUtils.copy(xml, out);
-				out.flush();
-				response.flushBuffer();
+				respondWithContent(request, response, "text/xml", xml);
+
 				return true;
 			}
 
 		};
-		httpServer.addHandler(handler);
+		addHandler(handler);
 
 		replayAll();
 

@@ -76,13 +76,13 @@ import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.util.DateUtils;
 import net.solarnetwork.util.IntRangeSet;
-import net.solarnetwork.web.service.HttpRequestCustomizerService;
+import net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService;
 
 /**
  * Test cases for the {@link SolarQueryTariffScheduleProvider} class.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SolarQueryTariffScheduleProviderTests {
 

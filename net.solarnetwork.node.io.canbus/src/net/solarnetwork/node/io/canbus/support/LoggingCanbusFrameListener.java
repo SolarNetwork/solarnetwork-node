@@ -32,7 +32,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
@@ -46,12 +48,14 @@ import net.solarnetwork.util.ByteUtils;
  * Listener that logs messages to a file.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.1
  */
 public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeable {
 
 	private static final Logger log = LoggerFactory.getLogger(LoggingCanbusFrameListener.class);
+
+	private static final Clock clock = Clock.tickMillis(ZoneOffset.UTC);
 
 	private final String busName;
 	private final Path logFile;
@@ -127,7 +131,7 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeabl
 		if ( closed ) {
 			return;
 		}
-		final Instant now = Instant.now();
+		final Instant now = clock.instant();
 		if ( !inlineDate ) {
 			out.print("# ");
 		}

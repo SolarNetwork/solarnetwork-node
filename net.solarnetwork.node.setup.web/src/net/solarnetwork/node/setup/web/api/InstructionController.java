@@ -1,21 +1,21 @@
 /* ==================================================================
  * InstructionController.java - 7/09/2023 5:10:49 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,7 +30,8 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,7 +54,7 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * API controller for local instruction handling.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 3.3
@@ -62,20 +63,23 @@ import net.solarnetwork.service.OptionalService;
 @RequestMapping("/api/v1/sec/instr")
 public class InstructionController {
 
-	@Resource(name = "instructionExecutionService")
+	@Autowired
+	@Qualifier("instructionExecutionService")
 	private OptionalService<InstructionExecutionService> instructionService;
 
-	@Resource(name = "reactorService")
+	@Autowired
+	@Qualifier("reactorService")
 	private OptionalService<ReactorService> reactorService;
 
-	@Resource(name = "instructionDao")
+	@Autowired
+	@Qualifier("instructionDao")
 	private OptionalService<InstructionDao> instructionDao;
 
 	private final IdentityService identityService;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param identityService
 	 *        the identity service
 	 */
@@ -86,7 +90,7 @@ public class InstructionController {
 
 	/**
 	 * Enqueue a new instruction.
-	 * 
+	 *
 	 * @param input
 	 *        the instruction data to add to the queue
 	 * @return the node instruction
@@ -98,7 +102,7 @@ public class InstructionController {
 
 	/**
 	 * Enqueue a new instruction.
-	 * 
+	 *
 	 * @param input
 	 *        the instruction data to add to the queue
 	 * @return the node instruction
@@ -110,12 +114,12 @@ public class InstructionController {
 
 	/**
 	 * Enqueue a new instruction.
-	 * 
+	 *
 	 * <p>
 	 * This API call exists to help with API path-based security policy
 	 * restrictions, to allow a policy to restrict which topics can be enqueued.
 	 * </p>
-	 * 
+	 *
 	 * @param topic
 	 *        the instruction topic
 	 * @param input
@@ -166,7 +170,7 @@ public class InstructionController {
 
 	/**
 	 * View a single instruction, based on its primary key.
-	 * 
+	 *
 	 * @param instructionId
 	 *        the ID of the instruction to view
 	 * @param source
@@ -182,7 +186,7 @@ public class InstructionController {
 
 	/**
 	 * View a set of instructions, based on their primary keys.
-	 * 
+	 *
 	 * @param instructionIds
 	 *        the IDs of the instructions to view
 	 * @param source
@@ -230,7 +234,7 @@ public class InstructionController {
 
 	/**
 	 * Update the state of an existing instruction.
-	 * 
+	 *
 	 * @param instructionId
 	 *        the ID of the instruction to update
 	 * @param source
@@ -250,7 +254,7 @@ public class InstructionController {
 
 	/**
 	 * Update the state of an existing instruction.
-	 * 
+	 *
 	 * @param instructionIds
 	 *        the IDs of the instructions to update
 	 * @param source
@@ -283,7 +287,7 @@ public class InstructionController {
 
 	/**
 	 * Set the instruction service.
-	 * 
+	 *
 	 * @param instructionService
 	 *        the service to set
 	 */
@@ -293,7 +297,7 @@ public class InstructionController {
 
 	/**
 	 * Set the reactor service.
-	 * 
+	 *
 	 * @param reactorService
 	 *        the service to set
 	 */
@@ -303,7 +307,7 @@ public class InstructionController {
 
 	/**
 	 * Set the instruction DAO.
-	 * 
+	 *
 	 * @param instructionDao
 	 *        the DAO to set
 	 */

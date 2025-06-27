@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html data-th-replace="~{layout :: layout(~{::title}, ~{::body}, ~{footer-top :: content}, 'controls')}"
+	xmlns:snode="http://solarnetwork.net/taglib/thymeleaf-solarnode-setup">
+<head>
+    <title data-th-text="#{app.title(#{controls.manage.title(${controlId})})}">SolarNode Manage Control</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../../../css/bootstrap.css">
+	<link rel="stylesheet" href="../../../css/solarnode.css">
+	<link rel="stylesheet" href="../../../css/fonts.css">
+	<link rel="stylesheet" href="../../../css/bootstrap-icons.css">
+</head>
+<body data-th-remove="tag">
+
+<section class="intro">
+	<h2 data-th-text="#{controls.manage.title(${controlId})}">
+		Manage my/control Control
+	</h2>
+	<p data-th-utext="#{controls.manage.intro(${controlId})}">
+		Manage control my/control here.
+	</p>
+	<a href="/a/controls" class="btn btn-secondary" data-th-href="@{/a/controls}">
+		<i class="bi bi-arrow-left"></i>
+		<span data-th-text="#{back.label}"></span>
+	</a>
+</section>
+<p data-th-unless="${info}" data-th-text="#{controls.manage.missing}">
+	Control not available.
+</p>
+<section id="status" data-th-if="${info}">
+	<h2 data-th-text="#{controls.manage.status.title}">Control Status</h2>
+	<p data-th-utext="#{controls.manage.status.intro}">
+		Manage control here.
+	</p>
+	<table class="table">
+		<tbody>
+			<tr>
+				<td><strong data-th-text="#{controls.info.type.label}">Type</strong></td>
+				<td data-th-text="${info.type}">
+					Boolean
+				</td>
+			</tr>
+			<tr>
+				<td><strong data-th-text="#{controls.info.value.label}">Value</strong></td>
+				<td data-th-text="${info.value}">
+					true
+				</td>
+			</tr>
+			<tr>
+				<td><strong data-th-text="#{controls.info.modifiable.label}">Modifiable</strong></td>
+				<td data-th-text="${!info.readonly}">
+					true
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</section>
+<section id="instruct" data-th-if="${info != null and not info.readonly}">
+	<h2 data-th-text="#{controls.manage.SetControlParameter.title}">Set Control Value</h2>
+	<p data-th-utest="#{controls.manage.SetControlParameter.intro}">
+		Set the control value.
+	</p>
+	<form action="/a/controls/setControlParameter" method="post" data-th-action="@{/a/controls/setControlParameter}">
+		<fieldset class="row">
+			<label class="col-sm-2 col-md-1 col-form-label" for="SetControlParameter-parameterValue"
+					data-th-text="#{controls.manage.SetControlParameter.parameterValue}">
+				Value
+			</label>
+			<div class="col-6">
+				<div class="input-group">
+					<input class="form-control" type="text" name="parameterValue" id="SetControlParameter-parameterValue" maxLength="255" value="">
+					<button type="submit" class="btn btn-primary" id="submit"
+							data-th-text="#{controls.manage.SetControlParameter.submit}">Submit</button>
+				</div>
+			</div>
+		</fieldset>
+		<input type="hidden" name="controlId" data-th-value="${controlId}"/>
+	</form>
+</section>
+
+</body>
+</html>

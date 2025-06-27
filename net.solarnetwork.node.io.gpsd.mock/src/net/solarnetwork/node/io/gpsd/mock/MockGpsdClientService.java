@@ -1,21 +1,21 @@
 /* ==================================================================
  * MockGpsdClientService.java - 30/08/2021 10:27:33 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,10 +24,10 @@ package net.solarnetwork.node.io.gpsd.mock;
 
 import static java.lang.String.valueOf;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,9 +64,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Mock implementation of {@link GpsdClientConnection} for testing purposes.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class MockGpsdClientService extends BasicIdentifiable
 		implements GpsdClientConnection, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -120,7 +120,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler to use
 	 * @throws IllegalArgumentException
@@ -145,9 +145,9 @@ public class MockGpsdClientService extends BasicIdentifiable
 		if ( updatePeriodMs < 1 ) {
 			return;
 		}
-		Date start = Date.from(Instant.now().truncatedTo(ChronoUnit.MINUTES).plusMillis(fixDelayMs));
-		taskStart = start.getTime();
-		taskFuture = taskScheduler.scheduleAtFixedRate(this, start, updatePeriodMs);
+		Instant start = Instant.now().truncatedTo(ChronoUnit.MINUTES).plusMillis(fixDelayMs);
+		taskStart = start.toEpochMilli();
+		taskFuture = taskScheduler.scheduleAtFixedRate(this, start, Duration.ofMillis(updatePeriodMs));
 		postClientStatusChangeEvent(GpsdClientStatus.Connected);
 	}
 
@@ -170,7 +170,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Return a base number randomly varied +- by a given variation.
-	 * 
+	 *
 	 * @param age
 	 *        the age since startup
 	 * @param base
@@ -368,7 +368,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the GPS update period.
-	 * 
+	 *
 	 * @return the update period, in milliseconds
 	 */
 	public long getUpdatePeriodMs() {
@@ -377,7 +377,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the GPS update period, in milliseconds.
-	 * 
+	 *
 	 * @param updatePeriodMs
 	 *        the period to set; setting to {@literal 0} will disable updates
 	 */
@@ -387,7 +387,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the {@link EventAdmin} service.
-	 * 
+	 *
 	 * @return the EventAdmin service
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
@@ -396,7 +396,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set an {@link EventAdmin} service to use.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the EventAdmin to use
 	 */
@@ -406,7 +406,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the base elevation.
-	 * 
+	 *
 	 * @return the elevation
 	 */
 	public double getElevation() {
@@ -415,7 +415,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the base elevation.
-	 * 
+	 *
 	 * @param elevation
 	 *        the elevation to set
 	 */
@@ -425,7 +425,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the base latitude.
-	 * 
+	 *
 	 * @return the latitude
 	 */
 	public double getLatitude() {
@@ -434,7 +434,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the base latitude.
-	 * 
+	 *
 	 * @param latitude
 	 *        the latitude to set
 	 */
@@ -444,7 +444,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the base longitude.
-	 * 
+	 *
 	 * @return the longitude
 	 */
 	public double getLongitude() {
@@ -453,7 +453,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the base longitude.
-	 * 
+	 *
 	 * @param longitude
 	 *        the longitude to set
 	 */
@@ -463,7 +463,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the elevation variation.
-	 * 
+	 *
 	 * @return the variation
 	 */
 	public double getElevationVariation() {
@@ -472,7 +472,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the elevation variation.
-	 * 
+	 *
 	 * @param elevationVariation
 	 *        the variation to set
 	 */
@@ -482,7 +482,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the latitude variation.
-	 * 
+	 *
 	 * @return the variation
 	 */
 	public double getLatitudeVariation() {
@@ -491,7 +491,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the latitude variation.
-	 * 
+	 *
 	 * @param latitudeVariation
 	 *        the variation to set
 	 */
@@ -501,7 +501,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the longitude variation.
-	 * 
+	 *
 	 * @return the variation
 	 */
 	public double getLongitudeVariation() {
@@ -510,7 +510,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the longitude variation.
-	 * 
+	 *
 	 * @param longitudeVariation
 	 *        the variation to set
 	 */
@@ -520,7 +520,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the fix delay.
-	 * 
+	 *
 	 * @return the fix delay, in milliseconds
 	 */
 	public long getFixDelayMs() {
@@ -529,7 +529,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the fix delay.
-	 * 
+	 *
 	 * @param fixDelayMs
 	 *        the delay to set, in milliseconds
 	 */
@@ -539,7 +539,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the fix lock.
-	 * 
+	 *
 	 * @return the fix lock duration, in milliseconds
 	 */
 	public long getFixLockMs() {
@@ -548,7 +548,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the fix lock.
-	 * 
+	 *
 	 * @param fixLockMs
 	 *        the fix lock to set, in milliseconds
 	 */
@@ -558,7 +558,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Get the fix unlocked variation multiplier.
-	 * 
+	 *
 	 * @return the multiplier
 	 */
 	public double getFixUnlockedVariationMultiplier() {
@@ -567,7 +567,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 
 	/**
 	 * Set the fix unlocked variation multiplier.
-	 * 
+	 *
 	 * @param fixUnlockedVariationMultiplier
 	 *        the multiplier to set
 	 */

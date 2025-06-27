@@ -26,6 +26,7 @@ package net.solarnetwork.node.dao;
 
 import java.util.Date;
 import java.util.List;
+import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.SettingNote;
@@ -45,7 +46,7 @@ import net.solarnetwork.node.domain.SettingNote;
  * </p>
  *
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public interface SettingDao extends BatchableDao<Setting> {
 

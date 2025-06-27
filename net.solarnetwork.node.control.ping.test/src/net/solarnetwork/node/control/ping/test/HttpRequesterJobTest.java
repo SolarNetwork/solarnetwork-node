@@ -1,21 +1,21 @@
 /* ==================================================================
  * HttpRequesterJobTest.java - Jul 21, 2013 8:32:24 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,31 +28,27 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.concurrent.CompletableFuture;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
-import org.junit.After;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.Callback;
 import org.junit.Before;
 import org.junit.Test;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.control.ping.HttpRequesterJob;
 import net.solarnetwork.node.reactor.BasicInstruction;
@@ -63,23 +59,21 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.SimpleInstructionExecutionService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.test.http.AbstractHttpServerTests;
 
 /**
  * Unit tests for the {@link HttpRequesterJob} class.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
-public class HttpRequesterJobTest {
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
+public class HttpRequesterJobTest extends AbstractHttpServerTests {
 
 	private static final String TEST_CONTROL_ID = "/test/toggle";
 
 	private InstructionHandler handler;
-	private Server server;
 
-	private class TestHandler extends AbstractHandler {
+	private class TestHandler extends Handler.Abstract {
 
 		private int count;
 
@@ -89,13 +83,13 @@ public class HttpRequesterJobTest {
 		}
 
 		@Override
-		public void handle(String target, HttpServletRequest request, HttpServletResponse response,
-				int dispatch) throws IOException, ServletException {
-			log.debug("Request query: {}", request.getQueryString());
+		public boolean handle(Request request, Response response, Callback callback) throws Exception {
+			count++;
+			log.debug("Request query: {}", request.getHttpURI().getQuery());
 			assertThat("HTTP method", request.getMethod(), is("HEAD"));
 			response.setStatus(HttpServletResponse.SC_OK);
-			((Request) request).setHandled(true);
-			count++;
+			callback.completeWith(CompletableFuture.completedFuture(null));
+			return true;
 		}
 
 		private int getCount() {
@@ -106,7 +100,7 @@ public class HttpRequesterJobTest {
 	private HttpRequesterJob newJobInstance() {
 		HttpRequesterJob job = new HttpRequesterJob();
 		job.setControlId(TEST_CONTROL_ID);
-		job.setUrl("http://localhost:8988/");
+		job.setUrl(getHttpServerBaseUrl());
 		job.setInstructionExecutionService(new StaticOptionalService<>(
 				new SimpleInstructionExecutionService(singletonList(handler))));
 		job.setSleepSeconds(0);
@@ -118,24 +112,17 @@ public class HttpRequesterJobTest {
 		return job;
 	}
 
+	@Override
 	@Before
-	public void setup() throws Exception {
+	public void setup() {
+		super.setup();
 		handler = EasyMock.createMock(InstructionHandler.class);
-		server = new Server(8988);
-		server.start();
-	}
-
-	@After
-	public void teardown() throws Exception {
-		if ( server != null && server.isRunning() ) {
-			server.stop();
-		}
 	}
 
 	@Test
 	public void pingSuccessful() throws Exception {
 		final TestHandler httpHandler = new TestHandler();
-		server.setHandler(httpHandler);
+		addHandler(httpHandler);
 		replay(handler);
 		HttpRequesterJob job = newJobInstance();
 		job.executeJobService();
@@ -147,7 +134,7 @@ public class HttpRequesterJobTest {
 	public void pingSuccessful_opModes() throws Exception {
 		// GIVEN
 		final TestHandler httpHandler = new TestHandler();
-		server.setHandler(httpHandler);
+		addHandler(httpHandler);
 
 		final OperationalModesService opModesService = EasyMock
 				.createMock(OperationalModesService.class);
@@ -173,7 +160,7 @@ public class HttpRequesterJobTest {
 	@Test
 	public void pingFailure() throws Exception {
 		final TestHandler httpHandler = new TestHandler();
-		server.stop();
+		stopHttpServer();
 		Capture<BasicInstruction> instructions = Capture.newInstance(CaptureType.ALL);
 		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
 				.andReturn(Boolean.TRUE);
@@ -217,7 +204,7 @@ public class HttpRequesterJobTest {
 	public void pingFailure_opModes() throws Exception {
 		// GIVEN
 		final TestHandler httpHandler = new TestHandler();
-		server.stop();
+		stopHttpServer();
 		Capture<BasicInstruction> instructions = Capture.newInstance(CaptureType.ALL);
 		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
 				.andReturn(Boolean.TRUE);
@@ -276,7 +263,7 @@ public class HttpRequesterJobTest {
 	public void systemConfigure_success() throws Exception {
 		// GIVEN
 		final TestHandler httpHandler = new TestHandler();
-		server.setHandler(httpHandler);
+		addHandler(httpHandler);
 		HttpRequesterJob job = newJobInstance();
 
 		// WHEN
@@ -303,16 +290,17 @@ public class HttpRequesterJobTest {
 	@Test
 	public void systemConfigure_statusError() throws Exception {
 		// GIVEN
-		final AbstractHandler httpHandler = new AbstractHandler() {
+		final Handler.Abstract httpHandler = new Handler.Abstract() {
 
 			@Override
-			public void handle(String target, HttpServletRequest request, HttpServletResponse response,
-					int dispatch) throws IOException, ServletException {
+			public boolean handle(Request request, Response response, Callback callback)
+					throws Exception {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				((Request) request).setHandled(true);
+				callback.completeWith(CompletableFuture.completedFuture(null));
+				return true;
 			}
 		};
-		server.setHandler(httpHandler);
+		addHandler(httpHandler);
 		HttpRequesterJob job = newJobInstance();
 
 		// WHEN
@@ -341,7 +329,7 @@ public class HttpRequesterJobTest {
 	@Test
 	public void systemConfigure_error() throws Exception {
 		// GIVEN
-		server.stop();
+		stopHttpServer();
 		HttpRequesterJob job = newJobInstance();
 
 		// WHEN

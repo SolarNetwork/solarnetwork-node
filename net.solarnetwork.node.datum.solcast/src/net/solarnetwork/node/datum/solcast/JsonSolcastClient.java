@@ -1,21 +1,21 @@
 /* ==================================================================
  * JsonSolcastClient.java - 14/10/2022 9:51:33 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,7 +28,6 @@ import java.net.URLConnection;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -43,9 +42,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Basic JSON client implementation of {@link SolcastClient}.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class JsonSolcastClient extends JsonHttpClientSupport
 		implements ConfigurableSolcastClient, Consumer<URLConnection> {
@@ -65,7 +64,7 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 	}
 
 	private UriComponentsBuilder uri(String path) {
-		return UriComponentsBuilder.fromHttpUrl(baseUrl).path(path);
+		return UriComponentsBuilder.fromUriString(baseUrl).path(path);
 	}
 
 	@Override
@@ -133,8 +132,7 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 				} else if ( !ts.isAfter(now) && (mostRecentOnOrBeforeNow == null
 						|| ts.isAfter(mostRecentOnOrBeforeNow.getTimestamp())) ) {
 					DatumSamples s = new DatumSamples();
-					for ( Iterator<Entry<String, JsonNode>> itr = node.fields(); itr.hasNext(); ) {
-						Entry<String, JsonNode> f = itr.next();
+					for ( final Entry<String, JsonNode> f : node.properties() ) {
 						String fieldName = f.getKey();
 						JsonNode n = f.getValue();
 						if ( "period_end".equals(fieldName) ) {
@@ -207,7 +205,7 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 
 	/**
 	 * Get the base URL to the Solcasts API.
-	 * 
+	 *
 	 * @return the base URL
 	 */
 	public String getBaseUrl() {
@@ -216,7 +214,7 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 
 	/**
 	 * Set the base URL to the Solcasts API
-	 * 
+	 *
 	 * @param baseUrl
 	 *        the base URL to set
 	 */

@@ -3,27 +3,27 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Yaskawa Device Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.yaskawa
 Bundle-Description: Hardware support for Yaskawa devices.
-Bundle-Version: 3.2.1
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Automatic-Module-Name: net.solarnetwork.node.hw.yaskawa
 Main-Class: net.solarnetwork.node.hw.yaskawa.ecb.app.Cmdline
 Export-Package: 
  net.solarnetwork.node.hw.yaskawa.ecb;version="3.1.0",
  net.solarnetwork.node.hw.yaskawa.mb.inverter;version="3.2.0"
 Import-Package: 
- net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.hw.sunspec;version="[3.0,4.0)",
  net.solarnetwork.node.hw.sunspec.inverter;version="[3.2,4.0)",
- net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
  net.solarnetwork.node.io.serial;version="[3.0,4.0)",
  net.solarnetwork.node.io.serial.rxtx;version="[3.0,4.0)";resolution:=optional,
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
- net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.apache.commons.codec;version="[1.7,2.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",

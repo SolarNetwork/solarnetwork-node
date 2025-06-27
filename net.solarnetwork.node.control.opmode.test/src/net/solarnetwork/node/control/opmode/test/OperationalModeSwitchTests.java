@@ -30,6 +30,7 @@ import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_
 import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
@@ -38,7 +39,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;

@@ -33,7 +33,8 @@ SolarNode.Settings.reset = function() {
 SolarNode.Settings.updateSetting = function(params, value) {
 	//providerKey, key, domID, value) {
 	var updates = SolarNode.Settings.updates;
-	var instance = (params.instance !== undefined && params.instance !== '' ? params.instance : undefined);
+	var instance = (params.instance !== undefined && params.instance !== '' && params.instance !== null
+		? params.instance : undefined);
 	var providerKey = params.provider;
 	if ( instance !== undefined ) {
 		providerKey += '.'+instance;

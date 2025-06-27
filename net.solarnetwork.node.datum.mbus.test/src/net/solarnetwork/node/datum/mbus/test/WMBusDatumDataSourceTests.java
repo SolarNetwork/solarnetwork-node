@@ -24,9 +24,9 @@ package net.solarnetwork.node.datum.mbus.test;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;

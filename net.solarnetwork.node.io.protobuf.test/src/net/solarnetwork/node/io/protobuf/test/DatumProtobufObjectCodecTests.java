@@ -24,9 +24,9 @@ package net.solarnetwork.node.io.protobuf.test;
 
 import static java.util.Collections.singleton;
 import static net.solarnetwork.node.io.protobuf.DatumProtobufObjectCodec.RESOURCE_KEY_PROTO_FILES;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import org.apache.commons.codec.binary.Hex;

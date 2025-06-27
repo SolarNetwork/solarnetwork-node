@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.node.service.SystemHealthService;
 import net.solarnetwork.node.service.SystemHealthService.PingTestResults;
-import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Web API for ping tests.

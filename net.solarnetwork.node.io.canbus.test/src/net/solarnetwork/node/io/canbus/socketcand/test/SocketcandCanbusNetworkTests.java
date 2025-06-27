@@ -1,21 +1,21 @@
 /* ==================================================================
  * SocketcandCanbusNetworkTests.java - 9/05/2022 1:55:25 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,12 +24,12 @@ package net.solarnetwork.node.io.canbus.socketcand.test;
 
 import static java.lang.String.format;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,7 +60,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link SocketcandCanbusNetwork} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -69,7 +69,7 @@ public class SocketcandCanbusNetworkTests {
 	private static final String TEST_CAN_BUS_NAME = "can0";
 
 	private static final Pattern DEBUG_LOG_PAT = Pattern.compile(
-			"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z \\((\\d+)\\.(\\d{6})\\) can0 (\\d+)#([0-9A-F]*)");
+			"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3,6}Z \\((\\d+)\\.(\\d{6})\\) can0 (\\d+)#([0-9A-F]*)");
 
 	private CanbusSocketProvider socketProvider;
 	private Executor executor;

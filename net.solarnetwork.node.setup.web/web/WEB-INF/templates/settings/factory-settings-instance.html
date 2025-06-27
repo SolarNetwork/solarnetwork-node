@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<!--/*
+	Inputs:
+	
+	factory 			- the provider factory
+	instance 			- Entry< instanceId, FactorySettingSpecifierProvider>
+	instanceId			- instance ID
+	instanceStatus		- instance iterator status (e.g. instanceStatus.index)
+	provider 			- instance.value (FactorySettingSpecifierProvider)
+	settingsService		- the settings service
+*/-->
+<body>
+<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
+	<div data-th-replace="~{settings/setting-control :: content('m' + ${instanceStatus.index} + 's0i' + ${settingStatus.index})}"></div>
+</div>
+</body>
+</html>
