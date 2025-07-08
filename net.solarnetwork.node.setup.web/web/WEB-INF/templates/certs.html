@@ -26,9 +26,9 @@
 	<tbody>
 		<tr>
 			<td>
-				<span class="label label-danger" data-th-if="${nodeCertExpired}" data-th-text="#{certs.status.expired}">Expired</span>
-				<span class="label label-success" data-th-if="${nodeCertValid}" data-th-text="#{certs.status.valid}">Valid</span>
-				<span class="label label-warning" data-th-unless="${nodeCertExpired or nodeCertValid}" data-th-text="#{certs.status.pending}">Pending</span>
+				<span class="badge bg-danger" data-th-if="${nodeCertExpired}" data-th-text="#{certs.status.expired}">Expired</span>
+				<span class="badge bg-success" data-th-if="${nodeCertValid}" data-th-text="#{certs.status.valid}">Valid</span>
+				<span class="badge bg-warning text-dark" data-th-unless="${nodeCertExpired or nodeCertValid}" data-th-text="#{certs.status.pending}">Pending</span>
 			</td>
 			<td>
 				
