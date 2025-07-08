@@ -223,5 +223,13 @@ POST /solaruser/api/v1/sec/instr/add/SetControlParameter
 {"nodeId":123,"params":{"test/float":"29.0"}}
 ```
 
+### `DemandBalanceGeneration` instruction support
+
+The [`DemandBalanceGeneration`][DemandBalanceGeneration] instruction is also supported, which
+is a specialized variation of `SetControlParameter` where a single instruction parameter named
+the **Control ID** you configured for the control and the desired integer percentage as the
+parameter value.
+
 [instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
 [SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
+[DemandBalanceGeneration]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#demandbalancegeneration

@@ -85,8 +85,12 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Read and write a Modbus "coil" or "holding" type register.
  *
+ * The {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction is supported,
+ * by setting the control matching the instruction parameter to the associated
+ * parameter value, assumed to be an integer percentage.
+ *
  * @author matt
- * @version 3.6
+ * @version 3.7
  */
 public class ModbusControl extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -540,14 +544,14 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
+		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic)
+				|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(topic);
 	}
 
 	@Override
 	public InstructionStatus processInstruction(Instruction instruction) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
-		if ( !InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic())
-				|| configs == null || configs.length < 1 ) {
+		if ( !handlesTopic(instruction.getTopic()) || configs == null || configs.length < 1 ) {
 			return null;
 		}
 		// look for a parameter name that matches a control ID
