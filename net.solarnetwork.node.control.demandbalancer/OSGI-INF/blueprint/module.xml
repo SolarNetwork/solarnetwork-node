@@ -96,7 +96,7 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
-									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="true"/>
 									<property name="propertyFilters">
 										<map>
 											<entry key="uid" value=""/>
@@ -108,7 +108,7 @@
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
-									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="true"/>
 									<property name="propertyFilters">
 										<map>
 											<entry key="uid" value=""/>
