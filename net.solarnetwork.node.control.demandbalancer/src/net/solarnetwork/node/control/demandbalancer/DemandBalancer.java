@@ -128,7 +128,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
 	private MessageSource messageSource;
 	private boolean collectPower = DEFAULT_COLLECT_POWER;
-	private Set<AcPhase> acEnergyPhaseFilter = EnumSet.copyOf(Collections.singleton(AcPhase.Total));
+	private Set<AcPhase> acEnergyPhaseFilter;
 
 	final Map<String, Object> stats = new LinkedHashMap<>(8);
 
