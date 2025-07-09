@@ -60,12 +60,12 @@ import net.solarnetwork.util.StringUtils;
  * This mock service implements both {@link NodeControlProvider} and
  * {@link InstructionHandler} to demonstrate a common pattern of control
  * providers implementing mutable controls. The control values can be changed
- * via a {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} instruction sent
- * to the node.
+ * via a {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} or
+ * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction sent to the node.
  * </p>
  *
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 public class MockNodeControlProvider extends BaseIdentifiable implements NodeControlProvider,
 		InstructionHandler, SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -153,7 +153,8 @@ public class MockNodeControlProvider extends BaseIdentifiable implements NodeCon
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
+		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic)
+				|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(topic);
 	}
 
 	@Override

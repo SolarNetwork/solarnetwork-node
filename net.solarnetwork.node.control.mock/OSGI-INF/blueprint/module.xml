@@ -47,6 +47,7 @@
 			<beans:entry key="instruction">
 				<beans:list>
 					<beans:value>SetControlParameter</beans:value>
+					<beans:value>DemandBalanceGeneration</beans:value>
 				</beans:list>
 			</beans:entry>
 		</osgix:service-properties>

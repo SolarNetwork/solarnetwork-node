@@ -113,17 +113,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	/** The {@code collectPower} property default value. */
 	public static final boolean DEFAULT_COLLECT_POWER = false;
 
-	/** The {@code powerControlId} property default value. */
-	public static final String DEFAULT_POWER_CONTROL_ID = "/power/pcm/1?percent";
-
 	/** The {@code powerMaximumWatts} property default value. */
 	public static final int DEFAULT_POWER_MAXIMUM_WATTS = 1000;
 
-	/** The {@code acEnergyPhaseFilter} property default value. */
-	public static final Set<AcPhase> DEFAULT_AC_ENERGY_PHASE_FILTER = EnumSet.of(AcPhase.Total);
-
 	private final OptionalService<InstructionExecutionService> instructionExecutionService;
-	private String powerControlId = DEFAULT_POWER_CONTROL_ID;
+	private String powerControlId;
 	private OptionalService<EventAdmin> eventAdmin;
 	private OptionalFilterableService<NodeControlProvider> powerControl;
 	private OptionalFilterableServiceCollection<DatumDataSource> powerDataSource;
@@ -134,7 +128,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
 	private MessageSource messageSource;
 	private boolean collectPower = DEFAULT_COLLECT_POWER;
-	private Set<AcPhase> acEnergyPhaseFilter = EnumSet.copyOf(Collections.singleton(AcPhase.Total));
+	private Set<AcPhase> acEnergyPhaseFilter;
 
 	final Map<String, Object> stats = new LinkedHashMap<>(8);
 
@@ -323,7 +317,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private InstructionState adjustLimit(final int desiredLimit) {
 		final InstructionExecutionService service = service(instructionExecutionService);
 		InstructionStatus result = null;
-		if ( service != null ) {
+		if ( service != null && powerControlId != null && !powerControlId.isBlank() ) {
 			final Instruction instr = InstructionUtils.createLocalInstruction(
 					InstructionHandler.TOPIC_DEMAND_BALANCE, powerControlId,
 					String.valueOf(desiredLimit));
@@ -480,13 +474,13 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		results.add(new BasicTextFieldSettingSpecifier(
 				"consumptionDataSource.propertyFilters['groupUid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier("acEnergyPhaseFilter",
-				commaDelimitedStringFromCollection(DEFAULT_AC_ENERGY_PHASE_FILTER)));
+				commaDelimitedStringFromCollection(null)));
 		results.add(new BasicToggleSettingSpecifier("collectPower", DEFAULT_COLLECT_POWER));
 		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['uid']", null,
 				false, "(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 		results.add(
 				new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['groupUid']", ""));
-		results.add(new BasicTextFieldSettingSpecifier("powerControlId", DEFAULT_POWER_CONTROL_ID));
+		results.add(new BasicTextFieldSettingSpecifier("powerControlId", null));
 		results.add(new BasicTextFieldSettingSpecifier("powerMaximumWatts",
 				String.valueOf(DEFAULT_POWER_MAXIMUM_WATTS)));
 
