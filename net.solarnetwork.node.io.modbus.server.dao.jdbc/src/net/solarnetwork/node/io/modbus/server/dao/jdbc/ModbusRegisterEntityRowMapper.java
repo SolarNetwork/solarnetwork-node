@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterKey;
  * Row mapper for {@link ModbusRegisterEntity} objects.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusRegisterEntityRowMapper implements RowMapper<ModbusRegisterEntity> {
 
@@ -52,9 +52,8 @@ public class ModbusRegisterEntityRowMapper implements RowMapper<ModbusRegisterEn
 	@Override
 	public ModbusRegisterEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
 		String serverId = rs.getString(1);
-		int unitId = Byte.toUnsignedInt(rs.getByte(2));
-		ModbusRegisterBlockType blockType = ModbusRegisterBlockType
-				.forCode(Byte.toUnsignedInt(rs.getByte(3)));
+		int unitId = rs.getInt(2);
+		ModbusRegisterBlockType blockType = ModbusRegisterBlockType.forCode(rs.getInt(3));
 		int addr = rs.getInt(4);
 		Instant created = JdbcUtils.getUtcTimestampColumnValue(rs, 5);
 		Instant modified = JdbcUtils.getUtcTimestampColumnValue(rs, 6);
