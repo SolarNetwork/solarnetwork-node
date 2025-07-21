@@ -66,9 +66,9 @@
 			
 			<div data-th-case="net.solarnetwork.settings.ToggleSettingSpecifier" data-th-remove="tag">
 			    <button type="button" class="toggle col-sm-3 btn"
-			    	data-th-classappend="${settingValue eq setting.trueValue ? 'btn-success active' : 'btn-light'}"
+			    	data-th-classappend="${#snUtils.isToggleSettingValueTrue(settingValue, setting)} ? 'btn-success active' : 'btn-light'"
 			    	data-th-id="${settingId}"
-			    	data-th-text="${settingValue eq  setting.trueValue} ? #{settings.toggle.on} : #{settings.toggle.off}">
+			    	data-th-text="${#snUtils.isToggleSettingValueTrue(settingValue, setting)} ? #{settings.toggle.on} : #{settings.toggle.off}">
 			    	On
 			    </button>
 				<script data-th-inline="javascript">
@@ -319,7 +319,7 @@
 							|| #snUtils.instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')}"
 					data-th-text="${not #snUtils.instanceOf(setting, 'net.solarnetwork.settings.ToggleSettingSpecifier')}
 						? ${settingValue}
-						: (${settingValue eq setting.trueValue}
+						: (${#snUtils.isToggleSettingValueTrue(settingValue, setting)}
 							? #{settings.toggle.on}
 							: #{settings.toggle.off})">
 					Value

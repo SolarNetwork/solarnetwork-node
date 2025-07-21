@@ -35,13 +35,15 @@ import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.settings.MarkupSetting;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.ToggleSettingSpecifier;
 import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Helper for SolarNode object utilities.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public final class SolarNodeUtils {
 
@@ -189,6 +191,35 @@ public final class SolarNodeUtils {
 			val = EscapedAttributeUtils.escapeAttribute(TemplateMode.HTML, val.toString());
 		}
 		return val;
+	}
+
+	/**
+	 * Test if a setting value equals the "truth" value of a
+	 * {@link ToggleSettingSpecifier}.
+	 *
+	 * @param settingValue
+	 *        the setting value to compare
+	 * @param setting
+	 *        the setting to compare to
+	 * @return {@code true} if {@code setting} is a
+	 *         {@link ToggleSettingSpecifier} and {@code settingValue} equals
+	 *         {@link ToggleSettingSpecifier#getTrueValue()}
+	 * @since 1.1
+	 */
+	public boolean isToggleSettingValueTrue(Object settingValue, SettingSpecifier setting) {
+		if ( settingValue == null || !(setting instanceof ToggleSettingSpecifier toggle) ) {
+			return false;
+		}
+		Object trueValue = toggle.getTrueValue();
+		// try boolean comparison first
+		if ( trueValue instanceof Boolean boolTrueValue ) {
+			if ( settingValue instanceof Boolean valueBoolean ) {
+				return valueBoolean.equals(boolTrueValue);
+			}
+			return StringUtils.parseBoolean(settingValue.toString()) == boolTrueValue;
+		}
+		// fall back to string comparison
+		return settingValue.toString().equals(trueValue.toString());
 	}
 
 	/**
