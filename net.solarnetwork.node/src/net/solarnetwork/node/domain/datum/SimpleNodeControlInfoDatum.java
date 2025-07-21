@@ -1,21 +1,21 @@
 /* ==================================================================
  * GeneralNodeControlInfoDatum.java - Dec 18, 2014 7:05:45 AM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,19 +25,21 @@ package net.solarnetwork.node.domain.datum;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Extension of {@link SimpleDatum} that wraps a {@link NodeControlInfo}
  * instance.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeControlInfo {
@@ -60,11 +62,11 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * This constructs a node datum.
 	 * </p>
-	 * 
+	 *
 	 * @param info
 	 *        the control info
 	 * @param timestamp
@@ -78,13 +80,13 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 
 	/**
 	 * Construct from a collection of {@link NodeControlInfo} instances.
-	 * 
+	 *
 	 * <p>
 	 * The {@code info} argument will serve as the primary delegate provide of
 	 * the {@link NodeControlInfo} API methods. All available properties from
 	 * {@code infos} will be added as datum properties.
 	 * </p>
-	 * 
+	 *
 	 * @param info
 	 *        the primary info
 	 * @param timestamp
@@ -125,7 +127,7 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 
 			case Integer:
 				// store as both instant and status
-				Integer val = Integer.valueOf(value);
+				Number val = NumberUtils.narrow(new BigInteger(value), 2);
 				ops.putSampleValue(Status, propertyName, val);
 				if ( propertyName.equals(DEFAULT_PROPERTY_NAME) ) {
 					ops.putSampleValue(Instantaneous, DEFAULT_INSTANT_PROPERTY_NAME, val);

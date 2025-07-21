@@ -91,7 +91,7 @@ import net.solarnetwork.util.StringUtils;
  * Modbus TCP server service.
  *
  * @author matt
- * @version 3.3
+ * @version 3.4
  */
 public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
@@ -260,7 +260,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 						start();
 					} catch ( Exception e ) {
 						stop();
-						log.error("Error binding Modbus server [{}] to {}:{}: {}", ModbusServer.this,
+						log.error("Error starting Modbus server [{}] on {}:{}: {}", description(),
 								bindAddress, port, e.toString());
 						if ( taskScheduler != null ) {
 							log.info("Will start Modbus server [{}] in {} seconds", description(),
@@ -284,6 +284,12 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	private void loadRegisterData() {
 		ModbusRegisterDao dao = service(registerDao);
 		if ( dao == null ) {
+			if ( daoRequired ) {
+				String msg = getMessageSource().getMessage("status.registerDaoMissing", null,
+						"ModbusRegisterDao missing.", Locale.getDefault());
+				throw new IllegalStateException(msg);
+			}
+
 			return;
 		}
 		String serviceId = getUid();
