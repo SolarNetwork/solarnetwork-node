@@ -50,10 +50,12 @@ import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.ControlRelayOutputBlock;
 import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Exception;
+import com.automatak.dnp3.DNPTime;
+import com.automatak.dnp3.Database;
 import com.automatak.dnp3.DatabaseConfig;
 import com.automatak.dnp3.DoubleBitBinaryInput;
 import com.automatak.dnp3.EventBufferConfig;
-import com.automatak.dnp3.FrozenCounter;
+import com.automatak.dnp3.Flags;
 import com.automatak.dnp3.Outstation;
 import com.automatak.dnp3.OutstationChangeSet;
 import com.automatak.dnp3.OutstationStackConfig;
@@ -65,7 +67,6 @@ import com.automatak.dnp3.enums.CommandStatus;
 import com.automatak.dnp3.enums.CounterQuality;
 import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
-import com.automatak.dnp3.enums.FrozenCounterQuality;
 import com.automatak.dnp3.enums.OperateType;
 import net.solarnetwork.domain.InstructionStatus;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
@@ -99,7 +100,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -523,6 +524,7 @@ public class OutstationService extends AbstractApplicationService
 			return null;
 		}
 		final long ts = timestamp.toEpochMilli();
+		final DNPTime dnpTs = new DNPTime(ts);
 		final Map<String, ?> datumProps = datum.getSampleData();
 		OutstationChangeSet changes = null;
 		if ( map != null ) {
@@ -534,14 +536,12 @@ public class OutstationService extends AbstractApplicationService
 					if ( sourceId.equals(config.getSourceId()) ) {
 						Object propVal = datumProps.get(config.getPropertyName());
 						if ( propVal != null ) {
-							if ( propVal instanceof Number ) {
+							if ( propVal instanceof Number n ) {
 								if ( config.getUnitMultiplier() != null ) {
-									propVal = applyUnitMultiplier((Number) propVal,
-											config.getUnitMultiplier());
+									propVal = applyUnitMultiplier(n, config.getUnitMultiplier());
 								}
 								if ( config.getDecimalScale() >= 0 ) {
-									propVal = applyDecimalScale((Number) propVal,
-											config.getDecimalScale());
+									propVal = applyDecimalScale(n, config.getDecimalScale());
 								}
 							}
 							if ( changes == null ) {
@@ -551,42 +551,37 @@ public class OutstationService extends AbstractApplicationService
 									itr.previousIndex(), sourceId, config.getPropertyName(), propVal);
 							switch (type) {
 								case AnalogInput:
-									if ( propVal instanceof Number ) {
-										changes.update(
-												new AnalogInput(((Number) propVal).doubleValue(),
-														(byte) AnalogQuality.ONLINE.toType(), ts),
+									if ( propVal instanceof Number n ) {
+										changes.update(new AnalogInput(n.doubleValue(),
+												new Flags((byte) AnalogQuality.ONLINE.toType()), dnpTs),
 												itr.previousIndex());
 									}
 									break;
 
 								case AnalogOutputStatus:
-									if ( propVal instanceof Number ) {
-										changes.update(
-												new AnalogOutputStatus(((Number) propVal).doubleValue(),
-														(byte) AnalogOutputStatusQuality.ONLINE.toType(),
-														ts),
-												itr.previousIndex());
+									if ( propVal instanceof Number n ) {
+										changes.update(new AnalogOutputStatus(n.doubleValue(), new Flags(
+												(byte) AnalogOutputStatusQuality.ONLINE.toType()),
+												dnpTs), itr.previousIndex());
 									}
 									break;
 
 								case BinaryInput:
-									changes.update(
-											new BinaryInput(booleanPropertyValue(propVal),
-													(byte) BinaryQuality.ONLINE.toType(), ts),
+									changes.update(new BinaryInput(booleanPropertyValue(propVal),
+											new Flags((byte) BinaryQuality.ONLINE.toType()), dnpTs),
 											itr.previousIndex());
 									break;
 
 								case BinaryOutputStatus:
 									changes.update(new BinaryOutputStatus(booleanPropertyValue(propVal),
-											(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
-											itr.previousIndex());
+											new Flags((byte) BinaryOutputStatusQuality.ONLINE.toType()),
+											dnpTs), itr.previousIndex());
 									break;
 
 								case Counter:
-									if ( propVal instanceof Number ) {
-										changes.update(
-												new Counter(((Number) propVal).longValue(),
-														(byte) CounterQuality.ONLINE.toType(), ts),
+									if ( propVal instanceof Number n ) {
+										changes.update(new Counter(n.longValue(),
+												new Flags((byte) CounterQuality.ONLINE.toType()), dnpTs),
 												itr.previousIndex());
 									}
 									break;
@@ -595,17 +590,13 @@ public class OutstationService extends AbstractApplicationService
 									changes.update(new DoubleBitBinaryInput(
 											booleanPropertyValue(propVal) ? DoubleBit.DETERMINED_ON
 													: DoubleBit.DETERMINED_OFF,
-											(byte) DoubleBitBinaryQuality.ONLINE.toType(), ts),
-											itr.previousIndex());
+											new Flags((byte) DoubleBitBinaryQuality.ONLINE.toType()),
+											dnpTs), itr.previousIndex());
 									break;
 
 								case FrozenCounter:
-									if ( propVal instanceof Number ) {
-										changes.update(
-												new FrozenCounter(((Number) propVal).longValue(),
-														(byte) FrozenCounterQuality.ONLINE.toType(), ts),
-												itr.previousIndex());
-									}
+									changes.freezeCounter(itr.previousIndex(),
+											booleanPropertyValue(propVal));
 									break;
 							}
 						}
@@ -635,14 +626,14 @@ public class OutstationService extends AbstractApplicationService
 								case Analog:
 									try {
 										Number n = null;
-										if ( propVal instanceof Number ) {
-											n = (Number) propVal;
+										if ( propVal instanceof Number num ) {
+											n = num;
 										} else {
 											n = new BigDecimal(propVal.toString());
 										}
-										changes.update(new AnalogOutputStatus(n.doubleValue(),
-												(byte) AnalogOutputStatusQuality.ONLINE.toType(), ts),
-												index);
+										changes.update(new AnalogOutputStatus(n.doubleValue(), new Flags(
+												(byte) AnalogOutputStatusQuality.ONLINE.toType()),
+												dnpTs), index);
 									} catch ( NumberFormatException e ) {
 										log.warn("Cannot convert control [{}] value [{}] to number: {}",
 												sourceId, propVal, e.getMessage());
@@ -651,8 +642,8 @@ public class OutstationService extends AbstractApplicationService
 
 								case Binary:
 									changes.update(new BinaryOutputStatus(booleanPropertyValue(propVal),
-											(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
-											index);
+											new Flags((byte) BinaryOutputStatusQuality.ONLINE.toType()),
+											dnpTs), index);
 									break;
 
 							}
@@ -727,14 +718,14 @@ public class OutstationService extends AbstractApplicationService
 		}
 
 		@Override
-		public CommandStatus operateCROB(ControlRelayOutputBlock command, int index,
+		public CommandStatus operate(ControlRelayOutputBlock command, int index, Database database,
 				OperateType opType) {
 			ControlConfig config = controlConfigForIndex(ControlType.Binary, index);
 			if ( config == null ) {
 				return CommandStatus.NOT_AUTHORIZED;
 			}
 			log.info("DNP3 outstation [{}] received CROB operation request {} on {}[{}] control [{}]",
-					getUid(), command.function, config.getType(), index, config.getControlId());
+					getUid(), command.opType, config.getType(), index, config.getControlId());
 			TaskExecutor executor = getTaskExecutor();
 			if ( executor != null ) {
 				executor.execute(new Runnable() {
@@ -746,7 +737,7 @@ public class OutstationService extends AbstractApplicationService
 						} catch ( Exception e ) {
 							log.error(
 									"Error processing DNP3 outstation [{}] operate request {} on {}[{}] control [{}]",
-									getUid(), command.function, config.getType(), index,
+									getUid(), command.opType, config.getType(), index,
 									config.getControlId(), e);
 						}
 					}
@@ -758,22 +749,26 @@ public class OutstationService extends AbstractApplicationService
 		}
 
 		@Override
-		public CommandStatus operateAOI16(AnalogOutputInt16 command, int index, OperateType opType) {
+		public CommandStatus operate(AnalogOutputInt16 command, int index, Database database,
+				OperateType opType) {
 			return handleAnalogOperation(command, index, "AnalogOutputInt16", command.value);
 		}
 
 		@Override
-		public CommandStatus operateAOI32(AnalogOutputInt32 command, int index, OperateType opType) {
+		public CommandStatus operate(AnalogOutputInt32 command, int index, Database database,
+				OperateType opType) {
 			return handleAnalogOperation(command, index, "AnalogOutputInt32", command.value);
 		}
 
 		@Override
-		public CommandStatus operateAOF32(AnalogOutputFloat32 command, int index, OperateType opType) {
+		public CommandStatus operate(AnalogOutputFloat32 command, int index, Database database,
+				OperateType opType) {
 			return handleAnalogOperation(command, index, "AnalogOutputFloat32", command.value);
 		}
 
 		@Override
-		public CommandStatus operateAOD64(AnalogOutputDouble64 command, int index, OperateType opType) {
+		public CommandStatus operate(AnalogOutputDouble64 command, int index, Database database,
+				OperateType opType) {
 			return handleAnalogOperation(command, index, "AnalogOutputDouble64", command.value);
 		}
 
@@ -826,7 +821,7 @@ public class OutstationService extends AbstractApplicationService
 			OperateType opType, ControlConfig config) {
 		final InstructionExecutionService service = OptionalService.service(instructionExecutionService);
 		Instruction instr = null;
-		switch (command.function) {
+		switch (command.opType) {
 			case LATCH_ON:
 				instr = InstructionUtils.createSetControlValueLocalInstruction(config.getControlId(),
 						Boolean.TRUE);
@@ -851,7 +846,7 @@ public class OutstationService extends AbstractApplicationService
 			} finally {
 				log.info(
 						"DNP3 outstation [{}] CROB operation request {} on {}[{}] control [{}] result: {}",
-						getUid(), command.function, config.getType(), index, config.getControlId(),
+						getUid(), command.opType, config.getType(), index, config.getControlId(),
 						result);
 			}
 		}
@@ -1149,13 +1144,15 @@ public class OutstationService extends AbstractApplicationService
 	public static void copySettings(com.automatak.dnp3.OutstationConfig from,
 			com.automatak.dnp3.OutstationConfig to) {
 		to.allowUnsolicited = from.allowUnsolicited;
-		to.indexMode = from.indexMode;
 		to.maxControlsPerRequest = from.maxControlsPerRequest;
 		to.maxRxFragSize = from.maxRxFragSize;
 		to.maxTxFragSize = from.maxTxFragSize;
 		to.selectTimeout = from.selectTimeout;
 		to.solConfirmTimeout = from.solConfirmTimeout;
-		to.unsolRetryTimeout = from.unsolRetryTimeout;
+		to.noDefferedReadDuringUnsolicitedNullResponse = from.noDefferedReadDuringUnsolicitedNullResponse;
+		to.numUnsolRetries = from.numUnsolRetries;
+		to.unsolConfirmTimeout = from.unsolConfirmTimeout;
+		to.typesAllowedInClass0 = from.typesAllowedInClass0;
 	}
 
 	/**

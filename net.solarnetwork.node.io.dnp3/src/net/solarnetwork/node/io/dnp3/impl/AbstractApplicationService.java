@@ -45,7 +45,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Abstract implementation of {@link OutstationService}.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class AbstractApplicationService extends BasicIdentifiable implements OutstationService {
 
@@ -170,10 +170,8 @@ public abstract class AbstractApplicationService extends BasicIdentifiable imple
 		to.isMaster = from.isMaster;
 		to.keepAliveTimeout = from.keepAliveTimeout;
 		to.localAddr = from.localAddr;
-		to.numRetry = from.numRetry;
 		to.remoteAddr = from.remoteAddr;
 		to.responseTimeout = from.responseTimeout;
-		to.useConfirms = from.useConfirms;
 	}
 
 	/**

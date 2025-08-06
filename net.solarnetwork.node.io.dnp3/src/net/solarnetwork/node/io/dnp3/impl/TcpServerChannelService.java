@@ -27,6 +27,7 @@ import java.util.List;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
+import com.automatak.dnp3.IPEndpoint;
 import com.automatak.dnp3.enums.ServerAcceptMode;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -36,7 +37,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * TCP based server (outstation) channel service.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class TcpServerChannelService extends AbstractChannelService<TcpServerChannelConfiguration>
 		implements SettingSpecifierProvider {
@@ -57,8 +58,8 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 	@Override
 	public Channel createChannel(TcpServerChannelConfiguration configuration) throws DNP3Exception {
 		return getManager().addTCPServer(getUid(), configuration.getLogLevels(),
-				ServerAcceptMode.CloseNew, configuration.getBindAddress(), configuration.getPort(),
-				this);
+				ServerAcceptMode.CloseNew,
+				new IPEndpoint(configuration.getBindAddress(), configuration.getPort()), this);
 	}
 
 	@Override

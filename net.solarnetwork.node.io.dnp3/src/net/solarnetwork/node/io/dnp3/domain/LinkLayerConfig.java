@@ -29,7 +29,7 @@ import java.time.Duration;
  * accessors to make it configurable via settings.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class LinkLayerConfig extends com.automatak.dnp3.LinkLayerConfig {
@@ -61,44 +61,6 @@ public class LinkLayerConfig extends com.automatak.dnp3.LinkLayerConfig {
 	 */
 	public void setMaster(boolean isMaster) {
 		this.isMaster = isMaster;
-	}
-
-	/**
-	 * Set the confirms mode.
-	 *
-	 * @return {@literal true} if confirm mode
-	 */
-	public boolean isUseConfirms() {
-		return useConfirms;
-	}
-
-	/**
-	 * Set the confirms mode.
-	 *
-	 * @param useConfirms
-	 *        {@literal true} if confirm mode
-	 */
-	public void setUseConfirms(boolean useConfirms) {
-		this.useConfirms = useConfirms;
-	}
-
-	/**
-	 * Get the retry count.
-	 *
-	 * @return the count
-	 */
-	public int getNumRetry() {
-		return numRetry;
-	}
-
-	/**
-	 * Set the retry count.
-	 *
-	 * @param numRetry
-	 *        the count
-	 */
-	public void setNumRetry(int numRetry) {
-		this.numRetry = numRetry;
 	}
 
 	/**
