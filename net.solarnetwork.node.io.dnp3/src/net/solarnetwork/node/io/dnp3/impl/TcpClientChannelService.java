@@ -1,7 +1,7 @@
 /* ==================================================================
- * TcpServerChannelService.java - 21/02/2019 5:51:37 pm
+ * TcpClientChannelService.java - 7/08/2025 11:53:20 am
  *
- * Copyright 2019 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,21 +25,21 @@ package net.solarnetwork.node.io.dnp3.impl;
 import java.util.ArrayList;
 import java.util.List;
 import com.automatak.dnp3.Channel;
+import com.automatak.dnp3.ChannelRetry;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
 import com.automatak.dnp3.IPEndpoint;
-import com.automatak.dnp3.enums.ServerAcceptMode;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
- * TCP based server (outstation) channel service.
+ * TCP based client (control center) channel service.
  *
  * @author matt
- * @version 2.0
+ * @version 1.0
  */
-public class TcpServerChannelService extends AbstractChannelService<TcpServerChannelConfiguration>
+public class TcpClientChannelService extends AbstractChannelService<TcpClientChannelConfiguration>
 		implements SettingSpecifierProvider {
 
 	/**
@@ -48,21 +48,14 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 	 * @param manager
 	 *        the manager
 	 */
-	public TcpServerChannelService(DNP3Manager manager) {
-		super(manager, new TcpServerChannelConfiguration());
-		setDisplayName("DNP3 server TCP");
+	public TcpClientChannelService(DNP3Manager manager) {
+		super(manager, new TcpClientChannelConfiguration());
+		setDisplayName("DNP3 client");
 	}
 
 	@Override
-	public Channel createChannel(TcpServerChannelConfiguration configuration) throws DNP3Exception {
-		final String uid = getUid();
-		if ( uid == null || uid.isBlank() ) {
-			log.warn("Missing UID: can not start DPN3 server channel.");
-			return null;
-		}
-		return getManager().addTCPServer(getUid(), configuration.getLogLevels(),
-				ServerAcceptMode.CloseNew,
-				new IPEndpoint(configuration.getBindAddress(), configuration.getPort()), this);
+	public String getSettingUid() {
+		return "net.solarnetwork.node.io.dnp3.client.tcp";
 	}
 
 	@Override
@@ -73,14 +66,27 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 
 		result.addAll(basicIdentifiableSettings("", "", null));
 
-		result.addAll(TcpServerChannelConfiguration.settings("config."));
+		result.addAll(TcpClientChannelConfiguration.settings("config."));
 
 		return result;
 	}
 
 	@Override
-	public String getSettingUid() {
-		return "net.solarnetwork.node.io.dnp3.tcp";
+	protected Channel createChannel(TcpClientChannelConfiguration configuration) throws DNP3Exception {
+		final String uid = getUid();
+		if ( uid == null || uid.isBlank() ) {
+			log.warn("Missing UID: can not start DNP3 client channel.");
+			return null;
+		}
+		final String host = configuration.getHost();
+		if ( host == null || host.isBlank() ) {
+			log.warn("Missing host: can not start DNP3 client channel [{}]", uid);
+			return null;
+		}
+		return getManager().addTCPClient(getUid(), configuration.getLogLevels(),
+				ChannelRetry.getDefault(),
+				List.of(new IPEndpoint(configuration.getHost(), configuration.getPort())), "0.0.0.0",
+				this);
 	}
 
 }

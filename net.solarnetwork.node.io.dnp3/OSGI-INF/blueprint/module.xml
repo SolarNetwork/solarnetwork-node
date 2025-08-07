@@ -83,7 +83,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.tcp"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService" init-method="startup" destroy-method="shutdown">
+		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="manager"/>
 			<property name="messageSource" ref="serverTcpMessageSource"/>
 		</bean>
@@ -161,5 +161,49 @@
 			<property name="taskScheduler" ref="taskScheduler"/>
 		</bean>
 	</osgix:managed-service-factory>
-		
+
+	<!-- TCP client channel component -->
+
+	<bean id="clientTcpMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.io.dnp3.impl.TcpClientChannelService"/>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="config."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<list>
+								<value>net.solarnetwork.node.io.dnp3.impl.BaseChannelConfiguration</value>
+								<value>net.solarnetwork.node.io.dnp3.impl.TcpClientChannelConfiguration</value>
+								<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="DNP3 TCP client connection"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.dnp3.client.tcp"/>
+			<property name="messageSource" ref="clientTcpMessageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.client.tcp" autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.io.dnp3.ChannelService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.client.tcp"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpClientChannelService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="manager"/>
+			<property name="messageSource" ref="clientTcpMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
 </blueprint>

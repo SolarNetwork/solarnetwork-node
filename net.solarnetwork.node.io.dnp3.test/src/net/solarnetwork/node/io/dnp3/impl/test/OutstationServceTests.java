@@ -116,7 +116,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		// when
@@ -137,7 +137,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -173,7 +173,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -211,7 +211,7 @@ public class OutstationServceTests {
 		service.setTaskExecutor(new TaskExecutorAdapter(executor));
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -253,7 +253,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/limiter";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -290,7 +290,7 @@ public class OutstationServceTests {
 		service.setTaskExecutor(new TaskExecutorAdapter(executor));
 
 		final String controlId = "/foo/limiter";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();

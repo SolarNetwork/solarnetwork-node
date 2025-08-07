@@ -40,7 +40,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class MeasurementConfig {
 
@@ -53,7 +53,6 @@ public class MeasurementConfig {
 	/** The default decimal scale: {@literal 0}. */
 	public static final int DEFAULT_DECIMAL_SCALE = 0;
 
-	private String dataSourceUid;
 	private String sourceId;
 	private String propertyName;
 	private MeasurementType type;
@@ -73,9 +72,6 @@ public class MeasurementConfig {
 	/**
 	 * Constructor.
 	 *
-	 * @param dataSourceUid
-	 *        the {@link net.solarnetwork.node.service.DatumDataSource#getUid()}
-	 *        to collect from
 	 * @param sourceId
 	 *        the source ID to collect from
 	 * @param propertyName
@@ -83,10 +79,8 @@ public class MeasurementConfig {
 	 * @param type
 	 *        the DNP3 measurement type
 	 */
-	public MeasurementConfig(String dataSourceUid, String sourceId, String propertyName,
-			MeasurementType type) {
+	public MeasurementConfig(String sourceId, String propertyName, MeasurementType type) {
 		super();
-		setDataSourceUid(dataSourceUid);
 		setSourceId(sourceId);
 		setPropertyName(propertyName);
 		setType(type);
@@ -104,8 +98,6 @@ public class MeasurementConfig {
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(6);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataSourceUid", "", false,
-				"(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyName", ""));
 
@@ -125,25 +117,6 @@ public class MeasurementConfig {
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
 		return results;
-	}
-
-	/**
-	 * Get the data source UID.
-	 *
-	 * @return the UID
-	 */
-	public String getDataSourceUid() {
-		return dataSourceUid;
-	}
-
-	/**
-	 * Set the data source UID.
-	 *
-	 * @param dataSourceUid
-	 *        the UID to set
-	 */
-	public void setDataSourceUid(String dataSourceUid) {
-		this.dataSourceUid = dataSourceUid;
 	}
 
 	/**
