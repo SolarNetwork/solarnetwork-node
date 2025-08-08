@@ -45,6 +45,36 @@ public class LinkLayerConfig extends com.automatak.dnp3.LinkLayerConfig {
 	}
 
 	/**
+	 * Copy constructor.
+	 *
+	 * @param other
+	 *        the configuration to copy
+	 * @since 2.0
+	 */
+	public LinkLayerConfig(com.automatak.dnp3.LinkLayerConfig other) {
+		super(other.isMaster);
+		copySettings(other, this);
+	}
+
+	/**
+	 * Copy the link layer configuration from one object to another.
+	 *
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 2.0
+	 */
+	public static void copySettings(com.automatak.dnp3.LinkLayerConfig from,
+			com.automatak.dnp3.LinkLayerConfig to) {
+		to.isMaster = from.isMaster;
+		to.keepAliveTimeout = from.keepAliveTimeout;
+		to.localAddr = from.localAddr;
+		to.remoteAddr = from.remoteAddr;
+		to.responseTimeout = from.responseTimeout;
+	}
+
+	/**
 	 * Get the master mode.
 	 *
 	 * @return {@literal true} if master mode

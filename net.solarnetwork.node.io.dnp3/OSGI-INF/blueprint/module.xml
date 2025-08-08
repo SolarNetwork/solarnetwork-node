@@ -82,6 +82,7 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.tcp"/>
+			<beans:entry key="function" value="server"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="manager"/>
@@ -94,7 +95,7 @@
 	<bean id="outstationMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.dnp3.impl.OutstationService</value>
+				<value>net.solarnetwork.node.io.dnp3.impl.DefaultOutstationService</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -142,11 +143,12 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.dnp3.impl.OutstationService" init-method="startup" destroy-method="shutdown">
+		<bean class="net.solarnetwork.node.io.dnp3.impl.DefaultOutstationService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.io.dnp3.ChannelService"/>
+					<property name="serviceFilter" value="(function=server)"/>
 					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 					<property name="propertyFilters">
 						<map>
@@ -199,10 +201,71 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.client.tcp"/>
+			<beans:entry key="function" value="client"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpClientChannelService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="manager"/>
 			<property name="messageSource" ref="clientTcpMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- DNP3 control center component -->
+
+	<bean id="controlCenterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.dnp3.impl.DefaultControlCenterService</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="delegates">
+					<map>
+						<entry key="measurementConfigsItem.">
+							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+								<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.MeasurementConfig"/>
+							</bean>
+						</entry>
+					</map>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="DNP3 control center"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.dnp3.controlcenter"/>
+			<property name="messageSource" ref="controlCenterMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.controlcenter" autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.io.dnp3.ControlCenterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.controlcenter"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.dnp3.impl.DefaultControlCenterService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.io.dnp3.ChannelService"/>
+					<property name="serviceFilter" value="(function=client)"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="uid" value=""/>
+						</map>
+					</property>
+				</bean>
+			</argument>
+			<property name="messageSource" ref="controlCenterMessageSource"/>
+			<property name="taskExecutor" ref="taskExecutor"/>
+			<property name="taskScheduler" ref="taskScheduler"/>
 		</bean>
 	</osgix:managed-service-factory>
 

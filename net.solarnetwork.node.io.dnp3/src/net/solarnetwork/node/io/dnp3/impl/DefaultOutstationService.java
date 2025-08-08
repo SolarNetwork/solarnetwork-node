@@ -1,5 +1,5 @@
 /* ==================================================================
- * OutstationService.java - 21/02/2019 11:05:32 am
+ * DefaultOutstationService.java - 21/02/2019 11:05:32 am
  *
  * Copyright 2019 SolarNetwork.net Dev Team
  *
@@ -72,6 +72,7 @@ import net.solarnetwork.domain.InstructionStatus;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
+import net.solarnetwork.node.io.dnp3.OutstationService;
 import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
@@ -102,17 +103,11 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 3.0
  */
-public class OutstationService extends AbstractApplicationService
-		implements EventHandler, SettingSpecifierProvider {
+public class DefaultOutstationService extends AbstractApplicationService<Outstation>
+		implements OutstationService, EventHandler, SettingSpecifierProvider {
 
 	/** The default event buffer size. */
 	private static final int DEFAULT_EVENT_BUFFER_SIZE = 30;
-
-	/** The default startup delay. */
-	private static final int DEFAULT_STARTUP_DELAY_SECONDS = 5;
-
-	/** The default uid value. */
-	public static final String DEFAULT_UID = "DNP3 Outstation";
 
 	private final Application app;
 	private final CommandHandler commandHandler;
@@ -122,10 +117,6 @@ public class OutstationService extends AbstractApplicationService
 	private MeasurementConfig[] measurementConfigs;
 	private ControlConfig[] controlConfigs;
 	private int eventBufferSize = DEFAULT_EVENT_BUFFER_SIZE;
-	private int startupDelaySecs = DEFAULT_STARTUP_DELAY_SECONDS;
-
-	private Outstation outstation;
-	private Runnable initTask;
 
 	/**
 	 * Constructor.
@@ -135,94 +126,33 @@ public class OutstationService extends AbstractApplicationService
 	 * @param instructionExecutionService
 	 *        the execution service to handle control operations
 	 */
-	public OutstationService(OptionalService<ChannelService> dnp3Channel,
+	public DefaultOutstationService(OptionalService<ChannelService> dnp3Channel,
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
-		super(dnp3Channel);
+		super(dnp3Channel, new LinkLayerConfig(false));
 		this.app = new Application();
 		this.outstationConfig = new OutstationConfig();
 		this.commandHandler = new CommandHandler();
 		this.instructionExecutionService = instructionExecutionService;
+		setDisplayName("DNP3 Outstation");
 	}
 
 	@Override
-	public synchronized void startup() {
-		super.startup();
-	}
-
-	/**
-	 * Callback after properties have been changed.
-	 *
-	 * @param properties
-	 *        the changed properties
-	 */
-	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
-		super.configurationChanged(properties);
-		if ( initTask != null ) {
-			// init task already underway
-			return;
-		}
-		TaskExecutor executor = getTaskExecutor();
-		if ( executor != null ) {
-			initTask = new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						log.info("Waiting {}s to start DNP3 outstation [{}]", getStartupDelaySecs(),
-								getUid());
-						Thread.sleep(getStartupDelaySecs() * 1000L);
-					} catch ( InterruptedException e ) {
-						// ignore
-					} finally {
-						synchronized ( OutstationService.this ) {
-							initTask = null;
-							getOutstation();
-						}
-					}
-				}
-			};
-			executor.execute(initTask);
-		} else {
-			// no executor; init immediately
-			getOutstation();
-		}
-	}
-
-	@Override
-	public synchronized void shutdown() {
-		super.shutdown();
-		if ( outstation != null ) {
-			log.info("Shutting down DNP3 outstation [{}]", getUid());
-			outstation.shutdown();
-			this.outstation = null;
-			log.info("DNP3 outstation [{}] shutdown", getUid());
-		}
-	}
-
-	private synchronized Outstation getOutstation() {
-		if ( outstation != null || initTask != null ) {
-			return outstation;
-		}
-		outstation = createOutstation();
-		if ( outstation != null ) {
-			outstation.enable();
-			log.info("DNP3 outstation [{}] enabled", getUid());
-		}
-		return outstation;
-	}
-
-	private Outstation createOutstation() {
-		Channel channel = channel();
-		if ( channel == null ) {
-			log.info("DNP3 channel not available for outstation [{}]", getUid());
+	protected synchronized Outstation createDnp3Stack() {
+		final String uid = getUid();
+		if ( uid == null || uid.isBlank() ) {
+			log.warn("Missing UID: can not start DNP3 outstation.");
 			return null;
 		}
-		log.info("Initializing DNP3 outstation [{}]", getUid());
+		Channel channel = channel();
+		if ( channel == null ) {
+			log.info("DNP3 channel not available for outstation [{}]", uid);
+			return null;
+		}
+		log.info("Initializing DNP3 outstation [{}]", uid);
 		try {
-			return channel.addOutstation(getUid(), commandHandler, app, createOutstationStackConfig());
+			return channel.addOutstation(uid, commandHandler, app, createOutstationStackConfig());
 		} catch ( DNP3Exception e ) {
-			log.error("Error creating outstation application [{}]: {}", getUid(), e.getMessage(), e);
+			log.error("Error creating outstation application [{}]: {}", uid, e.getMessage(), e);
 			return null;
 		}
 	}
@@ -234,8 +164,8 @@ public class OutstationService extends AbstractApplicationService
 		OutstationStackConfig config = new OutstationStackConfig(
 				createDatabaseConfig(configs, controlConfigs),
 				createEventBufferConfig(configs, controlConfigs));
-		copySettings(getLinkLayerConfig(), config.linkConfig);
-		copySettings(getOutstationConfig(), config.outstationConfig);
+		LinkLayerConfig.copySettings(getLinkLayerConfig(), config.linkConfig);
+		OutstationConfig.copySettings(getOutstationConfig(), config.outstationConfig);
 		return config;
 	}
 
@@ -503,7 +433,7 @@ public class OutstationService extends AbstractApplicationService
 			return;
 		}
 		synchronized ( this ) {
-			Outstation station = getOutstation();
+			Outstation station = getDnp3Stack();
 			if ( station != null ) {
 				log.info("Applying changes to DNP3 [{}]", getUid());
 				station.apply(changes);
@@ -883,18 +813,18 @@ public class OutstationService extends AbstractApplicationService
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(16);
 
-		result.add(new BasicTitleSettingSpecifier("status", getStackStatusMessage(), true));
+		result.add(new BasicTitleSettingSpecifier("status", outstationStatusMessage(), true));
 
-		result.add(new BasicTextFieldSettingSpecifier("uid", null));
-		result.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
+		result.addAll(basicIdentifiableSettings());
+
 		result.add(new BasicTextFieldSettingSpecifier("eventBufferSize",
 				String.valueOf(DEFAULT_EVENT_BUFFER_SIZE)));
 		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['uid']", null, false,
-				"(objectClass=net.solarnetwork.node.io.dnp3.ChannelService)"));
+				"(&(objectClass=net.solarnetwork.node.io.dnp3.ChannelService)(function=server))"));
 
 		result.addAll(linkLayerSettings("linkLayerConfig.", new LinkLayerConfig(false)));
 
-		result.addAll(outstationSettings("outstationConfig.", new OutstationConfig()));
+		result.addAll(OutstationConfig.outstationSettings("outstationConfig.", new OutstationConfig()));
 
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
 		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
@@ -906,7 +836,7 @@ public class OutstationService extends AbstractApplicationService
 					public Collection<SettingSpecifier> mapListSettingKey(MeasurementConfig value,
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								MeasurementConfig.settings(key + "."));
+								MeasurementConfig.serverSettings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
@@ -930,35 +860,16 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	@Override
-	public String getDisplayName() {
-		return DEFAULT_UID;
-	}
-
-	@Override
 	public String getSettingUid() {
 		return "net.solarnetwork.node.io.dnp3.outstation";
 	}
 
-	private synchronized String getStackStatusMessage() {
-		StringBuilder buf = new StringBuilder();
+	private synchronized String outstationStatusMessage() {
+		final Outstation outstation = getDnp3Stack();
+		final StringBuilder buf = new StringBuilder();
 		buf.append(outstation != null ? "Available" : "Offline");
-		/*- TODO stats are crashing JVM for some reason
-		StackStatistics stackStats = outstation != null ? outstation.getStatistics() : null;
-		if ( stackStats == null ) {
-			buf.append("N/A");
-		} else {
-			buf.append(app.getLinkStatus() == LinkStatus.RESET ? "Online" : "Offline");
-			TransportStatistics stats = stackStats.transport;
-			if ( stats != null ) {
-				buf.append("; ").append(stats.numTransportRx).append(" in");
-				buf.append("; ").append(stats.numTransportTx).append(" out");
-				buf.append("; ").append(stats.numTransportErrorRx).append(" in errors");
-				buf.append("; ").append(stats.numTransportBufferOverflow).append(" buffer overflows");
-				buf.append("; ").append(stats.numTransportDiscard).append(" discarded");
-				buf.append("; ").append(stats.numTransportIgnore).append(" ignored");
-			}
-		}
-		*/
+		buf.append(stackStatusMessage(outstation != null ? outstation.getStatistics() : null,
+				app.getLinkStatus()));
 		return buf.toString();
 	}
 
@@ -1099,30 +1010,6 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	/**
-	 * Get the startup delay, in seconds.
-	 *
-	 * @return the delay; defaults to {@link #DEFAULT_STARTUP_DELAY_SECONDS}
-	 */
-	public int getStartupDelaySecs() {
-		return startupDelaySecs;
-	}
-
-	/**
-	 * Set the startup delay, in seconds.
-	 *
-	 * <p>
-	 * This delay is used to allow the class to be configured fully before
-	 * starting.
-	 * </p>
-	 *
-	 * @param startupDelaySecs
-	 *        the delay
-	 */
-	public void setStartupDelaySecs(int startupDelaySecs) {
-		this.startupDelaySecs = startupDelaySecs;
-	}
-
-	/**
 	 * Get the outstation configuration.
 	 *
 	 * @return the configuration
@@ -1130,52 +1017,6 @@ public class OutstationService extends AbstractApplicationService
 	 */
 	public OutstationConfig getOutstationConfig() {
 		return outstationConfig;
-	}
-
-	/**
-	 * Copy the link outstation configuration from one object to another.
-	 *
-	 * @param from
-	 *        the settings to copy
-	 * @param to
-	 *        the destination to copy the settings to
-	 * @since 1.2
-	 */
-	public static void copySettings(com.automatak.dnp3.OutstationConfig from,
-			com.automatak.dnp3.OutstationConfig to) {
-		to.allowUnsolicited = from.allowUnsolicited;
-		to.maxControlsPerRequest = from.maxControlsPerRequest;
-		to.maxRxFragSize = from.maxRxFragSize;
-		to.maxTxFragSize = from.maxTxFragSize;
-		to.selectTimeout = from.selectTimeout;
-		to.solConfirmTimeout = from.solConfirmTimeout;
-		to.noDefferedReadDuringUnsolicitedNullResponse = from.noDefferedReadDuringUnsolicitedNullResponse;
-		to.numUnsolRetries = from.numUnsolRetries;
-		to.unsolConfirmTimeout = from.unsolConfirmTimeout;
-		to.typesAllowedInClass0 = from.typesAllowedInClass0;
-	}
-
-	/**
-	 * Get settings suitable for configuring an instance of
-	 * {@link OutstationConfig}.
-	 *
-	 * @param prefix
-	 *        a setting key prefix to use
-	 * @param defaults
-	 *        the default settings
-	 * @return the settings, never {@literal null}
-	 * @since 1.1
-	 */
-	public static List<SettingSpecifier> outstationSettings(String prefix, OutstationConfig defaults) {
-		List<SettingSpecifier> results = new ArrayList<>(8);
-		OutstationConfig config = new OutstationConfig();
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxControlsPerRequest",
-				String.valueOf(config.maxControlsPerRequest)));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxRxFragSize",
-				String.valueOf(config.maxRxFragSize)));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxTxFragSize",
-				String.valueOf(config.maxTxFragSize)));
-		return results;
 	}
 
 }

@@ -22,14 +22,12 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
-import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Clock;
 import java.time.InstantSource;
 import com.automatak.dnp3.ApplicationIIN;
 import com.automatak.dnp3.DNPTime;
 import com.automatak.dnp3.OutstationApplication;
 import com.automatak.dnp3.enums.AssignClassType;
-import com.automatak.dnp3.enums.LinkStatus;
 import com.automatak.dnp3.enums.PointClass;
 import com.automatak.dnp3.enums.RestartMode;
 
@@ -39,16 +37,13 @@ import com.automatak.dnp3.enums.RestartMode;
  * @author matt
  * @version 1.2
  */
-public class BaseOutstationApplication implements OutstationApplication {
-
-	private final InstantSource clock;
-	private LinkStatus linkStatus = LinkStatus.UNRESET;
+public class BaseOutstationApplication extends BaseApplication implements OutstationApplication {
 
 	/**
 	 * Constructor.
 	 */
 	public BaseOutstationApplication() {
-		this(Clock.systemUTC());
+		super(Clock.systemUTC());
 	}
 
 	/**
@@ -57,22 +52,7 @@ public class BaseOutstationApplication implements OutstationApplication {
 	 * @since 1.2
 	 */
 	public BaseOutstationApplication(InstantSource clock) {
-		super();
-		this.clock = requireNonNullArgument(clock, "clock");
-	}
-
-	@Override
-	public void onStateChange(LinkStatus value) {
-		linkStatus = value;
-	}
-
-	/**
-	 * Get the current link status.
-	 *
-	 * @return the status
-	 */
-	protected LinkStatus getLinkStatus() {
-		return linkStatus;
+		super(clock);
 	}
 
 	@Override

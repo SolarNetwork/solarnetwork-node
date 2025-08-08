@@ -1,5 +1,5 @@
 /* ==================================================================
- * OutstationServceTests.java - 26/02/2019 10:33:04 am
+ * DefaultOutstationServceTests.java - 26/02/2019 10:33:04 am
  *
  * Copyright 2019 SolarNetwork.net Dev Team
  *
@@ -48,7 +48,7 @@ import com.automatak.dnp3.enums.TripCloseCode;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
-import net.solarnetwork.node.io.dnp3.impl.OutstationService;
+import net.solarnetwork.node.io.dnp3.impl.DefaultOutstationService;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -58,12 +58,12 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
- * Test cases for the {@link OutstationService} class.
+ * Test cases for the {@link DefaultOutstationService} class.
  *
  * @author matt
  * @version 3.0
  */
-public class OutstationServceTests {
+public class DefaultOutstationServceTests {
 
 	private ChannelService channelService;
 	private InstructionExecutionService instructionService;
@@ -97,7 +97,7 @@ public class OutstationServceTests {
 		return service;
 	}
 
-	private static class TestOutstationService extends OutstationService {
+	private static class TestOutstationService extends DefaultOutstationService {
 
 		public TestOutstationService(OptionalService<ChannelService> dnp3Channel,
 				OptionalService<InstructionExecutionService> instructionService) {

@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.dnp3.test;
 import static java.lang.System.currentTimeMillis;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import com.automatak.dnp3.AnalogInput;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Manager;
@@ -91,11 +92,16 @@ public class OutstationDemo {
 		while ( true ) {
 			System.out.println("Enter something to update a counter or type <quit> to exit");
 			line = in.readLine();
-			if ( line.equals("quit") )
+			if ( line.equals("quit") ) {
 				break;
-			else {
+			} else if ( line.equals("meas") ) {
 				OutstationChangeSet set = new OutstationChangeSet();
-				set.update(new Counter(i, new Flags((byte) 0x01), new DNPTime(currentTimeMillis())), 0);
+				set.update(new AnalogInput(Math.random(), new Flags((byte) 0x01),
+						new DNPTime(currentTimeMillis())), 0);
+				outstation.apply(set);
+			} else {
+				OutstationChangeSet set = new OutstationChangeSet();
+				set.update(new Counter(i, new Flags((byte) 0x01), new DNPTime(currentTimeMillis())), 1);
 				outstation.apply(set);
 				++i;
 			}

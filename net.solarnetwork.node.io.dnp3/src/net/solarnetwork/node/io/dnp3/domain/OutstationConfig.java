@@ -23,6 +23,10 @@
 package net.solarnetwork.node.io.dnp3.domain;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Extension of {@link com.automatak.dnp3.OutstationConfig} to provide JavaBean
@@ -39,6 +43,63 @@ public class OutstationConfig extends com.automatak.dnp3.OutstationConfig {
 	 */
 	public OutstationConfig() {
 		super();
+	}
+
+	/**
+	 * Copy constructor.
+	 *
+	 * @param other
+	 *        the configuration to copy
+	 * @since 2.0
+	 */
+	public OutstationConfig(com.automatak.dnp3.OutstationConfig other) {
+		super();
+		copySettings(other, this);
+	}
+
+	/**
+	 * Copy the link outstation configuration from one object to another.
+	 *
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 2.0
+	 */
+	public static void copySettings(com.automatak.dnp3.OutstationConfig from,
+			com.automatak.dnp3.OutstationConfig to) {
+		to.allowUnsolicited = from.allowUnsolicited;
+		to.maxControlsPerRequest = from.maxControlsPerRequest;
+		to.maxRxFragSize = from.maxRxFragSize;
+		to.maxTxFragSize = from.maxTxFragSize;
+		to.selectTimeout = from.selectTimeout;
+		to.solConfirmTimeout = from.solConfirmTimeout;
+		to.noDefferedReadDuringUnsolicitedNullResponse = from.noDefferedReadDuringUnsolicitedNullResponse;
+		to.numUnsolRetries = from.numUnsolRetries;
+		to.unsolConfirmTimeout = from.unsolConfirmTimeout;
+		to.typesAllowedInClass0 = from.typesAllowedInClass0;
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of
+	 * {@link OutstationConfig}.
+	 *
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param defaults
+	 *        the default settings
+	 * @return the settings, never {@literal null}
+	 * @since 2.0
+	 */
+	public static List<SettingSpecifier> outstationSettings(String prefix, OutstationConfig defaults) {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxControlsPerRequest",
+				String.valueOf(defaults.maxControlsPerRequest)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxRxFragSize",
+				String.valueOf(defaults.maxRxFragSize)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxTxFragSize",
+				String.valueOf(defaults.maxTxFragSize)));
+		return results;
 	}
 
 	/**
