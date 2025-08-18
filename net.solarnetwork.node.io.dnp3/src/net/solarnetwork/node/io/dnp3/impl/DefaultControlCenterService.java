@@ -22,13 +22,22 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import static com.automatak.dnp3.Header.Range16;
+import static com.automatak.dnp3.Header.Range8;
+import static java.time.Instant.now;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import com.automatak.dnp3.AnalogInput;
@@ -40,17 +49,24 @@ import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DoubleBitBinaryInput;
 import com.automatak.dnp3.FrozenCounter;
+import com.automatak.dnp3.Header;
 import com.automatak.dnp3.HeaderInfo;
 import com.automatak.dnp3.IndexedValue;
 import com.automatak.dnp3.Master;
 import com.automatak.dnp3.MasterStackConfig;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.GeneralDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.ControlCenterService;
+import net.solarnetwork.node.io.dnp3.domain.ClassType;
 import net.solarnetwork.node.io.dnp3.domain.ControlCenterConfig;
+import net.solarnetwork.node.io.dnp3.domain.DatumConfig;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
+import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -59,6 +75,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Default implementation of {@link ControlCenterService}.
@@ -67,13 +86,14 @@ import net.solarnetwork.util.ArrayUtils;
  * @version 1.0
  */
 public class DefaultControlCenterService extends AbstractApplicationService<Master>
-		implements ControlCenterService, SettingSpecifierProvider {
+		implements ControlCenterService, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private final Application app;
 	private final SOEHandler handler;
 	private final ControlCenterConfig controlCenterConfig;
 	private final ConcurrentMap<MeasurementTypeIndex, DatumStreamSamples> datumStreamMapping;
-	private MeasurementConfig[] measurementConfigs;
+	private DatumConfig[] datumConfigs;
+	private Set<ClassType> unsolicitedEventClasses;
 
 	private Master master;
 
@@ -87,22 +107,64 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 		super(dnp3Channel, new LinkLayerConfig(true));
 		this.app = new Application();
 		this.handler = new SOEHandler();
-		this.controlCenterConfig = new ControlCenterConfig();
 		this.datumStreamMapping = new ConcurrentHashMap<>(4, 0.9f, 2);
 		setDisplayName("DNP3 Control Center");
+
+		var ccConfig = new ControlCenterConfig();
+		ccConfig.setupUnsolicitedEvents(null);
+		this.controlCenterConfig = ccConfig;
+	}
+
+	@Override
+	public Collection<String> publishedSourceIds() {
+		Set<String> publishedSourceIds = new LinkedHashSet<>();
+		final DatumConfig[] confs = getDatumConfigs();
+		if ( confs != null ) {
+			for ( DatumConfig conf : confs ) {
+				if ( conf.isValid() ) {
+					publishedSourceIds.add(conf.getSourceId());
+				}
+			}
+		}
+		return publishedSourceIds;
+	}
+
+	@Override
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return NodeDatum.class;
+	}
+
+	@Override
+	public Collection<NodeDatum> readMultipleDatum() {
+		Map<String, GeneralDatum> datumBySourceId = new LinkedHashMap<>();
+		for ( DatumStreamSamples dsSamples : datumStreamMapping.values() ) {
+			if ( datumBySourceId.containsKey(dsSamples.sourceId) ) {
+				continue;
+			}
+
+			// copy samples for snapshot
+			DatumSamples samples;
+			synchronized ( dsSamples.samples ) {
+				samples = new DatumSamples(dsSamples.samples);
+			}
+
+			SimpleDatum d = SimpleDatum.nodeDatum(dsSamples.sourceId, now(), samples);
+			datumBySourceId.put(dsSamples.sourceId, d);
+		}
+		return datumBySourceId.values().stream().map(NodeDatum.class::cast).toList();
 	}
 
 	/**
 	 * A measurement type and index combination.
 	 */
-	private record MeasurementTypeIndex(MeasurementType type, Integer index) {
+	private static record MeasurementTypeIndex(MeasurementType type, Integer index) {
 
 	}
 
 	/**
 	 * A runtime datum stream value.
 	 */
-	private record DatumStreamSamples(String sourceId, DatumSamples samples,
+	private static record DatumStreamSamples(String sourceId, DatumSamples samples,
 			ConcurrentMap<MeasurementTypeIndex, MeasurementConfig> measurementConfigs) {
 
 	}
@@ -230,18 +292,20 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 		result.addAll(ControlCenterConfig.controlCenterSettings("controlCenterConfig.",
 				new ControlCenterConfig()));
 
-		MeasurementConfig[] measConfs = getMeasurementConfigs();
-		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
-				: Collections.<MeasurementConfig> emptyList());
-		result.add(SettingUtils.dynamicListSettingSpecifier("measurementConfigs", measConfsList,
-				new SettingUtils.KeyedListCallback<MeasurementConfig>() {
+		result.add(new BasicTextFieldSettingSpecifier("unsolicitedEventClassesValue", null));
+
+		final DatumConfig[] datumConfs = getDatumConfigs();
+		final List<DatumConfig> datumConfsList = (datumConfs != null ? Arrays.asList(datumConfs)
+				: Collections.emptyList());
+		result.add(SettingUtils.dynamicListSettingSpecifier("datumConfigs", datumConfsList,
+				new SettingUtils.KeyedListCallback<>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(MeasurementConfig value,
-							int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(DatumConfig value, int index,
+							String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								MeasurementConfig.clientSettings(key + "."));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+								value.settings(key + "."));
+						return Collections.singletonList(configGroup);
 					}
 				}));
 
@@ -271,49 +335,119 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 		}
 		log.info("Initializing DNP3 control center [{}]", uid);
 		try {
-			return channel.addMaster(uid, handler, app, createMasterStackConfig());
+			Master master = channel.addMaster(uid, handler, app, createMasterStackConfig());
+
+			// add periodic scans
+			DatumConfig[] datumConfs = getDatumConfigs();
+			if ( datumConfs != null && datumConfs.length > 0 ) {
+				for ( DatumConfig datumConf : datumConfs ) {
+					if ( !(datumConf.isValid() && datumConf.getPollFrequency() != null
+							&& datumConf.getPollFrequency().compareTo(Duration.ZERO) > 0) ) {
+						continue;
+					}
+					List<Header> pollHeaders = headers(datumConf, true);
+					if ( pollHeaders != null && !pollHeaders.isEmpty() ) {
+						master.addPeriodicScan(datumConf.getPollFrequency(), pollHeaders, handler);
+					}
+				}
+			}
+
+			return master;
 		} catch ( DNP3Exception e ) {
 			log.error("Error creating DNP3 control center application [{}]: {}", uid, e.getMessage(), e);
 			return null;
 		}
 	}
 
-	private MasterStackConfig createMasterStackConfig() {
-		MasterStackConfig config = new MasterStackConfig();
-		LinkLayerConfig.copySettings(getLinkLayerConfig(), config.link);
-		ControlCenterConfig.copySettings(getControlCenterConfig(), config.master);
+	/**
+	 * Generate a list of DNP3 headers for polling or event registration.
+	 *
+	 * @param datumConf
+	 *        the configuration to generate headers from
+	 * @param forPoll
+	 *        {@code true} if "scan" polling headers are desired, {@code false}
+	 *        for event registration
+	 * @return the headers, never {@code null}
+	 */
+	private static List<Header> headers(final DatumConfig datumConf, final boolean forPoll) {
+		if ( datumConf == null || !datumConf.isValid() ) {
+			return Collections.emptyList();
+		}
+		Map<MeasurementType, IntRangeSet> ranges = new HashMap<>();
 
-		Map<MeasurementTypeIndex, DatumStreamSamples> newDatumStreamMapping = new HashMap<>();
-		final MeasurementConfig[] measConfigs = getMeasurementConfigs();
-		if ( measConfigs != null && measConfigs.length > 0 ) {
-			Map<String, DatumStreamSamples> sourceIdMapping = new HashMap<>(8);
-			for ( MeasurementConfig measConfig : measConfigs ) {
-				if ( !measConfig.isValidForClient() ) {
+		for ( MeasurementConfig measConf : datumConf.getMeasurementConfigs() ) {
+			if ( !measConf.isValidForClient() ) {
+				continue;
+			}
+			ranges.computeIfAbsent(measConf.getType(), k -> new IntRangeSet()).add(measConf.getIndex());
+		}
+		if ( ranges.isEmpty() ) {
+			return Collections.emptyList();
+		}
+
+		final List<Header> result = new ArrayList<>();
+		for ( Entry<MeasurementType, IntRangeSet> e : ranges.entrySet() ) {
+			MeasurementType measType = e.getKey();
+			IntRangeSet typeRanges = e.getValue();
+			for ( IntRange range : typeRanges.ranges() ) {
+				// we assume variation 1 for all types here
+				if ( range.getMin() > 0xFF || range.getMax() > 0xFF ) {
+					result.add(Range16(forPoll ? measType.getStaticGroup() : measType.getEventGroup(),
+							(byte) 1, range.getMin(), range.getMax()));
+				} else {
+					result.add(Range8(forPoll ? measType.getStaticGroup() : measType.getEventGroup(),
+							(byte) 1, (short) range.getMin(), (short) range.getMax()));
+				}
+			}
+		}
+		return result;
+	}
+
+	private MasterStackConfig createMasterStackConfig() {
+		final MasterStackConfig config = new MasterStackConfig();
+		LinkLayerConfig.copySettings(getLinkLayerConfig(), config.link);
+		ControlCenterConfig.copySettings(controlCenterConfig, config.master);
+
+		final Map<MeasurementTypeIndex, DatumStreamSamples> newDatumStreamMapping = new HashMap<>();
+		final DatumConfig[] datumConfs = getDatumConfigs();
+		if ( datumConfs != null && datumConfs.length > 0 ) {
+			final Map<String, DatumStreamSamples> sourceIdMapping = new HashMap<>(8);
+			for ( DatumConfig datumConfig : datumConfs ) {
+				if ( !datumConfig.isValid() ) {
 					continue;
 				}
-
-				// locate or create DatumStreamSamples for this source ID
-				DatumStreamSamples streamSamples = sourceIdMapping.get(measConfig.getSourceId());
-				if ( streamSamples == null ) {
-					for ( DatumStreamSamples s : datumStreamMapping.values() ) {
-						if ( s.sourceId.equals(measConfig.getSourceId()) ) {
-							streamSamples = new DatumStreamSamples(measConfig.getSourceId(), s.samples,
-									new ConcurrentHashMap<>(8, 0.9f, 2));
-							sourceIdMapping.put(measConfig.getSourceId(), streamSamples);
-							break;
+				final String sourceId = datumConfig.getSourceId();
+				final MeasurementConfig[] measConfs = datumConfig.getMeasurementConfigs();
+				if ( measConfs != null && measConfs.length > 0 ) {
+					for ( MeasurementConfig measConfig : measConfs ) {
+						if ( !measConfig.isValidForClient() ) {
+							continue;
 						}
+
+						// locate or create DatumStreamSamples for this source ID
+						DatumStreamSamples streamSamples = sourceIdMapping.get(sourceId);
+						if ( streamSamples == null ) {
+							for ( DatumStreamSamples s : datumStreamMapping.values() ) {
+								if ( s.sourceId.equals(sourceId) ) {
+									streamSamples = new DatumStreamSamples(sourceId, s.samples,
+											new ConcurrentHashMap<>(8, 0.9f, 2));
+									sourceIdMapping.put(sourceId, streamSamples);
+									break;
+								}
+							}
+						}
+						if ( streamSamples == null ) {
+							streamSamples = new DatumStreamSamples(sourceId, new DatumSamples(),
+									new ConcurrentHashMap<>(8, 0.9f, 2));
+							sourceIdMapping.put(sourceId, streamSamples);
+						}
+
+						MeasurementTypeIndex idx = new MeasurementTypeIndex(measConfig.getType(),
+								measConfig.getIndex());
+						streamSamples.measurementConfigs.put(idx, measConfig);
+						newDatumStreamMapping.putIfAbsent(idx, streamSamples);
 					}
 				}
-				if ( streamSamples == null ) {
-					streamSamples = new DatumStreamSamples(measConfig.getSourceId(), new DatumSamples(),
-							new ConcurrentHashMap<>(8, 0.9f, 2));
-					sourceIdMapping.put(measConfig.getSourceId(), streamSamples);
-				}
-
-				MeasurementTypeIndex idx = new MeasurementTypeIndex(measConfig.getType(),
-						measConfig.getIndex());
-				streamSamples.measurementConfigs.put(idx, measConfig);
-				newDatumStreamMapping.putIfAbsent(idx, streamSamples);
 			}
 		}
 
@@ -337,27 +471,27 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 	 *
 	 * @return the measurement configurations
 	 */
-	public MeasurementConfig[] getMeasurementConfigs() {
-		return measurementConfigs;
+	public DatumConfig[] getDatumConfigs() {
+		return datumConfigs;
 	}
 
 	/**
 	 * Set the measurement configurations to use.
 	 *
-	 * @param measurementConfigs
-	 *        the configs to use
+	 * @param datumConfigs
+	 *        the configurations to use
 	 */
-	public void setMeasurementConfigs(MeasurementConfig[] measurementConfigs) {
-		this.measurementConfigs = measurementConfigs;
+	public void setDatumConfigs(DatumConfig[] measurementConfigs) {
+		this.datumConfigs = measurementConfigs;
 	}
 
 	/**
-	 * Get the number of configured {@code measurementConfigs} elements.
+	 * Get the number of configured {@code datumConfigs} elements.
 	 *
-	 * @return the number of {@code measurementConfigs} elements
+	 * @return the number of {@code datumConfigs} elements
 	 */
-	public int getMeasurementConfigsCount() {
-		MeasurementConfig[] confs = this.measurementConfigs;
+	public int getDatumConfigsCount() {
+		final DatumConfig[] confs = getDatumConfigs();
 		return (confs == null ? 0 : confs.length);
 	}
 
@@ -370,11 +504,73 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 	 * </p>
 	 *
 	 * @param count
-	 *        The desired number of {@code measurementConfigs} elements.
+	 *        The desired number of {@code datumConfigs} elements.
 	 */
-	public void setMeasurementConfigsCount(int count) {
-		this.measurementConfigs = ArrayUtils.arrayWithLength(this.measurementConfigs, count,
-				MeasurementConfig.class, null);
+	public void setDatumConfigsCount(int count) {
+		this.datumConfigs = ArrayUtils.arrayWithLength(this.datumConfigs, count, DatumConfig.class,
+				null);
+	}
+
+	/**
+	 * Get the unsolicited event classes to support.
+	 *
+	 * @return the classes
+	 */
+	public Set<ClassType> getUnsolicitedEventClasses() {
+		return unsolicitedEventClasses;
+	}
+
+	/**
+	 * Set the unsolicited event classes to support.
+	 *
+	 * @param unsolicitedEventClasses
+	 *        the classes, or {@code null} or empty set to disable unsolicited
+	 *        events
+	 */
+	public void setUnsolicitedEventClasses(Set<ClassType> unsolicitedEventClasses) {
+		this.unsolicitedEventClasses = unsolicitedEventClasses;
+		this.controlCenterConfig.setupUnsolicitedEvents(unsolicitedEventClasses);
+	}
+
+	/**
+	 * Get the unsolicited event classes to support as a comma-delimited list of
+	 * class type codes.
+	 *
+	 * @return the comma-delimited list of class type codes
+	 */
+	public String getUnsolicitedEventClassesValue() {
+		final Set<ClassType> classes = getUnsolicitedEventClasses();
+		if ( classes == null || classes.isEmpty() ) {
+			return null;
+		}
+		return StringUtils.commaDelimitedStringFromCollection(
+				classes.stream().map(c -> String.valueOf(c.getCode())).toList());
+	}
+
+	/**
+	 * Set the unsolicited event classes to support as a comma-delimited list of
+	 * class type codes.
+	 *
+	 * @param unsolicitedEventClasses
+	 *        the classes as a comma-delimited list of class type codes, or
+	 *        {@code null} or empty set to disable unsolicited events
+	 */
+	public void setUnsolicitedEventClassesValue(String value) {
+		final Set<String> set = StringUtils.commaDelimitedStringToSet(value);
+		final Set<ClassType> classes = new TreeSet<>();
+		if ( set != null ) {
+			for ( String classTypeValue : set ) {
+				try {
+					ClassType classType = ClassType.forValue(classTypeValue);
+					if ( classType != ClassType.Static ) {
+						classes.add(classType);
+					}
+				} catch ( IllegalArgumentException e ) {
+					// ignore and continue
+				}
+			}
+		}
+		setUnsolicitedEventClasses(classes.isEmpty() ? null : classes);
 	}
 
 }

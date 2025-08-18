@@ -34,6 +34,36 @@
 		<property name="sticky" value="true"/>
 	</bean>	
 	
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
+		<property name="sticky" value="true"/>
+	</bean>	
+
 	<!-- DNP3Manager -->
 
 	<service interface="com.automatak.dnp3.DNP3Manager" ref="manager"/>
@@ -220,15 +250,36 @@
 		</property>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.support.PrefixedMessageSource">
-				<property name="delegates">
-					<map>
-						<entry key="measurementConfigsItem.">
-							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-								<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.MeasurementConfig"/>
+				<property name="prefix" value="datumConfigsItem."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.DatumConfig"/>
+						<property name="parentMessageSource">
+							<bean class="net.solarnetwork.support.PrefixedMessageSource">
+								<property name="prefix" value="measurementConfigsItem."/>
+								<property name="delegate">
+									<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+										<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.ClientMeasurementConfig"/>
+									</bean>
+								</property>
 							</bean>
-						</entry>
-					</map>
+						</property>
+					</bean>
 				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="controlCenterJobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="multiDatumDataSource."/>
+				<property name="delegate" ref="controlCenterMessageSource"/>
 			</bean>
 		</property>
 	</bean>
@@ -243,29 +294,55 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.controlcenter" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.io.dnp3.ControlCenterService</beans:value>
-			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.controlcenter"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.dnp3.impl.DefaultControlCenterService" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>
-				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-					<argument ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.io.dnp3.ChannelService"/>
-					<property name="serviceFilter" value="(function=client)"/>
-					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
-					<property name="propertyFilters">
-						<map>
-							<entry key="uid" value=""/>
-						</map>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.io.dnp3.impl.DefaultControlCenterService">
+							<argument>
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.node.io.dnp3.ChannelService"/>
+									<property name="serviceFilter" value="(function=client)"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+									<property name="propertyFilters">
+										<map>
+											<entry key="uid" value=""/>
+										</map>
+									</property>
+								</bean>
+							</argument>
+							<property name="messageSource" ref="controlCenterJobMessageSource"/>
+							<property name="taskExecutor" ref="taskExecutor"/>
+							<property name="taskScheduler" ref="taskScheduler"/>
+						</bean>
 					</property>
 				</bean>
 			</argument>
-			<property name="messageSource" ref="controlCenterMessageSource"/>
-			<property name="taskExecutor" ref="taskExecutor"/>
-			<property name="taskScheduler" ref="taskScheduler"/>
+			<argument value="0 * * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.io.dnp3.ControlCenterService</value>
+									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.domain.datum.Datum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 

@@ -143,9 +143,12 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	protected abstract Channel createChannel(C configuration) throws DNP3Exception;
 
 	@Override
-	public void onStateChange(ChannelState state) {
+	public synchronized void onStateChange(ChannelState state) {
 		log.info("Channel [{}] state changed to {}", getUid(), state);
 		this.channelState = state;
+		if ( state == ChannelState.SHUTDOWN ) {
+			this.channel = null;
+		}
 	}
 
 	/**

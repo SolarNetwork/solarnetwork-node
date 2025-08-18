@@ -136,8 +136,6 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "index", null));
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", ""));
-
 		// drop-down menu for propertyTypeKey
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "propertyTypeKey", String.valueOf(DEFAULT_PROPERTY_TYPE.toKey()));
@@ -178,7 +176,9 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 	 * @since 3.0
 	 */
 	public boolean isValidForClient() {
-		return (isValidForServer() && index != null && index.intValue() >= 0);
+		final String propertyKey = getPropertyKey();
+		return (type != null && propertyKey != null && !propertyKey.isEmpty() && index != null
+				&& index.intValue() >= 0);
 	}
 
 	/**

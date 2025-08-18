@@ -25,7 +25,10 @@ package net.solarnetwork.node.io.dnp3.domain;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import com.automatak.dnp3.ClassField;
 import com.automatak.dnp3.MasterConfig;
+import com.automatak.dnp3.enums.PointClass;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
@@ -54,6 +57,31 @@ public class ControlCenterConfig extends MasterConfig {
 	public ControlCenterConfig(MasterConfig other) {
 		super();
 		copySettings(other, this);
+	}
+
+	/**
+	 * Configure unsolicited event support from a set of classes.
+	 *
+	 * @param classes
+	 *        the classes to support, or {@code null} to disable
+	 */
+	public void setupUnsolicitedEvents(Set<ClassType> classes) {
+		List<PointClass> pointClasses = new ArrayList<>();
+		if ( classes != null ) {
+			for ( ClassType type : classes ) {
+				PointClass pointClass = switch (type) {
+					case Event1 -> PointClass.Class1;
+					case Event2 -> PointClass.Class2;
+					case Event3 -> PointClass.Class3;
+					default -> null;
+				};
+				if ( pointClass != null ) {
+					pointClasses.add(pointClass);
+				}
+			}
+		}
+		this.disableUnsolOnStartup = pointClasses.isEmpty();
+		this.unsolClassMask = ClassField.from(pointClasses.toArray(PointClass[]::new));
 	}
 
 	/**
