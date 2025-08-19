@@ -597,7 +597,9 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 	}
 
 	private boolean booleanPropertyValue(Object propVal) {
-		if ( propVal instanceof Boolean ) {
+		if ( propVal == null ) {
+			return false;
+		} else if ( propVal instanceof Boolean ) {
 			return ((Boolean) propVal).booleanValue();
 		} else if ( propVal instanceof Number ) {
 			return ((Number) propVal).intValue() == 0 ? false : true;
