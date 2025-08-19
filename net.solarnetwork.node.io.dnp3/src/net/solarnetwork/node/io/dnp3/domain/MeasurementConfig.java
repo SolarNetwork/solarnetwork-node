@@ -22,13 +22,18 @@
 
 package net.solarnetwork.node.io.dnp3.domain;
 
+import static java.lang.String.format;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -52,6 +57,17 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 
 	/** The default measurement type: {@code AnalogInput}. */
 	public static final MeasurementType DEFAULT_TYPE = MeasurementType.AnalogInput;
+
+	/**
+	 * A setting type pattern for a unit configuration element.
+	 *
+	 * <p>
+	 * The pattern has two capture groups: the unit configuration index and the
+	 * property setting name.
+	 * </p>
+	 */
+	public static final Pattern MEASUREMENT_SETTING_PATTERN = Pattern
+			.compile(".+".concat(Pattern.quote(".measurementConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
 	private MeasurementType type;
 	private Integer index;
@@ -154,6 +170,88 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
 		return results;
+	}
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 *
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 */
+	public static boolean populateFromSetting(DatumConfig config, Setting setting) {
+		Matcher m = MEASUREMENT_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		if ( idx >= config.getMeasurementConfigsCount() ) {
+			config.setMeasurementConfigsCount(idx + 1);
+		}
+		MeasurementConfig measConfig = config.getMeasurementConfigs()[idx];
+
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "typeKey":
+					measConfig.setTypeKey(val);
+					break;
+				case "index":
+					measConfig.setIndex(Integer.valueOf(val));
+					break;
+				case "propertyName":
+					measConfig.setPropertyName(val);
+					break;
+				case "unitMultiplier":
+					measConfig.setUnitMultiplier(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					measConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 *
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param unitIdx
+	 *        the unit configuration index
+	 * @param blockIdx
+	 *        the block configuration index
+	 * @param measIdx
+	 *        the measurement configuration index
+	 * @return the settings
+	 */
+	public List<SettingValueBean> toClientSettingValues(String providerId, String instanceId,
+			String prefix, int i) {
+		List<SettingValueBean> settings = new ArrayList<>(2);
+		addSetting(settings, providerId, instanceId, prefix, i, "typeKey", getTypeKey());
+		addSetting(settings, providerId, instanceId, prefix, i, "index", getIndex());
+		addSetting(settings, providerId, instanceId, prefix, i, "propertyName", getPropertyName());
+		addSetting(settings, providerId, instanceId, prefix, i, "unitMultiplier", getUnitMultiplier());
+		addSetting(settings, providerId, instanceId, prefix, i, "decimalScale", getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			String prefix, int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("%smeasurementConfigs[%d].%s", prefix, i, key), val.toString()));
 	}
 
 	/**

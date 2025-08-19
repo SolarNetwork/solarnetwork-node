@@ -1,5 +1,5 @@
 /* ==================================================================
- * DefaultControlCenterService.java - 7/08/2025 3:43:47 pm
+ * DatumControlCenterService.java - 7/08/2025 3:43:47 pm
  *
  * Copyright 2025 SolarNetwork.net Dev Team
  *
@@ -66,6 +66,7 @@ import net.solarnetwork.node.io.dnp3.domain.DatumConfig;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -85,13 +86,17 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 1.0
  */
-public class DefaultControlCenterService extends AbstractApplicationService<Master>
+public class DatumControlCenterService extends AbstractApplicationService<Master>
 		implements ControlCenterService, MultiDatumDataSource, SettingSpecifierProvider {
+
+	/** The setting UID. */
+	public static final String SETTING_UID = "net.solarnetwork.node.io.dnp3.controlcenter";
 
 	private final Application app;
 	private final SOEHandler handler;
 	private final ControlCenterConfig controlCenterConfig;
 	private final ConcurrentMap<MeasurementTypeIndex, DatumStreamSamples> datumStreamMapping;
+	private OptionalService<DatumQueue> datumQueue;
 	private DatumConfig[] datumConfigs;
 	private Set<ClassType> unsolicitedEventClasses;
 
@@ -103,7 +108,7 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 	 * @param dnp3Channel
 	 *        the channel to use
 	 */
-	public DefaultControlCenterService(OptionalService<ChannelService> dnp3Channel) {
+	public DatumControlCenterService(OptionalService<ChannelService> dnp3Channel) {
 		super(dnp3Channel, new LinkLayerConfig(true));
 		this.app = new Application();
 		this.handler = new SOEHandler();
@@ -122,7 +127,7 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 		if ( confs != null ) {
 			for ( DatumConfig conf : confs ) {
 				if ( conf.isValid() ) {
-					publishedSourceIds.add(conf.getSourceId());
+					publishedSourceIds.add(resolvePlaceholders(conf.getSourceId()));
 				}
 			}
 		}
@@ -148,7 +153,8 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 				samples = new DatumSamples(dsSamples.samples);
 			}
 
-			SimpleDatum d = SimpleDatum.nodeDatum(dsSamples.sourceId, now(), samples);
+			SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(dsSamples.sourceId), now(),
+					samples);
 			datumBySourceId.put(dsSamples.sourceId, d);
 		}
 		return datumBySourceId.values().stream().map(NodeDatum.class::cast).toList();
@@ -164,7 +170,8 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 	/**
 	 * A runtime datum stream value.
 	 */
-	private static record DatumStreamSamples(String sourceId, DatumSamples samples,
+	private static record DatumStreamSamples(String sourceId, DatumConfig datumConfig,
+			DatumSamples samples,
 			ConcurrentMap<MeasurementTypeIndex, MeasurementConfig> measurementConfigs) {
 
 	}
@@ -193,12 +200,23 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 				return;
 			}
 			final DatumSamples samples = streamSamples.samples;
+			DatumSamples publishSamples = null;
 			synchronized ( samples ) {
 				Number propVal = measConfig.applyTransformations(measurementValue);
 				samples.putSampleValue(measConfig.getPropertyType(), measConfig.getPropertyName(),
 						propVal);
 				log.trace("Source [{}] samples [{}] updated to {}; samples now {}",
 						streamSamples.sourceId, measConfig.getPropertyKey(), propVal, samples);
+				if ( streamSamples.datumConfig.isGenerateDatumOnEvents() ) {
+					publishSamples = new DatumSamples(samples);
+				}
+			}
+			if ( publishSamples != null ) {
+				DatumQueue queue = OptionalService.service(getDatumQueue());
+				if ( queue != null ) {
+					SimpleDatum d = SimpleDatum.nodeDatum(streamSamples.sourceId, now(), samples);
+					queue.offer(d);
+				}
 			}
 		}
 
@@ -273,7 +291,7 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.io.dnp3.controlcenter";
+		return SETTING_UID;
 	}
 
 	@Override
@@ -429,16 +447,16 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 						if ( streamSamples == null ) {
 							for ( DatumStreamSamples s : datumStreamMapping.values() ) {
 								if ( s.sourceId.equals(sourceId) ) {
-									streamSamples = new DatumStreamSamples(sourceId, s.samples,
-											new ConcurrentHashMap<>(8, 0.9f, 2));
+									streamSamples = new DatumStreamSamples(sourceId, datumConfig,
+											s.samples, new ConcurrentHashMap<>(8, 0.9f, 2));
 									sourceIdMapping.put(sourceId, streamSamples);
 									break;
 								}
 							}
 						}
 						if ( streamSamples == null ) {
-							streamSamples = new DatumStreamSamples(sourceId, new DatumSamples(),
-									new ConcurrentHashMap<>(8, 0.9f, 2));
+							streamSamples = new DatumStreamSamples(sourceId, datumConfig,
+									new DatumSamples(), new ConcurrentHashMap<>(8, 0.9f, 2));
 							sourceIdMapping.put(sourceId, streamSamples);
 						}
 
@@ -571,6 +589,25 @@ public class DefaultControlCenterService extends AbstractApplicationService<Mast
 			}
 		}
 		setUnsolicitedEventClasses(classes.isEmpty() ? null : classes);
+	}
+
+	/**
+	 * Get the datum queue.
+	 *
+	 * @return the queue
+	 */
+	public OptionalService<DatumQueue> getDatumQueue() {
+		return datumQueue;
+	}
+
+	/**
+	 * Set the datum queue.
+	 *
+	 * @param datumQueue
+	 *        the queue to set
+	 */
+	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
+		this.datumQueue = datumQueue;
 	}
 
 }

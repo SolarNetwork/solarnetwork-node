@@ -28,6 +28,8 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
+	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
+	
 	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
@@ -244,7 +246,7 @@
 	<bean id="controlCenterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.dnp3.impl.DefaultControlCenterService</value>
+				<value>net.solarnetwork.node.io.dnp3.impl.DatumControlCenterService</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -284,6 +286,27 @@
 		</property>
 	</bean>
 	
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvConfigurer">
+			<argument ref="settingsService"/>
+			<argument ref="identityService"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames">
+						<list>
+							<value>net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvConfigurer</value>
+							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+						</list>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</service>
+	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="DNP3 control center"/>
@@ -302,7 +325,7 @@
 					<property name="datumMetadataService" ref="datumMetadataService"/>
 					<property name="datumQueue" ref="datumQueue"/>
 					<property name="multiDatumDataSource">
-						<bean class="net.solarnetwork.node.io.dnp3.impl.DefaultControlCenterService">
+						<bean class="net.solarnetwork.node.io.dnp3.impl.DatumControlCenterService">
 							<argument>
 								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 									<argument ref="bundleContext"/>
@@ -319,6 +342,7 @@
 							<property name="messageSource" ref="controlCenterJobMessageSource"/>
 							<property name="taskExecutor" ref="taskExecutor"/>
 							<property name="taskScheduler" ref="taskScheduler"/>
+							<property name="datumQueue" ref="datumQueue"/>
 						</bean>
 					</property>
 				</bean>

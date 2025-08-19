@@ -22,17 +22,26 @@
 
 package net.solarnetwork.node.io.dnp3.domain;
 
+import static java.lang.String.format;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterConfig.JOB_SERVICE_SETTING_PREFIX;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.io.dnp3.impl.DatumControlCenterConfig;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * A collection of measurement configurations for a single source ID.
@@ -42,8 +51,20 @@ import net.solarnetwork.util.ArrayUtils;
  */
 public class DatumConfig {
 
+	/**
+	 * A setting type pattern for a datum configuration element.
+	 *
+	 * <p>
+	 * The pattern has two capture groups: the datum configuration index and the
+	 * property setting name.
+	 * </p>
+	 */
+	public static final Pattern DATUM_SETTING_PATTERN = Pattern
+			.compile(".+".concat(Pattern.quote(".datumConfigs[")).concat("(\\d+)\\]\\.(.*)"));
+
 	private String sourceId;
 	private Duration pollFrequency;
+	private boolean generateDatumOnEvents;
 	private MeasurementConfig[] measurementConfigs;
 
 	/**
@@ -65,6 +86,7 @@ public class DatumConfig {
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "pollFrequencySeconds", null));
+		results.add(new BasicToggleSettingSpecifier(prefix + "generateDatumOnEvents", Boolean.FALSE));
 
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
 		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
@@ -82,6 +104,93 @@ public class DatumConfig {
 				}));
 
 		return results;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 *
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param i
+	 *        the configuration index
+	 * @return the settings
+	 */
+	public List<SettingValueBean> toSettingValues(final String providerId, final String instanceId,
+			final int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, i, "sourceId", getSourceId());
+		addSetting(settings, providerId, instanceId, i, "pollFrequencySeconds",
+				getPollFrequencySeconds());
+		addSetting(settings, providerId, instanceId, i, "generateDatumOnEvents",
+				isGenerateDatumOnEvents());
+
+		final MeasurementConfig[] measConfs = getMeasurementConfigs();
+		if ( measConfs != null ) {
+			final String measPrefix = format("%sdatumConfigs[%d].", JOB_SERVICE_SETTING_PREFIX, i);
+			for ( int j = 0; j < measConfs.length; j++ ) {
+				settings.addAll(
+						measConfs[j].toClientSettingValues(providerId, instanceId, measPrefix, j));
+
+			}
+		}
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("%sdatumConfigs[%d].%s", JOB_SERVICE_SETTING_PREFIX, i, key), val.toString()));
+	}
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 *
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 */
+	public static boolean populateFromSetting(DatumControlCenterConfig config, Setting setting) {
+		Matcher m = DATUM_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<DatumConfig> datumConfigs = config.getDatumConfigs();
+		if ( !(idx < datumConfigs.size()) ) {
+			datumConfigs.add(idx, new DatumConfig());
+		}
+		DatumConfig datumConfig = datumConfigs.get(idx);
+
+		if ( MeasurementConfig.populateFromSetting(datumConfig, setting) ) {
+			return true;
+		}
+
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "sourceId":
+					datumConfig.setSourceId(val);
+					break;
+				case "pollFrequencySeconds":
+					datumConfig.setPollFrequencySeconds(Long.valueOf(val));
+					break;
+				case "generateDatumOnEvents":
+					datumConfig.setGenerateDatumOnEvents(StringUtils.parseBoolean(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -107,6 +216,31 @@ public class DatumConfig {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("DatumConfig{");
+		if ( sourceId != null ) {
+			builder.append("sourceId=");
+			builder.append(sourceId);
+			builder.append(", ");
+		}
+		if ( pollFrequency != null ) {
+			builder.append("pollFrequency=");
+			builder.append(pollFrequency);
+			builder.append(", ");
+		}
+		builder.append("generateDatumOnEvents=");
+		builder.append(generateDatumOnEvents);
+		builder.append(", ");
+		if ( measurementConfigs != null ) {
+			builder.append("measurementConfigs=");
+			builder.append(Arrays.toString(measurementConfigs));
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	/**
@@ -166,6 +300,26 @@ public class DatumConfig {
 	public void setPollFrequencySeconds(Long seconds) {
 		Duration dur = (seconds != null ? Duration.ofSeconds(seconds) : null);
 		setPollFrequency(dur);
+	}
+
+	/**
+	 * Get the "generate on events" mode.
+	 *
+	 * @return {@code true} to generate datum after measurement update events
+	 */
+	public boolean isGenerateDatumOnEvents() {
+		return generateDatumOnEvents;
+	}
+
+	/**
+	 * Set the "generate on events" mode.
+	 *
+	 * @param generateDatumOnEvents
+	 *        {@code true} to generate datum after measurement update events;
+	 *        {@code false} to only generate datum when polled
+	 */
+	public void setGenerateDatumOnEvents(boolean generateDatumOnEvents) {
+		this.generateDatumOnEvents = generateDatumOnEvents;
 	}
 
 	/**

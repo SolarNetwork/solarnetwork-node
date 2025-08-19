@@ -31,25 +31,25 @@ package net.solarnetwork.node.io.dnp3.domain;
 public enum MeasurementType {
 
 	/** Analog input. */
-	AnalogInput('a', "Analog input", 30, 32),
+	AnalogInput('a', "Analog Input", 30, 32),
 
 	/** Analog output status. */
-	AnalogOutputStatus('A', "Analog output status", 40, 42),
+	AnalogOutputStatus('A', "Analog Output Status", 40, 42),
 
 	/** Binary input. */
-	BinaryInput('b', "Binary input", 1, 2),
+	BinaryInput('b', "Binary Input", 1, 2),
 
 	/** Binary output status. */
-	BinaryOutputStatus('B', "Binary output status", 10, 11),
+	BinaryOutputStatus('B', "Binary Output Status", 10, 11),
 
 	/** Counter. */
 	Counter('c', "Counter", 20, 22),
 
 	/** Double bit binary input. */
-	DoubleBitBinaryInput('d', "Double bit binary input", 3, 4),
+	DoubleBitBinaryInput('d', "Double Bit Binary Input", 3, 4),
 
 	/** Frozen counter. */
-	FrozenCounter('f', "Frozen counter", 21, 23);
+	FrozenCounter('f', "Frozen Counter", 21, 23);
 
 	private final char code;
 	private final String title;

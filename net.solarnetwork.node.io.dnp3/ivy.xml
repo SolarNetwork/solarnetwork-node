@@ -13,6 +13,7 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
+		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>
        	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.0.0"/>
 		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.opendnp3-bindings" rev="3.1.2.SN01"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
@@ -22,4 +23,5 @@
 		<dependency org="org.springframework" name="spring-context-support" rev="6.2.6"/>
 		<dependency org="org.springframework" name="spring-core" rev="6.2.6"/>
 	</dependencies>
+	
 </ivy-module>

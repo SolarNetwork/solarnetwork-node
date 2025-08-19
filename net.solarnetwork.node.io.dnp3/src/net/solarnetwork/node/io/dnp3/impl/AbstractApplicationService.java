@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import com.automatak.dnp3.Channel;
@@ -40,9 +38,9 @@ import com.automatak.dnp3.TransportStatistics;
 import com.automatak.dnp3.enums.LinkStatus;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceLifecycleObserver;
-import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -55,7 +53,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @author matt
  * @version 3.0
  */
-public abstract class AbstractApplicationService<T extends Stack> extends BasicIdentifiable
+public abstract class AbstractApplicationService<T extends Stack> extends BaseIdentifiable
 		implements ServiceLifecycleObserver, SettingsChangeObserver {
 
 	/**
@@ -64,9 +62,6 @@ public abstract class AbstractApplicationService<T extends Stack> extends BasicI
 	 * @since 3.0
 	 */
 	private static final int DEFAULT_STARTUP_DELAY_SECONDS = 5;
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OptionalService<ChannelService> dnp3Channel;
 	private final LinkLayerConfig linkLayerConfig;
