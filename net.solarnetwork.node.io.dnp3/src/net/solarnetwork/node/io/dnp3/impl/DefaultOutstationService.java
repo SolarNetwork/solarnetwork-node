@@ -549,7 +549,14 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 							int index = (type == ControlType.Analog ? analogStatusOffset
 									: binaryStatusOffset) + itr.previousIndex();
 
-							Object propVal = datumProps.get("value");
+							Object propVal = datumProps.get("val");
+							if ( propVal == null ) {
+								propVal = datumProps.get("value");
+							}
+							if ( propVal == null ) {
+								// take first available value
+								propVal = datumProps.values().iterator().next();
+							}
 							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type, index,
 									sourceId, propVal);
 							switch (type) {
