@@ -25,7 +25,6 @@ package net.solarnetwork.node.io.dnp3.impl;
 import static net.solarnetwork.node.reactor.InstructionUtils.createSetControlValueLocalInstruction;
 import static net.solarnetwork.service.OptionalService.service;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,7 +92,6 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -467,12 +465,7 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 						Object propVal = datumProps.get(config.getPropertyName());
 						if ( propVal != null ) {
 							if ( propVal instanceof Number n ) {
-								if ( config.getUnitMultiplier() != null ) {
-									propVal = applyUnitMultiplier(n, config.getUnitMultiplier());
-								}
-								if ( config.getDecimalScale() >= 0 ) {
-									propVal = applyDecimalScale(n, config.getDecimalScale());
-								}
+								propVal = config.applyTransformations(n);
 							}
 							if ( changes == null ) {
 								changes = new OutstationChangeSet();
@@ -613,25 +606,6 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 		} else {
 			return StringUtils.parseBoolean(propVal.toString());
 		}
-	}
-
-	private Number applyDecimalScale(Number value, int decimalScale) {
-		if ( decimalScale < 0 ) {
-			return value;
-		}
-		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		if ( v.scale() > decimalScale ) {
-			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
-		}
-		return v;
-	}
-
-	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
-		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
-			return value;
-		}
-		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.multiply(multiplier);
 	}
 
 	/*
