@@ -38,41 +38,50 @@ public enum DatumControlCenterCsvColumn implements CodedValue {
 	/** The component instance ID. */
 	INSTANCE_ID(0, "Instance ID"),
 
+	/** The service ID. */
+	SERVICE_NAME(1, "Service Name"),
+
+	/** The service group ID. */
+	SERVICE_GROUP(2, "Service Group"),
+
 	/** The source ID. */
-	CONNECTION_NAME(1, "Connection"),
+	CONNECTION_NAME(3, "Connection"),
+
+	/** The address (0x0000 - 0xFFEF). */
+	ADDRESS(4, "Address"),
 
 	/** The event classes. */
-	EVENT_CLASSES(2, "Event Classes"),
+	EVENT_CLASSES(5, "Event Classes"),
 
 	/** The datum poll schedule. */
-	SCHEDULE(3, "Schedule"),
+	SCHEDULE(6, "Schedule"),
 
 	/** The datum source ID. */
-	SOURCE_ID(4, "Source ID"),
+	SOURCE_ID(7, "Source ID"),
 
 	/** The generate-datum-on-events mode. */
-	DATUM_EVENTS(5, "Datum Events"),
+	DATUM_EVENTS(8, "Datum Events"),
 
 	/** A frequency at which to refresh DNP3 data. */
-	POLL_FREQUENCY(6, "Poll Frequency"),
+	POLL_FREQUENCY(9, "Poll Frequency"),
 
 	/** The datum property name. */
-	PROP_NAME(7, "Property"),
+	PROP_NAME(10, "Property"),
 
 	/** The datum property type. */
-	PROP_TYPE(8, "Property Type"),
+	PROP_TYPE(11, "Property Type"),
 
 	/** The register address. */
-	MEASUREMENT_TYPE(9, "Measurement Type"),
+	MEASUREMENT_TYPE(12, "Measurement Type"),
 
 	/** The register type. */
-	INDEX(10, "Index"),
+	INDEX(13, "Index"),
 
 	/** A property value multiplier. */
-	MULTIPLIER(11, "Multiplier"),
+	MULTIPLIER(14, "Multiplier"),
 
 	/** A property value decimal scale. */
-	DECIMAL_SCALE(12, "Decimal Scale"),
+	DECIMAL_SCALE(15, "Decimal Scale"),
 
 	;
 

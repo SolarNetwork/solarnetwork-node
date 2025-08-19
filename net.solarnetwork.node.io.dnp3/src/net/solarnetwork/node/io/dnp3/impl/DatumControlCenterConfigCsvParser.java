@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.ADDRESS;
 import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.CONNECTION_NAME;
 import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DATUM_EVENTS;
 import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DECIMAL_SCALE;
@@ -33,6 +34,8 @@ import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.POL
 import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_NAME;
 import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_TYPE;
 import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SCHEDULE;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_GROUP;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_NAME;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.parseBoolean;
 import java.io.IOException;
@@ -116,7 +119,10 @@ public class DatumControlCenterConfigCsvParser {
 				config = new DatumControlCenterConfig();
 				results.add(config);
 				config.setKey(key);
+				config.setServiceName(parseStringValue(row, rowLen, rowNum, SERVICE_NAME));
+				config.setServiceGroup(parseStringValue(row, rowLen, rowNum, SERVICE_GROUP));
 				config.setConnectionName(parseStringValue(row, rowLen, rowNum, CONNECTION_NAME));
+				config.setAddress(parseIntegerValue(row, rowLen, rowNum, ADDRESS));
 				config.setUnsolicitedEventClasses(praseEventClasses(row, rowLen, rowNum, EVENT_CLASSES));
 				config.setSchedule(parseStringValue(row, rowLen, rowNum, SCHEDULE));
 

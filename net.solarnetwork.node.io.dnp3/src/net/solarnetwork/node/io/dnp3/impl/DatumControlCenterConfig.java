@@ -44,7 +44,10 @@ public class DatumControlCenterConfig {
 	public static final String JOB_SERVICE_SETTING_PREFIX = "jobService.multiDatumDataSource.";
 
 	private String key;
+	private String serviceName;
+	private String serviceGroup;
 	private String connectionName;
+	private Integer address;
 	private Set<ClassType> unsolicitedEventClasses;
 	private String schedule;
 	private final List<DatumConfig> datumConfigs = new ArrayList<>(8);
@@ -68,7 +71,10 @@ public class DatumControlCenterConfig {
 		if ( schedule != null ) {
 			settings.add(new SettingValueBean(providerId, key, "schedule", schedule));
 		}
+		addSetting(settings, providerId, key, "uid", serviceName);
+		addSetting(settings, providerId, key, "groupUid", serviceGroup);
 		addSetting(settings, providerId, key, "dnp3Channel.propertyFilters['uid']", connectionName);
+		addSetting(settings, providerId, key, "linkLayerConfig.localAddr", address);
 		addSetting(settings, providerId, key, "unsolicitedEventClassesValue",
 				StringUtils.commaDelimitedStringFromCollection(unsolicitedEventClasses));
 		addSetting(settings, providerId, key, "datumConfigsCount", getDatumConfigsCount());
@@ -101,8 +107,17 @@ public class DatumControlCenterConfig {
 			String val = setting.getValue();
 			if ( val != null && !val.isEmpty() ) {
 				switch (type) {
+					case "uid":
+						setServiceName(val);
+						break;
+					case "groupUid":
+						setServiceGroup(val);
+						break;
 					case "dnp3Channel.propertyFilters['uid']":
 						setConnectionName(val);
+						break;
+					case "linkLayerConfig.localAddr":
+						setAddress(Integer.valueOf(val));
 						break;
 					case "unsolicitedEventClassesValue":
 						setUnsolicitedEventClassesValue(val);
@@ -137,6 +152,11 @@ public class DatumControlCenterConfig {
 		if ( connectionName != null ) {
 			builder.append("connectionName=");
 			builder.append(connectionName);
+			builder.append(", ");
+		}
+		if ( address != null ) {
+			builder.append("address=");
+			builder.append(address);
 			builder.append(", ");
 		}
 		if ( unsolicitedEventClasses != null ) {
@@ -177,6 +197,44 @@ public class DatumControlCenterConfig {
 	}
 
 	/**
+	 * Get the service name.
+	 *
+	 * @return the service name
+	 */
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	/**
+	 * Set the service name.
+	 *
+	 * @param serviceName
+	 *        the service name to set
+	 */
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+
+	/**
+	 * Get the service group.
+	 *
+	 * @return the service group
+	 */
+	public String getServiceGroup() {
+		return serviceGroup;
+	}
+
+	/**
+	 * Set the service group.
+	 *
+	 * @param serviceGroup
+	 *        the service group to set
+	 */
+	public void setServiceGroup(String serviceGroup) {
+		this.serviceGroup = serviceGroup;
+	}
+
+	/**
 	 * Get the schedule.
 	 *
 	 * @return the schedule
@@ -212,6 +270,25 @@ public class DatumControlCenterConfig {
 	 */
 	public void setConnectionName(String connectionName) {
 		this.connectionName = connectionName;
+	}
+
+	/**
+	 * Get the address.
+	 *
+	 * @return the address
+	 */
+	public Integer getAddress() {
+		return address;
+	}
+
+	/**
+	 * Set the address.
+	 *
+	 * @param address
+	 *        the address to set
+	 */
+	public void setAddress(Integer address) {
+		this.address = address;
 	}
 
 	/**

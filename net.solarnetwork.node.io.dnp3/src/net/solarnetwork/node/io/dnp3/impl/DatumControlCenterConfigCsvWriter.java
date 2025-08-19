@@ -23,6 +23,22 @@
 package net.solarnetwork.node.io.dnp3.impl;
 
 import static java.util.Arrays.fill;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.ADDRESS;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.CONNECTION_NAME;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DATUM_EVENTS;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DECIMAL_SCALE;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.EVENT_CLASSES;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.INDEX;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.INSTANCE_ID;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.MEASUREMENT_TYPE;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.MULTIPLIER;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.POLL_FREQUENCY;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_NAME;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_TYPE;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SCHEDULE;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_GROUP;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_NAME;
+import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SOURCE_ID;
 import java.io.IOException;
 import java.util.List;
 import org.supercsv.io.ICsvListWriter;
@@ -86,19 +102,21 @@ public class DatumControlCenterConfigCsvWriter {
 			config.populateFromSetting(s);
 		}
 		String[] row = new String[rowLen];
-		row[DatumControlCenterCsvColumn.INSTANCE_ID.getCode()] = config.getKey();
-		row[DatumControlCenterCsvColumn.CONNECTION_NAME.getCode()] = config.getConnectionName();
-		row[DatumControlCenterCsvColumn.EVENT_CLASSES.getCode()] = config.getUnsolicitedEventClassesValue();
-		row[DatumControlCenterCsvColumn.SCHEDULE.getCode()] = config.getSchedule();
+		row[INSTANCE_ID.getCode()] = config.getKey();
+		row[SERVICE_NAME.getCode()] = config.getServiceName();
+		row[SERVICE_GROUP.getCode()] = config.getServiceGroup();
+		row[CONNECTION_NAME.getCode()] = config.getConnectionName();
+		row[ADDRESS.getCode()] = (config.getAddress() != null ? config.getAddress().toString()
+				: String.valueOf(1));
+		row[EVENT_CLASSES.getCode()] = config.getUnsolicitedEventClassesValue();
+		row[SCHEDULE.getCode()] = config.getSchedule();
 
 		for ( DatumConfig datumConfig : config.getDatumConfigs() ) {
-			row[DatumControlCenterCsvColumn.SOURCE_ID.getCode()] = datumConfig.getSourceId();
-			row[DatumControlCenterCsvColumn.DATUM_EVENTS.getCode()] = String
-					.valueOf(datumConfig.isGenerateDatumOnEvents());
-			row[DatumControlCenterCsvColumn.POLL_FREQUENCY
-					.getCode()] = (datumConfig.getPollFrequencySeconds() != null
-							? datumConfig.getPollFrequencySeconds().toString()
-							: null);
+			row[SOURCE_ID.getCode()] = datumConfig.getSourceId();
+			row[DATUM_EVENTS.getCode()] = String.valueOf(datumConfig.isGenerateDatumOnEvents());
+			row[POLL_FREQUENCY.getCode()] = (datumConfig.getPollFrequencySeconds() != null
+					? datumConfig.getPollFrequencySeconds().toString()
+					: null);
 
 			final MeasurementConfig[] measConfs = datumConfig.getMeasurementConfigs();
 			if ( measConfs == null || measConfs.length < 1 ) {
@@ -107,23 +125,21 @@ public class DatumControlCenterConfigCsvWriter {
 
 			for ( int measIdx = 0; measIdx < measConfs.length; measIdx++ ) {
 				MeasurementConfig measConf = measConfs[measIdx];
-				row[DatumControlCenterCsvColumn.PROP_NAME.getCode()] = measConf.getPropertyName();
-				row[DatumControlCenterCsvColumn.PROP_TYPE.getCode()] = (measConf.getPropertyType() != null
+				row[PROP_NAME.getCode()] = measConf.getPropertyName();
+				row[PROP_TYPE.getCode()] = (measConf.getPropertyType() != null
 						? measConf.getPropertyType().name()
 						: null);
-				row[DatumControlCenterCsvColumn.MEASUREMENT_TYPE.getCode()] = (measConf.getType() != null
+				row[MEASUREMENT_TYPE.getCode()] = (measConf.getType() != null
 						? measConf.getType().getTitle()
 						: null);
-				row[DatumControlCenterCsvColumn.INDEX.getCode()] = (measConf.getIndex() != null
-						? measConf.getIndex().toString()
+				row[INDEX.getCode()] = (measConf.getIndex() != null ? measConf.getIndex().toString()
 						: null);
-				row[DatumControlCenterCsvColumn.MULTIPLIER.getCode()] = (measConf.getIndex() != null
-						? measConf.getIndex().toString()
+				row[MULTIPLIER.getCode()] = (measConf.getIndex() != null ? measConf.getIndex().toString()
 						: null);
-				row[DatumControlCenterCsvColumn.MULTIPLIER.getCode()] = (measConf.getUnitMultiplier() != null
+				row[MULTIPLIER.getCode()] = (measConf.getUnitMultiplier() != null
 						? measConf.getUnitMultiplier().toPlainString()
 						: null);
-				row[DatumControlCenterCsvColumn.DECIMAL_SCALE.getCode()] = (measConf.getDecimalScale() >= 0
+				row[DECIMAL_SCALE.getCode()] = (measConf.getDecimalScale() >= 0
 						? String.valueOf(measConf.getDecimalScale())
 						: null);
 				writer.write(row);
