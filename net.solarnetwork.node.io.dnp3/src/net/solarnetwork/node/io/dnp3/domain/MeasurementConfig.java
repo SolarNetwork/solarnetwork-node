@@ -203,6 +203,9 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 				case "index":
 					measConfig.setIndex(Integer.valueOf(val));
 					break;
+				case "propertyTypeKey":
+					measConfig.setPropertyTypeKey(val);
+					break;
 				case "propertyName":
 					measConfig.setPropertyName(val);
 					break;
@@ -239,6 +242,7 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 		List<SettingValueBean> settings = new ArrayList<>(2);
 		addSetting(settings, providerId, instanceId, prefix, i, "typeKey", getTypeKey());
 		addSetting(settings, providerId, instanceId, prefix, i, "index", getIndex());
+		addSetting(settings, providerId, instanceId, prefix, i, "propertyTypeKey", getPropertyTypeKey());
 		addSetting(settings, providerId, instanceId, prefix, i, "propertyName", getPropertyName());
 		addSetting(settings, providerId, instanceId, prefix, i, "unitMultiplier", getUnitMultiplier());
 		addSetting(settings, providerId, instanceId, prefix, i, "decimalScale", getDecimalScale());
