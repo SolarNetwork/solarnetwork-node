@@ -51,8 +51,8 @@ Each TCP server configuration contains the following settings:
 # DNP3 Control Center
 
 The **DNP3 Control Center** component provides a DNP3 "control center" (or _master_) that connects
-to a DNP3 outstation to collect measurement values. The Control Center then generates datum out the
-collected DNP3 measurements.
+to a DNP3 outstation to collect measurement values. The Control Center then generates datum out of
+the collected DNP3 measurements.
 
 See the [Control Center README](./README-ControlCenter.md) document for more details.
 
