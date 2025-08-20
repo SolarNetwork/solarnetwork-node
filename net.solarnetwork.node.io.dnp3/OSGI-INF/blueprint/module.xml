@@ -247,6 +247,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.dnp3.impl.DatumControlCenterService</value>
+				<value>net.solarnetwork.node.io.dnp3.domain.MeasurementType</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>

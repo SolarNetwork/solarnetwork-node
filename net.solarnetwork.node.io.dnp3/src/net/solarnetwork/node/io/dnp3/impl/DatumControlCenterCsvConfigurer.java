@@ -48,6 +48,7 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.io.ICsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.io.dnp3.domain.DatumControlCenterConfig;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;

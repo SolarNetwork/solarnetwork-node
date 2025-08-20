@@ -23,7 +23,7 @@
 package net.solarnetwork.node.io.dnp3.domain;
 
 import static java.lang.String.format;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterConfig.JOB_SERVICE_SETTING_PREFIX;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterConfig.JOB_SERVICE_SETTING_PREFIX;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.domain.Setting;
-import net.solarnetwork.node.io.dnp3.impl.DatumControlCenterConfig;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
@@ -125,6 +124,8 @@ public class DatumConfig {
 				getPollFrequencySeconds());
 		addSetting(settings, providerId, instanceId, i, "generateDatumOnEvents",
 				isGenerateDatumOnEvents());
+		addSetting(settings, providerId, instanceId, i, "measurementConfigsCount",
+				getMeasurementConfigsCount());
 
 		final MeasurementConfig[] measConfs = getMeasurementConfigs();
 		if ( measConfs != null ) {

@@ -22,20 +22,20 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.ADDRESS;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.CONNECTION_NAME;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DATUM_EVENTS;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DECIMAL_SCALE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.EVENT_CLASSES;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.INDEX;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.MEASUREMENT_TYPE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.MULTIPLIER;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.POLL_FREQUENCY;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_NAME;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_TYPE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SCHEDULE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_GROUP;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_NAME;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.ADDRESS;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.CONNECTION_NAME;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.DATUM_EVENTS;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.DECIMAL_SCALE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.EVENT_CLASSES;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.INDEX;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.MEASUREMENT_TYPE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.MULTIPLIER;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.POLL_FREQUENCY;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.PROP_NAME;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.PROP_TYPE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SCHEDULE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SERVICE_GROUP;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SERVICE_NAME;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.parseBoolean;
 import java.io.IOException;
@@ -47,14 +47,16 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.springframework.context.MessageSource;
 import org.supercsv.io.ICsvListReader;
-import net.solarnetwork.codec.CsvUtils;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.io.dnp3.domain.ClassType;
 import net.solarnetwork.node.io.dnp3.domain.DatumConfig;
+import net.solarnetwork.node.io.dnp3.domain.DatumControlCenterConfig;
+import net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
 import net.solarnetwork.util.IntRangeSet;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Parse CSV data into {@link ModbusDatumDataSourceConfig} instances.
@@ -244,7 +246,8 @@ public class DatumControlCenterConfigCsvParser {
 
 	private Set<ClassType> praseEventClasses(List<String> row, int rowLen, int rowNum, CodedValue col) {
 		// parse into IntRangeSet, to support ranges like "1-3"
-		IntRangeSet ranges = CsvUtils.parseColumnsReference(parseStringValue(row, rowLen, rowNum, col));
+		IntRangeSet ranges = StringUtils
+				.commaDelimitedStringToIntRangeSet(parseStringValue(row, rowLen, rowNum, col));
 		if ( ranges == null || ranges.isEmpty() ) {
 			return null;
 		}

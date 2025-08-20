@@ -25,6 +25,9 @@ package net.solarnetwork.node.io.dnp3.impl;
 import static com.automatak.dnp3.Header.Range16;
 import static com.automatak.dnp3.Header.Range8;
 import static java.time.Instant.now;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toCollection;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,12 +37,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.springframework.context.MessageSource;
 import com.automatak.dnp3.AnalogInput;
 import com.automatak.dnp3.AnalogOutputStatus;
 import com.automatak.dnp3.BinaryInput;
@@ -99,8 +107,6 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 	private OptionalService<DatumQueue> datumQueue;
 	private DatumConfig[] datumConfigs;
 	private Set<ClassType> unsolicitedEventClasses;
-
-	private Master master;
 
 	/**
 	 * Constructor.
@@ -163,7 +169,17 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 	/**
 	 * A measurement type and index combination.
 	 */
-	private static record MeasurementTypeIndex(MeasurementType type, Integer index) {
+	private static record MeasurementTypeIndex(MeasurementType type, Integer index)
+			implements Comparable<MeasurementTypeIndex> {
+
+		@Override
+		public int compareTo(MeasurementTypeIndex o) {
+			int result = type.compareTo(o.type);
+			if ( result == 0 ) {
+				result = index.compareTo(o.index);
+			}
+			return result;
+		}
 
 	}
 
@@ -260,7 +276,7 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 		public void processC(HeaderInfo info, Iterable<IndexedValue<Counter>> values) {
 			log.trace("Got Counter updates: {}", values);
 			for ( IndexedValue<Counter> val : values ) {
-				processMeasurement(MeasurementType.BinaryOutputStatus, val.index, val.value.value);
+				processMeasurement(MeasurementType.Counter, val.index, val.value.value);
 			}
 		}
 
@@ -300,6 +316,9 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 
 		result.add(new BasicTitleSettingSpecifier("status", controlCenterStatusMessage(), true));
 
+		result.add(new BasicTitleSettingSpecifier("info",
+				controlCenterDatumInfo(getMessageSource(), Locale.getDefault()), true, true));
+
 		result.addAll(basicIdentifiableSettings());
 
 		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['uid']", null, false,
@@ -331,11 +350,15 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 	}
 
 	private synchronized String controlCenterStatusMessage() {
-		final Master master = this.master;
+		final Master master = getDnp3Stack();
 		final StringBuilder buf = new StringBuilder();
 		buf.append(master != null ? "Available" : "Offline");
-		buf.append(
-				stackStatusMessage(master != null ? master.getStatistics() : null, app.getLinkStatus()));
+		buf.append("; ");
+
+		final ChannelService channelService = channelService();
+
+		buf.append(stackStatusMessage(master != null ? master.getStatistics() : null,
+				channelService != null ? channelService.getChannelState() : null));
 		return buf.toString();
 	}
 
@@ -473,6 +496,74 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 		datumStreamMapping.putAll(newDatumStreamMapping);
 
 		return config;
+	}
+
+	private String controlCenterDatumInfo(MessageSource messageSource, Locale locale) {
+		final DatumConfig[] datumConfs = getDatumConfigs();
+		if ( datumConfs == null || datumConfs.length < 1 ) {
+			return "";
+		}
+
+		final StringBuilder buf = new StringBuilder();
+
+		// render section per source ID
+
+		for ( DatumConfig datumConf : datumConfs ) {
+			if ( !datumConf.isValid() ) {
+				continue;
+			}
+			buf.append(messageSource.getMessage("datumInfo.title",
+					new Object[] { datumConf.getSourceId() }, locale));
+
+			// render table of measurements per measurement type
+
+			final MeasurementConfig[] measConfs = datumConf.getMeasurementConfigs();
+
+			// @formatter:off
+			SortedMap<MeasurementType, SortedSet<MeasurementTypeIndex>> measGroups = Arrays.stream(measConfs)
+					.filter(c -> c.isValidForClient())
+					.collect(groupingBy(MeasurementConfig::getType, TreeMap::new,
+							mapping(c -> new MeasurementTypeIndex(c.getType(), c.getIndex()),
+									toCollection(TreeSet::new))));
+			// @formatter:on
+
+			for ( Entry<MeasurementType, SortedSet<MeasurementTypeIndex>> measGroupEntry : measGroups
+					.entrySet() ) {
+				final MeasurementType type = measGroupEntry.getKey();
+				// start a new measurements block for the type
+				buf.append(messageSource.getMessage("datumInfoMeasurementBlock.start",
+						new Object[] { messageSource.getMessage(
+								"measurementType.%s.title".formatted(type.name()), null, locale) },
+						locale));
+				buf.append(messageSource.getMessage("datumInfoMeasurementTable.start", null, locale));
+
+				// render measurements table for the block
+				for ( MeasurementTypeIndex measKey : measGroupEntry.getValue() ) {
+
+					DatumStreamSamples dsSamples = datumStreamMapping.get(measKey);
+					MeasurementConfig measConf = (dsSamples != null
+							? dsSamples.measurementConfigs.get(measKey)
+							: null);
+					buf.append(messageSource.getMessage("datumInfoMeasurementTable.row", new Object[] {
+							measKey.index, "0x" + Integer.toHexString(measKey.index),
+							(measConf != null ? measConf.getPropertyName() : ""),
+							(measConf != null && measConf.getPropertyName() != null
+									&& measConf.getPropertyType() != null
+									&& dsSamples.samples.hasSampleValue(measConf.getPropertyType(),
+											measConf.getPropertyName())
+													? dsSamples.samples.getSampleValue(
+															measConf.getPropertyType(),
+															measConf.getPropertyName())
+													: "") },
+							locale));
+				}
+
+				buf.append(messageSource.getMessage("datumInfoMeasurementTable.end", null, locale));
+				buf.append(messageSource.getMessage("datumInfoMeasurementBlock.end", null, locale));
+			}
+		}
+
+		return buf.toString();
 	}
 
 	/**

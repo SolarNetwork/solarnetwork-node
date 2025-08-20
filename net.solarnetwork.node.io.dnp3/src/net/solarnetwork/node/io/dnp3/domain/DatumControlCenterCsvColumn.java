@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.dnp3.impl;
+package net.solarnetwork.node.io.dnp3.domain;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -51,7 +51,7 @@ public enum DatumControlCenterCsvColumn implements CodedValue {
 	ADDRESS(4, "Address"),
 
 	/** The event classes. */
-	EVENT_CLASSES(5, "Event Classes"),
+	EVENT_CLASSES(5, "Events"),
 
 	/** The datum poll schedule. */
 	SCHEDULE(6, "Schedule"),

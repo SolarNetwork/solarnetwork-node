@@ -178,4 +178,9 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 		return buf.toString();
 	}
 
+	@Override
+	public ChannelState getChannelState() {
+		return channelState;
+	}
+
 }

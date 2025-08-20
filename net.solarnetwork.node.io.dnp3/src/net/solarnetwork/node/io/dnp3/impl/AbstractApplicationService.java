@@ -35,7 +35,7 @@ import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.Stack;
 import com.automatak.dnp3.StackStatistics;
 import com.automatak.dnp3.TransportStatistics;
-import com.automatak.dnp3.enums.LinkStatus;
+import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
@@ -220,12 +220,12 @@ public abstract class AbstractApplicationService<T extends Stack> extends BaseId
 	 * @return the message, never {@code null}
 	 * @since 3.0
 	 */
-	public static String stackStatusMessage(StackStatistics stackStats, LinkStatus linkStatus) {
+	public static String stackStatusMessage(StackStatistics stackStats, ChannelState channelState) {
 		if ( stackStats == null ) {
 			return "";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append(linkStatus == LinkStatus.RESET ? "; Link Online" : "; Link Offline");
+		buf.append(channelState != null ? channelState : ChannelState.CLOSED);
 		TransportStatistics stats = stackStats.transport;
 		if ( stats != null ) {
 			buf.append("; ").append(stats.numTransportRx).append(" in");

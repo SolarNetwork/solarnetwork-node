@@ -23,29 +23,35 @@
 package net.solarnetwork.node.io.dnp3.impl;
 
 import static java.util.Arrays.fill;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.ADDRESS;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.CONNECTION_NAME;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DATUM_EVENTS;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.DECIMAL_SCALE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.EVENT_CLASSES;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.INDEX;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.INSTANCE_ID;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.MEASUREMENT_TYPE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.MULTIPLIER;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.POLL_FREQUENCY;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_NAME;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.PROP_TYPE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SCHEDULE;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_GROUP;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SERVICE_NAME;
-import static net.solarnetwork.node.io.dnp3.impl.DatumControlCenterCsvColumn.SOURCE_ID;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.ADDRESS;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.CONNECTION_NAME;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.DATUM_EVENTS;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.DECIMAL_SCALE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.EVENT_CLASSES;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.INDEX;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.INSTANCE_ID;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.MEASUREMENT_TYPE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.MULTIPLIER;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.POLL_FREQUENCY;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.PROP_NAME;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.PROP_TYPE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SCHEDULE;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SERVICE_GROUP;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SERVICE_NAME;
+import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SOURCE_ID;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import org.supercsv.io.ICsvListWriter;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.io.dnp3.domain.ClassType;
 import net.solarnetwork.node.io.dnp3.domain.DatumConfig;
+import net.solarnetwork.node.io.dnp3.domain.DatumControlCenterConfig;
+import net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
+import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.ObjectUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Generate DNP3 Control Center configuration CSV from settings.
@@ -108,7 +114,7 @@ public class DatumControlCenterConfigCsvWriter {
 		row[CONNECTION_NAME.getCode()] = config.getConnectionName();
 		row[ADDRESS.getCode()] = (config.getAddress() != null ? config.getAddress().toString()
 				: String.valueOf(1));
-		row[EVENT_CLASSES.getCode()] = config.getUnsolicitedEventClassesValue();
+		row[EVENT_CLASSES.getCode()] = unsolicitedEventClassesValue(config.getUnsolicitedEventClasses());
 		row[SCHEDULE.getCode()] = config.getSchedule();
 
 		for ( DatumConfig datumConfig : config.getDatumConfigs() ) {
@@ -146,6 +152,17 @@ public class DatumControlCenterConfigCsvWriter {
 				fill(row, null);
 			}
 		}
+	}
+
+	private String unsolicitedEventClassesValue(Set<ClassType> types) {
+		if ( types == null || types.isEmpty() ) {
+			return null;
+		}
+		IntRangeSet ranges = new IntRangeSet();
+		for ( ClassType type : types ) {
+			ranges.add(type.getCode());
+		}
+		return StringUtils.commaDelimitedStringFromIntRangeSet(ranges);
 	}
 
 }

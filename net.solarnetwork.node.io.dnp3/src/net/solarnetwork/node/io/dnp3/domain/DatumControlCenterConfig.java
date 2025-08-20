@@ -20,15 +20,14 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.dnp3.impl;
+package net.solarnetwork.node.io.dnp3.domain;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import net.solarnetwork.node.domain.Setting;
-import net.solarnetwork.node.io.dnp3.domain.ClassType;
-import net.solarnetwork.node.io.dnp3.domain.DatumConfig;
+import net.solarnetwork.node.io.dnp3.impl.DatumControlCenterService;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.util.StringUtils;
 
@@ -76,7 +75,7 @@ public class DatumControlCenterConfig {
 		addSetting(settings, providerId, key, "dnp3Channel.propertyFilters['uid']", connectionName);
 		addSetting(settings, providerId, key, "linkLayerConfig.localAddr", address);
 		addSetting(settings, providerId, key, "unsolicitedEventClassesValue",
-				StringUtils.commaDelimitedStringFromCollection(unsolicitedEventClasses));
+				getUnsolicitedEventClassesValue());
 		addSetting(settings, providerId, key, "datumConfigsCount", getDatumConfigsCount());
 
 		int i = 0;
