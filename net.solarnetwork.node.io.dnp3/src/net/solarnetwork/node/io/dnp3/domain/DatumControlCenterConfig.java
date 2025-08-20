@@ -328,7 +328,7 @@ public class DatumControlCenterConfig {
 	 * Set the unsolicited event classes to support as a comma-delimited list of
 	 * class type codes.
 	 *
-	 * @param unsolicitedEventClasses
+	 * @param value
 	 *        the classes as a comma-delimited list of class type codes, or
 	 *        {@code null} or empty set to disable unsolicited events
 	 */

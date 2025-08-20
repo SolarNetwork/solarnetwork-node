@@ -215,8 +215,8 @@ public abstract class AbstractApplicationService<T extends Stack> extends BaseId
 	 *
 	 * @param stackStats
 	 *        the stack statistics
-	 * @param linkStatus
-	 *        the link status
+	 * @param channelState
+	 *        the channel state
 	 * @return the message, never {@code null}
 	 * @since 3.0
 	 */

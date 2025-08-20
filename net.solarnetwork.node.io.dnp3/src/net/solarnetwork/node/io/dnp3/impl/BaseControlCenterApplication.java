@@ -49,6 +49,11 @@ public class BaseControlCenterApplication extends BaseApplication implements Mas
 
 	/**
 	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public BaseControlCenterApplication(InstantSource clock) {
 		super(clock);

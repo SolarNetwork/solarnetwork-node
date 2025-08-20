@@ -49,7 +49,11 @@ public class BaseOutstationApplication extends BaseApplication implements Outsta
 	/**
 	 * Constructor.
 	 *
+	 * @param clock
+	 *        the clock to use
 	 * @since 1.2
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public BaseOutstationApplication(InstantSource clock) {
 		super(clock);

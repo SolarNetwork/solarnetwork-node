@@ -59,7 +59,7 @@ import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Parse CSV data into {@link ModbusDatumDataSourceConfig} instances.
+ * Parse CSV data into {@link DatumControlCenterConfig} instances.
  *
  * @author matt
  * @version 1.0

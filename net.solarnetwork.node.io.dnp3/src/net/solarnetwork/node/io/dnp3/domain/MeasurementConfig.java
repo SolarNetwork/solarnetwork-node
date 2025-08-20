@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.domain.Setting;
@@ -229,11 +230,9 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 	 *        the setting provider ID
 	 * @param instanceId
 	 *        the factory instance ID
-	 * @param unitIdx
-	 *        the unit configuration index
-	 * @param blockIdx
-	 *        the block configuration index
-	 * @param measIdx
+	 * @param prefix
+	 *        a prefix to use for the setting keys
+	 * @param i
 	 *        the measurement configuration index
 	 * @return the settings
 	 */
@@ -300,7 +299,7 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 	 * Set the source ID.
 	 *
 	 * <p>
-	 * This is an alias for {@link #setConfig(String)}.
+	 * This is an alias for {@link DatumSamplePropertyConfig#setConfig(Object)}.
 	 * </p>
 	 *
 	 * @param sourceId

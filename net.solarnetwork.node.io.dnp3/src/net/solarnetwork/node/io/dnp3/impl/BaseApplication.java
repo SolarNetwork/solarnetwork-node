@@ -57,6 +57,8 @@ public class BaseApplication implements LinkStatusListener {
 	 *
 	 * @param clock
 	 *        the clock
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public BaseApplication(InstantSource clock) {
 		super();
