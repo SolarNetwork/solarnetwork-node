@@ -1,21 +1,21 @@
 /* ==================================================================
  * CsvDatumDataSourceConfig.java - 31/03/2023 4:07:20 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,7 +32,7 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Overall configuration for a {@link CsvDatumDataSource} instance.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -69,7 +69,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param locationMode
 	 *        {@literal true} to work with location datum configuration
 	 */
@@ -80,7 +80,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Generate a list of setting values from this instance.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider key to use
 	 * @return the list of setting values, never {@literal null}
@@ -90,8 +90,8 @@ public class CsvDatumDataSourceConfig {
 		if ( schedule != null ) {
 			settings.add(new SettingValueBean(providerId, key, "schedule", schedule));
 		}
-		addSetting(locationMode, settings, providerId, key, "serviceName", serviceName);
-		addSetting(locationMode, settings, providerId, key, "serviceGroup", serviceGroup);
+		addSetting(locationMode, settings, providerId, key, "uid", serviceName);
+		addSetting(locationMode, settings, providerId, key, "groupUid", serviceGroup);
 		if ( locationMode ) {
 			addSetting(false, settings, providerId, key, "locationKey", locationKey);
 			addSetting(false, settings, providerId, key, "locationType", locationType);
@@ -121,7 +121,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Populate a setting as a configuration value, if possible.
-	 * 
+	 *
 	 * @param setting
 	 *        the setting to try to handle
 	 * @return {@literal true} if the setting was handled as a configuration
@@ -142,10 +142,10 @@ public class CsvDatumDataSourceConfig {
 		String val = setting.getValue();
 		if ( val != null && !val.isEmpty() ) {
 			switch (type) {
-				case "serviceName":
+				case "uid":
 					setServiceName(val);
 					break;
-				case "serviceGroup":
+				case "groupUid":
 					setServiceGroup(val);
 					break;
 				case "sourceId":
@@ -350,7 +350,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the location mode flag.
-	 * 
+	 *
 	 * @return the location mode flag
 	 */
 	public boolean isLocationMode() {
@@ -359,7 +359,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the instance key.
-	 * 
+	 *
 	 * @return the key
 	 */
 	public String getKey() {
@@ -368,7 +368,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the instance ID.
-	 * 
+	 *
 	 * @param key
 	 *        the key to set
 	 */
@@ -378,7 +378,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the schedule.
-	 * 
+	 *
 	 * @return the schedule
 	 */
 	public String getSchedule() {
@@ -387,7 +387,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the schedule.
-	 * 
+	 *
 	 * @param schedule
 	 *        the schedule to set
 	 */
@@ -397,7 +397,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the service name.
-	 * 
+	 *
 	 * @return the service name
 	 */
 	public String getServiceName() {
@@ -406,7 +406,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the service name.
-	 * 
+	 *
 	 * @param serviceName
 	 *        the service name to set
 	 */
@@ -416,7 +416,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the service group.
-	 * 
+	 *
 	 * @return the service group
 	 */
 	public String getServiceGroup() {
@@ -425,7 +425,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the service group.
-	 * 
+	 *
 	 * @param serviceGroup
 	 *        the service group to set
 	 */
@@ -435,7 +435,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the source ID.
-	 * 
+	 *
 	 * @return the sourceId
 	 */
 	public String getSourceId() {
@@ -444,7 +444,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the source ID.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the sourceId to set
 	 */
@@ -454,7 +454,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the {@literal 1}- or {@literal A}-based source ID column reference.
-	 * 
+	 *
 	 * @return the source ID column reference
 	 */
 	public String getSourceIdColumn() {
@@ -463,7 +463,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the {@literal 1}- or {@literal A}-based source ID column reference.
-	 * 
+	 *
 	 * @param sourceIdColumn
 	 *        the source ID column reference to set
 	 */
@@ -473,7 +473,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the location key.
-	 * 
+	 *
 	 * @return the location key
 	 */
 	public String getLocationKey() {
@@ -482,7 +482,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the location key.
-	 * 
+	 *
 	 * @param locationKey
 	 *        the location key to set
 	 */
@@ -492,7 +492,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the location type.
-	 * 
+	 *
 	 * @return the location type
 	 */
 	public String getLocationType() {
@@ -501,7 +501,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the location type.
-	 * 
+	 *
 	 * @param locationType
 	 *        the location type to set
 	 */
@@ -511,7 +511,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the URL template.
-	 * 
+	 *
 	 * @return the template
 	 */
 	public String getUrl() {
@@ -520,7 +520,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the URL template to retrieve price data from.
-	 * 
+	 *
 	 * <p>
 	 * This template is for accessing the delimited price data from. This will
 	 * be passed through {@link StringUtils#expandTemplateString(String, Map)}
@@ -530,7 +530,7 @@ public class CsvDatumDataSourceConfig {
 	 * <code>http://some.place/prices?date={date}</code> might resolve to
 	 * something like {@code http://some.place/prices?date=2009-08-08}.
 	 * </p>
-	 * 
+	 *
 	 * @param url
 	 *        the URL template
 	 */
@@ -541,7 +541,7 @@ public class CsvDatumDataSourceConfig {
 	/**
 	 * Get the {@link net.solarnetwork.web.service.HttpRequestCustomizerService}
 	 * UID.
-	 * 
+	 *
 	 * @return the UID
 	 */
 	public String getHttpCustomizer() {
@@ -551,7 +551,7 @@ public class CsvDatumDataSourceConfig {
 	/**
 	 * Set the {@link net.solarnetwork.web.service.HttpRequestCustomizerService}
 	 * UID.
-	 * 
+	 *
 	 * @param httpCustomizer
 	 *        the UID to set
 	 */
@@ -561,7 +561,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the character set name to parse the CSV resource as.
-	 * 
+	 *
 	 * @return the character set name
 	 */
 	public String getCharsetName() {
@@ -570,7 +570,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the character set name to parse the CSV resource as.
-	 * 
+	 *
 	 * @param charsetName
 	 *        the character set name to set
 	 */
@@ -580,7 +580,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the URL connection timeout to apply when requesting the data.
-	 * 
+	 *
 	 * @return the connection timeout, in milliseconds
 	 */
 	public Integer getConnectionTimeout() {
@@ -589,7 +589,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the URL connection timeout to apply when requesting the data.
-	 * 
+	 *
 	 * @param connectionTimeout
 	 *        the timeout, in milliseconds
 	 */
@@ -599,14 +599,14 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the number of lines of text to skip.
-	 * 
+	 *
 	 * <p>
 	 * When greater than {@literal 0} this will skip "header" rows. When
 	 * {@literal 0} the first line will be used. When less than {@literal 0}
 	 * then this line starting from the last available will be used, for example
 	 * {@literal -1} will cause the last line to be used.
 	 * </p>
-	 * 
+	 *
 	 * @return the number of lines to skip
 	 */
 	public Integer getSkipRows() {
@@ -615,7 +615,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the number of lines of text to skip.
-	 * 
+	 *
 	 * @param skipRows
 	 *        the number of lines, or {@literal 0} to not skip any lines
 	 */
@@ -625,7 +625,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the number of rows of CSV to keep (turn into datum).
-	 * 
+	 *
 	 * @return the number of rows to keep
 	 */
 	public Integer getKeepRows() {
@@ -634,7 +634,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the number of rows of CSV to keep (turn into datum).
-	 * 
+	 *
 	 * @param keepRows
 	 *        the number of rows, or {@literal 0} to not keep all rows
 	 */
@@ -645,14 +645,14 @@ public class CsvDatumDataSourceConfig {
 	/**
 	 * Get the comma-delimited set of {@literal 1}- or {@literal A}-based column
 	 * references to use as the time stamp value for datum.
-	 * 
+	 *
 	 * <p>
 	 * This is provided as an array in case the date and time of the data is
 	 * split across multiple columns. If multiple columns are configured, they
 	 * will be joined with a space character before parsing the result into a
 	 * time stamp value.
 	 * </p>
-	 * 
+	 *
 	 * @return the date time column
 	 */
 	public String getDateTimeColumn() {
@@ -662,7 +662,7 @@ public class CsvDatumDataSourceConfig {
 	/**
 	 * Set the comma-delimited set of {@literal 1}- or {@literal A}-based column
 	 * references to use as the time stamp value for datum.
-	 * 
+	 *
 	 * @param dateTimeColumn
 	 *        the column indexes to use for time stamps
 	 */
@@ -673,7 +673,7 @@ public class CsvDatumDataSourceConfig {
 	/**
 	 * Get the {@link DateTimeFormatter} pattern to use for parsing the price
 	 * date value into a time stamp.
-	 * 
+	 *
 	 * @return the date pattern
 	 */
 	public String getDateFormat() {
@@ -683,7 +683,7 @@ public class CsvDatumDataSourceConfig {
 	/**
 	 * Set the {@link DateTimeFormatter} pattern to use for parsing the price
 	 * date value into a time stamp.
-	 * 
+	 *
 	 * @param dateFormat
 	 *        the date pattern
 	 */
@@ -693,7 +693,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the time zone to use for dates.
-	 * 
+	 *
 	 * @return the time zone; defaults to the system default time zone
 	 */
 	public String getTimeZoneId() {
@@ -702,7 +702,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the time zone to use for dates.
-	 * 
+	 *
 	 * @param timeZoneId
 	 *        the time zone to set
 	 */
@@ -712,7 +712,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the date format to use for URL parameters.
-	 * 
+	 *
 	 * @return the date format
 	 */
 	public String getUrlDateFormat() {
@@ -721,7 +721,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the date format to use for URL parameters.
-	 * 
+	 *
 	 * @param urlDateFormat
 	 *        the urlDateFormat to set
 	 */
@@ -731,7 +731,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the sample cache milliseconds.
-	 * 
+	 *
 	 * @return the sampleCacheMs
 	 */
 	public Long getSampleCacheMs() {
@@ -740,7 +740,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Set the sample cache milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the sampleCacheMs to set
 	 */
@@ -750,7 +750,7 @@ public class CsvDatumDataSourceConfig {
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public List<CsvPropertyConfig> getPropertyConfigs() {
