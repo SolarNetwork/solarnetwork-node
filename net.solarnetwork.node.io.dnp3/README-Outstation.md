@@ -4,7 +4,7 @@ The **DNP3 Outstation** component provides a DNP3 "outstation" for DNP3 Control 
 to connect to. This allows data collected by SolarNode plugins to be published via the DNP3
 protocol, and for DNP3 control actions to be performed on SolarNode controls.
 
-<img title="DNP3 Outstation settings" src="docs/solarnode-dnp3-outstation-settings.png" width="508">
+<img title="DNP3 Outstation settings" src="docs/solarnode-dnp3-outstation-config@2x.png" width="960">
 
 ## DNP3 Outstation general settings
 
@@ -28,7 +28,7 @@ You must configure measurement settings for each datum property you want to publ
 You can configure as many measurement settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd>
 buttons to add/remove measurement configurations.
 
-<img title="DNP3 Outstation measurement settings" src="docs/solarnode-dnp3-outstation-measurement-settings.png" width="511">
+<img title="DNP3 Outstation measurement settings" src="docs/solarnode-dnp3-outstation-measurement-config@2x.png" width="938">
 
 Each measurement configuration contains the following settings:
 
@@ -50,16 +50,15 @@ You may configure control settings for each control you want to make manageable 
 You can configure as many control settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd>
 buttons to add/remove control configurations.
 
-Each control configuration will add a corresponding _output status_ type property to the DNP3 database
-(i.e. either an _Analog output status_ or a _Binary output status_).
+Each control configuration will add a corresponding _Output Status_ type property to the DNP3 database
+(i.e. either an _Analog Output Status_ or a _Binary Output Status_).
 
-<img title="DNP3 Outstation control settings" src="docs/solarnode-dnp3-outstation-control-settings.png" width="507">
+<img title="DNP3 Outstation control settings" src="docs/solarnode-dnp3-outstation-control-config@2x.png" width="944">
 
 Each control configuration contains the following settings:
 
 | Setting          | Description                                                                            |
 |------------------|----------------------------------------------------------------------------------------|
-| Control Provider | The **Service Name** of the of the control provider to query for control values. |
 | Control ID       | The control ID to manage via DNP3. |
 | DNP3 Type        | The type of DNP3 control to associate with the datum property. |
 

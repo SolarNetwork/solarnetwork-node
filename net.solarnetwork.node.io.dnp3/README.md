@@ -65,7 +65,7 @@ protocol, and for DNP3 control actions to be performed on SolarNode controls.
 
 See the [Outstation README](./README-Outstation.md) document for more details.
 
-<img title="DNP3 Outstation settings" src="docs/solarnode-dnp3-outstation-settings.png" width="508">
+<img title="DNP3 Outstation settings" src="docs/solarnode-dnp3-outstation-config@2x.png" width="960">
 
 # OpenDNP3 Shared library
 
