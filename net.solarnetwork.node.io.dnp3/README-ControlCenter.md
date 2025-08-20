@@ -39,7 +39,8 @@ The DNP3 Control Center CSV configuration uses the column structure detailed
 from the DNP3 outstation. A header row is required. Comment lines are allowed, just start the line
 with a `#` character (i.e. the first cell value). The entire comment line will be ignored.
 
-Here's an example screen shot of a configuration in a spreadsheet application. It is for two devices:
+Here's an example screen shot of a configuration in a spreadsheet application. It is for two Control
+Centers with 3 datum sources defined between them:
 
  1. Control Center `1` with 2 datum sources:
 	1. Source `meter/1/power` with 2 properties: `watts` and `voltage`
@@ -47,8 +48,8 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
  2. Control Center `2` with 1 datum source:
 	1. Source `meter/2/power1` with 1 datum property: `watts`
 
-Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
-then be loaded into SolarNode via the CSV Configurer.
+Spreadsheet applications generally allow you to export the sheet in the CSV format, which can then
+be loaded into SolarNode via the CSV Configurer.
 
 <img title="DNP3 example CSV configuration" src="docs/solarnode-dnp3-cc-csv-example@2x.png" width="1383">
 
@@ -60,7 +61,7 @@ dash character `-` to have SolarNode assign a simple number identifier. Once an 
 assigned on a given row, subsequent rows will use that value if the corresponding cell value is left
 empty.
 
-Here's an example of how 2 custom instance IDs `Meter` and `Therm` appear in the SolarNode UI:
+Here's an example of how 2 instance IDs `1` and `2` appear in the SolarNode UI:
 
 <img title="DNP3 Control Center instance buttons" src="docs/solarnode-dnp3-cc-instance-buttons@2x.png" width="965">
 
