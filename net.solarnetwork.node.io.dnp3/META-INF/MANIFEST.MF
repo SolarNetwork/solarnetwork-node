@@ -11,7 +11,7 @@ Import-Package:
  com.automatak.dnp3;version="[3.1,4.0)",
  com.automatak.dnp3.enums;version="[3.1,4.0)",
  com.automatak.dnp3.impl;version="[3.1,4.0)",
- net.solarnetwork.codec;version="[2.7,3.0)",
+ net.solarnetwork.codec;version="[2.6,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.dnp3.util;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[3.0,4.0)",
