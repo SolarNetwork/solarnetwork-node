@@ -1,8 +1,8 @@
 # DNP3 Control Center
 
 The **DNP3 Control Center** component provides a DNP3 "control center" (or _master_) that connects
-to DNP3 outstations to collects measurement values. This allows generating datum out of DNP3
-measurements.
+to a DNP3 outstation to collect measurement values. The Control Center then generates datum out the
+collected DNP3 measurements.
 
 At a high level, this component connects to a DNP3 outstation and then polls for DNP3 measurement
 values, caching them, based on a **Refresh Frequency** polling frequency. It then generates datum
