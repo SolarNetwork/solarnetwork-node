@@ -4,7 +4,7 @@ The **DNP3 Outstation** component provides a DNP3 "outstation" for DNP3 Control 
 to connect to. This allows data collected by SolarNode plugins to be published via the DNP3
 protocol, and for DNP3 control actions to be performed on SolarNode controls.
 
-![DNP3 Outstation settings](docs/solarnode-dnp3-outstation-settings.png)
+<img title="DNP3 Outstation settings" src="docs/solarnode-dnp3-outstation-settings.png" width="508">
 
 ## DNP3 Outstation general settings
 
@@ -28,7 +28,7 @@ You must configure measurement settings for each datum property you want to publ
 You can configure as many measurement settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd>
 buttons to add/remove measurement configurations.
 
-![DNP3 Outstation measurement settings](docs/solarnode-dnp3-outstation-measurement-settings.png)
+<img title="DNP3 Outstation measurement settings" src="docs/solarnode-dnp3-outstation-measurement-settings.png" width="511">
 
 Each measurement configuration contains the following settings:
 
@@ -53,7 +53,7 @@ buttons to add/remove control configurations.
 Each control configuration will add a corresponding _output status_ type property to the DNP3 database
 (i.e. either an _Analog output status_ or a _Binary output status_).
 
-![DNP3 Outstation control settings](docs/solarnode-dnp3-outstation-control-settings.png)
+<img title="DNP3 Outstation control settings" src="docs/solarnode-dnp3-outstation-control-settings.png" width="507">
 
 Each control configuration contains the following settings:
 

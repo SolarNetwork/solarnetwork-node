@@ -9,7 +9,7 @@ DNP3 services you plan to integrate with.
 The **DNP3 TCP server** component provides a TCP based DNP3 client that can be used for DNP3
 applications to use. This can be used by the [DNP3 Control Center](#dnp3-control-center) component.
 
-<img title="DNP3 TCP client settings" src="docs/solarnode-dnp3-tcp-client-config@2x.png" width"950">
+<img title="DNP3 TCP client settings" src="docs/solarnode-dnp3-tcp-client-config@2x.png" width="950">
 
 ## DNP3 TCP client settings
 
@@ -31,7 +31,7 @@ Each TCP client configuration contains the following settings:
 The **DNP3 TCP server** component provides a TCP based DNP3 server that can be used for DNP3
 applications to use. This can be used by the [DNP3 Outstation](#dnp3-outstation) component.
 
-<img title="DNP3 TCP server settings" src="docs/solarnode-dnp3-tcp-server-settings.png" width"523">
+<img title="DNP3 TCP server settings" src="docs/solarnode-dnp3-tcp-server-settings.png" width="523">
 
 ## DNP3 TCP server settings
 
@@ -55,7 +55,7 @@ to DNP3 outstations to collects measurement values. This allows generating datum
 
 See the [Control Center README](./README-ControlCenter.md) document for more details.
 
-<img title="DNP3 Control Center settings" src="docs/solarnode-dnp3-cc-config@2x.png" width"950">
+<img title="DNP3 Control Center settings" src="docs/solarnode-dnp3-cc-config@2x.png" width="950">
 
 # DNP3 Outstation
 
@@ -65,6 +65,7 @@ protocol, and for DNP3 control actions to be performed on SolarNode controls.
 
 See the [Outstation README](./README-Outstation.md) document for more details.
 
+<img title="DNP3 Outstation settings" src="docs/solarnode-dnp3-outstation-settings.png" width="508">
 
 # OpenDNP3 Shared library
 

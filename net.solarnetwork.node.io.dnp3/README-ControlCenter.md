@@ -15,7 +15,8 @@ configure the **Event Datum** setting to have this component generate datum afte
 measurement update event, in which case the datum will include the latest available values for _all
 cached values for all properties configured on that datum_.
 
-<img title="DNP3 Control Center settings" src="docs/solarnode-dnp3-cc-config@2x.png" width"950">
+<img title="DNP3 Control Center settings" src="docs/solarnode-dnp3-cc-config@2x.png" width="950">
+
 
 ## DNP3 Control Center general settings
 
@@ -39,7 +40,7 @@ configurations** to collect from the DNP3 outstation and populate as datum prope
 configure as many datum source settings as you like, using the **Datum Sources** <kbd>+</kbd> and
 <kbd>-</kbd> buttons to add/remove configurations.
 
-<img title="DNP3 Datum Source settings" src="docs/solarnode-dnp3-cc-datum-config@2x.png" width"956">
+<img title="DNP3 Datum Source settings" src="docs/solarnode-dnp3-cc-datum-config@2x.png" width="956">
 
 Each datum source configuration contains the following settings:
 
@@ -54,7 +55,7 @@ Each datum source configuration contains the following settings:
 
 A measurement configuration defines a mapping from a DNP3 point to a datum property.
 
-<img title="DNP3 Measurement settings" src="docs/solarnode-dnp3-cc-measurement-config@2x.png" width"952">
+<img title="DNP3 Measurement settings" src="docs/solarnode-dnp3-cc-measurement-config@2x.png" width="952">
 
 Each measurement configuration contains the following settings:
 
