@@ -39,14 +39,13 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class ControlConfig {
 
 	/** The default control type. */
 	public static final ControlType DEFAULT_TYPE = ControlType.Analog;
 
-	private String controlProviderUid;
 	private String controlId;
 	private ControlType type = DEFAULT_TYPE;
 
@@ -60,10 +59,6 @@ public class ControlConfig {
 	/**
 	 * Constructor.
 	 *
-	 * @param controlProviderUid
-	 *        the
-	 *        {@link net.solarnetwork.node.service.NodeControlProvider#getUid()}
-	 *        to collect from
 	 * @param controlId
 	 *        the control ID a
 	 *        {@link net.solarnetwork.domain.NodeControlInfo#getControlId()} to
@@ -71,9 +66,8 @@ public class ControlConfig {
 	 * @param type
 	 *        the DNP3 control type
 	 */
-	public ControlConfig(String controlProviderUid, String controlId, ControlType type) {
+	public ControlConfig(String controlId, ControlType type) {
 		super();
-		this.controlProviderUid = controlProviderUid;
 		this.controlId = controlId;
 		this.type = type;
 	}
@@ -88,8 +82,6 @@ public class ControlConfig {
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(3);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlProviderUid", "", false,
-				"(objectClass=net.solarnetwork.node.service.NodeControlProvider)"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", ""));
 
 		// drop-down menu for control type
@@ -103,25 +95,6 @@ public class ControlConfig {
 		results.add(propTypeSpec);
 
 		return results;
-	}
-
-	/**
-	 * Get the control provider UID.
-	 *
-	 * @return the UID
-	 */
-	public String getControlProviderUid() {
-		return controlProviderUid;
-	}
-
-	/**
-	 * Set the control provider UID.
-	 *
-	 * @param dataSourceUid
-	 *        the UID to set
-	 */
-	public void setControlProviderUid(String dataSourceUid) {
-		this.controlProviderUid = dataSourceUid;
 	}
 
 	/**

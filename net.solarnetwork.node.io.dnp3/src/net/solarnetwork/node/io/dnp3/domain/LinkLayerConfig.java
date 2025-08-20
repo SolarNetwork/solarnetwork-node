@@ -29,7 +29,7 @@ import java.time.Duration;
  * accessors to make it configurable via settings.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class LinkLayerConfig extends com.automatak.dnp3.LinkLayerConfig {
@@ -42,6 +42,36 @@ public class LinkLayerConfig extends com.automatak.dnp3.LinkLayerConfig {
 	 */
 	public LinkLayerConfig(boolean isMaster) {
 		super(isMaster);
+	}
+
+	/**
+	 * Copy constructor.
+	 *
+	 * @param other
+	 *        the configuration to copy
+	 * @since 2.0
+	 */
+	public LinkLayerConfig(com.automatak.dnp3.LinkLayerConfig other) {
+		super(other.isMaster);
+		copySettings(other, this);
+	}
+
+	/**
+	 * Copy the link layer configuration from one object to another.
+	 *
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 2.0
+	 */
+	public static void copySettings(com.automatak.dnp3.LinkLayerConfig from,
+			com.automatak.dnp3.LinkLayerConfig to) {
+		to.isMaster = from.isMaster;
+		to.keepAliveTimeout = from.keepAliveTimeout;
+		to.localAddr = from.localAddr;
+		to.remoteAddr = from.remoteAddr;
+		to.responseTimeout = from.responseTimeout;
 	}
 
 	/**
@@ -61,44 +91,6 @@ public class LinkLayerConfig extends com.automatak.dnp3.LinkLayerConfig {
 	 */
 	public void setMaster(boolean isMaster) {
 		this.isMaster = isMaster;
-	}
-
-	/**
-	 * Set the confirms mode.
-	 *
-	 * @return {@literal true} if confirm mode
-	 */
-	public boolean isUseConfirms() {
-		return useConfirms;
-	}
-
-	/**
-	 * Set the confirms mode.
-	 *
-	 * @param useConfirms
-	 *        {@literal true} if confirm mode
-	 */
-	public void setUseConfirms(boolean useConfirms) {
-		this.useConfirms = useConfirms;
-	}
-
-	/**
-	 * Get the retry count.
-	 *
-	 * @return the count
-	 */
-	public int getNumRetry() {
-		return numRetry;
-	}
-
-	/**
-	 * Set the retry count.
-	 *
-	 * @param numRetry
-	 *        the count
-	 */
-	public void setNumRetry(int numRetry) {
-		this.numRetry = numRetry;
 	}
 
 	/**

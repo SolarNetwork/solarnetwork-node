@@ -1,7 +1,7 @@
 /* ==================================================================
- * ChannelService.java - 21/02/2019 5:11:11 pm
+ * ControlCenterService.java - 7/08/2025 3:37:00 pm
  *
- * Copyright 2019 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,31 +22,14 @@
 
 package net.solarnetwork.node.io.dnp3;
 
-import com.automatak.dnp3.Channel;
-import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.service.Identifiable;
 
 /**
- * A managed DNP3 channel.
+ * API for a DNP3 "Control Center" (master) service.
  *
  * @author matt
- * @version 3.0
+ * @version 1.0
  */
-public interface ChannelService extends Identifiable {
-
-	/**
-	 * Get the channel.
-	 *
-	 * @return the channel
-	 */
-	Channel dnp3Channel();
-
-	/**
-	 * Get the channel state.
-	 *
-	 * @return the channel state
-	 * @since 3.0
-	 */
-	ChannelState getChannelState();
+public interface ControlCenterService extends Identifiable {
 
 }

@@ -23,14 +23,17 @@
 package net.solarnetwork.node.io.dnp3.domain;
 
 import java.time.Duration;
-import com.automatak.dnp3.enums.IndexMode;
+import java.util.ArrayList;
+import java.util.List;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Extension of {@link com.automatak.dnp3.OutstationConfig} to provide JavaBean
  * accessors to make it configurable via settings.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class OutstationConfig extends com.automatak.dnp3.OutstationConfig {
@@ -43,22 +46,60 @@ public class OutstationConfig extends com.automatak.dnp3.OutstationConfig {
 	}
 
 	/**
-	 * Get the index mode.
+	 * Copy constructor.
 	 *
-	 * @return the mode
+	 * @param other
+	 *        the configuration to copy
+	 * @since 2.0
 	 */
-	public IndexMode getIndexMode() {
-		return indexMode;
+	public OutstationConfig(com.automatak.dnp3.OutstationConfig other) {
+		super();
+		copySettings(other, this);
 	}
 
 	/**
-	 * Set the index mode.
+	 * Copy the link outstation configuration from one object to another.
 	 *
-	 * @param indexMode
-	 *        the mode to set
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 2.0
 	 */
-	public void setIndexMode(IndexMode indexMode) {
-		this.indexMode = indexMode;
+	public static void copySettings(com.automatak.dnp3.OutstationConfig from,
+			com.automatak.dnp3.OutstationConfig to) {
+		to.allowUnsolicited = from.allowUnsolicited;
+		to.maxControlsPerRequest = from.maxControlsPerRequest;
+		to.maxRxFragSize = from.maxRxFragSize;
+		to.maxTxFragSize = from.maxTxFragSize;
+		to.selectTimeout = from.selectTimeout;
+		to.solConfirmTimeout = from.solConfirmTimeout;
+		to.noDefferedReadDuringUnsolicitedNullResponse = from.noDefferedReadDuringUnsolicitedNullResponse;
+		to.numUnsolRetries = from.numUnsolRetries;
+		to.unsolConfirmTimeout = from.unsolConfirmTimeout;
+		to.typesAllowedInClass0 = from.typesAllowedInClass0;
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of
+	 * {@link OutstationConfig}.
+	 *
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param defaults
+	 *        the default settings
+	 * @return the settings, never {@literal null}
+	 * @since 2.0
+	 */
+	public static List<SettingSpecifier> outstationSettings(String prefix, OutstationConfig defaults) {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxControlsPerRequest",
+				String.valueOf(defaults.maxControlsPerRequest)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxRxFragSize",
+				String.valueOf(defaults.maxRxFragSize)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxTxFragSize",
+				String.valueOf(defaults.maxTxFragSize)));
+		return results;
 	}
 
 	/**
@@ -66,7 +107,7 @@ public class OutstationConfig extends com.automatak.dnp3.OutstationConfig {
 	 *
 	 * @return the count
 	 */
-	public short getMaxControlsPerRequest() {
+	public long getMaxControlsPerRequest() {
 		return maxControlsPerRequest;
 	}
 
@@ -76,7 +117,7 @@ public class OutstationConfig extends com.automatak.dnp3.OutstationConfig {
 	 * @param maxControlsPerRequest
 	 *        the count to set
 	 */
-	public void setMaxControlsPerRequest(short maxControlsPerRequest) {
+	public void setMaxControlsPerRequest(long maxControlsPerRequest) {
 		this.maxControlsPerRequest = maxControlsPerRequest;
 	}
 
@@ -156,45 +197,6 @@ public class OutstationConfig extends com.automatak.dnp3.OutstationConfig {
 	 */
 	public void setSolConfirmTimeoutSecs(int secs) {
 		setSolConfirmTimeout(Duration.ofSeconds(secs));
-	}
-
-	/**
-	 * Get the unsolicited retry timeout.
-	 *
-	 * @return the timeout
-	 */
-	public Duration getUnsolRetryTimeout() {
-		return unsolRetryTimeout;
-	}
-
-	/**
-	 * Set the unsolicited retry timeout.
-	 *
-	 * @param unsolRetryTimeout
-	 *        the timeout to set
-	 */
-	public void setUnsolRetryTimeout(Duration unsolRetryTimeout) {
-		this.unsolRetryTimeout = unsolRetryTimeout;
-	}
-
-	/**
-	 * Get the unsolicited retry timeout, in seconds.
-	 *
-	 * @return the timeout, in seconds
-	 */
-	public int getUnsolRetryTimeoutSecs() {
-		Duration d = getUnsolRetryTimeout();
-		return (d != null ? (int) (d.toMillis() / 1000L) : 0);
-	}
-
-	/**
-	 * Set the unsolicited retry timeout, in seconds.
-	 *
-	 * @param secs
-	 *        the seconds to set
-	 */
-	public void setUnsolRetryTimeoutSecs(int secs) {
-		setUnsolRetryTimeout(Duration.ofSeconds(secs));
 	}
 
 	/**

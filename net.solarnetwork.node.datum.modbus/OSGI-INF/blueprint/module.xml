@@ -168,7 +168,7 @@
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.domain.datum.Datum"/>
 								</map>
 							</property>
 						</bean>

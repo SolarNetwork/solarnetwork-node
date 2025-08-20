@@ -22,92 +22,123 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import com.automatak.dnp3.Channel;
+import com.automatak.dnp3.Stack;
+import com.automatak.dnp3.StackStatistics;
+import com.automatak.dnp3.TransportStatistics;
+import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.node.io.dnp3.ChannelService;
-import net.solarnetwork.node.io.dnp3.OutstationService;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * Abstract implementation of {@link OutstationService}.
+ * Abstract implementation of DNP3 application service.
  *
+ * @param <T>
+ *        the application stack type
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public abstract class AbstractApplicationService extends BasicIdentifiable implements OutstationService {
+public abstract class AbstractApplicationService<T extends Stack> extends BaseIdentifiable
+		implements ServiceLifecycleObserver, SettingsChangeObserver {
 
 	/**
-	 * The {@code uid} property default value.
+	 * The default startup delay.
 	 *
-	 * @since 2.0
+	 * @since 3.0
 	 */
-	public static final String DEFAULT_UID = "DNP3 Outstation";
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
+	private static final int DEFAULT_STARTUP_DELAY_SECONDS = 5;
 
 	private final OptionalService<ChannelService> dnp3Channel;
+	private final LinkLayerConfig linkLayerConfig;
 
 	private TaskExecutor taskExecutor;
 	private TaskScheduler taskScheduler;
-	private final LinkLayerConfig linkLayerConfig = new LinkLayerConfig(false);
+	private int startupDelaySecs = DEFAULT_STARTUP_DELAY_SECONDS;
+
+	private Runnable initTask;
+	private T dnp3Stack;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param dnp3Channel
 	 *        the channel to use
+	 * @param linkLayerConfig
+	 *        the link layer config to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
-	public AbstractApplicationService(OptionalService<ChannelService> dnp3Channel) {
+	public AbstractApplicationService(OptionalService<ChannelService> dnp3Channel,
+			LinkLayerConfig linkLayerConfig) {
 		super();
-		this.dnp3Channel = dnp3Channel;
-		setUid(DEFAULT_UID);
+		this.dnp3Channel = requireNonNullArgument(dnp3Channel, "dnp3Channel");
+		this.linkLayerConfig = requireNonNullArgument(linkLayerConfig, "linkLayerConfig");
 	}
 
-	/**
-	 * Configure and start the service.
-	 *
-	 * <p>
-	 * This method calls {@link #configurationChanged(Map)} with a
-	 * {@literal null} argument.
-	 * </p>
-	 */
-	public synchronized void startup() {
+	@Override
+	public synchronized void serviceDidStartup() {
 		configurationChanged(null);
 	}
 
-	/**
-	 * Callback after properties have been changed.
-	 *
-	 * <p>
-	 * This method calls {@link #shutdown()}.
-	 * </p>
-	 *
-	 * @param properties
-	 *        the changed properties
-	 */
+	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
-		shutdown();
+		serviceDidShutdown();
+		if ( initTask != null ) {
+			// init task already underway
+			return;
+		}
+		TaskExecutor executor = getTaskExecutor();
+		if ( executor != null ) {
+			initTask = new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						log.info("Waiting {}s to start {} [{}]", getStartupDelaySecs(), getDisplayName(),
+								getUid());
+						Thread.sleep(getStartupDelaySecs() * 1000L);
+					} catch ( InterruptedException e ) {
+						// ignore
+					} finally {
+						synchronized ( AbstractApplicationService.this ) {
+							initTask = null;
+							dnp3Stack();
+						}
+					}
+				}
+			};
+			executor.execute(initTask);
+		} else {
+			// no executor; init immediately
+			dnp3Stack();
+		}
 	}
 
-	/**
-	 * Shutdown this service when no longer needed.
-	 */
-	public synchronized void shutdown() {
-		// extending classes can override
+	@Override
+	public synchronized void serviceDidShutdown() {
+		if ( dnp3Stack != null ) {
+			final String uid = getUid();
+			final String displayName = getDisplayName();
+			log.info("Shutting down {} [{}]", displayName, uid);
+			dnp3Stack.shutdown();
+			this.dnp3Stack = null;
+			log.info("{} [{}] shutdown", displayName, uid);
+		}
 	}
 
 	/**
@@ -157,26 +188,6 @@ public abstract class AbstractApplicationService extends BasicIdentifiable imple
 	}
 
 	/**
-	 * Copy the link layer configuration from one object to another.
-	 *
-	 * @param from
-	 *        the settings to copy
-	 * @param to
-	 *        the destination to copy the settings to
-	 * @since 1.1
-	 */
-	public static void copySettings(com.automatak.dnp3.LinkLayerConfig from,
-			com.automatak.dnp3.LinkLayerConfig to) {
-		to.isMaster = from.isMaster;
-		to.keepAliveTimeout = from.keepAliveTimeout;
-		to.localAddr = from.localAddr;
-		to.numRetry = from.numRetry;
-		to.remoteAddr = from.remoteAddr;
-		to.responseTimeout = from.responseTimeout;
-		to.useConfirms = from.useConfirms;
-	}
-
-	/**
 	 * Get settings suitable for configuring an instance of
 	 * {@link LinkLayerConfig}.
 	 *
@@ -191,10 +202,86 @@ public abstract class AbstractApplicationService extends BasicIdentifiable imple
 		List<SettingSpecifier> results = new ArrayList<>(8);
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "localAddr",
 				String.valueOf(defaults.localAddr)));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "remoteAddr",
-				String.valueOf(defaults.remoteAddr)));
+		if ( !defaults.isMaster() ) {
+			results.add(new BasicTextFieldSettingSpecifier(prefix + "remoteAddr",
+					String.valueOf(defaults.remoteAddr)));
+		}
 
 		return results;
+	}
+
+	/**
+	 * Get a DNP3 stack status message.
+	 *
+	 * @param stackStats
+	 *        the stack statistics
+	 * @param linkStatus
+	 *        the link status
+	 * @return the message, never {@code null}
+	 * @since 3.0
+	 */
+	public static String stackStatusMessage(StackStatistics stackStats, ChannelState channelState) {
+		if ( stackStats == null ) {
+			return "";
+		}
+		StringBuilder buf = new StringBuilder();
+		buf.append(channelState != null ? channelState : ChannelState.CLOSED);
+		TransportStatistics stats = stackStats.transport;
+		if ( stats != null ) {
+			buf.append("; ").append(stats.numTransportRx).append(" in");
+			buf.append("; ").append(stats.numTransportTx).append(" out");
+			buf.append("; ").append(stats.numTransportErrorRx).append(" in errors");
+			buf.append("; ").append(stats.numTransportBufferOverflow).append(" buffer overflows");
+			buf.append("; ").append(stats.numTransportDiscard).append(" discarded");
+			buf.append("; ").append(stats.numTransportIgnore).append(" ignored");
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * Get (or create and return) the DNP3 stack.
+	 *
+	 * @return the existing or newly created DNP3 stack
+	 * @see #createDnp3Stack()
+	 */
+	protected synchronized T dnp3Stack() {
+		final T stack = getDnp3Stack();
+		if ( stack != null || initTask != null ) {
+			return stack;
+		}
+		T newStack = createDnp3Stack();
+		if ( newStack != null ) {
+			newStack.enable();
+			setDnp3Stack(newStack);
+			log.info("DNP3 outstation [{}] enabled", getUid());
+		}
+		return newStack;
+	}
+
+	/**
+	 * Create a new instance of the DNP3 stack.
+	 *
+	 * @return the new stack, or {@code null} if unable to create
+	 */
+	protected abstract T createDnp3Stack();
+
+	/**
+	 * Get the DNP3 stack.
+	 *
+	 * @return the stack
+	 */
+	protected synchronized T getDnp3Stack() {
+		return dnp3Stack;
+	}
+
+	/**
+	 * Set the DNP3 stack.
+	 *
+	 * @param dnp3Stack
+	 *        the stack to set
+	 */
+	protected synchronized void setDnp3Stack(T dnp3Stack) {
+		this.dnp3Stack = dnp3Stack;
 	}
 
 	/**
@@ -253,6 +340,32 @@ public abstract class AbstractApplicationService extends BasicIdentifiable imple
 	 */
 	public LinkLayerConfig getLinkLayerConfig() {
 		return linkLayerConfig;
+	}
+
+	/**
+	 * Get the startup delay, in seconds.
+	 *
+	 * @return the delay; defaults to {@link #DEFAULT_STARTUP_DELAY_SECONDS}
+	 * @since 3.0
+	 */
+	public int getStartupDelaySecs() {
+		return startupDelaySecs;
+	}
+
+	/**
+	 * Set the startup delay, in seconds.
+	 *
+	 * <p>
+	 * This delay is used to allow the class to be configured fully before
+	 * starting.
+	 * </p>
+	 *
+	 * @param startupDelaySecs
+	 *        the delay
+	 * @since 3.0
+	 */
+	public void setStartupDelaySecs(int startupDelaySecs) {
+		this.startupDelaySecs = startupDelaySecs;
 	}
 
 }
