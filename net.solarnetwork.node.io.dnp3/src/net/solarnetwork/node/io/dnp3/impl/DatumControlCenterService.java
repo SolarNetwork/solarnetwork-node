@@ -353,12 +353,13 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 		final Master master = getDnp3Stack();
 		final StringBuilder buf = new StringBuilder();
 		buf.append(master != null ? "Available" : "Offline");
-		buf.append("; ");
 
 		final ChannelService channelService = channelService();
-
-		buf.append(stackStatusMessage(master != null ? master.getStatistics() : null,
-				channelService != null ? channelService.getChannelState() : null));
+		if ( master != null || channelService != null ) {
+			buf.append("; ");
+			buf.append(stackStatusMessage(master != null ? master.getStatistics() : null,
+					channelService != null ? channelService.getChannelState() : null));
+		}
 		return buf.toString();
 	}
 

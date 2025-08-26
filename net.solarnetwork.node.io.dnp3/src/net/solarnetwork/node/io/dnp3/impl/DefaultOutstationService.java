@@ -851,12 +851,13 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 		final Outstation outstation = getDnp3Stack();
 		final StringBuilder buf = new StringBuilder();
 		buf.append(outstation != null ? "Available" : "Offline");
-		buf.append("; ");
 
 		final ChannelService channelService = channelService();
-
-		buf.append(stackStatusMessage(outstation != null ? outstation.getStatistics() : null,
-				channelService != null ? channelService.getChannelState() : null));
+		if ( outstation != null || channelService != null ) {
+			buf.append("; ");
+			buf.append(stackStatusMessage(outstation != null ? outstation.getStatistics() : null,
+					channelService != null ? channelService.getChannelState() : null));
+		}
 		return buf.toString();
 	}
 
