@@ -71,8 +71,6 @@ then be loaded into SolarNode via the CSV Configurer.
 
 <img title="CSV Configuration example" src="docs/solarnode-bacnet-device-csv-configuration-example-sheet.png" width="1704">
 
-![]()
-
 ### Instance identifiers
 
 Individual BACnet Device components are defined by the first column (**Instance ID**). You can

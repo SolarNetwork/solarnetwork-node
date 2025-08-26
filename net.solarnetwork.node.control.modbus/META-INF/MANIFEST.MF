@@ -4,7 +4,7 @@ Bundle-Name: Modbus Control
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus
 Automatic-Module-Name: net.solarnetwork.node.control.modbus
 Bundle-Description: Service to control arbitrary Modbus-accessible devices.
-Bundle-Version: 5.1.0
+Bundle-Version: 5.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

@@ -59,7 +59,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Transform service that sets a control value based on an expression result.
  *
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -159,7 +159,8 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 				} else {
 					Object reason = status.getInstructionState();
 					Map<String, ?> resultParams = status.getResultParameters();
-					if ( resultParams.containsKey(InstructionStatus.MESSAGE_RESULT_PARAM) ) {
+					if ( resultParams != null
+							&& resultParams.containsKey(InstructionStatus.MESSAGE_RESULT_PARAM) ) {
 						if ( resultParams.containsKey(InstructionStatus.ERROR_CODE_RESULT_PARAM) ) {
 							reason = String.format("%s (error %s)",
 									resultParams.get(InstructionStatus.MESSAGE_RESULT_PARAM),
@@ -167,7 +168,8 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 						} else {
 							reason = resultParams.get(InstructionStatus.MESSAGE_RESULT_PARAM);
 						}
-					} else if ( resultParams.containsKey(InstructionStatus.ERROR_CODE_RESULT_PARAM) ) {
+					} else if ( resultParams != null
+							&& resultParams.containsKey(InstructionStatus.ERROR_CODE_RESULT_PARAM) ) {
 						reason = String.format("error %s",
 								resultParams.get(InstructionStatus.ERROR_CODE_RESULT_PARAM));
 					}

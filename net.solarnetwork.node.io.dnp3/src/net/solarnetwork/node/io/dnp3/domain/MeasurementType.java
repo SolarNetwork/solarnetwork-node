@@ -31,32 +31,54 @@ package net.solarnetwork.node.io.dnp3.domain;
 public enum MeasurementType {
 
 	/** Analog input. */
-	AnalogInput('a', "Analog input"),
+	AnalogInput('a', "Analog Input", 30, 32),
 
 	/** Analog output status. */
-	AnalogOutputStatus('A', "Analog output status"),
+	AnalogOutputStatus('A', "Analog Output Status", 40, 42),
 
 	/** Binary input. */
-	BinaryInput('b', "Binary input"),
+	BinaryInput('b', "Binary Input", 1, 2),
 
 	/** Binary output status. */
-	BinaryOutputStatus('B', "Binary output status"),
+	BinaryOutputStatus('B', "Binary Output Status", 10, 11),
 
 	/** Counter. */
-	Counter('c', "Counter"),
+	Counter('c', "Counter", 20, 22),
 
 	/** Double bit binary input. */
-	DoubleBitBinaryInput('d', "Double bit binary input"),
+	DoubleBitBinaryInput('d', "Double Bit Binary Input", 3, 4),
 
 	/** Frozen counter. */
-	FrozenCounter('f', "Frozen counter");
+	FrozenCounter('f', "Frozen Counter", 21, 23);
 
 	private final char code;
 	private final String title;
+	private final byte staticGroup;
+	private final byte eventGroup;
 
-	private MeasurementType(char code, String title) {
+	private MeasurementType(char code, String title, int staticGroup, int eventGroup) {
 		this.code = code;
 		this.title = title;
+		this.staticGroup = (byte) staticGroup;
+		this.eventGroup = (byte) eventGroup;
+	}
+
+	/**
+	 * Get the static group.
+	 *
+	 * @return the static group
+	 */
+	public byte getStaticGroup() {
+		return staticGroup;
+	}
+
+	/**
+	 * Get the event group.
+	 *
+	 * @return the event group
+	 */
+	public byte getEventGroup() {
+		return eventGroup;
 	}
 
 	/**

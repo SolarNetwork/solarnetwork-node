@@ -31,7 +31,9 @@ import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
 import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.node.io.dnp3.ChannelService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
  * Abstract implementation of {@link ChannelService}.
@@ -39,13 +41,11 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * @param <C>
  *        the channel configuration type
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
-		extends BasicIdentifiable implements ChannelService, ChannelListener {
-
-	/** The default UID value. */
-	public static final String DEFAULT_UID = "DNP3 Channel";
+		extends BasicIdentifiable
+		implements ChannelService, ChannelListener, ServiceLifecycleObserver, SettingsChangeObserver {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -68,14 +68,20 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 		super();
 		this.manager = manager;
 		this.config = config;
-		setUid(DEFAULT_UID);
 	}
 
-	/**
-	 * Configure and start the channel.
-	 */
-	public synchronized void startup() {
+	@Override
+	public synchronized void serviceDidStartup() {
 		configurationChanged(null);
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
+		final Channel channel = this.channel;
+		if ( channel != null ) {
+			channel.shutdown();
+			this.channel = null;
+		}
 	}
 
 	/**
@@ -84,22 +90,13 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	 * @param properties
 	 *        the changed properties
 	 */
+	@Override
 	public void configurationChanged(Map<String, Object> properties) {
-		shutdown();
+		serviceDidShutdown();
 		try {
 			channel = createChannel(config);
 		} catch ( DNP3Exception e ) {
 			log.error("Error creating DNP3 channel [{}]: {}", getUid(), e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Shutdown the channel.
-	 */
-	public synchronized void shutdown() {
-		if ( channel != null ) {
-			channel.shutdown();
-			channel = null;
 		}
 	}
 
@@ -138,16 +135,20 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	 *
 	 * @param configuration
 	 *        the configuration
-	 * @return the channel
+	 * @return the channel, or {@code null} if one cannot be created (from lack
+	 *         of configuration, for example)
 	 * @throws DNP3Exception
 	 *         if any DNP3 error occurs
 	 */
 	protected abstract Channel createChannel(C configuration) throws DNP3Exception;
 
 	@Override
-	public void onStateChange(ChannelState state) {
+	public synchronized void onStateChange(ChannelState state) {
 		log.info("Channel [{}] state changed to {}", getUid(), state);
 		this.channelState = state;
+		if ( state == ChannelState.SHUTDOWN ) {
+			this.channel = null;
+		}
 	}
 
 	/**
@@ -175,6 +176,11 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 			*/
 		}
 		return buf.toString();
+	}
+
+	@Override
+	public ChannelState getChannelState() {
+		return channelState;
 	}
 
 }

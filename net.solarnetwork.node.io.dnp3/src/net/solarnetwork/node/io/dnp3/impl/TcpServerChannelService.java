@@ -27,6 +27,7 @@ import java.util.List;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
+import com.automatak.dnp3.IPEndpoint;
 import com.automatak.dnp3.enums.ServerAcceptMode;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -36,13 +37,10 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * TCP based server (outstation) channel service.
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class TcpServerChannelService extends AbstractChannelService<TcpServerChannelConfiguration>
 		implements SettingSpecifierProvider {
-
-	/** The default uid value. */
-	public static final String DEFAULT_UID = "DNP3 server TCP";
 
 	/**
 	 * Constructor.
@@ -52,18 +50,24 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 	 */
 	public TcpServerChannelService(DNP3Manager manager) {
 		super(manager, new TcpServerChannelConfiguration());
+		setDisplayName("DNP3 server TCP");
 	}
 
 	@Override
 	public Channel createChannel(TcpServerChannelConfiguration configuration) throws DNP3Exception {
+		final String uid = getUid();
+		if ( uid == null || uid.isBlank() ) {
+			log.warn("Missing UID: can not start DPN3 server channel.");
+			return null;
+		}
 		return getManager().addTCPServer(getUid(), configuration.getLogLevels(),
-				ServerAcceptMode.CloseNew, configuration.getBindAddress(), configuration.getPort(),
-				this);
+				ServerAcceptMode.CloseNew,
+				new IPEndpoint(configuration.getBindAddress(), configuration.getPort()), this);
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<net.solarnetwork.settings.SettingSpecifier> result = new ArrayList<>(8);
+		List<SettingSpecifier> result = new ArrayList<>(8);
 
 		result.add(new BasicTitleSettingSpecifier("status", getChannelStatusMessage(), true));
 
@@ -72,11 +76,6 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 		result.addAll(TcpServerChannelConfiguration.settings("config."));
 
 		return result;
-	}
-
-	@Override
-	public String getDisplayName() {
-		return DEFAULT_UID;
 	}
 
 	@Override

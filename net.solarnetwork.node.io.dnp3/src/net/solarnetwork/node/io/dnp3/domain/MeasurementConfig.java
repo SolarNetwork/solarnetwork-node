@@ -22,11 +22,19 @@
 
 package net.solarnetwork.node.io.dnp3.domain;
 
+import static java.lang.String.format;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -39,26 +47,31 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * This configuration maps a datum property to a DNP3 measurement.
  * </p>
  *
+ * <p>
+ * The {@code config} value represents the source ID.
+ * </p>
+ *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
-public class MeasurementConfig {
+public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 
 	/** The default measurement type: {@code AnalogInput}. */
 	public static final MeasurementType DEFAULT_TYPE = MeasurementType.AnalogInput;
 
-	/** The default unit multiplier: {@literal 1}. */
-	public static final BigDecimal DEFAULT_UNIT_MULTIPLIER = BigDecimal.ONE;
+	/**
+	 * A setting type pattern for a unit configuration element.
+	 *
+	 * <p>
+	 * The pattern has two capture groups: the unit configuration index and the
+	 * property setting name.
+	 * </p>
+	 */
+	public static final Pattern MEASUREMENT_SETTING_PATTERN = Pattern
+			.compile(".+".concat(Pattern.quote(".measurementConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
-	/** The default decimal scale: {@literal 0}. */
-	public static final int DEFAULT_DECIMAL_SCALE = 0;
-
-	private String dataSourceUid;
-	private String sourceId;
-	private String propertyName;
 	private MeasurementType type;
-	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
-	private int decimalScale;
+	private Integer index;
 
 	/**
 	 * Default constructor.
@@ -66,16 +79,11 @@ public class MeasurementConfig {
 	public MeasurementConfig() {
 		super();
 		setType(DEFAULT_TYPE);
-		setUnitMultiplier(DEFAULT_UNIT_MULTIPLIER);
-		setDecimalScale(DEFAULT_DECIMAL_SCALE);
 	}
 
 	/**
 	 * Constructor.
 	 *
-	 * @param dataSourceUid
-	 *        the {@link net.solarnetwork.node.service.DatumDataSource#getUid()}
-	 *        to collect from
 	 * @param sourceId
 	 *        the source ID to collect from
 	 * @param propertyName
@@ -83,15 +91,11 @@ public class MeasurementConfig {
 	 * @param type
 	 *        the DNP3 measurement type
 	 */
-	public MeasurementConfig(String dataSourceUid, String sourceId, String propertyName,
-			MeasurementType type) {
+	public MeasurementConfig(String sourceId, String propertyName, MeasurementType type) {
 		super();
-		setDataSourceUid(dataSourceUid);
 		setSourceId(sourceId);
 		setPropertyName(propertyName);
 		setType(type);
-		setUnitMultiplier(DEFAULT_UNIT_MULTIPLIER);
-		setDecimalScale(DEFAULT_DECIMAL_SCALE);
 	}
 
 	/**
@@ -100,27 +104,26 @@ public class MeasurementConfig {
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
+	 * @since 3.0
 	 */
-	public static List<SettingSpecifier> settings(String prefix) {
+	public static List<SettingSpecifier> serverSettings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(6);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataSourceUid", "", false,
-				"(objectClass=net.solarnetwork.node.service.DatumDataSource)"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyName", ""));
 
 		// drop-down menu for measurement type
-		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+		BasicMultiValueSettingSpecifier measTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "typeKey", Character.toString(DEFAULT_TYPE.getCode()));
-		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
+		Map<String, String> measTypeTitles = new LinkedHashMap<>(3);
 		for ( MeasurementType e : MeasurementType.values() ) {
-			propTypeTitles.put(Character.toString(e.getCode()), e.getTitle());
+			measTypeTitles.put(Character.toString(e.getCode()), e.getTitle());
 		}
-		propTypeSpec.setValueTitles(propTypeTitles);
-		results.add(propTypeSpec);
+		measTypeSpec.setValueTitles(measTypeTitles);
+		results.add(measTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier",
-				DEFAULT_UNIT_MULTIPLIER.toString()));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", DEFAULT_SLOPE.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
@@ -128,60 +131,209 @@ public class MeasurementConfig {
 	}
 
 	/**
-	 * Get the data source UID.
+	 * Get settings suitable for configuring an instance of this class.
 	 *
-	 * @return the UID
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @return the settings, never {@literal null}
+	 * @since 3.0
 	 */
-	public String getDataSourceUid() {
-		return dataSourceUid;
+	public static List<SettingSpecifier> clientSettings(String prefix) {
+		List<SettingSpecifier> results = new ArrayList<>(6);
+
+		// drop-down menu for measurement type
+		BasicMultiValueSettingSpecifier measTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "typeKey", Character.toString(DEFAULT_TYPE.getCode()));
+		Map<String, String> measTypeTitles = new LinkedHashMap<>(3);
+		for ( MeasurementType e : MeasurementType.values() ) {
+			measTypeTitles.put(Character.toString(e.getCode()), e.getTitle());
+		}
+		measTypeSpec.setValueTitles(measTypeTitles);
+		results.add(measTypeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "index", null));
+
+		// drop-down menu for propertyTypeKey
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "propertyTypeKey", String.valueOf(DEFAULT_PROPERTY_TYPE.toKey()));
+		Map<String, String> propTypeTitles = new LinkedHashMap<>(4);
+		for ( DatumSamplesType e : DatumSamplesType.values() ) {
+			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyName", ""));
+
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", DEFAULT_SLOPE.toString()));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
+				String.valueOf(DEFAULT_DECIMAL_SCALE)));
+
+		return results;
 	}
 
 	/**
-	 * Set the data source UID.
+	 * Populate a setting as a property configuration value, if possible.
 	 *
-	 * @param dataSourceUid
-	 *        the UID to set
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
 	 */
-	public void setDataSourceUid(String dataSourceUid) {
-		this.dataSourceUid = dataSourceUid;
+	public static boolean populateFromSetting(DatumConfig config, Setting setting) {
+		Matcher m = MEASUREMENT_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		if ( idx >= config.getMeasurementConfigsCount() ) {
+			config.setMeasurementConfigsCount(idx + 1);
+		}
+		MeasurementConfig measConfig = config.getMeasurementConfigs()[idx];
+
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "typeKey":
+					measConfig.setTypeKey(val);
+					break;
+				case "index":
+					measConfig.setIndex(Integer.valueOf(val));
+					break;
+				case "propertyTypeKey":
+					measConfig.setPropertyTypeKey(val);
+					break;
+				case "propertyName":
+					measConfig.setPropertyName(val);
+					break;
+				case "unitMultiplier":
+					measConfig.setUnitMultiplier(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					measConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 *
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param prefix
+	 *        a prefix to use for the setting keys
+	 * @param i
+	 *        the measurement configuration index
+	 * @return the settings
+	 */
+	public List<SettingValueBean> toClientSettingValues(String providerId, String instanceId,
+			String prefix, int i) {
+		List<SettingValueBean> settings = new ArrayList<>(2);
+		addSetting(settings, providerId, instanceId, prefix, i, "typeKey", getTypeKey());
+		addSetting(settings, providerId, instanceId, prefix, i, "index", getIndex());
+		addSetting(settings, providerId, instanceId, prefix, i, "propertyTypeKey", getPropertyTypeKey());
+		addSetting(settings, providerId, instanceId, prefix, i, "propertyName", getPropertyName());
+		addSetting(settings, providerId, instanceId, prefix, i, "unitMultiplier", getUnitMultiplier());
+		addSetting(settings, providerId, instanceId, prefix, i, "decimalScale", getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			String prefix, int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("%smeasurementConfigs[%d].%s", prefix, i, key), val.toString()));
+	}
+
+	/**
+	 * Test if the configuration is valid as a server configuration.
+	 *
+	 * @return {@code true} if the configuration is valid for a server
+	 * @since 3.0
+	 */
+	public boolean isValidForServer() {
+		final String sourceId = getSourceId();
+		final String propertyKey = getPropertyKey();
+		return (type != null && sourceId != null && !sourceId.isEmpty() && propertyKey != null
+				&& !propertyKey.isEmpty());
+	}
+
+	/**
+	 * Test if the configuration is valid as a client configuration.
+	 *
+	 * @return {@code true} if the configuration is valid for a client
+	 * @since 3.0
+	 */
+	public boolean isValidForClient() {
+		final String propertyKey = getPropertyKey();
+		return (type != null && propertyKey != null && !propertyKey.isEmpty() && index != null
+				&& index.intValue() >= 0);
 	}
 
 	/**
 	 * Get the source ID.
 	 *
+	 * <p>
+	 * This is an alias for {@link #getConfig()}.
+	 * </p>
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
-		return sourceId;
+		return getConfig();
 	}
 
 	/**
 	 * Set the source ID.
 	 *
+	 * <p>
+	 * This is an alias for {@link DatumSamplePropertyConfig#setConfig(Object)}.
+	 * </p>
+	 *
 	 * @param sourceId
 	 *        the source ID to set
 	 */
 	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
+		setConfig(sourceId);
 	}
 
 	/**
 	 * Get the property name.
 	 *
+	 * <p>
+	 * This is an alias for {@link #getPropertyKey()}.
+	 * </p>
+	 *
 	 * @return the property name
 	 */
 	public String getPropertyName() {
-		return propertyName;
+		return getPropertyKey();
 	}
 
 	/**
 	 * Set the property name.
 	 *
+	 * <p>
+	 * This is an alias for {@link #setPropertyKey(String)}.
+	 * </p>
+	 *
 	 * @param propertyName
 	 *        the property name to set
 	 */
 	public void setPropertyName(String propertyName) {
-		this.propertyName = propertyName;
+		setPropertyKey(propertyName);
 	}
 
 	/**
@@ -252,10 +404,15 @@ public class MeasurementConfig {
 	/**
 	 * Get the unit multiplier.
 	 *
-	 * @return the multiplier; defaults to {@link #DEFAULT_UNIT_MULTIPLIER}
+	 * <p>
+	 * This is an alias for {@link #getUnitSlope()}.
+	 * </p>
+	 *
+	 * @return the multiplier; defaults to
+	 *         {@link NumberDatumSamplePropertyConfig#DEFAULT_SLOPE}
 	 */
 	public BigDecimal getUnitMultiplier() {
-		return unitMultiplier;
+		return getUnitSlope();
 	}
 
 	/**
@@ -269,36 +426,34 @@ public class MeasurementConfig {
 	 * the value to <i>watts</i>.
 	 * </p>
 	 *
+	 * <p>
+	 * This is an alias for {@link #setUnitSlope(BigDecimal)}.
+	 * </p>
+	 *
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
 	public void setUnitMultiplier(BigDecimal unitMultiplier) {
-		this.unitMultiplier = unitMultiplier;
+		setUnitSlope(unitMultiplier);
 	}
 
 	/**
-	 * Get the decimal scale to round decimal numbers to.
+	 * Get an explicit index.
 	 *
-	 * @return the decimal scale; defaults to {@link #DEFAULT_DECIMAL_SCALE}
+	 * @return an explicit measurement index
 	 */
-	public int getDecimalScale() {
-		return decimalScale;
+	public Integer getIndex() {
+		return index;
 	}
 
 	/**
-	 * Set the decimal scale to round decimal numbers to.
+	 * Set an explicit index.
 	 *
-	 * <p>
-	 * This is a <i>maximum</i> scale value that decimal values should be
-	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
-	 * applied. A scale of {@literal 0} would round all decimals to integer
-	 * values.
-	 * </p>
-	 *
-	 * @param decimalScale
-	 *        the scale to set, or {@literal -1} to disable rounding completely
+	 * @param index
+	 *        the index to set
 	 */
-	public void setDecimalScale(int decimalScale) {
-		this.decimalScale = decimalScale;
+	public void setIndex(Integer index) {
+		this.index = index;
 	}
+
 }

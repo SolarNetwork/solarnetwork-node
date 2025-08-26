@@ -22,10 +22,12 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import java.time.Clock;
+import java.time.InstantSource;
 import com.automatak.dnp3.ApplicationIIN;
+import com.automatak.dnp3.DNPTime;
 import com.automatak.dnp3.OutstationApplication;
 import com.automatak.dnp3.enums.AssignClassType;
-import com.automatak.dnp3.enums.LinkStatus;
 import com.automatak.dnp3.enums.PointClass;
 import com.automatak.dnp3.enums.RestartMode;
 
@@ -33,31 +35,28 @@ import com.automatak.dnp3.enums.RestartMode;
  * Base implementation of {@link OutstationApplication}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class BaseOutstationApplication implements OutstationApplication {
-
-	private LinkStatus linkStatus = LinkStatus.UNRESET;
+public class BaseOutstationApplication extends BaseApplication implements OutstationApplication {
 
 	/**
 	 * Constructor.
 	 */
 	public BaseOutstationApplication() {
-		super();
-	}
-
-	@Override
-	public void onStateChange(LinkStatus value) {
-		linkStatus = value;
+		super(Clock.systemUTC());
 	}
 
 	/**
-	 * Get the current link status.
+	 * Constructor.
 	 *
-	 * @return the status
+	 * @param clock
+	 *        the clock to use
+	 * @since 1.2
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
-	protected LinkStatus getLinkStatus() {
-		return linkStatus;
+	public BaseOutstationApplication(InstantSource clock) {
+		super(clock);
 	}
 
 	@Override
@@ -118,6 +117,17 @@ public class BaseOutstationApplication implements OutstationApplication {
 	@Override
 	public ApplicationIIN getApplicationIIN() {
 		return ApplicationIIN.none();
+	}
+
+	@Override
+	public void onConfirmProcessed(boolean isUnsolicited, long numClass1, long numClass2,
+			long numClass3) {
+		// nothing
+	}
+
+	@Override
+	public DNPTime now() {
+		return new DNPTime(clock.millis());
 	}
 
 }

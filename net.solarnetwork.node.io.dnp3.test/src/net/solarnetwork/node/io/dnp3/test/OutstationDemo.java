@@ -1,34 +1,39 @@
 /* ==================================================================
  * OutstationDemo.java - 21/02/2019 3:34:12 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.io.dnp3.test;
 
+import static java.lang.System.currentTimeMillis;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import com.automatak.dnp3.AnalogInput;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Manager;
+import com.automatak.dnp3.DNPTime;
 import com.automatak.dnp3.DatabaseConfig;
 import com.automatak.dnp3.EventBufferConfig;
+import com.automatak.dnp3.Flags;
+import com.automatak.dnp3.IPEndpoint;
 import com.automatak.dnp3.LogMasks;
 import com.automatak.dnp3.Outstation;
 import com.automatak.dnp3.OutstationChangeSet;
@@ -65,7 +70,8 @@ public class OutstationDemo {
 
 		// Create a tcp channel class that will connect to the loopback
 		Channel channel = manager.addTCPServer("client", LogMasks.NORMAL | LogMasks.APP_COMMS,
-				ServerAcceptMode.CloseNew, "127.0.0.1", 20000, new Slf4jChannelListener());
+				ServerAcceptMode.CloseNew, new IPEndpoint("127.0.0.1", 20000),
+				new Slf4jChannelListener());
 
 		// Create the default outstation configuration
 		OutstationStackConfig config = new OutstationStackConfig(DatabaseConfig.allValues(5),
@@ -86,11 +92,16 @@ public class OutstationDemo {
 		while ( true ) {
 			System.out.println("Enter something to update a counter or type <quit> to exit");
 			line = in.readLine();
-			if ( line.equals("quit") )
+			if ( line.equals("quit") ) {
 				break;
-			else {
+			} else if ( line.equals("meas") ) {
 				OutstationChangeSet set = new OutstationChangeSet();
-				set.update(new Counter(i, (byte) 0x01, 0), 0);
+				set.update(new AnalogInput(Math.random(), new Flags((byte) 0x01),
+						new DNPTime(currentTimeMillis())), 0);
+				outstation.apply(set);
+			} else {
+				OutstationChangeSet set = new OutstationChangeSet();
+				set.update(new Counter(i, new Flags((byte) 0x01), new DNPTime(currentTimeMillis())), 1);
 				outstation.apply(set);
 				++i;
 			}

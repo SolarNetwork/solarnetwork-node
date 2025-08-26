@@ -1,21 +1,21 @@
 /* ==================================================================
- * OutstationServceTests.java - 26/02/2019 10:33:04 am
- * 
+ * DefaultOutstationServceTests.java - 26/02/2019 10:33:04 am
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,13 +40,15 @@ import org.junit.Test;
 import org.springframework.core.task.support.TaskExecutorAdapter;
 import com.automatak.dnp3.AnalogOutputInt32;
 import com.automatak.dnp3.ControlRelayOutputBlock;
+import com.automatak.dnp3.Database;
 import com.automatak.dnp3.enums.CommandStatus;
-import com.automatak.dnp3.enums.ControlCode;
 import com.automatak.dnp3.enums.OperateType;
+import com.automatak.dnp3.enums.OperationType;
+import com.automatak.dnp3.enums.TripCloseCode;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
-import net.solarnetwork.node.io.dnp3.impl.OutstationService;
+import net.solarnetwork.node.io.dnp3.impl.DefaultOutstationService;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -56,20 +58,22 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
- * Test cases for the {@link OutstationService} class.
- * 
+ * Test cases for the {@link DefaultOutstationService} class.
+ *
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public class OutstationServceTests {
+public class DefaultOutstationServceTests {
 
 	private ChannelService channelService;
 	private InstructionExecutionService instructionService;
+	private Database database;
 
 	@Before
 	public void setup() {
 		channelService = EasyMock.createMock(ChannelService.class);
 		instructionService = EasyMock.createMock(InstructionExecutionService.class);
+		database = EasyMock.createMock(Database.class);
 	}
 
 	@After
@@ -78,11 +82,11 @@ public class OutstationServceTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(channelService, instructionService);
+		EasyMock.replay(channelService, instructionService, database);
 	}
 
 	private void verifyAll() {
-		EasyMock.verify(channelService, instructionService);
+		EasyMock.verify(channelService, instructionService, database);
 	}
 
 	private TestOutstationService createOutstationService() {
@@ -93,7 +97,7 @@ public class OutstationServceTests {
 		return service;
 	}
 
-	private static class TestOutstationService extends OutstationService {
+	private static class TestOutstationService extends DefaultOutstationService {
 
 		public TestOutstationService(OptionalService<ChannelService> dnp3Channel,
 				OptionalService<InstructionExecutionService> instructionService) {
@@ -112,14 +116,14 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		// when
 		replayAll();
-		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(ControlCode.LATCH_ON, (short) 1, 0, 0,
-				CommandStatus.SUCCESS);
-		CommandStatus status = service.getCommandHandler().operateCROB(crob, 123123123,
+		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(OperationType.LATCH_ON,
+				TripCloseCode.CLOSE, false, (short) 1, 0, 0, CommandStatus.SUCCESS);
+		CommandStatus status = service.getCommandHandler().operate(crob, 123123123, database,
 				OperateType.DirectOperate);
 
 		// then
@@ -133,7 +137,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -148,9 +152,9 @@ public class OutstationServceTests {
 
 		// WHEN
 		replayAll();
-		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(ControlCode.LATCH_ON, (short) 1, 0, 0,
-				CommandStatus.SUCCESS);
-		CommandStatus status = service.getCommandHandler().operateCROB(crob, 0,
+		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(OperationType.LATCH_ON,
+				TripCloseCode.CLOSE, false, (short) 1, 0, 0, CommandStatus.SUCCESS);
+		CommandStatus status = service.getCommandHandler().operate(crob, 0, database,
 				OperateType.DirectOperate);
 
 		// THEN
@@ -169,7 +173,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -184,9 +188,9 @@ public class OutstationServceTests {
 
 		// when
 		replayAll();
-		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(ControlCode.LATCH_OFF, (short) 1, 0,
-				0, CommandStatus.SUCCESS);
-		CommandStatus status = service.getCommandHandler().operateCROB(crob, 0,
+		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(OperationType.LATCH_OFF,
+				TripCloseCode.CLOSE, false, (short) 1, 0, 0, CommandStatus.SUCCESS);
+		CommandStatus status = service.getCommandHandler().operate(crob, 0, database,
 				OperateType.DirectOperate);
 
 		// then
@@ -207,7 +211,7 @@ public class OutstationServceTests {
 		service.setTaskExecutor(new TaskExecutorAdapter(executor));
 
 		final String controlId = "/foo/switch";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -222,9 +226,9 @@ public class OutstationServceTests {
 
 		// when
 		replayAll();
-		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(ControlCode.LATCH_ON, (short) 1, 0, 0,
-				CommandStatus.SUCCESS);
-		CommandStatus status = service.getCommandHandler().operateCROB(crob, 0,
+		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(OperationType.LATCH_ON,
+				TripCloseCode.CLOSE, false, (short) 1, 0, 0, CommandStatus.SUCCESS);
+		CommandStatus status = service.getCommandHandler().operate(crob, 0, database,
 				OperateType.DirectOperate);
 
 		// wait for bg task
@@ -249,7 +253,7 @@ public class OutstationServceTests {
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/limiter";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -265,7 +269,7 @@ public class OutstationServceTests {
 		// when
 		replayAll();
 		AnalogOutputInt32 cmd = new AnalogOutputInt32(321456, CommandStatus.SUCCESS);
-		CommandStatus status = service.getCommandHandler().operateAOI32(cmd, 0,
+		CommandStatus status = service.getCommandHandler().operate(cmd, 0, database,
 				OperateType.DirectOperate);
 
 		// then
@@ -286,7 +290,7 @@ public class OutstationServceTests {
 		service.setTaskExecutor(new TaskExecutorAdapter(executor));
 
 		final String controlId = "/foo/limiter";
-		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
+		ControlConfig cConfig = new ControlConfig(controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
 		Capture<Instruction> instrCaptor = Capture.newInstance();
@@ -302,7 +306,7 @@ public class OutstationServceTests {
 		// when
 		replayAll();
 		AnalogOutputInt32 cmd = new AnalogOutputInt32(321456, CommandStatus.SUCCESS);
-		CommandStatus status = service.getCommandHandler().operateAOI32(cmd, 0,
+		CommandStatus status = service.getCommandHandler().operate(cmd, 0, database,
 				OperateType.DirectOperate);
 
 		// wait for bg task
