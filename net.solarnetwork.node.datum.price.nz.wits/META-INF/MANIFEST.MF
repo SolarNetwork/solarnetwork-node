@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: New Zealand Grid Market Prices
 Bundle-Description: Collect electricity market price data from the New Zealand Electricity Authority.
 Bundle-SymbolicName: net.solarnetwork.node.datum.price.nz.wits
-Bundle-Version: 2.0.0
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.price.nz.wits
 Bundle-RequiredExecutionEnvironment: JavaSE-17
@@ -42,4 +42,5 @@ Import-Package:
  org.springframework.context;version="[6.2,7.0)",
  org.springframework.context.support;version="[6.2,7.0)",
  org.springframework.core;version="[6.2,7.0)",
+ org.springframework.core.task;version="[6.2,7.0)",
  org.springframework.util;version="[6.2,7.0)"
