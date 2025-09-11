@@ -31,12 +31,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.nio.client.HttpAsyncClient;
 import org.springframework.context.MessageSource;
+import org.springframework.core.task.AsyncTaskExecutor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.scribejava.core.builder.ServiceBuilder;
@@ -72,7 +77,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Electricity Authority WITS API.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -85,6 +90,13 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 
 	/** The {@code sampleCacheTtl} property default value. */
 	public static final Duration DEFAULT_SAMPLE_CACHE_TTL = Duration.ofSeconds(59);
+
+	/**
+	 * The {@code requestTimeout} property default value.
+	 *
+	 * @since 1.1
+	 */
+	public static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(29);
 
 	/** The {@code tokenUrl} property default value. */
 	public static final String DEFAULT_TOKEN_URL = "https://api.electricityinfo.co.nz/login/oauth2/token";
@@ -104,6 +116,8 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	private String tokenUrl = DEFAULT_TOKEN_URL;
 	private String priceUrl = DEFAULT_PRICE_URL;
 	private Duration sampleCacheTtl = DEFAULT_SAMPLE_CACHE_TTL;
+	private Duration requestTimeout = DEFAULT_REQUEST_TIMEOUT;
+	private AsyncTaskExecutor taskExecutor;
 
 	private CachedResult<PriceDatum> latestDatum;
 	private OAuth20Service oauth;
@@ -293,15 +307,39 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 		request.addQuerystringParameter("nodes", node);
 		request.addQuerystringParameter("from", clock.instant().minus(from).toString());
 		service.signRequest(token, request);
+		Callable<JsonNode> task = () -> {
+			try {
+				final Response response = service.execute(request);
+				return objectMapper.readTree(response.getBody());
+			} catch ( InterruptedException e ) {
+				log.warn("Interrupted requesting price data from [{}]", priceUrl);
+				return null;
+			} catch ( ExecutionException e ) {
+				throw new RemoteServiceException(format("Error requesting price data from [%s]: %s",
+						priceUrl, e.getCause().getMessage()), e.getCause());
+			}
+		};
+		final AsyncTaskExecutor executor = getTaskExecutor();
+		final Duration maxWait = getRequestTimeout();
 		try {
-			final Response response = service.execute(request);
-			return objectMapper.readTree(response.getBody());
-		} catch ( InterruptedException e ) {
-			log.warn("Interrupted requesting price data from [{}]", priceUrl);
-			return null;
-		} catch ( ExecutionException e ) {
-			throw new RemoteServiceException(format("Error requesting price data from [%s]: %s",
-					priceUrl, e.getCause().getMessage()), e.getCause());
+			if ( executor != null && maxWait != null && maxWait.compareTo(Duration.ZERO) > 0 ) {
+				Future<JsonNode> future = executor.submit(task);
+				try {
+					return future.get(maxWait.toMillis(), TimeUnit.MILLISECONDS);
+				} catch ( TimeoutException | CancellationException e ) {
+					log.warn(format("Timeout waiting %dms for price data from [%s]", maxWait.toMillis(),
+							priceUrl));
+					future.cancel(true);
+					return null;
+				}
+			} else {
+				return task.call();
+			}
+		} catch ( IOException | RemoteServiceException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new RemoteServiceException(format("Error requesting price data from  [%s]: %s",
+					priceUrl, e.getCause().getMessage(), e.getCause()));
 		}
 	}
 
@@ -350,6 +388,8 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 				String.valueOf(DEFAULT_FROM_OFFSET.getSeconds())));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_TTL.getSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("requestTimeoutSeconds",
+				String.valueOf(DEFAULT_REQUEST_TIMEOUT.getSeconds())));
 
 		return results;
 	}
@@ -591,4 +631,76 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 		setSampleCacheTtl(Duration.ofSeconds(ttl));
 	}
 
+	/**
+	 * Get the overall request timeout.
+	 *
+	 * @return the maximum length of time to wait for a result, or {@code 0} to
+	 *         wait forever; defaults to {@link #DEFAULT_REQUEST_TIMEOUT}
+	 * @since 1.1
+	 */
+	public Duration getRequestTimeout() {
+		return requestTimeout;
+	}
+
+	/**
+	 * Set the overall request timeout.
+	 *
+	 * @param requestTimeout
+	 *        the maximum length of time to wait for a result, or {@code 0} to
+	 *        wait forever; if {@code null} or less than {@code 0} then
+	 *        {@link #DEFAULT_REQUEST_TIMEOUT} will be used
+	 * @since 1.1
+	 */
+	public void setRequestTimeout(Duration requestTimeout) {
+		this.requestTimeout = (requestTimeout == null || requestTimeout.isNegative()
+				? DEFAULT_REQUEST_TIMEOUT
+				: requestTimeout);
+	}
+
+	/**
+	 * Get the request timeout, in seconds.
+	 *
+	 * @return the timeout; defaults to {@link #DEFAULT_REQUEST_TIMEOUT}
+	 * @since 1.1
+	 */
+	public final long getRequestTimeoutSeconds() {
+		return fromOffset.getSeconds();
+	}
+
+	/**
+	 * Set the request timeout, in seconds.
+	 *
+	 * @param seconds
+	 *        the timeout to set; if less than {@code 0} then
+	 *        {@link #DEFAULT_REQUEST_TIMEOUT} will be used
+	 * @since 1.1
+	 */
+	public final void setRequestTimeoutSeconds(long seconds) {
+		setFromOffset(seconds >= 0 ? Duration.ofSeconds(seconds) : null);
+	}
+
+	/**
+	 * Get the task executor.
+	 *
+	 * @return the executor
+	 * @since 1.1
+	 */
+	public AsyncTaskExecutor getTaskExecutor() {
+		return taskExecutor;
+	}
+
+	/**
+	 * Set the task executor.
+	 *
+	 * <p>
+	 * This must be configured for request timeouts to be handled.
+	 * </p>
+	 *
+	 * @param taskExecutor
+	 *        the executor to set
+	 * @since 1.1
+	 */
+	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
+		this.taskExecutor = taskExecutor;
+	}
 }
