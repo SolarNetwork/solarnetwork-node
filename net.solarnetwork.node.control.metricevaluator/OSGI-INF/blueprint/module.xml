@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+
+	<!-- Service References -->
+
+	<reference id="metricDao" interface="net.solarnetwork.node.metrics.dao.MetricDao"/>
+
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+	</bean>
+
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="tariffScheduleProviders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.TariffScheduleProvider"/>
+	</bean>
+
+	<bean id="localStateDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.LocalStateDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<!-- Services -->
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.control.metricevaluator.MetricEvaluator</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</array>
+		</property>
+	</bean>
+
+	<!-- Published Services -->
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Metric Evaluator"/>
+			<property name="factoryUid" value="s10k.f8n.node.control.metricevaluator"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="s10k.f8n.node.control.metricevaluator"
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob"
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.control.metricevaluator.MetricEvaluator">
+					<argument ref="metricDao"/>
+					<argument ref="instructionExecutionService"/>
+					<property name="messageSource" ref="messageSource"/>
+					<property name="expressionServices" ref="expressionServices"/>
+					<property name="metadataService">
+						<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+							<argument ref="bundleContext"/>
+							<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+							<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+						</bean>
+					</property>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumService" ref="datumService"/>
+					<property name="locationService" ref="locationService"/>
+					<property name="opModesService" ref="opModesService"/>
+					<property name="placeholderService" ref="placeholderService"/>
+					<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
+					<property name="localStateDao" ref="localStateDao"/>
+				</bean>
+			</argument>
+			<argument value="0 * * * * *"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumSourceIdProvider">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.service.DatumSourceIdProvider</value>
+								</list>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>
