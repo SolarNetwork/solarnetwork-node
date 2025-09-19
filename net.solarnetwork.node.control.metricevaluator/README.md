@@ -103,8 +103,16 @@ The expressions will be executed in the order defined, and provided with all que
 aggregates as parameters, as well as the result of any parameter expressions (and thus both can be
 referenced as variables in the expression).
 
+# Expressions
+
+The expressions in both the [parameter](#parameter-settings) and [expression](#expression-settings)
+settings support normal node [expressions][expressions], but there is no datum available, so
+[other variables][expr-other-vars] like `datum`, `meta`, `sourceId`, and `props` are not available.
+All metrics, [static input parameters](#static-input-parameters), and [parameters](#parameter-settings)
+are available as variables or via the `parameters` variable.
 
 [expressions]: https://solarnetwork.github.io/solarnode-handbook/users/expressions/
+[expr-other-vars]: https://solarnetwork.github.io/solarnode-handbook/users/expressions/#other-variables
 [SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
 [metrics]: https://solarnetwork.github.io/solarnode-handbook/users/metrics/
 [metric-harvester]: https://solarnetwork.github.io/solarnode-handbook/users/datum-filters/metric-harvester/
