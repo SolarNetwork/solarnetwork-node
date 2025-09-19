@@ -219,7 +219,8 @@ public class MetricEvaluator extends BaseIdentifiable
 	 *
 	 * @param clock
 	 *        the clock to use
-	 * @parm stats the statistics instance to use
+	 * @param stats
+	 *        the statistics instance to use
 	 * @param metricDao
 	 *        the metric DAO
 	 * @param instructionExecutionService
@@ -945,9 +946,10 @@ public class MetricEvaluator extends BaseIdentifiable
 	}
 
 	/**
-	 * Set the time offset start (from now) to aggregate latestMetrics over.
+	 * Set the time offset start (from now) to aggregate latestMetrics over, in
+	 * seconds.
 	 *
-	 * @param metricAggregateTimeOffsetStart
+	 * @param seconds
 	 *        the time range to set; if {@literal null} then
 	 *        {@link #DEFAULT_METRIC_AGGREGATE_TIME_OFFSET_START} will be used
 	 */
@@ -976,6 +978,29 @@ public class MetricEvaluator extends BaseIdentifiable
 		this.metricAggregateTimeOffsetEnd = (metricAggregateTimeOffsetEnd != null
 				? metricAggregateTimeOffsetEnd
 				: DEFAULT_METRIC_AGGREGATE_TIME_OFFSET_END);
+	}
+
+	/**
+	 * Get the time offset end (from now) to aggregate latestMetrics over, in
+	 * seconds.
+	 *
+	 * @return the time range; defaults to
+	 *         {@link #DEFAULT_METRIC_AGGREGATE_TIME_OFFSET_END}
+	 */
+	public final long getMetricAggregateTimeOffsetEndSecs() {
+		return metricAggregateTimeOffsetEnd.getSeconds();
+	}
+
+	/**
+	 * Set the time offset end (from now) to aggregate latestMetrics over, in
+	 * seconds.
+	 *
+	 * @param seconds
+	 *        the time range to set; if {@literal null} then
+	 *        {@link #DEFAULT_METRIC_AGGREGATE_TIME_OFFSET_END} will be used
+	 */
+	public final void setMetricAggregateTimeOffsetEndSecs(long seconds) {
+		setMetricAggregateTimeOffsetEnd(Duration.ofSeconds(seconds));
 	}
 
 	/**

@@ -46,6 +46,7 @@ public final class NamedMetricAggregate implements MetricAggregate {
 	 *
 	 * @param delegate
 	 *        the delegate aggregate
+	 * @return the new instance
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
@@ -60,6 +61,7 @@ public final class NamedMetricAggregate implements MetricAggregate {
 	 *        the delegate aggregate
 	 * @param name
 	 *        the name
+	 * @return the new instance
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
