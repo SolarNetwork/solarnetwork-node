@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.control.metricevaluator;
+package net.solarnetwork.node.metrics.evaluator;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import net.solarnetwork.node.metrics.domain.Metric;

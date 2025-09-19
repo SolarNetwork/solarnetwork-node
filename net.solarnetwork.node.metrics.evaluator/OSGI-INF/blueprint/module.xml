@@ -72,7 +72,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.control.metricevaluator.MetricEvaluator</value>
+				<value>net.solarnetwork.node.metrics.evaluator.MetricEvaluator</value>
 				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
@@ -97,7 +97,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedJob"
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>
-				<bean class="net.solarnetwork.node.control.metricevaluator.MetricEvaluator">
+				<bean class="net.solarnetwork.node.metrics.evaluator.MetricEvaluator">
 					<argument ref="metricDao"/>
 					<argument ref="instructionExecutionService"/>
 					<property name="messageSource" ref="messageSource"/>

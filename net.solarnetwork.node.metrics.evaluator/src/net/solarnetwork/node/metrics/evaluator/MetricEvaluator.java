@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.control.metricevaluator;
+package net.solarnetwork.node.metrics.evaluator;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -29,7 +29,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static net.solarnetwork.node.control.metricevaluator.NamedMetricAggregate.namedMetricAggregate;
+import static net.solarnetwork.node.metrics.evaluator.NamedMetricAggregate.namedMetricAggregate;
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.control.metricevaluator;
+package net.solarnetwork.node.metrics.evaluator;
 
 /**
  * Statics for the metric evaluator.

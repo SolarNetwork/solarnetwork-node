@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Metric Evaluator
 Bundle-Description: Evaluate a set of expressions against a set of metrics and issue an instruction with the result.
-Bundle-SymbolicName: net.solarnetwork.node.control.metricevaluator
+Bundle-SymbolicName: net.solarnetwork.node.metrics.evaluator
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork Foudnation
 Automatic-Module-Name: s10k.f8n.node.control.metricevaluator
