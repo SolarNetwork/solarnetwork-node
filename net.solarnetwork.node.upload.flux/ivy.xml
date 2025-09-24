@@ -14,9 +14,9 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="commons-codec" name="commons-codec" rev="1.17.0"/>
-		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.19.0" />
-		<dependency org="com.fasterxml.jackson.dataformat" name="jackson-dataformat-cbor" rev="2.19.0" />
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.0.0"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.20.0" />
+		<dependency org="com.fasterxml.jackson.dataformat" name="jackson-dataformat-cbor" rev="2.20.0" />
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.5.0"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.mqtt" rev="6.0.0"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.0.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
