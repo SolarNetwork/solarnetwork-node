@@ -92,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class S3SetupManager implements InstructionHandler {
 
@@ -130,7 +130,7 @@ public class S3SetupManager implements InstructionHandler {
 	private static final Pattern VERSION_PAT = Pattern.compile(".*/(\\d+)");
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+			.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
 
 	private static final Pattern LEADING_ZEROS_PAT = Pattern.compile("^0+");
 
