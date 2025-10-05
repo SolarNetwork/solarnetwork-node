@@ -4,7 +4,7 @@ Bundle-Name: S3 Setup
 Bundle-SymbolicName: net.solarnetwork.node.setup.s3
 Automatic-Module-Name: net.solarnetwork.node.setup.s3
 Bundle-Description: Sync vendor-specific resources from Amazon S3.
-Bundle-Version: 4.0.0
+Bundle-Version: 4.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

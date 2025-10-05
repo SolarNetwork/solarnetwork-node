@@ -80,7 +80,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		setup.init();
 
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.setSerializationInclusion(Include.NON_NULL);
+		mapper.setDefaultPropertyInclusion(Include.NON_NULL);
 
 		dao = new JdbcGeneralNodeDatumDao();
 		dao.setDataSource(dataSource);

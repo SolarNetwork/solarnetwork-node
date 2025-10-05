@@ -82,7 +82,7 @@
 
 	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="newDatumObjectMapper">
 		<argument>
-			<bean class="com.fasterxml.jackson.dataformat.cbor.CBORFactory"/>
+			<bean class="net.solarnetwork.codec.CborUtils" factory-method="cborFactory"/>
 		</argument>
 	</bean>
 

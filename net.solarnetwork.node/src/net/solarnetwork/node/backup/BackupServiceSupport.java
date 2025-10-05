@@ -65,7 +65,7 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/** The object mapper to use. */
 	protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+			.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
 
 	private static final String MARKED_BACKUP_PROP_KEY = "key";
 	private static final String MARKED_BACKUP_PROP_PROPS = "props";
