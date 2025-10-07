@@ -59,7 +59,7 @@ import net.solarnetwork.node.setup.SetupResourceService;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class InlineResourcesElementModelProcessor extends AbstractElementModelProcessor {
 
@@ -176,6 +176,8 @@ public class InlineResourcesElementModelProcessor extends AbstractElementModelPr
 					}
 				} else if ( ID_ATTRIBUTE_NAME.equals(e.getKey()) ) {
 					wrapperAttributes.put(ID_ATTRIBUTE_NAME, e.getValue().toString());
+				} else if ( WRAPPER_CLASS_ATTRIBUTE_NAME.equals(e.getKey()) ) {
+					wrapperAttributes.put("class", e.getValue().toString());
 				} else if ( e.getKey().startsWith(DATA_ATTRIBUTE_PREFIX) ) {
 					wrapperAttributes.put(e.getKey(), e.getValue().toString());
 				}
