@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.metadata.json.test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -83,7 +84,9 @@ import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService.CachedMetadata;
+import net.solarnetwork.node.metadata.json.NodeMetadataInstructions;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.IdentityService;
@@ -96,7 +99,7 @@ import net.solarnetwork.util.CachedResult;
  * Test cases for the {@link JsonDatumMetadataService} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JsonDatumMetadataServiceTests extends AbstractHttpServerTests {
 
@@ -856,8 +859,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpServerTests {
 		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey1),
 				capture(resourcesCaptor1));
 
-		final String settingKey2 = DigestUtils
-				.md5DigestAsHex(sourceId2.getBytes(StandardCharsets.UTF_8));
+		final String settingKey2 = DigestUtils.md5DigestAsHex(sourceId2.getBytes(UTF_8));
 		Capture<Iterable<Resource>> resourcesCaptor2 = Capture.newInstance();
 		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey2),
 				capture(resourcesCaptor2));
@@ -878,6 +880,51 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpServerTests {
 		rsrcs = StreamSupport.stream(resourcesCaptor2.getValue().spliterator(), false)
 				.collect(Collectors.toList());
 		assertThat("Removed single resource 2", rsrcs, hasSize(1));
+	}
+
+	@Test
+	public void clearSourceCache_signal() throws IOException {
+		// GIVEN
+		// put metadata into cache from start
+		sourceMetadata.put(TEST_SOUCE_ID,
+				service.createCachedMetadata(TEST_SOUCE_ID, new GeneralDatumMetadata()));
+
+		final String sourceId2 = "test.source.2";
+		sourceMetadata.put(sourceId2,
+				service.createCachedMetadata(sourceId2, new GeneralDatumMetadata()));
+
+		final String settingKey = DigestUtils.md5DigestAsHex(TEST_SOUCE_ID.getBytes(UTF_8));
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
+		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
+				capture(resourcesCaptor));
+
+		final String settingKey2 = DigestUtils.md5DigestAsHex(sourceId2.getBytes(UTF_8));
+		Capture<Iterable<Resource>> resourcesCaptor2 = Capture.newInstance();
+		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey2),
+				capture(resourcesCaptor2));
+
+		// WHEN
+		replayAll();
+
+		Instruction instr = InstructionUtils.createLocalInstruction(InstructionHandler.TOPIC_SIGNAL,
+				JsonDatumMetadataService.SETTING_UID, NodeMetadataInstructions.CLEAR_CACHE_SIGNAL);
+
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Instruction status returned", result, is(notNullValue()));
+		assertThat("Instruction handled", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		Iterable<Resource> savedResources = resourcesCaptor.getValue();
+		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Removed single resource for first source", rsrcs, hasSize(1));
+
+		Iterable<Resource> savedResources2 = resourcesCaptor2.getValue();
+		List<Resource> rsrcs2 = StreamSupport.stream(savedResources2.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Removed single resource for second source", rsrcs2, hasSize(1));
 	}
 
 }

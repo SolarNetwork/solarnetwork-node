@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -74,12 +75,23 @@ import net.solarnetwork.util.StringUtils;
  * one JSON resource per source ID.
  * </p>
  *
+ * <p>
+ * The cache can be cleared using a {@code Signal} instruction with a
+ * {@link #SETTING_UID} parameter set to {@code clear-cache}.
+ * </p>
+ *
+ * <p>
+ * The cache for specific source IDs can be cleared using a
+ * {@code DatumSourceMetadataClearCache} instruction with a {@code sourceIds}
+ * parameter set to a comma-delimited list of source IDs to clear.
+ * </p>
+ *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport
-		implements DatumMetadataService, SettingResourceHandler, SettingSpecifierProvider,
-		SettingsChangeObserver, InstructionHandler, Runnable {
+		implements DatumMetadataService, NodeMetadataInstructions, SettingResourceHandler,
+		SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler, Runnable {
 
 	/** The settings key for source metadata. */
 	public static final String SETTING_KEY_SOURCE_META = "JsonDatumMetadataService.sourceMeta";
@@ -115,6 +127,13 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 	 * @since 2.3
 	 */
 	public static final String SOURCE_IDS_PARAM = "sourceIds";
+
+	/**
+	 * The setting UID.
+	 *
+	 * @since 2.5
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.metadata.json.JsonDatumMetadataService";
 
 	private String baseUrl = "/api/v1/sec/datum/meta";
 
@@ -191,7 +210,8 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC.equalsIgnoreCase(topic);
+		return DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC.equalsIgnoreCase(topic)
+				|| InstructionHandler.TOPIC_SIGNAL.equalsIgnoreCase(topic);
 	}
 
 	@Override
@@ -199,6 +219,16 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
+		if ( DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC.equalsIgnoreCase(instruction.getTopic()) ) {
+			return processDatumSourceMetadataCacheClearInstruction(instruction);
+		} else if ( InstructionHandler.TOPIC_SIGNAL.equalsIgnoreCase(instruction.getTopic()) ) {
+			return processSignalInstruction(instruction);
+		}
+		// don't expect to be here
+		return null;
+	}
+
+	private InstructionStatus processDatumSourceMetadataCacheClearInstruction(Instruction instruction) {
 		final String sourceIds = instruction.getParameterValue(SOURCE_IDS_PARAM);
 		if ( sourceIds == null || sourceIds.isEmpty() ) {
 			return InstructionUtils.createStatus(instruction, InstructionState.Declined, InstructionUtils
@@ -216,6 +246,27 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 			}
 		}
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
+	}
+
+	private InstructionStatus processSignalInstruction(Instruction instruction) {
+		for ( String paramName : instruction.getParameterNames() ) {
+			if ( SETTING_UID.equals(paramName) ) {
+				if ( CLEAR_CACHE_SIGNAL.equals(instruction.getParameterValue(paramName)) ) {
+					for ( Entry<String, CachedMetadata> e : sourceMetadata.entrySet() ) {
+						synchronized ( e.getValue() ) {
+							removePersistedMetadata(e.getKey());
+						}
+					}
+					sourceMetadata.clear();
+					return InstructionUtils.createStatus(instruction, InstructionState.Completed);
+				}
+				// signal not supported
+				return InstructionUtils.createStatus(instruction, InstructionState.Declined,
+						InstructionUtils.createErrorResultParameters("Signal name not supported.",
+								"JDMS.0002"));
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -391,7 +442,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.metadata.json.JsonDatumMetadataService";
+		return SETTING_UID;
 	}
 
 	@Override

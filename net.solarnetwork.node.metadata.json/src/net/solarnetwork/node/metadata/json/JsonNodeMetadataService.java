@@ -31,7 +31,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.NodeMetadataService;
 import net.solarnetwork.node.service.support.JsonHttpClientSupport;
@@ -45,15 +50,28 @@ import net.solarnetwork.util.CachedResult;
 /**
  * JSON based web service implementation of {@link NodeMetadataService}.
  *
+ * <p>
+ * The cache can be cleared using a {@code Signal} instruction with a
+ * {@link #SETTING_UID} parameter set to {@code clear-cache}.
+ * </p>
+ *
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 1.7
  */
-public class JsonNodeMetadataService extends JsonHttpClientSupport implements NodeMetadataService,
-		MetadataService, SettingSpecifierProvider, SettingsChangeObserver {
+public class JsonNodeMetadataService extends JsonHttpClientSupport
+		implements NodeMetadataService, MetadataService, NodeMetadataInstructions, InstructionHandler,
+		SettingSpecifierProvider, SettingsChangeObserver {
 
 	/** The {@code cacheSeconds} property default value. */
 	public static final int DEFAULT_CACHE_SECONDS = 3600;
+
+	/**
+	 * The setting UID.
+	 *
+	 * @since 2.4
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.metadata.json";
 
 	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
 
@@ -77,7 +95,7 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.metadata.json";
+		return SETTING_UID;
 	}
 
 	@Override
@@ -149,6 +167,7 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 
 	@Override
 	public GeneralDatumMetadata getNodeMetadata() {
+		final CachedResult<GeneralDatumMetadata> cachedMetadata = this.cachedMetadata;
 		if ( cachedMetadata != null && cachedMetadata.isValid() ) {
 			return cachedMetadata.getResult();
 		}
@@ -157,7 +176,9 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 			final InputStream in = jsonGET(url);
 			GeneralDatumMetadata meta = extractResponseData(in, GeneralDatumMetadata.class);
 			if ( cacheSeconds > 0 ) {
-				this.cachedMetadata = new CachedResult<>(meta, cacheSeconds, TimeUnit.SECONDS);
+				synchronized ( this ) {
+					this.cachedMetadata = new CachedResult<>(meta, cacheSeconds, TimeUnit.SECONDS);
+				}
 			}
 			return meta;
 		} catch ( IOException e ) {
@@ -168,6 +189,33 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 			}
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return InstructionHandler.TOPIC_SIGNAL.equalsIgnoreCase(topic);
+	}
+
+	@Override
+	public InstructionStatus processInstruction(Instruction instruction) {
+		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
+			return null;
+		}
+		for ( String paramName : instruction.getParameterNames() ) {
+			if ( SETTING_UID.equals(paramName) ) {
+				if ( CLEAR_CACHE_SIGNAL.equals(instruction.getParameterValue(paramName)) ) {
+					synchronized ( this ) {
+						cachedMetadata = null;
+					}
+					return InstructionUtils.createStatus(instruction, InstructionState.Completed);
+				}
+				// signal not supported
+				return InstructionUtils.createStatus(instruction, InstructionState.Declined,
+						InstructionUtils.createErrorResultParameters("Signal name not supported.",
+								"JNMS.0001"));
+			}
+		}
+		return null;
 	}
 
 	private String getStatusMessage() {
