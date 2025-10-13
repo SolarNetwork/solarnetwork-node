@@ -48,6 +48,14 @@
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_SIGNAL}</value>
+					<value>DatumSourceMetadataClearCache</value>
+				</array>
+			</entry>
+		</service-properties>
 		<bean class="net.solarnetwork.node.metadata.json.JsonDatumMetadataService" init-method="startup">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.metadata.json.JsonDatumMetadataService" 
 					autowire-on-update="true" update-method="configurationChanged"/>
@@ -68,6 +76,7 @@
 	
 	<service>
 		<interfaces>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>net.solarnetwork.node.service.NodeMetadataService</value>
 			<value>net.solarnetwork.node.service.MetadataService</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
@@ -75,6 +84,11 @@
 		<service-properties>
 			<entry key="function" value="node"/>
 			<entry key="encoding" value="json"/>
+			<entry key="instruction">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_SIGNAL}</value>
+				</array>
+			</entry>
 		</service-properties>
 		<bean class="net.solarnetwork.node.metadata.json.JsonNodeMetadataService">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.metadata.json" 

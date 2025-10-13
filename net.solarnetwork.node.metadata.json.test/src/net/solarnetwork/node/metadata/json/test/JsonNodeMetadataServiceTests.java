@@ -43,8 +43,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.metadata.json.JsonNodeMetadataService;
+import net.solarnetwork.node.metadata.json.NodeMetadataInstructions;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.test.http.AbstractHttpServerTests;
 import net.solarnetwork.test.http.TestHttpHandler;
@@ -53,7 +59,7 @@ import net.solarnetwork.test.http.TestHttpHandler;
  * Test cases for the {@link JsonNodeMetadataService} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JsonNodeMetadataServiceTests extends AbstractHttpServerTests {
 
@@ -310,6 +316,56 @@ public class JsonNodeMetadataServiceTests extends AbstractHttpServerTests {
 
 		// THEN
 		assertThat("API called", counter.get(), is(equalTo(2)));
+	}
+
+	@Test
+	public void clearCache() throws Exception {
+		// GIVEN
+		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
+		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
+
+		final AtomicInteger reqCount = new AtomicInteger();
+
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				reqCount.incrementAndGet();
+				assertThat("Request method", request.getMethod(), equalTo("GET"));
+				assertThat("Request path", request.getHttpURI().getPath(),
+						equalTo("/api/v1/sec/nodes/meta"));
+				respondWithJsonResource(request, response, "node-meta-01.json");
+				return true;
+			}
+
+		};
+		addHandler(handler);
+
+		// WHEN
+		replayAll();
+
+		// request 1 (populate in cache)
+		GeneralDatumMetadata meta = service.getNodeMetadata();
+
+		// clear cache
+		Instruction instr = InstructionUtils.createLocalInstruction(InstructionHandler.TOPIC_SIGNAL,
+				JsonNodeMetadataService.SETTING_UID, NodeMetadataInstructions.CLEAR_CACHE_SIGNAL);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// request 2 (repopulate cache)
+		GeneralDatumMetadata meta2 = service.getNodeMetadata();
+
+		// THEN
+		assertThat("Metadata returned on 1st request", meta, is(notNullValue()));
+
+		assertThat("Signal instruction handled", result, is(notNullValue()));
+		assertThat("Signal instruction completed", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		assertThat("Two requests executed", reqCount.get(), is(equalTo(2)));
+		assertThat("Non-cached metadata returned on 2nd request", meta2, is(not(sameInstance(meta))));
+
 	}
 
 }
