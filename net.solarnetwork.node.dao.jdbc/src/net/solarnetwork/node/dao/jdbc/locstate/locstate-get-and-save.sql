@@ -1,6 +1,11 @@
 SELECT skey, created, modified, stype, sdata FROM OLD TABLE (
 	MERGE INTO solarnode.sn_locstate r
-	USING (VALUES (?, ?, ?, ?, CAST(? AS BYTEA))) s(skey, created, modified, stype, sdata)
+	USING (VALUES (
+			  CAST(? AS VARCHAR)
+			, CAST(? AS TIMESTAMP)
+			, CAST(? AS TIMESTAMP)
+			, CAST(? AS CHARACTER)
+			, CAST(? AS BYTEA))) s(skey, created, modified, stype, sdata)
 		ON r.skey = s.skey
 	WHEN MATCHED AND r.sdata = s.sdata THEN UPDATE
 		SET r.stype = r.stype

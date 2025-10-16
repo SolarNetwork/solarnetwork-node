@@ -1,5 +1,5 @@
 MERGE INTO solarnode.sn_locstate r
-USING (VALUES (?, ?, ?, ?, ?)) s(skey, created, modified, stype, sdata)
+USING (VALUES (?, ?, ?, ?, CAST(? AS BYTEA))) s(skey, created, modified, stype, sdata)
 	ON r.skey = s.skey
 WHEN MATCHED THEN UPDATE
 	SET modified = s.modified, stype = s.stype, sdata = s.sdata

@@ -36,8 +36,14 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -193,6 +199,162 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 
 		// THEN
 		assertThat("Results found in order", results, contains(obj1, obj3, obj2));
+
+		List<LocalState> outputs = new ArrayList<>(results);
+		List<LocalState> inputs = Arrays.asList(obj1, obj3, obj2);
+		for ( int i = 0; i < inputs.size(); i++ ) {
+			assertThat("Result %d has same values as input".formatted(i),
+					outputs.get(i).isSameAs(inputs.get(i)), is(true));
+		}
+	}
+
+	@Test
+	public void saveIntString() {
+		// GIVEN
+		LocalState obj = new LocalState("a", LocalStateType.Int32, "123456");
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as integer", result.getValue(), is(equalTo(123456)));
+	}
+
+	@Test
+	public void saveInt() {
+		// GIVEN
+		LocalState obj = new LocalState("a", LocalStateType.Int32, 123456);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as integer", result.getValue(), is(equalTo(123456)));
+	}
+
+	@Test
+	public void saveLong() {
+		// GIVEN
+		LocalState obj = new LocalState("a", LocalStateType.Int64, 9876543210L);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as long", result.getValue(), is(equalTo(9876543210L)));
+	}
+
+	@Test
+	public void saveInteger() {
+		// GIVEN
+		final BigInteger val = new BigInteger("987654321098765432109876543210");
+		LocalState obj = new LocalState("a", LocalStateType.Integer, val);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as long", result.getValue(), is(equalTo(val)));
+	}
+
+	@Test
+	public void saveDecimal() {
+		// GIVEN
+		final BigDecimal val = new BigDecimal("98765432109876543210.9876543210");
+		LocalState obj = new LocalState("a", LocalStateType.Decimal, val);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as long", result.getValue(), is(equalTo(val)));
+	}
+
+	@Test
+	public void saveFloat() {
+		// GIVEN
+		final Float val = 1234.5f;
+		LocalState obj = new LocalState("a", LocalStateType.Float32, val);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as long", result.getValue(), is(equalTo(val)));
+	}
+
+	@Test
+	public void saveDouble() {
+		// GIVEN
+		final Double val = 1234567898765.54321;
+		LocalState obj = new LocalState("a", LocalStateType.Float64, val);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as long", result.getValue(), is(equalTo(val)));
+	}
+
+	@Test
+	public void saveMap() {
+		// GIVEN
+		final Map<String, Object> val = Map.of("a", "one", "b", 2, "c", true);
+		LocalState obj = new LocalState("a", LocalStateType.Mapping, val);
+
+		String pk = dao.save(obj);
+
+		// WHEN
+		replayAll();
+		LocalState result = dao.get(pk);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result ID returned", result.getId(), is(equalTo(obj.getId())));
+		assertThat("Result type returned", result.getType(), is(equalTo(obj.getType())));
+		assertThat("Result value returned as long", result.getValue(), is(equalTo(val)));
 	}
 
 	@Test
