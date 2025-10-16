@@ -169,7 +169,6 @@ public enum LocalStateType {
 						// should not be here
 						return null;
 				}
-				buf.rewind();
 				return buf.array();
 			}
 		} catch ( Exception e ) {
