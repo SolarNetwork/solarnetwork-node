@@ -1,7 +1,7 @@
 /* ==================================================================
- * BackupIdentity.java - 12/10/2017 5:11:49 PM
+ * SimpleBackupFilter.java - 18/10/2025 10:21:21 am
  *
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,63 +22,52 @@
 
 package net.solarnetwork.node.backup;
 
-import java.util.Date;
-import net.solarnetwork.domain.Unique;
+import net.solarnetwork.domain.SimplePagination;
 
 /**
- * Identity information about a {@link Backup}.
+ * Simple implementation of {@link BackupFilter}.
  *
  * @author matt
- * @version 1.1
- * @since 1.55
+ * @version 1.0
+ * @since 4.1
  */
-public interface BackupIdentity extends Unique<String> {
+public class SimpleBackupFilter extends SimplePagination implements BackupFilter {
+
+	private Long nodeId;
 
 	/**
-	 * Get the backup ID.
-	 *
-	 * <p>
-	 * This implementation returns {@link #getKey()}.
-	 * </p>
-	 *
-	 * @since 1.1
+	 * Constructor.
 	 */
-	@Override
-	default String getId() {
-		return getKey();
+	public SimpleBackupFilter() {
+		super();
 	}
 
 	/**
-	 * Get a unique key for the backup.
+	 * Construct a filter with a node ID.
 	 *
-	 * @return the backup key
+	 * @param nodeId
+	 *        the node ID to filter on
+	 * @return the new filter instance
 	 */
-	String getKey();
+	public static SimpleBackupFilter filterForNode(Long nodeId) {
+		SimpleBackupFilter f = new SimpleBackupFilter();
+		f.setNodeId(nodeId);
+		return f;
+	}
+
+	@Override
+	public Long getNodeId() {
+		return nodeId;
+	}
 
 	/**
-	 * Get the node ID associated with the backup.
+	 * Set the node ID.
 	 *
-	 * @return the node ID
+	 * @param nodeId
+	 *        the node ID to set
 	 */
-	Long getNodeId();
-
-	/**
-	 * Get the date the backup was created.
-	 *
-	 * @return the backup date
-	 */
-	Date getDate();
-
-	/**
-	 * Get an optional qualifier.
-	 *
-	 * <p>
-	 * A qualifier can be used to provide a backup with a more descriptive name
-	 * or tag.
-	 * </p>
-	 *
-	 * @return the qualifier, or {@literal null} if not known
-	 */
-	String getQualifier();
+	public void setNodeId(Long nodeId) {
+		this.nodeId = nodeId;
+	}
 
 }

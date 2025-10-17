@@ -1,7 +1,7 @@
 /* ==================================================================
- * BackupIdentity.java - 12/10/2017 5:11:49 PM
+ * BackupFilter.java - 18/10/2025 9:37:07 am
  *
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,63 +22,40 @@
 
 package net.solarnetwork.node.backup;
 
-import java.util.Date;
-import net.solarnetwork.domain.Unique;
+import net.solarnetwork.dao.PaginationCriteria;
 
 /**
- * Identity information about a {@link Backup}.
+ * API for backup search filter.
  *
  * @author matt
- * @version 1.1
- * @since 1.55
+ * @version 1.0
+ * @since 4.1
  */
-public interface BackupIdentity extends Unique<String> {
+public interface BackupFilter extends PaginationCriteria {
 
 	/**
-	 * Get the backup ID.
-	 *
-	 * <p>
-	 * This implementation returns {@link #getKey()}.
-	 * </p>
-	 *
-	 * @since 1.1
-	 */
-	@Override
-	default String getId() {
-		return getKey();
-	}
-
-	/**
-	 * Get a unique key for the backup.
-	 *
-	 * @return the backup key
-	 */
-	String getKey();
-
-	/**
-	 * Get the node ID associated with the backup.
+	 * Get a node ID to find.
 	 *
 	 * @return the node ID
 	 */
 	Long getNodeId();
 
 	/**
-	 * Get the date the backup was created.
+	 * Test if this filter has any node criteria.
 	 *
-	 * @return the backup date
+	 * @return {@literal true} if the node ID is non-null
 	 */
-	Date getDate();
+	default boolean hasNodeCriteria() {
+		return getNodeId() != null;
+	}
 
 	/**
-	 * Get an optional qualifier.
+	 * Test if this filter has any criteria.
 	 *
-	 * <p>
-	 * A qualifier can be used to provide a backup with a more descriptive name
-	 * or tag.
-	 * </p>
-	 *
-	 * @return the qualifier, or {@literal null} if not known
+	 * @return {@literal true} if any criteria is non-null
 	 */
-	String getQualifier();
+	default boolean hasAnyCriteria() {
+		return hasNodeCriteria() || getMax() != null || getOffset() != null;
+	}
 
 }
