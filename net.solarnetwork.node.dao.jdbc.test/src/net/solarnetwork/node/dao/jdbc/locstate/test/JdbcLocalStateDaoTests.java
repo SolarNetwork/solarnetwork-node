@@ -52,6 +52,9 @@ import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.test.context.transaction.BeforeTransaction;
+import net.solarnetwork.dao.BasicBatchOptions;
+import net.solarnetwork.dao.BatchableDao.BatchCallback;
+import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.locstate.JdbcLocalStateDao;
@@ -64,7 +67,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link JdbcLocalStateDao} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 
@@ -380,6 +383,28 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
+	public void deleteAll() {
+		// GIVEN
+		LocalState obj1 = new LocalState("a", LocalStateType.Boolean, true);
+		LocalState obj2 = new LocalState("c", LocalStateType.String, UUID.randomUUID().toString());
+		LocalState obj3 = new LocalState("b", LocalStateType.Int32, 123456);
+
+		obj1 = dao.get(dao.save(obj1));
+		obj2 = dao.get(dao.save(obj2));
+		obj3 = dao.get(dao.save(obj3));
+
+		// WHEN
+		replayAll();
+		int result = dao.deleteAll();
+
+		// THEN
+		assertThat("Result count is all entities", result, is(equalTo(3)));
+
+		Collection<LocalState> results = dao.getAll(null);
+		assertThat("No entities available", results, hasSize(0));
+	}
+
+	@Test
 	public void compareAndSave_insert() {
 		// GIVEN
 		final int originalValue = 1;
@@ -584,6 +609,38 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 		assertThat("Result returned", result, is(equalTo(entity)));
 		assertThat("Result same as given (no change)", result.isSameAs(entity), is(equalTo(true)));
 		assertThat("Result value is previous value", result.getValue(), is(equalTo(originalValue)));
+	}
+
+	@Test
+	public void batchExport() {
+		// GIVEN
+		LocalState obj1 = new LocalState("a", LocalStateType.Boolean, true);
+		LocalState obj2 = new LocalState("c", LocalStateType.String, UUID.randomUUID().toString());
+		LocalState obj3 = new LocalState("b", LocalStateType.Int32, 123456);
+
+		obj1 = dao.get(dao.save(obj1));
+		obj2 = dao.get(dao.save(obj2));
+		obj3 = dao.get(dao.save(obj3));
+
+		final List<LocalState> allEntities = List.of(obj1, obj3, obj2);
+
+		// WHEN
+		replayAll();
+		List<LocalState> results = new ArrayList<>();
+		BasicBatchOptions opts = new BasicBatchOptions("export", 50, false, Map.of());
+		dao.batchProcess(new BatchCallback<LocalState>() {
+
+			@Override
+			public BatchCallbackResult handle(LocalState metric) {
+				results.add(metric);
+				return BatchCallbackResult.CONTINUE;
+			}
+		}, opts);
+
+		// THEN
+		assertThat("Expected processed count", results, hasSize(allEntities.size()));
+		assertThat("Expected results returned", results,
+				contains(allEntities.toArray(LocalState[]::new)));
 	}
 
 }

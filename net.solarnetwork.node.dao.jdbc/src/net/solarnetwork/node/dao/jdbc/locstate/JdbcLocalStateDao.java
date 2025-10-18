@@ -33,7 +33,7 @@ import java.util.Locale;
 import java.util.Objects;
 import org.springframework.jdbc.core.ConnectionCallback;
 import net.solarnetwork.node.dao.LocalStateDao;
-import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
+import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
 import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.SecurityToken;
@@ -45,10 +45,10 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * JDBC implementation of {@link LocalStateDao}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.4
  */
-public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
+public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 		implements LocalStateDao, SettingSpecifierProvider {
 
 	/** The table name for {@link SecurityToken} entities. */
@@ -73,6 +73,13 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 
 		/** Get a count of stored records. */
 		Count("count"),
+
+		/**
+		 * Delete all records.
+		 *
+		 * @since 1.1
+		 */
+		DeleteAll("delete-all"),
 
 		;
 
@@ -228,6 +235,31 @@ public class JdbcLocalStateDao extends BaseJdbcGenericDao<LocalState, String>
 			postEntityEvent(entity.getId(), entity, EntityEventType.STORED);
 			return null;
 		});
+	}
+
+	@Override
+	public int deleteAll() {
+		return getJdbcTemplate().execute((ConnectionCallback<Integer>) conn -> {
+			return conn.prepareStatement(getSqlResource(SqlResource.DeleteAll.getResource()))
+					.executeUpdate();
+		});
+	}
+
+	@Override
+	protected String getBatchJdbcStatement(BatchOptions options) {
+		return querySql(SQL_FIND_ALL, null);
+	}
+
+	@Override
+	protected LocalState getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
+			throws SQLException {
+		return getRowMapper().mapRow(resultSet, rowCount);
+	}
+
+	@Override
+	protected void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
+			LocalState entity) throws SQLException {
+		throw new UnsupportedOperationException();
 	}
 
 }

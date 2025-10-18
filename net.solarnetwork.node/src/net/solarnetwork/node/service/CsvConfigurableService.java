@@ -1,5 +1,5 @@
 /* ==================================================================
- * LocalStateService.java - 15/04/2025 9:10:31 am
+ * CsvConfigurableService.java - 19/10/2025 6:54:19 am
  *
  * Copyright 2025 SolarNetwork.net Dev Team
  *
@@ -22,48 +22,41 @@
 
 package net.solarnetwork.node.service;
 
-import java.util.Collection;
-import net.solarnetwork.node.domain.LocalState;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 
 /**
- * Service API for {@link LocalState} management.
+ * API for a service that can import/export CSV configuration.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 4.1
  */
-public interface LocalStateService extends CsvConfigurableBackupService {
+public interface CsvConfigurableService {
 
 	/**
-	 * Get all available local state.
+	 * Import configuration from a CSV formatted text stream, optionally
+	 * replacing all existing configuration.
 	 *
-	 * @return the state entities, never {@code null}
+	 * @param in
+	 *        the CSV data to import
+	 * @param replace
+	 *        {@code true} to delete all existing configuration before
+	 *        importing; {@code false} to add or update existing configuration
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
-	Collection<LocalState> getAvailableLocalState();
+	void importCsvConfiguration(Reader in, boolean replace) throws IOException;
 
 	/**
-	 * Get local state for a given key.
+	 * Export the current configuration as CSV.
 	 *
-	 * @param key
-	 *        the key of the local state to get
-	 * @return the state entity, or {@code null} if not found
+	 * @param out
+	 *        the writer to generate the CSV to
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
-	LocalState localStateForKey(String key);
-
-	/**
-	 * Save a local state entity.
-	 *
-	 * @param state
-	 *        the state to save
-	 * @return the persisted state
-	 */
-	LocalState saveLocalState(LocalState state);
-
-	/**
-	 * Delete a local state entity.
-	 *
-	 * @param key
-	 *        the identifier of the state to delete
-	 */
-	void deleteLocalState(String key);
+	void exportCsvConfiguration(Writer out) throws IOException;
 
 }

@@ -486,6 +486,7 @@ public interface SettingsService {
 	 *
 	 * @return the backup object, or {@literal null} if no backup created
 	 */
+	@SuppressWarnings("deprecation")
 	SettingsBackup backupSettings();
 
 	/**
@@ -493,6 +494,7 @@ public interface SettingsService {
 	 *
 	 * @return the backups, never {@literal null}
 	 */
+	@SuppressWarnings("deprecation")
 	Collection<SettingsBackup> getAvailableBackups();
 
 	/**
@@ -503,5 +505,6 @@ public interface SettingsService {
 	 *        the backup to get the Reader for
 	 * @return the Reader, or {@literal null} if the backup cannot be found
 	 */
+	@SuppressWarnings("deprecation")
 	Reader getReaderForBackup(SettingsBackup backup);
 }
