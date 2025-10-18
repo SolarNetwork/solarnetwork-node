@@ -110,10 +110,6 @@ $(document).ready(function() {
 		event.preventDefault();
 		return false;
 	});
-	
-	$('#associate-choose-backup-apply-settings').on('click', function() {
-		SolarNode.Settings.saveUpdates(SolarNode.context.path('/associate/configure'), undefined, delayedReload);
-	});
 });
 
 }());

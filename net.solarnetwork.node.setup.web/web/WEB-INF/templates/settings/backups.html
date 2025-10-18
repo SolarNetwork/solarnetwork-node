@@ -104,24 +104,24 @@
 
 	<form id="backups-choose-backup-form" action="/a/settings/save" method="post"
 			data-th-action="@{/a/settings/save}">
-			
+
 		<!--/*/ <th:block th:with="provider = ${backupManager}"> /*/-->
 		<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
 			<div data-th-replace="~{settings/setting-control :: content('bm0i'+${settingStatus.index})}"></div>
 		</div>
    		 <!--/*/ </th:block> /*/-->
-		
+
 		<!--/*/ <th:block th:if="${backupService}" th:with="provider = ${backupService.settingSpecifierProvider}"> /*/-->
 		<div data-th-each="setting, settingStatus : ${provider.settingSpecifiers}" data-th-remove="tag">
 			<div data-th-replace="~{settings/setting-control :: content('bs0i'+${settingStatus.index})}"></div>
 		</div>
    		<!--/*/ </th:block> /*/-->
-		
+
 		<div class="form-actions d-grid my-5">
 			<button type="button" class="btn btn-primary settings-save" id="backups-apply-settings" disabled
 					data-th-text="#{backup.settings.save}">Save</button>
 		</div>
-	</form>		
+	</form>
 	<script data-th-inline="javascript">
 	$(function() {
 		$('#backups-apply-settings').on('click', function() {
@@ -148,7 +148,7 @@
 		</div>
 		<div class="col-sm-1 mt-1">
 			<button type="button" class="help-popover help-icon" tabindex="-1"
-				data-th-title="#{help.label}" 
+				data-th-title="#{help.label}"
 				data-th-data-bs-content="#{backup.now.caption}"
 				data-bs-html="true">
 				<i class="bi bi-question-circle" aria-hidden="true"></i>
@@ -163,7 +163,13 @@
 		</label>
 		<div class="col-sm-7 col-md-8">
 			<div class="row g-3">
-				<div class="col-sm-6">
+				<div class="col-sm-3">
+					<div class="input-group flex-nowrap">
+						<span class="input-group-text"><i class="bi bi-search"></i></span>
+						<input class="form-control" id="backup-filter-node-id" placeholder="Node ID" data-th-placeholder="#{backup.search.nodeId.placeholder}">
+					</div>
+				</div>
+				<div class="col-sm-5">
 					<select name="backup" class="form-select" id="backup-backups">
 						<option data-th-each="backup, backupStatus : ${backups}"
 								data-th-value="${backup.key}"
@@ -185,7 +191,7 @@
 		</div>
 		<div class="col-sm-1 mt-1">
 			<button type="button" class="help-popover help-icon" tabindex="-1"
-					data-th-title="#{help.label}" 
+					data-th-title="#{help.label}"
 					data-bs-content="#{backup.backups.info}"
 					data-bs-html="true">
 				<i class="bi bi-question-circle" aria-hidden="true"></i>
@@ -205,7 +211,7 @@
 		</div>
 		<div class="col-sm-1 mt-1">
 			<button type="button" class="help-popover help-icon" tabindex="-1"
-					data-th-title="#{help.label}" 
+					data-th-title="#{help.label}"
 					data-th-data-bs-content="#{backup.import.info}"
 					data-bs-html="true">
 				<i class="bi bi-question-circle" aria-hidden="true"></i>
@@ -214,11 +220,12 @@
 	</form>
 	<form id="backup-restore-modal" data-th-replace="~{inc/modals :: modal_form(
 			id = backup-restore-modal,
-			action =@{/a/backups/restore}, 
+			action =@{/a/backups/restore},
 			title = #{backup.restore.title},
-			body = ~{::#backup-restore-modal//.modal-body}, 
+			body = ~{::#backup-restore-modal//.modal-body},
 			footer = ~{::#backup-restore-modal//.modal-footer},
-			staticModal = true)}">
+			staticModal = true,
+			additionalClass = modal-lg)}">
 
 		<div class="modal-body">
 			<p data-th-utext="#{backup.restore.intro}">Restore backups here.</p>
