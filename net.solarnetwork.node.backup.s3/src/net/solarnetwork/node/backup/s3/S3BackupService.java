@@ -1,21 +1,21 @@
 /* ==================================================================
  * S3BackupService.java - 3/10/2017 12:03:47 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,7 +54,10 @@ import net.solarnetwork.common.s3.S3ObjectMetadata;
 import net.solarnetwork.common.s3.S3ObjectRef;
 import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.common.s3.sdk.SdkS3Client;
+import net.solarnetwork.dao.BasicFilterResults;
+import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupFilter;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceIterable;
 import net.solarnetwork.node.backup.BackupService;
@@ -77,7 +80,7 @@ import net.solarnetwork.util.CachedResult;
 /**
  * {@link BackupService} implementation using Amazon S3 for storage in the
  * cloud.
- * 
+ *
  * <p>
  * <b>Note</b> that backups are stored using a <b>shared</b> object structure in
  * S3, where individual backup resources are named after the SHA256 digest of
@@ -86,7 +89,7 @@ import net.solarnetwork.util.CachedResult;
  * then stored as an object named with the node ID and backup timestamp with a
  * `{@code backup-meta/} prefix added.
  * </p>
- * 
+ *
  * <p>
  * This object sharing system means that backup resources are only stored once
  * in S3, across any number of backups. It also means that multiple nodes can
@@ -95,9 +98,9 @@ import net.solarnetwork.util.CachedResult;
  * implications of this approach when using multiple nodes: all nodes
  * technically have access to all backups.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class S3BackupService extends BackupServiceSupport
 		implements SettingSpecifierProvider, SettingsChangeObserver {
@@ -118,19 +121,20 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * The default value for the {@code storageClass} property.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String DEFAULT_STORAGE_CLASS = "STANDARD";
 
 	/**
 	 * The {@code cacheSeconds} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final int DEFAULT_CACHE_SECONDS = 3600;
 
 	private static final String META_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS";
+	private static final String NODE_PREFIX_FORMAT = "node-%d-backup-";
 	private static final String META_OBJECT_KEY_PREFIX = "backup-meta/";
 	private static final String DATA_OBJECT_KEY_PREFIX = "backup-data/";
 
@@ -195,7 +199,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	private S3ObjectMeta setupMetadata(BackupResource rsrc, MessageDigest digest, byte[] buf)
 			throws IOException {
-		// S3 client buffers to RAM unless content length set; so since we have to calculate the 
+		// S3 client buffers to RAM unless content length set; so since we have to calculate the
 		// SHA256 digest of the content anyway, also calculate the content length at the same time
 		long contentLength = 0;
 		digest.reset();
@@ -409,23 +413,54 @@ public class S3BackupService extends BackupServiceSupport
 		return getAvailableBackupsInternal();
 	}
 
+	@Override
+	public FilterResults<Backup, String> findBackups(BackupFilter filter) {
+		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
+			return new BasicFilterResults<>(List.of());
+		}
+		if ( filter == null || !filter.hasNodeCriteria() ) {
+			return super.findBackups(filter);
+		}
+		final List<Backup> allMatching = getBackupsForPrefix(
+				NODE_PREFIX_FORMAT.formatted(filter.getNodeId()));
+		if ( filter.getOffset() != null || filter.getMax() != null ) {
+			int from = filter.getOffset() != null ? filter.getOffset().intValue() : 0;
+			int to = filter.getMax() != null ? Math.min(from + filter.getMax(), allMatching.size())
+					: allMatching.size();
+			List<Backup> filtered = List.of();
+			if ( from < allMatching.size() ) {
+				filtered = allMatching.subList(from, to);
+			}
+			return new BasicFilterResults<>(filtered, (long) allMatching.size(), from, filtered.size());
+		}
+		return new BasicFilterResults<>(allMatching);
+	}
+
 	private List<Backup> getAvailableBackupsInternal() {
 		CachedResult<List<Backup>> cached = cachedBackupList.get();
 		if ( cached != null && cached.isValid() ) {
 			return cached.getResult();
 		}
-		S3Client client = this.s3Client;
+		List<Backup> result = getBackupsForPrefix(null);
+		if ( result != null && !result.isEmpty() ) {
+			cachedBackupList.compareAndSet(cached,
+					new CachedResult<>(result, cacheSeconds, TimeUnit.SECONDS));
+		}
+		return result;
+	}
+
+	private List<Backup> getBackupsForPrefix(String prefix) {
 		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
 			return Collections.emptyList();
 		}
+		final S3Client client = this.s3Client;
 		final String objectKeyPrefix = objectKeyForPath(META_OBJECT_KEY_PREFIX);
+		final String searchPrefix = (prefix != null ? objectKeyPrefix + prefix : objectKeyPrefix);
 		try {
-			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
+			Set<S3ObjectReference> objs = client.listObjects(searchPrefix);
 			List<Backup> result = objs.stream()
 					.filter(o -> NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o.getKey()).find())
 					.map(backupListItem(objectKeyPrefix)).collect(Collectors.toList());
-			cachedBackupList.compareAndSet(cached,
-					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
 			return result;
 		} catch ( RemoteServiceException | IOException e ) {
 			log.warn("Error listing S3 avaialble backups with prefix {}: {}", objectKeyPrefix,
@@ -441,12 +476,12 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Get the canonical key for a backup.
-	 * 
+	 *
 	 * <p>
 	 * This method may be called even if {@code key} is already in canonical
 	 * form.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the backup key to get in canonical form
 	 * @return the key, in canonical form
@@ -552,7 +587,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the {@link MessageSource} to use with settings.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the {@code MessageSource} to set
 	 */
@@ -562,7 +597,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the AWS access token to use.
-	 * 
+	 *
 	 * @param accessToken
 	 *        the access token to set
 	 */
@@ -572,7 +607,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the AWS access token secret to use.
-	 * 
+	 *
 	 * @param accessSecret
 	 *        the access secret to set
 	 */
@@ -582,7 +617,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the AWS region to connect to.
-	 * 
+	 *
 	 * @param regionName
 	 *        the region name to set
 	 */
@@ -592,7 +627,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the S3 bucket name to use.
-	 * 
+	 *
 	 * @param bucketName
 	 *        the name to set
 	 */
@@ -602,7 +637,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Get the S3 object key prefix to use.
-	 * 
+	 *
 	 * @return the prefix; defaults to {@link #DEFAULT_OBJECT_KEY_PREFIX}
 	 * @since 1.3
 	 */
@@ -612,11 +647,11 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set a S3 object key prefix to use.
-	 * 
+	 *
 	 * <p>
 	 * This can essentially be a folder path to prefix all data with.
 	 * </p>
-	 * 
+	 *
 	 * @param objectKeyPrefix
 	 *        the object key prefix to set
 	 */
@@ -626,7 +661,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the {@link IdentityService} to use.
-	 * 
+	 *
 	 * @param identityService
 	 *        the service to set
 	 */
@@ -636,7 +671,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the number of seconds to cache S3 results.
-	 * 
+	 *
 	 * @param cacheSeconds
 	 *        the seconds to set
 	 */
@@ -646,7 +681,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Get the S3 client.
-	 * 
+	 *
 	 * @return the S3 client
 	 * @since 1.3
 	 */
@@ -656,7 +691,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the S3 client.
-	 * 
+	 *
 	 * @param s3Client
 	 *        the client
 	 */
@@ -666,7 +701,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the number of additional backups to maintain.
-	 * 
+	 *
 	 * <p>
 	 * If greater than zero, then this service will maintain this many copies of
 	 * past backups <em>for the same node ID</em> in addition to the most recent
@@ -674,7 +709,7 @@ public class S3BackupService extends BackupServiceSupport
 	 * other the most recent plus the next {@code additionalBackupCount} older
 	 * backups are deleted.
 	 * </p>
-	 * 
+	 *
 	 * @param additionalBackupCount
 	 *        the count; defaults to 10
 	 */
@@ -684,7 +719,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Get the S3 storage class to use.
-	 * 
+	 *
 	 * @return the S3 storage class; defaults to {@link #DEFAULT_STORAGE_CLASS}
 	 * @since 1.2
 	 */
@@ -694,7 +729,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	/**
 	 * Set the S3 storage class to use.
-	 * 
+	 *
 	 * @param storageClass
 	 *        the S3 storage class to set
 	 * @since 1.2

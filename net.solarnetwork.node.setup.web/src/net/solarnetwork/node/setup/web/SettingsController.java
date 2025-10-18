@@ -81,7 +81,6 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.Result;
-import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
@@ -96,7 +95,6 @@ import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageCom
 import net.solarnetwork.node.setup.web.support.IteratorStatus;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
-import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceRegistry;
@@ -114,7 +112,7 @@ import net.solarnetwork.web.jakarta.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -131,7 +129,6 @@ public class SettingsController {
 	private static final String KEY_SETTING_RESOURCE_LIST = "settingResourceList";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
-	private static final String KEY_BACKUPS = "backups";
 	private static final String VIEW_REDIRECT_SETTINGS = "redirect:/a/settings";
 
 	private static final SearchFilter NOT_DATUM_FILTER = SearchFilter
@@ -270,11 +267,6 @@ public class SettingsController {
 			model.put(KEY_BACKUP_MANAGER, backupManager);
 			BackupService service = backupManager.activeBackupService();
 			model.put(KEY_BACKUP_SERVICE, service);
-			if ( service != null ) {
-				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
-				model.put(KEY_BACKUPS, backups);
-			}
 		}
 		return "settings/backups";
 	}

@@ -595,32 +595,59 @@ function formatTimestamp(date) {
 	if ( !date ) {
 		return;
 	}
-	return moment(date).format('D MMM YYYY HH:mm');
+	return moment(date).format('YYYY-MM-DD HH:mm');
 }
 
 function refreshBackupList() {
-	$.getJSON(SolarNode.context.path('/a/backups'), function(json) {
-		if ( json.success !== true ) {
+	let url = SolarNode.context.path(document.location.pathname.indexOf('/associate') < 0
+		? '/a/backups/find?' 
+		: '/associate/findBackups?');
+	let nodeId = Number($('#backup-filter-node-id').val());
+	if ( isNaN(nodeId) ) {
+		return;
+	}
+	url += 'nodeId=' + nodeId;
+	
+	const backupSelect = $('#backup-backups');
+	backupSelect.empty();
+	
+	$.getJSON(url, (data) => {
+		if ( data && data.success === true ) {
+			const backupSelectEl = backupSelect[0];
+			for ( let backup of data.data.results ) {
+				backupSelectEl.add(new Option('Node ' +backup.nodeId + ' @ ' +formatTimestamp(new Date(backup.date)), backup.key));
+			}
+		} else {
 			SolarNode.error(json.message, $('#backup-list-form'));
-			return;
 		}
-		var optionEl = $('#backup-backups').get(0);
-		while ( optionEl.length > 0 ) {
-			optionEl.remove(0);
-		}
-		if ( Array.isArray(json.data) ) {
-			json.data.forEach(function(backup) {
-				var date = new Date(backup.date),
-					nodeId = backup.nodeId;
-				optionEl.add(new Option('Node ' +nodeId + ' @ ' +formatTimestamp(date), backup.key));
-			});
-		}
-		optionEl.selectedIndex = 0;
 	});
 }
 
 function setupBackups() {
-	var createBackupSubmitButton = $('#backup-now-btn');
+	const createBackupSubmitButton = $('#backup-now-btn');
+	const backupFilterNodeIdField = $('#backup-filter-node-id');
+	
+	if ( backupFilterNodeIdField.length > 0 ) {
+		var backupFilterNodeIdTimer;
+		backupFilterNodeIdField.on('keydown', (event) => {
+			if (event.key === "Enter" ) {
+				event.preventDefault();
+			}
+		}).on('keyup', () => {
+			if (backupFilterNodeIdTimer) {
+				clearTimeout(backupFilterNodeIdTimer);
+			}
+			backupFilterNodeIdTimer = setTimeout(() => {
+				refreshBackupList();
+			}, 500);
+		});
+		
+		// populate with current node ID, if known
+		if ( SolarNode.nodeId ) {
+			backupFilterNodeIdField.val(SolarNode.nodeId);
+			refreshBackupList();
+		}
+	}
 
 	// auto-save the preferred backup service when changing that option,
 	// and then auto-reload the screen to show the updated settings form
