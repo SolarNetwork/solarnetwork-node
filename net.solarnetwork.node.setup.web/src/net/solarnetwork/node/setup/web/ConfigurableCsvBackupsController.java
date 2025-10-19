@@ -122,7 +122,7 @@ public class ConfigurableCsvBackupsController {
 	 *
 	 * @param serviceId
 	 *        the ID of the service to export CSV from
-	 * @param key
+	 * @param backupKey
 	 *        the backup key, or {@code null} or empty to export the current
 	 *        settings
 	 * @param response
@@ -181,6 +181,10 @@ public class ConfigurableCsvBackupsController {
 	/**
 	 * Import settings.
 	 *
+	 * @param serviceId
+	 *        the ID of the service to import CSV to
+	 * @param replace
+	 *        {@code true} to delete existing settings before importing
 	 * @param file
 	 *        the CSV settings resource to import
 	 * @param session

@@ -102,6 +102,8 @@ public class BackupController extends BaseSetupController {
 	/**
 	 * Find backups from the active backup service.
 	 *
+	 * @param filter
+	 *        the search filter
 	 * @return All available backups.
 	 */
 	@RequestMapping(value = "/find", method = RequestMethod.GET)

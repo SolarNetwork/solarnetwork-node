@@ -408,6 +408,8 @@ public class NodeAssociationController extends BaseSetupController {
 	/**
 	 * Find backups from the active backup service.
 	 *
+	 * @param filter
+	 *        the search filter
 	 * @return All available backups.
 	 */
 	@RequestMapping(value = "/findBackups", method = RequestMethod.GET)
