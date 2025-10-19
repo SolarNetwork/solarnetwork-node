@@ -87,6 +87,68 @@
 	</div>
 </section>
 
+<section id="csv-backups" data-th-unless="${#lists.isEmpty(csvBackupServiceList)}">
+	<h2>
+		<a id="csv-backup-section" href="#csv-backup-section"
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
+		<span data-th-text="#{settings.csv.io.title}">CSV Backups</span>
+	</h2>
+	<p data-th-utext="#{settings.csv.io.intro(@{#backup-section})}">
+		Manage CSV backups here.
+	</p>
+
+	<form class="row mt-3">
+		<label class="col-sm-4 col-md-3 col-form-label" for="settings-csv-io-service" data-th-text="#{settings.csv.io.service.label}">
+			CSV Service
+		</label>
+		<div class="col-sm-7 col-md-8">
+			<select class="form-select" id="settings-csv-io-service">
+				<option data-th-each="service : ${csvBackupServiceList}"
+						data-th-value="${service.settingUid}"
+						data-th-text="${#snUtils.message('title', service.displayName, service.messageSource, #locale)}">My Service Backup</option>
+			</select>
+		</div>
+		<div class="col-sm-1 mt-1">
+			<button type="button" class="help-popover help-icon" tabindex="-1"
+					data-th-data-bs-content="#{settings.csv.io.service.info}"
+					data-bs-html="true"
+					data-th-title="#{help.label}">
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
+			</button>
+		</div>
+	</form>
+	<form class="row mt-3" id="settings-csv-io-export" action="/a/settings/csv/export" method="get" data-th-action="@{/a/settings/csv/export}">
+		<div class="offset-sm-4 offset-md-3 col-sm-7 col-md-8">
+			<div class="input-group">
+				<select class="form-select" name="key" id="settings-csv-io-export">
+					<option value="" data-th-text="#{settings.csv.io.export.current.label}">Current data</option>
+					<!--/*-->
+					<option>My Service backup @ 2025-01-01 12:00</option>
+					<!--*/-->
+				</select>
+
+				<button type="submit" class="btn btn-primary"
+					data-th-text="#{settings.io.export.button}">Export</button>
+			</div>
+		</div>
+		<input name="serviceId" type="hidden">
+	</form>
+	<form class="row mt-3" id="settings-csv-io-import" method="post" action="/a/settings/csv/import" data-th-action="@{/a/settings/csv/import}" enctype="multipart/form-data">
+		<div class="offset-sm-4 offset-md-3 col-sm-7 col-md-8">
+			<div class="input-group">
+				<div class="input-group-text">
+					<input class="form-check-input mt-0" name="replace" type="checkbox" value="true" title="Delete all existing data before importing">
+					<span class="ms-2" data-th-text="#{settings.csv.io.import.replace.label}">Full replace</span>
+				</div>
+				<input class="form-control" type="file" name="file" aria-describedby="settings-csv-io-import-button" required>
+				<button type="submit" id="settings-csv-io-import-button" class="btn btn-primary"
+					data-th-text="#{settings.io.import.button}">Import</button>
+			</div>
+		</div>
+		<input name="serviceId" type="hidden">
+	</form>
+</section>
+
 <section class="intro">
 	<h2>
 		<a id="backup-section" href="#backup-section"

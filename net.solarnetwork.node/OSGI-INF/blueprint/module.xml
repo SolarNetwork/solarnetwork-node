@@ -747,9 +747,48 @@
 	<!-- 
 		Local State Service
 	 -->
-	<service interface="net.solarnetwork.node.service.LocalStateService">
-		<bean class="net.solarnetwork.node.runtime.DefaultLocalStateService">
-			<argument ref="localStateDao"/>
+	<bean id="localStateService" class="net.solarnetwork.node.runtime.DefaultLocalStateService">
+		<argument ref="localStateDao"/>
+		<property name="transactionManager" ref="txManager"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.runtime.DefaultLocalStateService</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service ref="localStateService">
+		<interfaces>
+			<value>net.solarnetwork.node.service.LocalStateService</value>
+			<value>net.solarnetwork.node.service.CsvConfigurableBackupService</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+	
+	<!-- Local State backup job -->
+
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.LocalStateServiceBackupJob"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.LocalStateServiceBackupJob" autowire-on-update="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.runtime.CsvConfigurableBackupServiceJob">
+					<argument ref="localStateService"/>
+					<argument value="net.solarnetwork.node.LocalStateServiceBackupJob"/>
+					<property name="messageSource">
+						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+							<property name="basenames" value="net.solarnetwork.node.runtime.LocalStateServiceBackupJob"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 0/15 * * * ?"/>
 		</bean>
 	</service>
 	

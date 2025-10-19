@@ -29,9 +29,9 @@ import net.solarnetwork.node.domain.LocalState;
  * Service API for {@link LocalState} management.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface LocalStateService {
+public interface LocalStateService extends CsvConfigurableBackupService {
 
 	/**
 	 * Get all available local state.

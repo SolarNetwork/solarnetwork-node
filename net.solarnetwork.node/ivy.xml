@@ -18,6 +18,7 @@
 		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.8.3"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.17.0"/>
 		<dependency org="commons-io" name="commons-io" rev="2.4"/>
+		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.7.0"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.osgi" rev="3.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.framework" rev="1.10.0"/>

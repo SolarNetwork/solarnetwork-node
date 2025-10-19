@@ -100,7 +100,11 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		getAllMetadata();
+		try {
+			getAllMetadata();
+		} catch ( RuntimeException e ) {
+			log.warn("Error getting metadata: {}", e.getMessage());
+		}
 		List<SettingSpecifier> result = new ArrayList<>(2);
 		result.add(0, new BasicTitleSettingSpecifier("status", getStatusMessage(), true));
 		result.add(new BasicTextFieldSettingSpecifier("cacheSeconds",

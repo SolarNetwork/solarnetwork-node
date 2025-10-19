@@ -56,6 +56,18 @@ public class SimpleBackupFilter extends SimplePagination implements BackupFilter
 	}
 
 	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SimpleBackupFilter{");
+		if ( nodeId != null ) {
+			builder.append("nodeId=");
+			builder.append(nodeId);
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
+	@Override
 	public Long getNodeId() {
 		return nodeId;
 	}
