@@ -48,12 +48,8 @@ public class StringDateKey extends BaseId implements Serializable, Cloneable, Co
 	/**
 	 * Constructor.
 	 *
-	 * @param kind
-	 *        the kind
-	 * @param objectId
-	 *        the stream object ID
-	 * @param sourceId
-	 *        ID the stream source ID
+	 * @param key
+	 *        the key
 	 * @param timestamp
 	 *        the time stamp
 	 */

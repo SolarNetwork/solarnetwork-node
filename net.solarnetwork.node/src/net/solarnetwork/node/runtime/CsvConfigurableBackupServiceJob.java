@@ -47,7 +47,7 @@ public class CsvConfigurableBackupServiceJob extends BaseIdentifiable implements
 	 *
 	 * @param backupService
 	 *        the backup service
-	 * @param settingId
+	 * @param settingUid
 	 *        the setting UID
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@code null}
