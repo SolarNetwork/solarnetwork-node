@@ -764,6 +764,7 @@
 	<service ref="localStateService">
 		<interfaces>
 			<value>net.solarnetwork.node.service.LocalStateService</value>
+			<value>net.solarnetwork.node.service.CsvConfigurableBackupService</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>

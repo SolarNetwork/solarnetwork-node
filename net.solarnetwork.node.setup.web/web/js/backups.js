@@ -49,3 +49,51 @@ SolarNode.Backups.selectedProviders = function(container) {
 };
 
 }());
+
+$(document).ready(function csvBackupManagement() {
+	'use strict';
+
+	if ( !$('#csv-backups').length ) {
+		return;
+	}
+	
+	/**
+	 * CSV Backup key entity.
+	 * 
+	 * @typedef {Object} CsvBackupKey
+	 * @property {string} timestamp the timestamp
+	 * @property {string} key the key
+	 */
+
+	/** @type HTMLFormElement */
+	const csvExportForm = document.getElementById('settings-csv-io-export');
+
+	/** @type HTMLFormElement */
+	const csvImportForm = document.getElementById('settings-csv-io-import');
+	
+	const listCsvBackupsUrl = csvImportForm.action.replace(/\/[^/]+$/, '/list-backups?serviceId=');
+	
+	$('#settings-csv-io-service').on('change', function csvServiceChange() {
+		const serviceId = $(this).val();
+		csvExportForm.elements['serviceId'].value = serviceId;
+		csvImportForm.elements['serviceId'].value = serviceId;
+		
+		// populate auto-backups
+		
+		/** @type HTMLSelectElement */
+		const csvExportSelect = csvExportForm.elements['key'];
+		while (csvExportSelect.length > 1) {
+			csvExportSelect.remove(1);
+		}
+		return $.getJSON(listCsvBackupsUrl + encodeURIComponent(serviceId), (data) => {
+			if ( data && data.success === true ) {
+				/** @type CsvBackupKey[] */
+				const backupList = data.data;
+				backupList.reverse();
+				for ( let backup of  backupList ) {
+					csvExportSelect.add(new Option(moment(backup.timestamp).format('YYYY-MM-DD HH:mm'), backup.key));
+				}
+			}
+		});
+	}).trigger('change');
+});

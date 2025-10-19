@@ -36,6 +36,18 @@ import java.io.Writer;
 public interface CsvConfigurableService {
 
 	/**
+	 * Get a simple identifier for this service.
+	 *
+	 * <p>
+	 * This identifier should be simple enough to be used in filenames and help
+	 * uniquely identify, like a nickname for the service.
+	 * </p>
+	 *
+	 * @return the identifier, never {@code null}
+	 */
+	String getCsvConfigurationIdentifier();
+
+	/**
 	 * Import configuration from a CSV formatted text stream, optionally
 	 * replacing all existing configuration.
 	 *

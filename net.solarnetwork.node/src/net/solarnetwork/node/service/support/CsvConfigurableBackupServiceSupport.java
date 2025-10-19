@@ -23,6 +23,7 @@
 package net.solarnetwork.node.service.support;
 
 import static java.time.ZoneOffset.UTC;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -47,6 +48,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.supercsv.comment.CommentStartsWith;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.io.ICsvListReader;
@@ -54,9 +56,9 @@ import org.supercsv.io.ICsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.domain.StringDateKey;
 import net.solarnetwork.node.service.CsvConfigurableBackupService;
+import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Helper base class for {@link CsvConfigurableBackupService} implementations.
@@ -65,7 +67,8 @@ import net.solarnetwork.util.ObjectUtils;
  * @version 1.0
  * @since 4.1
  */
-public abstract class CsvConfigurableBackupServiceSupport implements CsvConfigurableBackupService {
+public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifiable
+		implements CsvConfigurableBackupService {
 
 	/** The {@code backupDestinationPath} property default value. */
 	public static final String DEFAULT_BACKUP_DESTINATION_PATH = "var";
@@ -74,12 +77,15 @@ public abstract class CsvConfigurableBackupServiceSupport implements CsvConfigur
 	public static final int DEFAULT_BACKUP_MAX_COUNT = 5;
 
 	private static final String BACKUP_DATE_FORMAT = "yyyy-MM-dd-HHmmss";
-	private static final DateTimeFormatter BACKUP_DATE_FORMATTER = DateTimeFormatter
+
+	/** A date formatter for backup file names. */
+	public static final DateTimeFormatter BACKUP_DATE_FORMATTER = DateTimeFormatter
 			.ofPattern(BACKUP_DATE_FORMAT).withZone(UTC);
 
 	private static final String CSV_FILENAME_EXT = ".csv";
 	private static final String GZIP_FILENAME_EXT = ".gz";
 
+	private final String identifier;
 	private final String filenamePrefix;
 	private final Pattern filenamePattern;
 
@@ -93,14 +99,17 @@ public abstract class CsvConfigurableBackupServiceSupport implements CsvConfigur
 	/**
 	 * Constructor.
 	 *
+	 * @param identifier
+	 *        the identifier
 	 * @param filenamePrefix
 	 *        a prefix to use in CSV file names, before the date
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@code null}
 	 */
-	public CsvConfigurableBackupServiceSupport(String filenamePrefix) {
+	public CsvConfigurableBackupServiceSupport(String identifier, String filenamePrefix) {
 		super();
-		this.filenamePrefix = ObjectUtils.requireNonNullArgument(filenamePrefix, "filenamePrefix");
+		this.identifier = requireNonNullArgument(identifier, "identifier");
+		this.filenamePrefix = requireNonNullArgument(filenamePrefix, "filenamePrefix");
 
 		// support both compressed and not compressed
 		this.filenamePattern = Pattern.compile('^' + filenamePrefix + "(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\"
@@ -125,8 +134,25 @@ public abstract class CsvConfigurableBackupServiceSupport implements CsvConfigur
 	}
 
 	@Override
+	public String getSettingUid() {
+		return null;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return List.of();
+	}
+
+	@Override
+	public String getCsvConfigurationIdentifier() {
+		return identifier;
+	}
+
+	@Override
 	public final void importCsvConfiguration(Reader in, boolean replace) throws IOException {
-		try (ICsvListReader csvReader = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+		try (ICsvListReader csvReader = new CsvListReader(in,
+				new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
+						.skipComments(new CommentStartsWith("#")).build())) {
 			String[] headers = csvReader.getHeader(true);
 			importCsvConfiguration(csvReader, headers, replace);
 		}
@@ -283,8 +309,8 @@ public abstract class CsvConfigurableBackupServiceSupport implements CsvConfigur
 	}
 
 	@Override
-	public Reader getCsvConfigurationBackup(StringDateKey backupId) {
-		final String uncompressedFileName = filenamePrefix + backupId.getKey() + CSV_FILENAME_EXT;
+	public Reader getCsvConfigurationBackup(final String backupKey) {
+		final String uncompressedFileName = filenamePrefix + backupKey + CSV_FILENAME_EXT;
 		final String compressedFileName = uncompressedFileName + GZIP_FILENAME_EXT;
 		final boolean compress = isCompress();
 		final String backupDestinationPath = getBackupDestinationPath();

@@ -66,7 +66,11 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	/** The setting UID. */
 	public static final String SETTING_UID = "net.solarnetwork.node.LocalStateService";
 
-	private static final String BACKUP_FILENAME_PREFIX = "localstate_";
+	private static final String BACKUP_IDENT = "localstate";
+
+	/** The backup filename prefix. */
+	public static final String BACKUP_FILENAME_PREFIX = BACKUP_IDENT + "_";
+
 	private static final String BACKUP_SERVICE_SETTINGS_PREFIX = "backupService.";
 
 	private final OptionalService<LocalStateDao> localStateDao;
@@ -87,21 +91,93 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 		this.backupService = new BackupService();
 	}
 
+	@Override
+	public String getSettingUid() {
+		return SETTING_UID;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return BackupService.settingSpecifiers();
+	}
+
+	private LocalStateDao dao() {
+		LocalStateDao dao = OptionalService.service(localStateDao);
+		if ( dao != null ) {
+			return dao;
+		}
+		throw new UnsupportedOperationException("LocalStateDao not available.");
+	}
+
+	@Override
+	public Collection<LocalState> getAvailableLocalState() {
+		return dao().getAll(null);
+	}
+
+	@Override
+	public LocalState localStateForKey(String key) {
+		return dao().get(key);
+	}
+
+	@Override
+	public LocalState saveLocalState(LocalState state) {
+		final LocalStateDao dao = dao();
+		return dao.get(dao.save(state));
+	}
+
+	@Override
+	public void deleteLocalState(String key) {
+		dao().delete(new LocalState(key, null));
+	}
+
+	@Override
+	public String getCsvConfigurationIdentifier() {
+		return backupService.getCsvConfigurationIdentifier();
+	}
+
+	@Override
+	public void importCsvConfiguration(Reader in, boolean replace) throws IOException {
+		backupService.importCsvConfiguration(in, replace);
+	}
+
+	@Override
+	public void exportCsvConfiguration(Writer out) throws IOException {
+		backupService.exportCsvConfiguration(out);
+	}
+
+	@Override
+	public StringDateKey backupCsvConfiguration() {
+		return backupService.backupCsvConfiguration();
+	}
+
+	@Override
+	public List<StringDateKey> getAvailableCsvConfigurationBackups() {
+		return backupService.getAvailableCsvConfigurationBackups();
+	}
+
+	@Override
+	public Reader getCsvConfigurationBackup(String backupKey) {
+		return backupService.getCsvConfigurationBackup(backupKey);
+	}
+
 	private static enum CsvColumns {
 		Key,
 		Created,
 		Modified,
 		Type,
-		Value,;
+		Value;
 	}
 
-	private final class BackupService extends CsvConfigurableBackupServiceSupport {
+	/**
+	 * Backup service used internally.
+	 */
+	public final class BackupService extends CsvConfigurableBackupServiceSupport {
 
 		/**
 		 * Constructor.
 		 */
 		private BackupService() {
-			super(BACKUP_FILENAME_PREFIX);
+			super(BACKUP_IDENT, BACKUP_FILENAME_PREFIX);
 			setBackupDestinationPath(DefaultLocalStateService.DEFAULT_BACKUP_DESTINATION_PATH);
 		}
 
@@ -112,6 +188,12 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 					BACKUP_SERVICE_SETTINGS_PREFIX + "backupDestinationPath",
 					DefaultLocalStateService.DEFAULT_BACKUP_DESTINATION_PATH));
 			return result;
+		}
+
+		@Override
+		protected Instant mostRecentCsvConfigurationModificationDate() {
+			final LocalStateDao dao = dao();
+			return dao.getMostRecentModificationDate();
 		}
 
 		@Override
@@ -145,14 +227,11 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 			if ( replace ) {
 				dao.deleteAll();
 			}
-			for ( List<String> row = csvReader.read(); row != null; ) {
+			for ( List<String> row = csvReader.read(); row != null; row = csvReader.read() ) {
 				if ( row.size() < 5 ) {
 					continue;
 				}
 				final String key = row.get(CsvColumns.Key.ordinal());
-				if ( key == null || key.startsWith("#") ) {
-					continue;
-				}
 				final Instant created = Instant.parse(row.get(CsvColumns.Created.ordinal()));
 				final Instant modified = Instant.parse(row.get(CsvColumns.Modified.ordinal()));
 				final LocalStateType type = LocalStateType.forKey(row.get(CsvColumns.Type.ordinal()));
@@ -221,70 +300,6 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 				}
 			}, opts);
 		}
-	}
-
-	@Override
-	public String getSettingUid() {
-		return SETTING_UID;
-	}
-
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		return BackupService.settingSpecifiers();
-	}
-
-	private LocalStateDao dao() {
-		LocalStateDao dao = OptionalService.service(localStateDao);
-		if ( dao != null ) {
-			return dao;
-		}
-		throw new UnsupportedOperationException("LocalStateDao not available.");
-	}
-
-	@Override
-	public Collection<LocalState> getAvailableLocalState() {
-		return dao().getAll(null);
-	}
-
-	@Override
-	public LocalState localStateForKey(String key) {
-		return dao().get(key);
-	}
-
-	@Override
-	public LocalState saveLocalState(LocalState state) {
-		final LocalStateDao dao = dao();
-		return dao.get(dao.save(state));
-	}
-
-	@Override
-	public void deleteLocalState(String key) {
-		dao().delete(new LocalState(key, null));
-	}
-
-	@Override
-	public void importCsvConfiguration(Reader in, boolean replace) throws IOException {
-		backupService.importCsvConfiguration(in, replace);
-	}
-
-	@Override
-	public void exportCsvConfiguration(Writer out) throws IOException {
-		backupService.exportCsvConfiguration(out);
-	}
-
-	@Override
-	public StringDateKey backupCsvConfiguration() {
-		return backupService.backupCsvConfiguration();
-	}
-
-	@Override
-	public List<StringDateKey> getAvailableCsvConfigurationBackups() {
-		return backupService.getAvailableCsvConfigurationBackups();
-	}
-
-	@Override
-	public Reader getCsvConfigurationBackup(StringDateKey backupId) {
-		return backupService.getCsvConfigurationBackup(backupId);
 	}
 
 	/**

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.dao.jdbc.locstate.test;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
+import static java.util.UUID.randomUUID;
 import static net.solarnetwork.dao.GenericDao.ENTITY_EVENT_ENTITY_ID_PROPERTY;
 import static net.solarnetwork.dao.GenericDao.entityEventTopic;
 import static net.solarnetwork.dao.GenericDao.EntityEventType.DELETED;
@@ -402,6 +403,42 @@ public class JdbcLocalStateDaoTests extends AbstractNodeTransactionalTest {
 
 		Collection<LocalState> results = dao.getAll(null);
 		assertThat("No entities available", results, hasSize(0));
+	}
+
+	@Test
+	public void getMostRecentMoficationDate() throws Exception {
+		// GIVEN
+		LocalState obj1 = new LocalState("a", LocalStateType.Boolean, true);
+		LocalState obj2 = new LocalState("c", LocalStateType.String, randomUUID().toString());
+		LocalState obj3 = new LocalState("b", LocalStateType.Int32, 123456);
+
+		obj1 = dao.get(dao.save(obj1));
+		obj2 = dao.get(dao.save(obj2));
+		obj3 = dao.get(dao.save(obj3));
+
+		Thread.sleep(50);
+
+		obj2 = dao.get(dao.save(new LocalState("c", LocalStateType.String, randomUUID().toString())));
+
+		// WHEN
+		replayAll();
+		Instant result = dao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("Result is from most recently modified entity", result,
+				is(equalTo(obj2.getModified())));
+	}
+
+	@Test
+	public void getMostRecentMoficationDate_none() throws Exception {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		Instant result = dao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("No modification date avaiable when no data", result, is(nullValue()));
 	}
 
 	@Test

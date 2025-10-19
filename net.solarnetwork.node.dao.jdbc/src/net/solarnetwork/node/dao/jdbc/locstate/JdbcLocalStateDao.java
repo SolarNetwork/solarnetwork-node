@@ -81,6 +81,13 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 		 */
 		DeleteAll("delete-all"),
 
+		/**
+		 * Get the most recent modification date.
+		 *
+		 * @since 1.1
+		 */
+		GetMostRecentModificationDate("most-recent-modification-date"),
+
 		;
 
 		private final String resource;
@@ -242,6 +249,21 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 		return getJdbcTemplate().execute((ConnectionCallback<Integer>) conn -> {
 			return conn.prepareStatement(getSqlResource(SqlResource.DeleteAll.getResource()))
 					.executeUpdate();
+		});
+	}
+
+	@Override
+	public Instant getMostRecentModificationDate() {
+		return getJdbcTemplate().query(conn -> {
+			PreparedStatement ps = conn.prepareStatement(
+					getSqlResource(SqlResource.GetMostRecentModificationDate.getResource()));
+			ps.setMaxRows(1);
+			return ps;
+		}, rs -> {
+			if ( rs.next() ) {
+				return JdbcUtils.getUtcTimestampColumnValue(rs, 1);
+			}
+			return null;
 		});
 	}
 

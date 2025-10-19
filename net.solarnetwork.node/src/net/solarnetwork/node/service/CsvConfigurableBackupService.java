@@ -25,6 +25,7 @@ package net.solarnetwork.node.service;
 import java.io.Reader;
 import java.util.List;
 import net.solarnetwork.node.domain.StringDateKey;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Service API for CSV configuration backup management.
@@ -33,7 +34,7 @@ import net.solarnetwork.node.domain.StringDateKey;
  * @version 1.0
  * @since 4.1
  */
-public interface CsvConfigurableBackupService extends CsvConfigurableService {
+public interface CsvConfigurableBackupService extends CsvConfigurableService, SettingSpecifierProvider {
 
 	/**
 	 * Create a backup of all local state, and return a backup object if the
@@ -58,12 +59,12 @@ public interface CsvConfigurableBackupService extends CsvConfigurableService {
 
 	/**
 	 * Get a {@link Reader} of CSV formatted configuration backup data for a
-	 * given backup ID.
+	 * given backup key.
 	 *
-	 * @param backupId
-	 *        the ID of the backup to get the CSV for
+	 * @param backupKey
+	 *        the key of the backup to get the CSV for
 	 * @return the Reader, or {@code null} if the backup cannot be found
 	 */
-	Reader getCsvConfigurationBackup(StringDateKey backupId);
+	Reader getCsvConfigurationBackup(String backupKey);
 
 }
