@@ -232,7 +232,7 @@
 					</div>
 				</div>
 				<div class="col-sm-5">
-					<select name="backup" class="form-select" id="backup-backups">
+					<select name="backup" class="form-select" id="backup-backups" required>
 						<option data-th-each="backup, backupStatus : ${backups}"
 								data-th-value="${backup.key}"
 								data-th-text="#{backup.backups.backup.label(${backup.nodeId}, ${#dates.format(backup.date, 'dd MMM yyyy HH:mm')})} + (${backup.qualifier} ? ('&mdash;' + ${backup.qualifier}) : '')">
@@ -240,7 +240,7 @@
 					</select>
 				</div>
 				<div class="col-auto">
-					<button type="submit" class="btn btn-primary" data-th-text="#{backup.download.button}">
+					<button type="submit" class="btn btn-primary" id="backup-download-button" data-th-text="#{backup.download.button}">
 						Download
 					</button>
 				</div>

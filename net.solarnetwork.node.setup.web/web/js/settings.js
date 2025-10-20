@@ -598,6 +598,12 @@ function formatTimestamp(date) {
 	return moment(date).format('YYYY-MM-DD HH:mm');
 }
 
+
+function toggleBackupDownloadButtons(enabled) {
+	$('#backup-restore-button').prop('disabled', !enabled);
+	$('#backup-download-button').prop('disabled', !enabled);
+}
+
 function refreshBackupList() {
 	let url = SolarNode.context.path(document.location.pathname.indexOf('/associate') < 0
 		? '/a/backups/find?' 
@@ -610,13 +616,18 @@ function refreshBackupList() {
 	
 	const backupSelect = $('#backup-backups');
 	backupSelect.empty();
+	toggleBackupDownloadButtons(false);
 	
 	$.getJSON(url, (data) => {
 		if ( data && data.success === true ) {
 			const backupSelectEl = backupSelect[0];
-			for ( let backup of data.data.results ) {
-				backupSelectEl.add(new Option('Node ' +backup.nodeId + ' @ ' +formatTimestamp(new Date(backup.date)), backup.key));
+			const backupCount = Array.isArray(data.data.results) ? data.data.results.length : 0;
+			if ( backupCount > 0 ) {
+				for ( let backup of data.data.results ) {
+					backupSelectEl.add(new Option('Node ' +backup.nodeId + ' @ ' +formatTimestamp(new Date(backup.date)), backup.key));
+				}
 			}
+			toggleBackupDownloadButtons(backupCount > 0);
 		} else {
 			SolarNode.error(json.message, $('#backup-list-form'));
 		}
@@ -641,11 +652,13 @@ function setupBackups() {
 				refreshBackupList();
 			}, 500);
 		});
-		
+
 		// populate with current node ID, if known
 		if ( SolarNode.nodeId ) {
 			backupFilterNodeIdField.val(SolarNode.nodeId);
 			refreshBackupList();
+		} else {
+			toggleBackupDownloadButtons(false);
 		}
 	}
 
@@ -689,6 +702,9 @@ function setupBackups() {
 	$('#backup-restore-button').on('click', function(event) {
 		var form = event.target.form,
 			backupKey = form.elements['backup-backups'].value;
+		if ( !backupKey ) {
+			return;
+		}
 		$.getJSON(SolarNode.context.path('/a/backups/inspect')+'?key='+encodeURIComponent(backupKey), function(json) {
 			if ( json.success !== true ) {
 				SolarNode.error(json.message, $('#backup-list-form'));
