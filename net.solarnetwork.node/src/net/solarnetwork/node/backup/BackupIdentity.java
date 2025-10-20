@@ -23,6 +23,8 @@
 package net.solarnetwork.node.backup;
 
 import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.domain.Unique;
 
 /**
@@ -32,6 +34,7 @@ import net.solarnetwork.domain.Unique;
  * @version 1.1
  * @since 1.55
  */
+@JsonPropertyOrder({ "key", "nodeId", "date", "qualifier" })
 public interface BackupIdentity extends Unique<String> {
 
 	/**
@@ -43,6 +46,7 @@ public interface BackupIdentity extends Unique<String> {
 	 *
 	 * @since 1.1
 	 */
+	@JsonIgnore
 	@Override
 	default String getId() {
 		return getKey();

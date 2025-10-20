@@ -1,21 +1,21 @@
 /* ==================================================================
  * BackupServiceSupport.java - 4/10/2017 7:03:53 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,14 +34,15 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.Constants;
 
 /**
  * Abstract support class for {@link BackupService} implementations.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.54
  */
 public abstract class BackupServiceSupport implements BackupService {
@@ -54,7 +55,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * node ID and {@literal D} is a date formatted using
 	 * {@link #BACKUP_KEY_DATE_FORMAT} and {@literal Q} is an optional
 	 * qualifier.
-	 * 
+	 *
 	 * <p>
 	 * Note that the qualifier and the leading dash is optional, so its
 	 * {@link Matcher} group is {@literal 4} (not 3).
@@ -65,7 +66,8 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/** The object mapper to use. */
 	protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-			.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+			.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL)
+			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 	private static final String MARKED_BACKUP_PROP_KEY = "key";
 	private static final String MARKED_BACKUP_PROP_PROPS = "props";
@@ -82,7 +84,7 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/**
 	 * Get a directory to use for local backup data.
-	 * 
+	 *
 	 * @return a directory to use for local backup data
 	 */
 	protected File defaultBackuprDir() {
@@ -100,7 +102,7 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/**
 	 * Get a file to use for "marked backup" metadata.
-	 * 
+	 *
 	 * @return the file for marked backup metadata
 	 */
 	protected File markedBackupForRestoreFile() {
@@ -110,12 +112,12 @@ public abstract class BackupServiceSupport implements BackupService {
 	/**
 	 * Shortcut for {@link #backupDateFromProps(Date, Map, Pattern, String)}
 	 * using default values.
-	 * 
+	 *
 	 * <p>
 	 * The {@link #NODE_AND_DATE_BACKUP_KEY_PATTERN} pattern and
 	 * {@link #BACKUP_KEY_DATE_FORMAT} format are used.
 	 * </p>
-	 * 
+	 *
 	 * @param date
 	 *        if not {@literal null} then return this value
 	 * @param props
@@ -131,12 +133,12 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/**
 	 * Parse a date from a backup key.
-	 * 
+	 *
 	 * <p>
 	 * If no date can be extracted from the given arguments, the current system
 	 * time will be returned.
 	 * </p>
-	 * 
+	 *
 	 * @param date
 	 *        if not {@literal null} then return this value
 	 * @param props
@@ -172,11 +174,11 @@ public abstract class BackupServiceSupport implements BackupService {
 	/**
 	 * Shortcut for {@link #backupNodeIdFromProps(Long, Map, Pattern)} using
 	 * default values.
-	 * 
+	 *
 	 * <p>
 	 * The {@link #NODE_AND_DATE_BACKUP_KEY_PATTERN} pattern is used.
 	 * </p>
-	 * 
+	 *
 	 * @param nodeId
 	 *        if not {@literal null} then return this value
 	 * @param props
@@ -191,7 +193,7 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/**
 	 * Parse a node ID from a backup key.
-	 * 
+	 *
 	 * @param nodeId
 	 *        if not {@literal null} then return this value
 	 * @param props
@@ -224,14 +226,14 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/**
 	 * Extract backup identity information from a backup key.
-	 * 
+	 *
 	 * <p>
 	 * This method calls
 	 * {@link #identityFromBackupKey(Pattern, String, String)}, passing
 	 * {@link #NODE_AND_DATE_BACKUP_KEY_PATTERN} and
 	 * {@link #BACKUP_KEY_DATE_FORMAT} for arguments.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the key to extract the details from
 	 * @return the extracted details, or {@literal null} if none found
@@ -243,7 +245,7 @@ public abstract class BackupServiceSupport implements BackupService {
 
 	/**
 	 * Extract backup identity information from a backup key.
-	 * 
+	 *
 	 * @param nodeIdAndDatePattern
 	 *        a pattern that contains groups for a node ID, date, and an
 	 *        optional qualifier
