@@ -81,11 +81,11 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.Result;
-import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
 import net.solarnetwork.node.domain.SettingNote;
+import net.solarnetwork.node.service.CsvConfigurableBackupService;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingsBackup;
@@ -96,7 +96,6 @@ import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageCom
 import net.solarnetwork.node.setup.web.support.IteratorStatus;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
-import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceRegistry;
@@ -114,7 +113,7 @@ import net.solarnetwork.web.jakarta.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 3.1
+ * @version 3.3
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -131,8 +130,8 @@ public class SettingsController {
 	private static final String KEY_SETTING_RESOURCE_LIST = "settingResourceList";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
-	private static final String KEY_BACKUPS = "backups";
 	private static final String VIEW_REDIRECT_SETTINGS = "redirect:/a/settings";
+	private static final String KEY_CSV_BACKUP_SERVICES = "csvBackupServiceList";
 
 	private static final SearchFilter NOT_DATUM_FILTER = SearchFilter
 			.forLDAPSearchFilterString("(!(role=datum-filter))");
@@ -152,6 +151,10 @@ public class SettingsController {
 	@Autowired
 	@Qualifier("backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
+
+	@Autowired
+	@Qualifier("csvBackupServiceList")
+	private Collection<CsvConfigurableBackupService> csvBackupServices;
 
 	@Autowired
 	private IdentityService identityService;
@@ -270,12 +273,8 @@ public class SettingsController {
 			model.put(KEY_BACKUP_MANAGER, backupManager);
 			BackupService service = backupManager.activeBackupService();
 			model.put(KEY_BACKUP_SERVICE, service);
-			if ( service != null ) {
-				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
-				model.put(KEY_BACKUPS, backups);
-			}
 		}
+		model.put(KEY_CSV_BACKUP_SERVICES, csvBackupServices);
 		return "settings/backups";
 	}
 
@@ -695,6 +694,7 @@ public class SettingsController {
 									: backupKey)
 							+ ".csv");
 			if ( backupKey != null ) {
+				@SuppressWarnings("deprecation")
 				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
 				if ( r != null ) {
 					try (Writer out = new OutputStreamWriter(

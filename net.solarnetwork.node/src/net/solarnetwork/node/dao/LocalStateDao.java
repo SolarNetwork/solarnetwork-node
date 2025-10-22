@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.dao;
 
+import java.time.Instant;
+import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.domain.LocalState;
 
@@ -29,10 +31,10 @@ import net.solarnetwork.node.domain.LocalState;
  * DAO API for {@link LocalState} entities.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.23
  */
-public interface LocalStateDao extends GenericDao<LocalState, String> {
+public interface LocalStateDao extends GenericDao<LocalState, String>, BatchableDao<LocalState> {
 
 	/**
 	 * Persist an entity, creating if does not exist or updating if the current
@@ -66,5 +68,36 @@ public interface LocalStateDao extends GenericDao<LocalState, String> {
 	 * @return the previously stored object, or {@code null} if inserted
 	 */
 	LocalState getAndSave(LocalState entity);
+
+	/**
+	 * Delete all entities.
+	 *
+	 * @return the number of deleted entities
+	 * @since 1.1
+	 */
+	default int deleteAll() {
+		int deleteCount = 0;
+		for ( LocalState s : getAll(null) ) {
+			delete(s);
+			deleteCount++;
+		}
+		return deleteCount;
+	}
+
+	/**
+	 * Get the most recent modification date of all local state.
+	 *
+	 * @return the modification date, or {@code null} if no date available
+	 * @since 1.1
+	 */
+	default Instant getMostRecentModificationDate() {
+		Instant result = null;
+		for ( LocalState s : getAll(null) ) {
+			if ( result == null || s.getModified().isAfter(result) ) {
+				result = s.getModified();
+			}
+		}
+		return result;
+	}
 
 }

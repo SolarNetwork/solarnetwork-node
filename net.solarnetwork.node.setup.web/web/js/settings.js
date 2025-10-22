@@ -595,32 +595,72 @@ function formatTimestamp(date) {
 	if ( !date ) {
 		return;
 	}
-	return moment(date).format('D MMM YYYY HH:mm');
+	return moment(date).format('YYYY-MM-DD HH:mm');
+}
+
+
+function toggleBackupDownloadButtons(enabled) {
+	$('#backup-restore-button').prop('disabled', !enabled);
+	$('#backup-download-button').prop('disabled', !enabled);
 }
 
 function refreshBackupList() {
-	$.getJSON(SolarNode.context.path('/a/backups'), function(json) {
-		if ( json.success !== true ) {
+	let url = SolarNode.context.path(document.location.pathname.indexOf('/associate') < 0
+		? '/a/backups/find?' 
+		: '/associate/findBackups?');
+	let nodeId = Number($('#backup-filter-node-id').val());
+	if ( isNaN(nodeId) ) {
+		return;
+	}
+	url += 'nodeId=' + nodeId;
+	
+	const backupSelect = $('#backup-backups');
+	backupSelect.empty();
+	toggleBackupDownloadButtons(false);
+	
+	$.getJSON(url, (data) => {
+		if ( data && data.success === true ) {
+			const backupSelectEl = backupSelect[0];
+			const backupCount = Array.isArray(data.data.results) ? data.data.results.length : 0;
+			if ( backupCount > 0 ) {
+				for ( let backup of data.data.results ) {
+					backupSelectEl.add(new Option('Node ' +backup.nodeId + ' @ ' +formatTimestamp(new Date(backup.date)), backup.key));
+				}
+			}
+			toggleBackupDownloadButtons(backupCount > 0);
+		} else {
 			SolarNode.error(json.message, $('#backup-list-form'));
-			return;
 		}
-		var optionEl = $('#backup-backups').get(0);
-		while ( optionEl.length > 0 ) {
-			optionEl.remove(0);
-		}
-		if ( Array.isArray(json.data) ) {
-			json.data.forEach(function(backup) {
-				var date = new Date(backup.date),
-					nodeId = backup.nodeId;
-				optionEl.add(new Option('Node ' +nodeId + ' @ ' +formatTimestamp(date), backup.key));
-			});
-		}
-		optionEl.selectedIndex = 0;
 	});
 }
 
 function setupBackups() {
-	var createBackupSubmitButton = $('#backup-now-btn');
+	const createBackupSubmitButton = $('#backup-now-btn');
+	const backupFilterNodeIdField = $('#backup-filter-node-id');
+	
+	if ( backupFilterNodeIdField.length > 0 ) {
+		var backupFilterNodeIdTimer;
+		backupFilterNodeIdField.on('keydown', (event) => {
+			if (event.key === "Enter" ) {
+				event.preventDefault();
+			}
+		}).on('keyup', () => {
+			if (backupFilterNodeIdTimer) {
+				clearTimeout(backupFilterNodeIdTimer);
+			}
+			backupFilterNodeIdTimer = setTimeout(() => {
+				refreshBackupList();
+			}, 500);
+		});
+
+		// populate with current node ID, if known
+		if ( SolarNode.nodeId ) {
+			backupFilterNodeIdField.val(SolarNode.nodeId);
+			refreshBackupList();
+		} else {
+			toggleBackupDownloadButtons(false);
+		}
+	}
 
 	// auto-save the preferred backup service when changing that option,
 	// and then auto-reload the screen to show the updated settings form
@@ -662,6 +702,9 @@ function setupBackups() {
 	$('#backup-restore-button').on('click', function(event) {
 		var form = event.target.form,
 			backupKey = form.elements['backup-backups'].value;
+		if ( !backupKey ) {
+			return;
+		}
 		$.getJSON(SolarNode.context.path('/a/backups/inspect')+'?key='+encodeURIComponent(backupKey), function(json) {
 			if ( json.success !== true ) {
 				SolarNode.error(json.message, $('#backup-list-form'));

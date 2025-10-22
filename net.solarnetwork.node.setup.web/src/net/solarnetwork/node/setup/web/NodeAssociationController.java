@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.domain.Result.success;
 import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,13 +56,17 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import net.solarnetwork.dao.BasicFilterResults;
+import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
+import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.backup.SimpleBackupFilter;
 import net.solarnetwork.node.service.PKIService;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
@@ -73,7 +78,6 @@ import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
-import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.web.jakarta.domain.Response;
 
@@ -82,7 +86,7 @@ import net.solarnetwork.web.jakarta.domain.Response;
  *
  * @author maxieduncan
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -127,7 +131,6 @@ public class NodeAssociationController extends BaseSetupController {
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
-	private static final String KEY_BACKUPS = "backups";
 
 	@Autowired
 	private MessageSource messageSource;
@@ -381,20 +384,6 @@ public class NodeAssociationController extends BaseSetupController {
 			model.put(KEY_BACKUP_MANAGER, backupManager);
 			BackupService service = backupManager.activeBackupService();
 			model.put(KEY_BACKUP_SERVICE, service);
-			if ( service != null ) {
-				try {
-					List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-					Collections.sort(backups, SortByNodeAndDate.DEFAULT);
-					model.put(KEY_BACKUPS, backups);
-				} catch ( RemoteServiceException e ) {
-					Throwable root = e;
-					while ( root.getCause() != null ) {
-						root = root.getCause();
-					}
-					log.error("Error listing backups with BackupService {}: {}", service,
-							root.getMessage());
-				}
-			}
 		}
 		return PAGE_IMPORT_FROM_BACKUP;
 	}
@@ -414,6 +403,33 @@ public class NodeAssociationController extends BaseSetupController {
 			settingsService.updateSettings(cmd);
 		}
 		return Response.response(null);
+	}
+
+	/**
+	 * Find backups from the active backup service.
+	 *
+	 * @param filter
+	 *        the search filter
+	 * @return All available backups.
+	 */
+	@RequestMapping(value = "/findBackups", method = RequestMethod.GET)
+	@ResponseBody
+	public Result<FilterResults<Backup, String>> findBackups(SimpleBackupFilter filter) {
+		final BackupManager backupManager = backupManagerTracker.service();
+		if ( backupManager != null ) {
+			BackupService service = backupManager.activeBackupService();
+			if ( service != null ) {
+				var results = service.findBackups(filter);
+				List<Backup> backups = new ArrayList<>();
+				for ( Backup backup : results ) {
+					backups.add(backup);
+				}
+				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
+				return success(new BasicFilterResults<>(backups, results.getTotalResults(),
+						results.getStartingOffset(), results.getReturnedResultCount()));
+			}
+		}
+		return success(new BasicFilterResults<>(List.of()));
 	}
 
 	/**

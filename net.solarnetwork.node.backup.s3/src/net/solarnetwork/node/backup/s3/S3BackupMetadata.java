@@ -1,21 +1,21 @@
 /* ==================================================================
  * S3BackupMetadata.java - 3/10/2017 5:53:20 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,7 +32,7 @@ import net.solarnetwork.node.backup.BackupResource;
 
 /**
  * S3 implementation of {@link Backup}.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -46,10 +46,19 @@ public class S3BackupMetadata implements Backup {
 
 	private List<S3BackupResourceMetadata> resourceMetadata;
 
+	/**
+	 * Constructor.
+	 */
 	public S3BackupMetadata() {
 		this(null);
 	}
 
+	/**
+	 * Constructor.
+	 *
+	 * @param objRef
+	 *        the object reference
+	 */
 	public S3BackupMetadata(S3ObjectReference objRef) {
 		super();
 		if ( objRef != null ) {
@@ -69,6 +78,12 @@ public class S3BackupMetadata implements Backup {
 		return key;
 	}
 
+	/**
+	 * Set the backup key.
+	 *
+	 * @param key
+	 *        the key to set
+	 */
 	public void setKey(String key) {
 		this.key = key;
 		BackupIdentity ident = S3BackupService.identityFromBackupKey(key);
@@ -95,6 +110,12 @@ public class S3BackupMetadata implements Backup {
 		return date;
 	}
 
+	/**
+	 * Set the backup date.
+	 *
+	 * @param date
+	 *        the date
+	 */
 	public void setDate(Date date) {
 		this.date = date;
 	}
@@ -109,17 +130,29 @@ public class S3BackupMetadata implements Backup {
 		return nodeId;
 	}
 
+	/**
+	 * Set the node ID.
+	 *
+	 * @param nodeId
+	 *        the node ID to set
+	 */
 	public void setNodeId(Long nodeId) {
 		this.nodeId = nodeId;
 	}
 
+	/**
+	 * Set the completed flag.
+	 *
+	 * @param complete
+	 *        {@code true} if completed
+	 */
 	public void setComplete(boolean complete) {
 		this.complete = complete;
 	}
 
 	/**
 	 * Add a resource to the resource list.
-	 * 
+	 *
 	 * @param resource
 	 *        the resource to add
 	 * @param objectKey
@@ -140,10 +173,21 @@ public class S3BackupMetadata implements Backup {
 		resourceMetadata.add(meta);
 	}
 
+	/**
+	 * Get the resource metadata.
+	 *
+	 * @return the metadata
+	 */
 	public List<S3BackupResourceMetadata> getResourceMetadata() {
 		return resourceMetadata;
 	}
 
+	/**
+	 * Set the resource metadata.
+	 *
+	 * @param resourceMetadata
+	 *        the metadata to set
+	 */
 	public void setResourceMetadata(List<S3BackupResourceMetadata> resourceMetadata) {
 		this.resourceMetadata = resourceMetadata;
 	}
@@ -153,6 +197,12 @@ public class S3BackupMetadata implements Backup {
 		return qualifier;
 	}
 
+	/**
+	 * Set the qualifier.
+	 *
+	 * @param qualifier
+	 *        the qualifier to set
+	 */
 	public void setQualifier(String qualifier) {
 		this.qualifier = qualifier;
 	}

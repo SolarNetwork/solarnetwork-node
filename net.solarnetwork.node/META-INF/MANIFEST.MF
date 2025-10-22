@@ -5,20 +5,20 @@ Bundle-SymbolicName: net.solarnetwork.node
 Automatic-Module-Name: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 4.0.3
+Bundle-Version: 4.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node;version="2.1.0",
- net.solarnetwork.node.backup;version="2.1.2",
- net.solarnetwork.node.dao;version="3.0.0",
+ net.solarnetwork.node.backup;version="2.2.0",
+ net.solarnetwork.node.dao;version="3.1.0",
  net.solarnetwork.node.domain;version="2.11.2",
- net.solarnetwork.node.domain.datum;version="1.2.2",
+ net.solarnetwork.node.domain.datum;version="1.3.0",
  net.solarnetwork.node.job;version="2.1.2",
  net.solarnetwork.node.reactor;version="2.5.0",
  net.solarnetwork.node.service;version="1.14.0",
- net.solarnetwork.node.service.support;version="1.12.1",
- net.solarnetwork.node.settings;version="2.7.0",
+ net.solarnetwork.node.service.support;version="1.13.0",
+ net.solarnetwork.node.settings;version="2.7.1",
  net.solarnetwork.node.settings.support;version="2.0.0",
  net.solarnetwork.node.setup;version="1.13.0"
 Import-Package: 
@@ -39,7 +39,7 @@ Import-Package:
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.1,2.0)",
  net.solarnetwork.dao;version="[3.0,4.0)",
- net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.domain;version="[3.2,4.0)",
  net.solarnetwork.domain.datum;version="[3.0,4.0)",
  net.solarnetwork.domain.tariff;version="[1.1,2.0)",
  net.solarnetwork.io;version="[3.0,4.0)",
@@ -87,5 +87,9 @@ Import-Package:
  org.springframework.transaction;version="[6.2,7.0)",
  org.springframework.transaction.support;version="[6.2,7.0)",
  org.springframework.util;version="[6.2,7.0)",
+ org.supercsv.comment;version="[2.0,3.0)",
+ org.supercsv.io;version="[2.0,3.0)",
+ org.supercsv.prefs;version="[2.0,3.0)",
+ org.supercsv.util;version="[2.0,3.0)",
  org.w3c.dom,
  org.xml.sax

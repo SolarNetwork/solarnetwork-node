@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.domain.Result.error;
+import static net.solarnetwork.domain.Result.success;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,19 +42,22 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import net.solarnetwork.dao.BasicFilterResults;
+import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.backup.SimpleBackupFilter;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.web.jakarta.domain.Response;
 
 /**
  * Controller for backup support.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 @Controller
 @RequestMapping("/a/backups")
@@ -81,9 +86,9 @@ public class BackupController extends BaseSetupController {
 	 */
 	@RequestMapping(value = { "", "/" }, method = RequestMethod.GET)
 	@ResponseBody
-	public Response<List<Backup>> availableBackups() {
+	public Result<List<Backup>> availableBackups() {
 		final BackupManager backupManager = backupManagerTracker.service();
-		List<Backup> backups = new ArrayList<Backup>();
+		List<Backup> backups = new ArrayList<>();
 		if ( backupManager != null ) {
 			BackupService service = backupManager.activeBackupService();
 			if ( service != null ) {
@@ -91,7 +96,34 @@ public class BackupController extends BaseSetupController {
 				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
 			}
 		}
-		return Response.response(backups);
+		return success(backups);
+	}
+
+	/**
+	 * Find backups from the active backup service.
+	 *
+	 * @param filter
+	 *        the search filter
+	 * @return All available backups.
+	 */
+	@RequestMapping(value = "/find", method = RequestMethod.GET)
+	@ResponseBody
+	public Result<FilterResults<Backup, String>> findBackups(SimpleBackupFilter filter) {
+		final BackupManager backupManager = backupManagerTracker.service();
+		if ( backupManager != null ) {
+			BackupService service = backupManager.activeBackupService();
+			if ( service != null ) {
+				var results = service.findBackups(filter);
+				List<Backup> backups = new ArrayList<>();
+				for ( Backup backup : results ) {
+					backups.add(backup);
+				}
+				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
+				return success(new BasicFilterResults<>(backups, results.getTotalResults(),
+						results.getStartingOffset(), results.getReturnedResultCount()));
+			}
+		}
+		return success(new BasicFilterResults<>(List.of()));
 	}
 
 	/**
@@ -101,13 +133,13 @@ public class BackupController extends BaseSetupController {
 	 */
 	@RequestMapping(value = "/create", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Backup> initiateBackup() {
+	public Result<Backup> initiateBackup() {
 		final BackupManager manager = backupManagerTracker.service();
 		Backup backup = null;
 		if ( manager != null ) {
 			backup = manager.createBackup();
 		}
-		return Response.response(backup);
+		return success(backup);
 	}
 
 	/**
@@ -123,19 +155,19 @@ public class BackupController extends BaseSetupController {
 	 */
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Boolean> importBackup(@RequestParam("file") MultipartFile file) throws IOException {
+	public Result<Boolean> importBackup(@RequestParam("file") MultipartFile file) throws IOException {
 		Future<Backup> task = importTask;
 		if ( task != null && !task.isDone() ) {
-			return new Response<Boolean>(false, "422", "Import task already running", null);
+			return error("422", "Import task already running");
 		}
 		final BackupManager manager = backupManagerTracker.service();
 		if ( manager == null ) {
-			return new Response<Boolean>(false, "500", "No backup manager available.", null);
+			return error("500", "No backup manager available.");
 		}
-		Map<String, String> props = new HashMap<String, String>();
+		Map<String, String> props = new HashMap<>();
 		props.put(BackupManager.BACKUP_KEY, file.getName());
 		importTask = manager.importBackupArchive(file.getInputStream(), props);
-		return Response.response(true);
+		return success();
 	}
 
 	/**
@@ -146,14 +178,14 @@ public class BackupController extends BaseSetupController {
 	 */
 	@RequestMapping(value = "/import", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<String> checkLastImport() {
+	public Result<String> checkLastImport() {
 		Future<Backup> task = importTask;
 		try {
-			return Response.response(task != null && task.isDone() ? task.get().getKey() : null);
+			return success(task != null && task.isDone() ? task.get().getKey() : null);
 		} catch ( ExecutionException e ) {
-			return new Response<String>(false, "500", "Import exception: " + e.getMessage(), null);
+			return error("500", "Import exception: " + e.getMessage());
 		} catch ( InterruptedException e ) {
-			return new Response<String>(false, "500", "Interrupted", null);
+			return error("500", "Interrupted");
 		}
 	}
 
@@ -168,17 +200,16 @@ public class BackupController extends BaseSetupController {
 	 */
 	@RequestMapping(value = "/inspect", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<BackupInfo> inspectBackup(@RequestParam("key") String key, Locale locale) {
+	public Result<BackupInfo> inspectBackup(@RequestParam("key") String key, Locale locale) {
 		final BackupManager manager = backupManagerTracker.service();
 		if ( manager == null ) {
-			return new Response<BackupInfo>(false, "500", "No backup manager available.", null);
+			return error("500", "No backup manager available.");
 		}
 		final BackupInfo info = manager.infoForBackup(key, locale);
 		if ( info == null ) {
-			return new Response<BackupInfo>(false, "404", "Backup not available for provided key.",
-					null);
+			return error("404", "Backup not available for provided key.");
 		}
-		return Response.response(info);
+		return success(info);
 	}
 
 	/**
@@ -192,28 +223,28 @@ public class BackupController extends BaseSetupController {
 	 */
 	@RequestMapping(value = "/restore", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<?> restoreBackup(BackupOptions options, Locale locale) {
+	public Result<?> restoreBackup(BackupOptions options, Locale locale) {
 		final BackupManager manager = backupManagerTracker.service();
 		if ( manager == null ) {
-			return new Response<BackupInfo>(false, "500", "No backup manager available.", null);
+			return error("500", "No backup manager available.");
 		}
 		final BackupService backupService = manager.activeBackupService();
 		if ( backupService == null ) {
-			return new Response<Backup>(false, "500", "No backup service available.", null);
+			return error("500", "No backup service available.");
 		}
 		final String backupKey = options.getKey();
 		if ( backupKey == null ) {
-			return new Response<Object>(false, "422", "No backup key provided.", null);
+			return error("422", "No backup key provided.");
 		}
 		Backup backup = manager.activeBackupService().backupForKey(backupKey);
 		if ( backup == null ) {
-			return new Response<Object>(false, "404", "Backup not available.", null);
+			return error("404", "Backup not available.");
 		}
 
 		Map<String, String> props = options.asBackupManagerProperties();
 		manager.restoreBackup(backup, props);
 		shutdownSoon();
-		return new Response<Object>(true, null,
+		return new Result<>(true, null,
 				messageSource.getMessage("node.setup.restore.success", null, locale), null);
 	}
 

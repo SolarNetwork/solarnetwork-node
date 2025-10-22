@@ -1,7 +1,7 @@
 /* ==================================================================
- * BackupInfo.java - 2/11/2016 1:33:07 PM
+ * BackupFilter.java - 18/10/2025 9:37:07 am
  *
- * Copyright 2007-2016 SolarNetwork.net Dev Team
+ * Copyright 2025 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,34 +22,40 @@
 
 package net.solarnetwork.node.backup;
 
-import java.util.Collection;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import net.solarnetwork.dao.PaginationCriteria;
 
 /**
- * Metadata about a {@link Backup}.
+ * API for backup search filter.
  *
  * @author matt
- * @version 1.1
- * @since 1.46
+ * @version 1.0
+ * @since 4.1
  */
-@JsonPropertyOrder({ "key", "nodeId", "date", "qualifier", "providerInfos", "resourceInfos" })
-public interface BackupInfo extends BackupIdentity {
+public interface BackupFilter extends PaginationCriteria {
 
 	/**
-	 * Get a list of all providers included in the backup.
+	 * Get a node ID to find.
 	 *
-	 * @return The list of providers, or an empty list.
+	 * @return the node ID
 	 */
-	Collection<BackupResourceProviderInfo> getProviderInfos();
+	Long getNodeId();
 
 	/**
-	 * Get a list of all resources included in the backup.
+	 * Test if this filter has any node criteria.
 	 *
-	 * The resources should be ordered such that all resources for a given
-	 * provider are together.
-	 *
-	 * @return The list of resources, or an empty list.
+	 * @return {@literal true} if the node ID is non-null
 	 */
-	Collection<BackupResourceInfo> getResourceInfos();
+	default boolean hasNodeCriteria() {
+		return getNodeId() != null;
+	}
+
+	/**
+	 * Test if this filter has any criteria.
+	 *
+	 * @return {@literal true} if any criteria is non-null
+	 */
+	default boolean hasAnyCriteria() {
+		return hasNodeCriteria() || getMax() != null || getOffset() != null;
+	}
 
 }

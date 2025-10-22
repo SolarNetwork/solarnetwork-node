@@ -123,6 +123,9 @@
 	<osgi:reference id="setupResourceService" availability="optional"
 		interface="net.solarnetwork.node.setup.SetupResourceService"/>
 	
+	<osgi:reference id="csvBackupServiceList" availability="optional"
+		interface="net.solarnetwork.node.service.CsvConfigurableBackupService"/>
+	
 	<!-- A SimpMessagingTemplate for the 'broker' configured for websocket messages -->
 	<osgi:service interface="org.springframework.messaging.simp.SimpMessageSendingOperations">
 		<osgi:service-properties>
