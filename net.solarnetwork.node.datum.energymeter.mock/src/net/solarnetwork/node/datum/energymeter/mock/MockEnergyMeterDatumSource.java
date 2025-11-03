@@ -85,7 +85,7 @@ import net.solarnetwork.util.ObjectUtils;
  *
  * @author robert
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -547,6 +547,25 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 */
 	public final void setVoltage(double voltage) {
 		this.voltagerms = voltage;
+	}
+
+	/**
+	 * Get the current.
+	 *
+	 * @return the current, in amps
+	 */
+	public double getCurrent() {
+		return current;
+	}
+
+	/**
+	 * Set the current.
+	 *
+	 * @param current
+	 *        the current to set, in amps
+	 */
+	public void setCurrent(double current) {
+		this.current = current;
 	}
 
 	/**
