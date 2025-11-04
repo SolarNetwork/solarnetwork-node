@@ -28,7 +28,6 @@ import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,6 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.StringUtils;
 
 /**
  * Datum filter service that joins multiple datum into a new datum stream.
@@ -117,13 +115,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 						Map<String, ?> data = samples.getSampleData(type);
 						if ( data != null && !data.isEmpty() ) {
 							for ( Entry<String, ?> e : data.entrySet() ) {
-								Map<String, Object> params = new HashMap<>(propSourceMapping.length);
-								params.put("p", e.getKey());
-								for ( int i = 1; i < propSourceMapping.length; i++ ) {
-									params.put(String.valueOf(i), propSourceMapping[i]);
-								}
-								String p = StringUtils.expandTemplateString(propSourceMapping[0],
-										params);
+								String p = PatternKeyValuePair.expand(e.getKey(), propSourceMapping);
 								mergedSamples.putSampleValue(type, p, e.getValue());
 							}
 						}

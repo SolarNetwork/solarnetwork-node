@@ -1046,7 +1046,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 				@Override
 				public boolean shouldImportSetting(Setting s) {
-					if ( allowed.matcher(s.getKey()).matches() == false ) {
+					if ( s.getKey() == null || allowed.matcher(s.getKey()).matches() == false ) {
 						return false;
 					}
 					if ( options.isAddOnly() ) {
@@ -1421,6 +1421,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return rsrcDir;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingsBackup backupSettings() {
 		final Date mrd = settingDao.getMostRecentModificationDate();
@@ -1476,6 +1477,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return new SettingsBackup(backupDateKey, backupDate);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public Collection<SettingsBackup> getAvailableBackups() {
 		final File dir = new File(backupDestinationPath);
@@ -1501,6 +1503,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return list;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public Reader getReaderForBackup(SettingsBackup backup) {
 		final File dir = new File(backupDestinationPath);

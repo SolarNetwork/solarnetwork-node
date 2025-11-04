@@ -55,7 +55,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that splits datum into multiple new datum streams.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class SplitDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
@@ -65,7 +65,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	private final OptionalService<DatumQueue> datumQueue;
 	private boolean swallowInput = DEFAULT_SWALLOW_INPUT;
-	private PatternKeyValuePair[] propertySourceMappings;
+	private ReplacingPatternKeyValuePair[] propertySourceMappings;
 
 	/**
 	 * Constructor.
@@ -82,7 +82,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
-		final PatternKeyValuePair[] mappings = getPropertySourceMappings();
+		final ReplacingPatternKeyValuePair[] mappings = getPropertySourceMappings();
 
 		if ( !conditionsMatch(datum, samples, parameters) || mappings == null || mappings.length < 1 ) {
 			incrementIgnoredStats(start);
@@ -90,7 +90,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		}
 
 		final Map<String, SimpleDatum> sources = new HashMap<>(4);
-		for ( PatternKeyValuePair mapping : mappings ) {
+		for ( ReplacingPatternKeyValuePair mapping : mappings ) {
 			populateMatchingDatumProperties(datum, samples, parameters, DatumSamplesType.Instantaneous,
 					sources, mapping);
 			populateMatchingDatumProperties(datum, samples, parameters, DatumSamplesType.Accumulating,
@@ -115,7 +115,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	private void populateMatchingDatumProperties(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters, DatumSamplesType samplesType,
-			Map<String, SimpleDatum> sources, PatternKeyValuePair mapping) {
+			Map<String, SimpleDatum> sources, ReplacingPatternKeyValuePair mapping) {
 		final String outputSourceId = resolvePlaceholders(mapping.getValue(), parameters);
 		if ( outputSourceId == null || outputSourceId.isEmpty() ) {
 			return;
@@ -125,12 +125,18 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 			for ( Entry<String, ?> e : props.entrySet() ) {
 				String[] match = mapping.keyMatches(e.getKey());
 				if ( match != null ) {
+					if ( mapping.hasReplacement() ) {
+						match[0] = mapping.getReplacement();
+					}
 					sources.computeIfAbsent(outputSourceId, k -> {
 						SimpleDatum sd = new SimpleDatum(new DatumId(datum.getKind(),
 								datum.getObjectId(), k, datum.getTimestamp()), new DatumSamples());
 						sd.setTags(samples.getTags());
 						return sd;
-					}).putSampleValue(samplesType, e.getKey(), e.getValue());
+					}).putSampleValue(samplesType,
+							mapping.hasReplacement() ? PatternKeyValuePair.expand(e.getKey(), match)
+									: e.getKey(),
+							e.getValue());
 				}
 			}
 		}
@@ -138,12 +144,12 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public Collection<String> publishedSourceIds() {
-		final PatternKeyValuePair[] mappings = getPropertySourceMappings();
+		final ReplacingPatternKeyValuePair[] mappings = getPropertySourceMappings();
 		if ( mappings == null || mappings.length < 1 ) {
 			return Collections.emptySet();
 		}
 		final Set<String> sources = new TreeSet<>();
-		for ( PatternKeyValuePair mapping : mappings ) {
+		for ( ReplacingPatternKeyValuePair mapping : mappings ) {
 			final String outputSourceId = resolvePlaceholders(mapping.getValue(), null);
 			if ( outputSourceId == null || outputSourceId.isEmpty() ) {
 				continue;
@@ -175,17 +181,18 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 		result.add(new BasicToggleSettingSpecifier("swallowInput", DEFAULT_SWALLOW_INPUT));
 
-		PatternKeyValuePair[] mappingConfs = getPropertySourceMappings();
-		List<PatternKeyValuePair> mappingConfList = (template ? singletonList(new PatternKeyValuePair())
+		ReplacingPatternKeyValuePair[] mappingConfs = getPropertySourceMappings();
+		List<ReplacingPatternKeyValuePair> mappingConfList = (template
+				? singletonList(new ReplacingPatternKeyValuePair())
 				: (mappingConfs != null ? asList(mappingConfs) : emptyList()));
 		result.add(SettingUtils.dynamicListSettingSpecifier("propertySourceMappings", mappingConfList,
-				new SettingUtils.KeyedListCallback<PatternKeyValuePair>() {
+				new SettingUtils.KeyedListCallback<ReplacingPatternKeyValuePair>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(PatternKeyValuePair value,
-							int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(
+							ReplacingPatternKeyValuePair value, int index, String key) {
 						SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								PatternKeyValuePair.settings(key + "."));
+								ReplacingPatternKeyValuePair.settings(key + "."));
 						return singletonList(configGroup);
 					}
 				}));
@@ -222,7 +229,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the mappings, or {@literal null}
 	 */
-	public PatternKeyValuePair[] getPropertySourceMappings() {
+	public ReplacingPatternKeyValuePair[] getPropertySourceMappings() {
 		return propertySourceMappings;
 	}
 
@@ -237,7 +244,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	 * @param propertySourceMappings
 	 *        the mappings to set
 	 */
-	public void setPropertySourceMappings(PatternKeyValuePair[] propertySourceMappings) {
+	public void setPropertySourceMappings(ReplacingPatternKeyValuePair[] propertySourceMappings) {
 		this.propertySourceMappings = propertySourceMappings;
 	}
 
@@ -247,7 +254,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	 * @return the number of property source mappings
 	 */
 	public int getPropertySourceMappingsCount() {
-		final PatternKeyValuePair[] mappings = getPropertySourceMappings();
+		final ReplacingPatternKeyValuePair[] mappings = getPropertySourceMappings();
 		return (mappings != null ? mappings.length : 0);
 	}
 
@@ -259,7 +266,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public void setPropertySourceMappingsCount(int count) {
 		setPropertySourceMappings(ArrayUtils.arrayWithLength(getPropertySourceMappings(), count,
-				PatternKeyValuePair.class, PatternKeyValuePair::new));
+				ReplacingPatternKeyValuePair.class, ReplacingPatternKeyValuePair::new));
 	}
 
 }
