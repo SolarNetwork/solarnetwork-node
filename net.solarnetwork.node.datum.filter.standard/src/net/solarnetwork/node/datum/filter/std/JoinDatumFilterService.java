@@ -55,7 +55,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
@@ -71,6 +71,13 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	/** The {@code swallowInput} property default value. */
 	public static final boolean DEFAULT_SWALLOW_INPUT = false;
 
+	/**
+	 * The {@code persist} property default value.
+	 *
+	 * @since 1.3
+	 */
+	public static final boolean DEFAULT_PERSIST = true;
+
 	private final DatumSamples mergedSamples = new DatumSamples();
 	private final Set<String> coalescedSourceIds = new HashSet<>(4, 0.9f);
 
@@ -78,6 +85,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	private String outputSourceId;
 	private int coalesceThreshold = DEFAULT_COALESCE_THRESHOLD;
 	private boolean swallowInput = DEFAULT_SWALLOW_INPUT;
+	private boolean persist = DEFAULT_PERSIST;
 	private PatternKeyValuePair[] propertySourceMappings;
 
 	/**
@@ -130,7 +138,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 				log.debug("Generated merged datum {}", d);
 				DatumQueue dq = service(datumQueue);
 				if ( dq != null ) {
-					dq.offer(d, true);
+					dq.offer(d, persist);
 				}
 				coalescedSourceIds.clear();
 			}
@@ -200,6 +208,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 				String.valueOf(DEFAULT_COALESCE_THRESHOLD)));
 
 		result.add(new BasicToggleSettingSpecifier("swallowInput", DEFAULT_SWALLOW_INPUT));
+		result.add(new BasicToggleSettingSpecifier("persist", DEFAULT_PERSIST));
 
 		PatternKeyValuePair[] mappingConfs = getPropertySourceMappings();
 		List<PatternKeyValuePair> mappingConfList = (template
@@ -320,6 +329,32 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public void setOutputSourceId(String outputSourceId) {
 		this.outputSourceId = outputSourceId;
+	}
+
+	/**
+	 * Get the persist mode.
+	 *
+	 * @return {@code true} to persist the output datum
+	 * @since 1.3
+	 */
+	public boolean isPersist() {
+		return persist;
+	}
+
+	/**
+	 * Set the persist mode.
+	 *
+	 * <p>
+	 * This affects how the generated datum are offered to the
+	 * {@link DatumQueue}.
+	 * </p>
+	 *
+	 * @param persist
+	 *        {@code true} to persist the output datum
+	 * @since 1.3
+	 */
+	public void setPersist(boolean persist) {
+		this.persist = persist;
 	}
 
 }

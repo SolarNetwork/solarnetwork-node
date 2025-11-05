@@ -55,7 +55,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that splits datum into multiple new datum streams.
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class SplitDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
@@ -63,8 +63,16 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	/** The {@code swallowInput} property default value. */
 	public static final boolean DEFAULT_SWALLOW_INPUT = true;
 
+	/**
+	 * The {@code persist} property default value.
+	 *
+	 * @since 1.5
+	 */
+	public static final boolean DEFAULT_PERSIST = true;
+
 	private final OptionalService<DatumQueue> datumQueue;
 	private boolean swallowInput = DEFAULT_SWALLOW_INPUT;
+	private boolean persist = DEFAULT_PERSIST;
 	private ReplacingPatternKeyValuePair[] propertySourceMappings;
 
 	/**
@@ -103,7 +111,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		if ( q != null ) {
 			for ( SimpleDatum out : sources.values() ) {
 				if ( !out.isEmpty() ) {
-					q.offer(out);
+					q.offer(out, persist);
 				}
 			}
 		}
@@ -180,6 +188,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		populateStatusSettings(result);
 
 		result.add(new BasicToggleSettingSpecifier("swallowInput", DEFAULT_SWALLOW_INPUT));
+		result.add(new BasicToggleSettingSpecifier("persist", DEFAULT_PERSIST));
 
 		ReplacingPatternKeyValuePair[] mappingConfs = getPropertySourceMappings();
 		List<ReplacingPatternKeyValuePair> mappingConfList = (template
@@ -267,6 +276,32 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 	public void setPropertySourceMappingsCount(int count) {
 		setPropertySourceMappings(ArrayUtils.arrayWithLength(getPropertySourceMappings(), count,
 				ReplacingPatternKeyValuePair.class, ReplacingPatternKeyValuePair::new));
+	}
+
+	/**
+	 * Get the persist mode.
+	 *
+	 * @return {@code true} to persist the output datum
+	 * @since 1.5
+	 */
+	public boolean isPersist() {
+		return persist;
+	}
+
+	/**
+	 * Set the persist mode.
+	 *
+	 * <p>
+	 * This affects how the generated datum are offered to the
+	 * {@link DatumQueue}.
+	 * </p>
+	 *
+	 * @param persist
+	 *        {@code true} to persist the output datum
+	 * @since 1.5
+	 */
+	public void setPersist(boolean persist) {
+		this.persist = persist;
 	}
 
 }
