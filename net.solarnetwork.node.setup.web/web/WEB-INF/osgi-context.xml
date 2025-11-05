@@ -123,7 +123,7 @@
 	<osgi:reference id="setupResourceService" availability="optional"
 		interface="net.solarnetwork.node.setup.SetupResourceService"/>
 	
-	<osgi:reference id="csvBackupServiceList" availability="optional"
+	<osgi:list id="csvBackupServiceList" availability="optional"
 		interface="net.solarnetwork.node.service.CsvConfigurableBackupService"/>
 	
 	<!-- A SimpMessagingTemplate for the 'broker' configured for websocket messages -->

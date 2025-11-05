@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.modbus.server.dao;
 
+import java.time.Instant;
+import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.FilterableDao;
 import net.solarnetwork.dao.GenericDao;
 
@@ -29,9 +31,41 @@ import net.solarnetwork.dao.GenericDao;
  * Data access API for {@link ModbusRegisterEntity} entities.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface ModbusRegisterDao extends GenericDao<ModbusRegisterEntity, ModbusRegisterKey>,
-		FilterableDao<ModbusRegisterEntity, ModbusRegisterKey, ModbusRegisterFilter> {
+		FilterableDao<ModbusRegisterEntity, ModbusRegisterKey, ModbusRegisterFilter>,
+		BatchableDao<ModbusRegisterEntity> {
+
+	/**
+	 * Delete all entities.
+	 *
+	 * @return the number of deleted entities
+	 * @since 1.2
+	 */
+	default int deleteAll() {
+		int deleteCount = 0;
+		for ( ModbusRegisterEntity s : getAll(null) ) {
+			delete(s);
+			deleteCount++;
+		}
+		return deleteCount;
+	}
+
+	/**
+	 * Get the most recent modification date of all local state.
+	 *
+	 * @return the modification date, or {@code null} if no date available
+	 * @since 1.2
+	 */
+	default Instant getMostRecentModificationDate() {
+		Instant result = null;
+		for ( ModbusRegisterEntity s : getAll(null) ) {
+			if ( result == null || s.getModified().isAfter(result) ) {
+				result = s.getModified();
+			}
+		}
+		return result;
+	}
 
 }
