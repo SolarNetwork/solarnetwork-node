@@ -20,12 +20,11 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.runtime;
+package net.solarnetwork.node.job;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.service.CsvConfigurableBackupService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
