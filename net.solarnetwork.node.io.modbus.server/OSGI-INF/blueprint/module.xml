@@ -152,8 +152,6 @@
 		</interfaces>
 	</service>
 
-	<!-- Local State backup job -->
-
 	<service interface="net.solarnetwork.node.job.ManagedJob">
 		<service-properties>
 			<entry key="service.pid" value="net.solarnetwork.node.io.modbus.server.ModbusRegisterBackupJob"/>
