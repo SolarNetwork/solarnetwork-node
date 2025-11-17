@@ -121,6 +121,40 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 ,,,,,,,Float32,2,Mock Energy Meter,current,1,-1
 ```
 
+## Additional server settings
+
+Other server settings like **Service Name** or **Allow Writes** can be configured with special
+`#param` comment rows **preceeding** the start of a instance. You configure just 3 columns in these
+rows:
+
+1. The literal string `#param`
+2. The **setting key**
+3. The **setting value**
+
+The supported **setting key** values match the setting names generated when exporting SolarNode
+settings for the Modbus Service component:
+
+| Setting | Key | Description |
+|:--------|:----|:------------|
+| Service Name | `uid` | Arbitrary string |
+| Service Group | `groupUid` | Arbitrary string |
+| Allow Writes | `allowWrites` | Either `true` or `false` |
+| Persistence Needed | `daoRequired` | Either `true` or `false` |
+
+Here is the CSV as shown in the example configuration screen shot above, with some additional
+settings:
+
+```csv
+Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,Data Length,Source ID,Property,Multiplier,Decimal Scale
+#param,uid,My Server
+#param,allowWrites,true
+#param,daoRequired,true
+1,0.0.0.0,5020,100,1,Holding,0,UInt16,1,Mock Energy Meter,watts,1,0
+,,,,,,,UInt64,4,Mock Energy Meter,wattHours,1,0
+,,,,,,,Float32,2,Mock Energy Meter,voltage,1,3
+,,,,,Input,100,UInt32,1,Mock Energy Meter,frequency,10,0
+,,,,,,,Float32,2,Mock Energy Meter,current,1,-1
+```
 
 # Server configuration
 
@@ -138,6 +172,7 @@ Each server configuration contains the following settings:
 | Port               | The port number to listen on. The default Modbus port is `502`. See [port considerations](#solarnodeos-port-considerations) for more info. |
 | Request Throttle   | A number of milliseconds to limit client requests by. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
+| Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
 ## SolarNodeOS port considerations
