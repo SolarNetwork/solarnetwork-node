@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.modbus.server.impl;
 import static java.util.Arrays.fill;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map.Entry;
 import org.supercsv.io.ICsvListWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -85,7 +86,8 @@ public class ModbusServerConfigCsvWriter {
 		if ( settings == null || settings.isEmpty() ) {
 			return;
 		}
-		ModbusServerConfig config = new ModbusServerConfig();
+
+		final ModbusServerConfig config = new ModbusServerConfig();
 		config.setKey(instanceId);
 		for ( Setting s : settings ) {
 			config.populateFromSetting(s);
@@ -98,6 +100,11 @@ public class ModbusServerConfigCsvWriter {
 		row[ModbusServerCsvColumn.THROTTLE.getCode()] = (config.getRequestThrottle() != null
 				? config.getRequestThrottle().toString()
 				: null);
+
+		// generate #param rows for unhandled settings, like uid etc
+		for ( Entry<String, String> e : config.getMeta().entrySet() ) {
+			writer.write(new String[] { "#param", e.getKey(), e.getValue() });
+		}
 
 		for ( UnitConfig unitConfig : config.getUnitConfigs() ) {
 			row[ModbusServerCsvColumn.UNIT_ID.getCode()] = String.valueOf(unitConfig.getUnitId());

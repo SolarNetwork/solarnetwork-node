@@ -24,15 +24,18 @@ package net.solarnetwork.node.io.modbus.server.dao.jdbc;
 
 import static java.lang.String.format;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.jdbc.core.ConnectionCallback;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.SortDescriptor;
-import net.solarnetwork.node.dao.jdbc.BaseJdbcGenericDao;
+import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
 import net.solarnetwork.node.dao.jdbc.JdbcUtils;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
@@ -47,9 +50,9 @@ import net.solarnetwork.util.StatTracker;
  * JDBC implementation of {@link ModbusRegisterDao}.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEntity, ModbusRegisterKey>
+public class JdbcModbusRegisterDao extends BaseJdbcBatchableDao<ModbusRegisterEntity, ModbusRegisterKey>
 		implements ModbusRegisterDao, SettingSpecifierProvider {
 
 	/**
@@ -77,6 +80,20 @@ public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEnti
 
 		/** Find records matching a server ID. */
 		FindForServer("find-for-server"),
+
+		/**
+		 * Delete all records.
+		 *
+		 * @since 1.4
+		 */
+		DeleteAll("delete-all"),
+
+		/**
+		 * Get the most recent modification date.
+		 *
+		 * @since 1.4
+		 */
+		GetMostRecentModificationDate("most-recent-modification-date"),
 
 		;
 
@@ -134,6 +151,29 @@ public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEnti
 	}
 
 	@Override
+	public int deleteAll() {
+		return getJdbcTemplate().execute((ConnectionCallback<Integer>) conn -> {
+			return conn.prepareStatement(getSqlResource(SqlResource.DeleteAll.getResource()))
+					.executeUpdate();
+		});
+	}
+
+	@Override
+	public Instant getMostRecentModificationDate() {
+		return getJdbcTemplate().query(conn -> {
+			PreparedStatement ps = conn.prepareStatement(
+					getSqlResource(SqlResource.GetMostRecentModificationDate.getResource()));
+			ps.setMaxRows(1);
+			return ps;
+		}, rs -> {
+			if ( rs.next() ) {
+				return JdbcUtils.getUtcTimestampColumnValue(rs, 1);
+			}
+			return null;
+		});
+	}
+
+	@Override
 	public FilterResults<ModbusRegisterEntity, ModbusRegisterKey> findFiltered(
 			ModbusRegisterFilter filter, List<SortDescriptor> sorts, Long offset, Integer max) {
 		Collection<ModbusRegisterEntity> results;
@@ -144,6 +184,23 @@ public class JdbcModbusRegisterDao extends BaseJdbcGenericDao<ModbusRegisterEnti
 			results = getAll(sorts);
 		}
 		return new BasicFilterResults<>(results);
+	}
+
+	@Override
+	protected String getBatchJdbcStatement(BatchOptions options) {
+		return querySql(SQL_FIND_ALL, null);
+	}
+
+	@Override
+	protected ModbusRegisterEntity getBatchRowEntity(BatchOptions options, ResultSet resultSet,
+			int rowCount) throws SQLException {
+		return getRowMapper().mapRow(resultSet, rowCount);
+	}
+
+	@Override
+	protected void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
+			ModbusRegisterEntity entity) throws SQLException {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

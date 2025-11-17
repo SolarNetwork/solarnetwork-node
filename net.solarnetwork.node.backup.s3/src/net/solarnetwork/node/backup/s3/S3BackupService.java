@@ -22,18 +22,19 @@
 
 package net.solarnetwork.node.backup.s3;
 
+import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.singletonMap;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,7 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class S3BackupService extends BackupServiceSupport
 		implements SettingSpecifierProvider, SettingsChangeObserver {
@@ -192,8 +193,7 @@ public class S3BackupService extends BackupServiceSupport
 
 	@Override
 	public Backup performBackup(Iterable<BackupResource> resources) {
-		final Calendar now = new GregorianCalendar();
-		now.set(Calendar.MILLISECOND, 0);
+		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 		return performBackupInternal(resources, now, null);
 	}
 
@@ -229,7 +229,7 @@ public class S3BackupService extends BackupServiceSupport
 		}
 	}
 
-	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Calendar now,
+	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Instant now,
 			Map<String, String> props) {
 		if ( resources == null ) {
 			return null;
@@ -250,7 +250,7 @@ public class S3BackupService extends BackupServiceSupport
 		Backup listBackupItem = null;
 		try {
 			final Long nodeId = nodeId(props);
-			final String metaName = String.format(META_NAME_FORMAT, now, nodeId);
+			final String metaName = String.format(META_NAME_FORMAT, now.atOffset(UTC), nodeId);
 			final String metaObjectKey = objectKeyForPath(META_OBJECT_KEY_PREFIX + metaName);
 			log.info("Starting backup to archive {}", metaObjectKey);
 
@@ -279,7 +279,7 @@ public class S3BackupService extends BackupServiceSupport
 
 			// now save metadata
 			meta.setComplete(true);
-			meta.setDate(now.getTime());
+			meta.setDate(Date.from(now));
 			meta.setKey(metaName);
 			byte[] metaJsonBytes = OBJECT_MAPPER.writeValueAsBytes(meta);
 			try (ByteArrayInputStream in = new ByteArrayInputStream(metaJsonBytes)) {
@@ -538,10 +538,8 @@ public class S3BackupService extends BackupServiceSupport
 	@Override
 	public Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props) {
 		final Date backupDate = backupDateFromProps(date, props);
-		final Calendar cal = new GregorianCalendar();
-		cal.setTime(backupDate);
-		cal.set(Calendar.MILLISECOND, 0);
-		return performBackupInternal(resources, cal, props);
+		final Instant ts = backupDate.toInstant().truncatedTo(ChronoUnit.SECONDS);
+		return performBackupInternal(resources, ts, props);
 	}
 
 	@Override

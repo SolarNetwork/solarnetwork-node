@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.backup;
 
+import static java.time.ZoneOffset.UTC;
 import static net.solarnetwork.node.backup.BackupStatus.Configured;
 import static net.solarnetwork.node.backup.BackupStatus.Error;
 import static net.solarnetwork.node.backup.BackupStatus.RunningBackup;
@@ -34,15 +35,15 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * the file system.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
@@ -163,12 +164,11 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	@Override
 	public Backup performBackup(final Iterable<BackupResource> resources) {
-		final Calendar now = new GregorianCalendar();
-		now.set(Calendar.MILLISECOND, 0);
+		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 		return performBackupInternal(resources, now, null);
 	}
 
-	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Calendar now,
+	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Instant now,
 			Map<String, String> props) {
 		if ( resources == null ) {
 			return null;
@@ -190,7 +190,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 			backupDir.mkdirs();
 		}
 		final Long nodeId = nodeIdForArchiveFileName(props);
-		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now, nodeId);
+		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now.atOffset(UTC), nodeId);
 		final File archiveFile = new File(backupDir, archiveName);
 		final String archiveKey = getArchiveKey(archiveName);
 		log.info("Starting backup to archive {}", archiveName);
@@ -215,7 +215,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 			zos.flush();
 			zos.finish();
 			log.info("Backup complete to archive {}", archiveName);
-			backup = new SimpleBackup(nodeId, now.getTime(), archiveKey, archiveFile.length(), true);
+			backup = new SimpleBackup(nodeId, Date.from(now), archiveKey, archiveFile.length(), true);
 
 			// clean out older backups
 			File[] backupFiles = getAvailableBackupFiles();
@@ -322,10 +322,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	@Override
 	public Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props) {
 		final Date backupDate = backupDateFromProps(date, props);
-		final Calendar cal = new GregorianCalendar();
-		cal.setTime(backupDate);
-		cal.set(Calendar.MILLISECOND, 0);
-		return performBackupInternal(resources, cal, props);
+		final Instant ts = backupDate.toInstant().truncatedTo(ChronoUnit.SECONDS);
+		return performBackupInternal(resources, ts, props);
 	}
 
 	/**

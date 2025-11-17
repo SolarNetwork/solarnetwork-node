@@ -3,12 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Server (TCP)
 Bundle-Description: Expose a Modbus TCP server for integration with other systems.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server
-Bundle-Version: 5.0.2
+Bundle-Version: 5.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
- net.solarnetwork.node.io.modbus.server.dao;version="1.1.0",
+ net.solarnetwork.node.io.modbus.server.dao;version="1.2.0",
  net.solarnetwork.node.io.modbus.server.domain;version="1.0.0"
 Import-Package: 
  io.netty.bootstrap;version="[4.2,5.0)",
@@ -32,8 +32,9 @@ Import-Package:
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
- net.solarnetwork.node.service;version="[1.0,2.0)",
- net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.node.job;version="[2.2,3.0)",
+ net.solarnetwork.node.service;version="[1.14,2.0)",
+ net.solarnetwork.node.service.support;version="[1.13,2.0)",
  net.solarnetwork.node.settings;version="[2.2,3.0)",
  net.solarnetwork.node.settings.support;version="[2.0,3.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
@@ -54,6 +55,8 @@ Import-Package:
  org.springframework.core.task;version="[6.2,7.0)",
  org.springframework.scheduling;version="[6.2,7.0)",
  org.springframework.scheduling.concurrent;version="[6.2,7.0)",
+ org.springframework.transaction;version="[6.2,7.0)",
+ org.springframework.transaction.support;version="[6.2,7.0)",
  org.supercsv.io;version="[2.0,3.0)",
  org.supercsv.prefs;version="[2.0,3.0)",
  org.supercsv.util;version="[2.0,3.0)"

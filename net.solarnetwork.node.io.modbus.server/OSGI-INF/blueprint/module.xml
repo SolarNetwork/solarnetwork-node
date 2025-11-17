@@ -37,6 +37,13 @@
 		<property name="sticky" value="true"/>
 	</bean>	
 	
+	<bean id="txManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.transaction.PlatformTransactionManager"/>
+		<property name="serviceFilter" value="(db=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
@@ -119,5 +126,51 @@
 			<property name="registerDao" ref="registerDao"/>
 		</bean>
 	</osgix:managed-service-factory>
-		
+	
+	<!-- 
+		Persistence Backup
+	 -->
+	
+	<bean id="csvBackupService" class="net.solarnetwork.node.io.modbus.server.impl.ModbusRegisterDaoCsvBackupService">
+			<argument ref="registerDao"/>
+		<property name="transactionManager" ref="txManager"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.io.modbus.server.impl.ModbusRegisterDaoCsvBackupService</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<service ref="csvBackupService">
+		<interfaces>
+			<value>net.solarnetwork.node.service.CsvConfigurableBackupService</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.io.modbus.server.ModbusRegisterBackupJob"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.io.modbus.server.ModbusRegisterBackupJob" autowire-on-update="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.job.CsvConfigurableBackupServiceJob">
+					<argument ref="csvBackupService"/>
+					<argument value="net.solarnetwork.node.io.modbus.server.ModbusRegisterBackupJob"/>
+					<property name="messageSource">
+						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+							<property name="basenames" value="net.solarnetwork.node.io.modbus.server.impl.ModbusRegisterDaoCsvBackupServiceJob"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 0/15 * * * ?"/>
+		</bean>
+	</service>
+
 </blueprint>

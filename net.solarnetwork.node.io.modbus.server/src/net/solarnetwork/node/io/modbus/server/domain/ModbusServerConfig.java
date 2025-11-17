@@ -23,7 +23,10 @@
 package net.solarnetwork.node.io.modbus.server.domain;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingValueBean;
 
@@ -31,7 +34,7 @@ import net.solarnetwork.node.settings.SettingValueBean;
  * Overall configuration for a Modbus data source.
  *
  * @author matt
- * @version 1.1
+ * @version 1.3
  * @since 2.2
  */
 public class ModbusServerConfig {
@@ -40,6 +43,7 @@ public class ModbusServerConfig {
 	private String bindAddress;
 	private Integer port;
 	private Long requestThrottle;
+	private final Map<String, String> meta = new LinkedHashMap<>(8);
 	private final List<UnitConfig> unitConfigs = new ArrayList<>(8);
 
 	/**
@@ -75,6 +79,10 @@ public class ModbusServerConfig {
 		addSetting(settings, providerId, key, "requestThrottle", requestThrottle);
 		addSetting(settings, providerId, key, "unitConfigsCount", getUnitConfigsCount());
 
+		for ( Entry<String, String> e : meta.entrySet() ) {
+			addSetting(settings, providerId, key, e.getKey(), e.getValue());
+		}
+
 		int i = 0;
 		for ( UnitConfig propConfig : unitConfigs ) {
 			settings.addAll(propConfig.toSettingValues(providerId, key, i++));
@@ -108,7 +116,8 @@ public class ModbusServerConfig {
 					setRequestThrottle(Long.valueOf(val));
 					break;
 				default:
-					// ignore
+					meta.put(type, val);
+					break;
 			}
 		}
 		return true;
@@ -147,7 +156,12 @@ public class ModbusServerConfig {
 			builder.append(requestThrottle);
 			builder.append(", ");
 		}
-		if ( unitConfigs != null ) {
+		if ( !meta.isEmpty() ) {
+			builder.append("meta=");
+			builder.append(meta);
+			builder.append(", ");
+		}
+		if ( !unitConfigs.isEmpty() ) {
 			builder.append("unitConfigs=");
 			builder.append(unitConfigs);
 		}
@@ -232,9 +246,19 @@ public class ModbusServerConfig {
 	}
 
 	/**
+	 * Get the metadata.
+	 *
+	 * @return the metadata; never {@code null}
+	 * @since 1.3
+	 */
+	public Map<String, String> getMeta() {
+		return meta;
+	}
+
+	/**
 	 * Get the unit configurations.
 	 *
-	 * @return the configurations, never {@literal null}
+	 * @return the configurations, never {@code null}
 	 */
 	public List<UnitConfig> getUnitConfigs() {
 		return unitConfigs;

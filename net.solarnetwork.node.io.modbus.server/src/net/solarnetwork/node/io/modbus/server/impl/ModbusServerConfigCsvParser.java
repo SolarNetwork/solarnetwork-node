@@ -37,6 +37,7 @@ import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColum
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +58,7 @@ import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
  * Parse CSV data into {@link ModbusServerConfig} instances.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.3
  */
 public class ModbusServerConfigCsvParser {
@@ -98,6 +99,7 @@ public class ModbusServerConfigCsvParser {
 		}
 		@SuppressWarnings("unused")
 		final String[] headerRow = csv.getHeader(true);
+		final Map<String, String> configMeta = new HashMap<>(8);
 		List<String> row = null;
 		ModbusServerConfig config = null;
 		Map<String, Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>>> instUnitBlockMapping = new LinkedHashMap<>();
@@ -111,10 +113,22 @@ public class ModbusServerConfigCsvParser {
 			final int rowLen = row.size();
 			final int rowNum = csv.getRowNumber();
 			final String key = rowKeyValue(row, config);
-			if ( key == null || key.startsWith("#") ) {
+			if ( key == null ) {
 				// either a comment line, or empty key but no active configuration
 				continue;
 			}
+			if ( key.startsWith("#") ) {
+				if ( "#param".equalsIgnoreCase(key) && rowLen >= 3 ) {
+					String metaKey = row.get(1);
+					String metaVal = row.get(2);
+					if ( metaKey != null && !metaKey.isEmpty() && metaVal != null
+							&& !metaVal.isEmpty() ) {
+						configMeta.put(metaKey, metaVal);
+					}
+				}
+				continue;
+			}
+
 			if ( config == null || (key != null && !key.equals(config.getKey())) ) {
 				// starting new modbus server config
 				config = new ModbusServerConfig();
@@ -123,6 +137,8 @@ public class ModbusServerConfigCsvParser {
 				config.setBindAddress(parseStringValue(row, rowLen, rowNum, BIND_ADDRESS.getCode()));
 				config.setPort(parseIntegerValue(row, rowLen, rowNum, PORT.getCode()));
 				config.setRequestThrottle(parseLongValue(row, rowLen, rowNum, THROTTLE.getCode()));
+				config.getMeta().putAll(configMeta);
+				configMeta.clear();
 				instUnitBlockMapping.put(key, new LinkedHashMap<>());
 			}
 

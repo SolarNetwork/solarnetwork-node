@@ -27,13 +27,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.springframework.test.context.transaction.BeforeTransaction;
+import net.solarnetwork.dao.BasicBatchOptions;
+import net.solarnetwork.dao.BatchableDao.BatchCallback;
+import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
@@ -47,7 +55,7 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test cases for the {@link JdbcModbusRegisterDao} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcModbusRegisterDaoTests extends AbstractNodeTransactionalTest {
 
@@ -153,6 +161,102 @@ public class JdbcModbusRegisterDaoTests extends AbstractNodeTransactionalTest {
 		FilterResults<ModbusRegisterEntity, ModbusRegisterKey> results3 = dao
 				.findFiltered(forServerId("test.nope"));
 		assertThat("Results found in order", results3, emptyIterable());
+	}
+
+	@Test
+	public void batchExport() {
+		// GIVEN
+		ModbusRegisterEntity obj1 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 1, (short) 0xFF);
+		ModbusRegisterEntity obj2 = createTestModbusRegisterEntity("test2", 1,
+				ModbusRegisterBlockType.Holding, 2, (short) 0xEE);
+		ModbusRegisterEntity obj3 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 3, (short) 0xDD);
+
+		obj1 = dao.get(dao.save(obj1));
+		obj2 = dao.get(dao.save(obj2));
+		obj3 = dao.get(dao.save(obj3));
+
+		final List<ModbusRegisterEntity> allEntities = List.of(obj1, obj3, obj2);
+
+		// WHEN
+		List<ModbusRegisterEntity> results = new ArrayList<>();
+		BasicBatchOptions opts = new BasicBatchOptions("export", 50, false, Map.of());
+		dao.batchProcess(new BatchCallback<ModbusRegisterEntity>() {
+
+			@Override
+			public BatchCallbackResult handle(ModbusRegisterEntity entity) {
+				results.add(entity);
+				return BatchCallbackResult.CONTINUE;
+			}
+		}, opts);
+
+		// THEN
+		assertThat("Expected processed count", results, hasSize(allEntities.size()));
+		assertThat("Expected results returned", results,
+				contains(allEntities.toArray(ModbusRegisterEntity[]::new)));
+	}
+
+	@Test
+	public void deleteAll() {
+		// GIVEN
+		ModbusRegisterEntity obj1 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 1, (short) 0xFF);
+		ModbusRegisterEntity obj2 = createTestModbusRegisterEntity("test2", 1,
+				ModbusRegisterBlockType.Holding, 2, (short) 0xEE);
+		ModbusRegisterEntity obj3 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 3, (short) 0xDD);
+
+		obj1 = dao.get(dao.save(obj1));
+		obj2 = dao.get(dao.save(obj2));
+		obj3 = dao.get(dao.save(obj3));
+
+		// WHEN
+		int result = dao.deleteAll();
+
+		// THEN
+		assertThat("Result count is all entities", result, is(equalTo(3)));
+
+		Collection<ModbusRegisterEntity> results = dao.getAll(null);
+		assertThat("No entities available", results, hasSize(0));
+	}
+
+	@Test
+	public void getMostRecentMoficationDate() throws Exception {
+		// GIVEN
+		ModbusRegisterEntity obj1 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 1, (short) 0xFF);
+		ModbusRegisterEntity obj2 = createTestModbusRegisterEntity("test2", 1,
+				ModbusRegisterBlockType.Holding, 2, (short) 0xEE);
+		ModbusRegisterEntity obj3 = createTestModbusRegisterEntity("test1", 1,
+				ModbusRegisterBlockType.Holding, 3, (short) 0xDD);
+
+		obj1 = dao.get(dao.save(obj1));
+		obj2 = dao.get(dao.save(obj2));
+		obj3 = dao.get(dao.save(obj3));
+
+		Thread.sleep(50);
+
+		obj2 = dao.get(dao.save(createTestModbusRegisterEntity("test2", 1,
+				ModbusRegisterBlockType.Holding, 2, (short) 0xEF)));
+
+		// WHEN
+		Instant result = dao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("Result is from most recently modified entity", result,
+				is(equalTo(obj2.getModified())));
+	}
+
+	@Test
+	public void getMostRecentMoficationDate_none() throws Exception {
+		// GIVEN
+
+		// WHEN
+		Instant result = dao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("No modification date avaiable when no data", result, is(nullValue()));
 	}
 
 }

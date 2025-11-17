@@ -4,7 +4,7 @@ Bundle-Name: Modbus Server Persistence (JDBC)
 Bundle-Description: Provides persistence for Modbus Server register data so server state is 
  preserved across SolarNode restarts.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server.dao.jdbc
-Bundle-Version: 2.0.1
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server.dao.jdbc
 Bundle-RequiredExecutionEnvironment: JavaSE-17
@@ -16,7 +16,7 @@ Import-Package:
  net.solarnetwork.node.backup;version="[2.0,3.0)",
  net.solarnetwork.node.dao.jdbc;version="[3.0,4.0)",
  net.solarnetwork.node.io.modbus;version="[5.0,6.0)",
- net.solarnetwork.node.io.modbus.server.dao;version="[1.1,2.0)",
+ net.solarnetwork.node.io.modbus.server.dao;version="[1.2,2.0)",
  net.solarnetwork.node.io.modbus.server.domain;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
