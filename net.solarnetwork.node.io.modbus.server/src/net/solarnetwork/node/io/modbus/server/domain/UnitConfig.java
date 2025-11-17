@@ -43,7 +43,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for a single Modbus unit.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class UnitConfig {
 
@@ -126,6 +126,10 @@ public class UnitConfig {
 	 * @since 2.1
 	 */
 	public static boolean populateFromSetting(ModbusServerConfig config, Setting setting) {
+		if ( "unitConfigsCount".equals(setting.getType()) ) {
+			// return true so treated as handled by caller
+			return true;
+		}
 		Matcher m = UNIT_SETTING_PATTERN.matcher(setting.getType());
 		if ( !m.matches() ) {
 			return false;

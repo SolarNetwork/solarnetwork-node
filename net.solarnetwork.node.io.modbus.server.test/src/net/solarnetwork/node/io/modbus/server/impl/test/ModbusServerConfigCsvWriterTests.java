@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusServerConfigCsvWriterTests.java - 10/03/2022 10:34:05 AM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,7 +42,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusServerConfigCsvWriter} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -89,6 +89,31 @@ public class ModbusServerConfigCsvWriterTests {
 
 		// THEN
 		String[] expected = resourceLines("test-settings-01-output.csv");
+		try (BufferedReader r = new BufferedReader(new StringReader(out.toString()))) {
+			int i = 0;
+			String line = null;
+			while ( (line = r.readLine()) != null ) {
+				assertThat(String.format("Wrote CSV line %d", (i + 1)), line.trim(), is(expected[i]));
+				i++;
+			}
+			assertThat("Generated expected line count", i, is(expected.length));
+		}
+	}
+
+	@Test
+	public void writeCsv_withParams() throws IOException {
+		// GIVEN
+		List<Setting> settings = loadSettingsCsv("test-settings-01-with-params.csv");
+
+		// WHEN
+		final StringWriter out = new StringWriter(4096);
+		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+			ModbusServerConfigCsvWriter gen = new ModbusServerConfigCsvWriter(writer);
+			gen.generateCsv(ModbusServer.SETTING_UID, "1", settings);
+		}
+
+		// THEN
+		String[] expected = resourceLines("test-settings-01-output-with-params.csv");
 		try (BufferedReader r = new BufferedReader(new StringReader(out.toString()))) {
 			int i = 0;
 			String line = null;

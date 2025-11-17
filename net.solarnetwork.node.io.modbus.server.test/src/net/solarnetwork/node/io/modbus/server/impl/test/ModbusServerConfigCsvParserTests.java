@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.modbus.server.impl.test;
 import static java.lang.String.format;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import java.io.IOException;
@@ -115,6 +116,36 @@ public class ModbusServerConfigCsvParserTests {
 		assertThat(format("Measurement config %s decimal scale", msg), measConfig.getDecimalScale(),
 				is(scale));
 
+	}
+
+	@Test
+	public void parse_deviceDetails_withParams() throws IOException {
+		// GIVEN
+
+		// WHEN
+		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-02.csv"),
+				ByteUtils.UTF8);
+				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+			parser.parse(csv);
+		}
+
+		// THEN
+		assertThat("Read device infos", results, hasSize(2));
+		ModbusServerConfig config = results.get(0);
+		assertThat("Key parsed", config.getKey(), is("P1"));
+		assertThat("Bind address parsed", config.getBindAddress(), is("0.0.0.0"));
+		assertThat("Port parsed", config.getPort(), is(5502));
+		assertThat("Request throttle parsed", config.getRequestThrottle(), is(10L));
+		assertThat("Metadata UID parsed", config.getMeta(), hasEntry("uid", "Test1"));
+
+		config = results.get(1);
+		assertThat("Key parsed", config.getKey(), is("P2"));
+		assertThat("Bind address parsed", config.getBindAddress(), is("127.0.0.1"));
+		assertThat("Port parsed", config.getPort(), is(5503));
+		assertThat("Request throttle parsed", config.getRequestThrottle(), is(11L));
+		assertThat("Metadata UID parsed", config.getMeta(), hasEntry("uid", "Test2"));
+		assertThat("Metadata allowWrites parsed", config.getMeta(), hasEntry("allowWrites", "true"));
+		assertThat("Metadata daoRequired parsed", config.getMeta(), hasEntry("daoRequired", "true"));
 	}
 
 	@Test
