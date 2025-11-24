@@ -43,6 +43,7 @@ import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.EventMessageRegistrar;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.PlatformService;
@@ -87,6 +88,7 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 	private static Map<String, String> defaultTopicMapping() {
 		Map<String, String> map = new HashMap<>();
 		map.put(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, "datum/captured/{sourceId}");
+		map.put(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, "datum/acquired/{sourceId}");
 		map.put(DatumDao.EVENT_TOPIC_DATUM_STORED, "datum/stored/{sourceId}");
 		map.put(UploadService.EVENT_TOPIC_DATUM_UPLOADED, "datum/uploaded/{sourceId}");
 		map.put(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, "control/captured/{controlId}");
