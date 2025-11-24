@@ -58,7 +58,7 @@ import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
  * Parse CSV data into {@link ModbusServerConfig} instances.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.3
  */
 public class ModbusServerConfigCsvParser {
@@ -233,7 +233,7 @@ public class ModbusServerConfigCsvParser {
 							// starting new block
 							blockConfig = new RegisterBlockConfig();
 							blockConfig.setBlockType(blockType);
-							blockConfig.setStartAddress(registerAddress < 0 ? addr : registerAddress);
+							blockConfig.setStartAddress(addr);
 							unitConfig.setRegisterBlockConfigsCount(
 									unitConfig.getRegisterBlockConfigsCount() + 1);
 							unitConfig
