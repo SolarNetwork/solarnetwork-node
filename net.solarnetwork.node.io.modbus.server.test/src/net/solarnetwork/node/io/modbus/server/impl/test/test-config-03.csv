@@ -1,0 +1,7 @@
+Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,Data Length,Source ID,Property,Multiplier,Decimal Scale,Units
+P1,0.0.0.0,5502,100,1,Holding,1000,32-bit float,,/ev/1,amps_a,,,
+,,,,,,,32-bit float,,/ev/1,amps_b,,,
+,,,,,,,32-bit float,,/ev/1,amps_c,,,
+,,,,,,2000,32-bit float,,/ev/1,meter_amps_a,,,
+,,,,,,,32-bit float,,/ev/1,meter_amps_b,,,
+,,,,,,,32-bit float,,/ev/1,meter_amps_c,,,

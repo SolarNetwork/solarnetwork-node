@@ -149,6 +149,59 @@ public class ModbusServerConfigCsvParserTests {
 	}
 
 	@Test
+	public void parse_deviceDetails_addrBlockJump() throws IOException {
+		// GIVEN
+
+		// WHEN
+		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-03.csv"),
+				ByteUtils.UTF8);
+				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+			parser.parse(csv);
+		}
+
+		// THEN
+		assertThat("Read device infos", results, hasSize(1));
+		ModbusServerConfig config = results.get(0);
+		assertThat("Key parsed", config.getKey(), is("P1"));
+		assertThat("Bind address parsed", config.getBindAddress(), is("0.0.0.0"));
+		assertThat("Port parsed", config.getPort(), is(5502));
+		assertThat("Request throttle parsed", config.getRequestThrottle(), is(100L));
+
+		assertThat("Units parsed", config.getUnitConfigs(), hasSize(1));
+
+		UnitConfig unitConfig = config.getUnitConfigs().get(0);
+		assertThat("Unit ID parsed", unitConfig.getUnitId(), is(1));
+		assertThat("2 block configs parsed because of address jump",
+				unitConfig.getRegisterBlockConfigs(), is(arrayWithSize(2)));
+
+		RegisterBlockConfig blockConfig = unitConfig.getRegisterBlockConfigs()[0];
+		assertThat("Parsed holding block 1", blockConfig.getBlockType(),
+				is(ModbusRegisterBlockType.Holding));
+		assertThat("Parsed starting address", blockConfig.getStartAddress(), is(1000));
+		assertThat("Measurement configs parsed", blockConfig.getMeasurementConfigs(),
+				is(arrayWithSize(3)));
+		assertMeasConfig("1", blockConfig.getMeasurementConfigs()[0], "/ev/1", "amps_a",
+				ModbusDataType.Float32, null, null, null);
+		assertMeasConfig("2", blockConfig.getMeasurementConfigs()[1], "/ev/1", "amps_b",
+				ModbusDataType.Float32, null, null, null);
+		assertMeasConfig("3", blockConfig.getMeasurementConfigs()[2], "/ev/1", "amps_c",
+				ModbusDataType.Float32, null, null, null);
+
+		RegisterBlockConfig blockConfig2 = unitConfig.getRegisterBlockConfigs()[1];
+		assertThat("Parsed holding block 2", blockConfig2.getBlockType(),
+				is(ModbusRegisterBlockType.Holding));
+		assertThat("Parsed starting address", blockConfig2.getStartAddress(), is(2000));
+		assertThat("Measurement configs parsed", blockConfig2.getMeasurementConfigs(),
+				is(arrayWithSize(3)));
+		assertMeasConfig("1", blockConfig2.getMeasurementConfigs()[0], "/ev/1", "meter_amps_a",
+				ModbusDataType.Float32, null, null, null);
+		assertMeasConfig("2", blockConfig2.getMeasurementConfigs()[1], "/ev/1", "meter_amps_b",
+				ModbusDataType.Float32, null, null, null);
+		assertMeasConfig("3", blockConfig2.getMeasurementConfigs()[2], "/ev/1", "meter_amps_c",
+				ModbusDataType.Float32, null, null, null);
+	}
+
+	@Test
 	public void parse_deviceDetails_sample01() throws IOException {
 		// GIVEN
 
