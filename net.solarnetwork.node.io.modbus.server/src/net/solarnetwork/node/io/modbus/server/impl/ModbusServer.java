@@ -91,7 +91,7 @@ import net.solarnetwork.util.StringUtils;
  * Modbus TCP server service.
  *
  * @author matt
- * @version 3.4
+ * @version 3.5
  */
 public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
@@ -582,6 +582,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
 		result.add(new BasicToggleSettingSpecifier("daoRequired", false));
+		result.add(new BasicToggleSettingSpecifier("wireLogging", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
 		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
