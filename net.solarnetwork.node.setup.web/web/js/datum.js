@@ -238,7 +238,7 @@ $(document).ready(function() {
 			console.info('Got %o message: %o', activity.event, activity);
 			
 			// ignore DATUM_CAPTURED events to only show DATUM_ACQUIRED
-			if ( activity === 'DATUM_CAPTURED' ) {
+			if ( activity.event === 'DATUM_CAPTURED' ) {
 				return;
 			}
 			
