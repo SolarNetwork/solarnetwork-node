@@ -22,6 +22,17 @@ SolarNode.Datum = (function() {
 	}
 
 	/**
+	 * Subscribe to the "datum acquired" topic.
+	 *
+	 * @param {string} [sourceId] an optional source ID to subscribe to; if not provided all sources are subscribed
+	 * @param {function} msgHandler the callback function that accepts error and message arguments
+	 */
+	function subscribeDatumAcquired(sourceId, msgHandler) {
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/acquired', sourceId);
+		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
+	}
+
+	/**
 	 * Subscribe to the "datum stored" topic.
 	 *
 	 * @param {string} [sourceId] an optional source ID to subscribe to; if not provided all sources are subscribed
@@ -85,7 +96,8 @@ SolarNode.Datum = (function() {
 		var eventName = activity.event;
 		if ( eventName === 'DATUM_STORED' ) {
 			return 'bi bi-hdd';
-		} else if ( eventName === 'DATUM_CAPTURED'
+		} else if (	eventName === 'DATUM_ACQUIRED'
+				|| eventName === 'DATUM_CAPTURED'
 				|| eventName === 'CONTROL_INFO_CAPTURED'
 				|| eventName === 'CONTROL_INFO_CHANGED' ) {
 			return 'bi bi-plus-lg';
@@ -194,6 +206,7 @@ SolarNode.Datum = (function() {
 		subscribeControl : { value : subscribeControl },
 
 		subscribeDatum : { value : subscribeDatum },
+		subscribeDatumAcquired : { value : subscribeDatumAcquired },
 		subscribeDatumCaptured : { value : subscribeDatumCaptured },
 		subscribeDatumStored : { value : subscribeDatumStored },
 
@@ -223,7 +236,12 @@ $(document).ready(function() {
 			var datum = JSON.parse(msg.body).data,
 				activity = SolarNode.Datum.datumActivityForDatum(datum);
 			console.info('Got %o message: %o', activity.event, activity);
-
+			
+			// ignore DATUM_CAPTURED events to only show DATUM_ACQUIRED
+			if ( activity.event === 'DATUM_CAPTURED' ) {
+				return;
+			}
+			
 			SolarNode.Datum.addDatumActivityTableRow(activityTableBody, activityTableTemplateRow, activity);
 			activityTableBody.find('>*:gt(9)').remove();
 			if ( activity.event !== 'DATUM_UPLOADED' ) {

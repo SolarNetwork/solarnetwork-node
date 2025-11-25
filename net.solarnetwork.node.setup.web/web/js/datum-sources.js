@@ -25,9 +25,18 @@ $(document).ready(function datumSourcesManagement() {
 	 * @property {string[]} sourceIds - the source IDs
 	 */
 
+	/**
+	 * Datum source information.
+	 * 
+	 * @typedef {Object} DatumUpdateInfo
+	 * @property {Number} [timeout] the timeout handle
+	 * @property {Object} [acquired] the acquired datum
+	 * @property {Object} [captured] the captured datum
+	 */
+
 	/** @type Array<HostInfo> */
 
-	
+		
 	const sourceIdTemplate = $('#datum-sources .template');
 	const sourceIdContainer = $('#datum-sources .list-container');
 
@@ -35,6 +44,9 @@ $(document).ready(function datumSourcesManagement() {
 	const datumDetailsContainer = $('#datum-sources-datum-detail-modal .list-container');
 	
 	const sourceIdRows = new Map();
+	
+	/** @type Map<String, DatumUpdateInfo> */
+	const datumUpdates = new Map();
 	
 	function setupSourceIds(/** @type {DatumSourceInfo[]} */ infos) {
 		sourceIdRows.clear();
@@ -113,12 +125,61 @@ $(document).ready(function datumSourcesManagement() {
 		$('#datum-sources-datum-detail-modal').data('datum', datum).modal('show');
 	}
 	
+	/*
+		Datum event handling:
+		
+		Captured events occur before filter processing, followed by Acquired events.
+		An Acquired event may never come, however, if the datum is filtered out completely.
+		We want to display the Acquired event when possible, so the final filtered datum
+		is shown.
+		
+		Thus we handle both Captured and Acquired events, with a small delay after a
+		Captured event to wait for a possible Acquired event. If an Acquired event comes,
+		then show that, otherwise fall back to the Captured event.
+	*/
+	
 	function handleDatumCapturedMessage(msg) {
 		const datum = JSON.parse(msg.body).data,
 			sourceId = datum ? datum.sourceId : undefined;
 		if ( !sourceId ) {
 			return;
 		}
+		
+		let update = datumUpdates.get(sourceId);
+		if ( !update ) {
+			update = {captured:datum};
+			datumUpdates.set(sourceId, update);
+			update.timeout = setTimeout(renderDatumUpdate, 300, sourceId);
+		}
+	}
+	
+	function handleDatumAcquiredMessage(msg) {
+		const datum = JSON.parse(msg.body).data,
+			sourceId = datum ? datum.sourceId : undefined;
+		if ( !sourceId ) {
+			return;
+		}
+		
+		let update = datumUpdates.get(sourceId);
+		if ( update ) {
+			clearTimeout(update.timeout);
+			update.acquired = datum;
+		} else {
+			update = {acquired:datum};
+			datumUpdates.set(sourceId, update);
+		}
+		renderDatumUpdate(sourceId);
+	}
+
+	function renderDatumUpdate(sourceId) {
+		const update = datumUpdates.get(sourceId);
+		if (!update) {
+			return;
+		}
+		datumUpdates.delete(sourceId);
+
+		const datum = update.acquired || update.captured;
+		
 		const itemEl = sourceIdRows.get(sourceId);
 		if ( !itemEl ) {
 			return;
@@ -130,7 +191,7 @@ $(document).ready(function datumSourcesManagement() {
 			.removeClass('hidden')
 			;
 	}
-	
+
 	$('#datum-sources-datum-detail-modal')
 		.on('show.bs.modal', function() {
 			const modal = $(this)
@@ -161,6 +222,7 @@ $(document).ready(function datumSourcesManagement() {
 		if ( data && data.success === true ) {
 			setupSourceIds(data.data);
 			SolarNode.Datum.subscribeDatumCaptured(null, handleDatumCapturedMessage);
+			SolarNode.Datum.subscribeDatumAcquired(null, handleDatumAcquiredMessage);
 		}
 	}).always(() => {
 		toggleLoading(false);
