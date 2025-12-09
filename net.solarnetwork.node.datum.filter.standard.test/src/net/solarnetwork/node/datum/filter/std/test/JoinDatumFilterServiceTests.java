@@ -1,21 +1,21 @@
 /* ==================================================================
  * JoinDatumFilterServiceTests.java - 17/02/2022 10:38:11 AM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,6 +23,11 @@
 package net.solarnetwork.node.datum.filter.std.test;
 
 import static java.lang.String.format;
+import static java.util.Map.entry;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.InstanceOfAssertFactories.map;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -34,6 +39,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +51,7 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.datum.filter.std.JoinDatumFilterService;
@@ -54,9 +63,9 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link JoinDatumFilterService} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JoinDatumFilterServiceTests {
 
@@ -66,24 +75,32 @@ public class JoinDatumFilterServiceTests {
 	private static final String PROP_2 = "amps";
 	private static final String OUTPUT_SOURCE_ID = "OUT";
 
+	private InstantSource sampleClock;
 	private DatumQueue datumQueue;
+	private SimpleAsyncTaskScheduler scheduler;
 	private JoinDatumFilterService xform;
 
 	@Before
 	public void setup() {
+		sampleClock = EasyMock.createMock(InstantSource.class);
 		datumQueue = EasyMock.createMock(DatumQueue.class);
-		xform = new JoinDatumFilterService(new StaticOptionalService<>(datumQueue));
+		xform = new JoinDatumFilterService(sampleClock, new StaticOptionalService<>(datumQueue));
 		xform.setSourceId("^F");
 		xform.setOutputSourceId(OUTPUT_SOURCE_ID);
+
+		scheduler = new SimpleAsyncTaskScheduler();
+		scheduler.start();
+		xform.setTaskScheduler(scheduler);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumQueue);
+		scheduler.stop();
+		EasyMock.verify(sampleClock, datumQueue);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumQueue);
+		EasyMock.replay(sampleClock, datumQueue);
 	}
 
 	private SimpleDatum createTestSimpleDatum(String sourceId, String prop, Number val) {
@@ -278,6 +295,106 @@ public class JoinDatumFilterServiceTests {
 				hasEntry(format("%s_s1", PROP_1), 123));
 		assertThat("Output prop 2 mapped from 2rd input datum", i,
 				hasEntry(format("%s_s2", PROP_2), 234));
+	}
+
+	@Test
+	public void coalesce_withTimeout() throws Exception {
+		// GIVEN
+		xform.setCoalesceThreshold(2);
+		xform.setCoalesceTimeout(Duration.ofSeconds(1));
+		xform.setPropertySourceMappings(
+				new PatternKeyValuePair[] { new PatternKeyValuePair("_(\\d+)$", "{p}_s{1}") });
+		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true);
+
+		final Instant timestamp = Instant.now().minusSeconds(1L);
+		expect(sampleClock.instant()).andReturn(timestamp);
+
+		// WHEN
+		replayAll();
+		xform.start();
+
+		final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID_1, PROP_1, 123);
+		DatumSamplesOperations result1 = null;
+		try {
+			result1 = xform.filter(d1, d1.getSamples(), null);
+			Thread.sleep(xform.getCoalesceTimeout().plusMillis(200).toMillis());
+		} finally {
+			xform.stop();
+		}
+
+		// THEN
+		// @formatter:off
+		then(result1)
+			.as("Result 1 unchanged")
+			.isSameAs(d1.getSamples())
+			;
+		then(outputCaptor.getValue())
+			.as("Output datum generated after timeout even though < coalesce threshold sources seen")
+			.isInstanceOf(SimpleDatum.class)
+			.asInstanceOf(type(SimpleDatum.class))
+			.as("Generated datum for configured output source and clock time")
+			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
+			.as("Only properties from seen sample included")
+			.containsExactly(entry(format("%s_s1", PROP_1), 123))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void coalesce_withTimeout_thresholdMet() throws Exception {
+		// GIVEN
+		xform.setCoalesceThreshold(2);
+		xform.setCoalesceTimeout(Duration.ofSeconds(1));
+		xform.setPropertySourceMappings(
+				new PatternKeyValuePair[] { new PatternKeyValuePair("_(\\d+)$", "{p}_s{1}") });
+		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true);
+
+		// WHEN
+		replayAll();
+		xform.start();
+
+		final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID_1, PROP_1, 123);
+		Thread.sleep(100);
+		final SimpleDatum d2 = createTestSimpleDatum(SOURCE_ID_2, PROP_2, 234);
+
+		DatumSamplesOperations result1 = null;
+		DatumSamplesOperations result2 = null;
+		try {
+			result1 = xform.filter(d1, d1.getSamples(), null);
+			Thread.sleep(100);
+			result2 = xform.filter(d2, d2.getSamples(), null);
+			Thread.sleep(xform.getCoalesceTimeout().minusMillis(200).toMillis());
+		} finally {
+			xform.stop();
+		}
+
+		// THEN
+		// @formatter:off
+		then(result1)
+			.as("Result 1 unchanged")
+			.isSameAs(d1.getSamples())
+			;
+		then(result2)
+			.as("Result 2 unchanged")
+			.isSameAs(d2.getSamples())
+			;
+		then(outputCaptor.getValue())
+			.as("Output datum generated immediately after coalesce threshold met")
+			.isInstanceOf(SimpleDatum.class)
+			.asInstanceOf(type(SimpleDatum.class))
+			.as("Generated datum for configured output source and most recently collected sample")
+			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, d2.getTimestamp()), from(SimpleDatum::getId))
+			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
+			.as("Properties from seen samples included")
+			.containsExactly(
+					  entry(format("%s_s1", PROP_1), 123)
+					, entry(format("%s_s2", PROP_2), 234)
+					)
+			;
+		// @formatter:on
 	}
 
 }
