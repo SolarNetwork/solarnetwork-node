@@ -4,7 +4,7 @@ Bundle-Name: Datum Filters (Standard)
 Bundle-SymbolicName: net.solarnetwork.node.datum.filter.standard
 Automatic-Module-Name: net.solarnetwork.node.datum.filter.standard
 Bundle-Description: Services to filter out unwanted datum, or datum properties, from collected datum samples.
-Bundle-Version: 4.3.0
+Bundle-Version: 4.3.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

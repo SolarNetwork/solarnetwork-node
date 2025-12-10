@@ -164,8 +164,10 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 	 * @return the timeout, or {@code null} if not applicable
 	 */
 	private Duration effectiveTimeout() {
+		final String outSourceId = nonEmptyString(getSourceId());
 		final Duration duration = getTimeout();
-		if ( taskScheduler == null || duration == null || duration.compareTo(Duration.ZERO) <= 0 ) {
+		if ( taskScheduler == null || outSourceId == null || duration == null
+				|| duration.compareTo(Duration.ZERO) <= 0 ) {
 			return null;
 		}
 		return duration;

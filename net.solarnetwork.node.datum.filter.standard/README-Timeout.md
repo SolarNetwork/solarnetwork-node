@@ -8,7 +8,7 @@ configurable timeout.
 Once installed, a new **Timeout Datum Filter** component will appear on the **Settings > Datum Filter**
 page on your SolarNode. Click on the **Manage** button to configure filters.
 
-<img alt="Timeout filter settings" src="docs/solarnode-timeout-filter-settings@2x.png" width="872">
+<img alt="Timeout filter settings" src="docs/solarnode-timeout-filter-settings@2x.png" width="882">
 
 # Settings
 
