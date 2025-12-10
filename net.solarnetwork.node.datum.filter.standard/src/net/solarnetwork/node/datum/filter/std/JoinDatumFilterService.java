@@ -22,10 +22,15 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import static java.time.Instant.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -43,8 +50,10 @@ import net.solarnetwork.node.service.DatumSourceIdProvider;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
@@ -55,10 +64,11 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
-		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
+		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver,
+		DatumSourceIdProvider, ServiceLifecycleObserver, Runnable {
 
 	/** The template parameter name for a property name to be mapped. */
 	public static final String PROPERTY_NAME_PARAMETER_KEY = "p";
@@ -82,34 +92,163 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	private final Set<String> coalescedSourceIds = new HashSet<>(4, 0.9f);
 
 	private final OptionalService<DatumQueue> datumQueue;
+	private final InstantSource sampleClock;
 	private String outputSourceId;
 	private int coalesceThreshold = DEFAULT_COALESCE_THRESHOLD;
+	private Duration coalesceTimeout;
 	private boolean swallowInput = DEFAULT_SWALLOW_INPUT;
 	private boolean persist = DEFAULT_PERSIST;
 	private PatternKeyValuePair[] propertySourceMappings;
+	private TaskScheduler taskScheduler;
+	private int startupDelay;
+
+	private ScheduledFuture<?> startupFuture;
+	private ScheduledFuture<?> coalesceFuture;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param datumQueue
 	 *        the datum queue
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public JoinDatumFilterService(OptionalService<DatumQueue> datumQueue) {
+		this(Clock.systemUTC(), datumQueue);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param sampleClock
+	 *        the sample clock
+	 * @param datumQueue
+	 *        the datum queue
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 */
+	public JoinDatumFilterService(InstantSource sampleClock, OptionalService<DatumQueue> datumQueue) {
 		super();
-		this.datumQueue = datumQueue;
+		this.sampleClock = requireNonNullArgument(sampleClock, "sampleClock");
+		this.datumQueue = requireNonNullArgument(datumQueue, "datumQueue");
+	}
+
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		if ( startupFuture != null || coalesceFuture != null ) {
+			log.info("Restarting Join Filter [{}] from configuration change", getUid());
+		}
+		restartFilter(properties == null ? startupDelay : 0);
+	}
+
+	@Override
+	public synchronized void serviceDidStartup() {
+		restartFilter(startupDelay);
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
+		stop();
+	}
+
+	/**
+	 * Start the filter.
+	 */
+	public synchronized void start() {
+		if ( startupFuture != null ) {
+			return;
+		}
+		try {
+			resetCoalesceTimeout();
+		} catch ( Exception e ) {
+			String msg = String.format("Error starting Join Filter [%s]", getUid());
+			log.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+	}
+
+	/**
+	 * Shut down the filter.
+	 */
+	public synchronized void stop() {
+		if ( startupFuture != null && !startupFuture.isDone() ) {
+			startupFuture.cancel(true);
+			startupFuture = null;
+		}
+		if ( coalesceFuture != null && !coalesceFuture.isDone() ) {
+			coalesceFuture.cancel(true);
+			coalesceFuture = null;
+		}
+	}
+
+	/**
+	 * Get the effective coalesce timeout.
+	 *
+	 * @return the timeout, or {@code null} if not applicable
+	 */
+	private Duration effectiveCoalesceTimeout() {
+		final Duration coalesceDuration = getCoalesceTimeout();
+		if ( taskScheduler == null || coalesceThreshold < 2 || coalesceDuration == null
+				|| coalesceDuration.compareTo(Duration.ZERO) <= 0 ) {
+			return null;
+		}
+		return coalesceDuration;
+	}
+
+	private synchronized void restartFilter(final int startupDelay) {
+		stop();
+		Runnable startupTask = new Runnable() {
+
+			@Override
+			public void run() {
+				synchronized ( JoinDatumFilterService.this ) {
+					startupFuture = null;
+					start();
+				}
+			}
+		};
+		if ( taskScheduler != null ) {
+			startupFuture = taskScheduler.schedule(startupTask,
+					Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
+		} else {
+			startupTask.run();
+		}
+	}
+
+	private void resetCoalesceTimeout() {
+		final Duration coalesceDuration = effectiveCoalesceTimeout();
+		if ( coalesceDuration == null ) {
+			return;
+		}
+		synchronized ( this ) {
+			if ( startupFuture != null && !startupFuture.isDone() ) {
+				startupFuture.cancel(true);
+				startupFuture = null;
+			}
+			if ( coalesceFuture != null && !coalesceFuture.isDone() ) {
+				coalesceFuture.cancel(true);
+				coalesceFuture = null;
+			}
+			coalesceFuture = taskScheduler.schedule(this, Instant.now().plus(coalesceDuration));
+		}
 	}
 
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
-		final String outputSourceId = resolvePlaceholders(getOutputSourceId(), parameters);
-		if ( !(outputSourceId != null && !outputSourceId.trim().isEmpty()
-				&& !outputSourceId.equals(datum.getSourceId())
-				&& conditionsMatch(datum, samples, parameters)) ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
+
+		final String outputSourceId = resolvePlaceholders(getOutputSourceId(), parameters);
+		if ( outputSourceId == null || outputSourceId.trim().isEmpty()
+				|| outputSourceId.equals(datum.getSourceId()) ) {
+			incrementIgnoredStats(start);
+			return samples;
+		}
+		resetCoalesceTimeout();
 		final String[] propSourceMapping = propertySourceMapping(datum);
 		synchronized ( mergedSamples ) {
 			coalescedSourceIds.add(datum.getSourceId());
@@ -131,21 +270,41 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 				}
 			}
 			if ( coalescedSourceIds.size() >= coalesceThreshold ) {
-				// generate datum
-				SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId,
-						datum.getTimestamp() != null ? datum.getTimestamp() : Instant.now(),
-						new DatumSamples(mergedSamples));
-				log.debug("Generated merged datum {}", d);
-				DatumQueue dq = service(datumQueue);
-				if ( dq != null ) {
-					dq.offer(d, persist);
-				}
-				coalescedSourceIds.clear();
+				generateDatum(datum.getTimestamp());
 			}
 		}
 		DatumSamplesOperations result = (swallowInput ? null : samples);
 		incrementStats(start, samples, result);
 		return result;
+	}
+
+	/**
+	 * Generate a datum out of the collected samples.
+	 */
+	@Override
+	public void run() {
+		synchronized ( mergedSamples ) {
+			generateDatum(sampleClock.instant());
+		}
+		final Duration coalesceDuration = effectiveCoalesceTimeout();
+		if ( coalesceDuration == null ) {
+			return;
+		}
+		coalesceFuture = taskScheduler.schedule(this, now().plus(coalesceDuration));
+	}
+
+	private void generateDatum(Instant timestamp) {
+		SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId, timestamp != null ? timestamp : now(),
+				new DatumSamples(mergedSamples));
+		log.debug("Generated merged datum {}", d);
+		DatumQueue dq = service(datumQueue);
+		if ( dq != null ) {
+			dq.offer(d, persist);
+		}
+		coalescedSourceIds.clear();
+		if ( coalesceThreshold > 1 ) {
+			mergedSamples.clear();
+		}
 	}
 
 	/**
@@ -206,6 +365,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 		result.add(new BasicTextFieldSettingSpecifier("coalesceThreshold",
 				String.valueOf(DEFAULT_COALESCE_THRESHOLD)));
+		result.add(new BasicTextFieldSettingSpecifier("coalesceTimeoutMillis", null));
 
 		result.add(new BasicToggleSettingSpecifier("swallowInput", DEFAULT_SWALLOW_INPUT));
 		result.add(new BasicToggleSettingSpecifier("persist", DEFAULT_PERSIST));
@@ -355,6 +515,91 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public void setPersist(boolean persist) {
 		this.persist = persist;
+	}
+
+	/**
+	 * Get the coalesce timeout.
+	 *
+	 * @return the coalesce timeout
+	 * @since 1.4
+	 */
+	public Duration getCoalesceTimeout() {
+		return coalesceTimeout;
+	}
+
+	/**
+	 * Set the coalesce timeout.
+	 *
+	 * @param coalesceTimeout
+	 *        the coalesce timeout to set
+	 * @since 1.4
+	 */
+	public void setCoalesceTimeout(Duration coalesceTimeout) {
+		this.coalesceTimeout = coalesceTimeout;
+	}
+
+	/**
+	 * Get the coalesce timeout as milliseconds.
+	 *
+	 * @return the coalesce timeout, in milliseconds
+	 * @since 1.4
+	 */
+	public long getCoalesceTimeoutMillis() {
+		final Duration timeout = getCoalesceTimeout();
+		return timeout != null ? timeout.toMillis() : 0L;
+	}
+
+	/**
+	 * Set the coalesce timeout as milliseconds.
+	 *
+	 * @param millis
+	 *        the coalesce timeout to set, in milliseconds
+	 * @since 1.4
+	 */
+	public void setCoalesceTimeoutMillis(long millis) {
+		setCoalesceTimeout(millis > 0 ? Duration.ofMillis(millis) : null);
+	}
+
+	/**
+	 * Get the task scheduler.
+	 *
+	 * @return the task scheduler
+	 * @since 1.4
+	 */
+	public TaskScheduler getTaskScheduler() {
+		return taskScheduler;
+	}
+
+	/**
+	 * Set the task scheduler.
+	 *
+	 * @param taskScheduler
+	 *        the task scheduler to set
+	 * @since 1.4
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get the startup delay.
+	 *
+	 * @return the startup delay, in seconds
+	 * @since 1.4
+	 */
+	public int getStartupDelay() {
+		return startupDelay;
+	}
+
+	/**
+	 * Set the startup delay.
+	 *
+	 * @param startupDelay
+	 *        the delay to set, in seconds
+	 * @since 1.4
+	 */
+	public void setStartupDelay(int startupDelay) {
+		this.startupDelay = startupDelay;
 	}
 
 }

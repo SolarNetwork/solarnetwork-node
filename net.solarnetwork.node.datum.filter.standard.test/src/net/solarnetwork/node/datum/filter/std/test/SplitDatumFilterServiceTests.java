@@ -26,6 +26,7 @@ import static java.util.Collections.singletonMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -45,7 +46,7 @@ import org.junit.Test;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
-import net.solarnetwork.node.datum.filter.std.PatternKeyValuePair;
+import net.solarnetwork.node.datum.filter.std.ReplacingPatternKeyValuePair;
 import net.solarnetwork.node.datum.filter.std.SplitDatumFilterService;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -112,9 +113,9 @@ public class SplitDatumFilterServiceTests {
 		SimpleDatum in = createTestDatum(SOURCE_ID_2);
 
 		// @formatter:off
-		xform.setPropertySourceMappings(new PatternKeyValuePair[] {
-				new PatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
-				new PatternKeyValuePair("^a", OUT_SOURCE_ID_2),
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
+				new ReplacingPatternKeyValuePair("^a", OUT_SOURCE_ID_2),
 		});
 		// @formatter:on
 
@@ -145,14 +146,14 @@ public class SplitDatumFilterServiceTests {
 		SimpleDatum in = createTestDatum(SOURCE_ID_1);
 
 		// @formatter:off
-		xform.setPropertySourceMappings(new PatternKeyValuePair[] {
-				new PatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
-				new PatternKeyValuePair("^a", OUT_SOURCE_ID_2),
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
+				new ReplacingPatternKeyValuePair("^a", OUT_SOURCE_ID_2),
 		});
 		// @formatter:on
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
-		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true).times(2);
+		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true).times(2);
 
 		// WHEN
 		replayAll();
@@ -195,9 +196,9 @@ public class SplitDatumFilterServiceTests {
 		SimpleDatum in = createTestDatum(SOURCE_ID_1);
 
 		// @formatter:off
-		xform.setPropertySourceMappings(new PatternKeyValuePair[] {
-				new PatternKeyValuePair("^W", OUT_SOURCE_ID_1),
-				new PatternKeyValuePair("^A", OUT_SOURCE_ID_2),
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^W", OUT_SOURCE_ID_1),
+				new ReplacingPatternKeyValuePair("^A", OUT_SOURCE_ID_2),
 		});
 		// @formatter:on
 
@@ -215,14 +216,14 @@ public class SplitDatumFilterServiceTests {
 		SimpleDatum in = createTestDatum(SOURCE_ID_1);
 
 		// @formatter:off
-		xform.setPropertySourceMappings(new PatternKeyValuePair[] {
-				new PatternKeyValuePair("^watt", "{foo}/1"),
-				new PatternKeyValuePair("^a", "{foo}/2"),
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watt", "{foo}/1"),
+				new ReplacingPatternKeyValuePair("^a", "{foo}/2"),
 		});
 		// @formatter:on
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
-		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true).times(2);
+		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true).times(2);
 
 		// WHEN
 		replayAll();
@@ -264,14 +265,14 @@ public class SplitDatumFilterServiceTests {
 		SimpleDatum in = createTestDatum(SOURCE_ID_1);
 
 		// @formatter:off
-		xform.setPropertySourceMappings(new PatternKeyValuePair[] {
-				new PatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
-				new PatternKeyValuePair("^a", OUT_SOURCE_ID_2),
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watt", OUT_SOURCE_ID_1),
+				new ReplacingPatternKeyValuePair("^a", OUT_SOURCE_ID_2),
 		});
 		// @formatter:on
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
-		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true).times(2);
+		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true).times(2);
 
 		// WHEN
 		replayAll();

@@ -33,6 +33,7 @@ documentation:
  * [Split Datum Filter](README-Split.md) - split the properties of a datum stream into multiple
    datum streams
  * [Throttle Datum Filter](README-Throttle.md) - to restrict the frequency of posting datum
+ * [Timeout Datum Filter](README-Timeout.md) - to generate datum after a timeout
  * [Unchanged Datum Filter](README-Unchanged.md) - discard unchanged datum within a stream
  * [Unchanged Property Datum Filter](README-UnchangedProperty.md) - discard unchanged datum properties within a stream
  * [Virtual Meter Datum Filter](README-VirtualMeter.md) - derive accumulating meter-style reading
