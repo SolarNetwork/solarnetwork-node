@@ -87,7 +87,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 2.5
+ * @version 2.6
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport
 		implements DatumMetadataService, NodeMetadataInstructions, SettingResourceHandler,
@@ -395,8 +395,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport
 			log.info("{}cheduling metdata synchroniztion at {} seconds", (cancelled ? "Res" : "S"),
 					updateThrottleSeconds);
 			syncTask = taskScheduler.scheduleWithFixedDelay(this,
-					Instant.now().truncatedTo(ChronoUnit.MILLIS)
-							.plusSeconds(TimeUnit.SECONDS.toMillis(updateThrottleSeconds)),
+					Instant.now().truncatedTo(ChronoUnit.SECONDS).plusSeconds(updateThrottleSeconds),
 					Duration.ofSeconds(updateThrottleSeconds));
 		}
 	}
