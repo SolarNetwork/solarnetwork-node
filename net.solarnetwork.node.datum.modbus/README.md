@@ -77,7 +77,7 @@ individual datum property.
 | `G` | **Max Read** | integer | `64` | The maximum number of Modbus registers to request at once. |
 | `H` | **Word Order** | enum | `Most to least` |  For multi-register data types, the ordering to use when combining them. Must be either `Most to least` or `Least to most`, and can be shortened to just `m` or `l`. |
 | `I` | **Property** | string |  | The name of the datum property to save the Modbus value as. |
-| `J` | **Property Type** | enum | `Instantaneous` |  The type of datum property to use. Must be one of `Instantaneous`, `Accumulating`, `Status`, or `Tag`, and can be shortened to just `i`, `a`, `s`, or `t`. |
+| `J` | **Property Type** | enum | `Instantaneous` |  The type of datum property to use. Must be one of `Instantaneous`, `Accumulating`, `Status`, `Tag`, or `Metadata`, and can be shortened to just `i`, `a`, `s`, `t`, or `m`. |
 | `K` | **Register** | integer |  | The register address to read Modbus data from (zero-based). For multi-register data types this is the _first_ register to read from. |
 | `L` | **Register Type** | enum | `Holding` | The Modbus read function to execute. Must be one of `Coil`, `Discrete Input`, `Holding`, or `Input`. |
 | `M` | **Data Type** | enum | `32-bit float` | The type of data to expect from the read Modbus register(s). Must be one of `Boolean` or `bit`, `16-bit float` or `f16`, `32-bit float` or `f32`, `16-bit signed int` or `i16`, `16-bit unsigned int` or `u16`, `32-bit signed int` or `i32`, `32-bit unsigned int` or `u32`, `64-bit signed int` or `i64`, `64-bit unsigned int` or `u16`, `Bytes` or `b`, `String UTF-8` or `s`, `String ASCII` or `a`. |
@@ -174,45 +174,14 @@ Each property configuration contains the following settings:
 
 | Setting         | Description                                                                                             |
 |:----------------|:--------------------------------------------------------------------------------------------------------|
-| Property        | The name of the datum property to save the Modbus value as.                                             |
-| Property Type   | The type of datum property to use.                                                                      |
-| Modbus Address  | The starting register address to read Modbus data from (zero-based).                                    |
-| Modbus Function | The Modbus read function to execute.                                                                    |
-| Data Type       | The type of data to expect from the read Modbus register(s).                                            |
+| Property        | The name of the datum property to save the Modbus value as. Property names represent what the associated data value is, and SolarNetwork has many standardized names that you should consider using. For example the [EnergyDatum](https://github.com/SolarNetwork/solarnetwork-node/blob/master/net.solarnetwork.node/src/net/solarnetwork/node/domain/EnergyDatum.java) class defines properties such as `watts` and  `wattHours` for electrical energy. :warning: See the note about the **Metadata** property type for more information about the property name syntax for that type. |
+| Property Type   | The type of datum property to use. Each property must be categorized as `Accumulating`, `Instantaneous`, `Status`, or `Metadata`. **Accumulating** is used for properties that record a value that accumulates over time, such as `wattHours` captured from a power meter. **Instantaneous** is used for properties that capture values that record independent values over time, such as `watts`. **Status** is used for non-numeric values such as string status messages. **Metadata** is for mostly unchanging data, like a device serial number or firmware version. The property names for metadata should be a [metadata path](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#metadata-filter-key-paths), for example `/pm/deviceInfo/serialNumber`. |
+| Modbus Address  | The starting register address to read Modbus data from (zero-based). |
+| Modbus Function | The Modbus read function to execute. |
+| Data Type       | The type of data to expect from the read Modbus register(s). The data type to interpret the values captured from the Modbus registers as. **Note** that only the **Status** and **Metadata** property types can accept non-numeric data types such as strings. |
 | Data Length     | For variable length data types such as strings, the number of Modbus registers to read.                 |
-| Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
-| Decimal Scale   | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
-
-## Datum property settings notes
-
-<dl>
-	<dt>Property</dt>
-	<dd>Property names represent what the associated data value is, and SolarNetwork
-	has many standardized names that you should consider using. For example the
-	<a href="https://github.com/SolarNetwork/solarnetwork-node/blob/master/net.solarnetwork.node/src/net/solarnetwork/node/domain/EnergyDatum.java">EnergyDatum</a>
-	class defines properties such as <code>watts</code> and <code>wattHours</code>
-	for electrical energy.</dd>
-	<dt>Property Type</dt>
-	<dd>Each property must be categorized as <code>Accumulating</code>, <code>Instantaneous</code>,
-	or <code>Status</code>. <b>Accumulating</b> is used for properties that record
-	a value that accumulates over time, such as <code>wattHours</code> captured from
-	a power meter. <b>Instantaneous</b> is used for properties that capture values
-	that record independent values over time, such as <code>watts</code>. <b>Status</b>
-	is used for non-numeric values such as string status messages.</dd>
-	<dt>Data Type</dt>
-	<dd>The data type to interpret the values captured from the Modbus registers as.
-	<b>Note</b> that only the <b>Status</b> property type can accept non-numeric
-	data types such as strings.</dd>
-	<dt>Unit Multiplier</dt>
-	<dd>The property values stored in SolarNetwork should be normalized into standard
-	base units if possible. For example if a power meter reports power in <i>kilowattts</i>
-	then a unit multiplier of <code>1000</code> can be used to convert the values into
-	<i>watts</i>.</dd>
-	<dt>Decimal Scale</dt>
-	<dd>This setting will round decimal numbers to at most this number of decimal places. Setting
-	to <code>0</code> rounds decimals to whole numbers. Setting to <code>-1</code> disables
-	rounding completely.</dd>
-</dl>
+| Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. The property values stored in SolarNetwork should be normalized into standard base units if possible. For example if a power meter reports power in _kilowattts_ then a unit multiplier of `1000` can be used to convert the values into _watts_.|
+| Decimal Scale   | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. This setting will round decimal numbers to at most this number of decimal places. Setting to `0` rounds decimals to whole numbers. Setting to `-1` disables rounding completely. |
 
 ## Expressions
 
