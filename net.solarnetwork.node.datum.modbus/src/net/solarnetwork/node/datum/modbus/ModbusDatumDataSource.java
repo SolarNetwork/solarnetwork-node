@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.modbus;
 
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.StringUtils.delimitedStringFromMap;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,10 +36,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntConsumer;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.MutableDatumSamplesWithMetadata;
 import net.solarnetwork.node.domain.datum.MutableNodeDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -67,7 +71,6 @@ import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.StringUtils;
 
 /**
  * Generic Modbus device datum data source.
@@ -167,13 +170,19 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( ts < 1 ) {
 			return null;
 		}
-		SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId), Instant.ofEpochMilli(ts));
-		populateDatumProperties(d, propConfigs);
-		populateDatumProperties(d, getExpressionConfigs());
+		final GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		final SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId),
+				Instant.ofEpochMilli(ts));
+		populateDatumProperties(d, meta, propConfigs);
+		populateDatumProperties(d, meta, getExpressionConfigs());
+		if ( !meta.isEmpty() ) {
+			addSourceMetadata(d.getSourceId(), meta);
+		}
 		return d;
 	}
 
-	private void populateDatumProperties(MutableNodeDatum d, ModbusPropertyConfig[] propConfs) {
+	private void populateDatumProperties(MutableNodeDatum d, GeneralDatumMetadata m,
+			ModbusPropertyConfig[] propConfs) {
 		if ( propConfs == null ) {
 			return;
 		}
@@ -196,8 +205,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					default:
 						// nothing
 				}
-				d.asMutableSampleOperations().putSampleValue(conf.getPropertyType(),
-						conf.getPropertyKey(), propVal);
+				if ( conf.getPropertyType() == DatumSamplesType.Metadata ) {
+					m.populate(conf.getPropertyKey(), propVal.toString());
+				} else {
+					d.asMutableSampleOperations().putSampleValue(conf.getPropertyType(),
+							conf.getPropertyKey(), propVal);
+				}
 			}
 		}
 	}
@@ -233,10 +246,13 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		}
 	}
 
-	private void populateDatumProperties(MutableNodeDatum d, ExpressionConfig[] expressionConfs) {
+	private void populateDatumProperties(MutableNodeDatum d, GeneralDatumMetadata m,
+			ExpressionConfig[] expressionConfs) {
 		ExpressionRoot root = new ExpressionRoot(d, data, service(getDatumService()));
 		root.setLocalStateDao(getLocalStateDao());
-		populateExpressionDatumProperties(d, expressionConfs, root);
+		populateExpressionDatumProperties(
+				new MutableDatumSamplesWithMetadata(d.asMutableSampleOperations(), m), expressionConfs,
+				root);
 	}
 
 	private Number applyDecimalScale(Number value, int decimalScale) {
@@ -367,9 +383,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			return "N/A";
 		}
 
+		GeneralDatumMetadata m = new GeneralDatumMetadata();
 		SimpleDatum d = SimpleDatum.nodeDatum(null);
-		populateDatumProperties(d, propConfigs);
-		populateDatumProperties(d, getExpressionConfigs());
+		populateDatumProperties(d, m, propConfigs);
+		populateDatumProperties(d, m, getExpressionConfigs());
 
 		Map<String, ?> data = d.getSampleData();
 		if ( data == null || data.isEmpty() ) {
@@ -377,7 +394,21 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		}
 
 		StringBuilder buf = new StringBuilder();
-		buf.append(StringUtils.delimitedStringFromMap(data, "=", ", "));
+		buf.append(delimitedStringFromMap(data, "=", ", "));
+		if ( !m.isEmpty() ) {
+			if ( m.getInfo() != null && !m.getInfo().isEmpty() ) {
+				buf.append("; metadata: ").append(delimitedStringFromMap(m.getInfo(), "=", ", "));
+			}
+			if ( m.getPropertyInfo() != null && !m.getPropertyInfo().isEmpty() ) {
+				for ( Entry<String, Map<String, Object>> e : m.getPropertyInfo().entrySet() ) {
+					var map = e.getValue();
+					if ( map != null && !m.isEmpty() ) {
+						buf.append("; ").append(e.getKey()).append(": ")
+								.append(delimitedStringFromMap(map, "=", ", "));
+					}
+				}
+			}
+		}
 		buf.append("; sampled at ").append(Instant.ofEpochMilli(ts));
 		return buf.toString();
 	}
@@ -478,6 +509,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 							}
 						});
 			}
+
 		}
 		sampleDate.set(System.currentTimeMillis());
 		return null;
