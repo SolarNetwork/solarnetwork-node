@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Postgres Database Storage Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.postgres.test
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.dao.jdbc.postgres;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.postgres.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
- com.zaxxer.hikari;version="[5.1,7.0)",
+ com.zaxxer.hikari;version="[5.1,8.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.hamcrest;version="[1.1,2.0)",
  org.junit;version="[4.5,5.0)",
