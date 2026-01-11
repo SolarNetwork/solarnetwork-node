@@ -1,21 +1,21 @@
 /* ==================================================================
  * BaseDatumDataSourceConfigCsvParser.java - 30/09/2022 2:49:16 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,15 +27,16 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
+import de.siegmar.fastcsv.reader.CsvRecord;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataType;
 
 /**
  * Base class for CSV parsing.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public abstract class BaseDatumDataSourceConfigCsvParser {
@@ -48,7 +49,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 * @param messages
@@ -62,7 +63,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Get the instance ID value from a CSV row.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param results
@@ -71,9 +72,9 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 *        the current configuration
 	 * @return the instance ID
 	 */
-	protected String rowKeyValue(List<String> row, List<? extends BaseDatumDataSourceConfig> results,
+	protected String rowKeyValue(CsvRecord row, List<? extends BaseDatumDataSourceConfig> results,
 			BaseDatumDataSourceConfig currentConfig) {
-		String key = row.get(0);
+		String key = row.getField(0);
 		if ( key != null ) {
 			key = key.trim();
 		}
@@ -88,7 +89,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse a string column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -100,9 +101,9 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column is
 	 *         missing or empty
 	 */
-	protected String parseStringValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	protected String parseStringValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		if ( colNum < rowLen ) {
-			String s = row.get(colNum);
+			String s = row.getField(colNum);
 			if ( s != null ) {
 				s = s.trim();
 			}
@@ -116,7 +117,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse an integer column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -128,7 +129,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column value
 	 *         cannot be parsed as an Integer
 	 */
-	protected Integer parseIntegerValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	protected Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -144,7 +145,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse a long column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -156,7 +157,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column value
 	 *         cannot be parsed as an Long
 	 */
-	protected Long parseLongValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	protected Long parseLongValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -172,7 +173,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse a decimal column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -184,7 +185,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column value
 	 *         cannot be parsed as an BigDecimal
 	 */
-	protected BigDecimal parseBigDecimalValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	protected BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -200,7 +201,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse a datum samples type column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -212,7 +213,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column value
 	 *         cannot be parsed as a DatumSamplesType
 	 */
-	protected DatumSamplesType parseDatumSamplesTypeValue(List<String> row, int rowLen, int rowNum,
+	protected DatumSamplesType parseDatumSamplesTypeValue(CsvRecord row, int rowLen, long rowNum,
 			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
@@ -234,7 +235,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse a MBus data type column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -246,7 +247,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column value
 	 *         cannot be parsed as an MBusDataType
 	 */
-	protected MBusDataType parseMBusDataTypeValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	protected MBusDataType parseMBusDataTypeValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
 			return null;
@@ -263,7 +264,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 
 	/**
 	 * Parse a MBus data description column value.
-	 * 
+	 *
 	 * @param row
 	 *        the row
 	 * @param rowLen
@@ -275,7 +276,7 @@ public abstract class BaseDatumDataSourceConfigCsvParser {
 	 * @return the parsed column value, or {@literal null} if the column value
 	 *         cannot be parsed as an MBusDataDescription
 	 */
-	protected MBusDataDescription parseMBusDataDescriptionValue(List<String> row, int rowLen, int rowNum,
+	protected MBusDataDescription parseMBusDataDescriptionValue(CsvRecord row, int rowLen, long rowNum,
 			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {

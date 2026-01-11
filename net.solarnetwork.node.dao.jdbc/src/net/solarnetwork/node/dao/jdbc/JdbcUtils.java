@@ -24,105 +24,42 @@ package net.solarnetwork.node.dao.jdbc;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.springframework.util.StringUtils;
-import org.supercsv.cellprocessor.ConvertNullTo;
-import org.supercsv.cellprocessor.Optional;
-import org.supercsv.cellprocessor.ParseBigDecimal;
-import org.supercsv.cellprocessor.ParseBool;
-import org.supercsv.cellprocessor.ift.CellProcessor;
 
 /**
  * Utilities to help with JDBC.
  *
  * @author matt
- * @version 1.3
+ * @version 2.0
  * @since 1.17
  */
 public abstract class JdbcUtils {
 
 	private JdbcUtils() {
 		// don't construct me
-	}
-
-	/**
-	 * Get a set of {@link CellProcessor} for formatting ResultSet data as CSV
-	 * strings.
-	 *
-	 * @param meta
-	 *        The metadata.
-	 * @return The processors.
-	 * @throws SQLException
-	 *         If any SQL error occurs.
-	 */
-	public static CellProcessor[] formattingProcessorsForResultSetMetaData(ResultSetMetaData meta)
-			throws SQLException {
-		int colCount = meta.getColumnCount();
-		CellProcessor[] cellProcessors = new CellProcessor[colCount];
-		for ( int i = 0; i < colCount; i++ ) {
-			CellProcessor processor = null;
-			int sqlType = meta.getColumnType(i + 1);
-			switch (sqlType) {
-				case Types.BINARY:
-				case Types.VARBINARY:
-				case Types.LONGVARBINARY:
-					processor = new ConvertNullTo("", new JdbcFmtBytes());
-					break;
-
-				case Types.DATE:
-					processor = new ConvertNullTo("", new JdbcFmtDate.Date());
-					break;
-
-				case Types.TIME:
-					processor = new ConvertNullTo("", new JdbcFmtDate.Time());
-					break;
-
-				case Types.TIMESTAMP:
-				case Types.TIMESTAMP_WITH_TIMEZONE:
-					processor = new ConvertNullTo("", new JdbcFmtDate.Timestamp());
-					break;
-			}
-			cellProcessors[i] = processor;
-		}
-		return cellProcessors;
-	}
-
-	/**
-	 * Get a set of {@link CellProcessor} for parsing CSV strings into JDBC
-	 * column objects.
-	 *
-	 * @param csvColumns
-	 *        The parsed CSV column names (i.e. from the header row).
-	 * @param columnMetaData
-	 *        JDBC column metadata (i.e. extracted from JDBC via
-	 *        {@link #columnCsvMetaDataForDatabaseMetaData(DatabaseMetaData, String)})
-	 * @return The cell processors.
-	 */
-	public static CellProcessor[] parsingCellProcessorsForCsvColumns(String[] csvColumns,
-			Map<String, ColumnCsvMetaData> columnMetaData) {
-		CellProcessor[] result = new CellProcessor[csvColumns.length];
-		int i = 0;
-		for ( String colName : csvColumns ) {
-			ColumnCsvMetaData meta = columnMetaData.get(colName);
-			result[i++] = (meta != null && meta.getCellProcessor() != null ? meta.getCellProcessor()
-					: new Optional());
-		}
-		return result;
 	}
 
 	/**
@@ -146,33 +83,48 @@ public abstract class JdbcUtils {
 		ResultSet rs = meta.getColumns(null, schema, table, null);
 		Map<String, ColumnCsvMetaData> results = new LinkedCaseInsensitiveMap<>(8, Locale.ROOT);
 		try {
-
 			while ( rs.next() ) {
 				String colName = rs.getString(4);
 				int sqlType = rs.getInt(5);
-				CellProcessor processor = null;
+				Function<Object, Object> processor = null;
 				switch (sqlType) {
 					case Types.BINARY:
 					case Types.VARBINARY:
 					case Types.LONGVARBINARY:
-						processor = new JdbcParseBytes();
+						processor = (d) -> {
+							try {
+								return d != null ? Hex.decodeHex(d.toString()) : null;
+							} catch ( DecoderException e ) {
+								throw new IllegalArgumentException(
+										"Unable to decode hex value [" + d + "]");
+							}
+						};
 						break;
 
 					case Types.BOOLEAN:
-						processor = new ParseBool();
+						processor = (d) -> d != null
+								? net.solarnetwork.util.StringUtils.parseBoolean(d.toString())
+								: null;
 						break;
 
 					case Types.DATE:
-						processor = new JdbcParseDate.Date();
+						processor = (d) -> d != null ? java.sql.Date.valueOf(
+								DateTimeFormatter.ISO_LOCAL_DATE.parse(d.toString(), LocalDate::from))
+								: null;
 						break;
 
 					case Types.TIME:
-						processor = new JdbcParseDate.Time();
+						processor = (d) -> d != null ? java.sql.Time.valueOf(
+								DateTimeFormatter.ISO_LOCAL_TIME.parse(d.toString(), LocalTime::from))
+								: null;
 						break;
 
 					case Types.TIMESTAMP:
 					case Types.TIMESTAMP_WITH_TIMEZONE:
-						processor = new JdbcParseDate.Timestamp();
+						processor = (d) -> d != null
+								? java.sql.Timestamp.from(
+										DateTimeFormatter.ISO_INSTANT.parse(d.toString(), Instant::from))
+								: null;
 						break;
 
 					case Types.BIGINT:
@@ -184,11 +136,10 @@ public abstract class JdbcUtils {
 					case Types.REAL:
 					case Types.SMALLINT:
 					case Types.TINYINT:
-						processor = new ParseBigDecimal();
+						processor = (d) -> d != null ? new BigDecimal(d.toString()) : null;
 						break;
 				}
-				results.put(colName, new ColumnCsvMetaData(colName,
-						(processor == null ? new Optional() : new Optional(processor)), sqlType));
+				results.put(colName, new ColumnCsvMetaData(colName, processor, sqlType));
 			}
 		} finally {
 			rs.close();
@@ -247,10 +198,11 @@ public abstract class JdbcUtils {
 	 * @return The mapping of headers. The iteration order preserves the order
 	 *         of the array.
 	 */
-	public static Map<String, Integer> csvColumnIndexMapping(String[] header) {
-		Map<String, Integer> csvColumns = new LinkedCaseInsensitiveMap<>(header.length, Locale.ROOT);
-		for ( int i = 0; i < header.length; i++ ) {
-			csvColumns.put(header[i], i);
+	public static Map<String, Integer> csvColumnIndexMapping(List<String> header) {
+		Map<String, Integer> csvColumns = new LinkedCaseInsensitiveMap<>(header.size(), Locale.ROOT);
+		int idx = 0;
+		for ( String h : header ) {
+			csvColumns.put(h, idx++);
 		}
 		return csvColumns;
 	}
@@ -381,8 +333,8 @@ public abstract class JdbcUtils {
 	 *         if any SQL error occurs
 	 * @since 1.3
 	 */
-	public static void setUtcTimestampStatementValue(PreparedStatement stmt, int parameterIndex, Instant time)
-			throws SQLException {
+	public static void setUtcTimestampStatementValue(PreparedStatement stmt, int parameterIndex,
+			Instant time) throws SQLException {
 		if ( time == null ) {
 			stmt.setNull(parameterIndex, Types.TIMESTAMP);
 		} else {

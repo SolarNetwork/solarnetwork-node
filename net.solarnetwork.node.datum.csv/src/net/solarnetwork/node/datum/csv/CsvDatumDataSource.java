@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -51,9 +52,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.ClientHttpRequest;
 import org.springframework.http.client.ClientHttpRequestFactory;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.io.UrlUtils;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -84,7 +87,7 @@ import net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService;
  * Read data from a CSV-formatted resource and generate one or more datum.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CsvDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
@@ -295,6 +298,10 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 						case Tag:
 							s.addTag(val);
 							break;
+
+						case Metadata:
+							// ignore
+							break;
 					}
 
 				}
@@ -442,7 +449,11 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 		Collection<List<String>> rowBuffer = null;
 
 		try (Reader in = new InputStreamReader(fetchCsvResource(theUrl), charset);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 
 			int skipCount = skipRows;
 			int rowCount = keepRows;
@@ -452,15 +463,14 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 			}
 			rowBuffer = (rowCount > 0 ? new LimitedSizeDeque<>(rowCount) : new ArrayList<>(16));
 
-			List<String> row = null;
-			while ( (row = csv.read()) != null ) {
+			for ( CsvRecord row : csv ) {
 				if ( skipRows > 0 && skipCount > 0 ) {
 					--skipCount;
 					continue;
 				} else if ( skipRows < 0 ) {
-					rowBuffer.add(row);
+					rowBuffer.add(row.getFields());
 				} else {
-					rowBuffer.add(row);
+					rowBuffer.add(row.getFields());
 					if ( keepRows > 0 && --rowCount < 1 ) {
 						break;
 					}
@@ -485,7 +495,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 			}
 
 			return rowBuffer;
-		} catch ( IOException e ) {
+		} catch ( UncheckedIOException | IOException e ) {
 			throw new RemoteServiceException(
 					String.format("Error reading CSV resource [%s]: %s", theUrl, e.getMessage()), e);
 		}

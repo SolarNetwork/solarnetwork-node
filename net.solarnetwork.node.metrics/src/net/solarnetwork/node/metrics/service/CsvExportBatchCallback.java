@@ -24,22 +24,20 @@ package net.solarnetwork.node.metrics.service;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.metrics.domain.Metric;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * {@link BatchCallback} for exporting metrics as a CSV document.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CsvExportBatchCallback implements BatchCallback<Metric>, Closeable {
 
@@ -47,7 +45,9 @@ public class CsvExportBatchCallback implements BatchCallback<Metric>, Closeable 
 
 	private static final Logger log = LoggerFactory.getLogger(CsvExportBatchCallback.class);
 
-	private final ICsvListWriter writer;
+	private final CsvWriter writer;
+
+	private int row = 0;
 
 	/**
 	 * Constructor.
@@ -59,8 +59,7 @@ public class CsvExportBatchCallback implements BatchCallback<Metric>, Closeable 
 	 */
 	public CsvExportBatchCallback(Writer out) {
 		super();
-		writer = new CsvListWriter(ObjectUtils.requireNonNullArgument(out, "out"),
-				CsvPreference.STANDARD_PREFERENCE);
+		writer = CsvWriter.builder().commentCharacter('!').build(out);
 
 	}
 
@@ -72,13 +71,13 @@ public class CsvExportBatchCallback implements BatchCallback<Metric>, Closeable 
 	@Override
 	public BatchCallbackResult handle(Metric metric) {
 		try {
-			if ( writer.getLineNumber() == 0 ) {
-				writer.writeHeader(CSV_HEADERS);
+			if ( row++ == 0 ) {
+				writer.writeRecord(CSV_HEADERS);
 			}
-			writer.write(metric.getTimestamp().toString(), metric.getType(), metric.getName(),
+			writer.writeRecord(metric.getTimestamp().toString(), metric.getType(), metric.getName(),
 					String.valueOf(metric.getValue()));
 			return BatchCallbackResult.CONTINUE;
-		} catch ( IOException e ) {
+		} catch ( UncheckedIOException e ) {
 			log.warn("IO error generating metric CSV output: {}", e.getMessage(), e);
 			return BatchCallbackResult.STOP;
 		}

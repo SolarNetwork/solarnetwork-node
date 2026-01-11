@@ -1,27 +1,28 @@
 /* ==================================================================
  * BacnetControlConfigTests.java - 11/11/2022 8:41:49 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.control.bacnet.test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -35,21 +36,22 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
 import net.solarnetwork.node.control.bacnet.BacnetControl;
 import net.solarnetwork.node.control.bacnet.BacnetControlConfig;
 import net.solarnetwork.node.control.bacnet.BacnetControlConfigCsvParser;
 import net.solarnetwork.node.control.bacnet.BacnetControlCsvConfigurer;
 import net.solarnetwork.node.settings.SettingValueBean;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link BacnetControlConfig} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetControlConfigTests {
 
@@ -87,7 +89,7 @@ public class BacnetControlConfigTests {
 	private String resourceString(String resource) {
 		StringBuilder buf = new StringBuilder();
 		try (BufferedReader r = new BufferedReader(
-				new InputStreamReader(getClass().getResourceAsStream(resource), ByteUtils.UTF8))) {
+				new InputStreamReader(getClass().getResourceAsStream(resource), UTF_8))) {
 			String line = null;
 			while ( (line = r.readLine()) != null ) {
 				buf.append(line.trim()).append('\n');
@@ -103,8 +105,11 @@ public class BacnetControlConfigTests {
 	public void settings_sample01() throws IOException {
 		// GIVEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-config-sample-01.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-config-sample-01.csv"), UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 		assertThat("Read device infos", results, hasSize(2));

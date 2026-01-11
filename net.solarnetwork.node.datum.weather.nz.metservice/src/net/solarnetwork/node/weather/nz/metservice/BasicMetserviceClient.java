@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicMetserviceClient.java - 28/05/2016 1:37:46 pm
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -60,7 +60,7 @@ import net.solarnetwork.node.service.support.HttpClientSupport;
 
 /**
  * Basic implementation of {@link MetserviceClient}.
- * 
+ *
  * @author matt
  * @version 2.1
  */
@@ -139,7 +139,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 
 	/**
 	 * Get a date formatter suitable for parsing the configured day date format.
-	 * 
+	 *
 	 * @return the formatter
 	 */
 	public DateTimeFormatter dayFormatter() {
@@ -155,7 +155,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 
 	/**
 	 * Get a date formatter suitable for parsing the configured day date format.
-	 * 
+	 *
 	 * @return the formatter
 	 */
 	public DateTimeFormatter timeFormatter() {
@@ -171,7 +171,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 
 	/**
 	 * Get a date formatter suitable for parsing the configured day date format.
-	 * 
+	 *
 	 * @return the formatter
 	 */
 	public DateTimeFormatter timestampFormatter() {
@@ -189,7 +189,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 
 	/**
 	 * Get a date formatter suitable for parsing the configured day date format.
-	 * 
+	 *
 	 * @return the formatter
 	 */
 	public DateTimeFormatter timestampHourFormatter() {
@@ -403,13 +403,18 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		return result;
 	}
 
+	/**
+	 * Get the base URL.
+	 *
+	 * @return the base URL
+	 */
 	public String getBaseUrl() {
 		return baseUrl;
 	}
 
 	/**
 	 * Read an InputStream as Unicode text and return as a String.
-	 * 
+	 *
 	 * @param in
 	 *        the InputStream to read
 	 * @return the text
@@ -426,7 +431,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	/**
 	 * The base URL for queries to MetService. Defaults to
 	 * {@link #DEFAULT_BASE_URL}.
-	 * 
+	 *
 	 * @param baseUrl
 	 *        The base URL to use.
 	 */
@@ -434,13 +439,18 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.baseUrl = baseUrl;
 	}
 
+	/**
+	 * Get the object mapper.
+	 *
+	 * @return the mapper
+	 */
 	public ObjectMapper getObjectMapper() {
 		return objectMapper;
 	}
 
 	/**
 	 * Set the {@link ObjectMapper} to use for parsing JSON.
-	 * 
+	 *
 	 * @param objectMapper
 	 *        The object mapper.
 	 */
@@ -448,6 +458,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.objectMapper = objectMapper;
 	}
 
+	/**
+	 * Get the local observation template.
+	 *
+	 * @return the template
+	 */
 	public String getLocalObsTemplate() {
 		return localObsTemplate;
 	}
@@ -457,7 +472,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * for the location key. This file is expected to contain a single JSON
 	 * object declaration with the humidity, pressure, etc. attributes. Defaults
 	 * to {@link #DEFAULT_LOCAL_OBS_SET_TEMPLATE}.
-	 * 
+	 *
 	 * @param localObsTemplate
 	 *        The file name template to use.
 	 */
@@ -465,6 +480,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.localObsTemplate = localObsTemplate;
 	}
 
+	/**
+	 * Get the local forecast template.
+	 *
+	 * @return the template
+	 */
 	public String getLocalForecastTemplate() {
 		return localForecastTemplate;
 	}
@@ -476,7 +496,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * from which the sky conditions are extracted. The real-time data doesn't
 	 * provide sky conditions, so we just use the presumably static value for
 	 * the day. Defaults to {@link #DEFAULT_LOCAL_FORECAST_SET_TEMPLATE}.
-	 * 
+	 *
 	 * @param localForecastTemplate
 	 *        The file name template to use.
 	 */
@@ -484,6 +504,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.localForecastTemplate = localForecastTemplate;
 	}
 
+	/**
+	 * Get the sunrise set template.
+	 *
+	 * @return the template
+	 */
 	public String getRiseSetTemplate() {
 		return riseSetTemplate;
 	}
@@ -493,7 +518,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * for the location key. This file is expected to contain a single JSON
 	 * object declaration with the sunrise, sunset, and date attributes.
 	 * Defaults to {@link #DEFAULT_RISE_SET_TEMPLATE}.
-	 * 
+	 *
 	 * @param riseSetTemplate
 	 *        The file name template to use.
 	 */
@@ -501,6 +526,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.riseSetTemplate = riseSetTemplate;
 	}
 
+	/**
+	 * Get the one minute observation template.
+	 *
+	 * @return the template
+	 */
 	public String getOneMinuteObsTemplate() {
 		return oneMinuteObsTemplate;
 	}
@@ -510,7 +540,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * parameter for the location key. This file is expected to contain a single
 	 * JSON object declaration with the weather date attributes. Defaults to
 	 * {@link #DEFAULT_ONE_MINUTE_OBS_SET_TEMPLATE}.
-	 * 
+	 *
 	 * @param oneMinuteObsTemplate
 	 *        the template to use
 	 */
@@ -518,6 +548,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.oneMinuteObsTemplate = oneMinuteObsTemplate;
 	}
 
+	/**
+	 * Get the hourly observation and forecast template.
+	 *
+	 * @return the template
+	 */
 	public String getHourlyObsAndForecastTemplate() {
 		return hourlyObsAndForecastTemplate;
 	}
@@ -526,7 +561,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * The name of the "hourlyObsAndForecast" file to parse, using a single
 	 * string parameter for the location key. Defaults to
 	 * {@link #DEFAULT_ONE_MINUTE_OBS_SET_TEMPLATE}.
-	 * 
+	 *
 	 * @param hourlyObsAndForecastTemplate
 	 *        the template to use
 	 */
@@ -534,6 +569,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.hourlyObsAndForecastTemplate = hourlyObsAndForecastTemplate;
 	}
 
+	/**
+	 * Get the day date format.
+	 *
+	 * @return the date format
+	 */
 	public String getDayDateFormat() {
 		return dayDateFormat;
 	}
@@ -541,7 +581,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	/**
 	 * The {@link SimpleDateFormat} date format to use to parse the day date.
 	 * Defaluts to {@link #DEFAULT_DAY_DATE_FORMAT}.
-	 * 
+	 *
 	 * @param dayDateFormat
 	 *        The date format to use.
 	 */
@@ -549,6 +589,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.dayDateFormat = dayDateFormat;
 	}
 
+	/**
+	 * Get the time date format.
+	 *
+	 * @return the date format
+	 */
 	public String getTimeDateFormat() {
 		return timeDateFormat;
 	}
@@ -556,7 +601,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	/**
 	 * Set a {@link SimpleDateFormat} time format to use to parse sunrise/sunset
 	 * times. Defaults to {@link #DEFAULT_TIME_DATE_FORMAT}.
-	 * 
+	 *
 	 * @param timeDateFormat
 	 *        The date format to use.
 	 */
@@ -564,6 +609,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.timeDateFormat = timeDateFormat;
 	}
 
+	/**
+	 * Get the timestamp date format.
+	 *
+	 * @return the date format
+	 */
 	public String getTimestampDateFormat() {
 		return timestampDateFormat;
 	}
@@ -572,7 +622,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * Set a {@link SimpleDateFormat} date and time pattern for parsing the
 	 * information date from the {@code oneMinObs} file. Defaults to
 	 * {@link #DEFAULT_TIMESTAMP_DATE_FORMAT}.
-	 * 
+	 *
 	 * @param timestampDateFormat
 	 *        The date format to use.
 	 */
@@ -580,6 +630,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.timestampDateFormat = timestampDateFormat;
 	}
 
+	/**
+	 * GEt the timestamp hour date format.
+	 *
+	 * @return the date format
+	 */
 	public String getTimestampHourDateFormat() {
 		return timestampHourDateFormat;
 	}
@@ -588,7 +643,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * Set a {@link SimpleDateFormat} date and time pattern for parsing the
 	 * information date from the {@code hourlyObsAndForecast} file. Defaults to
 	 * {@link #DEFAULT_TIMESTAMP_HOUR_DATE_FORMAT}.
-	 * 
+	 *
 	 * @param timestampHourDateFormat
 	 *        The date format to use.
 	 */
@@ -596,6 +651,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		this.timestampHourDateFormat = timestampHourDateFormat;
 	}
 
+	/**
+	 * Get the time zone ID.
+	 *
+	 * @return the time zone ID
+	 */
 	public String getTimeZoneId() {
 		return timeZoneId;
 	}
@@ -603,7 +663,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	/**
 	 * Set the time zone ID used for parsing date strings. Defaults to
 	 * {@link #DEFAULT_TIME_ZONE_ID}.
-	 * 
+	 *
 	 * @param timeZoneId
 	 *        The time zone ID to use.
 	 */

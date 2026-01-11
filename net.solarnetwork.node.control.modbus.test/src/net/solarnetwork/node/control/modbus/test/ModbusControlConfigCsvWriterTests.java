@@ -29,16 +29,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.control.modbus.ModbusControl;
 import net.solarnetwork.node.control.modbus.ModbusControlConfigCsvWriter;
 import net.solarnetwork.node.domain.Setting;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusControlConfigCsvWriter} class. *
@@ -50,8 +48,8 @@ public class ModbusControlConfigCsvWriterTests {
 
 	private List<Setting> loadSettingsCsv(String resource) throws IOException {
 		List<Setting> result = new ArrayList<>();
-		try (BufferedReader r = new BufferedReader(
-				new InputStreamReader(getClass().getResourceAsStream(resource), ByteUtils.UTF8))) {
+		try (BufferedReader r = new BufferedReader(new InputStreamReader(
+				getClass().getResourceAsStream(resource), StandardCharsets.UTF_8))) {
 			String line = r.readLine(); // skip header
 			while ( (line = r.readLine()) != null ) {
 				String[] components = line.split(",");
@@ -65,8 +63,8 @@ public class ModbusControlConfigCsvWriterTests {
 
 	private String[] resourceLines(String resource) throws IOException {
 		List<String> lines = new ArrayList<>();
-		try (BufferedReader r = new BufferedReader(
-				new InputStreamReader(getClass().getResourceAsStream(resource), ByteUtils.UTF8))) {
+		try (BufferedReader r = new BufferedReader(new InputStreamReader(
+				getClass().getResourceAsStream(resource), StandardCharsets.UTF_8))) {
 			String line = null;
 			while ( (line = r.readLine()) != null ) {
 				lines.add(line.trim());
@@ -82,7 +80,7 @@ public class ModbusControlConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			ModbusControlConfigCsvWriter gen = new ModbusControlConfigCsvWriter(writer);
 			gen.generateCsv(ModbusControl.SETTING_UID, "1", settings);
 		}
@@ -107,7 +105,7 @@ public class ModbusControlConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			ModbusControlConfigCsvWriter gen = new ModbusControlConfigCsvWriter(writer);
 			gen.generateCsv(ModbusControl.SETTING_UID, "1", settings);
 		}

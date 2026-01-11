@@ -33,8 +33,9 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.io.ICsvListWriter;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
@@ -55,7 +56,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Default implementation of {@link LocalStateService}.
  *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public final class DefaultLocalStateService extends BaseIdentifiable
 		implements LocalStateService, SettingSpecifierProvider {
@@ -197,15 +198,15 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 		}
 
 		@Override
-		protected void importCsvConfiguration(ICsvListReader csvReader, String[] headers,
-				boolean replace) throws IOException {
+		protected void importCsvConfiguration(CsvReader<CsvRecord> csvReader, boolean replace)
+				throws IOException {
 			final PlatformTransactionManager txMgr = OptionalService.service(getTransactionManager());
 			final TransactionTemplate tt = (txMgr != null ? new TransactionTemplate(txMgr) : null);
 			if ( tt != null ) {
 				try {
 					tt.executeWithoutResult(tx -> {
 						try {
-							importCsvConfigurationInternal(csvReader, headers, replace);
+							importCsvConfigurationInternal(csvReader, replace);
 						} catch ( IOException e ) {
 							throw new RuntimeException(e);
 						}
@@ -217,25 +218,27 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 					throw e;
 				}
 			} else {
-				importCsvConfigurationInternal(csvReader, headers, replace);
+				importCsvConfigurationInternal(csvReader, replace);
 			}
 		}
 
-		private void importCsvConfigurationInternal(ICsvListReader csvReader, String[] headers,
-				boolean replace) throws IOException {
+		private void importCsvConfigurationInternal(CsvReader<CsvRecord> csvReader, boolean replace)
+				throws IOException {
 			final LocalStateDao dao = dao();
 			if ( replace ) {
 				dao.deleteAll();
 			}
-			for ( List<String> row = csvReader.read(); row != null; row = csvReader.read() ) {
-				if ( row.size() < 5 ) {
+			csvReader.skipLines(1);
+			for ( CsvRecord row : csvReader ) {
+				if ( row.getFieldCount() < 5 ) {
 					continue;
 				}
-				final String key = row.get(CsvColumns.Key.ordinal());
-				final Instant created = Instant.parse(row.get(CsvColumns.Created.ordinal()));
-				final Instant modified = Instant.parse(row.get(CsvColumns.Modified.ordinal()));
-				final LocalStateType type = LocalStateType.forKey(row.get(CsvColumns.Type.ordinal()));
-				final String val = row.get(CsvColumns.Value.ordinal());
+				final String key = row.getField(CsvColumns.Key.ordinal());
+				final Instant created = Instant.parse(row.getField(CsvColumns.Created.ordinal()));
+				final Instant modified = Instant.parse(row.getField(CsvColumns.Modified.ordinal()));
+				final LocalStateType type = LocalStateType
+						.forKey(row.getField(CsvColumns.Type.ordinal()));
+				final String val = row.getField(CsvColumns.Value.ordinal());
 				final LocalState state = new LocalState(key, created, type, val);
 				state.setModified(modified);
 				if ( replace ) {
@@ -247,7 +250,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 		}
 
 		@Override
-		protected void exportCsvConfiguration(ICsvListWriter csvWriter) throws IOException {
+		protected void exportCsvConfiguration(CsvWriter csvWriter) throws IOException {
 			final PlatformTransactionManager txMgr = OptionalService.service(getTransactionManager());
 			final TransactionTemplate tt = (txMgr != null ? new TransactionTemplate(txMgr) : null);
 			if ( tt != null ) {
@@ -270,10 +273,10 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 			}
 		}
 
-		private void exportCsvConfigurationInternal(ICsvListWriter csvWriter) throws IOException {
+		private void exportCsvConfigurationInternal(CsvWriter csvWriter) throws IOException {
 			final LocalStateDao dao = dao();
 			final BasicBatchOptions opts = new BasicBatchOptions("export", 50, false, Map.of());
-			csvWriter.writeHeader(
+			csvWriter.writeRecord(
 					Arrays.stream(CsvColumns.values()).map(e -> e.name()).toArray(String[]::new));
 			dao.batchProcess(new BatchCallback<LocalState>() {
 
@@ -291,11 +294,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 					row[CsvColumns.Value.ordinal()] = val instanceof Map<?, ?> map
 							? JsonUtils.getJSONString(map)
 							: val.toString();
-					try {
-						csvWriter.write(row);
-					} catch ( IOException e ) {
-						throw new RuntimeException(e);
-					}
+					csvWriter.writeRecord(row);
 					return BatchCallbackResult.CONTINUE;
 				}
 			}, opts);

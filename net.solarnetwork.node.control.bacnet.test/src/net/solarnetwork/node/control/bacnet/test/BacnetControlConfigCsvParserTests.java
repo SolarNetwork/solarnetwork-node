@@ -23,6 +23,7 @@
 package net.solarnetwork.node.control.bacnet.test;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -37,9 +38,11 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.control.bacnet.BacnetControlConfig;
 import net.solarnetwork.node.control.bacnet.BacnetControlConfigCsvParser;
@@ -47,13 +50,12 @@ import net.solarnetwork.node.control.bacnet.BacnetControlCsvConfigurer;
 import net.solarnetwork.node.control.bacnet.BacnetWritePropertyConfig;
 import net.solarnetwork.node.io.bacnet.BacnetObjectType;
 import net.solarnetwork.node.io.bacnet.BacnetPropertyType;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link BacnetControlConfigCsvParser}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetControlConfigCsvParserTests {
 
@@ -98,8 +100,11 @@ public class BacnetControlConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-01.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -122,8 +127,11 @@ public class BacnetControlConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-02.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -146,8 +154,11 @@ public class BacnetControlConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-03.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -175,8 +186,11 @@ public class BacnetControlConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-config-sample-01.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-config-sample-01.csv"), UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 

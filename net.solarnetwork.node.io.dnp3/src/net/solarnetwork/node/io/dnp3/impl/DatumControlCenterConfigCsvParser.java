@@ -38,7 +38,7 @@ import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.S
 import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SERVICE_NAME;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.parseBoolean;
-import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
@@ -46,7 +46,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.springframework.context.MessageSource;
-import org.supercsv.io.ICsvListReader;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.io.dnp3.domain.ClassType;
@@ -62,7 +64,7 @@ import net.solarnetwork.util.StringUtils;
  * Parse CSV data into {@link DatumControlCenterConfig} instances.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DatumControlCenterConfigCsvParser {
 
@@ -92,25 +94,21 @@ public class DatumControlCenterConfigCsvParser {
 	 * Parse CSV.
 	 *
 	 * @param csv
-	 *        the CSV to parse
-	 * @throws IOException
+	 *        the CSV to parse; note that the comment strategy should be set to
+	 *        {@link CommentStrategy#NONE} so comments can be handled as
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
-	public void parse(ICsvListReader csv) throws IOException {
+	public void parse(CsvReader<CsvRecord> csv) throws UncheckedIOException {
 		if ( csv == null ) {
 			return;
 		}
-		@SuppressWarnings("unused")
-		final String[] headerRow = csv.getHeader(true);
-		List<String> row = null;
+		csv.skipLines(1);
 		DatumControlCenterConfig config = null;
 		DatumConfig datumConfig = null;
-		while ( (row = csv.read()) != null ) {
-			if ( row.isEmpty() ) {
-				continue;
-			}
-			final int rowLen = row.size();
-			final int rowNum = csv.getRowNumber();
+		for ( CsvRecord row : csv ) {
+			final int rowLen = row.getFieldCount();
+			final long rowNum = row.getStartingLineNumber();
 			final String key = rowKeyValue(row, config);
 			if ( key == null || key.startsWith("#") ) {
 				// either a comment line, or empty key but no active configuration
@@ -168,8 +166,8 @@ public class DatumControlCenterConfigCsvParser {
 		}
 	}
 
-	private String rowKeyValue(List<String> row, DatumControlCenterConfig currentConfig) {
-		String key = row.get(0);
+	private String rowKeyValue(CsvRecord row, DatumControlCenterConfig currentConfig) {
+		String key = row.getField(0);
 		if ( key != null ) {
 			key = key.trim();
 		}
@@ -182,9 +180,9 @@ public class DatumControlCenterConfigCsvParser {
 		return (currentConfig != null ? currentConfig.getKey() : null);
 	}
 
-	private String parseStringValue(List<String> row, int rowLen, int rowNum, CodedValue col) {
+	private String parseStringValue(CsvRecord row, int rowLen, long rowNum, CodedValue col) {
 		if ( col.getCode() < rowLen ) {
-			String s = row.get(col.getCode());
+			String s = row.getField(col.getCode());
 			if ( s != null ) {
 				s = s.trim();
 			}
@@ -196,7 +194,7 @@ public class DatumControlCenterConfigCsvParser {
 		return null;
 	}
 
-	private Integer parseIntegerValue(List<String> row, int rowLen, int rowNum, CodedValue col) {
+	private Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, CodedValue col) {
 		String s = parseStringValue(row, rowLen, rowNum, col);
 		if ( s != null ) {
 			try {
@@ -210,13 +208,13 @@ public class DatumControlCenterConfigCsvParser {
 		return null;
 	}
 
-	private int parseIntegerValue(List<String> row, int rowLen, int rowNum, CodedValue col,
+	private int parseIntegerValue(CsvRecord row, int rowLen, long rowNum, CodedValue col,
 			int defaultValue) {
 		Integer intVal = parseIntegerValue(row, rowLen, rowNum, col);
 		return (intVal != null ? intVal : defaultValue);
 	}
 
-	private Long parseLongValue(List<String> row, int rowLen, int rowNum, CodedValue col) {
+	private Long parseLongValue(CsvRecord row, int rowLen, long rowNum, CodedValue col) {
 		String s = parseStringValue(row, rowLen, rowNum, col);
 		if ( s != null ) {
 			try {
@@ -230,7 +228,7 @@ public class DatumControlCenterConfigCsvParser {
 		return null;
 	}
 
-	private BigDecimal parseBigDecimalValue(List<String> row, int rowLen, int rowNum, CodedValue col) {
+	private BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum, CodedValue col) {
 		String s = parseStringValue(row, rowLen, rowNum, col);
 		if ( s != null ) {
 			try {
@@ -244,7 +242,7 @@ public class DatumControlCenterConfigCsvParser {
 		return null;
 	}
 
-	private Set<ClassType> praseEventClasses(List<String> row, int rowLen, int rowNum, CodedValue col) {
+	private Set<ClassType> praseEventClasses(CsvRecord row, int rowLen, long rowNum, CodedValue col) {
 		// parse into IntRangeSet, to support ranges like "1-3"
 		IntRangeSet ranges = StringUtils
 				.commaDelimitedStringToIntRangeSet(parseStringValue(row, rowLen, rowNum, col));
@@ -259,7 +257,7 @@ public class DatumControlCenterConfigCsvParser {
 		// @formatter:on
 	}
 
-	private DatumSamplesType parseDatumSamplesType(List<String> row, int rowLen, int rowNum,
+	private DatumSamplesType parseDatumSamplesType(CsvRecord row, int rowLen, long rowNum,
 			CodedValue col) {
 		String s = parseStringValue(row, rowLen, rowNum, col);
 		if ( s == null ) {
@@ -279,7 +277,7 @@ public class DatumControlCenterConfigCsvParser {
 		return null;
 	}
 
-	private MeasurementType parseMeasurementType(List<String> row, int rowLen, int rowNum,
+	private MeasurementType parseMeasurementType(CsvRecord row, int rowLen, long rowNum,
 			CodedValue col) {
 		String s = parseStringValue(row, rowLen, rowNum, col);
 		if ( s == null || s.isEmpty() ) {

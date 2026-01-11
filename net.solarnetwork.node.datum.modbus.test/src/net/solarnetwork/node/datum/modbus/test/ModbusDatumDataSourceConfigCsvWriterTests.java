@@ -32,9 +32,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSource;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSourceConfigCsvWriter;
 import net.solarnetwork.node.domain.Setting;
@@ -44,7 +42,7 @@ import net.solarnetwork.util.ByteUtils;
  * Test cases for the {@link ModbusDatumDataSourceConfigCsvWriter} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusDatumDataSourceConfigCsvWriterTests {
 
@@ -82,7 +80,7 @@ public class ModbusDatumDataSourceConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			ModbusDatumDataSourceConfigCsvWriter gen = new ModbusDatumDataSourceConfigCsvWriter(writer);
 			gen.generateCsv(ModbusDatumDataSource.SETTING_UID, "1", settings);
 		}
@@ -107,7 +105,7 @@ public class ModbusDatumDataSourceConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			ModbusDatumDataSourceConfigCsvWriter gen = new ModbusDatumDataSourceConfigCsvWriter(writer);
 			gen.generateCsv(ModbusDatumDataSource.SETTING_UID, "1", settings);
 		}
@@ -132,7 +130,7 @@ public class ModbusDatumDataSourceConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			ModbusDatumDataSourceConfigCsvWriter gen = new ModbusDatumDataSourceConfigCsvWriter(writer);
 			gen.generateCsv(ModbusDatumDataSource.SETTING_UID, "1", settings);
 		}

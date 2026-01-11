@@ -26,9 +26,13 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -42,13 +46,21 @@ import net.solarnetwork.node.Constants;
  * Abstract support class for {@link BackupService} implementations.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.54
  */
 public abstract class BackupServiceSupport implements BackupService {
 
 	/** A date and time format to use with backup keys. */
 	public static final String BACKUP_KEY_DATE_FORMAT = "yyyyMMdd'T'HHmmss";
+
+	/**
+	 * A date time formatter for backup keys.
+	 *
+	 * @since 1.4
+	 */
+	public static final DateTimeFormatter BACKUP_KEY_DATE_FORMATTER = DateTimeFormatter
+			.ofPattern(BACKUP_KEY_DATE_FORMAT, Locale.ENGLISH).withZone(ZoneOffset.UTC);
 
 	/**
 	 * A pattern to match {@literal node-N-backup-D-Q} where {@literal N} is a
@@ -157,6 +169,7 @@ public abstract class BackupServiceSupport implements BackupService {
 			return date;
 		}
 		final SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+		sdf.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
 		String backupKey = (props == null ? null : props.get(BackupManager.BACKUP_KEY));
 		if ( backupKey != null ) {
 			Matcher m = nodeIdAndDatePattern.matcher(backupKey);
@@ -263,6 +276,7 @@ public abstract class BackupServiceSupport implements BackupService {
 			Matcher m = nodeIdAndDatePattern.matcher(key);
 			if ( m.find() ) {
 				final SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+				sdf.setTimeZone(TimeZone.getTimeZone(ZoneOffset.UTC));
 				try {
 					Long nodeId = Long.valueOf(m.group(1));
 					Date date = sdf.parse(m.group(2));

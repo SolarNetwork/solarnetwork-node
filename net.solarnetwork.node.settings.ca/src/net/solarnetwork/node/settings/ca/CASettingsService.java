@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -49,6 +50,8 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -89,15 +92,12 @@ import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.LinkedCaseInsensitiveMap;
-import org.supercsv.cellprocessor.ConvertNullTo;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.comment.CommentStartsWith;
-import org.supercsv.io.CsvBeanReader;
-import org.supercsv.io.CsvBeanWriter;
-import org.supercsv.io.ICsvBeanReader;
-import org.supercsv.io.ICsvBeanWriter;
-import org.supercsv.prefs.CsvPreference;
-import org.supercsv.util.CsvContext;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
@@ -142,7 +142,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  *
  * @author matt
- * @version 2.5
+ * @version 2.6
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -862,6 +862,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value", "flags",
 			"modified", "note" };
 	private static final String SETTING_MODIFIED_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+	private static final DateTimeFormatter SETTING_MODIFIED_DATE_FORMATTER = DateTimeFormatter
+			.ofPattern(SETTING_MODIFIED_DATE_FORMAT).withZone(ZoneOffset.UTC);
 
 	@Override
 	public void exportSettingsCSV(Writer out) throws IOException {
@@ -871,25 +873,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	@Override
 	public void exportSettingsCSV(SettingsFilter filter, Writer out) throws IOException {
 		AUDIT_LOG.info("Export settings CSV; filter [{}]", filter != null ? filter : "");
-		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
 		final List<IOException> errors = new ArrayList<>(1);
-		final CellProcessor[] processors = new CellProcessor[] {
-				new org.supercsv.cellprocessor.Optional(), new org.supercsv.cellprocessor.Optional(),
-				new org.supercsv.cellprocessor.Optional(), new CellProcessor() {
-
-					@SuppressWarnings("unchecked")
-					@Override
-					public Object execute(Object value, CsvContext ctx) {
-						Set<SettingFlag> set = (Set<SettingFlag>) value;
-						if ( set != null && !set.isEmpty() ) {
-							return SettingFlag.maskForSet(set);
-						}
-						return "";
-					}
-				},
-				new org.supercsv.cellprocessor.Optional(
-						new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT)),
-				new org.supercsv.cellprocessor.Optional() };
 		final String providerFilter = (filter != null && filter.getProviderKey() != null
 				? filter.getProviderKey() + "."
 				: null);
@@ -900,8 +884,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				: null);
 		final SortedMap<String, SortedMap<String, Setting>> instanceSettings = new TreeMap<>();
 		final List<Setting> instanceFactorySettings = new ArrayList<>();
-		try {
-			writer.writeHeader(CSV_HEADERS);
+		final String[] row = new String[CSV_HEADERS.length];
+		try (final CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
+			writer.writeRecord(CSV_HEADERS);
 			settingDao.batchProcess(new BatchCallback<Setting>() {
 
 				@Override
@@ -933,9 +918,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 					}
 					try {
-						writer.write(domainObject, CSV_HEADERS, processors);
-					} catch ( IOException e ) {
-						errors.add(e);
+						populateCsvRow(domainObject, row);
+						writer.writeRecord(row);
+					} catch ( UncheckedIOException e ) {
+						errors.add(e.getCause());
 						return BatchCallbackResult.STOP;
 					}
 					return BatchCallbackResult.CONTINUE;
@@ -968,29 +954,35 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 					}
 					for ( Setting s : settingMap.values() ) {
-						writer.write(s, CSV_HEADERS, processors);
+						populateCsvRow(s, row);
+						writer.writeRecord(row);
 					}
 				}
 			}
 			if ( instanceFactorySettings != null ) {
 				// add factory settings last so grouped at end
 				for ( Setting s : instanceFactorySettings ) {
-					writer.write(s, CSV_HEADERS, processors);
+					populateCsvRow(s, row);
+					writer.writeRecord(row);
 				}
 			}
 			if ( errors.size() > 0 ) {
 				throw errors.get(0);
 			}
-		} finally {
-			if ( writer != null ) {
-				try {
-					writer.flush();
-					writer.close();
-				} catch ( IOException e ) {
-					// ignore these
-				}
-			}
 		}
+	}
+
+	private static void populateCsvRow(Setting s, String[] row) {
+		row[0] = s.getKey();
+		row[1] = s.getType();
+		row[2] = s.getValue();
+		row[3] = s.getFlags() != null && !s.getFlags().isEmpty()
+				? String.valueOf(SettingFlag.maskForSet(s.getFlags()))
+				: null;
+		row[4] = s.getModified() != null
+				? SETTING_MODIFIED_DATE_FORMATTER.format(s.getModified().toInstant())
+				: null;
+		row[5] = s.getNote();
 	}
 
 	@Override
@@ -1063,61 +1055,66 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private CellProcessor[] importProcessors(String[] headerRow) {
-		CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null,
-				new org.supercsv.cellprocessor.Optional(new CellProcessor() {
-
-					@SuppressWarnings("unchecked")
-					@Override
-					public Object execute(Object arg, CsvContext ctx) {
-						Set<Setting.SettingFlag> set = null;
-						if ( arg != null ) {
-							int mask = Integer.parseInt(arg.toString());
-							set = Setting.SettingFlag.setForMask(mask);
-						}
-						return set;
-					}
-				}),
-				new org.supercsv.cellprocessor.Optional(
-						new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT)),
-				new org.supercsv.cellprocessor.Optional() };
-		if ( processors.length > headerRow.length && headerRow.length > 2 ) {
-			CellProcessor[] p = new CellProcessor[headerRow.length];
-			System.arraycopy(processors, 0, p, 0, headerRow.length);
-			processors = p;
+	private static Setting parseCsvRow(CsvRecord row) {
+		final String key = row.getField(0);
+		if ( key == null || key.isEmpty() ) {
+			return null;
 		}
-		return processors;
+
+		String type = null;
+		String value = null;
+		Set<SettingFlag> flags = null;
+		Date modified = null;
+		String note = null;
+
+		if ( row.getFieldCount() >= 2 ) {
+			type = row.getField(1);
+		}
+		if ( row.getFieldCount() >= 3 ) {
+			String d = row.getField(2);
+			if ( d != null && !d.isEmpty() ) {
+				value = d;
+			}
+		}
+		if ( row.getFieldCount() >= 4 ) {
+			String d = row.getField(3);
+			if ( d != null && !d.isEmpty() ) {
+				flags = SettingFlag.setForMask(Integer.parseInt(d));
+			}
+		}
+		if ( row.getFieldCount() >= 5 ) {
+			String d = row.getField(4);
+			if ( d != null && !d.isEmpty() ) {
+				modified = Date.from(SETTING_MODIFIED_DATE_FORMATTER.parse(d, Instant::from));
+			}
+		}
+		if ( row.getFieldCount() >= 6 ) {
+			String d = row.getField(5);
+			if ( d != null && !d.isEmpty() ) {
+				note = d;
+			}
+		}
+
+		Setting s = new Setting(key, type, value, note, flags);
+		s.setModified(modified);
+		return s;
 	}
 
-	private String[] importColumnNames(String[] headerRow) {
-		String[] cols = CSV_HEADERS;
-		if ( cols.length > headerRow.length && headerRow.length > 2 ) {
-			String[] c = new String[headerRow.length];
-			System.arraycopy(cols, 0, c, 0, headerRow.length);
-			cols = c;
-		}
-		return cols;
-	}
-
-	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
-		final CsvPreference prefs = new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
-				.skipComments(new CommentStartsWith("#")).build();
-		final ICsvBeanReader reader = new CsvBeanReader(in, prefs);
-		final String[] headerRow = reader.getHeader(true);
-		final CellProcessor[] processors = importProcessors(headerRow);
-		final String[] colNames = importColumnNames(headerRow);
+	private void importSettingsCSV(final Reader in, final ImportCallback callback) throws IOException {
 		final List<Setting> importedSettings = new ArrayList<>();
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 			@Override
 			protected void doInTransactionWithoutResult(final TransactionStatus status) {
-				Setting s;
-				try {
-					while ( (s = reader.read(Setting.class, colNames, processors)) != null ) {
-						if ( !callback.shouldImportSetting(s) ) {
-							continue;
-						}
-						if ( s.getKey() == null ) {
+				try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.SKIP)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
+					csv.skipLines(1);
+					for ( CsvRecord row : csv ) {
+						final Setting s = parseCsvRow(row);
+						if ( s == null || !callback.shouldImportSetting(s) ) {
 							continue;
 						}
 						if ( s.getValue() == null ) {
@@ -1131,11 +1128,6 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					log.error("Unable to import settings: {}", e.getMessage());
 					status.setRollbackOnly();
 				} finally {
-					try {
-						reader.close();
-					} catch ( IOException e ) {
-						// ingore
-					}
 					if ( status.isRollbackOnly() ) {
 						importedSettings.clear();
 					}

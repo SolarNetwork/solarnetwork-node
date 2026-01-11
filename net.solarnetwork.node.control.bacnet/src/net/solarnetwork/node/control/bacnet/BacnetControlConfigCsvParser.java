@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetControlConfigCsvParser.java - 10/11/2022 10:09:36 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -37,19 +37,21 @@ import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.SAMPLE
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.SERVICE_GROUP;
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.SERVICE_NAME;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
-import org.supercsv.io.ICsvListReader;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
 import net.solarnetwork.domain.NodeControlPropertyType;
 
 /**
  * Parse CSV data into {@link BacnetControlConfig} instances.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class BacnetControlConfigCsvParser {
 
@@ -59,7 +61,7 @@ public class BacnetControlConfigCsvParser {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param results
 	 *        the list to add the parsed results to
 	 * @param messageSource
@@ -77,26 +79,22 @@ public class BacnetControlConfigCsvParser {
 
 	/**
 	 * Parse CSV.
-	 * 
+	 *
 	 * @param csv
-	 *        the CSV to parse
-	 * @throws IOException
+	 *        the CSV to parse; note that the comment strategy should be set to
+	 *        {@link CommentStrategy#NONE} so comments can be handled as
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
-	public void parse(ICsvListReader csv) throws IOException {
+	public void parse(CsvReader<CsvRecord> csv) throws UncheckedIOException {
 		if ( csv == null ) {
 			return;
 		}
-		@SuppressWarnings("unused")
-		final String[] headerRow = csv.getHeader(true);
-		List<String> row = null;
+		csv.skipLines(1);
 		BacnetControlConfig config = null;
-		while ( (row = csv.read()) != null ) {
-			if ( row.isEmpty() ) {
-				continue;
-			}
-			final int rowLen = row.size();
-			final int rowNum = csv.getRowNumber();
+		for ( CsvRecord row : csv ) {
+			final int rowLen = row.getFieldCount();
+			final long rowNum = row.getStartingLineNumber();
 			final String key = rowKeyValue(row, config);
 			if ( key == null || key.startsWith("#") ) {
 				// either a comment line, or empty key but no active configuration
@@ -139,8 +137,8 @@ public class BacnetControlConfigCsvParser {
 		}
 	}
 
-	private String rowKeyValue(List<String> row, BacnetControlConfig currentConfig) {
-		String key = row.get(INSTANCE_ID.getCode());
+	private String rowKeyValue(CsvRecord row, BacnetControlConfig currentConfig) {
+		String key = row.getField(INSTANCE_ID.getCode());
 		if ( key != null ) {
 			key = key.trim();
 		}
@@ -153,9 +151,9 @@ public class BacnetControlConfigCsvParser {
 		return (currentConfig != null ? currentConfig.getKey() : null);
 	}
 
-	private String parseStringValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	private String parseStringValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		if ( colNum < rowLen ) {
-			String s = row.get(colNum);
+			String s = row.getField(colNum);
 			if ( s != null ) {
 				s = s.trim();
 			}
@@ -167,7 +165,7 @@ public class BacnetControlConfigCsvParser {
 		return null;
 	}
 
-	private Integer parseIntegerValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	private Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -181,7 +179,7 @@ public class BacnetControlConfigCsvParser {
 		return null;
 	}
 
-	private Long parseLongValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	private Long parseLongValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -195,7 +193,7 @@ public class BacnetControlConfigCsvParser {
 		return null;
 	}
 
-	private BigDecimal parseBigDecimalValue(List<String> row, int rowLen, int rowNum, int colNum) {
+	private BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -209,8 +207,8 @@ public class BacnetControlConfigCsvParser {
 		return null;
 	}
 
-	private NodeControlPropertyType parseControlPropertyTypeValue(List<String> row, int rowLen,
-			int rowNum, int colNum) {
+	private NodeControlPropertyType parseControlPropertyTypeValue(CsvRecord row, int rowLen, long rowNum,
+			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
 			return null;

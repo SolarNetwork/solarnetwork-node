@@ -40,9 +40,10 @@ import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.S
 import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SERVICE_NAME;
 import static net.solarnetwork.node.io.dnp3.domain.DatumControlCenterCsvColumn.SOURCE_ID;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
-import org.supercsv.io.ICsvListWriter;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.dnp3.domain.ClassType;
 import net.solarnetwork.node.io.dnp3.domain.DatumConfig;
@@ -57,24 +58,25 @@ import net.solarnetwork.util.StringUtils;
  * Generate DNP3 Control Center configuration CSV from settings.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DatumControlCenterConfigCsvWriter {
 
-	private final ICsvListWriter writer;
+	private final CsvWriter writer;
 	private final int rowLen;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param writer
-	 *        the writer
+	 *        the writer; note the comment character should be set to something
+	 *        <b>other</b> than {@code #} so comments can be generated manually
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
-	 * @throws IOException
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
-	public DatumControlCenterConfigCsvWriter(ICsvListWriter writer) throws IOException {
+	public DatumControlCenterConfigCsvWriter(CsvWriter writer) throws UncheckedIOException {
 		super();
 		this.writer = ObjectUtils.requireNonNullArgument(writer, "writer");
 		rowLen = DatumControlCenterCsvColumn.values().length;
@@ -82,7 +84,7 @@ public class DatumControlCenterConfigCsvWriter {
 		for ( DatumControlCenterCsvColumn col : DatumControlCenterCsvColumn.values() ) {
 			row[col.getCode()] = col.getName();
 		}
-		writer.writeHeader(row);
+		writer.writeRecord(row);
 	}
 
 	/**
@@ -148,7 +150,7 @@ public class DatumControlCenterConfigCsvWriter {
 				row[DECIMAL_SCALE.getCode()] = (measConf.getDecimalScale() >= 0
 						? String.valueOf(measConf.getDecimalScale())
 						: null);
-				writer.write(row);
+				writer.writeRecord(row);
 				fill(row, null);
 			}
 		}
