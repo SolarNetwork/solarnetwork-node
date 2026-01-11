@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDatumDataSourceConfigcsvParserTests.java - 9/03/2022 3:17:45 PM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,14 +30,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.modbus.ExpressionConfig;
 import net.solarnetwork.node.datum.modbus.ModbusCsvConfigurer;
@@ -47,11 +50,10 @@ import net.solarnetwork.node.datum.modbus.ModbusPropertyConfig;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusDatumDataSourceConfigCsvParser} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -79,8 +81,12 @@ public class ModbusDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-01.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -113,8 +119,12 @@ public class ModbusDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-02.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -147,8 +157,12 @@ public class ModbusDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-03.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -198,8 +212,12 @@ public class ModbusDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-04.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -233,8 +251,12 @@ public class ModbusDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-config-sample-01.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-config-sample-01.csv"), StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 

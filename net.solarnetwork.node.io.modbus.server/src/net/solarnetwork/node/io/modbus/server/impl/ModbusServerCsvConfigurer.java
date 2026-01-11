@@ -28,9 +28,9 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.Writer;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,11 +42,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
 import net.solarnetwork.node.service.IdentityService;
@@ -61,7 +62,6 @@ import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.util.StringUtils;
 
@@ -69,7 +69,7 @@ import net.solarnetwork.util.StringUtils;
  * Service that can configure {@link ModbusServer} instances via CSV resources.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusServerCsvConfigurer extends BasicIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -143,8 +143,7 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 			return null;
 		}
 		final ByteArrayOutputStream byos = new ByteArrayOutputStream(4096);
-		try (Writer out = new OutputStreamWriter(byos, ByteUtils.UTF8);
-				ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(byos)) {
 			ModbusServerConfigCsvWriter gen = new ModbusServerConfigCsvWriter(writer);
 
 			// iterate over each instance in natural sort order
@@ -155,7 +154,7 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 				List<Setting> settings = settingsService.getSettings(settingProviderId, instanceId);
 				gen.generateCsv(settingProviderId, instanceId, settings);
 			}
-		} catch ( IOException e ) {
+		} catch ( UncheckedIOException | IOException e ) {
 			log.error("Error generating Modbus Server configuration CSV: {}", e.toString());
 			return Collections.emptyList();
 		}
@@ -217,8 +216,12 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 		ModbusServerConfigCsvParser parser = new ModbusServerConfigCsvParser(configs, getMessageSource(),
 				lastImportMessages);
 		try (Reader in = new InputStreamReader(
-				inputStreamForPossibleGzipStream(resource.getInputStream()), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				inputStreamForPossibleGzipStream(resource.getInputStream()), StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 		return configs;

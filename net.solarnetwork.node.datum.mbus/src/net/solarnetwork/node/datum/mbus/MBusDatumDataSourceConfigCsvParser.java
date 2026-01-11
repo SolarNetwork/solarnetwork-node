@@ -1,21 +1,21 @@
 /* ==================================================================
  * MBusDatumDataSourceConfigCsvParser.java - 30/09/2022 12:01:56 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,13 +40,15 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
-import org.supercsv.io.ICsvListReader;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
 
 /**
  * Parse CSV data into {@link MBusDatumDataSourceConfig} instances.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class MBusDatumDataSourceConfigCsvParser extends BaseDatumDataSourceConfigCsvParser {
@@ -55,7 +57,7 @@ public class MBusDatumDataSourceConfigCsvParser extends BaseDatumDataSourceConfi
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param results
 	 *        the list to add the parsed results to
 	 * @param messageSource
@@ -71,26 +73,22 @@ public class MBusDatumDataSourceConfigCsvParser extends BaseDatumDataSourceConfi
 
 	/**
 	 * Parse CSV.
-	 * 
+	 *
 	 * @param csv
-	 *        the CSV to parse
+	 *        the CSV to parse; note that the comment strategy should be set to
+	 *        {@link CommentStrategy#NONE} so comments can be handled as
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	public void parse(ICsvListReader csv) throws IOException {
+	public void parse(CsvReader<CsvRecord> csv) throws IOException {
 		if ( csv == null ) {
 			return;
 		}
-		@SuppressWarnings("unused")
-		final String[] headerRow = csv.getHeader(true);
-		List<String> row = null;
+		csv.skipLines(1);
 		MBusDatumDataSourceConfig config = null;
-		while ( (row = csv.read()) != null ) {
-			if ( row.isEmpty() ) {
-				continue;
-			}
-			final int rowLen = row.size();
-			final int rowNum = csv.getRowNumber();
+		for ( CsvRecord row : csv ) {
+			final int rowLen = row.getFieldCount();
+			final long rowNum = row.getStartingLineNumber();
 			final String key = rowKeyValue(row, results, config);
 			if ( key == null || key.startsWith("#") ) {
 				// either a comment line, or empty key but no active configuration
@@ -120,8 +118,8 @@ public class MBusDatumDataSourceConfigCsvParser extends BaseDatumDataSourceConfi
 		}
 	}
 
-	private void popoulateBaseConfig(List<String> row, int rowLen, int rowNum,
-			BaseDatumDataSourceConfig config) {
+	private void popoulateBaseConfig(final CsvRecord row, final int rowLen, final long rowNum,
+			final BaseDatumDataSourceConfig config) {
 		config.setServiceName(parseStringValue(row, rowLen, rowNum, SERVICE_NAME.getCode()));
 		config.setServiceGroup(parseStringValue(row, rowLen, rowNum, SERVICE_GROUP.getCode()));
 		config.setSourceId(parseStringValue(row, rowLen, rowNum, SOURCE_ID.getCode()));
@@ -129,8 +127,8 @@ public class MBusDatumDataSourceConfigCsvParser extends BaseDatumDataSourceConfi
 		config.setNetworkName(parseStringValue(row, rowLen, rowNum, NETWORK_NAME.getCode()));
 	}
 
-	private MBusPropertyConfig parseMBusPropertyConfig(List<String> row, final int rowLen,
-			final int rowNum) {
+	private MBusPropertyConfig parseMBusPropertyConfig(final CsvRecord row, final int rowLen,
+			final long rowNum) {
 		MBusPropertyConfig propConfig = new MBusPropertyConfig();
 		propConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME.getCode()));
 		propConfig.setPropertyType(parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE.getCode()));

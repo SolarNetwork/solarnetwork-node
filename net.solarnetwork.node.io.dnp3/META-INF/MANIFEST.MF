@@ -4,13 +4,15 @@ Bundle-Name: DNP3 Integration
 Bundle-SymbolicName: net.solarnetwork.node.io.dnp3
 Bundle-Description: Integration with DNP3 based networks.
 Automatic-Module-Name: net.solarnetwork.node.io.dnp3
-Bundle-Version: 5.0.0
+Bundle-Version: 5.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.automatak.dnp3;version="[3.1,4.0)",
  com.automatak.dnp3.enums;version="[3.1,4.0)",
  com.automatak.dnp3.impl;version="[3.1,4.0)",
+ de.siegmar.fastcsv.reader;version="[4.1,5.0)",
+ de.siegmar.fastcsv.writer;version="[4.1,5.0)",
  net.solarnetwork.codec;version="[2.6,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.dnp3.util;version="[1.0,2.0)",
@@ -39,7 +41,4 @@ Import-Package:
  org.springframework.core;version="[6.2,7.0)",
  org.springframework.core.io;version="[6.2,7.0)",
  org.springframework.core.task;version="[6.2,7.0)",
- org.springframework.scheduling;version="[6.2,7.0)",
- org.supercsv.io;version="[2.0,3.0)",
- org.supercsv.prefs;version="[2.0,3.0)",
- org.supercsv.util;version="[2.0,3.0)"
+ org.springframework.scheduling;version="[6.2,7.0)"

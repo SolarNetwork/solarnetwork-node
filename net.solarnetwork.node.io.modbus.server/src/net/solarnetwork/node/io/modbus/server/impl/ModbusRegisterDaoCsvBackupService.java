@@ -25,14 +25,16 @@ package net.solarnetwork.node.io.modbus.server.impl;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.parseBytes;
 import static net.solarnetwork.util.ByteUtils.encodeHexString;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.io.ICsvListWriter;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
@@ -50,7 +52,7 @@ import net.solarnetwork.util.ObjectUtils;
  * CSV backup service for Modbus server data.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.1
  */
 public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServiceSupport
@@ -115,7 +117,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	}
 
 	@Override
-	protected void importCsvConfiguration(ICsvListReader csvReader, String[] headers, boolean replace)
+	protected void importCsvConfiguration(CsvReader<CsvRecord> csvReader, boolean replace)
 			throws IOException {
 		final PlatformTransactionManager txMgr = OptionalService.service(getTransactionManager());
 		final TransactionTemplate tt = (txMgr != null ? new TransactionTemplate(txMgr) : null);
@@ -123,7 +125,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 			try {
 				tt.executeWithoutResult(tx -> {
 					try {
-						importCsvConfigurationInternal(csvReader, headers, replace);
+						importCsvConfigurationInternal(csvReader, replace);
 					} catch ( IOException e ) {
 						throw new RuntimeException(e);
 					}
@@ -135,29 +137,30 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 				throw e;
 			}
 		} else {
-			importCsvConfigurationInternal(csvReader, headers, replace);
+			importCsvConfigurationInternal(csvReader, replace);
 		}
 	}
 
-	private void importCsvConfigurationInternal(ICsvListReader csvReader, String[] headers,
-			boolean replace) throws IOException {
+	private void importCsvConfigurationInternal(CsvReader<CsvRecord> csvReader, boolean replace)
+			throws IOException {
 		final ModbusRegisterDao dao = dao();
 		if ( replace ) {
 			dao.deleteAll();
 		}
-		for ( List<String> row = csvReader.read(); row != null; row = csvReader.read() ) {
-			if ( row.size() < 5 ) {
+		csvReader.skipLines(1);
+		for ( CsvRecord row : csvReader ) {
+			if ( row.getFieldCount() < 5 ) {
 				continue;
 			}
-			final String serverId = row.get(CsvColumns.ServerId.ordinal());
-			final int unitId = Integer.parseInt(row.get(CsvColumns.UnitId.ordinal()));
+			final String serverId = row.getField(CsvColumns.ServerId.ordinal());
+			final int unitId = Integer.parseInt(row.getField(CsvColumns.UnitId.ordinal()));
 			final ModbusRegisterBlockType blockType = ModbusRegisterBlockType
-					.valueOf(row.get(CsvColumns.BlockType.ordinal()));
-			final int address = Integer.parseInt(row.get(CsvColumns.Address.ordinal()));
-			final Instant created = Instant.parse(row.get(CsvColumns.Created.ordinal()));
-			final Instant modified = Instant.parse(row.get(CsvColumns.Modified.ordinal()));
-			final short val = (short) (Integer.parseUnsignedInt(row.get(CsvColumns.Value.ordinal()), 16)
-					& 0xFFFF);
+					.valueOf(row.getField(CsvColumns.BlockType.ordinal()));
+			final int address = Integer.parseInt(row.getField(CsvColumns.Address.ordinal()));
+			final Instant created = Instant.parse(row.getField(CsvColumns.Created.ordinal()));
+			final Instant modified = Instant.parse(row.getField(CsvColumns.Modified.ordinal()));
+			final short val = (short) (Integer.parseUnsignedInt(row.getField(CsvColumns.Value.ordinal()),
+					16) & 0xFFFF);
 			final ModbusRegisterEntity entity = ModbusRegisterEntity.newRegisterEntity(serverId, unitId,
 					blockType, address, created, val);
 			entity.setModified(modified);
@@ -166,7 +169,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	}
 
 	@Override
-	protected void exportCsvConfiguration(ICsvListWriter csvWriter) throws IOException {
+	protected void exportCsvConfiguration(CsvWriter csvWriter) throws IOException {
 		final PlatformTransactionManager txMgr = OptionalService.service(getTransactionManager());
 		final TransactionTemplate tt = (txMgr != null ? new TransactionTemplate(txMgr) : null);
 		if ( tt != null ) {
@@ -181,6 +184,8 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 			} catch ( RuntimeException e ) {
 				if ( e.getCause() instanceof IOException ioe ) {
 					throw ioe;
+				} else if ( e instanceof UncheckedIOException uioe ) {
+					throw uioe.getCause();
 				}
 				throw e;
 			}
@@ -189,10 +194,10 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 		}
 	}
 
-	private void exportCsvConfigurationInternal(ICsvListWriter csvWriter) throws IOException {
+	private void exportCsvConfigurationInternal(CsvWriter csvWriter) throws IOException {
 		final ModbusRegisterDao dao = dao();
 		final BasicBatchOptions opts = new BasicBatchOptions("export", 50, false, Map.of());
-		csvWriter.writeHeader(
+		csvWriter.writeRecord(
 				Arrays.stream(CsvColumns.values()).map(e -> e.name()).toArray(String[]::new));
 		dao.batchProcess(new BatchCallback<ModbusRegisterEntity>() {
 
@@ -207,11 +212,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 				row[CsvColumns.Modified.ordinal()] = entity.getModified().toString();
 				row[CsvColumns.Value.ordinal()] = encodeHexString(
 						parseBytes(new short[] { entity.getValue() }, 0), 0, 2, false);
-				try {
-					csvWriter.write(row);
-				} catch ( IOException e ) {
-					throw new RuntimeException(e);
-				}
+				csvWriter.writeRecord(row);
 				return BatchCallbackResult.CONTINUE;
 			}
 		}, opts);

@@ -23,10 +23,10 @@
 package net.solarnetwork.node.io.modbus.server.impl;
 
 import static java.util.Arrays.fill;
-import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map.Entry;
-import org.supercsv.io.ICsvListWriter;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
@@ -41,24 +41,25 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate Modbus Server configuration CSV from settings.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusServerConfigCsvWriter {
 
-	private final ICsvListWriter writer;
+	private final CsvWriter writer;
 	private final int rowLen;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param writer
-	 *        the writer
+	 *        the writer; note the comment character should be set to something
+	 *        <b>other</b> than {@code #} so comments can be generated manually
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
-	 * @throws IOException
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
-	public ModbusServerConfigCsvWriter(ICsvListWriter writer) throws IOException {
+	public ModbusServerConfigCsvWriter(CsvWriter writer) throws UncheckedIOException {
 		super();
 		this.writer = ObjectUtils.requireNonNullArgument(writer, "writer");
 		rowLen = ModbusServerCsvColumn.values().length;
@@ -66,7 +67,7 @@ public class ModbusServerConfigCsvWriter {
 		for ( ModbusServerCsvColumn col : ModbusServerCsvColumn.values() ) {
 			row[col.getCode()] = col.getName();
 		}
-		writer.writeHeader(row);
+		writer.writeRecord(row);
 	}
 
 	/**
@@ -78,11 +79,11 @@ public class ModbusServerConfigCsvWriter {
 	 *        the instance ID
 	 * @param settings
 	 *        the settings to generate CSV for
-	 * @throws IOException
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
 	public void generateCsv(String factoryId, String instanceId, List<Setting> settings)
-			throws IOException {
+			throws UncheckedIOException {
 		if ( settings == null || settings.isEmpty() ) {
 			return;
 		}
@@ -103,7 +104,7 @@ public class ModbusServerConfigCsvWriter {
 
 		// generate #param rows for unhandled settings, like uid etc
 		for ( Entry<String, String> e : config.getMeta().entrySet() ) {
-			writer.write(new String[] { "#param", e.getKey(), e.getValue() });
+			writer.writeRecord(new String[] { "#param", e.getKey(), e.getValue() });
 		}
 
 		for ( UnitConfig unitConfig : config.getUnitConfigs() ) {
@@ -138,7 +139,7 @@ public class ModbusServerConfigCsvWriter {
 							.getCode()] = (measConfig.getDecimalScale() != null
 									? measConfig.getDecimalScale().toString()
 									: null);
-					writer.write(row);
+					writer.writeRecord(row);
 					fill(row, null);
 					regAddr += measConfig.getSize();
 				}

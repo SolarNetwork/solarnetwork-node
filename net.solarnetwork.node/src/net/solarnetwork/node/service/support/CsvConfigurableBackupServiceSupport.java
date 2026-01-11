@@ -48,12 +48,12 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.supercsv.comment.CommentStartsWith;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.StringDateKey;
 import net.solarnetwork.node.service.CsvConfigurableBackupService;
 import net.solarnetwork.service.support.BasicIdentifiable;
@@ -64,7 +64,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Helper base class for {@link CsvConfigurableBackupService} implementations.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 4.1
  */
 public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifiable
@@ -150,11 +150,10 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 
 	@Override
 	public final void importCsvConfiguration(Reader in, boolean replace) throws IOException {
-		try (ICsvListReader csvReader = new CsvListReader(in,
-				new CsvPreference.Builder(CsvPreference.STANDARD_PREFERENCE)
-						.skipComments(new CommentStartsWith("#")).build())) {
-			String[] headers = csvReader.getHeader(true);
-			importCsvConfiguration(csvReader, headers, replace);
+		try (CsvReader<CsvRecord> csvReader = CsvReader.builder().allowMissingFields(true)
+				.allowExtraFields(true).commentStrategy(CommentStrategy.SKIP)
+				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(), in)) {
+			importCsvConfiguration(csvReader, replace);
 		}
 	}
 
@@ -164,19 +163,18 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 *
 	 * @param csvReader
 	 *        the CSV reader
-	 * @param headers
-	 *        the parsed CSV header row
 	 * @param replace
 	 *        {@code true} to replace all existing configuration
 	 * @throws IOException
 	 *         if any IO error occurs
+	 * @since 2.0
 	 */
-	protected abstract void importCsvConfiguration(ICsvListReader csvReader, String[] headers,
-			boolean replace) throws IOException;
+	protected abstract void importCsvConfiguration(CsvReader<CsvRecord> csvReader, boolean replace)
+			throws IOException;
 
 	@Override
 	public final void exportCsvConfiguration(Writer out) throws IOException {
-		try (ICsvListWriter csvWriter = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter csvWriter = CsvWriter.builder().build(out)) {
 			exportCsvConfiguration(csvWriter);
 		}
 	}
@@ -189,8 +187,9 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 *        the CSV writer
 	 * @throws IOException
 	 *         if any IO error occurs
+	 * @since 2.0
 	 */
-	protected abstract void exportCsvConfiguration(ICsvListWriter csvWriter) throws IOException;
+	protected abstract void exportCsvConfiguration(CsvWriter csvWriter) throws IOException;
 
 	/**
 	 * Get the most recent CSV configuration modification date.

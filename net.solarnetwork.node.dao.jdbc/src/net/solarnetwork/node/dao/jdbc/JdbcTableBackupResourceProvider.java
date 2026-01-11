@@ -24,22 +24,27 @@ package net.solarnetwork.node.dao.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Statement;
+import java.sql.Types;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -52,8 +57,12 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -65,7 +74,7 @@ import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
  * Backup support for JDBC tables.
  *
  * @author matt
- * @version 1.6
+ * @version 2.0
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
@@ -132,7 +141,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	public Iterable<BackupResource> getBackupResources() {
 		List<BackupResource> result = new ArrayList<BackupResource>(tableNames.length);
 		for ( String tableName : tableNames ) {
-			result.add(new JdbcTableBackupResource(tableName, CsvPreference.STANDARD_PREFERENCE));
+			result.add(new JdbcTableBackupResource(tableName));
 		}
 		return result;
 	}
@@ -141,13 +150,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 		private final long modTime;
 		private final String tableName;
-		private final CsvPreference preference;
 
-		private JdbcTableBackupResource(String tableName, CsvPreference preference) {
+		private JdbcTableBackupResource(String tableName) {
 			super();
 			this.tableName = tableName;
 			this.modTime = System.currentTimeMillis();
-			this.preference = preference;
 		}
 
 		@Override
@@ -168,9 +175,8 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		@Override
 		public InputStream getInputStream() throws IOException {
 			PipedOutputStream sink = new PipedOutputStream();
-			Writer writer = new OutputStreamWriter(sink, "UTF-8");
 			PipedInputStream result = new PipedInputStream(sink);
-			taskExecutor.execute(new JdbcTableCsvExporter(tableName, writer, preference));
+			taskExecutor.execute(new JdbcTableCsvExporter(tableName, sink));
 			return result;
 		}
 
@@ -184,14 +190,12 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	private final class JdbcTableCsvExporter implements Runnable {
 
 		private final String sqlQuery;
-		private final Writer out;
-		private final CsvPreference preference;
+		private final OutputStream out;
 
-		private JdbcTableCsvExporter(String tableName, Writer out, CsvPreference preference) {
+		private JdbcTableCsvExporter(String tableName, OutputStream out) {
 			super();
 			this.sqlQuery = "SELECT * FROM " + tableName;
 			this.out = out;
-			this.preference = preference;
 		}
 
 		@Override
@@ -211,44 +215,82 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 		}
 
-		private void exportTable(Connection con) throws SQLException, IOException {
-			// query
-			Statement stmt = con.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+		private void exportTable(Connection con) throws SQLException, IOException, UncheckedIOException {
+			try (Statement stmt = con.createStatement(ResultSet.TYPE_FORWARD_ONLY,
 					ResultSet.CONCUR_READ_ONLY);
-			try {
-				ResultSet rs = stmt.executeQuery(sqlQuery);
-				CellProcessor[] cellProcessors = JdbcUtils
-						.formattingProcessorsForResultSetMetaData(rs.getMetaData());
-				JdbcResultSetCsvWriter writer = new ResultSetCsvWriter(out, preference);
-				try {
-					writer.write(rs, cellProcessors);
-				} finally {
-					if ( writer != null ) {
-						try {
-							writer.flush();
-							writer.close();
-						} catch ( IOException e ) {
-							// ignore
+					ResultSet rs = stmt.executeQuery(sqlQuery);
+					CsvWriter csv = CsvWriter.builder().commentCharacter('!').build(out)) {
+				final ResultSetMetaData meta = rs.getMetaData();
+				final String[] headers = resultSetHeaders(meta);
+				final int colCount = headers.length;
+				final List<String> row = new ArrayList<String>(headers.length);
+				final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone(ZoneOffset.UTC));
+				csv.writeRecord(headers);
+				while ( rs.next() ) {
+					row.clear();
+					for ( int i = 1; i <= colCount; i++ ) {
+						final int sqlType = meta.getColumnType(i);
+						String val = null;
+						switch (sqlType) {
+							case Types.DATE: {
+								java.sql.Date d = rs.getDate(i, utcCalendar);
+								if ( d != null ) {
+									val = DateTimeFormatter.ISO_LOCAL_DATE.format(d.toLocalDate());
+								}
+							}
+								break;
+
+							case Types.TIME: {
+								java.sql.Time d = rs.getTime(i, utcCalendar);
+								if ( d != null ) {
+									val = DateTimeFormatter.ISO_LOCAL_TIME.format(d.toLocalTime());
+								}
+							}
+								break;
+
+							case Types.TIMESTAMP:
+							case Types.TIMESTAMP_WITH_TIMEZONE: {
+								java.sql.Timestamp d = rs.getTimestamp(i, utcCalendar);
+								if ( d != null ) {
+									val = DateTimeFormatter.ISO_INSTANT.format(d.toInstant());
+								}
+							}
+								break;
+
+							case Types.BINARY:
+							case Types.VARBINARY:
+							case Types.LONGVARBINARY: {
+								byte[] d = rs.getBytes(i);
+								if ( d != null ) {
+									val = Hex.encodeHexString(d);
+								}
+							}
+								break;
+
+							default: {
+								Object v = rs.getObject(i);
+								if ( v != null ) {
+									val = v.toString();
+								}
+							}
+
 						}
+						row.add(val);
 					}
-					if ( rs != null ) {
-						try {
-							rs.close();
-						} catch ( SQLException e ) {
-							// ignore
-						}
-					}
-				}
-			} finally {
-				if ( stmt != null ) {
-					try {
-						stmt.close();
-					} catch ( SQLException e ) {
-						// ignore
-					}
+					csv.writeRecord(row);
 				}
 			}
 		}
+
+		private String[] resultSetHeaders(final ResultSetMetaData meta) throws SQLException {
+			final int colCount = meta.getColumnCount();
+			final String[] headers = new String[colCount];
+			for ( int i = 0; i < colCount; i++ ) {
+				headers[i] = meta.getColumnName(i + 1).toUpperCase(Locale.ROOT);
+			}
+			return headers;
+		}
+
 	}
 
 	@Override
@@ -310,21 +352,49 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		final Map<String, ColumnCsvMetaData> columnMetaData = JdbcUtils
 				.columnCsvMetaDataForDatabaseMetaData(con.getMetaData(), tableName);
 		final String sql = JdbcUtils.insertSqlForColumnCsvMetaData(tableName, columnMetaData);
-		Reader in;
-		PreparedStatementCsvReader reader = null;
-		try (PreparedStatement ps = con.prepareStatement(sql)) {
-			in = new InputStreamReader(resource.getInputStream());
-			reader = new PreparedStatementCsvReader(in, CsvPreference.STANDARD_PREFERENCE);
-			String[] header = reader.getHeader(true);
-			if ( header == null ) {
-				// no data; skip
-				log.info("No data provided in backup resource for table {}", tableName);
-				return true;
-			}
-			Map<String, Integer> csvColumns = JdbcUtils.csvColumnIndexMapping(header);
-			CellProcessor[] cellProcessors = JdbcUtils.parsingCellProcessorsForCsvColumns(header,
-					columnMetaData);
-			while ( reader.read(ps, csvColumns, cellProcessors, columnMetaData) ) {
+		final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone(ZoneOffset.UTC));
+		try (PreparedStatement ps = con.prepareStatement(sql);
+				CsvReader<CsvRecord> reader = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								resource.getInputStream())) {
+			List<String> header = null;
+			Map<String, Integer> csvColumns = null;
+			for ( CsvRecord row : reader ) {
+				if ( header == null ) {
+					header = row.getFields();
+					csvColumns = JdbcUtils.csvColumnIndexMapping(header);
+					continue;
+				}
+				int i = 1;
+				for ( Map.Entry<String, ColumnCsvMetaData> me : columnMetaData.entrySet() ) {
+					Integer csvColumnIndex = csvColumns.get(me.getKey());
+					Object columnValue = (csvColumnIndex != null && csvColumnIndex < row.getFieldCount()
+							? row.getField(csvColumnIndex)
+							: null);
+					// at this point value can only be a string
+					if ( columnValue != null && ((String) columnValue).isEmpty() ) {
+						columnValue = null;
+					}
+					if ( columnValue != null && me.getValue().getCellProcessor() != null ) {
+						columnValue = me.getValue().getCellProcessor().apply(columnValue);
+					}
+					final int sqlType = me.getValue().getSqlType();
+					if ( columnValue == null ) {
+						ps.setNull(i, sqlType);
+					} else if ( columnValue instanceof java.sql.Date ) {
+						ps.setDate(i, (java.sql.Date) columnValue, utcCalendar);
+					} else if ( columnValue instanceof java.sql.Time ) {
+						ps.setTime(i, (java.sql.Time) columnValue, utcCalendar);
+					} else if ( columnValue instanceof java.sql.Timestamp ) {
+						ps.setTimestamp(i, (java.sql.Timestamp) columnValue, utcCalendar);
+					} else {
+						ps.setObject(i, columnValue, sqlType);
+					}
+					i++;
+				}
+
 				Savepoint sp = con.setSavepoint();
 				try {
 					ps.executeUpdate();
@@ -333,7 +403,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 							sql, e);
 					if ( dae instanceof DataIntegrityViolationException ) {
 						log.debug("Ignoring {} CSV duplicate import row {}", tableName,
-								reader.getRowNumber());
+								row.getStartingLineNumber());
 						con.rollback(sp);
 					} else {
 						throw e;
@@ -344,17 +414,9 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		} catch ( SQLException e ) {
 			log.error("SQL error restoring resource [{}] to table [{}]: {}", resource.getBackupPath(),
 					tableName, e.getMessage());
-		} catch ( IOException e ) {
+		} catch ( UncheckedIOException | IOException e ) {
 			log.error("CSV encoding error restoring resource [{}] to table [{}]: {}",
 					resource.getBackupPath(), tableName, e.getMessage());
-		} finally {
-			if ( reader != null ) {
-				try {
-					reader.close();
-				} catch ( IOException e ) {
-					// ignore
-				}
-			}
 		}
 		return false;
 	}

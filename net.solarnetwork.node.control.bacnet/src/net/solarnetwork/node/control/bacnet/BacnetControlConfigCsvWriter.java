@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetControlConfigCsvWriter.java - 10/11/2022 10:16:18 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,35 +23,36 @@
 package net.solarnetwork.node.control.bacnet;
 
 import static java.util.Arrays.fill;
-import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
-import org.supercsv.io.ICsvListWriter;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Generate BACnet Control configuration CSV from settings.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class BacnetControlConfigCsvWriter {
 
-	private final ICsvListWriter writer;
+	private final CsvWriter writer;
 	private final int rowLen;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param writer
-	 *        the writer
+	 *        the writer; note the comment character should be set to something
+	 *        <b>other</b> than {@code #} so comments can be generated manually
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
-	 * @throws IOException
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
-	public BacnetControlConfigCsvWriter(ICsvListWriter writer) throws IOException {
+	public BacnetControlConfigCsvWriter(CsvWriter writer) throws UncheckedIOException {
 		super();
 		this.writer = ObjectUtils.requireNonNullArgument(writer, "writer");
 		rowLen = BacnetControlCsvColumn.values().length;
@@ -59,23 +60,23 @@ public class BacnetControlConfigCsvWriter {
 		for ( BacnetControlCsvColumn col : BacnetControlCsvColumn.values() ) {
 			row[col.getCode()] = col.getName();
 		}
-		writer.writeHeader(row);
+		writer.writeRecord(row);
 	}
 
 	/**
 	 * Generate Bacnet Device CSV from settings.
-	 * 
+	 *
 	 * @param factoryId
 	 *        the Bacnet Device factory ID
 	 * @param instanceId
 	 *        the instance ID
 	 * @param settings
 	 *        the settings to generate CSV for
-	 * @throws IOException
+	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
 	public void generateCsv(String factoryId, String instanceId, List<Setting> settings)
-			throws IOException {
+			throws UncheckedIOException {
 		if ( settings == null || settings.isEmpty() ) {
 			return;
 		}
@@ -114,7 +115,7 @@ public class BacnetControlConfigCsvWriter {
 			row[BacnetControlCsvColumn.DECIMAL_SCALE.getCode()] = (propConfig.getDecimalScale() != null
 					? propConfig.getDecimalScale().toString()
 					: null);
-			writer.write(row);
+			writer.writeRecord(row);
 			fill(row, null);
 		}
 	}

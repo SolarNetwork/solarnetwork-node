@@ -32,9 +32,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServer;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerConfigCsvWriter;
@@ -82,7 +80,7 @@ public class ModbusServerConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().build(out)) {
 			ModbusServerConfigCsvWriter gen = new ModbusServerConfigCsvWriter(writer);
 			gen.generateCsv(ModbusServer.SETTING_UID, "1", settings);
 		}
@@ -107,7 +105,7 @@ public class ModbusServerConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			ModbusServerConfigCsvWriter gen = new ModbusServerConfigCsvWriter(writer);
 			gen.generateCsv(ModbusServer.SETTING_UID, "1", settings);
 		}

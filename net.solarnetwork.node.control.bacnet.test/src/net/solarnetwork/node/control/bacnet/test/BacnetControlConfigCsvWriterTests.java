@@ -1,21 +1,21 @@
 /* ==================================================================
  * BacnetControlConfigCsvWriterTests.java - 11/11/2022 8:39:00 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,9 +32,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.control.bacnet.BacnetControl;
 import net.solarnetwork.node.control.bacnet.BacnetControlConfigCsvWriter;
 import net.solarnetwork.node.domain.Setting;
@@ -42,7 +40,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link BacnetControlConfigCsvWriter} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -82,7 +80,7 @@ public class BacnetControlConfigCsvWriterTests {
 
 		// WHEN
 		final StringWriter out = new StringWriter(4096);
-		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			BacnetControlConfigCsvWriter gen = new BacnetControlConfigCsvWriter(writer);
 			gen.generateCsv(BacnetControl.SETTING_UID, "1", settings);
 		}

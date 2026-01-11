@@ -3,13 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: JDBC DAO Tests
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.test
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.test
-Bundle-Version: 4.1.0
+Bundle-Version: 4.2.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="[4.1.0,5.0)"
+Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="[4.2,5.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.19,3.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
+ org.assertj.core.api;version="[3.27,4.0)",
  org.easymock;version="[3.6,4.0)",
  org.hamcrest;version="[1.1,2.0)",
  org.junit;version="[4.5,5.0)",
@@ -19,6 +20,7 @@ Import-Package:
  org.springframework.jdbc.core;version="[6.2,7.0)",
  org.springframework.jdbc.core.simple;version="[6.2,7.0)",
  org.springframework.jdbc.datasource.embedded;version="[6.2,7.0)",
+ org.springframework.scheduling.concurrent;version="[6.2,7.0)",
  org.springframework.test.context;version="[6.2,7.0)",
  org.springframework.test.context.junit4;version="[6.2,7.0)",
  org.springframework.test.context.transaction;version="[6.2,7.0)",

@@ -32,14 +32,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.bacnet.BacnetCsvConfigurer;
 import net.solarnetwork.node.datum.bacnet.BacnetDatumDataSourceConfig;
@@ -49,13 +52,12 @@ import net.solarnetwork.node.datum.bacnet.BacnetDeviceConfig;
 import net.solarnetwork.node.datum.bacnet.BacnetPropertyConfig;
 import net.solarnetwork.node.io.bacnet.BacnetObjectType;
 import net.solarnetwork.node.io.bacnet.BacnetPropertyType;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link BacnetDatumDataSourceConfigCsvParser} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetDatumDataSourceConfigCsvParserTests {
 
@@ -81,8 +83,11 @@ public class BacnetDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-bacnet-config-01.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-bacnet-config-01.csv"), StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -126,8 +131,11 @@ public class BacnetDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-bacnet-config-02.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-bacnet-config-02.csv"), StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -171,8 +179,11 @@ public class BacnetDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-bacnet-config-03.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-bacnet-config-03.csv"), StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 
@@ -253,8 +264,12 @@ public class BacnetDatumDataSourceConfigCsvParserTests {
 
 		// WHEN
 		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-bacnet-config-sample-01.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				getClass().getResourceAsStream("test-bacnet-config-sample-01.csv"),
+				StandardCharsets.UTF_8);
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 

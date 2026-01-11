@@ -55,7 +55,7 @@ import net.solarnetwork.domain.SortDescriptor;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparable<K>>
 		extends AbstractJdbcDao<T> implements GenericDao<T, K> {
@@ -390,7 +390,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 				for ( StandardSortKey k : StandardSortKey.values() ) {
 					String lc = k.toString().toLowerCase();
 					if ( lc.equalsIgnoreCase(d.getSortKey()) ) {
-						clause = sqlOrderClause(lc, d.isDescending());
+						clause = JdbcUtils.sqlOrderClause(lc, d.isDescending());
 						break;
 					}
 				}
@@ -499,7 +499,8 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 * @return the new instant, or {@literal null} if the column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
-	 * @deprecated use {@link JdbcUtils#getUtcTimestampColumnValue(ResultSet, int)}
+	 * @deprecated use
+	 *             {@link JdbcUtils#getUtcTimestampColumnValue(ResultSet, int)}
 	 */
 	@Deprecated
 	public static Instant getInstantColumn(ResultSet rs, int columnIndex) throws SQLException {

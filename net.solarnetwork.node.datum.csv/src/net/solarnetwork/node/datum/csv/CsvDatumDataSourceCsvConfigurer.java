@@ -1,21 +1,21 @@
 /* ==================================================================
  * CsvDatumDataSourceCsvConfigurer.java - 1/04/2023 3:58:10 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,9 +29,8 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.Writer;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,11 +42,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.CsvListWriter;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.io.ICsvListWriter;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
@@ -67,9 +67,9 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Service that can configure {@link CsvDatumDataSource} instances via CSV
  * resources.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CsvDatumDataSourceCsvConfigurer extends BasicIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -89,7 +89,7 @@ public class CsvDatumDataSourceCsvConfigurer extends BasicIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param locationMode
 	 *        {@literal true} to configure location-based datum data sources
 	 * @param settingsService
@@ -150,8 +150,7 @@ public class CsvDatumDataSourceCsvConfigurer extends BasicIdentifiable
 			return null;
 		}
 		final ByteArrayOutputStream byos = new ByteArrayOutputStream(4096);
-		try (Writer out = new OutputStreamWriter(byos, ByteUtils.UTF8);
-				ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(byos)) {
 			CsvDatumDataSourceConfigCsvWriter gen = new CsvDatumDataSourceConfigCsvWriter(writer,
 					locationMode);
 
@@ -161,7 +160,7 @@ public class CsvDatumDataSourceCsvConfigurer extends BasicIdentifiable
 				List<Setting> settings = settingsService.getSettings(settingProviderId, instanceId);
 				gen.generateCsv(settingProviderId, instanceId, settings);
 			}
-		} catch ( IOException e ) {
+		} catch ( UncheckedIOException | IOException e ) {
 			log.error("Error generating {} configuration CSV: {}",
 					locationMode ? "CSV Location Resource" : "CSV Resource", e.toString());
 			return Collections.emptyList();
@@ -227,7 +226,11 @@ public class CsvDatumDataSourceCsvConfigurer extends BasicIdentifiable
 				getMessageSource(), lastImportMessages, locationMode);
 		try (Reader in = new InputStreamReader(
 				inputStreamForPossibleGzipStream(resource.getInputStream()), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+						.allowExtraFields(true).skipEmptyLines(true)
+						.commentStrategy(CommentStrategy.NONE)
+						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+								in)) {
 			parser.parse(csv);
 		}
 		return configs;

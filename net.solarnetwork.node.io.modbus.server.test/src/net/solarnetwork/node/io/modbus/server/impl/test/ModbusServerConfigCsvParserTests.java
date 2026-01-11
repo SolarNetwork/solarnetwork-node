@@ -29,17 +29,17 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.supercsv.io.CsvListReader;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
+import de.siegmar.fastcsv.reader.CommentStrategy;
+import de.siegmar.fastcsv.reader.CsvReader;
+import de.siegmar.fastcsv.reader.CsvRecord;
+import de.siegmar.fastcsv.reader.CsvRecordHandler;
+import de.siegmar.fastcsv.reader.FieldModifiers;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
@@ -48,7 +48,6 @@ import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerConfigCsvParser;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusServerConfigCsvParser} class.
@@ -79,9 +78,10 @@ public class ModbusServerConfigCsvParserTests {
 		// GIVEN
 
 		// WHEN
-		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-01.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+				.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+						getClass().getResourceAsStream("test-config-01.csv"))) {
 			parser.parse(csv);
 		}
 
@@ -123,9 +123,10 @@ public class ModbusServerConfigCsvParserTests {
 		// GIVEN
 
 		// WHEN
-		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-02.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+				.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+						getClass().getResourceAsStream("test-config-02.csv"))) {
 			parser.parse(csv);
 		}
 
@@ -153,9 +154,10 @@ public class ModbusServerConfigCsvParserTests {
 		// GIVEN
 
 		// WHEN
-		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-03.csv"),
-				ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+				.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+						getClass().getResourceAsStream("test-config-03.csv"))) {
 			parser.parse(csv);
 		}
 
@@ -206,9 +208,10 @@ public class ModbusServerConfigCsvParserTests {
 		// GIVEN
 
 		// WHEN
-		try (Reader in = new InputStreamReader(
-				getClass().getResourceAsStream("test-config-sample-01.csv"), ByteUtils.UTF8);
-				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+		try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+				.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+						getClass().getResourceAsStream("test-config-sample-01.csv"))) {
 			parser.parse(csv);
 		}
 

@@ -539,7 +539,8 @@ public class CsvDatumDataSourceConfig {
 	}
 
 	/**
-	 * Get the {@link net.solarnetwork.web.service.HttpRequestCustomizerService}
+	 * Get the
+	 * {@link net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService}
 	 * UID.
 	 *
 	 * @return the UID
@@ -549,7 +550,8 @@ public class CsvDatumDataSourceConfig {
 	}
 
 	/**
-	 * Set the {@link net.solarnetwork.web.service.HttpRequestCustomizerService}
+	 * Set the
+	 * {@link net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService}
 	 * UID.
 	 *
 	 * @param httpCustomizer

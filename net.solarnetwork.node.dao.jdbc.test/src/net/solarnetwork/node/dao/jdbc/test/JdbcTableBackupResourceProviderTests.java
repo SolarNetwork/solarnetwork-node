@@ -1,7 +1,7 @@
 /* ==================================================================
- * PreparedStatementCsvReaderTests.java - 6/10/2016 1:13:32 PM
+ * JdbcTableBackupResourceProviderTests.java - 11/01/2026 11:30:42 am
  *
- * Copyright 2007-2016 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,50 +22,42 @@
 
 package net.solarnetwork.node.dao.jdbc.test;
 
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Savepoint;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.test.context.transaction.BeforeTransaction;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.util.LinkedCaseInsensitiveMap;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.prefs.CsvPreference;
-import net.solarnetwork.node.dao.jdbc.ColumnCsvMetaData;
+import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
-import net.solarnetwork.node.dao.jdbc.JdbcUtils;
-import net.solarnetwork.node.dao.jdbc.PreparedStatementCsvReader;
+import net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
- * Test cases for the {@link PreparedStatementCsvReader} class.
+ * Test cases for the {@link JdbcTableBackupResourceProvider} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTest {
+public class JdbcTableBackupResourceProviderTests extends AbstractNodeTransactionalTest {
 
 	@BeforeTransaction
 	public void setup() {
@@ -77,57 +69,15 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 	}
 
 	private void importData(final String tableName) {
-		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedCaseInsensitiveMap<ColumnCsvMetaData>(
-				8, Locale.ROOT);
-		jdbcTemplate.execute(new ConnectionCallback<Object>() {
+		final JdbcTableBackupResourceProvider provider = new JdbcTableBackupResourceProvider("test",
+				jdbcTemplate, txTemplate,
+				new ConcurrentTaskExecutor(Executors.newSingleThreadExecutor()));
 
-			@Override
-			public Object doInConnection(Connection con) throws SQLException, DataAccessException {
-				columnMetaData.putAll(
-						JdbcUtils.columnCsvMetaDataForDatabaseMetaData(con.getMetaData(), tableName));
-				String sql = JdbcUtils.insertSqlForColumnCsvMetaData(tableName, columnMetaData);
-				PreparedStatement ps = con.prepareStatement(sql);
+		final BackupResource rsrc = new ResourceBackupResource(
+				new ClassPathResource("csv-data-01.csv", getClass()), tableName + ".csv",
+				provider.getKey());
 
-				Reader in;
-				PreparedStatementCsvReader reader = null;
-				try {
-					in = new InputStreamReader(getClass().getResourceAsStream("csv-data-01.csv"),
-							"UTF-8");
-					reader = new PreparedStatementCsvReader(in, CsvPreference.STANDARD_PREFERENCE);
-					String[] header = reader.getHeader(true);
-					Map<String, Integer> csvColumns = JdbcUtils.csvColumnIndexMapping(header);
-					CellProcessor[] cellProcessors = JdbcUtils.parsingCellProcessorsForCsvColumns(header,
-							columnMetaData);
-					while ( reader.read(ps, csvColumns, cellProcessors, columnMetaData) ) {
-						Savepoint sp = con.setSavepoint();
-						try {
-							ps.executeUpdate();
-						} catch ( SQLException e ) {
-
-							DataAccessException dae = jdbcTemplate.getExceptionTranslator()
-									.translate("Load CSV", sql, e);
-							if ( dae instanceof DataIntegrityViolationException ) {
-								con.rollback(sp);
-							} else {
-								throw e;
-							}
-						}
-					}
-				} catch ( IOException e ) {
-					throw new DataAccessResourceFailureException("CSV encoding error", e);
-				} finally {
-					if ( reader != null ) {
-						try {
-							reader.close();
-						} catch ( IOException e ) {
-							// ignore
-						}
-					}
-				}
-				return null;
-			}
-
-		});
+		provider.restoreBackupResource(rsrc);
 	}
 
 	@Test
@@ -142,7 +92,6 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				// TODO Auto-generated method stub
 				return con.prepareStatement(
 						"select PK,STR,INUM,DNUM,TS from solarnode.test_csv_io order by pk");
 			}
@@ -180,7 +129,13 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 				}
 			}
 		});
-		assertEquals("Imported count", 5, row.intValue());
+
+		// @formatter:off
+		then(row.intValue())
+			.as("Imported all rows")
+			.isEqualTo(5)
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -198,4 +153,36 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 		});
 	}
 
+	@Test
+	public void exportTable() throws Exception {
+		// GIVEN
+		final String tableName = "SOLARNODE.TEST_CSV_IO";
+		importData(tableName);
+
+		// because export uses a pipe, need to commit transaction to see the data
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
+
+		final JdbcTableBackupResourceProvider provider = new JdbcTableBackupResourceProvider("test",
+				jdbcTemplate, txTemplate,
+				new ConcurrentTaskExecutor(Executors.newSingleThreadExecutor()));
+		provider.setTableNames(new String[] { "SOLARNODE.TEST_CSV_IO" });
+
+		// WHEN
+		Iterable<BackupResource> rsrcs = provider.getBackupResources();
+
+		// THEN
+		// @formatter:off
+		then(rsrcs)
+			.as("One table exported")
+			.hasSize(1)
+			.element(0)
+			.satisfies(r -> {
+				then(r.getInputStream())
+					.hasSameContentAs(getClass().getResourceAsStream("csv-data-01.csv"))
+					;
+			})
+			;
+		// @formatter:on
+	}
 }

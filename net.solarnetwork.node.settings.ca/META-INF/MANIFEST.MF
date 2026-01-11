@@ -4,11 +4,13 @@ Bundle-Name: Core Settings Support
 Bundle-SymbolicName: net.solarnetwork.node.settings.ca
 Automatic-Module-Name: net.solarnetwork.node.settings.ca
 Bundle-Description: Provides persistent storage of user-customized SolarNode settings.
-Bundle-Version: 4.0.1
+Bundle-Version: 4.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.19,3.0)",
+ de.siegmar.fastcsv.reader;version="[4.1,5.0)",
+ de.siegmar.fastcsv.writer;version="[4.1,5.0)",
  net.solarnetwork.dao;version="[3.0,4.0)",
  net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.io;version="[3.0,4.0)",
@@ -37,10 +39,4 @@ Import-Package:
  org.springframework.core.task;version="[6.2,7.0)",
  org.springframework.transaction;version="[6.2,7.0)",
  org.springframework.transaction.support;version="[6.2,7.0)",
- org.springframework.util;version="[6.2,7.0)",
- org.supercsv.cellprocessor;version="[2.0,3.0)",
- org.supercsv.cellprocessor.ift;version="[2.0,3.0)",
- org.supercsv.comment;version="[2.0,3.0)",
- org.supercsv.io;version="[2.0,3.0)",
- org.supercsv.prefs;version="[2.0,3.0)",
- org.supercsv.util;version="[2.0,3.0)"
+ org.springframework.util;version="[6.2,7.0)"

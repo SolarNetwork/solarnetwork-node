@@ -33,9 +33,8 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +67,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * the file system.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
@@ -159,7 +158,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		if ( !archiveFile.canRead() ) {
 			return null;
 		}
-		return createBackupForFile(archiveFile, new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT));
+		return createBackupForFile(archiveFile);
 	}
 
 	@Override
@@ -378,19 +377,19 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return archives;
 	}
 
-	private SimpleBackup createBackupForFile(File f, SimpleDateFormat sdf) {
+	private SimpleBackup createBackupForFile(File f) {
 		Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(f.getName());
 		if ( m.find() ) {
 			try {
-				Date d = sdf.parse(m.group(2));
+				Instant d = BACKUP_KEY_DATE_FORMATTER.parse(m.group(2), Instant::from);
 				Long nodeId = 0L;
 				try {
 					nodeId = Long.valueOf(m.group(1));
 				} catch ( NumberFormatException e ) {
 					// ignore this
 				}
-				return new SimpleBackup(nodeId, d, m.group(2), f.length(), true);
-			} catch ( ParseException e ) {
+				return new SimpleBackup(nodeId, Date.from(d), m.group(2), f.length(), true);
+			} catch ( DateTimeParseException e ) {
 				log.error("Error parsing date from archive " + f.getName() + ": " + e.getMessage());
 			}
 		}
@@ -404,9 +403,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 			return Collections.emptyList();
 		}
 		List<Backup> result = new ArrayList<Backup>(archives.length);
-		SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT);
 		for ( File f : archives ) {
-			SimpleBackup b = createBackupForFile(f, sdf);
+			SimpleBackup b = createBackupForFile(f);
 			if ( b != null ) {
 				result.add(b);
 			}

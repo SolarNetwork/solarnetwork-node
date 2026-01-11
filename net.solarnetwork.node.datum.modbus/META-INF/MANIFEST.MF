@@ -4,10 +4,12 @@ Bundle-Name: Modbus Datum Source
 Bundle-Description: Collect data from arbitrary Modbus devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.modbus
 Automatic-Module-Name: net.solarnetwork.node.datum.modbus
-Bundle-Version: 5.1.0
+Bundle-Version: 5.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
+ de.siegmar.fastcsv.reader;version="[4.1,5.0)",
+ de.siegmar.fastcsv.writer;version="[4.1,5.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.domain.datum;version="[3.4,4.0)",
@@ -35,7 +37,4 @@ Import-Package:
  org.springframework.core;version="[6.2,7.0)",
  org.springframework.core.io;version="[6.2,7.0)",
  org.springframework.expression;version="[6.2,7.0)",
- org.springframework.scheduling;version="[6.2,7.0)",
- org.supercsv.io;version="[2.0,3.0)",
- org.supercsv.prefs;version="[2.0,3.0)",
- org.supercsv.util;version="[2.0,3.0)"
+ org.springframework.scheduling;version="[6.2,7.0)"
