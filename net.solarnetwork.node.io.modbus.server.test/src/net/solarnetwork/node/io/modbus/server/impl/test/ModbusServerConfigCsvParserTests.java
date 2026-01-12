@@ -47,7 +47,7 @@ import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerConfigCsvParser;
-import net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer;
+import net.solarnetwork.node.io.modbus.server.tcp.ModbusServerCsvConfigurer;
 
 /**
  * Test cases for the {@link ModbusServerConfigCsvParser} class.

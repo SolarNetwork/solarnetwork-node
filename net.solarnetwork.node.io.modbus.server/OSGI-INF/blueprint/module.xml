@@ -17,14 +17,6 @@
 	
 	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
 
-	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Modbus Server (TCP)"/>
-			<property name="factoryUid" value="net.solarnetwork.node.io.modbus.server"/>
-			<property name="messageSource" ref="messageSource"/>
-		</bean>
-	</service>
-	
 	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
@@ -43,34 +35,24 @@
 		<property name="serviceFilter" value="(db=node)"/>
 		<property name="sticky" value="true"/>
 	</bean>
-
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames">
-			<array>
-				<value>net.solarnetwork.node.io.modbus.server.impl.ModbusServer</value>
-				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
-			</array>
-		</property>
-		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.support.PrefixedMessageSource">
-				<property name="prefix" value="unitConfigsItem."/>
-				<property name="delegate">
-					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.UnitConfig"/>
-						<property name="parentMessageSource">
-							<bean class="net.solarnetwork.support.PrefixedMessageSource">
-								<property name="prefix" value="registerBlockConfigsItem."/>
-								<property name="delegate">
-									<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-										<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig"/>
-										<property name="parentMessageSource">
-											<bean class="net.solarnetwork.support.PrefixedMessageSource">
-												<property name="prefix" value="measurementConfigsItem."/>
-												<property name="delegate">
-													<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-														<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig"/>
-													</bean>
-												</property>
+	
+	<bean id="baseMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="unitConfigsItem."/>
+		<property name="delegate">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.UnitConfig"/>
+				<property name="parentMessageSource">
+					<bean class="net.solarnetwork.support.PrefixedMessageSource">
+						<property name="prefix" value="registerBlockConfigsItem."/>
+						<property name="delegate">
+							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+								<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig"/>
+								<property name="parentMessageSource">
+									<bean class="net.solarnetwork.support.PrefixedMessageSource">
+										<property name="prefix" value="measurementConfigsItem."/>
+										<property name="delegate">
+											<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+												<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig"/>
 											</bean>
 										</property>
 									</bean>
@@ -83,19 +65,35 @@
 		</property>
 	</bean>
 	
+	<!-- 
+		TCP Server	
+	 -->
+
+	<bean id="tcpMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.io.modbus.server.tcp.ModbusServer</value>
+				<value>net.solarnetwork.node.io.modbus.server.impl.BaseModbusServer</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</array>
+		</property>
+		<property name="parentMessageSource" ref="baseMessageSource"/>
+	</bean>
+	
 	<service>
 		<interfaces>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
 		</interfaces>
-		<bean class="net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer">
+		<bean class="net.solarnetwork.node.io.modbus.server.tcp.ModbusServerCsvConfigurer">
 			<argument ref="settingsService"/>
 			<argument ref="identityService"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 					<property name="basenames">
 						<list>
-							<value>net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer</value>
+							<value>net.solarnetwork.node.io.modbus.server.tcp.ModbusServerCsvConfigurer</value>
+							<value>net.solarnetwork.node.io.modbus.server.impl.BaseModbusServerCsvConfigurer</value>
 							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 						</list>
 					</property>
@@ -104,6 +102,14 @@
 		</bean>
 	</service>
 
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Modbus Server (TCP)"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus.server"/>
+			<property name="messageSource" ref="tcpMessageSource"/>
+		</bean>
+	</service>
+	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -119,14 +125,96 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.modbus.server.impl.ModbusServer" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<bean class="net.solarnetwork.node.io.modbus.server.tcp.ModbusServer" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="taskExecutor"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="tcpMessageSource"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
 			<property name="registerDao" ref="registerDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
+
+	<!-- 
+		RTU Server	
+	 -->
+
+	<bean id="rtuMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.io.modbus.server.rtu.ModbusServer</value>
+				<value>net.solarnetwork.node.io.modbus.server.impl.BaseModbusServer</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</array>
+		</property>
+		<property name="parentMessageSource" ref="baseMessageSource"/>
+	</bean>
+	
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.io.modbus.server.rtu.ModbusServerCsvConfigurer">
+			<argument ref="settingsService"/>
+			<argument ref="identityService"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames">
+						<list>
+							<value>net.solarnetwork.node.io.modbus.server.rtu.ModbusServerCsvConfigurer</value>
+							<value>net.solarnetwork.node.io.modbus.server.impl.BaseModbusServerCsvConfigurer</value>
+							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+						</list>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</service>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Modbus Server (RTU)"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus.server.rtu"/>
+			<property name="messageSource" ref="rtuMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server.rtu" autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>org.osgi.service.event.EventHandler</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.server.rtu"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.service.DatumQueue).EVENT_TOPIC_DATUM_ACQUIRED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.modbus.server.rtu.ModbusServer" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="taskExecutor"/>
+			<argument>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.nifty.rtu.SerialConnectionProvider"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="uid" value=""/>
+						</map>
+					</property>
+				</bean>
+			</argument>
+			<property name="messageSource" ref="rtuMessageSource"/>
+			<property name="taskScheduler" ref="taskScheduler"/>
+			<property name="registerDao" ref="registerDao"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+
 	<!-- 
 		Persistence Backup
 	 -->

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus.server.impl.test;
+package net.solarnetwork.node.io.modbus.server.tcp.test;
 
 import static java.lang.String.format;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
@@ -62,14 +62,14 @@ import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
-import net.solarnetwork.node.io.modbus.server.impl.ModbusServer;
+import net.solarnetwork.node.io.modbus.server.tcp.ModbusServer;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.test.CallingThreadExecutorService;
 
 /**
- * Test cases for the {@link ModbusServer} class.
+ * Test cases for the {@link RtuModbusServer} class.
  *
  * @author matt
  * @version 1.0

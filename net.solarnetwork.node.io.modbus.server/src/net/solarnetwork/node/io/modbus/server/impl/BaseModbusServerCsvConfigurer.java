@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusServerCsvConfigurer.java - 9/03/2022 11:48:43 AM
+ * BaseModbusServerCsvConfigurer.java - 13/01/2026 8:41:18 am
  *
- * Copyright 2022 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -50,6 +50,7 @@ import de.siegmar.fastcsv.reader.FieldModifiers;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
+import net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
@@ -66,23 +67,26 @@ import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Service that can configure {@link ModbusServer} instances via CSV resources.
+ * Base implementation of CSV configurer for Modbus servers using the
+ * {@link ModbusServerCsvColumn} CSV structure with {@link ModbusServerConfig}
+ * configuration.
  *
  * @author matt
- * @version 1.2
+ * @version 1.0
  */
-public class ModbusServerCsvConfigurer extends BasicIdentifiable
+public abstract class BaseModbusServerCsvConfigurer extends BasicIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
 
 	/** The setting resource key for a CSV file. */
 	public static final String RESOURCE_KEY_CSV_FILE = "csvFile";
 
-	private static final Logger log = LoggerFactory.getLogger(ModbusServerCsvConfigurer.class);
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final SettingsService settingsService;
 	private final OptionalService<IdentityService> identityService;
-
-	private String settingProviderId = ModbusServer.SETTING_UID;
+	private final String serverSettingUid;
+	private final String serverTypeKey;
 
 	private Throwable lastImportException = null;
 	private List<String> lastImportMessages = null;
@@ -94,28 +98,26 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 	 *        the settings service
 	 * @param identityService
 	 *        the identity service
+	 * @param serverSettingUid
+	 *        the Modbus Server setting UID
+	 * @param serverTypeKey
+	 *        a server implementation identifier to include in CSV export file
+	 *        names, e.g. {@code tcp} or {@code rtu}
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public ModbusServerCsvConfigurer(SettingsService settingsService,
-			OptionalService<IdentityService> identityService) {
+	public BaseModbusServerCsvConfigurer(SettingsService settingsService,
+			OptionalService<IdentityService> identityService, String serverSettingUid,
+			String serverTypeKey) {
 		super();
 		this.settingsService = requireNonNullArgument(settingsService, "settingsService");
 		this.identityService = requireNonNullArgument(identityService, "identityService");
+		this.serverSettingUid = requireNonNullArgument(serverSettingUid, "serverSettingUid");
+		this.serverTypeKey = requireNonNullArgument(serverTypeKey, "serverTypeKey");
 	}
 
 	@Override
-	public String getSettingUid() {
-		return "net.solarnetwork.node.io.modbus.server.csv";
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "Modbus Server CSV Configurer";
-	}
-
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
+	public final List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(3);
 		results.add(new BasicTitleSettingSpecifier("lastImportException",
 				lastImportException != null ? lastImportException.toString() : "N/A", true));
@@ -132,12 +134,12 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 	}
 
 	@Override
-	public Collection<String> supportedCurrentResourceSettingKeys() {
+	public final Collection<String> supportedCurrentResourceSettingKeys() {
 		return Collections.singletonList(RESOURCE_KEY_CSV_FILE);
 	}
 
 	@Override
-	public Iterable<Resource> currentSettingResources(String settingKey) {
+	public final Iterable<Resource> currentSettingResources(String settingKey) {
 		if ( !RESOURCE_KEY_CSV_FILE.equals(settingKey) ) {
 			log.warn("Ignoring setting resource key [{}]", settingKey);
 			return null;
@@ -148,11 +150,11 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 
 			// iterate over each instance in natural sort order
 			List<String> instanceIds = new ArrayList<>(
-					settingsService.getProvidersForFactory(settingProviderId).keySet());
+					settingsService.getProvidersForFactory(serverSettingUid).keySet());
 			instanceIds.sort(StringNaturalSortComparator.CASE_INSENSITIVE_NATURAL_SORT);
 			for ( String instanceId : instanceIds ) {
-				List<Setting> settings = settingsService.getSettings(settingProviderId, instanceId);
-				gen.generateCsv(settingProviderId, instanceId, settings);
+				List<Setting> settings = settingsService.getSettings(serverSettingUid, instanceId);
+				gen.generateCsv(serverSettingUid, instanceId, settings);
 			}
 		} catch ( UncheckedIOException | IOException e ) {
 			log.error("Error generating Modbus Server configuration CSV: {}", e.toString());
@@ -166,8 +168,9 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 						IdentityService service = OptionalService.service(identityService);
 						Long nodeId = (service != null ? service.getNodeId() : null);
 						return (nodeId != null
-								? String.format("modbus-server-config-solarnode-%d.csv", nodeId)
-								: "modbus-server-config.csv");
+								? String.format("modbus-server-%s-config-solarnode-%d.csv",
+										serverTypeKey, nodeId)
+								: String.format("modbus-server-%s-config.csv", serverTypeKey));
 					}
 
 				})
@@ -175,7 +178,7 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 	}
 
 	@Override
-	public synchronized SettingsUpdates applySettingResources(String settingKey,
+	public final synchronized SettingsUpdates applySettingResources(String settingKey,
 			Iterable<Resource> resources) throws IOException {
 		if ( resources == null ) {
 			return null;
@@ -233,15 +236,15 @@ public class ModbusServerCsvConfigurer extends BasicIdentifiable
 		}
 
 		// remove all factory instances so start anew
-		for ( String instanceId : settingsService.getProvidersForFactory(settingProviderId).keySet() ) {
-			settingsService.deleteProviderFactoryInstance(settingProviderId, instanceId);
+		for ( String instanceId : settingsService.getProvidersForFactory(serverSettingUid).keySet() ) {
+			settingsService.deleteProviderFactoryInstance(serverSettingUid, instanceId);
 		}
 
 		List<SettingValueBean> settings = new ArrayList<>(32);
 		for ( ModbusServerConfig config : configs ) {
-			settings.addAll(config.toSettingValues(settingProviderId));
+			settings.addAll(config.toSettingValues(serverSettingUid));
 			if ( config.getKey() != null ) {
-				settingsService.enableProviderFactoryInstance(settingProviderId, config.getKey());
+				settingsService.enableProviderFactoryInstance(serverSettingUid, config.getKey());
 			}
 		}
 

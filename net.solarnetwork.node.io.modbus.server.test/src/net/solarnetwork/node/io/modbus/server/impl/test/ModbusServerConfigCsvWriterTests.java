@@ -34,8 +34,8 @@ import java.util.List;
 import org.junit.Test;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
-import net.solarnetwork.node.io.modbus.server.impl.ModbusServer;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerConfigCsvWriter;
+import net.solarnetwork.node.io.modbus.server.tcp.ModbusServer;
 import net.solarnetwork.util.ByteUtils;
 
 /**

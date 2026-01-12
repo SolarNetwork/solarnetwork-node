@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusServer.java - 17/09/2020 4:54:54 PM
+ * BaseModbusServer.java - 12/01/2026 6:37:43 pm
  *
- * Copyright 2020 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -43,7 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -53,7 +52,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
-import net.solarnetwork.io.modbus.tcp.netty.NettyTcpModbusServer;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
@@ -71,6 +69,7 @@ import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceNotAvailableException;
 import net.solarnetwork.service.PingTest;
 import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.service.ServiceLifecycleObserver;
@@ -88,57 +87,40 @@ import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Modbus TCP server service.
+ * Base server class for RTU and TCP Modbus server implementations.
  *
+ * @param <T>
+ *        the server type
  * @author matt
- * @version 3.5
+ * @version 1.0
+ * @since 5.3
  */
-public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
+public abstract class BaseModbusServer<T> extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
-
-	/** The default listen port. */
-	public static final int DEFAULT_PORT = 502;
 
 	/** The default startup delay, in seconds. */
 	public static final int DEFAULT_STARTUP_DELAY_SECS = 15;
 
-	/**
-	 * The default {@code maxBacklog} property value.
-	 *
-	 * @deprecated no longer used
-	 */
-	@Deprecated
-	public static final int DEFAULT_BACKLOG = 5;
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	/** The default {@code bindAddress} property value. */
-	public static final String DEFAULT_BIND_ADDRESS = "0.0.0.0";
+	/** An executor. */
+	protected final Executor executor;
 
-	/**
-	 * The setting UID used by this service.
-	 *
-	 * @since 2.3
-	 */
-	public static final String SETTING_UID = "net.solarnetwork.node.io.modbus.server";
+	/** The register data. */
+	protected final ConcurrentMap<Integer, ModbusRegisterData> registers;
 
-	/** The {@code pendingMessageTtl} property default value. */
-	public static final long DEFAULT_PENDING_MESSAGE_TTL = TimeUnit.MINUTES.toMillis(2);
+	/** The server handler. */
+	protected final ModbusConnectionHandler handler;
 
-	private static final Logger log = LoggerFactory.getLogger(ModbusServer.class);
-
-	private final Executor executor;
-	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
-	private final ModbusConnectionHandler handler;
-	private int port = DEFAULT_PORT;
-	private String bindAddress = DEFAULT_BIND_ADDRESS;
 	private int startupDelay = DEFAULT_STARTUP_DELAY_SECS;
 	private TaskScheduler taskScheduler;
 	private UnitConfig[] unitConfigs;
-	private long pendingMessageTtl = DEFAULT_PENDING_MESSAGE_TTL;
 	private boolean wireLogging;
 	private OptionalService<ModbusRegisterDao> registerDao;
 	private boolean daoRequired;
 
-	private NettyTcpModbusServer server;
+	private T server;
 	private ScheduledFuture<?> startupFuture;
 
 	/**
@@ -149,7 +131,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public ModbusServer(Executor executor) {
+	public BaseModbusServer(Executor executor) {
 		this(executor, new ConcurrentHashMap<>(2, 0.9f, 2));
 	}
 
@@ -163,7 +145,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public ModbusServer(Executor executor, ConcurrentMap<Integer, ModbusRegisterData> registers) {
+	public BaseModbusServer(Executor executor, ConcurrentMap<Integer, ModbusRegisterData> registers) {
 		super();
 		this.executor = ObjectUtils.requireNonNullArgument(executor, "executor");
 		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
@@ -171,16 +153,20 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 				() -> service(registerDao));
 	}
 
-	private String description() {
-		String uid = getUid();
-		if ( uid != null && !uid.isEmpty() ) {
-			return uid + " (port " + port + ")";
-		}
-		return "port " + port;
-	}
+	/**
+	 * Get a brief description of this server.
+	 *
+	 * <p>
+	 * This will show up in log messages, so might include things like TCP port
+	 * number or serial port name.
+	 * </p>
+	 *
+	 * @return the description
+	 */
+	protected abstract String description();
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public final void configurationChanged(Map<String, Object> properties) {
 		if ( server != null ) {
 			log.info("Restarting Modbus server [{}] from configuration change", description());
 		}
@@ -188,13 +174,13 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	}
 
 	@Override
-	public void serviceDidStartup() {
+	public final void serviceDidStartup() {
 		restartServer();
 
 	}
 
 	@Override
-	public void serviceDidShutdown() {
+	public final void serviceDidShutdown() {
 		stop();
 	}
 
@@ -202,25 +188,23 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * Start the server.
 	 *
 	 * <p>
-	 * Upon return the server will be bound and ready to accept connections on
-	 * the configured port.
+	 * Calls the {@link #startServer()} method to start the server instance.
 	 * </p>
 	 *
 	 * @throws IOException
 	 *         if an IO error occurs
 	 */
-	public synchronized void start() throws IOException {
+	public final synchronized void start() throws IOException {
 		if ( server != null ) {
 			return;
 		}
 		loadRegisterData();
 		try {
-			server = new NettyTcpModbusServer(bindAddress, port);
-			server.setMessageHandler(handler);
-			server.setWireLogging(wireLogging);
-			server.setPendingMessageTtl(pendingMessageTtl);
-			server.start();
+			server = startServer();
 			log.info("Started Modbus server [{}]", description());
+		} catch ( OptionalServiceNotAvailableException e ) {
+			log.info("Modbus server configuration [{}] incomplete, cannot start: {}", description(),
+					e.getMessage());
 		} catch ( Exception e ) {
 			String msg = String.format("Error starting Modbus server [%s]", description());
 			if ( e instanceof IOException ) {
@@ -234,19 +218,40 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	}
 
 	/**
+	 * Start up the server.
+	 *
+	 * <p>
+	 * This method will be called by the {@link #start()} method.
+	 * </p>
+	 *
+	 * @return the started server instance
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
+	protected abstract T startServer() throws IOException;
+
+	/**
 	 * Shut down the server.
 	 */
-	public synchronized void stop() {
+	public final synchronized void stop() {
 		if ( startupFuture != null && !startupFuture.isDone() ) {
 			startupFuture.cancel(true);
 			startupFuture = null;
 		}
 		if ( server != null ) {
-			server.stop();
+			stopServer(server);
 			log.info("Stopped Modbus server [{}]", description());
 			server = null;
 		}
 	}
+
+	/**
+	 * Stop the server.
+	 *
+	 * @param server
+	 *        the server to stop
+	 */
+	protected abstract void stopServer(T server);
 
 	private synchronized void restartServer() {
 		stop();
@@ -254,14 +259,13 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 
 			@Override
 			public void run() {
-				synchronized ( ModbusServer.this ) {
+				synchronized ( BaseModbusServer.this ) {
 					startupFuture = null;
 					try {
 						start();
 					} catch ( Exception e ) {
 						stop();
-						log.error("Error starting Modbus server [{}] on {}:{}: {}", description(),
-								bindAddress, port, e.toString());
+						log.error("Error starting Modbus server [{}]: {}", description(), e.toString());
 						if ( taskScheduler != null ) {
 							log.info("Will start Modbus server [{}] in {} seconds", description(),
 									startupDelay);
@@ -564,20 +568,14 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	}
 
 	@Override
-	public String getSettingUid() {
-		return SETTING_UID;
-	}
-
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
+	public final List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(8);
 
 		result.add(new BasicTitleSettingSpecifier("info",
 				registerBlocksInfo(getMessageSource(), Locale.getDefault()), true, true));
 
 		result.addAll(baseIdentifiableSettings(null));
-		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
-		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
+		result.addAll(getExtendedSettingSpecifiers());
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
@@ -600,6 +598,20 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 				}));
 
 		return result;
+	}
+
+	/**
+	 * Get implementation-specific server settings.
+	 *
+	 * <p>
+	 * This is where settings like TCP port number or serial port name should be
+	 * returned.
+	 * </p>
+	 *
+	 * @return the additional server settings, never {@code null}
+	 */
+	protected List<SettingSpecifier> getExtendedSettingSpecifiers() {
+		return Collections.emptyList();
 	}
 
 	private String registerBlocksInfo(MessageSource messageSource, Locale locale) {
@@ -664,7 +676,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return the task scheduler
 	 */
-	public TaskScheduler getTaskScheduler() {
+	public final TaskScheduler getTaskScheduler() {
 		return taskScheduler;
 	}
 
@@ -674,7 +686,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 */
-	public void setTaskScheduler(TaskScheduler taskScheduler) {
+	public final void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}
 
@@ -683,27 +695,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return the startup delay, in seconds
 	 */
-	public int getStartupDelay() {
+	public final int getStartupDelay() {
 		return startupDelay;
-	}
-
-	/**
-	 * Get the address to bind to.
-	 *
-	 * @return the address; defaults to {@link #DEFAULT_BIND_ADDRESS}
-	 */
-	public String getBindAddress() {
-		return bindAddress;
-	}
-
-	/**
-	 * Set the address to bind to.
-	 *
-	 * @param bindAddress
-	 *        the address to set
-	 */
-	public void setBindAddress(String bindAddress) {
-		this.bindAddress = bindAddress;
 	}
 
 	/**
@@ -712,50 +705,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param startupDelay
 	 *        the delay to set, in seconds
 	 */
-	public void setStartupDelay(int startupDelay) {
+	public final void setStartupDelay(int startupDelay) {
 		this.startupDelay = startupDelay;
-	}
-
-	/**
-	 * Get the server socket backlog setting.
-	 *
-	 * @return the backlog; defaults to {@link #DEFAULT_BACKLOG}
-	 * @deprecated only returns 0 now
-	 */
-	@Deprecated
-	public int getBacklog() {
-		return 0;
-	}
-
-	/**
-	 * Set the server socket backlog setting.
-	 *
-	 * @param backlog
-	 *        the backlog to set
-	 * @deprecated does not do anything anymore
-	 */
-	@Deprecated
-	public void setBacklog(int backlog) {
-		// nothing
-	}
-
-	/**
-	 * Get the server listen port.
-	 *
-	 * @return the port; defaults to {@link #DEFAULT_PORT}
-	 */
-	public int getPort() {
-		return port;
-	}
-
-	/**
-	 * Set the server listen port.
-	 *
-	 * @param port
-	 *        the port to set
-	 */
-	public void setPort(int port) {
-		this.port = port;
 	}
 
 	/**
@@ -763,7 +714,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return the block configurations
 	 */
-	public UnitConfig[] getUnitConfigs() {
+	public final UnitConfig[] getUnitConfigs() {
 		return unitConfigs;
 	}
 
@@ -773,7 +724,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param unitConfigs
 	 *        the configurations to use
 	 */
-	public void setUnitConfigs(UnitConfig[] unitConfigs) {
+	public final void setUnitConfigs(UnitConfig[] unitConfigs) {
 		this.unitConfigs = unitConfigs;
 	}
 
@@ -782,7 +733,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return the number of {@code unitConfigs} elements
 	 */
-	public int getUnitConfigsCount() {
+	public final int getUnitConfigsCount() {
 		UnitConfig[] confs = this.unitConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
@@ -798,7 +749,7 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param count
 	 *        The desired number of {@code unitConfigs} elements.
 	 */
-	public void setUnitConfigsCount(int count) {
+	public final void setUnitConfigsCount(int count) {
 		this.unitConfigs = ArrayUtils.arrayWithLength(this.unitConfigs, count, UnitConfig.class, null);
 	}
 
@@ -807,9 +758,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return the minimum time in milliseconds allowed between client requests,
 	 *         or {@code 0} for no minimum
-	 * @since 2.2
 	 */
-	public long getRequestThrottle() {
+	public final long getRequestThrottle() {
 		return handler.getRequestThrottle();
 	}
 
@@ -819,9 +769,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param requestThrottle
 	 *        the minimum time in milliseconds allowed between client requests,
 	 *        or {@code 0} to disable
-	 * @since 2.2
 	 */
-	public void setRequestThrottle(long requestThrottle) {
+	public final void setRequestThrottle(long requestThrottle) {
 		handler.setRequestThrottle(requestThrottle);
 	}
 
@@ -830,9 +779,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return {@literal true} to allow Modbus clients to write to holding/coil
 	 *         registers
-	 * @since 2.4
 	 */
-	public boolean isAllowWrites() {
+	public final boolean isAllowWrites() {
 		return handler.isAllowWrites();
 	}
 
@@ -842,9 +790,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param allowWrites
 	 *        {@literal true} to allow Modbus clients to write to holding/coil
 	 *        registers
-	 * @since 2.4
 	 */
-	public void setAllowWrites(boolean allowWrites) {
+	public final void setAllowWrites(boolean allowWrites) {
 		handler.setAllowWrites(allowWrites);
 	}
 
@@ -852,9 +799,8 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * Get the "wire logging" setting.
 	 *
 	 * @return {@literal true} to enable wire-level logging of all messages
-	 * @since 4.0
 	 */
-	public boolean isWireLogging() {
+	public final boolean isWireLogging() {
 		return wireLogging;
 	}
 
@@ -863,45 +809,15 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @param wireLogging
 	 *        {@literal true} to enable wire-level logging of all messages
-	 * @since 4.0
 	 */
-	public void setWireLogging(boolean wireLogging) {
+	public final void setWireLogging(boolean wireLogging) {
 		this.wireLogging = wireLogging;
-	}
-
-	/**
-	 * Get the pending Modbus message time-to-live expiration time.
-	 *
-	 * @return the pendingMessageTtl the pending Modbus message time-to-live, in
-	 *         milliseconds; defaults to {@link #DEFAULT_PENDING_MESSAGE_TTL}
-	 * @since 4.0
-	 */
-	public long getPendingMessageTtl() {
-		return pendingMessageTtl;
-	}
-
-	/**
-	 * Set the pending Modbus message time-to-live expiration time.
-	 *
-	 * <p>
-	 * This timeout represents the minimum amount of time the client will wait
-	 * for a Modbus message response, before it qualifies for removal from the
-	 * pending message queue.
-	 * </p>
-	 *
-	 * @param pendingMessageTtl
-	 *        the pending Modbus message time-to-live, in milliseconds
-	 * @since 4.0
-	 */
-	public void setPendingMessageTtl(long pendingMessageTtl) {
-		this.pendingMessageTtl = pendingMessageTtl;
 	}
 
 	/**
 	 * Get the register DAO.
 	 *
 	 * @return the DAO
-	 * @since 3.1
 	 */
 	public final OptionalService<ModbusRegisterDao> getRegisterDao() {
 		return registerDao;
@@ -912,7 +828,6 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @param registerDao
 	 *        the DAO to set
-	 * @since 3.1
 	 */
 	public final void setRegisterDao(OptionalService<ModbusRegisterDao> registerDao) {
 		this.registerDao = registerDao;
@@ -923,7 +838,6 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 *
 	 * @return {@literal true} to treat the lack of a {@link #getRegisterDao()}
 	 *         service as an error state
-	 * @since 3.1
 	 */
 	public final boolean isDaoRequired() {
 		return daoRequired;
@@ -935,7 +849,6 @@ public class ModbusServer extends BaseIdentifiable implements SettingSpecifierPr
 	 * @param daoRequired
 	 *        {@literal true} to treat the lack of a {@link #getRegisterDao()}
 	 *        service as an error state
-	 * @since 3.1
 	 */
 	public final void setDaoRequired(boolean daoRequired) {
 		this.daoRequired = daoRequired;

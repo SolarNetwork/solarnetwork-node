@@ -97,7 +97,7 @@ public class ModbusServerConfigCsvWriter {
 		row[ModbusServerCsvColumn.INSTANCE_ID.getCode()] = config.getKey();
 		row[ModbusServerCsvColumn.BIND_ADDRESS.getCode()] = config.getBindAddress();
 		row[ModbusServerCsvColumn.PORT
-				.getCode()] = (config.getPort() != null ? config.getPort().toString() : "5020");
+				.getCode()] = (config.getPort() != null ? config.getPort().toString() : null);
 		row[ModbusServerCsvColumn.THROTTLE.getCode()] = (config.getRequestThrottle() != null
 				? config.getRequestThrottle().toString()
 				: null);
