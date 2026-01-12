@@ -1,5 +1,5 @@
 /* ==================================================================
- * SerialParameters.java - 23/11/2022 6:37:01 am
+ * NiftySerialParameters.java - 23/11/2022 6:37:01 am
  * 
  * Copyright 2022 SolarNetwork.net Dev Team
  * 
@@ -41,7 +41,7 @@ import net.solarnetwork.util.ObjectUtils;
  * @author matt
  * @version 1.0
  */
-public class SerialParameters extends BasicSerialParameters {
+public class NiftySerialParameters extends BasicSerialParameters {
 
 	private NettyRtuModbusClientConfig config;
 	private int flowControlIn;
@@ -53,7 +53,7 @@ public class SerialParameters extends BasicSerialParameters {
 	 * @param config
 	 *        the config
 	 */
-	public SerialParameters(NettyRtuModbusClientConfig config) {
+	public NiftySerialParameters(NettyRtuModbusClientConfig config) {
 		super();
 		this.config = ObjectUtils.requireNonNullArgument(config, "config");
 	}
