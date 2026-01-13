@@ -9,8 +9,8 @@ Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
  net.solarnetwork.node.io.modbus.nifty;version="1.0.0",
- net.solarnetwork.node.io.modbus.nifty.tcp;version="1.0.0",
- net.solarnetwork.node.io.modbus.nifty.rtu;version="1.0.0"
+ net.solarnetwork.node.io.modbus.nifty.rtu;version="1.0.0",
+ net.solarnetwork.node.io.modbus.nifty.tcp;version="1.0.0"
 Import-Package: 
  io.netty.channel;version="[4.2,5.0)",
  io.netty.channel.nio;version="[4.2,5.0)",
