@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.domain;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.StringUtils.nonEmptyString;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.NumberUtils;
  * Configuration for a Modbus measurement captured from a datum source property.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class MeasurementConfig {
 
@@ -59,6 +60,22 @@ public class MeasurementConfig {
 
 	/** The default value for the {@code wordLength} property . */
 	public static final int DEFAULT_WORD_LENGTH = 1;
+
+	/**
+	 * The control ID value that signals the source ID value should be used as
+	 * the control ID.
+	 *
+	 * @since 2.4
+	 */
+	public static final String CONTROL_ID_AS_SOURCE_ID = "-";
+
+	/**
+	 * The control ID value that signals that the pattern
+	 * {@code SOURCE_ID/PROPERTY_NAME} should be used as the control ID.
+	 *
+	 * @since 2.4
+	 */
+	public static final String CONTROL_ID_AS_SOURCE_ID_AND_PROPERTY_NAME = "+";
 
 	/**
 	 * A setting type pattern for a unit configuration element.
@@ -79,6 +96,7 @@ public class MeasurementConfig {
 	private Integer wordLength = DEFAULT_WORD_LENGTH;
 	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
 	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
+	private String controlId;
 
 	/**
 	 * Constructor.
@@ -131,6 +149,8 @@ public class MeasurementConfig {
 				case "decimalScale":
 					measConfig.setDecimalScale(Integer.valueOf(val));
 					break;
+				case "controlId":
+					measConfig.setControlId(val);
 				default:
 					// ignore
 			}
@@ -167,6 +187,7 @@ public class MeasurementConfig {
 				DEFAULT_UNIT_MULTIPLIER.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", ""));
 
 		return results;
 	}
@@ -189,7 +210,7 @@ public class MeasurementConfig {
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx,
 			int blockIdx, int measIdx) {
-		List<SettingValueBean> settings = new ArrayList<>(2);
+		List<SettingValueBean> settings = new ArrayList<>(8);
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "sourceId",
 				getSourceId());
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "propertyName",
@@ -202,6 +223,9 @@ public class MeasurementConfig {
 				getUnitMultiplier());
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "decimalScale",
 				getDecimalScale());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "controlId",
+				getControlId());
+
 		return settings;
 	}
 
@@ -286,6 +310,37 @@ public class MeasurementConfig {
 	}
 
 	/**
+	 * Test if a control ID is configured.
+	 *
+	 * @return {@code true} if a control ID is available
+	 * @since 2.4
+	 */
+	public boolean hasControlId() {
+		return controlId() != null;
+	}
+
+	/**
+	 * Get the effective control ID.
+	 *
+	 * <p>
+	 * If the {@code controlId} value is {@code -} then the source ID will be
+	 * returned.
+	 * </p>
+	 *
+	 * @return the effective control ID
+	 * @since 2.4
+	 */
+	public String controlId() {
+		final String controlId = getControlId();
+		// @formatter:off
+		return nonEmptyString(
+				  CONTROL_ID_AS_SOURCE_ID.equals(controlId) ? getSourceId()
+				: CONTROL_ID_AS_SOURCE_ID_AND_PROPERTY_NAME.equals(controlId) ? getSourceId() + "/" + getPropertyName()
+				: controlId);
+		// @formatter:on
+	}
+
+	/**
 	 * Get the number of registers used by this measurement.
 	 *
 	 * @return the register count
@@ -330,6 +385,10 @@ public class MeasurementConfig {
 		if ( decimalScale != null ) {
 			builder.append("decimalScale=");
 			builder.append(decimalScale);
+		}
+		if ( controlId != null ) {
+			builder.append("controlId=");
+			builder.append(controlId);
 		}
 		builder.append("}");
 		return builder.toString();
@@ -504,6 +563,27 @@ public class MeasurementConfig {
 	 */
 	public void setDecimalScale(Integer decimalScale) {
 		this.decimalScale = decimalScale;
+	}
+
+	/**
+	 * Get the optional control ID.
+	 *
+	 * @return the control ID
+	 * @since 2.4
+	 */
+	public String getControlId() {
+		return controlId;
+	}
+
+	/**
+	 * Set the optional control ID.
+	 *
+	 * @param controlId
+	 *        the control ID to set
+	 * @since 2.4
+	 */
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
 	}
 
 }

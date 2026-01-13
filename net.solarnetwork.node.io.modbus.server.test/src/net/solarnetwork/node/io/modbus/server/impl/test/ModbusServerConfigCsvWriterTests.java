@@ -123,4 +123,29 @@ public class ModbusServerConfigCsvWriterTests {
 		}
 	}
 
+	@Test
+	public void writeCsv_controlIds() throws IOException {
+		// GIVEN
+		List<Setting> settings = loadSettingsCsv("test-settings-02.csv");
+
+		// WHEN
+		final StringWriter out = new StringWriter(4096);
+		try (CsvWriter writer = CsvWriter.builder().build(out)) {
+			ModbusServerConfigCsvWriter gen = new ModbusServerConfigCsvWriter(writer);
+			gen.generateCsv(ModbusServer.SETTING_UID, "1", settings);
+		}
+
+		// THEN
+		String[] expected = resourceLines("test-settings-02-output.csv");
+		try (BufferedReader r = new BufferedReader(new StringReader(out.toString()))) {
+			int i = 0;
+			String line = null;
+			while ( (line = r.readLine()) != null ) {
+				assertThat(String.format("Wrote CSV line %d", (i + 1)), line.trim(), is(expected[i]));
+				i++;
+			}
+			assertThat("Generated expected line count", i, is(expected.length));
+		}
+	}
+
 }

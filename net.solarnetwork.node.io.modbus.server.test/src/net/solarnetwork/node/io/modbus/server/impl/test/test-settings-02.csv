@@ -1,0 +1,19 @@
+key,type,value,flags,modified
+net.solarnetwork.node.io.modbus.server.P1,port,5502,0,2021-06-19 09:51:45
+net.solarnetwork.node.io.modbus.server.P1,unitConfigsCount,1,0,2020-09-18 17:25:47
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigsCount,1,0,2020-09-18 17:23:34
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].blockTypeKey,4,0,2020-09-18 17:26:29
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigsCount,3,0,2020-09-18 17:23:57
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[0].propertyName,watts,0,2020-09-18 17:23:52
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[0].sourceId,mock/meter/1,0,2020-09-18 17:23:52
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[1].dataTypeKey,u64,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[1].propertyName,wattHours,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[1].sourceId,mock/meter/1,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[1].controlId,-,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[2].dataTypeKey,f32,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[2].decimalScale,3,0,2022-04-04 14:53:37
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[2].propertyName,voltage,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[2].sourceId,mock/meter/1,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].measurementConfigs[2].controlId,mock/control/1,0,2020-09-18 17:24:24
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].registerBlockConfigs[0].startAddress,100,0,2020-09-18 17:26:29
+net.solarnetwork.node.io.modbus.server.P1,unitConfigs[0].unitId,1,0,2020-09-18 17:26:00

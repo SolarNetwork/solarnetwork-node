@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.impl;
 
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.BIND_ADDRESS;
+import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.CONTROL_ID;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.DATA_LENGTH;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.DATA_TYPE;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.DECIMAL_SCALE;
@@ -60,7 +61,7 @@ import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
  * Parse CSV data into {@link ModbusServerConfig} instances.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.3
  */
 public class ModbusServerConfigCsvParser {
@@ -190,6 +191,7 @@ public class ModbusServerConfigCsvParser {
 			measConfig
 					.setUnitMultiplier(parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER.getCode()));
 			measConfig.setDecimalScale(parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE.getCode()));
+			measConfig.setControlId(parseStringValue(row, rowLen, rowNum, CONTROL_ID.getCode()));
 			if ( measConfig.isValid() ) {
 				registerAddress += measConfig.getSize();
 			} else {
