@@ -94,6 +94,26 @@ public final class NodeTestUtils {
 	}
 
 	/**
+	 * Get a random positive double number.
+	 *
+	 * @return the random double number
+	 * @since 1.1
+	 */
+	public static Double randomDouble() {
+		return RNG.nextDouble(0, Double.MAX_VALUE);
+	}
+
+	/**
+	 * Get a random positive float number.
+	 *
+	 * @return the random float number
+	 * @since 1.1
+	 */
+	public static Float randomFloat() {
+		return RNG.nextFloat(0, Float.MAX_VALUE);
+	}
+
+	/**
 	 * Get a random string value.
 	 *
 	 * @return the string
@@ -116,6 +136,16 @@ public final class NodeTestUtils {
 		}
 		buf.setLength(len);
 		return buf.toString();
+	}
+
+	/**
+	 * Get a random positive short value.
+	 *
+	 * @return the short
+	 * @since 1.1
+	 */
+	public static Short randomShort() {
+		return (short) RNG.nextInt(1, Short.MAX_VALUE);
 	}
 
 	/**
