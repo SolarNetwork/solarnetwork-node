@@ -34,25 +34,33 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -64,6 +72,10 @@ import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
@@ -95,8 +107,9 @@ import net.solarnetwork.util.StringUtils;
  * @version 1.0
  * @since 5.3
  */
-public abstract class BaseModbusServer<T> extends BaseIdentifiable implements SettingSpecifierProvider,
-		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler, PingTest {
+public abstract class BaseModbusServer<T> extends BaseIdentifiable
+		implements SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver,
+		EventHandler, PingTest, NodeControlProvider, InstructionHandler {
 
 	/** The default startup delay, in seconds. */
 	public static final int DEFAULT_STARTUP_DELAY_SECS = 15;
@@ -117,6 +130,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 	private TaskScheduler taskScheduler;
 	private UnitConfig[] unitConfigs;
 	private boolean wireLogging;
+	private OptionalService<EventAdmin> eventAdmin;
 	private OptionalService<ModbusRegisterDao> registerDao;
 	private boolean daoRequired;
 
@@ -416,7 +430,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 
 				@Override
 				public void run() {
-					applyDatumCapturedUpdates(finalUpdates);
+					applyMeasurementUpdates(finalUpdates);
 				}
 			});
 		}
@@ -430,7 +444,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 		private final Object propertyValue;
 		private final int address;
 
-		public MeasurementUpdate(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
+		private MeasurementUpdate(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
 				MeasurementConfig measConfig, Object propertyValue, int address) {
 			super();
 			this.unitConfig = unitConfig;
@@ -438,6 +452,10 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 			this.measConfig = measConfig;
 			this.propertyValue = propertyValue;
 			this.address = address;
+		}
+
+		private MeasurementUpdate withPropertyValue(Object value) {
+			return new MeasurementUpdate(unitConfig, blockConfig, measConfig, value, address);
 		}
 
 		@Override
@@ -472,7 +490,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 
 	}
 
-	private void applyDatumCapturedUpdates(final Collection<MeasurementUpdate> updates) {
+	private void applyMeasurementUpdates(final Collection<MeasurementUpdate> updates) {
 		final String serverId = getUid();
 		final ModbusRegisterDao dao = (serverId != null && !serverId.isEmpty() ? service(registerDao)
 				: null);
@@ -671,6 +689,203 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 		buf.append(messageSource.getMessage("serverUnitInfoIntBlock.end", null, locale));
 	}
 
+	@Override
+	public List<String> getAvailableControlIds() {
+		Set<String> result = null;
+		final UnitConfig[] unitConfigs = getUnitConfigs();
+		if ( unitConfigs != null && unitConfigs.length > 0 ) {
+			for ( UnitConfig unitConfig : unitConfigs ) {
+				final RegisterBlockConfig[] blockConfigs = unitConfig.getRegisterBlockConfigs();
+				if ( blockConfigs != null && blockConfigs.length > 0 ) {
+					for ( RegisterBlockConfig blockConfig : blockConfigs ) {
+						final MeasurementConfig[] measConfigs = blockConfig.getMeasurementConfigs();
+						if ( measConfigs != null && measConfigs.length > 0 ) {
+							for ( MeasurementConfig config : measConfigs ) {
+								String controlId = config.controlId();
+								if ( controlId != null ) {
+									if ( result == null ) {
+										result = new LinkedHashSet<>(8);
+									}
+									result.add(controlId);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return (result != null ? new ArrayList<>(result) : Collections.emptyList());
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
+	}
+
+	@Override
+	public InstructionStatus processInstruction(Instruction instruction) {
+		if ( !handlesTopic(instruction.getTopic()) ) {
+			return null;
+		}
+
+		List<MeasurementUpdate> updates = null;
+
+		final UnitConfig[] unitConfigs = getUnitConfigs();
+		if ( unitConfigs != null && unitConfigs.length > 0 ) {
+			for ( UnitConfig unitConfig : unitConfigs ) {
+				final RegisterBlockConfig[] blockConfigs = unitConfig.getRegisterBlockConfigs();
+				if ( blockConfigs != null && blockConfigs.length > 0 ) {
+					for ( RegisterBlockConfig blockConfig : blockConfigs ) {
+						final MeasurementConfig[] measConfigs = blockConfig.getMeasurementConfigs();
+						if ( measConfigs != null && measConfigs.length > 0 ) {
+							int address = blockConfig.getStartAddress();
+							for ( MeasurementConfig measConfig : measConfigs ) {
+								String controlId = measConfig.controlId();
+								if ( controlId != null ) {
+									for ( String param : instruction.getParameterNames() ) {
+										if ( param.equals(controlId) ) {
+											MeasurementUpdate update = new MeasurementUpdate(unitConfig,
+													blockConfig, measConfig,
+													coerceInstructionValue(measConfig,
+															instruction.getParameterValue(param)),
+													address);
+											if ( updates == null ) {
+												updates = new ArrayList<>(4);
+											}
+											updates.add(update);
+										}
+									}
+								}
+								address += measConfig.getSize();
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ( updates != null ) {
+			log.trace("Applying instruction [{}] updates: {}", instruction.getIdentifier(),
+					updates.stream().map(Object::toString)
+							.collect(Collectors.joining(",\n\t", "[\n\t", "\n]")));
+			applyMeasurementUpdates(updates);
+			for ( MeasurementUpdate update : updates ) {
+				postControlEvent(newSimpleNodeControlInfoDatum(update),
+						NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
+			}
+			return InstructionUtils.createStatus(instruction, InstructionState.Completed);
+		}
+
+		return null;
+	}
+
+	private Object coerceInstructionValue(MeasurementConfig measConfig, String value) {
+		return switch (measConfig.getDataType()) {
+			case Boolean -> StringUtils.parseBoolean(value);
+			case Bytes, StringAscii, StringUtf8 -> value;
+			default -> StringUtils.numberValue(value);
+		};
+	}
+
+	@Override
+	public NodeControlInfo getCurrentControlInfo(final String controlId) {
+		final UnitConfig[] unitConfigs = getUnitConfigs();
+		if ( unitConfigs != null && unitConfigs.length > 0 ) {
+			for ( UnitConfig unitConfig : unitConfigs ) {
+				final RegisterBlockConfig[] blockConfigs = unitConfig.getRegisterBlockConfigs();
+				if ( blockConfigs != null && blockConfigs.length > 0 ) {
+					for ( RegisterBlockConfig blockConfig : blockConfigs ) {
+						final MeasurementConfig[] measConfigs = blockConfig.getMeasurementConfigs();
+						if ( measConfigs != null && measConfigs.length > 0 ) {
+							int address = blockConfig.getStartAddress();
+							for ( MeasurementConfig measConfig : measConfigs ) {
+								String measControlId = measConfig.controlId();
+								if ( measControlId != null && measControlId.equals(controlId) ) {
+									// just using MeasurementUpdate here because convenient
+									final MeasurementUpdate update = new MeasurementUpdate(unitConfig,
+											blockConfig, measConfig, null, address);
+
+									final Object value = update.measConfig
+											.applyReverseTransforms(currentRawValue(update));
+
+									SimpleNodeControlInfoDatum result = newSimpleNodeControlInfoDatum(
+											update.withPropertyValue(value));
+									postControlEvent(result,
+											NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
+									return result;
+								}
+								address += measConfig.getSize();
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private Object currentRawValue(final MeasurementUpdate update) {
+		final ModbusRegisterData data = registers.get(update.unitConfig.getUnitId());
+		if ( data == null ) {
+			return 0;
+		}
+		final ModbusRegisterBlockType blockType = update.blockConfig.getBlockType();
+		switch (blockType) {
+			case Coil: {
+				BitSet bits = data.readCoils(update.address, 1);
+				return bits.get(update.address);
+			}
+
+			case Discrete: {
+				BitSet bits = data.readDiscretes(update.address, 1);
+				return bits.get(update.address);
+			}
+
+			case Holding: {
+				ModbusData d = data.getHoldings();
+				return d.getValue(update.measConfig.getDataType(), update.address,
+						update.measConfig.getSize());
+			}
+
+			case Input: {
+				ModbusData d = data.getInputs();
+				return d.getValue(update.measConfig.getDataType(), update.address,
+						update.measConfig.getSize());
+			}
+		}
+		return null;
+	}
+
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(MeasurementUpdate update) {
+		final NodeControlPropertyType controlType = switch (update.measConfig.getDataType()) {
+			case Boolean -> NodeControlPropertyType.Boolean;
+			case Float16, Float32, Float64 -> NodeControlPropertyType.Float;
+			case Bytes, StringAscii, StringUtf8 -> NodeControlPropertyType.String;
+			default -> update.measConfig.hasUnitMultiplier() ? NodeControlPropertyType.Float
+					: NodeControlPropertyType.Integer;
+		};
+
+		// @formatter:off
+		final NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(update.measConfig.controlId()))
+				.withType(controlType)
+				.withReadonly(false)
+				.withValue(update.propertyValue != null ? update.propertyValue.toString() : null)
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
+	}
+
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
+		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+		if ( admin == null ) {
+			return;
+		}
+		Event event = DatumEvents.datumEvent(topic, info);
+		admin.postEvent(event);
+	}
+
 	/**
 	 * Get the task scheduler.
 	 *
@@ -812,6 +1027,25 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable implements Se
 	 */
 	public final void setWireLogging(boolean wireLogging) {
 		this.wireLogging = wireLogging;
+	}
+
+	/**
+	 * Get the event admin service.
+	 *
+	 * @return the event admin
+	 */
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set the event admin sevice.
+	 *
+	 * @param eventAdmin
+	 *        the service to set
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 	/**

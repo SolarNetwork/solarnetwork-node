@@ -17,6 +17,12 @@
 	
 	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
 
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
@@ -112,6 +118,8 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
+			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
@@ -124,10 +132,16 @@
 					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
+				</beans:list>
+			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.modbus.server.tcp.ModbusServer" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="taskExecutor"/>
 			<property name="messageSource" ref="tcpMessageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
 			<property name="registerDao" ref="registerDao"/>
 		</bean>
@@ -181,6 +195,8 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server.rtu" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
+			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
@@ -192,6 +208,11 @@
 					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
 					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
 				</beans:array>
+			</beans:entry>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
+				</beans:list>
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.modbus.server.rtu.ModbusServer" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
@@ -209,6 +230,7 @@
 				</bean>
 			</argument>
 			<property name="messageSource" ref="rtuMessageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
 			<property name="registerDao" ref="registerDao"/>
 		</bean>

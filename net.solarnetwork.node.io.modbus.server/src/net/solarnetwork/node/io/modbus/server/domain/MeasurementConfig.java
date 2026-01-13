@@ -302,11 +302,53 @@ public class MeasurementConfig {
 	}
 
 	private static Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
-		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
+		if ( multiplier == null || BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
 		return v.multiply(multiplier);
+	}
+
+	/**
+	 * Apply the configured unit multiplier and decimal scale in reverse, if
+	 * appropriate.
+	 *
+	 * @param propVal
+	 *        the property value to transform; only {@link Number} values will
+	 *        be transformed
+	 * @return the transformed property value to use
+	 * @since 2.4
+	 */
+	public Object applyReverseTransforms(Object propVal) {
+		if ( propVal instanceof Number ) {
+			if ( decimalScale >= 0 ) {
+				propVal = applyReverseDecimalScale((Number) propVal, decimalScale);
+			}
+			if ( unitMultiplier != null ) {
+				propVal = applyReverseUnitMultiplier((Number) propVal, unitMultiplier);
+			}
+		}
+		return propVal;
+	}
+
+	private static Number applyReverseDecimalScale(Number value, int decimalScale) {
+		if ( decimalScale < 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		v = v.setScale(-decimalScale, RoundingMode.HALF_UP);
+		return v;
+	}
+
+	private static Number applyReverseUnitMultiplier(Number value, BigDecimal divisor) {
+		if ( divisor == null || BigDecimal.ONE.compareTo(divisor) == 0
+				|| BigDecimal.ZERO.compareTo(divisor) == 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		int scale = v.scale();
+		scale += divisor.abs().divide(BigDecimal.TEN, RoundingMode.UP).intValue();
+		return v.divide(divisor, scale, RoundingMode.HALF_UP);
 	}
 
 	/**
@@ -510,6 +552,17 @@ public class MeasurementConfig {
 			return;
 		}
 		this.wordLength = wordLength;
+	}
+
+	/**
+	 * Test if a non-identity unit multiplier is configured.
+	 *
+	 * @return {@code true} if a unit multiplier other than {@code 1} is
+	 *         configured
+	 */
+	public boolean hasUnitMultiplier() {
+		final BigDecimal m = getUnitMultiplier();
+		return (m != null && m.compareTo(BigDecimal.ONE) != 0);
 	}
 
 	/**
