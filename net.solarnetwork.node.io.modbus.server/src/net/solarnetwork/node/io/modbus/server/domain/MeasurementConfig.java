@@ -275,11 +275,11 @@ public class MeasurementConfig {
 	 */
 	public Object applyTransforms(Object propVal) {
 		if ( propVal instanceof Number ) {
-			if ( unitMultiplier != null ) {
-				propVal = applyUnitMultiplier((Number) propVal, unitMultiplier);
-			}
 			if ( decimalScale >= 0 ) {
 				propVal = applyDecimalScale((Number) propVal, decimalScale);
+			}
+			if ( unitMultiplier != null ) {
+				propVal = applyUnitMultiplier((Number) propVal, unitMultiplier);
 			}
 		}
 		return propVal;
@@ -321,23 +321,11 @@ public class MeasurementConfig {
 	 */
 	public Object applyReverseTransforms(Object propVal) {
 		if ( propVal instanceof Number ) {
-			if ( decimalScale >= 0 ) {
-				propVal = applyReverseDecimalScale((Number) propVal, decimalScale);
-			}
 			if ( unitMultiplier != null ) {
 				propVal = applyReverseUnitMultiplier((Number) propVal, unitMultiplier);
 			}
 		}
 		return propVal;
-	}
-
-	private static Number applyReverseDecimalScale(Number value, int decimalScale) {
-		if ( decimalScale < 0 ) {
-			return value;
-		}
-		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		v = v.setScale(-decimalScale, RoundingMode.HALF_UP);
-		return v;
 	}
 
 	private static Number applyReverseUnitMultiplier(Number value, BigDecimal divisor) {
@@ -427,6 +415,7 @@ public class MeasurementConfig {
 		if ( decimalScale != null ) {
 			builder.append("decimalScale=");
 			builder.append(decimalScale);
+			builder.append(", ");
 		}
 		if ( controlId != null ) {
 			builder.append("controlId=");
