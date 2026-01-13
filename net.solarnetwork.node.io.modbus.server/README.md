@@ -6,9 +6,9 @@ knowledge of the Modbus services you plan to integrate with.
 
 # Use
 
-Once installed, a new **Modbus Server (TCP)** component will appear on the **Settings** page on your
-SolarNode. Click on the **Manage** button to configure components. You'll need to add one
-configuration for each port you want to expose a Modbus server on.
+Once installed, new **Modbus Server (RTU)** and **Modbus Server (TCP)** components will appear on
+the **Settings** page on your SolarNode. Click on the **Manage** button to configure components.
+You'll need to add one configuration for each port you want to expose a Modbus server on.
 
 Each Modbus server configuration is divided into four parts:
 
@@ -49,11 +49,11 @@ database are then also persisted to that service.
 
 # CSV Configurer
 
-This plugin also provides a **Modbus Server CSV Configurer** component will appear on the main
-settings page. This component lets you upload a Modbus Server CSV Configuration file to configure
-all Modbus Server components, without having to use the settings form.
+This plugin also provides **Modbus Server (RTU) CSV Configurer** and **Modbus Server (TCP) CSV
+Configurer** components that will appear on the main settings page. This component lets you upload a
+CSV file to configure all Modbus Server components, without having to use the settings form.
 
-![CSV Configurer settings](docs/solarnode-modbus-tcp-server-csv-configurer.png)
+<img alt="RTU and TCP CSV Configurer settings" src="docs/solarnode-modbus-servers-csv-configurer@2x.png" width="876">
 
 ## Modbus Server CSV Configuration Format
 
@@ -61,6 +61,9 @@ The Modbus Server CSV Configuration uses the column structure detailed
 [below](#csv-column-definition), with each row representing an individual datum property to expose
 in Modbus server registers. A header row is required. Comment lines are allowed, just start the line
 with a `#` character (i.e. the first cell value). The entire comment line will be ignored.
+
+> :bulb: **Note** that the TCP and RTU servers use the same CSV structure. For RTU the
+> **Bind Address** column is used for the serial port name and the **Port** column is unused.
 
 Here's an example screen shot of a configuration in a spreadsheet application. It is for one server
 with one unit with two register blocks:
@@ -88,7 +91,7 @@ The following table defines all the CSV columns used by Modbus Server CSV Config
 defines a new Instance ID will be used to configure the server. Thus you can omit the values from
 these columns when defining more than one register for a given server.
 
-Columns **E - M** define the mapping of datum properties to Modbus registers: each row defines an
+Columns **E - N** define the mapping of datum properties to Modbus registers: each row defines an
 individual datum property which occupies one or more Modbus registers.
 
 
@@ -107,6 +110,7 @@ individual datum property which occupies one or more Modbus registers.
 | `K` | **Property** | string |  | The name of the datum property to to encode into Modbus registers. |
 | `L` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the datum property value to normalize it into a standard unit. |
 | `M` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
+| `N` | **Control ID** | string |  | A control ID to expose the property as. Can specify `-` to use the **Source ID** or `+` to use the pattern **_Source ID/Property_**. See [Controls](#controls) for more information. |
 
 ## Example CSV
 
@@ -156,11 +160,14 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 ,,,,,,,Float32,2,Mock Energy Meter,current,1,-1
 ```
 
+
 # Server configuration
 
-The server configuration defines the port number and address to listen on.
+## TCP settings
 
-![Unit settings](docs/solarnode-modbus-tcp-server-settings.png)
+The TCP server configuration defines the port number and address to listen on.
+
+<img alt="TCP server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="874">
 
 Each server configuration contains the following settings:
 
@@ -173,6 +180,7 @@ Each server configuration contains the following settings:
 | Request Throttle   | A number of milliseconds to limit client requests by. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
+| Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the **Port** number of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
 ## SolarNodeOS port considerations
@@ -199,11 +207,30 @@ You'd then add the following NAT lines at the end:
 add rule ip nat prerouting tcp dport 502 redirect to 5020
 ```
 
+## RTU settings
+
+The RTU server configuration defines the serial port to use.
+
+<img alt="RTU server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="880">
+
+Each server configuration contains the following settings:
+
+| Setting            | Description |
+|:-------------------|:------------|
+| Service Name       | A unique name to identify this data source with. |
+| Service Group      | A group name to associate this data source with. |
+| Serial Connection  | The **Service Name** of the Modbus Serial Connection component to use. |
+| Request Throttle   | A number of milliseconds to limit client requests by. |
+| Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
+| Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
+| Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the serial port device name of the server to log messages for. |
+| Units              | The list of [unit configurations](#unit-configuration). |
+
 ## Unit configuration
 
 Each Modbus server can support up to 256 unit configurations, numbered from `0` - `255`.
 
-![Unit settings](docs/solarnode-modbus-tcp-server-unit-settings.png)
+<img alt="Unit settings" src="docs/solarnode-modbus-tcp-server-unit-settings@2x.png" width="854">
 
 Each unit configuration contains the following settings:
 
@@ -218,7 +245,7 @@ Register blocks are sets of contiguous Modbus registers. You configure a startin
 each measurement configuration added to the block is mapped to Modbus registers based on the size
 required by each measurement.
 
-![Register block settings](docs/solarnode-modbus-tcp-server-register-block-settings.png)
+<img alt="Register block settings" src="docs/solarnode-modbus-tcp-server-register-block-settings@2x.png" width="858">
 
 Each register block configuration contains the following settings:
 
@@ -234,7 +261,7 @@ Measurement configurations define what data is made available in Modbus. They wo
 properties of datum, collected by other SolarNode plugins, to Modbus registers. Thus you must
 configure the datum source ID and property name of each value you want to publish via Modbus.
 
-![Measurement settings](docs/solarnode-modbus-tcp-server-measurement-settings.png)
+<img alt="Measurement settings" src="docs/solarnode-modbus-tcp-server-measurement-settings@2x.png" width="840">
 
 Each measurement configuration contains the following settings:
 
@@ -246,3 +273,38 @@ Each measurement configuration contains the following settings:
 | Data Length        | For variable length data types such as strings, the number of Modbus registers to read.                 |
 | Unit Multiplier    | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
 | Decimal Scale      | For numeric data types, a maximum number of decimal places to round decimal numbers to.                 |
+| Control ID         | A control ID to expose the property as. Can specify `-` to use the **Source ID** or `+` to use the pattern **_Source ID/Property_**. See [Controls](#controls) for more information. |
+
+
+# Controls
+
+If a measurement has a **Control ID** configured, then it will be exposed as a control that can be
+queried and updated as a normal control. They will appear on the [Controls][node-controls-ui] page
+in the SolarNode UI.
+
+You can also use the [SolarUser Instruction API][instr-api] to update the measurement value by
+issuing a [`SetControlParameter`][SetControlParameter] instruction that includes a single
+instruction parameter named the **Control ID** you configured for the control and the desired value
+as the parameter value.
+
+For example, to set the `test/float` control to `29.0` an HTTP `POST` like this would update the
+value:
+
+```
+POST /solaruser/api/v1/sec/instr/add/SetControlParameter
+
+{"nodeId":123,"params":{"test/float":"29.0"}}
+```
+
+You can configure an explicit control ID or use one of these shortcuts to derive the control ID from
+the source ID and/or property name:
+
+| Control ID | Description |
+|:-----------|:------------|
+| `-` | Use the **Source ID**. |
+| `+` | Use the pattern **_Source ID/Property_**. For example if the Source ID is `meter/1` and the Property is `watts` then the control ID would be `meter/1/watts`. |
+
+
+[instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
+[node-controls-ui]: https://solarnetwork.github.io/solarnode-handbook/users/setup-app/tools/controls/
+[SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter

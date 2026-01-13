@@ -1,0 +1,3 @@
+Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,Data Length,Source ID,Property,Multiplier,Decimal Scale,Control ID
+P1,0.0.0.0,5502,10,1,Input,100,16-bit unsigned int,,mock/meter/1,watts,1,0,-
+P2,127.0.0.1,5503,11,2,Input,101,64-bit unsigned int,,mock/meter/1,wattHours,1,0,mock/control/1

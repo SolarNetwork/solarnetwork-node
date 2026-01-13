@@ -1,21 +1,21 @@
 /* ==================================================================
  * NiftyPjcSerialModbusNetwork.java - 20/12/2023 6:37:01 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,28 +31,70 @@ import net.solarnetwork.io.modbus.ModbusClient;
 import net.solarnetwork.io.modbus.rtu.netty.NettyRtuModbusClientConfig;
 import net.solarnetwork.io.modbus.rtu.netty.RtuNettyModbusClient;
 import net.solarnetwork.io.modbus.rtu.pjc.PjcSerialPortProvider;
+import net.solarnetwork.io.modbus.serial.SerialParameters;
+import net.solarnetwork.io.modbus.serial.SerialPortProvider;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork;
+import net.solarnetwork.node.io.modbus.nifty.rtu.SerialConnectionProvider;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Nifty Modbus implementation of {@link ModbusNetwork} using a serial RTU
  * connection.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<NettyRtuModbusClientConfig> {
+public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<NettyRtuModbusClientConfig>
+		implements SerialConnectionProvider {
+
+	private final PjcSerialPortProvider serialPortProvider;
 
 	/**
 	 * Constructor.
 	 */
 	public NiftyPjcSerialModbusNetwork() {
+		this(null);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param serialPortProvider
+	 *        an optional provider to use, if {@code null} a new default
+	 *        instance will be created
+	 * @since 1.1
+	 */
+	public NiftyPjcSerialModbusNetwork(PjcSerialPortProvider serialPortProvider) {
 		super(new NettyRtuModbusClientConfig());
 		config.setAutoReconnect(false);
-		config.setSerialParameters(new SerialParameters(config));
+		config.setSerialParameters(new NiftySerialParameters(config));
 		setDisplayName("Modbus RTU");
+		this.serialPortProvider = (serialPortProvider != null ? serialPortProvider
+				: new PjcSerialPortProvider());
+	}
+
+	@Override
+	public String serialPortName() {
+		return config.getName();
+	}
+
+	@Override
+	public SerialParameters serialParameters() {
+		return config.getSerialParameters();
+	}
+
+	@Override
+	public SerialPortProvider serialPortProvider() {
+		return serialPortProvider;
+	}
+
+	@Override
+	protected String getNetworkDescription() {
+		StringBuilder buf = new StringBuilder(config.getDescription());
+		buf.append(" readTimeout=").append(config.getSerialParameters().getReadTimeout());
+		return buf.toString();
 	}
 
 	@Override
@@ -66,8 +108,7 @@ public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 		EventLoopGroup g = getOrCreateEventLoopGroup(() -> {
 			return new InternalEventLoopGroup();
 		});
-		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, g,
-				new PjcSerialPortProvider());
+		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, g, serialPortProvider);
 		controller.setWireLogging(isWireLogging());
 		controller.setReplyTimeout(getReplyTimeout());
 		return controller;
@@ -142,10 +183,10 @@ public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 
 	/**
 	 * Get the serial parameters.
-	 * 
+	 *
 	 * @return the parameters
 	 */
-	public SerialParameters getSerialParams() {
-		return (SerialParameters) config.getSerialParameters();
+	public NiftySerialParameters getSerialParams() {
+		return (NiftySerialParameters) config.getSerialParameters();
 	}
 }

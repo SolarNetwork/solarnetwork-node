@@ -24,8 +24,7 @@ package net.solarnetwork.node.domain.datum;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import static net.solarnetwork.util.NumberUtils.parseNumber;
 import java.time.Instant;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
@@ -39,7 +38,7 @@ import net.solarnetwork.util.NumberUtils;
  * instance.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeControlInfo {
@@ -125,22 +124,24 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 				}
 				break;
 
-			case Integer:
+			case Integer: {
 				// store as both instant and status
-				Number val = NumberUtils.narrow(new BigInteger(value), 2);
+				Number val = NumberUtils.narrow(NumberUtils.bigIntegerForNumber(parseNumber(value)), 2);
 				ops.putSampleValue(Status, propertyName, val);
 				if ( propertyName.equals(DEFAULT_PROPERTY_NAME) ) {
 					ops.putSampleValue(Instantaneous, DEFAULT_INSTANT_PROPERTY_NAME, val);
 				}
+			}
 				break;
 
 			case Float:
-			case Percent:
-				BigDecimal decimalValue = new BigDecimal(value);
-				ops.putSampleValue(Status, propertyName, decimalValue);
+			case Percent: {
+				Number val = parseNumber(value);
+				ops.putSampleValue(Status, propertyName, val);
 				if ( propertyName.equals(DEFAULT_PROPERTY_NAME) ) {
-					ops.putSampleValue(Instantaneous, DEFAULT_INSTANT_PROPERTY_NAME, decimalValue);
+					ops.putSampleValue(Instantaneous, DEFAULT_INSTANT_PROPERTY_NAME, val);
 				}
+			}
 				break;
 
 			default:

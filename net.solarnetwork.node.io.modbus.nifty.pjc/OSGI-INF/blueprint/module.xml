@@ -24,7 +24,17 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<!-- TCP Modbus Network -->
+	<!-- Serial Port Provider -->
+	
+	<bean id="serialPortProvider" class="net.solarnetwork.io.modbus.rtu.pjc.PjcSerialPortProvider"/>
+	
+	<service interface="net.solarnetwork.io.modbus.serial.SerialPortProvider" ref="serialPortProvider">
+		<service-properties>
+			<entry key="impl" value="jsc"/>
+		</service-properties>
+	</service>
+
+	<!-- RTU Modbus Network -->
 	
 	<bean id="messageSourcePjcSerial" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -49,6 +59,7 @@
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.modbus.ModbusNetwork</beans:value>
+			<beans:value>net.solarnetwork.node.io.modbus.nifty.rtu.SerialConnectionProvider</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
@@ -62,6 +73,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.modbus.nifty.pjc.NiftyPjcSerialModbusNetwork"
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="serialPortProvider"/>
 			<property name="messageSource" ref="messageSourcePjcSerial"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="messageSendingOps" ref="messageSendingOps"/>

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.domain;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.StringUtils.nonEmptyString;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.NumberUtils;
  * Configuration for a Modbus measurement captured from a datum source property.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class MeasurementConfig {
 
@@ -59,6 +60,22 @@ public class MeasurementConfig {
 
 	/** The default value for the {@code wordLength} property . */
 	public static final int DEFAULT_WORD_LENGTH = 1;
+
+	/**
+	 * The control ID value that signals the source ID value should be used as
+	 * the control ID.
+	 *
+	 * @since 2.4
+	 */
+	public static final String CONTROL_ID_AS_SOURCE_ID = "-";
+
+	/**
+	 * The control ID value that signals that the pattern
+	 * {@code SOURCE_ID/PROPERTY_NAME} should be used as the control ID.
+	 *
+	 * @since 2.4
+	 */
+	public static final String CONTROL_ID_AS_SOURCE_ID_AND_PROPERTY_NAME = "+";
 
 	/**
 	 * A setting type pattern for a unit configuration element.
@@ -79,6 +96,7 @@ public class MeasurementConfig {
 	private Integer wordLength = DEFAULT_WORD_LENGTH;
 	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
 	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
+	private String controlId;
 
 	/**
 	 * Constructor.
@@ -131,6 +149,8 @@ public class MeasurementConfig {
 				case "decimalScale":
 					measConfig.setDecimalScale(Integer.valueOf(val));
 					break;
+				case "controlId":
+					measConfig.setControlId(val);
 				default:
 					// ignore
 			}
@@ -167,6 +187,7 @@ public class MeasurementConfig {
 				DEFAULT_UNIT_MULTIPLIER.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", ""));
 
 		return results;
 	}
@@ -189,7 +210,7 @@ public class MeasurementConfig {
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx,
 			int blockIdx, int measIdx) {
-		List<SettingValueBean> settings = new ArrayList<>(2);
+		List<SettingValueBean> settings = new ArrayList<>(8);
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "sourceId",
 				getSourceId());
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "propertyName",
@@ -202,6 +223,9 @@ public class MeasurementConfig {
 				getUnitMultiplier());
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "decimalScale",
 				getDecimalScale());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "controlId",
+				getControlId());
+
 		return settings;
 	}
 
@@ -251,11 +275,11 @@ public class MeasurementConfig {
 	 */
 	public Object applyTransforms(Object propVal) {
 		if ( propVal instanceof Number ) {
-			if ( unitMultiplier != null ) {
-				propVal = applyUnitMultiplier((Number) propVal, unitMultiplier);
-			}
 			if ( decimalScale >= 0 ) {
 				propVal = applyDecimalScale((Number) propVal, decimalScale);
+			}
+			if ( unitMultiplier != null ) {
+				propVal = applyUnitMultiplier((Number) propVal, unitMultiplier);
 			}
 		}
 		return propVal;
@@ -278,11 +302,72 @@ public class MeasurementConfig {
 	}
 
 	private static Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
-		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
+		if ( multiplier == null || BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
 		return v.multiply(multiplier);
+	}
+
+	/**
+	 * Apply the configured unit multiplier and decimal scale in reverse, if
+	 * appropriate.
+	 *
+	 * @param propVal
+	 *        the property value to transform; only {@link Number} values will
+	 *        be transformed
+	 * @return the transformed property value to use
+	 * @since 2.4
+	 */
+	public Object applyReverseTransforms(Object propVal) {
+		if ( propVal instanceof Number ) {
+			if ( unitMultiplier != null ) {
+				propVal = applyReverseUnitMultiplier((Number) propVal, unitMultiplier);
+			}
+		}
+		return propVal;
+	}
+
+	private static Number applyReverseUnitMultiplier(Number value, BigDecimal divisor) {
+		if ( divisor == null || BigDecimal.ONE.compareTo(divisor) == 0
+				|| BigDecimal.ZERO.compareTo(divisor) == 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		int scale = v.scale();
+		scale += divisor.abs().divide(BigDecimal.TEN, RoundingMode.UP).intValue();
+		return v.divide(divisor, scale, RoundingMode.HALF_UP);
+	}
+
+	/**
+	 * Test if a control ID is configured.
+	 *
+	 * @return {@code true} if a control ID is available
+	 * @since 2.4
+	 */
+	public boolean hasControlId() {
+		return controlId() != null;
+	}
+
+	/**
+	 * Get the effective control ID.
+	 *
+	 * <p>
+	 * If the {@code controlId} value is {@code -} then the source ID will be
+	 * returned.
+	 * </p>
+	 *
+	 * @return the effective control ID
+	 * @since 2.4
+	 */
+	public String controlId() {
+		final String controlId = getControlId();
+		// @formatter:off
+		return nonEmptyString(
+				  CONTROL_ID_AS_SOURCE_ID.equals(controlId) ? getSourceId()
+				: CONTROL_ID_AS_SOURCE_ID_AND_PROPERTY_NAME.equals(controlId) ? getSourceId() + "/" + getPropertyName()
+				: controlId);
+		// @formatter:on
 	}
 
 	/**
@@ -330,6 +415,11 @@ public class MeasurementConfig {
 		if ( decimalScale != null ) {
 			builder.append("decimalScale=");
 			builder.append(decimalScale);
+			builder.append(", ");
+		}
+		if ( controlId != null ) {
+			builder.append("controlId=");
+			builder.append(controlId);
 		}
 		builder.append("}");
 		return builder.toString();
@@ -454,6 +544,17 @@ public class MeasurementConfig {
 	}
 
 	/**
+	 * Test if a non-identity unit multiplier is configured.
+	 *
+	 * @return {@code true} if a unit multiplier other than {@code 1} is
+	 *         configured
+	 */
+	public boolean hasUnitMultiplier() {
+		final BigDecimal m = getUnitMultiplier();
+		return (m != null && m.compareTo(BigDecimal.ONE) != 0);
+	}
+
+	/**
 	 * Get the unit multiplier.
 	 *
 	 * @return the multiplier
@@ -504,6 +605,27 @@ public class MeasurementConfig {
 	 */
 	public void setDecimalScale(Integer decimalScale) {
 		this.decimalScale = decimalScale;
+	}
+
+	/**
+	 * Get the optional control ID.
+	 *
+	 * @return the control ID
+	 * @since 2.4
+	 */
+	public String getControlId() {
+		return controlId;
+	}
+
+	/**
+	 * Set the optional control ID.
+	 *
+	 * @param controlId
+	 *        the control ID to set
+	 * @since 2.4
+	 */
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
 	}
 
 }

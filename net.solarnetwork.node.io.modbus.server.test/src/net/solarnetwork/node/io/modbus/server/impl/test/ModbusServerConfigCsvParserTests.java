@@ -23,6 +23,10 @@
 package net.solarnetwork.node.io.modbus.server.impl.test;
 
 import static java.lang.String.format;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.InstanceOfAssertFactories.array;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.hasEntry;
@@ -47,13 +51,13 @@ import net.solarnetwork.node.io.modbus.server.domain.ModbusServerConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusServerConfigCsvParser;
-import net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer;
+import net.solarnetwork.node.io.modbus.server.tcp.ModbusServerCsvConfigurer;
 
 /**
  * Test cases for the {@link ModbusServerConfigCsvParser} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusServerConfigCsvParserTests {
 
@@ -254,6 +258,57 @@ public class ModbusServerConfigCsvParserTests {
 		assertMeasConfig("2", blockConfig.getMeasurementConfigs()[1], "power/meter/2", "current",
 				ModbusDataType.Float32, null, BigDecimal.ONE, -1);
 
+	}
+
+	@Test
+	public void parse_controlIds() throws IOException {
+		// GIVEN
+
+		// WHEN
+		try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
+				.allowExtraFields(true).commentStrategy(CommentStrategy.NONE)
+				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
+						getClass().getResourceAsStream("test-config-04.csv"))) {
+			parser.parse(csv);
+		}
+
+		// THEN
+		// @formatter:off
+		then(results)
+			.as("Read device infos")
+			.hasSize(2)
+			.satisfies(l -> {
+				then(l).element(0)
+					.as("Key parsed")
+					.returns("P1", from(ModbusServerConfig::getKey))
+					.extracting(ModbusServerConfig::getUnitConfigs, list(UnitConfig.class))
+					.singleElement()
+					.extracting(UnitConfig::getRegisterBlockConfigs, array(RegisterBlockConfig[].class))
+					.singleElement()
+					.extracting(RegisterBlockConfig::getMeasurementConfigs, array(MeasurementConfig[].class))
+					.singleElement()
+					.as("Source ID parsed")
+					.returns("mock/meter/1", from(MeasurementConfig::getSourceId))
+					.as("Control ID parsed")
+					.returns("-", from(MeasurementConfig::getControlId))
+					;
+				then(l).element(1)
+					.as("Key parsed")
+					.returns("P2", from(ModbusServerConfig::getKey))
+					.extracting(ModbusServerConfig::getUnitConfigs, list(UnitConfig.class))
+					.singleElement()
+					.extracting(UnitConfig::getRegisterBlockConfigs, array(RegisterBlockConfig[].class))
+					.singleElement()
+					.extracting(RegisterBlockConfig::getMeasurementConfigs, array(MeasurementConfig[].class))
+					.singleElement()
+					.as("Source ID parsed")
+					.returns("mock/meter/1", from(MeasurementConfig::getSourceId))
+					.as("Control ID parsed")
+					.returns("mock/control/1", from(MeasurementConfig::getControlId))
+					;
+			})
+			;
+		// @formatter:on
 	}
 
 }
