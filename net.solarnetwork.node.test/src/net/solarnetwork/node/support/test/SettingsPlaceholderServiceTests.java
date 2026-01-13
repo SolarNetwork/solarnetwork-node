@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.suppor.test;
+package net.solarnetwork.node.support.test;
 
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.MatcherAssert.assertThat;

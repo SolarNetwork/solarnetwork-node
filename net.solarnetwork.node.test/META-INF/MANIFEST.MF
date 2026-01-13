@@ -4,7 +4,7 @@ Bundle-Name: Node Unit Test Support
 Bundle-Description: Testing support for SolarNode plugins.
 Bundle-SymbolicName: net.solarnetwork.node.test
 Automatic-Module-Name: net.solarnetwork.node.test
-Bundle-Version: 3.0.1
+Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
