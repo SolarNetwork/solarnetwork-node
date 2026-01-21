@@ -19,7 +19,7 @@
 		<dependency org="net.solarnetwork.common" name="nifty-modbus-tcp" rev="1.2.0"/>
        	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="4.0.0"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.3.0"/>
-       	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="6.0.0"/>
+       	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="6.1.0"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus.nifty" rev="3.1.0"/>
 		<dependency org="org.springframework" name="spring-beans" rev="6.2.6"/>
 		<dependency org="org.springframework" name="spring-context" rev="6.2.6"/>

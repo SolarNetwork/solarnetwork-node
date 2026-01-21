@@ -34,6 +34,8 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -104,7 +106,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -213,6 +215,12 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			return;
 		}
 		loadRegisterData();
+
+		// if restricting unit IDs, ensure register maps contains values for exactly the configured units
+		if ( isRestrictUnitIds() ) {
+			syncUnitIdConfiguration();
+		}
+
 		try {
 			server = startServer();
 			log.info("Started Modbus server [{}]", description());
@@ -366,6 +374,29 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 								description(), blockType, e.toString());
 					}
 				}
+			}
+		}
+	}
+
+	private synchronized void syncUnitIdConfiguration() {
+		final UnitConfig[] units = getUnitConfigs();
+		if ( units == null || units.length < 0 ) {
+			registers.clear();
+			return;
+		}
+		Set<Integer> configuredUnitIds = new HashSet<>(units.length);
+		for ( UnitConfig unit : units ) {
+			Integer unitId = unit.getUnitId();
+			registers.computeIfAbsent(unitId, id -> handler.createRegisterData());
+			configuredUnitIds.add(unitId);
+		}
+		for ( Iterator<Integer> itr = registers.keySet().iterator(); itr.hasNext(); ) {
+			Integer unitId = itr.next();
+			if ( !configuredUnitIds.contains(unitId) ) {
+				log.info(
+						"Dropping data for unit ID {} because restricted unit IDs mode is enabled and that unit ID is not configured.",
+						unitId);
+				itr.remove();
 			}
 		}
 	}
@@ -598,6 +629,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
 		result.add(new BasicToggleSettingSpecifier("daoRequired", false));
+		result.add(new BasicToggleSettingSpecifier("restrictUnitIds", false));
+		result.add(new BasicToggleSettingSpecifier("restrictAddresses", false));
 		result.add(new BasicToggleSettingSpecifier("wireLogging", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
@@ -1086,6 +1119,57 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 */
 	public final void setDaoRequired(boolean daoRequired) {
 		this.daoRequired = daoRequired;
+	}
+
+	/**
+	 * Get the restrict-unit-ids mode.
+	 *
+	 * @return {@code true} to deny requests for unit IDs that do not exist in
+	 *         the registers map
+	 * @since 1.1
+	 */
+	public boolean isRestrictUnitIds() {
+		return handler.isRestrictUnitIds();
+	}
+
+	/**
+	 * Set the restrict-unit-ids mode.
+	 *
+	 * @param restrictUnitIds
+	 *        {@code true} to deny requests for unit IDs that do not exist in
+	 *        the registers map
+	 * @since 1.1
+	 */
+	public void setRestrictUnitIds(boolean restrictUnitIds) {
+		handler.setRestrictUnitIds(restrictUnitIds);
+	}
+
+	/**
+	 * Get the restrict-addresses mode.
+	 *
+	 * @return {@code} true to deny requests for data addresses that do not
+	 *         already exist in the register data
+	 * @since 1.1
+	 */
+	public boolean isRestrictAddresses() {
+		return handler.isRestrictAddresses();
+	}
+
+	/**
+	 * Set the restrict-addresses mode.
+	 *
+	 * <p>
+	 * <b>Note</b> this mode only affects unit IDs that are created dynamically
+	 * by this class, when {@code restrictUnitIds} is {@code false}.
+	 * </p>
+	 *
+	 * @param restrictAddresses
+	 *        {@code} true to deny requests for data addresses that do not
+	 *        already exist in the register data
+	 * @since 1.1
+	 */
+	public void setRestrictAddresses(boolean restrictAddresses) {
+		handler.setRestrictAddresses(restrictAddresses);
 	}
 
 }

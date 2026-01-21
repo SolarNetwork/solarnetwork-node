@@ -60,7 +60,7 @@ import net.solarnetwork.util.NumberUtils;
  * Test cases for the {@link BaseModbusServer} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BaseModbusServerTests {
 
@@ -431,6 +431,40 @@ public class BaseModbusServerTests {
 			.returns(sourceId, from(NodeControlInfo::getControlId))
 			.as("Control value with reversed unit multiplier returned")
 			.returns(propVal, from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void start_restrictedUnitIds() throws IOException {
+		// GIVEN
+		final String sourceId = randomString();
+		final String propName = randomString();
+		final int unitId = 1;
+
+		// @formatter:off
+		final MeasurementConfig[] measConfigs = new MeasurementConfig[] {
+			meas(sourceId, propName, ModbusDataType.StringUtf8, 16, 1, "1", null)
+		};
+		final RegisterBlockConfig[] blockConfigs = new RegisterBlockConfig[] {
+			block(ModbusRegisterBlockType.Holding, 0, measConfigs)
+		};
+		final UnitConfig[] unitConfigs = new UnitConfig[] {
+			unit(unitId, blockConfigs)
+		};
+		// @formatter:on
+
+		server.setUnitConfigs(unitConfigs);
+		server.setRestrictUnitIds(true);
+
+		// WHEN
+		server.start();
+
+		// THEN
+		// @formatter:off
+		then(registers)
+			.as("Data for configured unit IDs created")
+			.containsOnlyKeys(unitId)
 			;
 		// @formatter:on
 	}

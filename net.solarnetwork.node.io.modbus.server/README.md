@@ -144,6 +144,7 @@ settings for the Modbus Service component:
 | Service Group | `groupUid` | Arbitrary string |
 | Allow Writes | `allowWrites` | Either `true` or `false` |
 | Persistence Needed | `daoRequired` | Either `true` or `false` |
+| Strict Unit IDs | `restrictUnitIds` | Either `true` or `false` |
 
 Here is the CSV as shown in the example configuration screen shot above, with some additional
 settings:
@@ -153,6 +154,7 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 #param,uid,My Server
 #param,allowWrites,true
 #param,daoRequired,true
+#param,restrictUnitIds,true
 1,0.0.0.0,5020,100,1,Holding,0,UInt16,1,Mock Energy Meter,watts,1,0
 ,,,,,,,UInt64,4,Mock Energy Meter,wattHours,1,0
 ,,,,,,,Float32,2,Mock Energy Meter,voltage,1,3
@@ -167,7 +169,7 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 
 The TCP server configuration defines the port number and address to listen on.
 
-<img alt="TCP server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="874">
+<img alt="TCP server settings" src="docs/solarnode-modbus-tcp-server-settings@2x.png" width="880">
 
 Each server configuration contains the following settings:
 
@@ -180,6 +182,8 @@ Each server configuration contains the following settings:
 | Request Throttle   | A number of milliseconds to limit client requests by. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
+| Strict Unit IDs    | If enabled, then respond to requests for a Unit ID that is not configured with a _Modbus Illegal Data Address_ error. |
+| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the **Port** number of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
@@ -223,6 +227,8 @@ Each server configuration contains the following settings:
 | Request Throttle   | A number of milliseconds to limit client requests by. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
+| Strict Unit IDs    | If enabled, then respond to requests for a Unit ID that is not configured with a _Modbus Illegal Data Address_ error. |
+| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the serial port device name of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
