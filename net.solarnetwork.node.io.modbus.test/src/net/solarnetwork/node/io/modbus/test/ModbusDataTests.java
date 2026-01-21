@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDataTests.java - 20/12/2017 10:01:23 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -43,9 +44,9 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusData} class.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusDataTests {
 
@@ -408,6 +409,18 @@ public class ModbusDataTests {
 		});
 
 		assertThat("Signed 16-bit integer", d.getInt16(0), equalTo(s));
+	}
+
+	@Test
+	public void readSignedInt16_notAvailable() throws IOException {
+		ModbusData d = new ModbusData(false);
+		d.getInt16(0);
+	}
+
+	@Test(expected = NoSuchElementException.class)
+	public void readSignedInt16_strict_notAvailable() throws IOException {
+		ModbusData d = new ModbusData(true);
+		assertThat("Signed 16-bit integer", d.getInt16(0), equalTo((short) 0));
 	}
 
 	@Test

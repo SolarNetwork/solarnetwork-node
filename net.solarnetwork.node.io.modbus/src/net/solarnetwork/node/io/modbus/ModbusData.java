@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusData.java - 20/12/2017 7:12:16 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,7 +42,7 @@ import net.solarnetwork.util.IntShortMap;
 
 /**
  * Object to hold raw data extracted from a Modbus device.
- * 
+ *
  * <p>
  * This class is designed to operate as a cache of data read from a Modbus
  * device. The data is modeled as a sparse array of register address keys with
@@ -50,9 +50,9 @@ import net.solarnetwork.util.IntShortMap;
  * data and thread-safe read access if {@link #ModbusData(ModbusData)} or
  * {@link #copy()} are invoked to get a copy of the data.
  * </p>
- * 
+ *
  * @author matt
- * @version 3.1
+ * @version 3.2
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -65,18 +65,32 @@ public class ModbusData implements DataAccessor {
 	 * Default constructor.
 	 */
 	public ModbusData() {
+		this(false);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param strictAddresses
+	 *        if {@code true} then throw {@code NoSuchElementException} when
+	 *        attempting to read from an address that does not already have an
+	 *        associated value
+	 * @since 3.2
+	 */
+	public ModbusData(boolean strictAddresses) {
 		super();
-		this.dataRegisters = new IntShortMap(64);
+		this.dataRegisters = new IntShortMap(64,
+				strictAddresses ? IntShortMap.VALUE_NO_SUCH_ELEMENT : (short) 0);
 		this.wordOrder = ModbusWordOrder.MostToLeastSignificant;
 	}
 
 	/**
 	 * Copy constructor.
-	 * 
+	 *
 	 * <p>
 	 * This method provides a thread-safe way to get a copy of the current data.
 	 * </p>
-	 * 
+	 *
 	 * @param other
 	 *        the object to copy
 	 */
@@ -90,7 +104,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get the number of registers with a set value.
-	 * 
+	 *
 	 * @return the number of set registers
 	 */
 	public int size() {
@@ -99,7 +113,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Test if the register data is empty.
-	 * 
+	 *
 	 * @return {@literal true} if no registers have been set
 	 */
 	public boolean isEmpty() {
@@ -118,11 +132,11 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Create a copy of this object.
-	 * 
+	 *
 	 * <p>
 	 * This method provides a thread-safe way to get a copy of the current data.
 	 * </p>
-	 * 
+	 *
 	 * @return the new instance
 	 * @see #ModbusData(ModbusData)
 	 */
@@ -132,7 +146,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get a number value from a reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the number value for
 	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
@@ -146,7 +160,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get a number value from a relative reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the relative reference to get the number value for
 	 * @param offset
@@ -203,7 +217,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a 1-bit boolean from a data register address.
-	 * 
+	 *
 	 * @param addr
 	 *        the address
 	 * @return the boolean, never {@literal null}
@@ -215,7 +229,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an unsigned 16-bit integer from a data register address.
-	 * 
+	 *
 	 * @param addr
 	 *        the register address
 	 * @return the integer, never {@literal null}
@@ -227,7 +241,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a signed 16-bit integer from a data register address.
-	 * 
+	 *
 	 * @param addr
 	 *        the register address
 	 * @return the short, never {@literal null}
@@ -238,7 +252,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an unsigned 32-bit integer from data register addresses.
-	 * 
+	 *
 	 * @param hiAddr
 	 *        the address of the high 16 bits
 	 * @param loAddr
@@ -252,7 +266,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a signed 32-bit integer from data register addresses.
-	 * 
+	 *
 	 * @param hiAddr
 	 *        the address of the high 16 bits
 	 * @param loAddr
@@ -267,11 +281,11 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a signed 32-bit integer from data register addresses.
-	 * 
+	 *
 	 * <p>
 	 * This method will respect the configured {@link #getWordOrder()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
@@ -286,11 +300,11 @@ public class ModbusData implements DataAccessor {
 	/**
 	 * Construct an unsigned 32-bit integer from a starting data register
 	 * address.
-	 * 
+	 *
 	 * <p>
 	 * This method will respect the configured {@link #getWordOrder()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
@@ -303,7 +317,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a 16-bit float from data register addresses.
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the 16 bits
 	 * @return the parsed value, or {@literal null} if not available.
@@ -315,7 +329,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a 32-bit float from data register addresses.
-	 * 
+	 *
 	 * @param hiAddr
 	 *        the address of the high 16 bits
 	 * @param loAddr
@@ -329,11 +343,11 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a 32-bit float from a starting data register address.
-	 * 
+	 *
 	 * <p>
 	 * This method will respect the configured {@link #getWordOrder()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
@@ -346,7 +360,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a signed 64-bit long value from data register addresses.
-	 * 
+	 *
 	 * @param h1Addr
 	 *        the address of bits 63-48
 	 * @param h2Addr
@@ -364,11 +378,11 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a signed 64-bit integer from a starting data register address.
-	 * 
+	 *
 	 * <p>
 	 * This method will respect the configured {@link #getWordOrder()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the first register; the remaining three registers
 	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
@@ -383,7 +397,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an unsigned 64-bit integer from data register addresses.
-	 * 
+	 *
 	 * @param h1Addr
 	 *        the address of bits 63-48
 	 * @param h2Addr
@@ -404,11 +418,11 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an unsigned 64-bit integer from data register addresses.
-	 * 
+	 *
 	 * <p>
 	 * This method will respect the configured {@link #getWordOrder()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the first register; the remaining three registers
 	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
@@ -424,7 +438,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a 32-bit float from data register addresses.
-	 * 
+	 *
 	 * @param h1Addr
 	 *        the address of bits 63-48
 	 * @param h2Addr
@@ -444,11 +458,11 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a 32-bit float from a starting data register address.
-	 * 
+	 *
 	 * <p>
 	 * This method will respect the configured {@link #getWordOrder()} value.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the address of the first register; the remaining three registers
 	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
@@ -463,12 +477,12 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a byte array out of a data address range.
-	 * 
+	 *
 	 * <p>
 	 * This method will assume {@link ModbusWordOrder#MostToLeastSignificant}
 	 * word ordering.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the starting address of the 16-bit register to read
 	 * @param count
@@ -487,13 +501,13 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a string out of a data address range.
-	 * 
+	 *
 	 * <p>
 	 * This method calls {@link #getBytes(int, int)} to interpret the data
 	 * addresses as a raw byte array, and then interprets the result as a string
 	 * in the given character set.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the starting address of the 16-bit register to read
 	 * @param count
@@ -519,13 +533,13 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a string out of a data address range.
-	 * 
+	 *
 	 * <p>
 	 * This method calls {@link #getBytes(int, int)} to interpret the data
 	 * addresses as a raw byte array, and then interprets the result as a string
 	 * in the given character set.
 	 * </p>
-	 * 
+	 *
 	 * @param addr
 	 *        the starting address of the 16-bit register to read
 	 * @param count
@@ -553,7 +567,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a UTF-8 string out of a data address range.
-	 * 
+	 *
 	 * @param addr
 	 *        the starting address of the 16-bit register to read
 	 * @param count
@@ -569,7 +583,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an ASCII string out of a data address range.
-	 * 
+	 *
 	 * @param addr
 	 *        the starting address of the 16-bit register to read
 	 * @param count
@@ -585,7 +599,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a UTF-8 string from a reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the string value for
 	 * @param trim
@@ -600,7 +614,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct a UTF-8 string from a reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the string value for
 	 * @param offset
@@ -617,7 +631,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an ASCII string from a reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the string value for
 	 * @param trim
@@ -632,7 +646,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an ASCII string from a relative reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the string value for
 	 * @param offset
@@ -649,7 +663,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Construct an ISO-LATIN-1 string from a relative reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the string value for
 	 * @param offset
@@ -667,7 +681,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Perform a set of updates to saved register data.
-	 * 
+	 *
 	 * @param action
 	 *        the callback to perform the updates on
 	 * @return this object to allow method chaining
@@ -686,12 +700,12 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Force the data timestamp to be expired.
-	 * 
+	 *
 	 * <p>
 	 * Calling this method will reset the {@code dataTimestamp} to zero,
 	 * effectively expiring the data.
 	 * </p>
-	 * 
+	 *
 	 * @return this object to allow method chaining
 	 * @since 1.2
 	 */
@@ -704,7 +718,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get a value for a reference.
-	 * 
+	 *
 	 * @param ref
 	 *        the reference to get the number value for
 	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
@@ -716,7 +730,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get a value.
-	 * 
+	 *
 	 * @param dataType
 	 *        the data type
 	 * @param address
@@ -780,7 +794,7 @@ public class ModbusData implements DataAccessor {
 		/**
 		 * Store a mapping of addresses to associated 16-bit integer register
 		 * data values.
-		 * 
+		 *
 		 * @param data
 		 *        the data map to save; all values will be treated as 16-bit
 		 *        integer
@@ -790,7 +804,7 @@ public class ModbusData implements DataAccessor {
 		/**
 		 * Store an array of 16-bit integer register data values, starting at a
 		 * given address.
-		 * 
+		 *
 		 * @param data
 		 *        the data array to save, as shorts
 		 * @param addr
@@ -801,11 +815,11 @@ public class ModbusData implements DataAccessor {
 		/**
 		 * Store an array of 16-bit integer register data values, starting at a
 		 * given address.
-		 * 
+		 *
 		 * <p>
 		 * Note that the data values will be treated as 16-bit unsigned values.
 		 * </p>
-		 * 
+		 *
 		 * @param data
 		 *        the data array to save, as ints
 		 * @param addr
@@ -816,11 +830,11 @@ public class ModbusData implements DataAccessor {
 		/**
 		 * Store an array of 16-bit integer register data values, starting at a
 		 * given address.
-		 * 
+		 *
 		 * <p>
 		 * Note that the data values will be treated as 16-bit unsigned values.
 		 * </p>
-		 * 
+		 *
 		 * @param data
 		 *        the data array to save, as ints
 		 * @param addr
@@ -831,18 +845,18 @@ public class ModbusData implements DataAccessor {
 		/**
 		 * Store an array of bytes into 16-bit register data values, starting at
 		 * a given address.
-		 * 
+		 *
 		 * <p>
 		 * The bytes are packed into 16-bit values, so the number of register
 		 * addresses written to will be <i>half</i> of the length of
 		 * {@code bytes} (rounded up to nearest even even length).
 		 * </p>
-		 * 
+		 *
 		 * <p>
 		 * This method will assume
 		 * {@link ModbusWordOrder#MostToLeastSignificant} word ordering.
 		 * </p>
-		 * 
+		 *
 		 * @param data
 		 *        the bytes to save
 		 * @param addr
@@ -858,7 +872,7 @@ public class ModbusData implements DataAccessor {
 
 		/**
 		 * Perform updates to the data.
-		 * 
+		 *
 		 * @param m
 		 *        a mutable version of the data to update
 		 * @return {@literal true} if {@code dataTimestamp} should be updated to
@@ -872,7 +886,7 @@ public class ModbusData implements DataAccessor {
 	/**
 	 * Mutable view of Modbus data registers, meant to be used for thread-safe
 	 * writes.
-	 * 
+	 *
 	 * <p>
 	 * All methods are assumed to be synchronized on {@code dataRegsiters}.
 	 * </p>
@@ -883,7 +897,7 @@ public class ModbusData implements DataAccessor {
 
 		/**
 		 * Construct with data registers to mutate.
-		 * 
+		 *
 		 * @param dataRegisters
 		 *        the registers to mutate; calling code should by synchronized
 		 *        on this instance
@@ -895,7 +909,7 @@ public class ModbusData implements DataAccessor {
 
 		/**
 		 * Construct with data registers to mutate.
-		 * 
+		 *
 		 * @param dataRegisters
 		 *        the registers to mutate; calling code should by synchronized
 		 *        on this instance
@@ -985,13 +999,13 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get a string of data values, useful for debugging.
-	 * 
+	 *
 	 * <p>
 	 * The generated string will contain a register address followed by two
 	 * register values per line, printed as hexidecimal integers, with a prefix
 	 * and suffix line. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * ModbusData{
 	 *      30000: 0x4141, 0x727E
@@ -1000,7 +1014,7 @@ public class ModbusData implements DataAccessor {
 	 *      30344: 0x0000, 0x0000
 	 * }
 	 * </pre>
-	 * 
+	 *
 	 * @return debug string
 	 */
 	public final String dataDebugString() {
@@ -1033,7 +1047,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Copy the raw modbus data for a set of addresses into an array.
-	 * 
+	 *
 	 * @param dest
 	 *        the destination array
 	 * @param destFrom
@@ -1055,7 +1069,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get the word ordering to use when reading multi-register data types.
-	 * 
+	 *
 	 * @return the word order
 	 * @since 1.3
 	 */
@@ -1065,7 +1079,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Set the word ordering to use when reading multi-register data types.
-	 * 
+	 *
 	 * @param wordOrder
 	 *        the word order to use; {@literal null} will be ignored
 	 * @since 1.3
@@ -1079,12 +1093,12 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Refresh a range of data from the Modbus device into this object.
-	 * 
+	 *
 	 * <p>
 	 * This method uses the {@link ModbusReadFunction#ReadHoldingRegister} with
 	 * a maximum of {@literal 64} addresses read per transaction.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param rangeSet
@@ -1101,7 +1115,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Refresh a range of data from the Modbus device into this object.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param readFunction
@@ -1123,7 +1137,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Refresh a range of data from the Modbus device into this object.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param readFunction
@@ -1149,7 +1163,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Read data from the device and update a mutable data instance.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param readFunction
@@ -1173,7 +1187,7 @@ public class ModbusData implements DataAccessor {
 	/**
 	 * Get a read-only Map view of all modbus registers as unsigned integer
 	 * values.
-	 * 
+	 *
 	 * @return the data map, never {@literal null}
 	 * @since 1.7
 	 */
@@ -1184,7 +1198,7 @@ public class ModbusData implements DataAccessor {
 
 	/**
 	 * Get direct access to all modbus registers.
-	 * 
+	 *
 	 * @return the data map, never {@literal null}
 	 * @since 3.1
 	 */
