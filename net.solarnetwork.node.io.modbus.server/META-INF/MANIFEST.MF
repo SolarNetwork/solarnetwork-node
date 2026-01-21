@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Modbus Server (TCP)
-Bundle-Description: Expose a Modbus TCP server for integration with other systems.
+Bundle-Name: Modbus Server
+Bundle-Description: Expose a Modbus RTU or TCP server for integration with other systems.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server
 Bundle-Version: 5.4.0
 Bundle-Vendor: SolarNetwork

@@ -231,8 +231,12 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		ModbusMessage res = null;
 
 		if ( restrictUnitIds && registers.get(req.getUnitId()) == null ) {
-			res = new BaseModbusMessage(req.getUnitId(), req.getFunction(),
-					ModbusErrorCode.IllegalDataAddress);
+			// ignore
+			if ( log.isTraceEnabled() ) {
+				log.trace("Modbus [{}] request {} ignored because of strict unit ID mode.",
+						descriptor.get(), req);
+			}
+			return;
 		} else {
 			try {
 				final BitsModbusMessage bitReq = req.unwrap(BitsModbusMessage.class);
@@ -508,7 +512,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * Set the restrict-unit-ids mode.
 	 *
 	 * @param restrictUnitIds
-	 *        {@code true} to deny requests for unit IDs that do not exist in
+	 *        {@code true} to ignore requests for unit IDs that do not exist in
 	 *        the registers map
 	 * @since 2.2
 	 */
@@ -519,7 +523,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	/**
 	 * Get the restrict-addresses mode.
 	 *
-	 * @return {@code} true to deny requests for data addresses that do not
+	 * @return {@code} true to ignore requests for data addresses that do not
 	 *         already exist in the register data
 	 * @since 2.2
 	 */

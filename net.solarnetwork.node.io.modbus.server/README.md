@@ -182,7 +182,7 @@ Each server configuration contains the following settings:
 | Request Throttle   | A number of milliseconds to limit client requests by. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
-| Strict Unit IDs    | If enabled, then respond to requests for a Unit ID that is not configured with a _Modbus Illegal Data Address_ error. |
+| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
 | Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the **Port** number of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |
@@ -227,7 +227,7 @@ Each server configuration contains the following settings:
 | Request Throttle   | A number of milliseconds to limit client requests by. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
-| Strict Unit IDs    | If enabled, then respond to requests for a Unit ID that is not configured with a _Modbus Illegal Data Address_ error. |
+| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
 | Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the serial port device name of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |

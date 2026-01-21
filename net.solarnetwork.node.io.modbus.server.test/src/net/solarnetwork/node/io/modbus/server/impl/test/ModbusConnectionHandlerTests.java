@@ -425,16 +425,8 @@ public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.i
 		// THEN
 		// @formatter:off
 		then(msg)
-			.as("Response provided")
-			.isNotNull()
-			.as("Response function code matches request value")
-			.returns(ModbusFunctionCode.ReadInputRegisters, from(r -> r.getFunction().functionCode()))
-			.as("Response unit ID matches request value")
-			.returns(unitId, from(net.solarnetwork.io.modbus.ModbusMessage::getUnitId))
-			.as("Response is exception")
-			.returns(true, from(net.solarnetwork.io.modbus.ModbusMessage::isException))
-			.as("Illegal error returned")
-			.returns(ModbusErrorCode.IllegalDataAddress, from(net.solarnetwork.io.modbus.ModbusMessage::getError))
+			.as("Response not provided because of strict unit ID checking")
+			.isNull()
 			;
 		// @formatter:on
 	}
