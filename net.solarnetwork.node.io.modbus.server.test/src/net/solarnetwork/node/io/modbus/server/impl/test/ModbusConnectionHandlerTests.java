@@ -38,7 +38,10 @@ import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.io.modbus.ModbusErrorCode;
 import net.solarnetwork.io.modbus.ModbusFunctionCode;
+import net.solarnetwork.io.modbus.ModbusFunctionCodes;
 import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.ModbusValidationException;
+import net.solarnetwork.io.modbus.netty.msg.BaseModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
@@ -328,28 +331,31 @@ public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.i
 	}
 
 	@Test
-	public void readInput() throws Exception {
+	public void validationException() throws Exception {
 		// GIVEN
 		final int address = 17;
-		final int count = 1;
-		RegistersModbusMessage req = RegistersModbusMessage.readInputsRequest(DEFAULT_UNIT_ID, address,
-				count);
 
 		registers.writeInput(address, (short) 123);
 
+		final var ex = new ModbusValidationException("foobar");
+
 		// WHEN
-		handler.accept(req, this);
+		handler.accept(new BaseModbusMessage(DEFAULT_UNIT_ID, ModbusFunctionCodes.READ_INPUT_REGISTERS) {
+
+			@Override
+			public ModbusMessage validate() throws ModbusValidationException {
+				throw ex;
+			}
+
+		}, this);
 
 		// THEN
-		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
-				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
-		assertThat("Response is registers", res, is(notNullValue()));
-
-		assertThat("Response function code", res.getFunction().functionCode(),
-				is(equalTo(ModbusFunctionCode.ReadInputRegisters)));
-		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
-		assertThat("Response address", res.getAddress(), is(equalTo(address)));
-		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 2), is(equalTo("007B")));
+		// @formatter:off
+		then(msg)
+			.as("No message delivered after validation exception")
+			.isNull()
+			;
+		// @formatter:on
 	}
 
 	@Test

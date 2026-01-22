@@ -48,6 +48,7 @@ import net.solarnetwork.io.modbus.BitsModbusMessage;
 import net.solarnetwork.io.modbus.ModbusErrorCode;
 import net.solarnetwork.io.modbus.ModbusFunctionCode;
 import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.ModbusValidationException;
 import net.solarnetwork.io.modbus.RegistersModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.BaseModbusMessage;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -226,6 +227,13 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		}
 		if ( log.isTraceEnabled() ) {
 			log.trace("Modbus [{}] request: {}", descriptor.get(), req);
+		}
+
+		try {
+			req.validate();
+		} catch ( ModbusValidationException e ) {
+			log.warn("Ignoring invalid Modbus message {}: {}", req, e.getMessage());
+			return;
 		}
 
 		ModbusMessage res = null;
