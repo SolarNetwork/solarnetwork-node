@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -61,6 +62,7 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.io.modbus.ModbusMessage;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -165,8 +167,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		super();
 		this.executor = ObjectUtils.requireNonNullArgument(executor, "executor");
 		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
-		this.handler = new ModbusConnectionHandler(registers, this::description, this::getUid,
-				() -> service(registerDao));
+		this.handler = new ModbusConnectionHandler(registers, this::description, this::handleException,
+				this::getUid, () -> service(registerDao));
 	}
 
 	/**
@@ -275,7 +277,32 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 */
 	protected abstract void stopServer(T server);
 
-	private synchronized void restartServer() {
+	/**
+	 * Handle an exception from the connection handler.
+	 *
+	 * <p>
+	 * This implementation simply logs a message. Extending classes may want to
+	 * override this method.
+	 * </p>
+	 *
+	 * @param t
+	 *        the exception
+	 * @param msg
+	 *        an optional associated message
+	 */
+	protected void handleException(Throwable t, Optional<ModbusMessage> msg) {
+		if ( msg.isPresent() ) {
+			log.warn("Exception processing Modbus message [{}] in Modbus server [{}]: {}", msg.get(),
+					description(), t.getMessage());
+		} else {
+			log.warn("Exception in Modbus server [{}]: {}", description(), t.getMessage());
+		}
+	}
+
+	/**
+	 * Restart the server.
+	 */
+	protected synchronized void restartServer() {
 		stop();
 		Runnable startupTask = new Runnable() {
 
@@ -347,7 +374,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		for ( Entry<Integer, Map<ModbusRegisterBlockType, List<ModbusRegisterEntity>>> unitEntry : dataByBlockByUnit
 				.entrySet() ) {
 			ModbusRegisterData unit = registers.computeIfAbsent(unitEntry.getKey(),
-					k -> new ModbusRegisterData());
+					k -> handler.createRegisterData());
 			for ( Entry<ModbusRegisterBlockType, List<ModbusRegisterEntity>> blockEntry : unitEntry
 					.getValue().entrySet() ) {
 				ModbusRegisterBlockType blockType = blockEntry.getKey();
@@ -537,7 +564,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 				continue;
 			}
 			ModbusRegisterData regData = registers.computeIfAbsent(unitId,
-					k -> new ModbusRegisterData());
+					k -> handler.createRegisterData());
 			switch (blockType) {
 				case Coil:
 				case Discrete:
@@ -627,6 +654,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		result.addAll(getExtendedSettingSpecifiers());
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
+		result.add(new BasicTextFieldSettingSpecifier("startupDelay",
+				String.valueOf(DEFAULT_STARTUP_DELAY_SECS)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
 		result.add(new BasicToggleSettingSpecifier("daoRequired", false));
 		result.add(new BasicToggleSettingSpecifier("restrictUnitIds", false));

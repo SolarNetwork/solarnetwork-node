@@ -142,9 +142,12 @@ settings for the Modbus Service component:
 |:--------|:----|:------------|
 | Service Name | `uid` | Arbitrary string |
 | Service Group | `groupUid` | Arbitrary string |
+| Startup Delay | `startupDelay` | Number (seconds) |
 | Allow Writes | `allowWrites` | Either `true` or `false` |
 | Persistence Needed | `daoRequired` | Either `true` or `false` |
 | Strict Unit IDs | `restrictUnitIds` | Either `true` or `false` |
+| Strict Addresses | `restrictAddresses` | Either `true` or `false` |
+| Wire Logging | `wireLogging` | Either `true` or `false` |
 
 Here is the CSV as shown in the example configuration screen shot above, with some additional
 settings:
@@ -169,7 +172,7 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 
 The TCP server configuration defines the port number and address to listen on.
 
-<img alt="TCP server settings" src="docs/solarnode-modbus-tcp-server-settings@2x.png" width="880">
+<img alt="TCP server settings" src="docs/solarnode-modbus-tcp-server-settings@2x.png" width="872">
 
 Each server configuration contains the following settings:
 
@@ -180,6 +183,7 @@ Each server configuration contains the following settings:
 | Bind Address       | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses. |
 | Port               | The port number to listen on. The default Modbus port is `502`. See [port considerations](#solarnodeos-port-considerations) for more info. |
 | Request Throttle   | A number of milliseconds to limit client requests by. |
+| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
 | Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
@@ -215,7 +219,7 @@ add rule ip nat prerouting tcp dport 502 redirect to 5020
 
 The RTU server configuration defines the serial port to use.
 
-<img alt="RTU server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="880">
+<img alt="RTU server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="872">
 
 Each server configuration contains the following settings:
 
@@ -224,7 +228,8 @@ Each server configuration contains the following settings:
 | Service Name       | A unique name to identify this data source with. |
 | Service Group      | A group name to associate this data source with. |
 | Serial Connection  | The **Service Name** of the Modbus Serial Connection component to use. |
-| Request Throttle   | A number of milliseconds to limit client requests by. |
+| Request Throttle   | A number of **milliseconds** to limit client requests by. |
+| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change, or after any message validation failure. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
 | Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |

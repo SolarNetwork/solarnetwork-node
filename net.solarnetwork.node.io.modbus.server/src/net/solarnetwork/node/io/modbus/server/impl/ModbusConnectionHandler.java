@@ -38,6 +38,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -75,6 +76,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
 	private final Supplier<String> serverIdProvider;
 	private final Supplier<ModbusRegisterDao> daoProvider;
+	private final BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler;
 	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private boolean allowWrites;
 	private boolean restrictUnitIds;
@@ -89,12 +91,15 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor) {
-		this(registers, descriptor, 0);
+			Supplier<String> descriptor,
+			BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler) {
+		this(registers, descriptor, exceptionHandler, 0);
 	}
 
 	/**
@@ -104,6 +109,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param serverIdProvider
 	 *        and optional provider of the server ID to use, when
 	 *        {@code daoProvider} is also configured
@@ -115,9 +122,10 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @since 2.1
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, Supplier<String> serverIdProvider,
-			Supplier<ModbusRegisterDao> daoProvider) {
-		this(Clock.systemUTC(), registers, descriptor, serverIdProvider, daoProvider, 0, false);
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			Supplier<String> serverIdProvider, Supplier<ModbusRegisterDao> daoProvider) {
+		this(Clock.systemUTC(), registers, descriptor, exceptionHandler, serverIdProvider, daoProvider,
+				0, false);
 	}
 
 	/**
@@ -127,6 +135,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param requestThrottle
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
@@ -134,8 +144,9 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *         if any argument other than {@code closeable} is {@literal null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, long requestThrottle) {
-		this(registers, descriptor, requestThrottle, false);
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			long requestThrottle) {
+		this(registers, descriptor, exceptionHandler, requestThrottle, false);
 	}
 
 	/**
@@ -145,6 +156,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param requestThrottle
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
@@ -155,8 +168,10 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @since 2.0
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, long requestThrottle, boolean allowWrites) {
-		this(Clock.systemUTC(), registers, descriptor, null, null, requestThrottle, allowWrites);
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			long requestThrottle, boolean allowWrites) {
+		this(Clock.systemUTC(), registers, descriptor, exceptionHandler, null, null, requestThrottle,
+				allowWrites);
 	}
 
 	/**
@@ -168,6 +183,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param serverIdProvider
 	 *        and optional provider of the server ID to use, when
 	 *        {@code daoProvider} is also configured
@@ -184,12 +201,14 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @since 2.1
 	 */
 	public ModbusConnectionHandler(Clock clock, ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, Supplier<String> serverIdProvider,
-			Supplier<ModbusRegisterDao> daoProvider, long requestThrottle, boolean allowWrites) {
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			Supplier<String> serverIdProvider, Supplier<ModbusRegisterDao> daoProvider,
+			long requestThrottle, boolean allowWrites) {
 		super();
 		this.clock = requireNonNullArgument(clock, "clock");
 		this.registers = requireNonNullArgument(registers, "registers");
 		this.descriptor = requireNonNullArgument(descriptor, "descriptor");
+		this.exceptionHandler = requireNonNullArgument(exceptionHandler, "exceptionHandler");
 		this.serverIdProvider = serverIdProvider;
 		this.daoProvider = daoProvider;
 		this.requestThrottle = requestThrottle;
@@ -233,6 +252,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 			req.validate();
 		} catch ( ModbusValidationException e ) {
 			log.warn("Ignoring invalid Modbus message {}: {}", req, e.getMessage());
+			exceptionHandler.accept(e, Optional.of(req));
 			return;
 		}
 
@@ -269,7 +289,11 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		if ( log.isTraceEnabled() ) {
 			log.trace("Modbus [{}] request {} response: {}", descriptor.get(), req, res);
 		}
-		dest.accept(res);
+		try {
+			dest.accept(res);
+		} catch ( Exception e ) {
+			exceptionHandler.accept(e, Optional.of(res));
+		}
 	}
 
 	private ModbusMessage handleBitsMessage(BitsModbusMessage req) {

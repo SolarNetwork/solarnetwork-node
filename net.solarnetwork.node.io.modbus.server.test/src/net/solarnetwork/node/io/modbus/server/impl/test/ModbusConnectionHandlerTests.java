@@ -68,7 +68,9 @@ public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.i
 		units = new ConcurrentHashMap<>(1, 0.9f, 1);
 		registers = new ModbusRegisterData();
 		units.put(DEFAULT_UNIT_ID, registers);
-		handler = new ModbusConnectionHandler(units, () -> "Test");
+		handler = new ModbusConnectionHandler(units, () -> "Test", (ex, msg) -> {
+			// ignore
+		});
 		msg = null;
 	}
 
