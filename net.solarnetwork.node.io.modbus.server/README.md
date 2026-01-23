@@ -298,6 +298,9 @@ issuing a [`SetControlParameter`][SetControlParameter] instruction that includes
 instruction parameter named the **Control ID** you configured for the control and the desired value
 as the parameter value.
 
+> :bulb: **Note** that the **Allow Writes** setting does **not** apply to control updates — control
+> updates are always allowed.
+
 For example, to set the `test/float` control to `29.0` an HTTP `POST` like this would update the
 value:
 
