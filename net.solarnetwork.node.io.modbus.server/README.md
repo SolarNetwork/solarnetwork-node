@@ -1,8 +1,8 @@
-# SolarNode Modbus Server (TCP)
+# SolarNode Modbus Server
 
-This project provides SolarNode plugin that exposes a Modbus TCP server within SolarNode based on
-data collected by other plugins. This is an advanced plugin that requires specific low-level
-knowledge of the Modbus services you plan to integrate with.
+This project provides SolarNode plugin that exposes a Modbus TCP or serial (RTU) server within
+SolarNode based on data collected by other plugins. This is an advanced plugin that requires
+specific low-level knowledge of the Modbus services you plan to integrate with.
 
 # Use
 
@@ -142,8 +142,12 @@ settings for the Modbus Service component:
 |:--------|:----|:------------|
 | Service Name | `uid` | Arbitrary string |
 | Service Group | `groupUid` | Arbitrary string |
+| Startup Delay | `startupDelay` | Number (seconds) |
 | Allow Writes | `allowWrites` | Either `true` or `false` |
 | Persistence Needed | `daoRequired` | Either `true` or `false` |
+| Strict Unit IDs | `restrictUnitIds` | Either `true` or `false` |
+| Strict Addresses | `restrictAddresses` | Either `true` or `false` |
+| Wire Logging | `wireLogging` | Either `true` or `false` |
 
 Here is the CSV as shown in the example configuration screen shot above, with some additional
 settings:
@@ -153,6 +157,7 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 #param,uid,My Server
 #param,allowWrites,true
 #param,daoRequired,true
+#param,restrictUnitIds,true
 1,0.0.0.0,5020,100,1,Holding,0,UInt16,1,Mock Energy Meter,watts,1,0
 ,,,,,,,UInt64,4,Mock Energy Meter,wattHours,1,0
 ,,,,,,,Float32,2,Mock Energy Meter,voltage,1,3
@@ -167,7 +172,7 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 
 The TCP server configuration defines the port number and address to listen on.
 
-<img alt="TCP server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="874">
+<img alt="TCP server settings" src="docs/solarnode-modbus-tcp-server-settings@2x.png" width="872">
 
 Each server configuration contains the following settings:
 
@@ -178,8 +183,11 @@ Each server configuration contains the following settings:
 | Bind Address       | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses. |
 | Port               | The port number to listen on. The default Modbus port is `502`. See [port considerations](#solarnodeos-port-considerations) for more info. |
 | Request Throttle   | A number of milliseconds to limit client requests by. |
+| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
+| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
+| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the **Port** number of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
@@ -211,7 +219,7 @@ add rule ip nat prerouting tcp dport 502 redirect to 5020
 
 The RTU server configuration defines the serial port to use.
 
-<img alt="RTU server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="880">
+<img alt="RTU server settings" src="docs/solarnode-modbus-rtu-server-settings@2x.png" width="872">
 
 Each server configuration contains the following settings:
 
@@ -220,9 +228,12 @@ Each server configuration contains the following settings:
 | Service Name       | A unique name to identify this data source with. |
 | Service Group      | A group name to associate this data source with. |
 | Serial Connection  | The **Service Name** of the Modbus Serial Connection component to use. |
-| Request Throttle   | A number of milliseconds to limit client requests by. |
+| Request Throttle   | A number of **milliseconds** to limit client requests by. |
+| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change, or after any message validation failure. |
 | Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
+| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
+| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the serial port device name of the server to log messages for. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
@@ -286,6 +297,9 @@ You can also use the [SolarUser Instruction API][instr-api] to update the measur
 issuing a [`SetControlParameter`][SetControlParameter] instruction that includes a single
 instruction parameter named the **Control ID** you configured for the control and the desired value
 as the parameter value.
+
+> :bulb: **Note** that the **Allow Writes** setting does **not** apply to control updates — control
+> updates are always allowed.
 
 For example, to set the `test/float` control to `29.0` an HTTP `POST` like this would update the
 value:

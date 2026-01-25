@@ -25,11 +25,16 @@ package net.solarnetwork.node.io.modbus.server.rtu;
 import static net.solarnetwork.service.OptionalService.requiredService;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.ModbusValidationException;
 import net.solarnetwork.io.modbus.rtu.netty.NettyRtuModbusServer;
 import net.solarnetwork.node.io.modbus.nifty.rtu.SerialConnectionProvider;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
@@ -45,7 +50,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Modbus RTU server service.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 5.3
  */
 public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
@@ -137,6 +142,21 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	@Override
 	protected void stopServer(NettyRtuModbusServer server) {
 		server.stop();
+	}
+
+	@Override
+	protected void handleException(Throwable t, Optional<ModbusMessage> msg) {
+		super.handleException(t, msg);
+		if ( t instanceof ModbusValidationException ) {
+			// restart server after validation exception
+			log.warn("Restarting Modbus Server [{}] after message validation exception.", description());
+			final TaskScheduler scheduler = getTaskScheduler();
+			if ( scheduler != null ) {
+				scheduler.schedule(this::restartServer, Instant.now().plusMillis(100));
+			} else {
+				restartServer();
+			}
+		}
 	}
 
 	@Override

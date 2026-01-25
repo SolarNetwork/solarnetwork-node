@@ -25,6 +25,8 @@ package net.solarnetwork.node.backup.s3;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupIdentity;
@@ -34,8 +36,10 @@ import net.solarnetwork.node.backup.BackupResource;
  * S3 implementation of {@link Backup}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
+@JsonPropertyOrder({ "key", "nodeId", "date", "qualifier", "size", "complete" })
+@JsonIgnoreProperties({ "id" })
 public class S3BackupMetadata implements Backup {
 
 	private Long nodeId;

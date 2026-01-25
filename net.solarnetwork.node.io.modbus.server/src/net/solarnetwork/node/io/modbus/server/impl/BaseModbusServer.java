@@ -34,12 +34,15 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -59,6 +62,7 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.io.modbus.ModbusMessage;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -104,7 +108,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -163,8 +167,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		super();
 		this.executor = ObjectUtils.requireNonNullArgument(executor, "executor");
 		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
-		this.handler = new ModbusConnectionHandler(registers, this::description, this::getUid,
-				() -> service(registerDao));
+		this.handler = new ModbusConnectionHandler(registers, this::description, this::handleException,
+				this::getUid, () -> service(registerDao));
 	}
 
 	/**
@@ -213,6 +217,12 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			return;
 		}
 		loadRegisterData();
+
+		// if restricting unit IDs, ensure register maps contains values for exactly the configured units
+		if ( isRestrictUnitIds() ) {
+			syncUnitIdConfiguration();
+		}
+
 		try {
 			server = startServer();
 			log.info("Started Modbus server [{}]", description());
@@ -267,7 +277,32 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 */
 	protected abstract void stopServer(T server);
 
-	private synchronized void restartServer() {
+	/**
+	 * Handle an exception from the connection handler.
+	 *
+	 * <p>
+	 * This implementation simply logs a message. Extending classes may want to
+	 * override this method.
+	 * </p>
+	 *
+	 * @param t
+	 *        the exception
+	 * @param msg
+	 *        an optional associated message
+	 */
+	protected void handleException(Throwable t, Optional<ModbusMessage> msg) {
+		if ( msg.isPresent() ) {
+			log.warn("Exception processing Modbus message [{}] in Modbus server [{}]: {}", msg.get(),
+					description(), t.getMessage());
+		} else {
+			log.warn("Exception in Modbus server [{}]: {}", description(), t.getMessage());
+		}
+	}
+
+	/**
+	 * Restart the server.
+	 */
+	protected synchronized void restartServer() {
 		stop();
 		Runnable startupTask = new Runnable() {
 
@@ -339,7 +374,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		for ( Entry<Integer, Map<ModbusRegisterBlockType, List<ModbusRegisterEntity>>> unitEntry : dataByBlockByUnit
 				.entrySet() ) {
 			ModbusRegisterData unit = registers.computeIfAbsent(unitEntry.getKey(),
-					k -> new ModbusRegisterData());
+					k -> handler.createRegisterData());
 			for ( Entry<ModbusRegisterBlockType, List<ModbusRegisterEntity>> blockEntry : unitEntry
 					.getValue().entrySet() ) {
 				ModbusRegisterBlockType blockType = blockEntry.getKey();
@@ -370,9 +405,32 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		}
 	}
 
+	private synchronized void syncUnitIdConfiguration() {
+		final UnitConfig[] units = getUnitConfigs();
+		if ( units == null || units.length < 0 ) {
+			registers.clear();
+			return;
+		}
+		Set<Integer> configuredUnitIds = new HashSet<>(units.length);
+		for ( UnitConfig unit : units ) {
+			Integer unitId = unit.getUnitId();
+			registers.computeIfAbsent(unitId, id -> handler.createRegisterData());
+			configuredUnitIds.add(unitId);
+		}
+		for ( Iterator<Integer> itr = registers.keySet().iterator(); itr.hasNext(); ) {
+			Integer unitId = itr.next();
+			if ( !configuredUnitIds.contains(unitId) ) {
+				log.info(
+						"Dropping data for unit ID {} because restricted unit IDs mode is enabled and that unit ID is not configured.",
+						unitId);
+				itr.remove();
+			}
+		}
+	}
+
 	@Override
 	public void handleEvent(Event event) {
-		String topic = (event != null ? event.getTopic() : null);
+		final String topic = (event != null ? event.getTopic() : null);
 		if ( DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
@@ -506,7 +564,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 				continue;
 			}
 			ModbusRegisterData regData = registers.computeIfAbsent(unitId,
-					k -> new ModbusRegisterData());
+					k -> handler.createRegisterData());
 			switch (blockType) {
 				case Coil:
 				case Discrete:
@@ -596,8 +654,12 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		result.addAll(getExtendedSettingSpecifiers());
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
+		result.add(new BasicTextFieldSettingSpecifier("startupDelay",
+				String.valueOf(DEFAULT_STARTUP_DELAY_SECS)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
 		result.add(new BasicToggleSettingSpecifier("daoRequired", false));
+		result.add(new BasicToggleSettingSpecifier("restrictUnitIds", false));
+		result.add(new BasicToggleSettingSpecifier("restrictAddresses", false));
 		result.add(new BasicToggleSettingSpecifier("wireLogging", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
@@ -701,7 +763,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 						final MeasurementConfig[] measConfigs = blockConfig.getMeasurementConfigs();
 						if ( measConfigs != null && measConfigs.length > 0 ) {
 							for ( MeasurementConfig config : measConfigs ) {
-								String controlId = config.controlId();
+								final String controlId = config.controlId();
 								if ( controlId != null ) {
 									if ( result == null ) {
 										result = new LinkedHashSet<>(8);
@@ -740,7 +802,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 						if ( measConfigs != null && measConfigs.length > 0 ) {
 							int address = blockConfig.getStartAddress();
 							for ( MeasurementConfig measConfig : measConfigs ) {
-								String controlId = measConfig.controlId();
+								final String controlId = measConfig.controlId();
 								if ( controlId != null ) {
 									for ( String param : instruction.getParameterNames() ) {
 										if ( param.equals(controlId) ) {
@@ -799,7 +861,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 						if ( measConfigs != null && measConfigs.length > 0 ) {
 							int address = blockConfig.getStartAddress();
 							for ( MeasurementConfig measConfig : measConfigs ) {
-								String measControlId = measConfig.controlId();
+								final String measControlId = measConfig.controlId();
 								if ( measControlId != null && measControlId.equals(controlId) ) {
 									// just using MeasurementUpdate here because convenient
 									final MeasurementUpdate update = new MeasurementUpdate(unitConfig,
@@ -808,7 +870,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 									final Object value = update.measConfig
 											.applyReverseTransforms(currentRawValue(update));
 
-									SimpleNodeControlInfoDatum result = newSimpleNodeControlInfoDatum(
+									final var result = newSimpleNodeControlInfoDatum(
 											update.withPropertyValue(value));
 									postControlEvent(result,
 											NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
@@ -1086,6 +1148,57 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 */
 	public final void setDaoRequired(boolean daoRequired) {
 		this.daoRequired = daoRequired;
+	}
+
+	/**
+	 * Get the restrict-unit-ids mode.
+	 *
+	 * @return {@code true} to deny requests for unit IDs that do not exist in
+	 *         the registers map
+	 * @since 1.1
+	 */
+	public boolean isRestrictUnitIds() {
+		return handler.isRestrictUnitIds();
+	}
+
+	/**
+	 * Set the restrict-unit-ids mode.
+	 *
+	 * @param restrictUnitIds
+	 *        {@code true} to deny requests for unit IDs that do not exist in
+	 *        the registers map
+	 * @since 1.1
+	 */
+	public void setRestrictUnitIds(boolean restrictUnitIds) {
+		handler.setRestrictUnitIds(restrictUnitIds);
+	}
+
+	/**
+	 * Get the restrict-addresses mode.
+	 *
+	 * @return {@code} true to deny requests for data addresses that do not
+	 *         already exist in the register data
+	 * @since 1.1
+	 */
+	public boolean isRestrictAddresses() {
+		return handler.isRestrictAddresses();
+	}
+
+	/**
+	 * Set the restrict-addresses mode.
+	 *
+	 * <p>
+	 * <b>Note</b> this mode only affects unit IDs that are created dynamically
+	 * by this class, when {@code restrictUnitIds} is {@code false}.
+	 * </p>
+	 *
+	 * @param restrictAddresses
+	 *        {@code} true to deny requests for data addresses that do not
+	 *        already exist in the register data
+	 * @since 1.1
+	 */
+	public void setRestrictAddresses(boolean restrictAddresses) {
+		handler.setRestrictAddresses(restrictAddresses);
 	}
 
 }

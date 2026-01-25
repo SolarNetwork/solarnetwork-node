@@ -37,6 +37,8 @@ import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.BitSet;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -47,8 +49,10 @@ import net.solarnetwork.io.modbus.BitsModbusMessage;
 import net.solarnetwork.io.modbus.ModbusErrorCode;
 import net.solarnetwork.io.modbus.ModbusFunctionCode;
 import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.ModbusValidationException;
 import net.solarnetwork.io.modbus.RegistersModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.BaseModbusMessage;
+import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
@@ -58,7 +62,7 @@ import net.solarnetwork.util.NumberUtils;
  * Handler for a Modbus server connection.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consumer<ModbusMessage>> {
 
@@ -72,8 +76,11 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
 	private final Supplier<String> serverIdProvider;
 	private final Supplier<ModbusRegisterDao> daoProvider;
+	private final BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler;
 	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private boolean allowWrites;
+	private boolean restrictUnitIds;
+	private boolean restrictAddresses;
 
 	private long lastRequestTime;
 
@@ -84,12 +91,15 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor) {
-		this(registers, descriptor, 0);
+			Supplier<String> descriptor,
+			BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler) {
+		this(registers, descriptor, exceptionHandler, 0);
 	}
 
 	/**
@@ -99,6 +109,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param serverIdProvider
 	 *        and optional provider of the server ID to use, when
 	 *        {@code daoProvider} is also configured
@@ -110,9 +122,10 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @since 2.1
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, Supplier<String> serverIdProvider,
-			Supplier<ModbusRegisterDao> daoProvider) {
-		this(Clock.systemUTC(), registers, descriptor, serverIdProvider, daoProvider, 0, false);
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			Supplier<String> serverIdProvider, Supplier<ModbusRegisterDao> daoProvider) {
+		this(Clock.systemUTC(), registers, descriptor, exceptionHandler, serverIdProvider, daoProvider,
+				0, false);
 	}
 
 	/**
@@ -122,6 +135,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param requestThrottle
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
@@ -129,8 +144,9 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *         if any argument other than {@code closeable} is {@literal null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, long requestThrottle) {
-		this(registers, descriptor, requestThrottle, false);
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			long requestThrottle) {
+		this(registers, descriptor, exceptionHandler, requestThrottle, false);
 	}
 
 	/**
@@ -140,18 +156,22 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param requestThrottle
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
 	 * @param allowWrites
-	 *        {@literal true} to allow Modbus write operations
+	 *        {@code true} to allow Modbus write operations
 	 * @throws IllegalArgumentException
 	 *         if any argument other than {@code closeable} is {@literal null}
 	 * @since 2.0
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, long requestThrottle, boolean allowWrites) {
-		this(Clock.systemUTC(), registers, descriptor, null, null, requestThrottle, allowWrites);
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			long requestThrottle, boolean allowWrites) {
+		this(Clock.systemUTC(), registers, descriptor, exceptionHandler, null, null, requestThrottle,
+				allowWrites);
 	}
 
 	/**
@@ -163,6 +183,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the register data
 	 * @param descriptor
 	 *        a descriptor.get() for the connection
+	 * @param exceptionHandler
+	 *        the exception handler
 	 * @param serverIdProvider
 	 *        and optional provider of the server ID to use, when
 	 *        {@code daoProvider} is also configured
@@ -173,18 +195,20 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
 	 * @param allowWrites
-	 *        {@literal true} to allow Modbus write operations
+	 *        {@code true} to allow Modbus write operations
 	 * @throws IllegalArgumentException
 	 *         if any argument other than {@code closeable} is {@literal null}
 	 * @since 2.1
 	 */
 	public ModbusConnectionHandler(Clock clock, ConcurrentMap<Integer, ModbusRegisterData> registers,
-			Supplier<String> descriptor, Supplier<String> serverIdProvider,
-			Supplier<ModbusRegisterDao> daoProvider, long requestThrottle, boolean allowWrites) {
+			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
+			Supplier<String> serverIdProvider, Supplier<ModbusRegisterDao> daoProvider,
+			long requestThrottle, boolean allowWrites) {
 		super();
 		this.clock = requireNonNullArgument(clock, "clock");
 		this.registers = requireNonNullArgument(registers, "registers");
 		this.descriptor = requireNonNullArgument(descriptor, "descriptor");
+		this.exceptionHandler = requireNonNullArgument(exceptionHandler, "exceptionHandler");
 		this.serverIdProvider = serverIdProvider;
 		this.daoProvider = daoProvider;
 		this.requestThrottle = requestThrottle;
@@ -224,16 +248,38 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 			log.trace("Modbus [{}] request: {}", descriptor.get(), req);
 		}
 
+		try {
+			req.validate();
+		} catch ( ModbusValidationException e ) {
+			log.warn("Ignoring invalid Modbus message {}: {}", req, e.getMessage());
+			exceptionHandler.accept(e, Optional.of(req));
+			return;
+		}
+
 		ModbusMessage res = null;
 
-		final BitsModbusMessage bitReq = req.unwrap(BitsModbusMessage.class);
-		if ( bitReq != null ) {
-			res = handleBitsMessage(bitReq);
+		if ( restrictUnitIds && registers.get(req.getUnitId()) == null ) {
+			// ignore
+			if ( log.isTraceEnabled() ) {
+				log.trace("Modbus [{}] request {} ignored because of strict unit ID mode.",
+						descriptor.get(), req);
+			}
+			return;
 		} else {
+			try {
+				final BitsModbusMessage bitReq = req.unwrap(BitsModbusMessage.class);
+				if ( bitReq != null ) {
+					res = handleBitsMessage(bitReq);
+				} else {
 
-			final RegistersModbusMessage regReq = req.unwrap(RegistersModbusMessage.class);
-			if ( regReq != null ) {
-				res = handleRegistersMessage(regReq);
+					final RegistersModbusMessage regReq = req.unwrap(RegistersModbusMessage.class);
+					if ( regReq != null ) {
+						res = handleRegistersMessage(regReq);
+					}
+				}
+			} catch ( NoSuchElementException e ) {
+				res = new BaseModbusMessage(req.getUnitId(), req.getFunction(),
+						ModbusErrorCode.IllegalDataAddress);
 			}
 		}
 		if ( res == null ) {
@@ -243,7 +289,11 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		if ( log.isTraceEnabled() ) {
 			log.trace("Modbus [{}] request {} response: {}", descriptor.get(), req, res);
 		}
-		dest.accept(res);
+		try {
+			dest.accept(res);
+		} catch ( Exception e ) {
+			exceptionHandler.accept(e, Optional.of(res));
+		}
 	}
 
 	private ModbusMessage handleBitsMessage(BitsModbusMessage req) {
@@ -308,11 +358,46 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		return null;
 	}
 
+	/**
+	 * Get the register data for a request's unit ID.
+	 *
+	 * @param req
+	 *        the request
+	 * @return the register data
+	 * @throws IllegalStateException
+	 *         if {@code restrictUnitIds} is {@code true} and the register data
+	 *         for the requests's unit ID does not already exist in the
+	 *         {@code registers} map
+	 */
 	private ModbusRegisterData registerData(ModbusMessage req) {
 		final Integer unitId = req.getUnitId();
+		if ( restrictUnitIds ) {
+			var result = registers.get(unitId);
+			if ( result == null ) {
+				throw new IllegalStateException("Unit ID %d not available.".formatted(unitId));
+			}
+			return result;
+		}
 		return registers.computeIfAbsent(unitId, k -> {
-			return new ModbusRegisterData();
+			return createRegisterData();
 		});
+	}
+
+	/**
+	 * Create a new {@link ModbusRegisterData} instance.
+	 *
+	 * <p>
+	 * The new instance will be configured based on this handler's settings.
+	 * </p>
+	 *
+	 * @return the new register data instance
+	 */
+	ModbusRegisterData createRegisterData() {
+		var coils = new BitSet();
+		var discretes = new BitSet();
+		var inputs = new ModbusData(restrictAddresses);
+		var holdings = new ModbusData(restrictAddresses);
+		return new ModbusRegisterData(coils, discretes, holdings, inputs);
 	}
 
 	private ModbusMessage readCoils(BitsModbusMessage req) {
@@ -426,7 +511,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	/**
 	 * Get the read-write mode.
 	 *
-	 * @return {@literal true} if writing is allowed
+	 * @return {@code true} if writing is allowed
 	 * @since 2.0
 	 */
 	public boolean isAllowWrites() {
@@ -437,11 +522,62 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * Set the read-write mode.
 	 *
 	 * @param allowWrites
-	 *        {@literal true} if writing is allowed
+	 *        {@code true} if writing is allowed
 	 * @since 2.0
 	 */
 	public void setAllowWrites(boolean allowWrites) {
 		this.allowWrites = allowWrites;
+	}
+
+	/**
+	 * Get the restrict-unit-ids mode.
+	 *
+	 * @return {@code true} to deny requests for unit IDs that do not exist in
+	 *         the registers map
+	 * @since 2.2
+	 */
+	public boolean isRestrictUnitIds() {
+		return restrictUnitIds;
+	}
+
+	/**
+	 * Set the restrict-unit-ids mode.
+	 *
+	 * @param restrictUnitIds
+	 *        {@code true} to ignore requests for unit IDs that do not exist in
+	 *        the registers map
+	 * @since 2.2
+	 */
+	public void setRestrictUnitIds(boolean restrictUnitIds) {
+		this.restrictUnitIds = restrictUnitIds;
+	}
+
+	/**
+	 * Get the restrict-addresses mode.
+	 *
+	 * @return {@code} true to ignore requests for data addresses that do not
+	 *         already exist in the register data
+	 * @since 2.2
+	 */
+	public boolean isRestrictAddresses() {
+		return restrictAddresses;
+	}
+
+	/**
+	 * Set the restrict-addresses mode.
+	 *
+	 * <p>
+	 * <b>Note</b> this mode only affects unit IDs that are created dynamically
+	 * by this class, when {@code restrictUnitIds} is {@code false}.
+	 * </p>
+	 *
+	 * @param restrictAddresses
+	 *        {@code} true to deny requests for data addresses that do not
+	 *        already exist in the register data
+	 * @since 2.2
+	 */
+	public void setRestrictAddresses(boolean restrictAddresses) {
+		this.restrictAddresses = restrictAddresses;
 	}
 
 }

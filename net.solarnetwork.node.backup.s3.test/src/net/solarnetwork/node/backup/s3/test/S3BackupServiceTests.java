@@ -32,6 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -128,7 +129,7 @@ public class S3BackupServiceTests {
 		int i = 0;
 		for ( Backup b : backups ) {
 			LocalDateTime ts = start.plusSeconds(i * 60);
-			Date d = Date.from(ZonedDateTime.of(ts, ZoneId.systemDefault()).toInstant());
+			Date d = Date.from(ZonedDateTime.of(ts, ZoneOffset.UTC).toInstant());
 			assertThat(format("Backup %d ordered oldest to newest", i), b.getDate(), is(equalTo(d)));
 			i++;
 		}
@@ -162,7 +163,7 @@ public class S3BackupServiceTests {
 		int i = 0;
 		for ( Backup b : result ) {
 			LocalDateTime ts = start.plusSeconds(i * 60);
-			Date d = Date.from(ZonedDateTime.of(ts, ZoneId.systemDefault()).toInstant());
+			Date d = Date.from(ZonedDateTime.of(ts, ZoneOffset.UTC).toInstant());
 			assertThat(format("Backup %d ordered oldest to newest", i), b.getDate(), is(equalTo(d)));
 			i++;
 		}
@@ -199,7 +200,7 @@ public class S3BackupServiceTests {
 		int i = 5;
 		for ( Backup b : result ) {
 			LocalDateTime ts = start.plusSeconds(i * 60);
-			Date d = Date.from(ZonedDateTime.of(ts, ZoneId.systemDefault()).toInstant());
+			Date d = Date.from(ZonedDateTime.of(ts, ZoneOffset.UTC).toInstant());
 			assertThat(format("Backup %d ordered oldest to newest", i), b.getDate(), is(equalTo(d)));
 			i++;
 		}

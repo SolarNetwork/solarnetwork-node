@@ -23,6 +23,8 @@
 package net.solarnetwork.node.io.modbus.server.impl.test;
 
 import static net.solarnetwork.io.modbus.ModbusByteUtils.encodeHexString;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -34,8 +36,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.io.modbus.ModbusErrorCode;
 import net.solarnetwork.io.modbus.ModbusFunctionCode;
+import net.solarnetwork.io.modbus.ModbusFunctionCodes;
 import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.ModbusValidationException;
+import net.solarnetwork.io.modbus.netty.msg.BaseModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage;
 import net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
@@ -45,7 +51,7 @@ import net.solarnetwork.node.io.modbus.server.impl.ModbusConnectionHandler;
  * Test cases for the {@link ModbusConnectionHandler} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.io.modbus.ModbusMessage> {
 
@@ -62,7 +68,9 @@ public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.i
 		units = new ConcurrentHashMap<>(1, 0.9f, 1);
 		registers = new ModbusRegisterData();
 		units.put(DEFAULT_UNIT_ID, registers);
-		handler = new ModbusConnectionHandler(units, () -> "Test");
+		handler = new ModbusConnectionHandler(units, () -> "Test", (ex, msg) -> {
+			// ignore
+		});
 		msg = null;
 	}
 
@@ -325,29 +333,31 @@ public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.i
 	}
 
 	@Test
-	public void readInput() throws Exception {
-		// GIVEN
+	public void validationException() throws Exception {
 		// GIVEN
 		final int address = 17;
-		final int count = 1;
-		RegistersModbusMessage req = RegistersModbusMessage.readInputsRequest(DEFAULT_UNIT_ID, address,
-				count);
 
 		registers.writeInput(address, (short) 123);
 
+		final var ex = new ModbusValidationException("foobar");
+
 		// WHEN
-		handler.accept(req, this);
+		handler.accept(new BaseModbusMessage(DEFAULT_UNIT_ID, ModbusFunctionCodes.READ_INPUT_REGISTERS) {
+
+			@Override
+			public ModbusMessage validate() throws ModbusValidationException {
+				throw ex;
+			}
+
+		}, this);
 
 		// THEN
-		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
-				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
-		assertThat("Response is registers", res, is(notNullValue()));
-
-		assertThat("Response function code", res.getFunction().functionCode(),
-				is(equalTo(ModbusFunctionCode.ReadInputRegisters)));
-		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
-		assertThat("Response address", res.getAddress(), is(equalTo(address)));
-		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 2), is(equalTo("007B")));
+		// @formatter:off
+		then(msg)
+			.as("No message delivered after validation exception")
+			.isNull()
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -375,4 +385,119 @@ public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.i
 		assertThat("Response address", res.getAddress(), is(equalTo(address)));
 		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 6), is(equalTo("007B0000FEDC")));
 	}
+
+	@Test
+	public void readInput_unknownUnitId() throws Exception {
+		// GIVEN
+		final int unitId = 123;
+		final int address = 17;
+		final int count = 1;
+		var req = RegistersModbusMessage.readInputsRequest(unitId, address, count);
+
+		// WHEN
+		handler.accept(req, this);
+
+		// THEN
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+
+		// @formatter:off
+		then(res)
+			.as("Response is registers")
+			.isNotNull()
+			.as("Response function code matches request value")
+			.returns(ModbusFunctionCode.ReadInputRegisters, from(r -> r.getFunction().functionCode()))
+			.as("Response unit ID matches request value")
+			.returns(unitId, from(net.solarnetwork.io.modbus.RegistersModbusMessage::getUnitId))
+			.as("Response address matches request value")
+			.returns(address, from(net.solarnetwork.io.modbus.RegistersModbusMessage::getAddress))
+			.as("Response data is zeros")
+			.returns(new byte[] {0, 0}, from(net.solarnetwork.io.modbus.RegistersModbusMessage::dataCopy))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readInput_unknownUnitId_restricted() throws Exception {
+		// GIVEN
+		final int unitId = 123;
+		final int address = 17;
+		final int count = 1;
+		var req = RegistersModbusMessage.readInputsRequest(unitId, address, count);
+
+		handler.setRestrictUnitIds(true);
+
+		// WHEN
+		handler.accept(req, this);
+
+		// THEN
+		// @formatter:off
+		then(msg)
+			.as("Response not provided because of strict unit ID checking")
+			.isNull()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readInput_unknownAddress() throws Exception {
+		// GIVEN
+		final int unitId = 123; // create unit dynamically
+		final int address = 17;
+		final int count = 1;
+		var req = RegistersModbusMessage.readInputsRequest(unitId, address, count);
+
+		// WHEN
+		handler.accept(req, this);
+
+		// THEN
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+
+		// @formatter:off
+		then(res)
+			.as("Response is registers")
+			.isNotNull()
+			.as("Response function code matches request value")
+			.returns(ModbusFunctionCode.ReadInputRegisters, from(r -> r.getFunction().functionCode()))
+			.as("Response unit ID matches request value")
+			.returns(unitId, from(net.solarnetwork.io.modbus.RegistersModbusMessage::getUnitId))
+			.as("Response address matches request value")
+			.returns(address, from(net.solarnetwork.io.modbus.RegistersModbusMessage::getAddress))
+			.as("Response data is zeros")
+			.returns(new byte[] {0, 0}, from(net.solarnetwork.io.modbus.RegistersModbusMessage::dataCopy))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readInput_unknownAddress_restricted() throws Exception {
+		// GIVEN
+		final int unitId = 123; // create unit dynamically
+		final int address = 17;
+		final int count = 1;
+		var req = RegistersModbusMessage.readInputsRequest(unitId, address, count);
+
+		handler.setRestrictAddresses(true);
+
+		// WHEN
+		handler.accept(req, this);
+
+		// THEN
+		// @formatter:off
+		then(msg)
+			.as("Response provided")
+			.isNotNull()
+			.as("Response function code matches request value")
+			.returns(ModbusFunctionCode.ReadInputRegisters, from(r -> r.getFunction().functionCode()))
+			.as("Response unit ID matches request value")
+			.returns(unitId, from(net.solarnetwork.io.modbus.ModbusMessage::getUnitId))
+			.as("Response is exception")
+			.returns(true, from(net.solarnetwork.io.modbus.ModbusMessage::isException))
+			.as("Illegal error returned")
+			.returns(ModbusErrorCode.IllegalDataAddress, from(net.solarnetwork.io.modbus.ModbusMessage::getError))
+			;
+		// @formatter:on
+	}
+
 }
