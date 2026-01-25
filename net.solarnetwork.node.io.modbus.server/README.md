@@ -1,8 +1,8 @@
-# SolarNode Modbus Server (TCP)
+# SolarNode Modbus Server
 
-This project provides SolarNode plugin that exposes a Modbus TCP server within SolarNode based on
-data collected by other plugins. This is an advanced plugin that requires specific low-level
-knowledge of the Modbus services you plan to integrate with.
+This project provides SolarNode plugin that exposes a Modbus TCP or serial (RTU) server within
+SolarNode based on data collected by other plugins. This is an advanced plugin that requires
+specific low-level knowledge of the Modbus services you plan to integrate with.
 
 # Use
 
