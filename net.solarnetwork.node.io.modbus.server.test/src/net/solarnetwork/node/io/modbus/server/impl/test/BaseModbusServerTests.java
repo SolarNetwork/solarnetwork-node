@@ -26,23 +26,34 @@ import static java.math.RoundingMode.HALF_UP;
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Completed;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.encodeInt32;
 import static net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig.CONTROL_ID_AS_SOURCE_ID;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static net.solarnetwork.node.test.NodeTestUtils.randomInt;
+import static net.solarnetwork.node.test.NodeTestUtils.randomLong;
 import static net.solarnetwork.node.test.NodeTestUtils.randomShort;
 import static net.solarnetwork.node.test.NodeTestUtils.randomString;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import static org.assertj.core.api.BDDAssertions.from;
 import static org.assertj.core.api.BDDAssertions.then;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.service.event.Event;
 import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
@@ -53,6 +64,10 @@ import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.io.modbus.server.impl.BaseModbusServer;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.test.CallingThreadExecutorService;
 import net.solarnetwork.util.NumberUtils;
 
@@ -467,6 +482,111 @@ public class BaseModbusServerTests {
 			.containsOnlyKeys(unitId)
 			;
 		// @formatter:on
+	}
+
+	@Test
+	public void requiredOpMode_match() {
+		// GIVEN
+		final String sourceId = randomString();
+		final String propName = randomString();
+		final Integer propVal = randomInt();
+		final int unitId = 1;
+
+		// @formatter:off
+		final MeasurementConfig[] measConfigs = new MeasurementConfig[] {
+			meas(sourceId, propName, Int32, 0, "1", CONTROL_ID_AS_SOURCE_ID)
+		};
+		final RegisterBlockConfig[] blockConfigs = new RegisterBlockConfig[] {
+			block(ModbusRegisterBlockType.Holding, 0, measConfigs)
+		};
+		final UnitConfig[] unitConfigs = new UnitConfig[] {
+			unit(unitId, blockConfigs)
+		};
+		// @formatter:on
+
+		server.setUnitConfigs(unitConfigs);
+
+		final String reqMode = randomString();
+		server.setRequiredOperationalMode(reqMode);
+
+		final OperationalModesService opModesService = createMock(OperationalModesService.class);
+		server.setOpModesService(new StaticOptionalService<>(opModesService));
+
+		// test for required mode
+		expect(opModesService.isOperationalModeActive(reqMode)).andReturn(true);
+
+		// WHEN
+		replay(opModesService);
+
+		SimpleDatum datum = new SimpleDatum(DatumId.nodeId(randomLong(), sourceId, null),
+				new DatumSamples(Map.of(propName, propVal), null, null));
+		Event evt = new Event(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED,
+				Map.of(DatumEvents.DATUM_PROPERTY, datum));
+		server.handleEvent(evt);
+
+		// THEN
+		// @formatter:off
+		then(registers)
+			.as("Server data contains unit ID for updated measurement")
+			.containsOnlyKeys(unitId)
+			.extractingByKey(unitId)
+			.as("Measurement data contains updated datum property value")
+			.returns(encodeInt32(propVal), from(r -> r.readHoldings(0, 2)))
+			;
+		// @formatter:on
+
+		verify(opModesService);
+	}
+
+	@Test
+	public void requiredOpMode_noMatch() {
+		// GIVEN
+		final String sourceId = randomString();
+		final String propName = randomString();
+		final Integer propVal = randomInt();
+		final int unitId = 1;
+
+		// @formatter:off
+		final MeasurementConfig[] measConfigs = new MeasurementConfig[] {
+			meas(sourceId, propName, Int32, 0, "1", CONTROL_ID_AS_SOURCE_ID)
+		};
+		final RegisterBlockConfig[] blockConfigs = new RegisterBlockConfig[] {
+			block(ModbusRegisterBlockType.Holding, 0, measConfigs)
+		};
+		final UnitConfig[] unitConfigs = new UnitConfig[] {
+			unit(unitId, blockConfigs)
+		};
+		// @formatter:on
+
+		server.setUnitConfigs(unitConfigs);
+
+		final String reqMode = randomString();
+		server.setRequiredOperationalMode(reqMode);
+
+		final OperationalModesService opModesService = createMock(OperationalModesService.class);
+		server.setOpModesService(new StaticOptionalService<>(opModesService));
+
+		// test for required mode
+		expect(opModesService.isOperationalModeActive(reqMode)).andReturn(false);
+
+		// WHEN
+		replay(opModesService);
+
+		SimpleDatum datum = new SimpleDatum(DatumId.nodeId(randomLong(), sourceId, null),
+				new DatumSamples(Map.of(propName, propVal), null, null));
+		Event evt = new Event(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED,
+				Map.of(DatumEvents.DATUM_PROPERTY, datum));
+		server.handleEvent(evt);
+
+		// THEN
+		// @formatter:off
+		then(registers)
+			.as("Server data does not contain unit ID becauase op mode does not match so update ignored")
+			.isEmpty()
+			;
+		// @formatter:on
+
+		verify(opModesService);
 	}
 
 }
