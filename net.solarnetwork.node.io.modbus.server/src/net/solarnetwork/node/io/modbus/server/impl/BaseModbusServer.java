@@ -83,6 +83,7 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceNotAvailableException;
@@ -108,7 +109,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -136,6 +137,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	private boolean wireLogging;
 	private OptionalService<EventAdmin> eventAdmin;
 	private OptionalService<ModbusRegisterDao> registerDao;
+	private OptionalService<OperationalModesService> opModesService;
+	private String requiredOperationalMode;
 	private boolean daoRequired;
 
 	private T server;
@@ -438,9 +441,36 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		}
 	}
 
+	/**
+	 * Test if the configured required operational mode is active.
+	 *
+	 * <p>
+	 * If {@link #getRequiredOperationalMode()} is configured but
+	 * {@code #getOpModesService()} is not, this method will always return
+	 * {@literal false}.
+	 * </p>
+	 *
+	 * @return {@literal true} if an operational mode is required and that mode
+	 *         is currently active
+	 * @since 1.2
+	 */
+	private boolean operationalModeMatches() {
+		final String mode = getRequiredOperationalMode();
+		if ( mode == null ) {
+			// no mode required, so automatically matches
+			return true;
+		}
+		final OperationalModesService service = service(opModesService);
+		if ( service == null ) {
+			// service not available, so automatically does not match
+			return false;
+		}
+		return service.isOperationalModeActive(mode);
+	}
+
 	private void handleDatumCapturedEvent(Event event) {
 		Object d = event.getProperty(DatumEvents.DATUM_PROPERTY);
-		if ( !(d instanceof NodeDatum && ((NodeDatum) d).getSourceId() != null) ) {
+		if ( !(d instanceof NodeDatum datum && datum.getSourceId() != null) ) {
 			return;
 		}
 		UnitConfig[] unitConfigs = getUnitConfigs();
@@ -448,7 +478,13 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			return;
 		}
 
-		NodeDatum datum = (NodeDatum) d;
+		if ( !operationalModeMatches() ) {
+			log.trace(
+					"Modbus server [{}] required operational mode [{}] not active; ignoring datum update [{}]",
+					description(), datum);
+			return;
+		}
+
 		final DatumSamplesOperations ops = datum.asSampleOperations();
 		final String sourceId = datum.getSourceId();
 
@@ -652,6 +688,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 
 		result.addAll(baseIdentifiableSettings(null));
 		result.addAll(getExtendedSettingSpecifiers());
+		result.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
 		result.add(new BasicTextFieldSettingSpecifier("startupDelay",
@@ -1199,6 +1236,52 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 */
 	public void setRestrictAddresses(boolean restrictAddresses) {
 		handler.setRestrictAddresses(restrictAddresses);
+	}
+
+	/**
+	 * Get the operational modes service to use.
+	 *
+	 * @return the service, or {@literal null}
+	 * @since 1.2
+	 */
+	public OptionalService<OperationalModesService> getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * Set the operational modes service to use.
+	 *
+	 * @param opModesService
+	 *        the service to use
+	 * @since 1.2
+	 */
+	public void setOpModesService(OptionalService<OperationalModesService> opModesService) {
+		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Get an operational mode that is required by this service.
+	 *
+	 * @return the required operational mode, or {@literal null} for none
+	 * @since 1.2
+	 */
+	public String getRequiredOperationalMode() {
+		return requiredOperationalMode;
+	}
+
+	/**
+	 * Set an operational mode that is required by this service.
+	 *
+	 * @param requiredOperationalMode
+	 *        the required operational mode, or {@literal null} or an empty
+	 *        string that will be treated as {@literal null}
+	 * @since 1.2
+	 */
+	public void setRequiredOperationalMode(String requiredOperationalMode) {
+		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
+			requiredOperationalMode = null;
+		}
+		this.requiredOperationalMode = requiredOperationalMode;
 	}
 
 }

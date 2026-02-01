@@ -35,6 +35,12 @@
 		<property name="sticky" value="true"/>
 	</bean>	
 	
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<bean id="txManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.springframework.transaction.PlatformTransactionManager"/>
@@ -144,6 +150,7 @@
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
 			<property name="registerDao" ref="registerDao"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
@@ -233,6 +240,7 @@
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
 			<property name="registerDao" ref="registerDao"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Server
 Bundle-Description: Expose a Modbus RTU or TCP server for integration with other systems.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server
-Bundle-Version: 5.4.0
+Bundle-Version: 5.5.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server
 Bundle-RequiredExecutionEnvironment: JavaSE-17
