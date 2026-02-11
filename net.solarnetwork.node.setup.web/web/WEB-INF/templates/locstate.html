@@ -30,28 +30,25 @@
 	<p class="none" data-th-utext="#{locstate.intro.none}">
 		No Local State is available.
 	</p>
-	<table class="table table-sm some hidden" id="locstate-list">
-		<thead>
-			<tr>
-				<th data-th-text="#{locstate.entity.key.label}">Key</th>
-				<th data-th-text="#{locstate.entity.created.label}">Created</th>
-				<th data-th-text="#{locstate.entity.modified.label}">Modified</th>
-				<th data-th-text="#{locstate.entity.type.label}">Type</th>
-				<th data-th-text="#{locstate.entity.value.label}">Value</th>
-			</tr>
-			<tr class="template item">
-				<td><a href="#" class="edit-link" data-tprop="key"></a></td>
-				<td data-tprop="createdDate"></td>
-				<td data-tprop="modifiedDate"></td>
-				<td data-tprop="typeDisplay"></td>
-				<td>
-					<span data-tprop="valueDisplay"></span>
-				</td>
-			</tr>
-		</thead>
-		<tbody class="list-container">
-		</tbody>
-	</table>
+	<div class="container" id="locstate-list">
+		<div class="row fw-bold border-bottom some hidden">
+			<div class="col-3" data-th-text="#{locstate.entity.key.label}">Key</div>
+			<div class="col-3" data-th-text="#{locstate.entity.created.label}">Created</div>
+			<div class="col-3" data-th-text="#{locstate.entity.modified.label}">Modified</div>
+			<div class="col-1" data-th-text="#{locstate.entity.type.label}">Type</div>
+			<div class="col-2" data-th-text="#{locstate.entity.value.label}">Value</div>
+		</div>
+		
+		<div class="row py-1 border-bottom template item">
+			<div class="col-3"><a href="#" class="edit-link" data-tprop="key"></a></div>
+			<div class="col-3 font-monospace"><small data-tprop="createdDate"></small></div>
+			<div class="col-3 font-monospace"><small data-tprop="modifiedDate"></small></div>
+			<div class="col-1" data-tprop="typeDisplay"></div>
+			<div class="col-2" data-tprop="valueDisplay"></div>
+		</div>
+		<div class="list-container some hidden">
+		</div>
+	</div>
 </section>
 
 <form id="local-state-edit-modal" data-th-replace="~{inc/modals :: modal_form(

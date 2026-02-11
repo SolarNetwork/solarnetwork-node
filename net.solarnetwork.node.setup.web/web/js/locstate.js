@@ -65,25 +65,33 @@ $(document).ready(function localStateManagement() {
 			: info.value;
 	}
 	
+	const DISPLAY_DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+	
 	function renderLocalState(/** @type {LocalStateInfo} */ info) {
 		const typeDisplay = info.type;
 		const valueDisplay = renderDisplayValue(info);
 
 		const itemEl = localStateRows.has(info.key) 
-			? localStateRows.get(info.key) 
+			? localStateRows.get(info.key).removeClass('brief-showcase')
 			: localStateTemplate.clone(true).removeClass('template');
 		itemEl.find('[data-tprop=key]').text(info.key);
-		itemEl.find('[data-tprop=createdDate]').text(info.created);
-		itemEl.find('[data-tprop=modifiedDate]').text(info.modified);
+		itemEl.find('[data-tprop=createdDate]').text(moment(info.created).format(DISPLAY_DATE_FORMAT));
+		itemEl.find('[data-tprop=modifiedDate]').text(moment(info.modified).format(DISPLAY_DATE_FORMAT));
 		itemEl.find('[data-tprop=typeDisplay]').text(typeDisplay);
 		itemEl.find('[data-tprop=valueDisplay]').text(valueDisplay);
 		itemEl.find('.edit-link').data('localState', info);
 		
+
 		if ( !localStateRows.has(info.key) ) {
 			itemEl.find('.edit-link').on('click', showLocalStateEditForm);
 			localStateContainer.append(itemEl);
 			localStateRows.set(info.key, itemEl);
-		}			
+		} else {
+			setTimeout(() => {
+				// kick to another event loop
+				itemEl.addClass('brief-showcase');
+			}, 100);
+		}
 	}
 	
 	function showLocalStateEditForm() {
@@ -160,6 +168,16 @@ $(document).ready(function localStateManagement() {
 		});
 	});
 
+	function handleLocalStateUpdatedMessage(msg) {
+		/** @type LocalStateInfo */
+		const data = JSON.parse(msg.body).data;
+		if ( !(data && data.entity) ) {
+			return;
+		}
+		console.debug('LocalState stored: %o', data.entity);
+		renderLocalState(data.entity);
+		toggleRowsVisible();
+	}
 	
 	/* ============================
 	   Init
@@ -172,4 +190,7 @@ $(document).ready(function localStateManagement() {
 	}).always(() => {
 		toggleLoading(false);
 	});
+	
+	// subscribe to get LocalState updates as they happen
+	SolarNode.WebSocket.subscribeToTopic('/topic/dao/LocalState/STORED', handleLocalStateUpdatedMessage);
 });
