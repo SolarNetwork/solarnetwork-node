@@ -109,7 +109,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -517,7 +517,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			}
 		}
 		if ( updates != null ) {
-			log.trace("Queuing [{}] updates: {}", sourceId, updates.stream().map(Object::toString)
+			log.debug("Queuing [{}] updates: {}", sourceId, updates.stream().map(Object::toString)
 					.collect(Collectors.joining(",\n\t", "[\n\t", "\n]")));
 			final List<MeasurementUpdate> finalUpdates = updates;
 			executor.execute(new Runnable() {
