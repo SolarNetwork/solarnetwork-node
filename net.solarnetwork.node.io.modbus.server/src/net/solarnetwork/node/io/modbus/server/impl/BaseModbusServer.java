@@ -481,7 +481,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		if ( !operationalModeMatches() ) {
 			log.trace(
 					"Modbus server [{}] required operational mode [{}] not active; ignoring datum update [{}]",
-					description(), datum);
+					description(), requiredOperationalMode, datum);
 			return;
 		}
 
