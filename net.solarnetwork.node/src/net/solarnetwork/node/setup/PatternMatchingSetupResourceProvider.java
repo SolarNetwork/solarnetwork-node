@@ -1,21 +1,21 @@
 /* ==================================================================
  * PatternMatchingSetupResourceProvider.java - 23/09/2016 9:27:09 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -44,10 +44,10 @@ import org.springframework.util.StringUtils;
 
 /**
  * Resolve resources based on pattern matching a set of base names.
- * 
+ *
  * This can be easier to configure a set of localized resources than using
  * {@link SimpleSetupResourceProvider}.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -110,7 +110,7 @@ public class PatternMatchingSetupResourceProvider
 
 	@Override
 	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale) {
-		if ( !consumerType.equals(consumerType) ) {
+		if ( !consumerTypes.contains(consumerType) ) {
 			return Collections.emptyList();
 		}
 		List<SetupResource> results = new ArrayList<SetupResource>(basenames.length);
@@ -164,7 +164,7 @@ public class PatternMatchingSetupResourceProvider
 	/**
 	 * Set the consumer types assigned to all resolved resources. Defaults to
 	 * {@link SetupResource#WEB_CONSUMER_TYPES}.
-	 * 
+	 *
 	 * @param consumerTypes
 	 *        The consumer types.
 	 */
@@ -174,7 +174,7 @@ public class PatternMatchingSetupResourceProvider
 
 	/**
 	 * Set the base names supported by this factory.
-	 * 
+	 *
 	 * @param basenames
 	 *        The list of base names (file paths without extensions) to use.
 	 */
@@ -184,7 +184,7 @@ public class PatternMatchingSetupResourceProvider
 
 	/**
 	 * A pattern resolver to search for resources with.
-	 * 
+	 *
 	 * @param resourcePatternResolver
 	 *        The pattern resolver to use.
 	 */
@@ -194,7 +194,7 @@ public class PatternMatchingSetupResourceProvider
 
 	/**
 	 * Set the cache value to use for resolved resources, in seconds.
-	 * 
+	 *
 	 * @param cacheSeconds
 	 *        The cache maximum seconds.
 	 */
@@ -205,7 +205,7 @@ public class PatternMatchingSetupResourceProvider
 	/**
 	 * The required roles to assign to resolved resources. Defaults to
 	 * {@link SetupResource#USER_ROLES}.
-	 * 
+	 *
 	 * @param roles
 	 *        The required roles to use.
 	 */
@@ -216,7 +216,7 @@ public class PatternMatchingSetupResourceProvider
 	/**
 	 * Set the filename to content type mapping. Defaults to
 	 * {@link SetupResourceUtils#DEFAULT_FILENAME_EXTENSION_CONTENT_TYPES}.
-	 * 
+	 *
 	 * @param fileExtensionContentTypeMapping
 	 *        The filename to content type mapping to use.
 	 */
@@ -227,7 +227,7 @@ public class PatternMatchingSetupResourceProvider
 	/**
 	 * Set the locale to use for resources that have no locale specified in
 	 * their filename.
-	 * 
+	 *
 	 * @param defaultLocale
 	 *        The default locale.
 	 */
@@ -237,7 +237,7 @@ public class PatternMatchingSetupResourceProvider
 
 	/**
 	 * Set a scope to use for all resolved resources.
-	 * 
+	 *
 	 * @param scope
 	 *        the scope to set
 	 * @since 1.1

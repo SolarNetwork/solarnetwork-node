@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node
 Automatic-Module-Name: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 4.3.1
+Bundle-Version: 4.3.2
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
@@ -20,7 +20,7 @@ Export-Package:
  net.solarnetwork.node.service.support;version="1.14.0",
  net.solarnetwork.node.settings;version="2.7.1",
  net.solarnetwork.node.settings.support;version="2.0.0",
- net.solarnetwork.node.setup;version="1.13.0"
+ net.solarnetwork.node.setup;version="1.13.1"
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.19,3.0)",
  com.fasterxml.jackson.core;version="[2.19,3.0)",
