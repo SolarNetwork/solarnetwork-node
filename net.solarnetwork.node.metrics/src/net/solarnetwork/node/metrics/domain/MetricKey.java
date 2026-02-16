@@ -82,9 +82,9 @@ public class MetricKey implements Serializable, Cloneable, Comparable<MetricKey>
 	public int compareTo(MetricKey o) {
 		int result = timestamp.compareTo(o.timestamp);
 		if ( result == 0 ) {
-			result = type.compareTo(type);
+			result = type.compareTo(o.type);
 			if ( result == 0 ) {
-				result = name.compareTo(name);
+				result = name.compareTo(o.name);
 			}
 		}
 		return result;
