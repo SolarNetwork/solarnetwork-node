@@ -176,8 +176,7 @@ public class ControlConductor extends BaseIdentifiable
 		final ReactorService rs = OptionalService.service(reactorService);
 		if ( rs == null ) {
 			return createStatus(instruction, InstructionState.Declined, createErrorResultParameters(
-					format("No ReactorService avaialble to schedule the control tasks.", taskIndex),
-					"CC.0004"));
+					"No ReactorService avaialble to schedule the control tasks.", "CC.0004"));
 		}
 
 		taskIndex = 0;
