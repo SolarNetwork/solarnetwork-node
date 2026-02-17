@@ -4,7 +4,7 @@ Bundle-Name: Mock Energy Meter
 Bundle-Description: Energy meter simulator to be used for development and testing. 
 Bundle-SymbolicName: net.solarnetwork.node.datum.energymeter.mock
 Automatic-Module-Name: net.solarnetwork.node.datum.energymeter.mock
-Bundle-Version: 4.0.1
+Bundle-Version: 4.0.2
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 

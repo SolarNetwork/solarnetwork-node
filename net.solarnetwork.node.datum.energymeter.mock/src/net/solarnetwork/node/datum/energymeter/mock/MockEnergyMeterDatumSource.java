@@ -818,7 +818,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @return the offset, in hours
 	 */
 	public final long getTouOffsetHours() {
-		return getTouOffset().get(ChronoUnit.HOURS);
+		return getTouOffset().toHours();
 	}
 
 	/**
