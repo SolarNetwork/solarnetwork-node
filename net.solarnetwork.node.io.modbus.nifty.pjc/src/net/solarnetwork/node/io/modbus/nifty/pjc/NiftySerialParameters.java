@@ -1,21 +1,21 @@
 /* ==================================================================
  * NiftySerialParameters.java - 20/12/2023 6:37:01 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,12 +32,12 @@ import purejavacomm.SerialPort;
 
 /**
  * Serial parameters.
- * 
+ *
  * <p>
  * This class provides accessors that are compatible with other Modbus plugins
  * so they can be interchanged easily.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -49,7 +49,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param config
 	 *        the config
 	 */
@@ -60,11 +60,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the serial port device name.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link NettyRtuModbusClientConfig#getName()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the name
 	 */
 	public String getPortName() {
@@ -73,11 +73,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the serial port device name.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link NettyRtuModbusClientConfig#setName(String)}.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *        the name to set, e.g. {@literal /dev/ttyUSB0}
 	 */
@@ -87,11 +87,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the serial port data bits.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link SerialPortBean#getDataBits()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the number of data bits; defaults to {@literal 8}
 	 */
 	public int getDatabits() {
@@ -100,11 +100,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the serial port number of data bits.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link SerialPortBean#setDataBits(int)}.
 	 * </p>
-	 * 
+	 *
 	 * @param dataBits
 	 *        the number of data bits to use
 	 */
@@ -114,11 +114,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the serial port number of stop bits.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link SerialPortBean#getStopBits()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the stop bits; defaults to {@literal 1}
 	 */
 	public int getStopbits() {
@@ -128,11 +128,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the serial port number of stop bits.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link SerialPortBean#setStopBits(int)}.
 	 * </p>
-	 * 
+	 *
 	 * @param stopBits
 	 *        the number of stop bits to use
 	 */
@@ -201,7 +201,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the input flow control.
-	 * 
+	 *
 	 * @return the input flow control
 	 */
 	public int getFlowControlIn() {
@@ -210,7 +210,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the input flow control.
-	 * 
+	 *
 	 * @param flowControlIn
 	 *        the flow control to set
 	 */
@@ -220,7 +220,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the input flow control name.
-	 * 
+	 *
 	 * @return the input flow control
 	 */
 	public String getFlowControlInString() {
@@ -229,7 +229,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the input flow control name.
-	 * 
+	 *
 	 * @param flowControlIn
 	 *        the flow control to set
 	 */
@@ -239,7 +239,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the output flow control.
-	 * 
+	 *
 	 * @return the output flow control
 	 */
 	public int getFlowControlOut() {
@@ -248,7 +248,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the output flow control.
-	 * 
+	 *
 	 * @param flowControlOut
 	 *        the output flow control to set
 	 */
@@ -258,7 +258,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the output flow control name.
-	 * 
+	 *
 	 * @return the output flow control
 	 */
 	public String getFlowControlOutString() {
@@ -267,7 +267,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the output flow control name.
-	 * 
+	 *
 	 * @param flowControlOut
 	 *        the output flow control to set
 	 */
@@ -277,7 +277,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the flow control.
-	 * 
+	 *
 	 * @param flowControl
 	 *        the flow control
 	 */
@@ -286,7 +286,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 			flowControlIn = SerialPort.FLOWCONTROL_XONXOFF_IN;
 		} else if ( (flowControl
 				& SerialPort.FLOWCONTROL_RTSCTS_IN) == SerialPort.FLOWCONTROL_RTSCTS_IN ) {
-			flowControlIn = SerialPort.FLOWCONTROL_RTSCTS_IN | SerialPort.FLOWCONTROL_RTSCTS_IN;
+			flowControlIn = SerialPort.FLOWCONTROL_RTSCTS_IN;
 		} else {
 			flowControlIn = SerialPort.FLOWCONTROL_NONE;
 		}
@@ -302,7 +302,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the parity as a string value.
-	 * 
+	 *
 	 * @return the parity, or {@literal null} if not supported
 	 * @see #setParityString(String)
 	 */
@@ -324,17 +324,17 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the parity as a string value.
-	 * 
+	 *
 	 * <p>
 	 * This method accepts the following values:
 	 * </p>
-	 * 
+	 *
 	 * <ul>
 	 * <li>none</li>
 	 * <li>odd</li>
 	 * <li>even</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param parity
 	 *        the parity value to set
 	 */
@@ -351,11 +351,11 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Get the receive timeout.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #getReadTimeout()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the receive timeout; defaults to {@literal -1}
 	 */
 	public int getReceiveTimeout() {
@@ -364,15 +364,15 @@ public class NiftySerialParameters extends BasicSerialParameters {
 
 	/**
 	 * Set the SerialPort receive timeout setting.
-	 * 
+	 *
 	 * <p>
 	 * If set to anything less than 0 then the receive timeout will be disabled.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #setReadTimeout(int)}.
 	 * </p>
-	 * 
+	 *
 	 * @param receiveTimeout
 	 *        the receive timeout to use
 	 */
