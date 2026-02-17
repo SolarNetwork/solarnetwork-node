@@ -3,12 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: BACnet Communication API
 Bundle-SymbolicName: net.solarnetwork.node.io.bacnet
 Bundle-Description: Communication API for the BACnet protocol.
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.bacnet
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
- net.solarnetwork.node.io.bacnet;version="1.1.0"
+ net.solarnetwork.node.io.bacnet;version="1.1.1"
 Import-Package: 
  net.solarnetwork.domain;version="[3.0,4.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
