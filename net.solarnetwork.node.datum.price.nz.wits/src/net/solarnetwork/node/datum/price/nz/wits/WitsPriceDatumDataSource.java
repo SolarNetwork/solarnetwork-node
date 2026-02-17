@@ -339,7 +339,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 			throw e;
 		} catch ( Exception e ) {
 			throw new RemoteServiceException(format("Error requesting price data from  [%s]: %s",
-					priceUrl, e.getCause().getMessage(), e.getCause()));
+					priceUrl, e.getCause().getMessage()), e.getCause());
 		}
 	}
 
