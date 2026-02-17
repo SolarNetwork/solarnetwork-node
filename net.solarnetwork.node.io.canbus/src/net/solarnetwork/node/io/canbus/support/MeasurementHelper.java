@@ -102,7 +102,7 @@ public class MeasurementHelper {
 						Integer count = Integer.valueOf(k.substring(4, split));
 						Unit<?> unit = unitValueInternal(me.getValue().toString());
 						if ( unit != null ) {
-							std.computeIfAbsent(count, LinkedHashSet::new).add(unit);
+							std.computeIfAbsent(count, idx -> new LinkedHashSet<>(8, 0.9f)).add(unit);
 						} else {
 							log.warn("Unit not found for standard unit mapping [{}] value [{}]", k,
 									me.getValue());
