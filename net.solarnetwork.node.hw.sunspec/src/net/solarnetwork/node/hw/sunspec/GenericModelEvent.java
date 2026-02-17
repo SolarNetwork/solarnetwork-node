@@ -1,21 +1,21 @@
 /* ==================================================================
  * GenericModelEvent.java - 10/09/2019 9:36:24 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,19 +29,19 @@ import java.util.Set;
 
 /**
  * A basic immutable implementation of {@link ModelEvent}.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
-public class GenericModelEvent implements ModelEvent, Comparable<ModelEvent> {
+public class GenericModelEvent implements ModelEvent, Comparable<GenericModelEvent> {
 
 	private final int index;
 	private final String description;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param index
 	 *        the index
 	 */
@@ -51,7 +51,7 @@ public class GenericModelEvent implements ModelEvent, Comparable<ModelEvent> {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param index
 	 *        the index
 	 * @param description
@@ -74,7 +74,7 @@ public class GenericModelEvent implements ModelEvent, Comparable<ModelEvent> {
 	}
 
 	@Override
-	public int compareTo(ModelEvent o) {
+	public int compareTo(GenericModelEvent o) {
 		if ( o == null ) {
 			return -1;
 		}
@@ -102,7 +102,7 @@ public class GenericModelEvent implements ModelEvent, Comparable<ModelEvent> {
 
 	/**
 	 * Get a set of events from a bitmask.
-	 * 
+	 *
 	 * @param bitmask
 	 *        the bitmask
 	 * @return the active events
