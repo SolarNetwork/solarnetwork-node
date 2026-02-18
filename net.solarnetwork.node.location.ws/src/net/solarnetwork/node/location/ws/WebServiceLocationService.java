@@ -1,21 +1,21 @@
 /* ==================================================================
  * WebServiceLocationService.java - Feb 19, 2011 2:43:42 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,7 +47,7 @@ import net.solarnetwork.util.CachedResult;
 
 /**
  * Web service implementation of {@link WebServiceLocationService}.
- * 
+ *
  * @author matt
  * @version 2.1
  */
@@ -59,35 +59,35 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * The setting group used for location properties.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String SETTING_GROUP_LOCATION = "solarnode.location";
 
 	/**
 	 * The setting key for latitude.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String SETTING_LATITUDE = "latitude";
 
 	/**
 	 * The setting key for longitude.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String SETTING_LONGITUDE = "longitude";
 
 	/**
 	 * The setting key for elevation.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String SETTING_ELEVATION = "elevation";
 
 	/**
 	 * The default {@code minLatLonDeviation} property value.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final double DEFAULT_MIN_LAT_LON_DEVIATION = 20.0;
@@ -105,7 +105,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingDao
 	 *        the setting DAO to use
 	 * @throws IllegalArgumentException
@@ -323,17 +323,16 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 		double lat2 = loc2.getLatitude().doubleValue();
 		double lon2 = loc2.getLongitude().doubleValue();
 
-		double φ1 = lat1 * Math.PI / 180.0;
-		double φ2 = lat2 * Math.PI / 180.0;
-		double Δφ = (lat2 - lat1) * Math.PI / 180.0;
-		double Δλ = (lon2 - lon1) * Math.PI / 180.0;
+		double phi1 = lat1 * Math.PI / 180.0;
+		double phi2 = lat2 * Math.PI / 180.0;
+		double deltaPhi = (lat2 - lat1) * Math.PI / 180.0;
+		double deltaLambda = (lon2 - lon1) * Math.PI / 180.0;
 
-		double a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
-				+ Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+		double a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) + Math.cos(phi1) * Math.cos(phi2)
+				* Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
 		double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-		double d = EARTH_RADIUS * c;
-		return d;
+		return EARTH_RADIUS * c;
 	}
 
 	private static class CachedLocation {
@@ -389,7 +388,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Get the URL.
-	 * 
+	 *
 	 * @return the URL
 	 */
 	public String getUrl() {
@@ -398,7 +397,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Set the URL.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to set
 	 */
@@ -408,7 +407,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Get the cache TTL.
-	 * 
+	 *
 	 * @return the cache TTL
 	 */
 	public Long getCacheTtl() {
@@ -417,7 +416,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Set the cache TTL.
-	 * 
+	 *
 	 * @param cacheTtl
 	 *        the cache TTL to set
 	 */
@@ -427,7 +426,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Get the minimum lat/lon deviation.
-	 * 
+	 *
 	 * @return the deviation, in meters
 	 */
 	public double getMinLatLonDeviation() {
@@ -436,7 +435,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	/**
 	 * Set the maximum lat/lon deviation.
-	 * 
+	 *
 	 * @param minLatLonDeviation
 	 *        the deviation to set, in meters
 	 */
