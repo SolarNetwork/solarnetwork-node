@@ -1,21 +1,21 @@
 /* ==================================================================
  * StompSetupServerHandlerTests.java - 15/08/2021 5:17:28 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -51,6 +51,7 @@ import org.easymock.IAnswer;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -91,7 +92,7 @@ import net.solarnetwork.test.CallingThreadExecutorService;
 
 /**
  * Test cases for the {@link StompSetupServerHandler} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -402,13 +403,14 @@ public class StompSetupServerHandlerTests {
 	 * Example use of {@link SnsAuthorizationBuilder} for generating the
 	 * {@code authorization} and {@code date} headers required by the SNS
 	 * authorization scheme.
-	 * 
+	 *
 	 * <p>
 	 * This example is meant to help you understand how a client application
 	 * would authenticate to the SolarNode STOMP Setup Server as the user
 	 * {@literal me@example.com} whose password is {@literal password123}.
 	 * </p>
 	 */
+	@Ignore
 	public void authenticate_example_bcrypt() {
 		// We received a CONNECTED frame whose `auth-hash` header value was `bcrypt`.
 		// Take the salt provided by the `auth-hash-param-salt` header value:
@@ -427,22 +429,22 @@ public class StompSetupServerHandlerTests {
 		// the verb and `/setup/authenticate` as the path:
 
 		// @formatter:off
-		
+
 		SnsAuthorizationBuilder authBuilder = new SnsAuthorizationBuilder("me@example.com")
 				.date(now)
 				.verb("SEND")
 				.path("/setup/authenticate");
 		String authHeader = authBuilder.build(secret);
-		
+
 		// @formatter:on
 
-		// at this point, authHeader contains the `authorization` header value, and 
+		// at this point, authHeader contains the `authorization` header value, and
 		// we must also use a correctly formatted `date` header:
 		Map<String, String> sendFrameHeaders = new HashMap<>();
 		sendFrameHeaders.put("date", authBuilder.headerValue("date"));
 		sendFrameHeaders.put("authorization", authHeader);
 
-		// Now conceptually we'd post the SEND frame using our STOMP client, e.g. 
+		// Now conceptually we'd post the SEND frame using our STOMP client, e.g.
 		/*-
 		client.publish("SEND", sendFrameHeaders);
 		 */
