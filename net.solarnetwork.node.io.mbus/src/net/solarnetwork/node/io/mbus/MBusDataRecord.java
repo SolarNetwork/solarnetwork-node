@@ -1,21 +1,21 @@
 /* ==================================================================
  * MBusDataRecord.java - 29/06/2020 09:55:29 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,10 +24,11 @@ package net.solarnetwork.node.io.mbus;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 
 /**
  * Object to hold data record information extracted from an M-Bus device.
- * 
+ *
  * @author alex
  * @version 2.0
  */
@@ -46,7 +47,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param description
 	 *        the description
 	 * @param value
@@ -63,7 +64,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param description
 	 *        the description
 	 * @param type
@@ -83,7 +84,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param description
 	 *        the description
 	 * @param date
@@ -97,7 +98,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param description
 	 *        the description
 	 * @param value
@@ -111,7 +112,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Copy constructor.
-	 * 
+	 *
 	 * @param record
 	 *        the record to copy
 	 */
@@ -142,7 +143,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the description.
-	 * 
+	 *
 	 * @return the description
 	 */
 	public MBusDataDescription getDescription() {
@@ -151,7 +152,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the data type.
-	 * 
+	 *
 	 * @return the data type
 	 */
 	public MBusDataType getType() {
@@ -160,7 +161,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the value as a double.
-	 * 
+	 *
 	 * @return the double value
 	 * @throws ClassCastException
 	 *         if {@code value} is not a double
@@ -171,7 +172,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the value as a date.
-	 * 
+	 *
 	 * @return the date value
 	 * @throws ClassCastException
 	 *         if {@code value} is not a date
@@ -182,7 +183,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the value as a long.
-	 * 
+	 *
 	 * @return the long value
 	 * @throws ClassCastException
 	 *         if {@code value} is not a long
@@ -193,7 +194,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the value as a string.
-	 * 
+	 *
 	 * @return the string value
 	 * @throws ClassCastException
 	 *         if {@code value} is not a string
@@ -204,7 +205,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the exponent.
-	 * 
+	 *
 	 * @return the exponent
 	 */
 	public int getMultiplierExponent() {
@@ -213,7 +214,7 @@ public class MBusDataRecord {
 
 	/**
 	 * Get the double value, scaled.
-	 * 
+	 *
 	 * @return the scaled double value
 	 */
 	public Double getScaledValue() {
@@ -232,19 +233,21 @@ public class MBusDataRecord {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if ( o == this ) {
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
 			return true;
 		}
-
-		if ( !(o instanceof MBusDataRecord) ) {
+		if ( !(obj instanceof MBusDataRecord dr) ) {
 			return false;
 		}
-
-		MBusDataRecord dr = (MBusDataRecord) o;
-
 		return dr.description == this.description && dr.type == this.type
 				&& (dr.type == MBusDataType.None || dr.value.equals(this.value))
 				&& dr.multiplierExponent == this.multiplierExponent;
 	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(description, type, value, multiplierExponent);
+	}
+
 }

@@ -1,21 +1,21 @@
 /* ==================================================================
  * MBusMessage.java - 09/07/2020 11:50:01 am
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,11 +26,12 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * 
+ *
  * A class representing an MBus Message
- * 
+ *
  * @author alex
  * @version 2.0
  */
@@ -47,7 +48,7 @@ public class MBusData {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param receivedTime
 	 *        the received time
 	 */
@@ -57,7 +58,7 @@ public class MBusData {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the data
 	 * @throws IllegalArgumentException
@@ -71,7 +72,7 @@ public class MBusData {
 
 	/**
 	 * Add data to this instance.
-	 * 
+	 *
 	 * @param data
 	 *        the data to add
 	 * @throws IllegalArgumentException
@@ -86,7 +87,7 @@ public class MBusData {
 	/**
 	 * Get timestamp of data. If a time cannot be found in the data records,
 	 * message reception time will be used
-	 * 
+	 *
 	 * @return data timestamp
 	 */
 	public Instant getDataTimestamp() {
@@ -107,7 +108,7 @@ public class MBusData {
 
 	/**
 	 * Find a data record given a description
-	 * 
+	 *
 	 * @param description
 	 *        description type to find record for
 	 * @return data record
@@ -123,7 +124,7 @@ public class MBusData {
 
 	/**
 	 * Get a scaled numeric value (long, double or BCD), given a description
-	 * 
+	 *
 	 * @param description
 	 *        description type to find record for
 	 * @return scaled value
@@ -138,7 +139,7 @@ public class MBusData {
 
 	/**
 	 * Get a string value, given a description
-	 * 
+	 *
 	 * @param description
 	 *        description type to find record for
 	 * @return string value
@@ -153,7 +154,7 @@ public class MBusData {
 
 	/**
 	 * Get a date value, given a description
-	 * 
+	 *
 	 * @param description
 	 *        description type to find record for
 	 * @return date value
@@ -167,17 +168,19 @@ public class MBusData {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if ( o == this ) {
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
 			return true;
 		}
-
-		if ( !(o instanceof MBusData) ) {
+		if ( !(obj instanceof MBusData other) ) {
 			return false;
 		}
-
-		MBusData d = (MBusData) o;
-
-		return d.dataRecords.equals(this.dataRecords);
+		return Objects.equals(dataRecords, other.dataRecords);
 	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(dataRecords);
+	}
+
 }
