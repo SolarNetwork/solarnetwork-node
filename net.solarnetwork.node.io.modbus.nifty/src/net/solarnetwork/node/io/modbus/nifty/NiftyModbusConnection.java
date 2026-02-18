@@ -303,7 +303,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			ModbusMessage res = controller.send(req).validate();
 			if ( res.isException() ) {
 				throw new IOException(String.format(
-						"Modbus exception %d reading %d discrete input values from %d @ %s",
+						"Modbus exception %s reading %d discrete input values from %d @ %s",
 						res.getError(), count, address, describer.get()));
 			}
 			BitsModbusMessage r = res.unwrap(BitsModbusMessage.class);
