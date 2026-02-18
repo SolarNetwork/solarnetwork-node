@@ -82,6 +82,7 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 	private Instruction lastDatum;
 
+	@SuppressWarnings("JUnit4SetUpNotRun")
 	@BeforeTransaction
 	public void setUp() throws Exception {
 		DatabaseSetup setup = new DatabaseSetup();
