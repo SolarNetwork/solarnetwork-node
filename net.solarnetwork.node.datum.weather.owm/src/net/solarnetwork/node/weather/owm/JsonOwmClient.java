@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,12 +53,41 @@ import net.solarnetwork.node.service.support.JsonHttpClientSupport;
  * JSON implementation of {@link OwmClient}
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 
 	/** The default value for the {@code baseUrl} property. */
 	public static final String DEFAULT_API_BASE_URL = "https://api.openweathermap.org";
+
+	/**
+	 * The icon ID property name.
+	 *
+	 * @since 2.2
+	 */
+	public static final String ICON_ID_PROP = "iconId";
+
+	/**
+	 * A suffix added to daytime copies of properties.
+	 *
+	 * @since 2.2
+	 */
+	public static final String DAY_SUFFIX = "_day";
+
+	/**
+	 * A suffix added to night-time copies of properties.
+	 *
+	 * @since 2.2
+	 */
+	public static final String NIGHT_SUFFIX = "_night";
+
+	/**
+	 * List of status properties copied to day/night values.
+	 *
+	 * @since 2.2
+	 */
+	public static final List<String> DAYNIGHT_STATUS_PROPS = List.of(AtmosphericDatum.SKY_CONDITIONS_KEY,
+			ICON_ID_PROP);
 
 	private String apiKey;
 	private String baseUrl = DEFAULT_API_BASE_URL;
@@ -209,6 +239,21 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		BigDecimal threeHourRain = parseBigDecimalAttribute(rain, "3h");
 		if ( threeHourRain != null ) {
 			d.setRain(threeHourRain.setScale(0, RoundingMode.HALF_UP).intValue());
+		}
+
+		// populate day/night copies of status properties
+		if ( ts != null ) {
+			final JsonNode sysNode = node.get("sys");
+			final Instant sunrise = parseTimestampNode(sysNode, "sunrise");
+			final Instant sunset = parseTimestampNode(sysNode, "sunset");
+			final Map<String, Object> statusProps = d.getSamples().getStatus();
+			if ( sunrise != null && sunset != null && statusProps != null ) {
+				final String suffix = (ts.isBefore(sunrise) || ts.isAfter(sunset)) ? NIGHT_SUFFIX
+						: DAY_SUFFIX;
+				for ( String propName : DAYNIGHT_STATUS_PROPS ) {
+					statusProps.put(propName + suffix, statusProps.get(propName));
+				}
+			}
 		}
 
 		return d;

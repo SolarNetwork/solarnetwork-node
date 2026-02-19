@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.weather.owm.test;
 
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -35,12 +38,15 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Map;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.Fields;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.DayDatum;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
@@ -188,23 +194,86 @@ public class JsonOwmClientTests extends AbstractHttpServerTests {
 		AtmosphericDatum datum = client.getCurrentConditions(owmLocationId);
 		assertTrue("Request handled", handler.isHandled());
 
-		assertThat("SimpleAtmosphericDatum", datum, instanceOf(SimpleAtmosphericDatum.class));
-		assertThat("Created", datum.getTimestamp(), equalTo(Instant.ofEpochMilli(1537138800000L)));
-		assertThat("Temperature", datum.getTemperature(), equalTo(new BigDecimal("14.0")));
-		assertThat("Temperature min", datum.getSampleData().get("tempMin"), nullValue());
-		assertThat("Temperature min", datum.getSampleData().get("tempMax"), nullValue());
-		assertThat("AtmosphericPressure", datum.getAtmosphericPressure(), equalTo(101600));
-		assertThat("Humidity", datum.getHumidity(), equalTo(87));
-		assertThat("SkyConditions", datum.getSkyConditions(), equalTo("Rain"));
-		assertThat("Icon ID", datum.getSampleData().get("iconId"), equalTo("10n"));
-		assertThat("WindSpeed", datum.getWindSpeed(), equalTo(new BigDecimal("9.8")));
-		assertThat("WindDirection", datum.getWindDirection(), equalTo(350));
-		assertThat("Wind gust", datum.getSampleData().get("wgust"), equalTo(new BigDecimal("14.9")));
-		assertThat("Visibility", datum.getVisibility(), equalTo(10000));
+		// @formatter:off
+		then(datum)
+			.as("Datum available")
+			.asInstanceOf(type(SimpleAtmosphericDatum.class))
+			.as("Timestamp from data")
+			.returns(Instant.ofEpochSecond(1537138800L), from(Datum::getTimestamp))
+			.as("Datum samples from register data")
+			.returns(new DatumSamples(Map.of(
+						"temp", new BigDecimal("14.0"),
+						"atm", 101600,
+						"humidity", 87,
+						"visibility", 10000,
+						"wdir", 350,
+						"wspeed", new BigDecimal("9.8"),
+						"wgust", new BigDecimal("14.9"),
+						"cloudiness", 44
+					), null , Map.of(
+						"sky", "Rain",
+						"iconId", "10n",
+						"sky_night", "Rain",
+						"iconId_night", "10n"
+					)),
+				Datum::asSampleOperations)
+			;
+		// @formatter:on
+	}
 
-		assertThat("Rain", datum.getRain(), nullValue());
+	@Test
+	public void readConditions_daytime() throws Exception {
+		final String owmLocationId = "foobar.loc.id";
 
-		assertThat("No tags", datum.asSampleOperations().getTags(), nullValue());
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				assertThat("Request method", request.getMethod(), equalTo("GET"));
+				assertThat("Request path", request.getHttpURI().getPath(), equalTo("/data/2.5/weather"));
+
+				Fields queryParams = Request.extractQueryParameters(request);
+
+				assertThat("API key", queryParams.getValue("appid"), equalTo(TEST_API_KEY));
+				assertThat("Location ID", queryParams.getValue("id"), equalTo(owmLocationId));
+				assertThat("Units", queryParams.getValue("units"), equalTo("metric"));
+				assertThat("Mode", queryParams.getValue("mode"), equalTo("json"));
+				respondWithJsonResource(request, response, "weather-02.json");
+				return true;
+			}
+
+		};
+		addHandler(handler);
+
+		AtmosphericDatum datum = client.getCurrentConditions(owmLocationId);
+		assertTrue("Request handled", handler.isHandled());
+
+		// @formatter:off
+		then(datum)
+			.as("Datum available")
+			.asInstanceOf(type(SimpleAtmosphericDatum.class))
+			.as("Timestamp from data")
+			.returns(Instant.ofEpochSecond(1537060000L), from(Datum::getTimestamp))
+			.as("Datum samples from register data")
+			.returns(new DatumSamples(Map.of(
+						"temp", new BigDecimal("14.0"),
+						"atm", 101600,
+						"humidity", 87,
+						"visibility", 10000,
+						"wdir", 350,
+						"wspeed", new BigDecimal("9.8"),
+						"wgust", new BigDecimal("14.9"),
+						"cloudiness", 44
+					), null , Map.of(
+						"sky", "Rain",
+						"iconId", "10n",
+						"sky_day", "Rain",
+						"iconId_day", "10n"
+					)),
+				Datum::asSampleOperations)
+			;
+		// @formatter:on
 	}
 
 }
