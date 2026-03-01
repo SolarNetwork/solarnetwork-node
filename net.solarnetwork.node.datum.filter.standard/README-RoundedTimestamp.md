@@ -30,7 +30,7 @@ For example if `300000` is configured then the resolved timestamps would have ti
 _hour:minute_ values like `00:00`, `00:05`, `00:10`, and so on.
 
 Sub-second durations are also supported. For example if `250` is configured then the resolved
-timestamps would have have times exactly at _second.millisecond_ values like
+timestamps would have times exactly at _second.millisecond_ values like
 `00.000`, `00.250`, `00.500`, and so on.
 
 **Note** that if datum are generated at a rate faster than the configured duration,
