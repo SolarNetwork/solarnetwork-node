@@ -30,6 +30,7 @@ documentation:
  * [Parameter Expression Datum Filter](README-Parameter.md) - generate dynamic filter parameters
    by evaluating expressions against existing datum properties
  * [Property Datum Filter](README-Property.md) - to remove unwanted datum properties
+ * [Rounded Timestamp Datum Filter](README-RoundedTimestamp.md) - round datum timestamps to clock-aligned values
  * [Split Datum Filter](README-Split.md) - split the properties of a datum stream into multiple
    datum streams
  * [Throttle Datum Filter](README-Throttle.md) - to restrict the frequency of posting datum
