@@ -140,12 +140,13 @@ settings for the Modbus Service component:
 
 | Setting | Key | Description |
 |:--------|:----|:------------|
-| Service Name | `uid` | Arbitrary string |
-| Service Group | `groupUid` | Arbitrary string |
-| Startup Delay | `startupDelay` | Number (seconds) |
-| Required Mode | `requiredOperationalMode` | String mode name |
 | Allow Writes | `allowWrites` | Either `true` or `false` |
+| Datum Event Mode | `datumEventMode` | One of `Capture` (before filters), `Acquire` (after filters), or `Both` (both). |
 | Persistence Needed | `daoRequired` | Either `true` or `false` |
+| Required Mode | `requiredOperationalMode` | String mode name |
+| Startup Delay | `startupDelay` | Number (seconds) |
+| Service Group | `groupUid` | Arbitrary string |
+| Service Name | `uid` | Arbitrary string |
 | Strict Unit IDs | `restrictUnitIds` | Either `true` or `false` |
 | Strict Addresses | `restrictAddresses` | Either `true` or `false` |
 | Wire Logging | `wireLogging` | Either `true` or `false` |

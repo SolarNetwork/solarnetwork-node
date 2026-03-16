@@ -226,11 +226,11 @@ public class ModbusServerConfigCsvParser {
 								? blockConfig.getMeasurementConfigsCount()
 								: 0);
 						final MeasurementConfig measConfig = me.getValue();
-						if ( measCount < 1
-								|| (blockConfig != null && blockType != blockConfig.getBlockType())
-								|| addr != (registerAddress
+						if ( blockConfig == null || measCount < 1
+								|| blockType != blockConfig.getBlockType()
+								|| (addr != (registerAddress
 										+ blockConfig.getMeasurementConfigs()[measCount - 1]
-												.getSize()) ) {
+												.getSize())) ) {
 							// starting new block
 							blockConfig = new RegisterBlockConfig();
 							blockConfig.setBlockType(blockType);

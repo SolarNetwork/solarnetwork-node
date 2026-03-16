@@ -26,6 +26,7 @@ import static java.lang.String.format;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusReadFunction.ReadHoldingRegister;
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,7 +63,9 @@ import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
+import net.solarnetwork.node.io.modbus.server.impl.DatumEventMode;
 import net.solarnetwork.node.io.modbus.server.tcp.ModbusServer;
+import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.service.StaticOptionalService;
@@ -163,9 +166,7 @@ public class ModbusServerTests {
 		}
 	}
 
-	@Test
-	public void handleDatumAcquired_number() {
-		// GIVEN
+	private void setupServer_numberProperty() {
 		UnitConfig unitConf = new UnitConfig();
 		unitConf.setUnitId(1);
 		RegisterBlockConfig regBlockConf = new RegisterBlockConfig();
@@ -178,6 +179,12 @@ public class ModbusServerTests {
 		regBlockConf.setMeasurementConfigs(new MeasurementConfig[] { measConf });
 		unitConf.setRegisterBlockConfigs(new RegisterBlockConfig[] { regBlockConf });
 		server.setUnitConfigs(new UnitConfig[] { unitConf });
+	}
+
+	@Test
+	public void handleDatumAcquired_number() {
+		// GIVEN
+		setupServer_numberProperty();
 
 		DatumSamples s = new DatumSamples();
 		s.putInstantaneousSampleValue("p1", 123);
@@ -208,18 +215,10 @@ public class ModbusServerTests {
 			}
 		});
 
-		UnitConfig unitConf = new UnitConfig();
-		unitConf.setUnitId(1);
-		RegisterBlockConfig regBlockConf = new RegisterBlockConfig();
-		regBlockConf.setBlockType(ModbusRegisterBlockType.Holding);
-		regBlockConf.setStartAddress(100);
-		MeasurementConfig measConf = new MeasurementConfig();
-		measConf.setDataType(ModbusDataType.UInt16);
-		measConf.setSourceId(TEST_SOURCE_ID);
-		measConf.setPropertyName("p1");
-		regBlockConf.setMeasurementConfigs(new MeasurementConfig[] { measConf });
-		unitConf.setRegisterBlockConfigs(new RegisterBlockConfig[] { regBlockConf });
-		server.setUnitConfigs(new UnitConfig[] { unitConf });
+		setupServer_numberProperty();
+
+		final UnitConfig unitConf = server.getUnitConfigs()[0];
+		final RegisterBlockConfig regBlockConf = unitConf.getRegisterBlockConfigs()[0];
 
 		DatumSamples s = new DatumSamples();
 		s.putInstantaneousSampleValue("p1", 123);
@@ -246,9 +245,7 @@ public class ModbusServerTests {
 		assertThat("Persisted register value", daoEntity.getValue(), is(equalTo((short) 123)));
 	}
 
-	@Test
-	public void handleDatumAcquired_string() {
-		// GIVEN
+	private void setupServer_stringProperty() {
 		UnitConfig unitConf = new UnitConfig();
 		unitConf.setUnitId(1);
 		RegisterBlockConfig regBlockConf = new RegisterBlockConfig();
@@ -262,11 +259,94 @@ public class ModbusServerTests {
 		regBlockConf.setMeasurementConfigs(new MeasurementConfig[] { measConf });
 		unitConf.setRegisterBlockConfigs(new RegisterBlockConfig[] { regBlockConf });
 		server.setUnitConfigs(new UnitConfig[] { unitConf });
+	}
+
+	@Test
+	public void handleDatumAcquired_string() {
+		// GIVEN
+		setupServer_stringProperty();
 
 		DatumSamples s = new DatumSamples();
 		s.putStatusSampleValue("p1", "Hello, world.");
 		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), s);
 		Event evt = DatumEvents.datumEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, d);
+
+		// WHEN
+		server.handleEvent(evt);
+
+		// THEN
+		assertRegisterValue("Acquired string", 1, ReadHoldingRegister, 100, StringAscii, 16,
+				"Hello, world.");
+	}
+
+	@Test
+	public void handleDatumAcquired_string_captureBoth() {
+		// GIVEN
+		setupServer_stringProperty();
+
+		server.setDatumEventMode(DatumEventMode.Both);
+
+		DatumSamples s = new DatumSamples();
+		s.putStatusSampleValue("p1", "Hello, world.");
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), s);
+		Event evt = DatumEvents.datumEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, d);
+
+		// WHEN
+		server.handleEvent(evt);
+
+		// THEN
+		assertRegisterValue("Acquired string", 1, ReadHoldingRegister, 100, StringAscii, 16,
+				"Hello, world.");
+	}
+
+	@Test
+	public void handleDatumCaptured_notSupported() {
+		// GIVEN
+		setupServer_stringProperty();
+
+		DatumSamples s = new DatumSamples();
+		s.putStatusSampleValue("p1", "Hello, world.");
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), s);
+		Event evt = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, d);
+
+		// WHEN
+		server.handleEvent(evt);
+
+		// THEN
+		then(data).as("Nothing captured for Captured event when event mode Acquire").isEmpty();
+	}
+
+	@Test
+	public void handleDatumCaptured_supported_Capture() {
+		// GIVEN
+		setupServer_stringProperty();
+
+		server.setDatumEventMode(DatumEventMode.Capture);
+
+		DatumSamples s = new DatumSamples();
+		s.putStatusSampleValue("p1", "Hello, world.");
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), s);
+		Event evt = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, d);
+
+		// WHEN
+		server.handleEvent(evt);
+
+		// THEN
+		assertRegisterValue("Acquired string", 1, ReadHoldingRegister, 100, StringAscii, 16,
+				"Hello, world.");
+	}
+
+	@Test
+	public void handleDatumCaptured_supported_Both() {
+		// GIVEN
+		setupServer_stringProperty();
+
+		server.setDatumEventMode(DatumEventMode.Both);
+
+		DatumSamples s = new DatumSamples();
+		s.putStatusSampleValue("p1", "Hello, world.");
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), s);
+		Event evt = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, d);
 
 		// WHEN
 		server.handleEvent(evt);
@@ -293,19 +373,10 @@ public class ModbusServerTests {
 			}
 		}).times(7);
 
-		UnitConfig unitConf = new UnitConfig();
-		unitConf.setUnitId(1);
-		RegisterBlockConfig regBlockConf = new RegisterBlockConfig();
-		regBlockConf.setBlockType(ModbusRegisterBlockType.Holding);
-		regBlockConf.setStartAddress(100);
-		MeasurementConfig measConf = new MeasurementConfig();
-		measConf.setDataType(StringAscii);
-		measConf.setSourceId(TEST_SOURCE_ID);
-		measConf.setPropertyName("p1");
-		measConf.setWordLength(16);
-		regBlockConf.setMeasurementConfigs(new MeasurementConfig[] { measConf });
-		unitConf.setRegisterBlockConfigs(new RegisterBlockConfig[] { regBlockConf });
-		server.setUnitConfigs(new UnitConfig[] { unitConf });
+		setupServer_stringProperty();
+
+		final UnitConfig unitConf = server.getUnitConfigs()[0];
+		final RegisterBlockConfig regBlockConf = unitConf.getRegisterBlockConfigs()[0];
 
 		DatumSamples s = new DatumSamples();
 		s.putStatusSampleValue("p1", "Hello, world.");

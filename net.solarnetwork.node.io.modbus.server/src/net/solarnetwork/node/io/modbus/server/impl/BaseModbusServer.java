@@ -25,6 +25,10 @@ package net.solarnetwork.node.io.modbus.server.impl;
 import static net.solarnetwork.node.io.modbus.server.dao.BasicModbusRegisterFilter.forServerId;
 import static net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity.newRegisterEntity;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData.encodeValue;
+import static net.solarnetwork.node.io.modbus.server.impl.DatumEventMode.Acquire;
+import static net.solarnetwork.node.io.modbus.server.impl.DatumEventMode.Capture;
+import static net.solarnetwork.node.service.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
+import static net.solarnetwork.node.service.DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.time.Instant;
@@ -36,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -81,7 +86,6 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumEvents;
-import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
@@ -94,6 +98,7 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
@@ -109,7 +114,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -118,6 +123,9 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 
 	/** The default startup delay, in seconds. */
 	public static final int DEFAULT_STARTUP_DELAY_SECS = 15;
+
+	/** The {@code datumEventMode} property default value. */
+	public static final DatumEventMode DEFAULT_DATUM_EVENT_MODE = Acquire;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -140,6 +148,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	private OptionalService<OperationalModesService> opModesService;
 	private String requiredOperationalMode;
 	private boolean daoRequired;
+	private DatumEventMode datumEventMode = DEFAULT_DATUM_EVENT_MODE;
 
 	private T server;
 	private ScheduledFuture<?> startupFuture;
@@ -434,7 +443,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	@Override
 	public void handleEvent(Event event) {
 		final String topic = (event != null ? event.getTopic() : null);
-		if ( DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED.equals(topic)
+		if ( (datumEventMode != Acquire && EVENT_TOPIC_DATUM_CAPTURED.equals(topic))
+				|| (datumEventMode != Capture && EVENT_TOPIC_DATUM_ACQUIRED.equals(topic))
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
@@ -688,6 +698,18 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 
 		result.addAll(baseIdentifiableSettings(null));
 		result.addAll(getExtendedSettingSpecifiers());
+
+		// drop-down menu for datumEventMode
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				"datumEventMode", DEFAULT_DATUM_EVENT_MODE.toString());
+		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
+		for ( DatumEventMode e : DatumEventMode.values() ) {
+			propTypeTitles.put(e.name(), getMessageSource().getMessage("DatumEventMode." + e.name(),
+					null, e.name(), Locale.getDefault()));
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		result.add(propTypeSpec);
+
 		result.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
@@ -1282,6 +1304,28 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			requiredOperationalMode = null;
 		}
 		this.requiredOperationalMode = requiredOperationalMode;
+	}
+
+	/**
+	 * Get the datum event mode.
+	 *
+	 * @return the mode; defaults to {@link #DEFAULT_DATUM_EVENT_MODE}
+	 * @since 1.4
+	 */
+	public final DatumEventMode getDatumEventMode() {
+		return datumEventMode;
+	}
+
+	/**
+	 * Set the datum event mode.
+	 *
+	 * @param datumEventMode
+	 *        the mode to set; if {@code null} then
+	 *        {@link #DEFAULT_DATUM_EVENT_MODE} will be used
+	 * @since 1.4
+	 */
+	public final void setDatumEventMode(DatumEventMode datumEventMode) {
+		this.datumEventMode = (datumEventMode != null ? datumEventMode : DEFAULT_DATUM_EVENT_MODE);
 	}
 
 }
