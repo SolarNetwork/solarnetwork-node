@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.impl;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.parseBytes;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ByteUtils.encodeHexString;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -38,6 +39,7 @@ import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
+import net.solarnetwork.node.domain.StringDateKey;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterDao;
 import net.solarnetwork.node.io.modbus.server.dao.ModbusRegisterEntity;
@@ -52,7 +54,7 @@ import net.solarnetwork.util.ObjectUtils;
  * CSV backup service for Modbus server data.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.1
  */
 public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServiceSupport
@@ -108,6 +110,15 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 		result.add(new BasicTextFieldSettingSpecifier("backupDestinationPath",
 				DEFAULT_BACKUP_DESTINATION_PATH));
 		return result;
+	}
+
+	@Override
+	public StringDateKey backupCsvConfiguration() {
+		ModbusRegisterDao dao = service(modbusRegisterDao);
+		if ( dao == null ) {
+			return null;
+		}
+		return super.backupCsvConfiguration();
 	}
 
 	@Override
@@ -219,7 +230,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	}
 
 	private ModbusRegisterDao dao() {
-		ModbusRegisterDao dao = OptionalService.service(modbusRegisterDao);
+		ModbusRegisterDao dao = service(modbusRegisterDao);
 		if ( dao != null ) {
 			return dao;
 		}
