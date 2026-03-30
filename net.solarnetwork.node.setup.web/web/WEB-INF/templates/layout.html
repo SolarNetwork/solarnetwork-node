@@ -55,7 +55,9 @@
 		<script src="../../js/locstate.js" data-th-src="@{/js/locstate.js}"></script>
 		<snode:resources type="application/javascript" sec:authorize="!hasRole('ROLE_USER')" />
 		<snode:resources type="application/javascript" role='USER' sec:authorize="hasRole('ROLE_USER')" />
-		<!--/*/ <th:block th:utext="${headExtra}"> /*/-->
+		<!--/*/ <th:block th:if="${#vars.getVariable('headExtra')}"> /*/-->
+			<!--/*/ <th:block th:replace="${headExtra}"> /*/-->
+	    	<!--/*/ </th:block> /*/-->		
     	<!--/*/ </th:block> /*/-->		
 	</head>
 	<body>
