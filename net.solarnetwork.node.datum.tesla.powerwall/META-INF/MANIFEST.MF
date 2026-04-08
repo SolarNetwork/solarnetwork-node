@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Tesla Powerwall Datum Source
 Bundle-Description: Collect Tesla Powerwall data as a datum stream.
 Bundle-SymbolicName: net.solarnetwork.node.datum.tesla.powerwall
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.tesla.powerwall
 Bundle-RequiredExecutionEnvironment: JavaSE-17
@@ -36,6 +36,7 @@ Import-Package:
  org.apache.http.impl.client;version="[4.5,5.0)",
  org.apache.http.message;version="[4.4,5.0)",
  org.apache.http.util;version="[4.4,5.0)",
+ org.jspecify.annotations;version="[1.0,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[6.2,7.0)",
  org.springframework.context;version="[6.2,7.0)",

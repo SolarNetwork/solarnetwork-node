@@ -27,6 +27,7 @@ import static java.util.stream.Collectors.toMap;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static net.solarnetwork.test.CommonTestUtils.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.assertj.core.api.BDDAssertions;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
@@ -60,7 +62,7 @@ import net.solarnetwork.test.http.TestHttpHandler;
  * Test cases for the {@link PowerwallOperations} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PowerwallOperationsTests extends AbstractHttpServerTests {
 
@@ -74,8 +76,8 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 	@Before
 	public void setup() {
 		super.setup();
-		username = UUID.randomUUID().toString();
-		password = UUID.randomUUID().toString();
+		username = randomString();
+		password = randomString();
 		ops = new PowerwallOperations(false, "localhost:" + getHttpServerPort(), username, password,
 				buildRequestConfig(), JsonUtils.newObjectMapper());
 	}
@@ -92,7 +94,7 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 	@Test
 	public void datum() throws IOException {
 		// GIVEN
-		final String sourceId = UUID.randomUUID().toString();
+		final String sourceId = randomString();
 
 		final TestHttpHandler handler = new TestHttpHandler() {
 
@@ -228,5 +230,62 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 				is(equalTo(12366)));
 		assertThat("Grid connection state from system_island_state",
 				d.getSampleInteger(Status, "gridConnected"), is(equalTo(1)));
+	}
+
+	@Test
+	public void notTlsNoUsernamePasswordAutoDetect() throws IOException {
+		// GIVEN
+		final var ops = new PowerwallOperations(null, "localhost:" + getHttpServerPort(), null, null,
+				buildRequestConfig(), JsonUtils.newObjectMapper());
+
+		final String sourceId = UUID.randomUUID().toString();
+
+		final TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				String path = request.getHttpURI().getPath();
+				switch (path) {
+					case "/api/meters/aggregates":
+						respondWithJsonResource(request, response, "meters-aggregates-01.json");
+						break;
+
+					case "/api/system_status":
+						respondWithJsonResource(request, response, "system_status-01.json");
+						break;
+
+					case "/api/system_status/soe":
+						respondWithJsonResource(request, response, "system_status-soe-01.json");
+						break;
+
+					default:
+						response.setStatus(HttpStatus.NOT_FOUND.value());
+						break;
+				}
+				return true;
+			}
+
+		};
+		addHandler(handler);
+
+		// WHEN
+		Collection<NodeDatum> datum = ops.datum(sourceId);
+		ops.close();
+
+		// THEN
+		log.debug("Got datum: {}", datum);
+		Map<String, NodeDatum> datumMap = datum.stream().collect(toMap(d -> d.getSourceId(), d -> d));
+		// @formatter:off
+		BDDAssertions.then(datumMap)
+			.as("Datum generated for all sources")
+			.containsOnlyKeys(
+				sourceId + PowerwallOperations.DEFAULT_BATTERY_SUFFIX,
+				sourceId + PowerwallOperations.DEFAULT_LOAD_SUFFIX,
+				sourceId + PowerwallOperations.DEFAULT_SITE_SUFFIX,
+				sourceId + PowerwallOperations.DEFAULT_SOLAR_SUFFIX
+			)
+			;
+		// @formatter:on
 	}
 }

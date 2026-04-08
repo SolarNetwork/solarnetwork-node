@@ -48,6 +48,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -69,7 +70,7 @@ import net.solarnetwork.service.RemoteServiceException;
  * Access to Powerwall APIs.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PowerwallOperations implements Closeable {
 
@@ -90,8 +91,8 @@ public class PowerwallOperations implements Closeable {
 	private final boolean useTls;
 	private final String hostName;
 	private final int port;
-	private String username;
-	private String password;
+	private final @Nullable String username;
+	private final @Nullable String password;
 	private final ObjectMapper mapper;
 
 	private String batterySuffix = DEFAULT_BATTERY_SUFFIX;
@@ -118,16 +119,17 @@ public class PowerwallOperations implements Closeable {
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public PowerwallOperations(String hostName, String username, String password,
+	public PowerwallOperations(String hostName, @Nullable String username, @Nullable String password,
 			RequestConfig requestConfig, ObjectMapper mapper) {
-		this(true, hostName, username, password, requestConfig, mapper);
+		this(null, hostName, username, password, requestConfig, mapper);
 	}
 
 	/**
 	 * Constructor.
 	 *
 	 * @param useTls
-	 *        {@literal true} to use TLS (HTTPS)
+	 *        {@literal true} to use TLS (HTTPS), {@code false} to not, or
+	 *        {@code null} to auto-detect based on {@code hostName}
 	 * @param hostName
 	 *        the host name that is required; can include a port after a
 	 *        {@literal :} delimiter
@@ -142,17 +144,51 @@ public class PowerwallOperations implements Closeable {
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public PowerwallOperations(boolean useTls, String hostName, String username, String password,
-			RequestConfig requestConfig, ObjectMapper mapper) {
+	public PowerwallOperations(@Nullable Boolean useTls, String hostName, @Nullable String username,
+			@Nullable String password, RequestConfig requestConfig, ObjectMapper mapper) {
 		super();
-		this.useTls = useTls;
 		final String[] hostComponents = requireNonNullArgument(hostName, "hostName").split(":", 2);
 		this.hostName = hostComponents[0].toLowerCase();
+		this.useTls = shouldUseTls(useTls, hostComponents);
 		this.port = hostComponents.length > 1 ? Integer.parseInt(hostComponents[1]) : 443;
-		this.username = requireNonNullArgument(username, "username");
-		this.password = requireNonNullArgument(password, "password");
+		this.username = username;
+		this.password = password;
 		this.mapper = mapper;
 		this.httpClient = createHttpClient(requestConfig);
+	}
+
+	/**
+	 * Auto-detect if TLS should be used.
+	 *
+	 * <p>
+	 * If the hostname is {@code localhost} or {@code 127.0.0.1} then this will
+	 * return {@code false}. If a port is specified and it is not {@code 443}
+	 * then this will return {@code false}. Otherwise {@code true} will be
+	 * returned.
+	 * </p>
+	 *
+	 * @param useTls
+	 *        the requested use of TLS; if non-{@code null} this will be
+	 *        returned directly
+	 * @param hostComponents
+	 *        array with the hostname and optionally the port
+	 * @return {@code true} if TLS should be used
+	 */
+	private static boolean shouldUseTls(@Nullable Boolean useTls, String[] hostComponents) {
+		if ( useTls != null ) {
+			return useTls;
+		}
+		if ( "localhost".equalsIgnoreCase(hostComponents[0]) || "127.0.0.1".equals(hostComponents[0]) ) {
+			return false;
+		}
+		if ( hostComponents.length > 1 ) {
+			if ( !"443".equals(hostComponents[1]) ) {
+				// non-TLS port specified, so do not use TLS
+				return false;
+			}
+		}
+		// default to true
+		return true;
 	}
 
 	@Override
@@ -327,7 +363,8 @@ public class PowerwallOperations implements Closeable {
 	 *        "reverse" direction
 	 * @return the datum, or {@literal null} if one could not be extracted
 	 */
-	private SimpleAcDcEnergyDatum extractDatum(JsonNode root, String sourceId, boolean consumer) {
+	private @Nullable SimpleAcDcEnergyDatum extractDatum(JsonNode root, String sourceId,
+			boolean consumer) {
 		SimpleAcDcEnergyDatum d = null;
 		JsonNode node = null;
 
@@ -408,7 +445,10 @@ public class PowerwallOperations implements Closeable {
 		return (d.isEmpty() ? null : d);
 	}
 
-	private JsonNode loginBasic() {
+	private @Nullable JsonNode loginBasic() {
+		if ( username == null || username.isEmpty() || password == null || password.isEmpty() ) {
+			return null;
+		}
 		final Map<String, Object> data = new LinkedHashMap<>(2);
 		data.put("username", username);
 		data.put("password", password);
@@ -427,8 +467,9 @@ public class PowerwallOperations implements Closeable {
 				HttpResponseException err = (HttpResponseException) e.getCause();
 				if ( err.getStatusCode() == 401 || err.getStatusCode() == 403 ) {
 					// attempt to retry, by logging in and then retry
-					loginBasic();
-					return forJson(req);
+					if ( loginBasic() != null ) {
+						return forJson(req);
+					}
 				}
 			}
 			throw e;
@@ -471,7 +512,7 @@ public class PowerwallOperations implements Closeable {
 	 *
 	 * @return the suffix; default to {@link #DEFAULT_BATTERY_SUFFIX}
 	 */
-	public String getBatterySuffix() {
+	public final String getBatterySuffix() {
 		return batterySuffix;
 	}
 
@@ -481,7 +522,7 @@ public class PowerwallOperations implements Closeable {
 	 * @param batterySuffix
 	 *        the suffix to set
 	 */
-	public void setBatterySuffix(String batterySuffix) {
+	public final void setBatterySuffix(String batterySuffix) {
 		this.batterySuffix = batterySuffix;
 	}
 
@@ -490,7 +531,7 @@ public class PowerwallOperations implements Closeable {
 	 *
 	 * @return the suffix; default to {@link #DEFAULT_LOAD_SUFFIX}
 	 */
-	public String getLoadSuffix() {
+	public final String getLoadSuffix() {
 		return loadSuffix;
 	}
 
@@ -500,7 +541,7 @@ public class PowerwallOperations implements Closeable {
 	 * @param loadSuffix
 	 *        the suffix to set
 	 */
-	public void setLoadSuffix(String loadSuffix) {
+	public final void setLoadSuffix(String loadSuffix) {
 		this.loadSuffix = loadSuffix;
 	}
 
@@ -509,7 +550,7 @@ public class PowerwallOperations implements Closeable {
 	 *
 	 * @return the suffix; default to {@link #DEFAULT_SOLAR_SUFFIX}
 	 */
-	public String getSolarSuffix() {
+	public final String getSolarSuffix() {
 		return solarSuffix;
 	}
 
@@ -519,7 +560,7 @@ public class PowerwallOperations implements Closeable {
 	 * @param solarSuffix
 	 *        the suffix to set
 	 */
-	public void setSolarSuffix(String solarSuffix) {
+	public final void setSolarSuffix(String solarSuffix) {
 		this.solarSuffix = solarSuffix;
 	}
 
@@ -528,7 +569,7 @@ public class PowerwallOperations implements Closeable {
 	 *
 	 * @return the suffix; default to {@link #DEFAULT_SITE_SUFFIX}
 	 */
-	public String getSiteSuffix() {
+	public final String getSiteSuffix() {
 		return siteSuffix;
 	}
 
@@ -538,7 +579,7 @@ public class PowerwallOperations implements Closeable {
 	 * @param siteSuffix
 	 *        the suffix to set
 	 */
-	public void setSiteSuffix(String siteSuffix) {
+	public final void setSiteSuffix(String siteSuffix) {
 		this.siteSuffix = siteSuffix;
 	}
 
