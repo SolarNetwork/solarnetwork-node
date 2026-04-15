@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.MultiDatumDataSource;
@@ -64,15 +65,15 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	/** The {@code username} property default value. */
 	public static final String DEFAULT_USERNAME = "customer";
 
-	private String sourceId;
+	private @Nullable String sourceId;
 	private String hostName = DEFAULT_HOST_NAME;
-	private String username = DEFAULT_USERNAME;
-	private String password;
+	private @Nullable String username = DEFAULT_USERNAME;
+	private @Nullable String password;
 	private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
 	private int readTimeout = DEFAULT_READ_TIMEOUT;
 	private int connectionRequestTimeout = DEFAULT_CONNECTION_REQUEST_TIMEOUT;
 
-	private PowerwallOperations ops;
+	private @Nullable PowerwallOperations ops;
 
 	/**
 	 * Constructor.
@@ -94,7 +95,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	}
 
 	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
+	public synchronized void configurationChanged(@Nullable Map<String, Object> properties) {
 		closeOperations();
 		this.ops = createOperations();
 	}
@@ -148,13 +149,14 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	@Override
 	public Collection<NodeDatum> readMultipleDatum() {
 		final PowerwallOperations ops = this.ops;
-		if ( ops != null ) {
+		final String sourceId = getSourceId();
+		if ( ops != null && sourceId != null && !sourceId.isEmpty() ) {
 			return ops.datum(sourceId);
 		}
 		return Collections.emptyList();
 	}
 
-	private synchronized PowerwallOperations createOperations() {
+	private synchronized @Nullable PowerwallOperations createOperations() {
 		try {
 			return new PowerwallOperations(hostName, username, password, buildRequestConfig(),
 					JsonUtils.newObjectMapper());
@@ -193,7 +195,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @return the source ID to use
 	 */
-	public String getSourceId() {
+	public @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -203,7 +205,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 * @param sourceId
 	 *        the source ID to set
 	 */
-	public void setSourceId(String sourceId) {
+	public void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -221,10 +223,11 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @param hostName
 	 *        the host name to set; can include a custom port using a colon
-	 *        delimiter
+	 *        delimiter; if {@code null} then {@link #DEFAULT_HOST_NAME} will be
+	 *        used
 	 */
 	public void setHostName(String hostName) {
-		this.hostName = hostName;
+		this.hostName = (hostName != null ? hostName : DEFAULT_HOST_NAME);
 	}
 
 	/**
@@ -232,7 +235,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @return the username; defaults to {@link #DEFAULT_USERNAME}
 	 */
-	public String getUsername() {
+	public @Nullable String getUsername() {
 		return username;
 	}
 
@@ -242,7 +245,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 * @param username
 	 *        the username to set
 	 */
-	public void setUsername(String username) {
+	public void setUsername(@Nullable String username) {
 		this.username = username;
 	}
 
@@ -251,7 +254,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @return the password
 	 */
-	public String getPassword() {
+	public @Nullable String getPassword() {
 		return password;
 	}
 
@@ -261,7 +264,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 * @param password
 	 *        the password to set
 	 */
-	public void setPassword(String password) {
+	public void setPassword(@Nullable String password) {
 		this.password = password;
 	}
 
