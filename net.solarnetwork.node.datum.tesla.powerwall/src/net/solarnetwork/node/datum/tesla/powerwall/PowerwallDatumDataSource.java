@@ -25,9 +25,10 @@ package net.solarnetwork.node.datum.tesla.powerwall;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.jspecify.annotations.Nullable;
@@ -102,9 +103,16 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	@Override
 	public Collection<String> publishedSourceIds() {
-		final String sourceId = resolvePlaceholders(getSourceId());
-		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
-				: Collections.singleton(sourceId));
+		try {
+			Collection<NodeDatum> datum = readMultipleDatum();
+			return datum.stream().map(NodeDatum::getSourceId).collect(Collectors.toSet());
+		} catch ( Exception e ) {
+			final String sourceId = resolvePlaceholders(getSourceId());
+			if ( sourceId != null && !sourceId.isEmpty() ) {
+				return Set.of(sourceId);
+			}
+			return Set.of();
+		}
 	}
 
 	@Override
@@ -149,11 +157,11 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	@Override
 	public Collection<NodeDatum> readMultipleDatum() {
 		final PowerwallOperations ops = this.ops;
-		final String sourceId = getSourceId();
+		final String sourceId = resolvePlaceholders(getSourceId());
 		if ( ops != null && sourceId != null && !sourceId.isEmpty() ) {
 			return ops.datum(sourceId);
 		}
-		return Collections.emptyList();
+		return List.of();
 	}
 
 	private synchronized @Nullable PowerwallOperations createOperations() {
