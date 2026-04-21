@@ -35,7 +35,7 @@ provided in the Source ID setting, then the **Placeholder** setting for each com
 appended to the Source ID, preceded by a `/` character.
 
 Here are some example settings to show how the component source IDs are resolved, assuming the
-default placeholder values of `batter`, `load`, `site`, and `solar` are configured:
+default placeholder values of `battery`, `load`, `site`, and `solar` are configured:
 
 | Source ID | Resolved Source IDs | Notes |
 |:----------|:--------------------|:------|
