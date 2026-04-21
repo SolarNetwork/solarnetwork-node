@@ -46,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * {@link MultiDatumDataSource} for Tesla Powerwall devices.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PowerwallDatumDataSource extends DatumDataSourceSupport implements MultiDatumDataSource,
 		ServiceLifecycleObserver, SettingsChangeObserver, SettingSpecifierProvider {
@@ -73,6 +73,10 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
 	private int readTimeout = DEFAULT_READ_TIMEOUT;
 	private int connectionRequestTimeout = DEFAULT_CONNECTION_REQUEST_TIMEOUT;
+	private String batteryPlaceholder = PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER;
+	private String loadPlaceholder = PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER;
+	private String solarPlaceholder = PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER;
+	private String sitePlaceholder = PowerwallOperations.DEFAULT_SITE_PLACEHOLDER;
 
 	private @Nullable PowerwallOperations ops;
 
@@ -128,6 +132,14 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 		results.add(new BasicTextFieldSettingSpecifier("hostName", DEFAULT_HOST_NAME));
 		results.add(new BasicTextFieldSettingSpecifier("username", DEFAULT_USERNAME));
 		results.add(new BasicTextFieldSettingSpecifier("password", null, true));
+		results.add(new BasicTextFieldSettingSpecifier("batteryPlaceholder",
+				PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER));
+		results.add(new BasicTextFieldSettingSpecifier("loadPlaceholder",
+				PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER));
+		results.add(new BasicTextFieldSettingSpecifier("sitePlaceholder",
+				PowerwallOperations.DEFAULT_SITE_PLACEHOLDER));
+		results.add(new BasicTextFieldSettingSpecifier("solarPlaceholder",
+				PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER));
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 		return results;
 	}
@@ -157,7 +169,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	@Override
 	public Collection<NodeDatum> readMultipleDatum() {
 		final PowerwallOperations ops = this.ops;
-		final String sourceId = resolvePlaceholders(getSourceId());
+		final String sourceId = getSourceId();
 		if ( ops != null && sourceId != null && !sourceId.isEmpty() ) {
 			return ops.datum(sourceId);
 		}
@@ -166,8 +178,14 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 
 	private synchronized @Nullable PowerwallOperations createOperations() {
 		try {
-			return new PowerwallOperations(hostName, username, password, buildRequestConfig(),
+			var ops = new PowerwallOperations(hostName, username, password, buildRequestConfig(),
 					JsonUtils.newObjectMapper());
+			ops.setPlaceholderService(getPlaceholderService());
+			ops.setBatteryPlaceholder(batteryPlaceholder);
+			ops.setLoadPlaceholder(loadPlaceholder);
+			ops.setSitePlaceholder(sitePlaceholder);
+			ops.setSolarPlaceholder(solarPlaceholder);
+			return ops;
 		} catch ( IllegalArgumentException e ) {
 			// configuration not fully specified yet
 			return null;
@@ -354,4 +372,100 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 		this.connectionRequestTimeout = connectionRequestTimeout;
 	}
 
+	/**
+	 * Get the source ID suffix used for battery data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_BATTERY_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getBatteryPlaceholder() {
+		return batteryPlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for battery data.
+	 *
+	 * @param batteryPlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_BATTERY_PLACEHOLDER} will be
+	 *        used
+	 * @since 1.2
+	 */
+	public final void setBatteryPlaceholder(String batteryPlaceholder) {
+		this.batteryPlaceholder = (batteryPlaceholder != null ? batteryPlaceholder
+				: PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER);
+	}
+
+	/**
+	 * Get the source ID suffix used for load data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_LOAD_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getLoadPlaceholder() {
+		return loadPlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for load data.
+	 *
+	 * @param loadPlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_LOAD_PLACEHOLDER} will be used
+	 * @since 1.2
+	 */
+	public final void setLoadPlaceholder(String loadPlaceholder) {
+		this.loadPlaceholder = (loadPlaceholder != null ? loadPlaceholder
+				: PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER);
+	}
+
+	/**
+	 * Get the source ID suffix used for solar data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_SOLAR_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getSolarPlaceholder() {
+		return solarPlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for solar data.
+	 *
+	 * @param solarPlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_SOLAR_PLACEHOLDER} will be used
+	 * @since 1.2
+	 */
+	public final void setSolarPlaceholder(String solarPlaceholder) {
+		this.solarPlaceholder = (solarPlaceholder != null ? solarPlaceholder
+				: PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER);
+	}
+
+	/**
+	 * Get the source ID suffix used for site data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_SITE_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getSitePlaceholder() {
+		return sitePlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for site data.
+	 *
+	 * @param sitePlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_SITE_PLACEHOLDER} will be used
+	 * @since 1.2
+	 */
+	public final void setSitePlaceholder(String sitePlaceholder) {
+		this.sitePlaceholder = (sitePlaceholder != null ? sitePlaceholder
+				: PowerwallOperations.DEFAULT_SITE_PLACEHOLDER);
+	}
 }
