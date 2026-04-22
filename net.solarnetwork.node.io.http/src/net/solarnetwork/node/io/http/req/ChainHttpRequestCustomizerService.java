@@ -74,7 +74,7 @@ public class ChainHttpRequestCustomizerService
 									int index, String key) {
 								return Collections.singletonList(new BasicTextFieldSettingSpecifier(key,
 										null, false,
-										"(objectClass=net.solarnetwork.web.service.HttpRequestCustomizerService)"));
+										"(objectClass=net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService)"));
 							}
 						});
 				itr.set(uidsGroup);
