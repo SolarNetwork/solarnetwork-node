@@ -515,7 +515,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 		}
 		result.add(new BasicTextFieldSettingSpecifier("url", null));
 		result.add(new BasicTextFieldSettingSpecifier("httpRequestCustomizerUid", null, false,
-				"(objectClass=net.solarnetwork.web.service.HttpRequestCustomizerService)"));
+				"(objectClass=net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService)"));
 		result.add(new BasicTextFieldSettingSpecifier("charsetName", StandardCharsets.UTF_8.name()));
 		result.add(new BasicTextFieldSettingSpecifier("connectionTimeout",
 				String.valueOf(DEFAULT_CONNECTION_TIMEOUT)));

@@ -27,17 +27,22 @@ import static java.util.stream.Collectors.toMap;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static net.solarnetwork.node.datum.tesla.powerwall.PowerwallOperations.COMPONENT_PLACEHOLDER_NAME;
+import static net.solarnetwork.test.CommonTestUtils.randomString;
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Set;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.easymock.EasyMock;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
@@ -53,6 +58,8 @@ import net.solarnetwork.domain.datum.EnergyStorageDatum;
 import net.solarnetwork.node.datum.tesla.powerwall.PowerwallOperations;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.PlaceholderService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.test.http.AbstractHttpServerTests;
 import net.solarnetwork.test.http.TestHttpHandler;
 
@@ -60,7 +67,7 @@ import net.solarnetwork.test.http.TestHttpHandler;
  * Test cases for the {@link PowerwallOperations} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.2
  */
 public class PowerwallOperationsTests extends AbstractHttpServerTests {
 
@@ -74,8 +81,8 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 	@Before
 	public void setup() {
 		super.setup();
-		username = UUID.randomUUID().toString();
-		password = UUID.randomUUID().toString();
+		username = randomString();
+		password = randomString();
 		ops = new PowerwallOperations(false, "localhost:" + getHttpServerPort(), username, password,
 				buildRequestConfig(), JsonUtils.newObjectMapper());
 	}
@@ -89,10 +96,24 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 		// @formatter:on
 	}
 
+	private Collection<String> expectedSourceIds(String sourceIdTemplate) {
+		Set<String> result = new LinkedHashSet<>(4);
+		for ( String comp : List.of(ops.getBatteryPlaceholder(), ops.getLoadPlaceholder(),
+				ops.getSitePlaceholder(), ops.getSolarPlaceholder()) ) {
+			String sourceId = PlaceholderService.resolvePlaceholders(ops.getPlaceholderService(),
+					sourceIdTemplate, Map.of(PowerwallOperations.COMPONENT_PLACEHOLDER_NAME, comp));
+			if ( !sourceId.contains(comp) ) {
+				sourceId = sourceId + '/' + comp;
+			}
+			result.add(sourceId);
+		}
+		return result;
+	}
+
 	@Test
 	public void datum() throws IOException {
 		// GIVEN
-		final String sourceId = UUID.randomUUID().toString();
+		final String sourceId = randomString();
 
 		final TestHttpHandler handler = new TestHttpHandler() {
 
@@ -129,11 +150,12 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 		// THEN
 		log.debug("Got datum: {}", datum);
 		Map<String, NodeDatum> datumMap = datum.stream().collect(toMap(d -> d.getSourceId(), d -> d));
-		assertThat("Generated datum sources", datumMap.keySet(),
-				containsInAnyOrder(sourceId + PowerwallOperations.DEFAULT_BATTERY_SUFFIX,
-						sourceId + PowerwallOperations.DEFAULT_LOAD_SUFFIX,
-						sourceId + PowerwallOperations.DEFAULT_SITE_SUFFIX,
-						sourceId + PowerwallOperations.DEFAULT_SOLAR_SUFFIX));
+		// @formatter:off
+		then(datumMap)
+			.as("Generated datum sources")
+			.containsOnlyKeys(expectedSourceIds(sourceId))
+			;
+		// @formatter:on
 
 		/*-
 		 Datum{kind=Node,sourceId=a860ecee-9653-484d-bc4e-efbd1242b400/battery,
@@ -155,7 +177,7 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 		 		wattHours=7986302,
 		 		wattHoursReverse=9273303},
 		 	s={gridConnected=1}}}
-
+		
 		    "battery": {
 		        "last_communication_time": "2023-11-09T15:29:58.897559649+13:00",
 		        "instant_power": 123,
@@ -177,12 +199,12 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 		        "instant_total_current": -0.25
 		    }
 		    {"percentage":87.5}
-
+		
 		    "nominal_full_pack_energy": 14015,
 		    "nominal_energy_remaining": 12366,
 		    "system_island_state": "SystemGridConnected",
 		 */
-		NodeDatum batt = datumMap.get(sourceId + PowerwallOperations.DEFAULT_BATTERY_SUFFIX);
+		NodeDatum batt = datumMap.get(sourceId + '/' + PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER);
 		DatumSamplesOperations d = batt.asSampleOperations();
 		assertThat("Date from last_communication_time", batt.getTimestamp(),
 				is(equalTo(ISO_DATE_TIME.parse("2023-11-09T15:29:58.897559649+13:00", Instant::from))));
@@ -229,4 +251,128 @@ public class PowerwallOperationsTests extends AbstractHttpServerTests {
 		assertThat("Grid connection state from system_island_state",
 				d.getSampleInteger(Status, "gridConnected"), is(equalTo(1)));
 	}
+
+	@Test
+	public void notTlsNoUsernamePasswordAutoDetect() throws IOException {
+		// GIVEN
+		final var ops = new PowerwallOperations(null, "localhost:" + getHttpServerPort(), null, null,
+				buildRequestConfig(), JsonUtils.newObjectMapper());
+
+		final String sourceId = randomString();
+
+		final TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				String path = request.getHttpURI().getPath();
+				switch (path) {
+					case "/api/meters/aggregates":
+						respondWithJsonResource(request, response, "meters-aggregates-01.json");
+						break;
+
+					case "/api/system_status":
+						respondWithJsonResource(request, response, "system_status-01.json");
+						break;
+
+					case "/api/system_status/soe":
+						respondWithJsonResource(request, response, "system_status-soe-01.json");
+						break;
+
+					default:
+						response.setStatus(HttpStatus.NOT_FOUND.value());
+						break;
+				}
+				return true;
+			}
+
+		};
+		addHandler(handler);
+
+		// WHEN
+		Collection<NodeDatum> datum = ops.datum(sourceId);
+		ops.close();
+
+		// THEN
+		log.debug("Got datum: {}", datum);
+		Map<String, NodeDatum> datumMap = datum.stream().collect(toMap(d -> d.getSourceId(), d -> d));
+		// @formatter:off
+		then(datumMap)
+			.as("Datum generated for all sources")
+			.containsOnlyKeys(expectedSourceIds(sourceId))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void placeholderServiceComponentSourceIds() throws IOException {
+		// GIVEN
+		PlaceholderService placeholderService = EasyMock.createMock(PlaceholderService.class);
+		ops.setPlaceholderService(new StaticOptionalService<>(placeholderService));
+
+		final String sourceId = "{COMP}";
+
+		final TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				String path = request.getHttpURI().getPath();
+				switch (path) {
+					case "/api/meters/aggregates":
+						respondWithJsonResource(request, response, "meters-aggregates-01.json");
+						break;
+
+					case "/api/system_status":
+						respondWithJsonResource(request, response, "system_status-01.json");
+						break;
+
+					case "/api/system_status/soe":
+						respondWithJsonResource(request, response, "system_status-soe-01.json");
+						break;
+
+					default:
+						response.setStatus(HttpStatus.NOT_FOUND.value());
+						break;
+				}
+				return true;
+			}
+
+		};
+		addHandler(handler);
+
+		EasyMock.expect(placeholderService.resolvePlaceholders(sourceId,
+				Map.of(COMPONENT_PLACEHOLDER_NAME, PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER)))
+				.andReturn(PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER).anyTimes();
+
+		EasyMock.expect(placeholderService.resolvePlaceholders(sourceId,
+				Map.of(COMPONENT_PLACEHOLDER_NAME, PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER)))
+				.andReturn(PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER).anyTimes();
+
+		EasyMock.expect(placeholderService.resolvePlaceholders(sourceId,
+				Map.of(COMPONENT_PLACEHOLDER_NAME, PowerwallOperations.DEFAULT_SITE_PLACEHOLDER)))
+				.andReturn(PowerwallOperations.DEFAULT_SITE_PLACEHOLDER).anyTimes();
+
+		EasyMock.expect(placeholderService.resolvePlaceholders(sourceId,
+				Map.of(COMPONENT_PLACEHOLDER_NAME, PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER)))
+				.andReturn(PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER).anyTimes();
+
+		// WHEN
+		EasyMock.replay(placeholderService);
+		Collection<NodeDatum> datum = ops.datum(sourceId);
+		ops.close();
+
+		// THEN
+		log.debug("Got datum: {}", datum);
+		Map<String, NodeDatum> datumMap = datum.stream().collect(toMap(d -> d.getSourceId(), d -> d));
+		// @formatter:off
+		then(datumMap)
+			.as("Datum generated for all sources")
+			.containsOnlyKeys(expectedSourceIds(sourceId))
+			;
+		// @formatter:on
+
+		EasyMock.verify(placeholderService);
+	}
+
 }

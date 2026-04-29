@@ -25,11 +25,13 @@ package net.solarnetwork.node.datum.tesla.powerwall;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.MultiDatumDataSource;
@@ -44,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * {@link MultiDatumDataSource} for Tesla Powerwall devices.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PowerwallDatumDataSource extends DatumDataSourceSupport implements MultiDatumDataSource,
 		ServiceLifecycleObserver, SettingsChangeObserver, SettingSpecifierProvider {
@@ -64,15 +66,19 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	/** The {@code username} property default value. */
 	public static final String DEFAULT_USERNAME = "customer";
 
-	private String sourceId;
+	private @Nullable String sourceId;
 	private String hostName = DEFAULT_HOST_NAME;
-	private String username = DEFAULT_USERNAME;
-	private String password;
+	private @Nullable String username = DEFAULT_USERNAME;
+	private @Nullable String password;
 	private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
 	private int readTimeout = DEFAULT_READ_TIMEOUT;
 	private int connectionRequestTimeout = DEFAULT_CONNECTION_REQUEST_TIMEOUT;
+	private String batteryPlaceholder = PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER;
+	private String loadPlaceholder = PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER;
+	private String solarPlaceholder = PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER;
+	private String sitePlaceholder = PowerwallOperations.DEFAULT_SITE_PLACEHOLDER;
 
-	private PowerwallOperations ops;
+	private @Nullable PowerwallOperations ops;
 
 	/**
 	 * Constructor.
@@ -94,16 +100,23 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	}
 
 	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
+	public synchronized void configurationChanged(@Nullable Map<String, Object> properties) {
 		closeOperations();
 		this.ops = createOperations();
 	}
 
 	@Override
 	public Collection<String> publishedSourceIds() {
-		final String sourceId = resolvePlaceholders(getSourceId());
-		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
-				: Collections.singleton(sourceId));
+		try {
+			Collection<NodeDatum> datum = readMultipleDatum();
+			return datum.stream().map(NodeDatum::getSourceId).collect(Collectors.toSet());
+		} catch ( Exception e ) {
+			final String sourceId = resolvePlaceholders(getSourceId());
+			if ( sourceId != null && !sourceId.isEmpty() ) {
+				return Set.of(sourceId);
+			}
+			return Set.of();
+		}
 	}
 
 	@Override
@@ -119,6 +132,14 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 		results.add(new BasicTextFieldSettingSpecifier("hostName", DEFAULT_HOST_NAME));
 		results.add(new BasicTextFieldSettingSpecifier("username", DEFAULT_USERNAME));
 		results.add(new BasicTextFieldSettingSpecifier("password", null, true));
+		results.add(new BasicTextFieldSettingSpecifier("batteryPlaceholder",
+				PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER));
+		results.add(new BasicTextFieldSettingSpecifier("loadPlaceholder",
+				PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER));
+		results.add(new BasicTextFieldSettingSpecifier("sitePlaceholder",
+				PowerwallOperations.DEFAULT_SITE_PLACEHOLDER));
+		results.add(new BasicTextFieldSettingSpecifier("solarPlaceholder",
+				PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER));
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 		return results;
 	}
@@ -148,16 +169,23 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	@Override
 	public Collection<NodeDatum> readMultipleDatum() {
 		final PowerwallOperations ops = this.ops;
-		if ( ops != null ) {
+		final String sourceId = getSourceId();
+		if ( ops != null && sourceId != null && !sourceId.isEmpty() ) {
 			return ops.datum(sourceId);
 		}
-		return Collections.emptyList();
+		return List.of();
 	}
 
-	private synchronized PowerwallOperations createOperations() {
+	private synchronized @Nullable PowerwallOperations createOperations() {
 		try {
-			return new PowerwallOperations(hostName, username, password, buildRequestConfig(),
+			var ops = new PowerwallOperations(hostName, username, password, buildRequestConfig(),
 					JsonUtils.newObjectMapper());
+			ops.setPlaceholderService(getPlaceholderService());
+			ops.setBatteryPlaceholder(batteryPlaceholder);
+			ops.setLoadPlaceholder(loadPlaceholder);
+			ops.setSitePlaceholder(sitePlaceholder);
+			ops.setSolarPlaceholder(solarPlaceholder);
+			return ops;
 		} catch ( IllegalArgumentException e ) {
 			// configuration not fully specified yet
 			return null;
@@ -193,7 +221,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @return the source ID to use
 	 */
-	public String getSourceId() {
+	public @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -203,7 +231,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 * @param sourceId
 	 *        the source ID to set
 	 */
-	public void setSourceId(String sourceId) {
+	public void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -221,10 +249,11 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @param hostName
 	 *        the host name to set; can include a custom port using a colon
-	 *        delimiter
+	 *        delimiter; if {@code null} then {@link #DEFAULT_HOST_NAME} will be
+	 *        used
 	 */
 	public void setHostName(String hostName) {
-		this.hostName = hostName;
+		this.hostName = (hostName != null ? hostName : DEFAULT_HOST_NAME);
 	}
 
 	/**
@@ -232,7 +261,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @return the username; defaults to {@link #DEFAULT_USERNAME}
 	 */
-	public String getUsername() {
+	public @Nullable String getUsername() {
 		return username;
 	}
 
@@ -242,7 +271,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 * @param username
 	 *        the username to set
 	 */
-	public void setUsername(String username) {
+	public void setUsername(@Nullable String username) {
 		this.username = username;
 	}
 
@@ -251,7 +280,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 *
 	 * @return the password
 	 */
-	public String getPassword() {
+	public @Nullable String getPassword() {
 		return password;
 	}
 
@@ -261,7 +290,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	 * @param password
 	 *        the password to set
 	 */
-	public void setPassword(String password) {
+	public void setPassword(@Nullable String password) {
 		this.password = password;
 	}
 
@@ -343,4 +372,100 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 		this.connectionRequestTimeout = connectionRequestTimeout;
 	}
 
+	/**
+	 * Get the source ID suffix used for battery data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_BATTERY_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getBatteryPlaceholder() {
+		return batteryPlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for battery data.
+	 *
+	 * @param batteryPlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_BATTERY_PLACEHOLDER} will be
+	 *        used
+	 * @since 1.2
+	 */
+	public final void setBatteryPlaceholder(String batteryPlaceholder) {
+		this.batteryPlaceholder = (batteryPlaceholder != null ? batteryPlaceholder
+				: PowerwallOperations.DEFAULT_BATTERY_PLACEHOLDER);
+	}
+
+	/**
+	 * Get the source ID suffix used for load data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_LOAD_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getLoadPlaceholder() {
+		return loadPlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for load data.
+	 *
+	 * @param loadPlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_LOAD_PLACEHOLDER} will be used
+	 * @since 1.2
+	 */
+	public final void setLoadPlaceholder(String loadPlaceholder) {
+		this.loadPlaceholder = (loadPlaceholder != null ? loadPlaceholder
+				: PowerwallOperations.DEFAULT_LOAD_PLACEHOLDER);
+	}
+
+	/**
+	 * Get the source ID suffix used for solar data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_SOLAR_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getSolarPlaceholder() {
+		return solarPlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for solar data.
+	 *
+	 * @param solarPlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_SOLAR_PLACEHOLDER} will be used
+	 * @since 1.2
+	 */
+	public final void setSolarPlaceholder(String solarPlaceholder) {
+		this.solarPlaceholder = (solarPlaceholder != null ? solarPlaceholder
+				: PowerwallOperations.DEFAULT_SOLAR_PLACEHOLDER);
+	}
+
+	/**
+	 * Get the source ID suffix used for site data.
+	 *
+	 * @return the suffix; default to
+	 *         {@link PowerwallOperations#DEFAULT_SITE_PLACEHOLDER}
+	 * @since 1.2
+	 */
+	public final String getSitePlaceholder() {
+		return sitePlaceholder;
+	}
+
+	/**
+	 * Set the source ID used for site data.
+	 *
+	 * @param sitePlaceholder
+	 *        the suffix to set; if {@code null} then
+	 *        {@link PowerwallOperations#DEFAULT_SITE_PLACEHOLDER} will be used
+	 * @since 1.2
+	 */
+	public final void setSitePlaceholder(String sitePlaceholder) {
+		this.sitePlaceholder = (sitePlaceholder != null ? sitePlaceholder
+				: PowerwallOperations.DEFAULT_SITE_PLACEHOLDER);
+	}
 }

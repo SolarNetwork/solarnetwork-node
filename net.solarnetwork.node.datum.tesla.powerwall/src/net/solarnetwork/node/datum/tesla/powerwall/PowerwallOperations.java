@@ -48,6 +48,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -63,41 +64,77 @@ import net.solarnetwork.domain.datum.EnergyStorageDatum;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
+import net.solarnetwork.node.service.PlaceholderService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.RemoteServiceException;
 
 /**
  * Access to Powerwall APIs.
  *
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class PowerwallOperations implements Closeable {
 
+	/**
+	 * The component placeholder name.
+	 *
+	 * <p>
+	 * This placeholder is used to resolve the source ID for each component type
+	 * supported by this class:
+	 * </p>
+	 *
+	 * <ol>
+	 * <li>battery</li>
+	 * <li>load</li>
+	 * <li>site</li>
+	 * <li>solar</li>
+	 * </ol>
+	 *
+	 * <p>
+	 * For example, a source ID {@code /powerwall/{COMP}/1} would resolve source
+	 * IDs like {@code /powerwall/battery/1} and {@code /powerwall/solar/1} and
+	 * so on.
+	 * </p>
+	 *
+	 * <p>
+	 * If the given source ID does not have a {@code {COMP}} placeholder then
+	 * the placeholder will be added as a suffix, preceeded by a {@code /}
+	 * character. For example, a source ID {@code /powerwall/1} would resolve
+	 * source IDs like {@code /powerwall/1/batter} and
+	 * {@code /powerwall/1/solar} and so on.
+	 * </p>
+	 *
+	 * @since 1.2
+	 */
+	public static final String COMPONENT_PLACEHOLDER_NAME = "COMP";
+
 	/** The {@code batterySuffix} property default value. */
-	public static final String DEFAULT_BATTERY_SUFFIX = "/battery";
+	public static final String DEFAULT_BATTERY_PLACEHOLDER = "battery";
 
 	/** The {@code loadSuffix} property default value. */
-	public static final String DEFAULT_LOAD_SUFFIX = "/load";
+	public static final String DEFAULT_LOAD_PLACEHOLDER = "load";
 
 	/** The {@code siteSuffix} property default value. */
-	public static final String DEFAULT_SITE_SUFFIX = "/site";
+	public static final String DEFAULT_SITE_PLACEHOLDER = "site";
 
 	/** The {@code solarSuffix} property default value. */
-	public static final String DEFAULT_SOLAR_SUFFIX = "/solar";
+	public static final String DEFAULT_SOLAR_PLACEHOLDER = "solar";
 
 	private static final Logger log = LoggerFactory.getLogger(PowerwallOperations.class);
 
 	private final boolean useTls;
 	private final String hostName;
 	private final int port;
-	private String username;
-	private String password;
+	private final @Nullable String username;
+	private final @Nullable String password;
 	private final ObjectMapper mapper;
+	private @Nullable OptionalService<PlaceholderService> placeholderService;
 
-	private String batterySuffix = DEFAULT_BATTERY_SUFFIX;
-	private String loadSuffix = DEFAULT_LOAD_SUFFIX;
-	private String solarSuffix = DEFAULT_SOLAR_SUFFIX;
-	private String siteSuffix = DEFAULT_SITE_SUFFIX;
+	private String batteryPlaceholder = DEFAULT_BATTERY_PLACEHOLDER;
+	private String loadPlaceholder = DEFAULT_LOAD_PLACEHOLDER;
+	private String solarPlaceholder = DEFAULT_SOLAR_PLACEHOLDER;
+	private String sitePlaceholder = DEFAULT_SITE_PLACEHOLDER;
 
 	private final CloseableHttpClient httpClient;
 
@@ -118,16 +155,17 @@ public class PowerwallOperations implements Closeable {
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public PowerwallOperations(String hostName, String username, String password,
+	public PowerwallOperations(String hostName, @Nullable String username, @Nullable String password,
 			RequestConfig requestConfig, ObjectMapper mapper) {
-		this(true, hostName, username, password, requestConfig, mapper);
+		this(null, hostName, username, password, requestConfig, mapper);
 	}
 
 	/**
 	 * Constructor.
 	 *
 	 * @param useTls
-	 *        {@literal true} to use TLS (HTTPS)
+	 *        {@literal true} to use TLS (HTTPS), {@code false} to not, or
+	 *        {@code null} to auto-detect based on {@code hostName}
 	 * @param hostName
 	 *        the host name that is required; can include a port after a
 	 *        {@literal :} delimiter
@@ -142,17 +180,51 @@ public class PowerwallOperations implements Closeable {
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public PowerwallOperations(boolean useTls, String hostName, String username, String password,
-			RequestConfig requestConfig, ObjectMapper mapper) {
+	public PowerwallOperations(@Nullable Boolean useTls, String hostName, @Nullable String username,
+			@Nullable String password, RequestConfig requestConfig, ObjectMapper mapper) {
 		super();
-		this.useTls = useTls;
 		final String[] hostComponents = requireNonNullArgument(hostName, "hostName").split(":", 2);
 		this.hostName = hostComponents[0].toLowerCase();
+		this.useTls = shouldUseTls(useTls, hostComponents);
 		this.port = hostComponents.length > 1 ? Integer.parseInt(hostComponents[1]) : 443;
-		this.username = requireNonNullArgument(username, "username");
-		this.password = requireNonNullArgument(password, "password");
+		this.username = username;
+		this.password = password;
 		this.mapper = mapper;
 		this.httpClient = createHttpClient(requestConfig);
+	}
+
+	/**
+	 * Auto-detect if TLS should be used.
+	 *
+	 * <p>
+	 * If the hostname is {@code localhost} or {@code 127.0.0.1} then this will
+	 * return {@code false}. If a port is specified and it is not {@code 443}
+	 * then this will return {@code false}. Otherwise {@code true} will be
+	 * returned.
+	 * </p>
+	 *
+	 * @param useTls
+	 *        the requested use of TLS; if non-{@code null} this will be
+	 *        returned directly
+	 * @param hostComponents
+	 *        array with the hostname and optionally the port
+	 * @return {@code true} if TLS should be used
+	 */
+	private static boolean shouldUseTls(@Nullable Boolean useTls, String[] hostComponents) {
+		if ( useTls != null ) {
+			return useTls;
+		}
+		if ( "localhost".equalsIgnoreCase(hostComponents[0]) || "127.0.0.1".equals(hostComponents[0]) ) {
+			return false;
+		}
+		if ( hostComponents.length > 1 ) {
+			if ( !"443".equals(hostComponents[1]) ) {
+				// non-TLS port specified, so do not use TLS
+				return false;
+			}
+		}
+		// default to true
+		return true;
 	}
 
 	@Override
@@ -281,7 +353,8 @@ public class PowerwallOperations implements Closeable {
 
 		node = root.path("battery");
 		if ( node.isObject() ) {
-			SimpleAcDcEnergyDatum d = extractDatum(node, sourceId + getBatterySuffix(), false);
+			SimpleAcDcEnergyDatum d = extractDatum(node, resolveSourceId(sourceId, batteryPlaceholder),
+					false);
 			if ( d != null ) {
 				populateBatteryDatum(d);
 				result.add(d);
@@ -290,7 +363,7 @@ public class PowerwallOperations implements Closeable {
 
 		node = root.path("load");
 		if ( node.isObject() ) {
-			AcDcEnergyDatum d = extractDatum(node, sourceId + getLoadSuffix(), true);
+			AcDcEnergyDatum d = extractDatum(node, resolveSourceId(sourceId, loadPlaceholder), true);
 			if ( d != null ) {
 				result.add(d);
 			}
@@ -298,7 +371,7 @@ public class PowerwallOperations implements Closeable {
 
 		node = root.path("site");
 		if ( node.isObject() ) {
-			AcDcEnergyDatum d = extractDatum(node, sourceId + getSiteSuffix(), true);
+			AcDcEnergyDatum d = extractDatum(node, resolveSourceId(sourceId, sitePlaceholder), true);
 			if ( d != null ) {
 				result.add(d);
 			}
@@ -306,12 +379,21 @@ public class PowerwallOperations implements Closeable {
 
 		node = root.path("solar");
 		if ( node.isObject() ) {
-			AcDcEnergyDatum d = extractDatum(node, sourceId + getSolarSuffix(), false);
+			AcDcEnergyDatum d = extractDatum(node, resolveSourceId(sourceId, solarPlaceholder), false);
 			if ( d != null ) {
 				result.add(d);
 			}
 		}
 
+		return result;
+	}
+
+	private String resolveSourceId(String sourceId, String component) {
+		String result = PlaceholderService.resolvePlaceholders(placeholderService, sourceId,
+				Map.of(COMPONENT_PLACEHOLDER_NAME, component));
+		if ( !result.contains(component) ) {
+			result = result + '/' + component;
+		}
 		return result;
 	}
 
@@ -327,7 +409,8 @@ public class PowerwallOperations implements Closeable {
 	 *        "reverse" direction
 	 * @return the datum, or {@literal null} if one could not be extracted
 	 */
-	private SimpleAcDcEnergyDatum extractDatum(JsonNode root, String sourceId, boolean consumer) {
+	private @Nullable SimpleAcDcEnergyDatum extractDatum(JsonNode root, String sourceId,
+			boolean consumer) {
 		SimpleAcDcEnergyDatum d = null;
 		JsonNode node = null;
 
@@ -408,7 +491,10 @@ public class PowerwallOperations implements Closeable {
 		return (d.isEmpty() ? null : d);
 	}
 
-	private JsonNode loginBasic() {
+	private @Nullable JsonNode loginBasic() {
+		if ( username == null || username.isEmpty() || password == null || password.isEmpty() ) {
+			return null;
+		}
 		final Map<String, Object> data = new LinkedHashMap<>(2);
 		data.put("username", username);
 		data.put("password", password);
@@ -427,8 +513,9 @@ public class PowerwallOperations implements Closeable {
 				HttpResponseException err = (HttpResponseException) e.getCause();
 				if ( err.getStatusCode() == 401 || err.getStatusCode() == 403 ) {
 					// attempt to retry, by logging in and then retry
-					loginBasic();
-					return forJson(req);
+					if ( loginBasic() != null ) {
+						return forJson(req);
+					}
 				}
 			}
 			throw e;
@@ -467,79 +554,99 @@ public class PowerwallOperations implements Closeable {
 	}
 
 	/**
+	 * Get the {@link PlaceholderService}.
+	 *
+	 * @return the service
+	 */
+	public final @Nullable OptionalService<PlaceholderService> getPlaceholderService() {
+		return placeholderService;
+	}
+
+	/**
+	 * Set the {@link PlaceholderService}.
+	 *
+	 * @param placeholderService
+	 *        the service to set
+	 */
+	public final void setPlaceholderService(
+			@Nullable OptionalService<PlaceholderService> placeholderService) {
+		this.placeholderService = placeholderService;
+	}
+
+	/**
 	 * Get the source ID suffix used for battery data.
 	 *
-	 * @return the suffix; default to {@link #DEFAULT_BATTERY_SUFFIX}
+	 * @return the suffix; default to {@link #DEFAULT_BATTERY_PLACEHOLDER}
 	 */
-	public String getBatterySuffix() {
-		return batterySuffix;
+	public final String getBatteryPlaceholder() {
+		return batteryPlaceholder;
 	}
 
 	/**
 	 * Set the source ID used for battery data.
 	 *
-	 * @param batterySuffix
+	 * @param batteryPlaceholder
 	 *        the suffix to set
 	 */
-	public void setBatterySuffix(String batterySuffix) {
-		this.batterySuffix = batterySuffix;
+	public final void setBatteryPlaceholder(String batteryPlaceholder) {
+		this.batteryPlaceholder = batteryPlaceholder;
 	}
 
 	/**
 	 * Get the source ID suffix used for load data.
 	 *
-	 * @return the suffix; default to {@link #DEFAULT_LOAD_SUFFIX}
+	 * @return the suffix; default to {@link #DEFAULT_LOAD_PLACEHOLDER}
 	 */
-	public String getLoadSuffix() {
-		return loadSuffix;
+	public final String getLoadPlaceholder() {
+		return loadPlaceholder;
 	}
 
 	/**
 	 * Set the source ID used for load data.
 	 *
-	 * @param loadSuffix
+	 * @param loadPlaceholder
 	 *        the suffix to set
 	 */
-	public void setLoadSuffix(String loadSuffix) {
-		this.loadSuffix = loadSuffix;
+	public final void setLoadPlaceholder(String loadPlaceholder) {
+		this.loadPlaceholder = loadPlaceholder;
 	}
 
 	/**
 	 * Get the source ID suffix used for solar data.
 	 *
-	 * @return the suffix; default to {@link #DEFAULT_SOLAR_SUFFIX}
+	 * @return the suffix; default to {@link #DEFAULT_SOLAR_PLACEHOLDER}
 	 */
-	public String getSolarSuffix() {
-		return solarSuffix;
+	public final String getSolarPlaceholder() {
+		return solarPlaceholder;
 	}
 
 	/**
 	 * Set the source ID used for solar data.
 	 *
-	 * @param solarSuffix
+	 * @param solarPlaceholder
 	 *        the suffix to set
 	 */
-	public void setSolarSuffix(String solarSuffix) {
-		this.solarSuffix = solarSuffix;
+	public final void setSolarPlaceholder(String solarPlaceholder) {
+		this.solarPlaceholder = solarPlaceholder;
 	}
 
 	/**
 	 * Get the source ID suffix used for site data.
 	 *
-	 * @return the suffix; default to {@link #DEFAULT_SITE_SUFFIX}
+	 * @return the suffix; default to {@link #DEFAULT_SITE_PLACEHOLDER}
 	 */
-	public String getSiteSuffix() {
-		return siteSuffix;
+	public final String getSitePlaceholder() {
+		return sitePlaceholder;
 	}
 
 	/**
 	 * Set the source ID used for site data.
 	 *
-	 * @param siteSuffix
+	 * @param sitePlaceholder
 	 *        the suffix to set
 	 */
-	public void setSiteSuffix(String siteSuffix) {
-		this.siteSuffix = siteSuffix;
+	public final void setSitePlaceholder(String sitePlaceholder) {
+		this.sitePlaceholder = sitePlaceholder;
 	}
 
 }

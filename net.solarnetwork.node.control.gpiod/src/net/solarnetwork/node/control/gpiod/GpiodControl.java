@@ -79,7 +79,7 @@ import net.solarnetwork.util.StringUtils;
  * Datum data source for the Linux gpiod library.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GpiodControl extends BaseIdentifiable implements NodeControlProvider, InstructionHandler,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -354,8 +354,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 		@SuppressWarnings("resource")
 		GpioDevice device = (gpioThread != null ? gpioThread.device : null);
 		if ( device == null ) {
-			try (GpioDevice d = new GpioDevice(gpioDevice);
-					GpioHandle handle = d.requestHandle(request)) {
+			try (GpioDevice d = createGpioDevice(); GpioHandle handle = d.requestHandle(request)) {
 				// the value will have been set via the request default value
 			}
 		} else {
@@ -364,6 +363,15 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 			}
 		}
 		createDatum(config, active);
+	}
+
+	private synchronized GpioDevice createGpioDevice() throws IOException {
+		try {
+			int chip = Integer.parseInt(gpioDevice);
+			return new GpioDevice(chip);
+		} catch ( NumberFormatException e ) {
+			return new GpioDevice(gpioDevice);
+		}
 	}
 
 	private synchronized void setupWatcher() throws IOException {
@@ -448,9 +456,7 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 			log.info("Starting GPIO processing for device [{}]", deviceName);
 			try {
 				while ( keepGoing ) {
-					final Number deviceNum = StringUtils.numberValue(deviceName);
-					try (GpioDevice device = (deviceNum != null ? new GpioDevice(deviceNum.intValue())
-							: new GpioDevice(deviceName))) {
+					try (GpioDevice device = createGpioDevice()) {
 						this.device = device;
 						GpioEventWatcher watcher = new GpioEventWatcher();
 						this.watcher = watcher;

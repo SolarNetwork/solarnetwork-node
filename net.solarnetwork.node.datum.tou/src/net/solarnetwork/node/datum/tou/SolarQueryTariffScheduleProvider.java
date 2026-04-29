@@ -683,7 +683,7 @@ public class SolarQueryTariffScheduleProvider extends BaseIdentifiable implement
 		result.add(new BasicTextFieldSettingSpecifier("timeZoneId", null));
 
 		result.add(new BasicTextFieldSettingSpecifier("httpRequestCustomizerUid", null, false,
-				"(objectClass=net.solarnetwork.web.service.HttpRequestCustomizerService)"));
+				"(objectClass=net.solarnetwork.web.jakarta.service.HttpRequestCustomizerService)"));
 		result.add(new BasicTextFieldSettingSpecifier("tariffScheduleCacheTtlSecs",
 				String.valueOf(DEFAULT_TARIFF_SCHEDULE_CACHE_TTL.getSeconds())));
 
