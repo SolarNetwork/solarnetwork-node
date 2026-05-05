@@ -71,10 +71,10 @@ public enum DatumControlCenterCsvColumn implements CodedValue {
 	/** The datum property type. */
 	PROP_TYPE(11, "Property Type"),
 
-	/** The register address. */
+	/** The measurement type. */
 	MEASUREMENT_TYPE(12, "Measurement Type"),
 
-	/** The register type. */
+	/** The measurement index. */
 	INDEX(13, "Index"),
 
 	/** A property value multiplier. */
