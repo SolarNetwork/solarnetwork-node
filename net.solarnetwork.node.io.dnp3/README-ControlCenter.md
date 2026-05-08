@@ -171,7 +171,7 @@ Each measurement configuration contains the following settings:
 | Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. Set to `0` to round to whole numbers, or `-1` for no rounding. |
 
 
-> :bulb: Note that the **Decimal Scale** will affect the DNP3 encoding used for Analog INput and Analog
+> :bulb: Note that the **Decimal Scale** will affect the DNP3 encoding used for Analog Input and Analog
 > Output Status measurement types. When set to `0` then a 32-bit integer variation will be used. Otherwise
 > a 64-bit floating point variation will be used.
 
