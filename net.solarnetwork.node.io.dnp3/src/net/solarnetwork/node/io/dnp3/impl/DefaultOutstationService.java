@@ -37,12 +37,14 @@ import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.core.task.TaskExecutor;
+import com.automatak.dnp3.AnalogConfig;
 import com.automatak.dnp3.AnalogInput;
 import com.automatak.dnp3.AnalogOutputDouble64;
 import com.automatak.dnp3.AnalogOutputFloat32;
 import com.automatak.dnp3.AnalogOutputInt16;
 import com.automatak.dnp3.AnalogOutputInt32;
 import com.automatak.dnp3.AnalogOutputStatus;
+import com.automatak.dnp3.AnalogOutputStatusConfig;
 import com.automatak.dnp3.BinaryInput;
 import com.automatak.dnp3.BinaryOutputStatus;
 import com.automatak.dnp3.Channel;
@@ -67,6 +69,8 @@ import com.automatak.dnp3.enums.CounterQuality;
 import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
 import com.automatak.dnp3.enums.OperateType;
+import com.automatak.dnp3.enums.StaticAnalogOutputStatusVariation;
+import com.automatak.dnp3.enums.StaticAnalogVariation;
 import net.solarnetwork.domain.InstructionStatus;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.Datum;
@@ -99,7 +103,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class DefaultOutstationService extends AbstractApplicationService<Outstation>
 		implements OutstationService, EventHandler, SettingSpecifierProvider {
@@ -204,7 +208,8 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 		if ( list != null ) {
 			int i = 0;
 			for ( MeasurementConfig conf : list ) {
-				buf.append(String.format("  %3d: %s\n", i, conf.getSourceId()));
+				buf.append(
+						String.format("  %3d: %s.%s\n", i, conf.getSourceId(), conf.getPropertyName()));
 				i++;
 			}
 		}
@@ -299,8 +304,39 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 		}
 		log.info("DNP3 outstation [{}] database configured with following registers:\n{}", getUid(),
 				infoBuf);
-		return new DatabaseConfig(binaryCount, doubleBinaryCount, analogCount, counterCount,
+		var dbConfig = new DatabaseConfig(binaryCount, doubleBinaryCount, analogCount, counterCount,
 				frozenCounterCount, boStatusCount, aoStatusCount);
+		if ( configs != null ) {
+			// for AnalogInput use Group30Var6 (64-bit decimal) if decimal scale != 0
+			List<MeasurementConfig> analogs = configs.get(MeasurementType.AnalogInput);
+			if ( analogs != null ) {
+				for ( ListIterator<MeasurementConfig> itr = analogs.listIterator(); itr.hasNext(); ) {
+					MeasurementConfig measConfig = itr.next();
+					if ( measConfig != null && measConfig.getDecimalScale() != 0 ) {
+						AnalogConfig cfg = dbConfig.analog.get(itr.previousIndex());
+						if ( cfg != null ) {
+							cfg.staticVariation = StaticAnalogVariation.Group30Var6;
+						}
+					}
+				}
+			}
+
+			// for AnalogInput use Group40Var4 (64-bit decimal) if decimal scale != 0
+			List<MeasurementConfig> analogOutputs = configs.get(MeasurementType.AnalogOutputStatus);
+			if ( analogOutputs != null ) {
+				for ( ListIterator<MeasurementConfig> itr = analogOutputs.listIterator(); itr
+						.hasNext(); ) {
+					MeasurementConfig measConfig = itr.next();
+					if ( measConfig != null && measConfig.getDecimalScale() != 0 ) {
+						AnalogOutputStatusConfig cfg = dbConfig.aoStatus.get(itr.previousIndex());
+						if ( cfg != null ) {
+							cfg.staticVariation = StaticAnalogOutputStatusVariation.Group40Var4;
+						}
+					}
+				}
+			}
+		}
+		return dbConfig;
 	}
 
 	private EventBufferConfig createEventBufferConfig(

@@ -168,8 +168,13 @@ Each measurement configuration contains the following settings:
 | Property Type   | The datum property type to publish measurement values as. |
 | Property        | The datum property name to publish measurement values as. |
 | Unit Multiplier | A multiplication factor to apply to measurement values to normalize the value into a standard unit. |
-| Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. |
+| Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. Set to `0` to round to whole numbers, or `-1` for no rounding. |
 
+
+> :bulb: Note that the **Decimal Scale** will affect the DNP3 encoding used for Analog INput and Analog
+> Output Status measurement types. When set to `0` then a 32-bit integer variation will be used. Otherwise
+> a 64-bit floating point variation will be used.
 
 [csv-example]: https://docs.google.com/spreadsheets/d/1ZYAfR8NFbY11f5SLlGuXqOadG32FH4c4WsixRbcOekQ
+[sn-cron-syntax]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 
