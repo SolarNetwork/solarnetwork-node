@@ -68,6 +68,8 @@ import com.automatak.dnp3.enums.CommandStatus;
 import com.automatak.dnp3.enums.CounterQuality;
 import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
+import com.automatak.dnp3.enums.EventAnalogOutputStatusVariation;
+import com.automatak.dnp3.enums.EventAnalogVariation;
 import com.automatak.dnp3.enums.OperateType;
 import com.automatak.dnp3.enums.StaticAnalogOutputStatusVariation;
 import com.automatak.dnp3.enums.StaticAnalogVariation;
@@ -316,6 +318,7 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 						AnalogConfig cfg = dbConfig.analog.get(itr.previousIndex());
 						if ( cfg != null ) {
 							cfg.staticVariation = StaticAnalogVariation.Group30Var6;
+							cfg.eventVariation = EventAnalogVariation.Group32Var6;
 						}
 					}
 				}
@@ -331,6 +334,7 @@ public class DefaultOutstationService extends AbstractApplicationService<Outstat
 						AnalogOutputStatusConfig cfg = dbConfig.aoStatus.get(itr.previousIndex());
 						if ( cfg != null ) {
 							cfg.staticVariation = StaticAnalogOutputStatusVariation.Group40Var4;
+							cfg.eventVariation = EventAnalogOutputStatusVariation.Group42Var6;
 						}
 					}
 				}
