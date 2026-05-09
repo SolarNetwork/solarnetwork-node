@@ -295,6 +295,9 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 	 * scale is also not equal to {@code 0}.
 	 * </p>
 	 *
+	 * @param forStatic
+	 *        {@code true} if the variation is for static access, {@code false}
+	 *        for events
 	 * @return the variation to use
 	 * @since 3.1
 	 */
