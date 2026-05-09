@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.automatak.dnp3.enums.EventAnalogOutputStatusVariation;
+import com.automatak.dnp3.enums.EventAnalogVariation;
+import com.automatak.dnp3.enums.StaticAnalogOutputStatusVariation;
+import com.automatak.dnp3.enums.StaticAnalogVariation;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
@@ -52,7 +56,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 
@@ -280,6 +284,29 @@ public class MeasurementConfig extends NumberDatumSamplePropertyConfig<String> {
 		final String propertyKey = getPropertyKey();
 		return (type != null && propertyKey != null && !propertyKey.isEmpty() && index != null
 				&& index.intValue() >= 0);
+	}
+
+	/**
+	 * Get the DNP3 variation value to use for this configuration.
+	 *
+	 * <p>
+	 * This will return variation {@code 1} for all types except
+	 * {@code AnalogInput} and {@code AnalogOutputStatus} where the decimal
+	 * scale is also not equal to {@code 0}.
+	 * </p>
+	 *
+	 * @return the variation to use
+	 * @since 3.1
+	 */
+	public byte dnp3Variation(final boolean forStatic) {
+		if ( type == MeasurementType.AnalogInput && getDecimalScale() != 0 ) {
+			return (byte) ((byte) (forStatic ? StaticAnalogVariation.Group30Var6.toType()
+					: EventAnalogVariation.Group32Var6.toType()) + (byte) 1);
+		} else if ( type == MeasurementType.AnalogOutputStatus && getDecimalScale() != 0 ) {
+			return (byte) ((byte) (forStatic ? StaticAnalogOutputStatusVariation.Group40Var4.toType()
+					: EventAnalogOutputStatusVariation.Group42Var6) + (byte) 1);
+		}
+		return (byte) 1;
 	}
 
 	/**

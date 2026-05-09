@@ -415,30 +415,34 @@ public class DatumControlCenterService extends AbstractApplicationService<Master
 		if ( datumConf == null || !datumConf.isValid() ) {
 			return Collections.emptyList();
 		}
-		Map<MeasurementType, IntRangeSet> ranges = new HashMap<>();
+		Map<MeasurementType, Map<Byte, IntRangeSet>> ranges = new HashMap<>();
 
 		for ( MeasurementConfig measConf : datumConf.getMeasurementConfigs() ) {
 			if ( !measConf.isValidForClient() ) {
 				continue;
 			}
-			ranges.computeIfAbsent(measConf.getType(), k -> new IntRangeSet()).add(measConf.getIndex());
+			final byte variation = measConf.dnp3Variation(forPoll);
+			ranges.computeIfAbsent(measConf.getType(), k -> new HashMap<>(2))
+					.computeIfAbsent(variation, k -> new IntRangeSet()).add(measConf.getIndex());
 		}
 		if ( ranges.isEmpty() ) {
 			return Collections.emptyList();
 		}
 
 		final List<Header> result = new ArrayList<>();
-		for ( Entry<MeasurementType, IntRangeSet> e : ranges.entrySet() ) {
-			MeasurementType measType = e.getKey();
-			IntRangeSet typeRanges = e.getValue();
-			for ( IntRange range : typeRanges.ranges() ) {
-				// we assume variation 1 for all types here
-				if ( range.getMin() > 0xFF || range.getMax() > 0xFF ) {
-					result.add(Range16(forPoll ? measType.getStaticGroup() : measType.getEventGroup(),
-							(byte) 1, range.getMin(), range.getMax()));
-				} else {
-					result.add(Range8(forPoll ? measType.getStaticGroup() : measType.getEventGroup(),
-							(byte) 1, (short) range.getMin(), (short) range.getMax()));
+		for ( Entry<MeasurementType, Map<Byte, IntRangeSet>> vars : ranges.entrySet() ) {
+			MeasurementType measType = vars.getKey();
+			for ( Entry<Byte, IntRangeSet> e : vars.getValue().entrySet() ) {
+				IntRangeSet typeRanges = e.getValue();
+				for ( IntRange range : typeRanges.ranges() ) {
+					if ( range.getMin() > 0xFF || range.getMax() > 0xFF ) {
+						result.add(
+								Range16(forPoll ? measType.getStaticGroup() : measType.getEventGroup(),
+										e.getKey(), range.getMin(), range.getMax()));
+					} else {
+						result.add(Range8(forPoll ? measType.getStaticGroup() : measType.getEventGroup(),
+								e.getKey(), (short) range.getMin(), (short) range.getMax()));
+					}
 				}
 			}
 		}
