@@ -23,13 +23,14 @@
 package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.joining;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -37,15 +38,18 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.easymock.EasyMock;
-import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.datum.AggregateDatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
@@ -62,7 +66,10 @@ import net.solarnetwork.node.service.OperationalModesService;
  */
 public class DownsampleDatumFilterServiceTests {
 
+	private static final Logger log = LoggerFactory.getLogger(DownsampleDatumFilterServiceTests.class);
+
 	private static final String TEST_PROP = "foo";
+	private static final String TEST_PROP_ACC = "bar";
 	private static final String TEST_SOURCE = "test.source";
 
 	@Test
@@ -244,11 +251,15 @@ public class DownsampleDatumFilterServiceTests {
 		// go for 3 samples
 		Instant end = Instant.now().plusMillis(3500L);
 
+		final Instant start = tick.instant();
+
 		// WHEN
 		int i = 0;
 		while ( Instant.now().isBefore(end) ) {
 			SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
 			d.getSamples().putInstantaneousSampleValue(TEST_PROP, ++i);
+			d.getSamples().putAccumulatingSampleValue(TEST_PROP_ACC,
+					ChronoUnit.NANOS.between(d.getTimestamp(), start));
 			DatumSamplesOperations out = xs.filter(d, d.getSamples(), emptyMap());
 			input.computeIfAbsent(tick.instant().plusSeconds(1), k -> new ArrayList<>(256)).add(d);
 			if ( out != null ) {
@@ -262,8 +273,16 @@ public class DownsampleDatumFilterServiceTests {
 		}
 
 		// THEN
-		assertThat("Output has 1 sample for each passed input time slot", output,
-				hasSize(input.size() - 1));
+		// @formatter:off
+		then(output)
+			.as("Output has 1 sample for each passed input time slot")
+			.hasSize(input.size() - 1)
+			;
+		// @formatter:on
+
+		log.debug("Got 1s downsample output starting from {}: [{}]", start,
+				output.stream().map(Object::toString).collect(joining("\n\t", "\n\t", "\n")));
+
 		int outIdx = 0;
 		for ( Entry<Instant, List<DatumSamplesOperations>> e : input.entrySet() ) {
 			AggregateDatumSamples expectedAgg = new AggregateDatumSamples();
@@ -273,12 +292,18 @@ public class DownsampleDatumFilterServiceTests {
 			DatumSamplesOperations expected = expectedAgg.average(xs.getDecimalScale(),
 					xs.getMinPropertyFormat(), xs.getMaxPropertyFormat());
 			DatumSamplesOperations out = output.get(outIdx++);
-			assertThat("Output is NodeDatum", out, Matchers.instanceOf(NodeDatum.class));
-			NodeDatum outDatum = (NodeDatum) out;
-			assertThat("Output date is time slot end" + (outIdx + 1), outDatum.getTimestamp(),
-					is(equalTo(e.getKey())));
-			assertThat("Output samples averaged by duration " + (outIdx + 1),
-					outDatum.asSampleOperations(), is(equalTo(expected)));
+			// @formatter:off
+			then(out)
+				.as("Output is NodeDatum")
+				.isInstanceOf(NodeDatum.class)
+				.asInstanceOf(InstanceOfAssertFactories.type(NodeDatum.class))
+				.as("Output %d date is time slot end + %d", outIdx + 1)
+				.returns(e.getKey(), from(NodeDatum::getTimestamp))
+				.extracting(NodeDatum::asSampleOperations)
+				.as("Output %d sample averaged/last by duration", outIdx + 1)
+				.isEqualTo(expected)
+				;
+			// @formatter:on
 			if ( outIdx >= output.size() ) {
 				break;
 			}
