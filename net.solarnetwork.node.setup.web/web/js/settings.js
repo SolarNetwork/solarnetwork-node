@@ -1001,7 +1001,7 @@ function renderProviderNote(/** @type SettingNote */ note,/** @type HTMLButtonEl
 		btn.classList.remove('text-primary');
 	}
 	$(btn).children('.bi')
-		.toggleClass('bi-sticky-fill', note.note)
+		.toggleClass('bi-sticky-fill', !!note.note)
 		.toggleClass('bi-sticky', !note.note);
 }
 
