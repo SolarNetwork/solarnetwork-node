@@ -1,21 +1,21 @@
 /* ==================================================================
  * CmdlineSystemService.java - 10/02/2017 3:16:47 PM
- * 
+ *
  * Copyright 2007-2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -55,9 +55,38 @@ import net.solarnetwork.util.StringUtils;
 /**
  * SystemService implementation using OS command line actions to perform
  * functions.
- * 
+ *
+ * <p>
+ * This service handles the following instruction topics:
+ * </p>
+ *
+ * <ul>
+ * <li>{@code SystemReboot} - reboot the system</li>
+ * <li>{@code SystemRestart} - restart the SolarNode process</li>
+ * <li>{@code SystemReset} - reset SolarNode configuration (delete
+ * settings)</li>
+ * </ul>
+ *
+ * <p>
+ * In addition, the {@code SystemConfigure} instruction can be used to achieve
+ * the same functions, by including one of the following {@code service}
+ * parameter values:
+ * </p>
+ *
+ * <ul>
+ * <li>{@code /system/reboot} - reboot the system</li>
+ * <li>{@code /system/restart} - restart the SolarNode process</li>
+ * <li>{@code /system/reset} - reset SolarNode configuration (delete
+ * settings)</li>
+ * </ul>
+ *
+ * <p>
+ * All functions rely on system-provided commands to implement the desired
+ * outcome.
+ * </p>
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class CmdlineSystemService
 		implements SystemService, SettingSpecifierProvider, InstructionHandler {
@@ -76,17 +105,38 @@ public class CmdlineSystemService
 
 	/**
 	 * The default value for the {@code hostCtlCommand} property.
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final String DEFAULT_HOSTCTL_COMMAND = Constants.solarNodeHome() + "/bin/hostctl";
 
 	/**
 	 * The {@code successExitCodes} property default value.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final Set<Integer> DEFAULT_SUCCESS_EXIT_CODES = Collections.singleton(143);
+
+	/**
+	 * The {@literal service} instruction parameter value for restart.
+	 *
+	 * @since 2.3
+	 */
+	public static final String RESTART_SERVICE_NAME = "/system/restart";
+
+	/**
+	 * The {@literal service} instruction parameter value for restart.
+	 *
+	 * @since 2.3
+	 */
+	public static final String REBOOT_SERVICE_NAME = "/system/reboot";
+
+	/**
+	 * The {@literal service} instruction parameter value for reset.
+	 *
+	 * @since 2.3
+	 */
+	public static final String RESET_SERVICE_NAME = "/system/reset";
 
 	private String exitCommand = DEFAULT_EXIT_COMMAND;
 	private String rebootCommand = DEFAULT_REBOOT_COMMAND;
@@ -104,7 +154,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * No {@link BundleContext} will be available.
 	 * </p>
@@ -115,7 +165,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param bundleContext
 	 *        the bundle context
 	 */
@@ -368,7 +418,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Handle a line of input from the OS command process.
-	 * 
+	 *
 	 * @param errorStream
 	 *        {@literal true} if the line is from STDERR, {@literal false} from
 	 *        STDOUT
@@ -388,17 +438,26 @@ public class CmdlineSystemService
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return (TOPIC_REBOOT.equals(topic) || TOPIC_RESTART.equals(topic));
+		return (TOPIC_REBOOT.equals(topic) || TOPIC_RESTART.equals(topic)
+				|| TOPIC_SYSTEM_CONFIGURE.equals(topic));
 	}
 
 	@Override
 	public InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
-		if ( TOPIC_REBOOT.equals(topic) ) {
+		if ( !handlesTopic(topic) ) {
+			return null;
+		}
+		if ( TOPIC_REBOOT.equals(topic) || (TOPIC_SYSTEM_CONFIGURE.equals(topic) && REBOOT_SERVICE_NAME
+				.equals(instruction.getParameterValue(InstructionHandler.PARAM_SERVICE))) ) {
 			reboot();
-		} else if ( TOPIC_RESTART.equals(topic) ) {
+		} else if ( TOPIC_RESTART.equals(topic)
+				|| (TOPIC_SYSTEM_CONFIGURE.equals(topic) && RESTART_SERVICE_NAME
+						.equals(instruction.getParameterValue(InstructionHandler.PARAM_SERVICE))) ) {
 			exit(true);
-		} else if ( TOPIC_RESET.equals(topic) ) {
+		} else if ( TOPIC_RESET.equals(topic)
+				|| (TOPIC_SYSTEM_CONFIGURE.equals(topic) && RESET_SERVICE_NAME
+						.equals(instruction.getParameterValue(InstructionHandler.PARAM_SERVICE))) ) {
 			String appOnly = (instruction != null ? instruction.getParameterValue("applicationOnly")
 					: null);
 			reset(StringUtils.parseBoolean(appOnly));
@@ -437,7 +496,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Set a message source to use for i18n messages.
-	 * 
+	 *
 	 * @param messageSource
 	 *        The message source to use.
 	 */
@@ -448,7 +507,7 @@ public class CmdlineSystemService
 	/**
 	 * Set the OS command to use to exit and sync the application state. The
 	 * command will be split on whitespace to turn into command-line arguments.
-	 * 
+	 *
 	 * @param exitCommand
 	 *        The command and arguments to use when {@link #exit(boolean)} is
 	 *        called with a {@code true} argument.
@@ -461,7 +520,7 @@ public class CmdlineSystemService
 	 * Set the OS command to use to reboot the device the application is running
 	 * on. The command will be split on whitespace to turn into command-line
 	 * arguments.
-	 * 
+	 *
 	 * @param rebootCommand
 	 *        The command and arguments to use when {@link #reboot()} is called.
 	 */
@@ -471,7 +530,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Set the OS command to use to reset the whole device.
-	 * 
+	 *
 	 * @param resetCommand
 	 *        the command to set
 	 * @since 1.2
@@ -482,7 +541,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Set the OS command to use to reset the application.
-	 * 
+	 *
 	 * @param resetAppCommand
 	 *        the command to set
 	 * @since 1.2
@@ -494,7 +553,7 @@ public class CmdlineSystemService
 	/**
 	 * Get the exit codes to be considered as successful (in addition to
 	 * {@literal 0}).
-	 * 
+	 *
 	 * @return the exit codes; defaults to {@link #DEFAULT_SUCCESS_EXIT_CODES}
 	 * @since 2.1
 	 */
@@ -505,7 +564,7 @@ public class CmdlineSystemService
 	/**
 	 * Set the exit codes to be considered as successful (in addition to
 	 * {@literal 0}).
-	 * 
+	 *
 	 * @param successExitCodes
 	 *        the exit codes to set
 	 * @since 2.1
@@ -517,7 +576,7 @@ public class CmdlineSystemService
 	/**
 	 * Get the exit codes to be considered as successful (in addition to
 	 * {@literal 0}) as a comma-delimited list.
-	 * 
+	 *
 	 * @return the comma-delimited exit codes list
 	 * @see #getSuccessExitCodes()
 	 * @since 2.1
@@ -529,7 +588,7 @@ public class CmdlineSystemService
 	/**
 	 * Set the exit codes to be considered as successful (in addition to
 	 * {@literal 0}) as a comma-delimited list.
-	 * 
+	 *
 	 * @param value
 	 *        the comma-delimited exit codes list to set
 	 * @since 2.1
@@ -551,7 +610,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Get the {@code hostctl} command.
-	 * 
+	 *
 	 * @return the command
 	 * @since 2.2
 	 */
@@ -561,7 +620,7 @@ public class CmdlineSystemService
 
 	/**
 	 * Set the {@code hostctl} command.
-	 * 
+	 *
 	 * @param hostCtlCommand
 	 *        the command to set
 	 * @since 2.2
