@@ -20,6 +20,7 @@
 
 	<!-- Stateless SNWS2 authentication realm for web services. -->
 	<http pattern="/api/v1/sec/**" create-session="stateless" entry-point-ref="authTokenEntryPoint" use-expressions="true">
+		<cors/>
 		<access-denied-handler ref="authTokenEntryPoint"/>
 		<intercept-url pattern='/**' method="OPTIONS" access="permitAll"/>
 		<intercept-url pattern='/**' access="hasRole('ROLE_USER')"/>

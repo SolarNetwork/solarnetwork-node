@@ -24,6 +24,7 @@
 		<service-properties>
 			<entry key="instruction">
 				<list>
+					<value>SystemConfigure</value>
 					<value>SystemReboot</value>
 					<value>SystemRestart</value>
 				</list>

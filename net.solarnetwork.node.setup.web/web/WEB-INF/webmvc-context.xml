@@ -42,10 +42,15 @@
 
 	<mvc:cors>
 		<mvc:mapping path="/pub/**"
-			allowed-origins="*"
 			allowed-methods="GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH"
 			allowed-headers="Content-MD5, Content-Type, Digest, X-SN-Date"
 			allow-credentials="false"
+			max-age="86400"/>
+		<mvc:mapping path="/api/**"
+			allowed-origin-patterns="*"
+			allowed-methods="GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH"
+			allowed-headers="Authorization, Content-MD5, Content-Type, Digest, X-SN-Date"
+			allow-credentials="true"
 			max-age="86400"/>
 	</mvc:cors>
 
