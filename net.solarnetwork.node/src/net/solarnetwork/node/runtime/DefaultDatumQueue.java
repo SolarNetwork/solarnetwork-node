@@ -371,17 +371,17 @@ public class DefaultDatumQueue extends BaseIdentifiable
 				 of events where one should be persisted and the other not (just passed to consumers).
 				 Since all events are passed to consumers, we can discard (persist == false) events
 				 from a matching pair event with (persist == true).
-
+				
 				 The approach taken relies on the ordering of our queue, which is ordered by
 				 date, source ID, persist. Potential pairs will differ only by the persist flag,
 				 and will have identical datum objects. The algorithm thus does:
-
+				
 				 1. Poll for the next available event.
 				 2. Peek/take all next available events with a matching date.
 				 3. Sort the collected events (by date, source, persist)
 				 4. For each collected event where persist == false, search previous collected
 				    events for an identical datum with persist == true. If found, discard.
-
+				
 				 The approach holds up in highly-concurrent environments where even a single
 				 source ID has events at the same date (i.e. >1 event within 1ms on a JVM with
 				 millisecond precision dates).
