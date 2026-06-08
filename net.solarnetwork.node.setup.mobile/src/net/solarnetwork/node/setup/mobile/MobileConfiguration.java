@@ -78,20 +78,14 @@ import org.springframework.context.MessageSource;
  * @author elijah
  * @version 1.0
  */
-public class MobileConfiguration
-	extends BaseIdentifiable
-	implements
-		SettingSpecifierProvider,
-		SettingsChangeObserver,
-		InstructionHandler
-{
+public class MobileConfiguration extends BaseIdentifiable
+		implements SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler {
 
 	/** The {@code solarcfg} service name for mobile networking. */
 	public static final String CONFIG_SERVICE = "mobile";
 
 	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND =
-		solarNodeHome() + "/bin/solarcfg";
+	public static final String DEFAULT_COMMAND = solarNodeHome() + "/bin/solarcfg";
 
 	/**
 	 * The {@literal service} instruction parameter value for mobile network
@@ -126,17 +120,15 @@ public class MobileConfiguration
 	}
 
 	@Override
-	public synchronized void configurationChanged(
-		Map<String, Object> properties
-	) {
+	public synchronized void configurationChanged(Map<String, Object> properties) {
 		// the "reset" toggle is transient; when toggled on, perform a reset and
 		// then clear the flag so the UI returns to "off" on reload
-		if (reset) {
+		if ( reset ) {
 			reset = false;
 			log.info("Mobile network reset requested via settings");
 			try {
 				executeAction(ACTION_RESET);
-			} catch (Exception e) {
+			} catch ( Exception e ) {
 				log.warn("Error resetting mobile network: {}", e.getMessage());
 			}
 		}
@@ -148,20 +140,13 @@ public class MobileConfiguration
 	}
 
 	@Override
-	public synchronized InstructionStatus processInstruction(
-		Instruction instruction
-	) {
-		if (
-			instruction == null ||
-			!handlesTopic(instruction.getTopic()) ||
-			!MOBILE_SERVICE_NAME.equals(
-				instruction.getParameterValue(PARAM_SERVICE)
-			)
-		) {
+	public synchronized InstructionStatus processInstruction(Instruction instruction) {
+		if ( instruction == null || !handlesTopic(instruction.getTopic())
+				|| !MOBILE_SERVICE_NAME.equals(instruction.getParameterValue(PARAM_SERVICE)) ) {
 			return null;
 		}
 		String action = instruction.getParameterValue(PARAM_ACTION);
-		if (action == null || action.isEmpty()) {
+		if ( action == null || action.isEmpty() ) {
 			action = ACTION_STATUS;
 		}
 		Map<String, Object> resultParams = new LinkedHashMap<>(2);
@@ -173,33 +158,21 @@ public class MobileConfiguration
 					break;
 				case ACTION_RESET:
 				case ACTION_RESTART:
-					List<String> result = executeAction(
-						action.toLowerCase(Locale.ENGLISH)
-					);
+					List<String> result = executeAction(action.toLowerCase(Locale.ENGLISH));
 					resultParams.put(PARAM_SERVICE_RESULT, result);
 					break;
 				default:
-					resultParams.put(
-						PARAM_MESSAGE,
-						getMessageSource().getMessage(
-							"error.unsupportedAction",
-							new Object[] { action },
-							"Unsupported action.",
-							Locale.getDefault()
-						)
-					);
+					resultParams.put(PARAM_MESSAGE,
+							getMessageSource().getMessage("error.unsupportedAction",
+									new Object[] { action }, "Unsupported action.",
+									Locale.getDefault()));
 					resultState = InstructionState.Declined;
 			}
-		} catch (Exception e) {
+		} catch ( Exception e ) {
 			resultParams.put(PARAM_MESSAGE, e.toString());
 			resultState = InstructionState.Declined;
 		}
-		return InstructionUtils.createStatus(
-			instruction,
-			resultState,
-			Instant.now(),
-			resultParams
-		);
+		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
 	}
 
 	@Override
@@ -211,58 +184,35 @@ public class MobileConfiguration
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		final Status status = currentStatus();
 		final List<SettingSpecifier> result = new ArrayList<>(2);
-		result.add(
-			new BasicTitleSettingSpecifier("status", statusMessage(status))
-		);
+		result.add(new BasicTitleSettingSpecifier("status", statusMessage(status)));
 
 		// Only offer the reset action when a modem is actually present, so nodes
 		// without a mobile modem do not show a confusing toggle.
-		if (status.present) {
-			result.add(
-				new BasicToggleSettingSpecifier("reset", Boolean.FALSE, true)
-			);
+		if ( status.present ) {
+			result.add(new BasicToggleSettingSpecifier("reset", Boolean.FALSE, true));
 		}
 		return result;
 	}
 
 	private String statusMessage(Status status) {
 		MessageSource messageSource = getMessageSource();
-		if (messageSource == null) {
+		if ( messageSource == null ) {
 			return "";
 		}
-		if (!status.present) {
-			return messageSource.getMessage(
-				"notSupported.label",
-				null,
-				"No mobile modem available",
-				Locale.getDefault()
-			);
+		if ( !status.present ) {
+			return messageSource.getMessage("notSupported.label", null, "No mobile modem available",
+					Locale.getDefault());
 		}
 		StringBuilder buf = new StringBuilder();
-		if (status.active) {
-			buf.append(
-				messageSource.getMessage(
-					"active.label",
-					null,
-					"Active",
-					Locale.getDefault()
-				)
-			);
+		if ( status.active ) {
+			buf.append(messageSource.getMessage("active.label", null, "Active", Locale.getDefault()));
 		} else {
 			buf.append(
-				messageSource.getMessage(
-					"inactive.label",
-					null,
-					"Inactive",
-					Locale.getDefault()
-				)
-			);
+					messageSource.getMessage("inactive.label", null, "Inactive", Locale.getDefault()));
 		}
-		if (status.info != null && !status.info.isEmpty()) {
+		if ( status.info != null && !status.info.isEmpty() ) {
 			buf.append("; ");
-			buf.append(
-				StringUtils.delimitedStringFromCollection(status.info, ", ")
-			);
+			buf.append(StringUtils.delimitedStringFromCollection(status.info, ", "));
 		}
 		return buf.toString();
 	}
@@ -325,46 +275,37 @@ public class MobileConfiguration
 		List<String> info = new ArrayList<>(4);
 		try {
 			List<String> result = executeAction(ACTION_STATUS);
-			if (result != null) {
-				for (String line : result) {
+			if ( result != null ) {
+				for ( String line : result ) {
 					int idx = line.indexOf(':');
-					if (idx < 0) {
+					if ( idx < 0 ) {
 						continue;
 					}
-					String key = line
-						.substring(0, idx)
-						.trim()
-						.toLowerCase(Locale.ENGLISH);
+					String key = line.substring(0, idx).trim().toLowerCase(Locale.ENGLISH);
 					String value = line.substring(idx + 1).trim();
-					if ("present".equals(key)) {
+					if ( "present".equals(key) ) {
 						present = "true".equalsIgnoreCase(value);
-					} else if ("active".equals(key)) {
+					} else if ( "active".equals(key) ) {
 						active = "true".equalsIgnoreCase(value);
-					} else if (!value.isEmpty()) {
+					} else if ( !value.isEmpty() ) {
 						info.add(line.trim());
 					}
 				}
 			}
-		} catch (Throwable t) {
-			log.warn(
-				"Error getting current mobile network status: {}",
-				t.getMessage()
-			);
+		} catch ( Throwable t ) {
+			log.warn("Error getting current mobile network status: {}", t.getMessage());
 		}
 		return new Status(present, active, info);
 	}
 
-	private synchronized List<String> executeAction(
-		final String action,
-		String... args
-	) {
+	private synchronized List<String> executeAction(final String action, String... args) {
 		log.debug("Executing mobile action {}", action);
 		List<String> cmd = new ArrayList<>(8);
 		cmd.add(command);
 		cmd.add(CONFIG_SERVICE);
 		cmd.add(action);
-		if (args != null && args.length > 0) {
-			for (String arg : args) {
+		if ( args != null && args.length > 0 ) {
+			for ( String arg : args ) {
 				cmd.add(arg);
 			}
 		}
@@ -372,30 +313,26 @@ public class MobileConfiguration
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		try {
 			Process pr = pb.start();
-			BufferedReader in = new BufferedReader(
-				new InputStreamReader(pr.getInputStream())
-			);
+			BufferedReader in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
 			String line = null;
-			while ((line = in.readLine()) != null) {
+			while ( (line = in.readLine()) != null ) {
 				result.add(line);
 			}
 
-			BufferedReader err = new BufferedReader(
-				new InputStreamReader(pr.getErrorStream())
-			);
+			BufferedReader err = new BufferedReader(new InputStreamReader(pr.getErrorStream()));
 			StringBuilder buf = new StringBuilder();
 			line = null;
-			while ((line = err.readLine()) != null) {
-				if (buf.length() > 0) {
+			while ( (line = err.readLine()) != null ) {
+				if ( buf.length() > 0 ) {
 					buf.append('\n');
 				}
 				buf.append(line);
 			}
-			if (buf.length() > 0) {
+			if ( buf.length() > 0 ) {
 				log.error("Error executing mobile action {}: {}", action, buf);
 			}
 			return result;
-		} catch (IOException e) {
+		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
 	}
