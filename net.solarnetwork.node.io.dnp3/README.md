@@ -70,7 +70,7 @@ See the [Outstation README](./README-Outstation.md) document for more details.
 
 # OpenDNP3 Shared library
 
-SolarNode must be able to find the OpenDNP3 `libopendnp3java` shared library at runtime.
+SolarNode must be able to find the [OpenDNP3](https://github.com/dnp3/opendnp3) `libopendnp3java` shared library at runtime.
 If this is not available in a standard location, add the appropriate path to the `java.library.path`
 system property. For example, pass the following argument to the JVM:
 
