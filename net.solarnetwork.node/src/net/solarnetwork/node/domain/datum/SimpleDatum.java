@@ -48,7 +48,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 * Create a node datum.
 	 * 
 	 * <p>
-	 * The {@code nodeId} property will be set to {@literal null} and presumed
+	 * The {@code nodeId} property will be set to {@code null} and presumed
 	 * to be equal to the ID of the running node. The {@code timestamp} will be
 	 * set to the system time. A new {@code samples} instance will be created.
 	 * </p>
@@ -65,7 +65,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 * Create a node datum.
 	 * 
 	 * <p>
-	 * The {@code nodeId} property will be set to {@literal null} and presumed
+	 * The {@code nodeId} property will be set to {@code null} and presumed
 	 * to be equal to the ID of the running node. A new {@code samples} instance
 	 * will be created.
 	 * </p>
@@ -84,7 +84,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 * Create a node datum.
 	 * 
 	 * <p>
-	 * The {@code nodeId} property will be set to {@literal null} and presumed
+	 * The {@code nodeId} property will be set to {@code null} and presumed
 	 * to be equal to the ID of the running node.
 	 * </p>
 	 * 
@@ -143,7 +143,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 * @param id
 	 *        the ID
 	 * @param samples
-	 *        the samples; if {@literal null} a new instance will be created
+	 *        the samples; if {@code null} a new instance will be created
 	 */
 	public SimpleDatum(DatumId id, DatumSamples samples) {
 		super(id, samples);

@@ -90,7 +90,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * </p>
 	 * 
 	 * @param value
-	 *        the real power in watts, or {@literal null} if not available
+	 *        the real power in watts, or {@code null} if not available
 	 */
 	default void setRealPower(Integer value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, REAL_POWER_KEY, value);
@@ -100,7 +100,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous apparent power, in volt-amperes (VA).
 	 * 
 	 * @param value
-	 *        the apparent power in volt-amperes, or {@literal null} if not
+	 *        the apparent power in volt-amperes, or {@code null} if not
 	 *        available
 	 */
 	default void setApparentPower(Integer value) {
@@ -112,7 +112,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous reactive power, in reactive volt-amperes (var).
 	 * 
 	 * @param value
-	 *        the reactive power in reactive volt-amperes, or {@literal null} if
+	 *        the reactive power in reactive volt-amperes, or {@code null} if
 	 *        not available
 	 */
 	default void setReactivePower(Integer value) {
@@ -147,7 +147,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous frequency, in hertz (Hz).
 	 * 
 	 * @param value
-	 *        the frequency, or {@literal null} if not known
+	 *        the frequency, or {@code null} if not known
 	 */
 	default void setFrequency(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, FREQUENCY_KEY, value);
@@ -157,7 +157,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous neutral voltage.
 	 * 
 	 * @param value
-	 *        the volts, or {@literal null} if not known
+	 *        the volts, or {@code null} if not known
 	 */
 	default void setVoltage(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, VOLTAGE_KEY, value);
@@ -169,7 +169,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * @param phase
 	 *        the phase
 	 * @param value
-	 *        the volts, or {@literal null} if not known
+	 *        the volts, or {@code null} if not known
 	 */
 	default void setVoltage(AcPhase phase, Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, phase.withKey(VOLTAGE_KEY), value);
@@ -184,7 +184,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * </p>
 	 * 
 	 * @param value
-	 *        the amps, or {@literal null} if not known
+	 *        the amps, or {@code null} if not known
 	 */
 	default void setCurrent(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, CURRENT_KEY, value);
@@ -206,7 +206,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous neutral current, in amps.
 	 * 
 	 * @param value
-	 *        the amps, or {@literal null} if not known
+	 *        the amps, or {@code null} if not known
 	 */
 	default void setNeutralCurrent(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, NEUTRAL_CURRENT_KEY, value);
@@ -221,7 +221,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * </p>
 	 * 
 	 * @param value
-	 *        the volts, or {@literal null} if not known
+	 *        the volts, or {@code null} if not known
 	 */
 	default void setPhaseVoltage(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, PHASE_VOLTAGE_KEY, value);

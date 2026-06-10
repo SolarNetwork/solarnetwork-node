@@ -133,7 +133,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 * @param eventAdmin
 	 *        the event service to post notifications with
 	 * @throws IllegalArgumentException
-	 *         if {@code settingDao} is {@literal null}
+	 *         if {@code settingDao} is {@code null}
 	 */
 	public DefaultOperationalModesService(OptionalService<SettingDao> settingDao,
 			OptionalService<EventAdmin> eventAdmin) {
@@ -150,7 +150,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 * @param eventAdmin
 	 *        the event service to post notifications with
 	 * @throws IllegalArgumentException
-	 *         if {@code settingDao} or {@code modeCache} is {@literal null}
+	 *         if {@code settingDao} or {@code modeCache} is {@code null}
 	 * @since 1.3
 	 */
 	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
@@ -171,7 +171,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *        the event service to post notifications with
 	 * @throws IllegalArgumentException
 	 *         if {@code modeCache} or {@code registeredModes} or
-	 *         {@code settingDao} is {@literal null}
+	 *         {@code settingDao} is {@code null}
 	 * @since 2.2
 	 */
 	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,

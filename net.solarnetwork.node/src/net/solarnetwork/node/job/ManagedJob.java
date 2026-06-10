@@ -71,7 +71,7 @@ public interface ManagedJob extends Identifiable, ServiceProvider, SettingSpecif
 	 * millisecond period.
 	 * </p>
 	 *
-	 * @return the schedule expression, never {@literal null}
+	 * @return the schedule expression, never {@code null}
 	 */
 	String getSchedule();
 

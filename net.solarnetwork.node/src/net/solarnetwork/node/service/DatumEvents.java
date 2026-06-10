@@ -69,8 +69,8 @@ public final class DatumEvents {
 	 *        the datum class
 	 * @param datumMap
 	 *        the datum properties
-	 * @return the new event, or {@literal null} if {@code datumMap} is
-	 *         {@literal null} or empty
+	 * @return the new event, or {@code null} if {@code datumMap} is
+	 *         {@code null} or empty
 	 */
 	public static Event datumEvent(String topic, Class<? extends Datum> clazz, Map<String, ?> datumMap) {
 		if ( datumMap == null || datumMap.isEmpty() ) {
@@ -139,7 +139,7 @@ public final class DatumEvents {
 	 * 
 	 * @param event
 	 *        the event to get a map of event properties for
-	 * @return the event properties as a map, never {@literal null}
+	 * @return the event properties as a map, never {@code null}
 	 */
 	public static Map<String, Object> datumEventMap(Event event) {
 		String[] propNames = event.getPropertyNames();

@@ -72,7 +72,7 @@ public interface DatumDataSource extends Identifiable, DeviceInfoProvider, Datum
 	 * This implementation returns an empty list.
 	 * </p>
 	 *
-	 * @return the collection of published source IDs, never {@literal null}
+	 * @return the collection of published source IDs, never {@code null}
 	 * @since 2.1
 	 */
 	@Override

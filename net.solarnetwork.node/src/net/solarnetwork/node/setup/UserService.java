@@ -49,7 +49,7 @@ public interface UserService {
 	 *        The new password, repeated.
 	 * @throws IllegalArgumentException
 	 *         if the {@code newPassword} and {@code newPasswordAgain} values do
-	 *         not match, or are {@literal null}
+	 *         not match, or are {@code null}
 	 */
 	void changePassword(String existingPassword, String newPassword, String newPasswordAgain);
 
@@ -62,7 +62,7 @@ public interface UserService {
 	 *        The new username, repeated.
 	 * @throws IllegalArgumentException
 	 *         if the {@code newUsername} and {@code newUsernameAgain} values do
-	 *         not match, or are {@literal null}
+	 *         not match, or are {@code null}
 	 */
 	void changeUsername(String newUsername, String newUsernameAgain);
 
@@ -72,9 +72,9 @@ public interface UserService {
 	 * @param profile
 	 *        The profile to store.
 	 * @throws IllegalArgumentException
-	 *         if {@code username} is {@literal null}, or if the
+	 *         if {@code username} is {@code null}, or if the
 	 *         {@code password} and {@code passwordAgain} values do not match or
-	 *         are {@literal null}
+	 *         are {@code null}
 	 */
 	void storeUserProfile(UserProfile profile);
 
@@ -83,7 +83,7 @@ public interface UserService {
 	 * 
 	 * @param username
 	 *        the username to get authentication info for
-	 * @return the info, or {@literal null} if not available
+	 * @return the info, or {@code null} if not available
 	 * @since 1.1
 	 */
 	UserAuthenticationInfo authenticationInfo(String username);

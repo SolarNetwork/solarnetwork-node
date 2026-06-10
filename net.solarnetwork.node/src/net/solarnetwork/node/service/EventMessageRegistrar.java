@@ -42,7 +42,7 @@ public interface EventMessageRegistrar {
 	 * @param messageTopic
 	 *        the message topic
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 * @throws IllegalStateException
 	 *         if the given {@code eventTopic} is already mapped to a different
 	 *         message topic
@@ -61,7 +61,7 @@ public interface EventMessageRegistrar {
 	 * @param messageTopic
 	 *        the message topic
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	void unregisterTopicMapping(String eventTopic, String messageTopic);
 
@@ -73,7 +73,7 @@ public interface EventMessageRegistrar {
 	 * @param extractor
 	 *        the extractor
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	void registerEventDataExtractor(String eventTopic, Function<Event, Map<String, ?>> extractor);
 
@@ -85,7 +85,7 @@ public interface EventMessageRegistrar {
 	 * @param extractor
 	 *        the extractor to unregister
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	void unregisterEventDataExtractor(String eventTopic, Function<Event, Map<String, ?>> extractor);
 }

@@ -95,7 +95,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 *        a setting key prefix to use
 	 * @param expressionServices
 	 *        the available expression services
-	 * @return the settings, never {@literal null}
+	 * @return the settings, never {@code null}
 	 */
 	public static List<SettingSpecifier> settings(Class<?> clazz, String prefix,
 			Iterable<ExpressionService> expressionServices) {
@@ -148,7 +148,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 *        the setting provider instance key to use
 	 * @param prefix
 	 *        a prefix to append to all setting keys
-	 * @return the list of setting values, never {@literal null}
+	 * @return the list of setting values, never {@code null}
 	 * @since 1.1
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, String prefix) {
@@ -204,7 +204,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 * 
 	 * @param services
 	 *        the available services
-	 * @return the expression instance, or {@literal null} if no expression
+	 * @return the expression instance, or {@code null} if no expression
 	 *         configured or the appropriate service is not found
 	 * @since 1.1
 	 */
@@ -295,7 +295,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 * {@link #getExpression()}.
 	 * 
 	 * @param expressionServiceId
-	 *        the service ID, or {@literal null} to not evaluate
+	 *        the service ID, or {@code null} to not evaluate
 	 */
 	public synchronized void setExpressionServiceId(String expressionServiceId) {
 		this.expressionServiceId = expressionServiceId;
@@ -320,7 +320,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 * 
 	 * <p>
 	 * This is an alias for {@link #setPropertyType(DatumSamplesType)}, and
-	 * ignores a {@literal null} argument.
+	 * ignores a {@code null} argument.
 	 * </p>
 	 * 
 	 * @param datumPropertyType

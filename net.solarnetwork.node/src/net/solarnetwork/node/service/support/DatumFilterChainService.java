@@ -89,7 +89,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *        the list of available services
 	 * @throws IllegalArgumentException
 	 *         if {@code settingUid} or {@code transformServices} are
-	 *         {@literal null}
+	 *         {@code null}
 	 */
 	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices) {
 		this(settingUid, transformServices, true, null);
@@ -107,7 +107,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *        specifiers
 	 * @throws IllegalArgumentException
 	 *         if {@code settingUid} or {@code transformServices} are
-	 *         {@literal null}
+	 *         {@code null}
 	 */
 	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices,
 			boolean configurableUid) {
@@ -128,7 +128,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *        an optional static service
 	 * @throws IllegalArgumentException
 	 *         if {@code settingUid} or {@code transformServices} are
-	 *         {@literal null}
+	 *         {@code null}
 	 */
 	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices,
 			boolean configurableUid, DatumFilterService staticService) {

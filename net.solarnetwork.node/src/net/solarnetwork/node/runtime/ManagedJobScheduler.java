@@ -335,7 +335,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 * @param taskScheduler
 	 *        the task scheduler
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ManagedJobScheduler(BundleContext bundleContext, TaskScheduler taskScheduler) {
 		super();

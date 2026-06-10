@@ -45,7 +45,7 @@ public class UserAuthenticationInfo {
 	 * @param hashParameters
 	 *        optional hash parameters, algorithm-specific
 	 * @throws IllegalArgumentException
-	 *         if {@code hashAlgorithm} is {@literal null}
+	 *         if {@code hashAlgorithm} is {@code null}
 	 */
 	public UserAuthenticationInfo(String hashAlgorithm, Map<String, ?> hashParameters) {
 		super();
@@ -59,7 +59,7 @@ public class UserAuthenticationInfo {
 	/**
 	 * Get the hash algorithm name.
 	 * 
-	 * @return the hash algorithm name, never {@literal null}
+	 * @return the hash algorithm name, never {@code null}
 	 */
 	public String getHashAlgorithm() {
 		return hashAlgorithm;
@@ -68,7 +68,7 @@ public class UserAuthenticationInfo {
 	/**
 	 * Get the optional hash algorithm parameters.
 	 * 
-	 * @return the hash parameters, never {@literal null}
+	 * @return the hash parameters, never {@code null}
 	 */
 	public Map<String, ?> getHashParameters() {
 		return hashParameters;

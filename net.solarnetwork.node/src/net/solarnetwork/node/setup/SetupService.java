@@ -98,7 +98,7 @@ public interface SetupService {
 	 * the SolarUser and SolarQuery applications.
 	 * </p>
 	 * 
-	 * @return the app configuration, never {@literal null}
+	 * @return the app configuration, never {@code null}
 	 * @since 1.3
 	 */
 	NodeAppConfiguration getAppConfiguration();

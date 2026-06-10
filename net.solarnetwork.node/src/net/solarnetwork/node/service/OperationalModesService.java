@@ -103,7 +103,7 @@ public interface OperationalModesService {
 	 * Test if a specific mode is active.
 	 * 
 	 * <p>
-	 * Note that a {@literal null} or empty {@code mode} argument will be
+	 * Note that a {@code null} or empty {@code mode} argument will be
 	 * treated as testing if the <i>default</i> mode is active, which is always
 	 * {@literal true}.
 	 * </p>
@@ -120,7 +120,7 @@ public interface OperationalModesService {
 	/**
 	 * Get the set of active operational modes.
 	 * 
-	 * @return the active operational modes, never {@literal null}
+	 * @return the active operational modes, never {@code null}
 	 */
 	Set<String> activeOperationalModes();
 
@@ -133,7 +133,7 @@ public interface OperationalModesService {
 	 * </p>
 	 * 
 	 * @return the active operational modes that have expiration dates, never
-	 *         {@literal null}
+	 *         {@code null}
 	 * @since 2.1
 	 */
 	Map<String, Long> activeOperationalModesWithExpirations();
@@ -144,7 +144,7 @@ public interface OperationalModesService {
 	 * @param modes
 	 *        the modes to enable
 	 * @return the active operational modes, after activating {@code modes},
-	 *         never {@literal null}
+	 *         never {@code null}
 	 */
 	Set<String> enableOperationalModes(Set<String> modes);
 
@@ -155,9 +155,9 @@ public interface OperationalModesService {
 	 *        the modes to enable
 	 * @param expire
 	 *        a date after which {@code modes} should be automatically disabled,
-	 *        or {@literal null} for no expiration
+	 *        or {@code null} for no expiration
 	 * @return the active operational modes, after activating {@code modes},
-	 *         never {@literal null}
+	 *         never {@code null}
 	 * @since 2.0
 	 */
 	Set<String> enableOperationalModes(Set<String> modes, Instant expire);
@@ -168,7 +168,7 @@ public interface OperationalModesService {
 	 * @param modes
 	 *        the modes to disable
 	 * @return the active operational modes, after deactivating {@code modes},
-	 *         never {@literal null}
+	 *         never {@code null}
 	 */
 	Set<String> disableOperationalModes(Set<String> modes);
 
@@ -179,7 +179,7 @@ public interface OperationalModesService {
 	 * This method will look for a {@link #EVENT_PARAM_ACTIVE_OPERATIONAL_MODES}
 	 * event parameter in the provided {@code event}. If the parameter is a
 	 * {@link Set}, and it contains {@code mode} or {@code mode} is
-	 * {@literal null} or empty, then {@literal true} will be returned.
+	 * {@code null} or empty, then {@literal true} will be returned.
 	 * </p>
 	 * 
 	 * @param event
@@ -213,7 +213,7 @@ public interface OperationalModesService {
 	 * 
 	 * @param instruction
 	 *        the instruction to parse the expiration parameter from
-	 * @return the expiration date, or {@literal null} if none available
+	 * @return the expiration date, or {@code null} if none available
 	 * @since 2.0
 	 */
 	static Instant expirationDate(Instruction instruction) {
@@ -246,7 +246,7 @@ public interface OperationalModesService {
 		 * @param name
 		 *        the name
 		 * @throws IllegalArgumentException
-		 *         if {@code name} is {@literal null}
+		 *         if {@code name} is {@code null}
 		 */
 		public OperationalModeInfo(String name) {
 			this(name, null);
@@ -260,7 +260,7 @@ public interface OperationalModesService {
 		 * @param tags
 		 *        the tags
 		 * @throws IllegalArgumentException
-		 *         if {@code name} is {@literal null}
+		 *         if {@code name} is {@code null}
 		 */
 		public OperationalModeInfo(String name, Set<String> tags) {
 			super();

@@ -115,7 +115,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * classes.
 	 * </p>
 	 *
-	 * @return the collection of published source IDs, never {@literal null}
+	 * @return the collection of published source IDs, never {@code null}
 	 * @since 1.2
 	 */
 	public Collection<String> publishedSourceIds() {
@@ -243,7 +243,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param dataSource
 	 *        the data source
-	 * @return the scheduled future or {@literal null} if sub-sampling support
+	 * @return the scheduled future or {@code null} if sub-sampling support
 	 *         is not configured; canceling this will stop the sub-sampling task
 	 * @see #stopSubSampling()
 	 */
@@ -321,7 +321,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param props
 	 *        optional transform properties to pass to
 	 *        {@link DatumFilterService#filter(net.solarnetwork.domain.datum.Datum, DatumSamplesOperations, Map)}
-	 * @return the same datum, possibly transformed, or {@literal null} if the
+	 * @return the same datum, possibly transformed, or {@code null} if the
 	 *         datum has been filtered out completely
 	 */
 	protected NodeDatum applyDatumFilter(NodeDatum datum, Map<String, Object> props) {
@@ -445,7 +445,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Get a sub-sample frequency at which to request datum.
 	 *
-	 * @return the sub-sample frequency, in milliseconds, or {@literal null} or
+	 * @return the sub-sample frequency, in milliseconds, or {@code null} or
 	 *         anything less than {@literal 1} to disable sub-sampling
 	 */
 	public Long getSubSampleFrequency() {

@@ -46,7 +46,7 @@ public interface NodeMetadataService {
 	/**
 	 * Get all metadata for the active node.
 	 * 
-	 * @return the metadata, or {@literal null} if none available
+	 * @return the metadata, or {@code null} if none available
 	 */
 	GeneralDatumMetadata getNodeMetadata();
 

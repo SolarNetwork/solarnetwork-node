@@ -432,7 +432,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Get the "location service required" flag.
 	 *
 	 * <p>
-	 * If configured as {@literal true} then return {@literal null} data only
+	 * If configured as {@literal true} then return {@code null} data only
 	 * instead of calling the {@code delegate}. This is designed for services
 	 * that require a location ID to be set, for example a Location Datum
 	 * logger.
@@ -492,8 +492,8 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Get the location ID and source ID as a single string value. The format of
 	 * the key is {@code locationId:sourceId}.
 	 *
-	 * @return the location key, or {@literal null} if both the location ID and
-	 *         source ID values are {@literal null}
+	 * @return the location key, or {@code null} if both the location ID and
+	 *         source ID values are {@code null}
 	 */
 	public String getLocationKey() {
 		StringBuilder buf = new StringBuilder();

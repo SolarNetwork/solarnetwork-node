@@ -235,7 +235,7 @@ public interface InstructionHandler {
 	 * 
 	 * @param instruction
 	 *        the instruction to process
-	 * @return the status for the instruction, or {@literal null} if the
+	 * @return the status for the instruction, or {@code null} if the
 	 *         instruction was not handled
 	 */
 	InstructionStatus processInstruction(Instruction instruction);

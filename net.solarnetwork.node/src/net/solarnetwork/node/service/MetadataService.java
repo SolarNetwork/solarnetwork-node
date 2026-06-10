@@ -37,7 +37,7 @@ public interface MetadataService extends Identifiable {
 	/**
 	 * Get all metadata available.
 	 * 
-	 * @return the metadata, or {@literal null} if none available
+	 * @return the metadata, or {@code null} if none available
 	 */
 	GeneralDatumMetadata getAllMetadata();
 
@@ -46,7 +46,7 @@ public interface MetadataService extends Identifiable {
 	 * 
 	 * @param path
 	 *        the path of the metadata object to get
-	 * @return the value, or {@literal null}
+	 * @return the value, or {@code null}
 	 * @see GeneralDatumMetadata#metadataAtPath(String)
 	 */
 	default Object metadataAtPath(String path) {
@@ -63,7 +63,7 @@ public interface MetadataService extends Identifiable {
 	 *        the path of the metadata object to get
 	 * @param clazz
 	 *        the expected value type class
-	 * @return the value, or {@literal null}
+	 * @return the value, or {@code null}
 	 * @see GeneralDatumMetadata#metadataAtPath(String, Class)
 	 */
 	default <T> T metadataAtPath(String path, Class<T> clazz) {

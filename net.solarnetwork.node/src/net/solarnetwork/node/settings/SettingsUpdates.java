@@ -47,9 +47,9 @@ public interface SettingsUpdates {
 
 		/**
 		 * Get the setting instance ID of the setting provider factory this is
-		 * for, or {@literal null} if the provider is not a factory
+		 * for, or {@code null} if the provider is not a factory
 		 *
-		 * @return the setting instance key, or {@literal null}
+		 * @return the setting instance key, or {@code null}
 		 */
 		String getInstanceKey();
 
@@ -84,7 +84,7 @@ public interface SettingsUpdates {
 		/**
 		 * Get a brief note to associate with the setting.
 		 *
-		 * @return the note, or {@literal null}
+		 * @return the note, or {@code null}
 		 * @since 1.1
 		 */
 		String getNote();
@@ -102,7 +102,7 @@ public interface SettingsUpdates {
 	 * Get a collection of setting key patterns to clean before apply any
 	 * setting value updates.
 	 *
-	 * @return the patterns, never {@literal null}
+	 * @return the patterns, never {@code null}
 	 */
 	Iterable<Pattern> getSettingKeyPatternsToClean();
 
@@ -117,7 +117,7 @@ public interface SettingsUpdates {
 	/**
 	 * Get a collection of setting values to apply.
 	 *
-	 * @return the setting values, never {@literal null}
+	 * @return the setting values, never {@code null}
 	 */
 	Iterable<? extends Change> getSettingValueUpdates();
 

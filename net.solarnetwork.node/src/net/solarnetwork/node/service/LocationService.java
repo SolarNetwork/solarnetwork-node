@@ -52,7 +52,7 @@ public interface LocationService {
 	 *        an optional source ID to limit the results to
 	 * @param tags
 	 *        the optional tags
-	 * @return the matching location metadata, never {@literal null}
+	 * @return the matching location metadata, never {@code null}
 	 * @since 1.1
 	 */
 	Collection<GeneralLocationSourceMetadata> findLocationMetadata(String query, String sourceId,
@@ -65,7 +65,7 @@ public interface LocationService {
 	 *        the location ID
 	 * @param sourceId
 	 *        the source ID
-	 * @return the location metadata, or {@literal null} if not found
+	 * @return the location metadata, or {@code null} if not found
 	 * @since 1.1
 	 */
 	GeneralLocationSourceMetadata getLocationMetadata(Long locationId, String sourceId);

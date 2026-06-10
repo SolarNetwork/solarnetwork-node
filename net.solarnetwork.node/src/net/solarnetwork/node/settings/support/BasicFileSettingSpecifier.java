@@ -45,7 +45,7 @@ public class BasicFileSettingSpecifier extends BaseKeyedSettingSpecifier<Resourc
 	 * Constructor.
 	 * 
 	 * <p>
-	 * This sets {@code acceptableFileTypeSpecifiers} to {@literal null} and
+	 * This sets {@code acceptableFileTypeSpecifiers} to {@code null} and
 	 * {@code multiple} to {@literal false}.
 	 * </p>
 	 * 
@@ -66,7 +66,7 @@ public class BasicFileSettingSpecifier extends BaseKeyedSettingSpecifier<Resourc
 	 * @param defaultValue
 	 *        the default value
 	 * @param acceptableFileTypeSpecifiers
-	 *        the acceptable file type specifiers, or {@literal null} if all
+	 *        the acceptable file type specifiers, or {@code null} if all
 	 *        files are acceptable
 	 * @param multiple
 	 *        {@literal true} if multiple files can be accepted,

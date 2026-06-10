@@ -37,7 +37,7 @@ public interface DatumSourceIdProvider extends Identifiable {
 	/**
 	 * Get the collection of source IDs produced by this datum data source.
 	 *
-	 * @return the collection of published source IDs, never {@literal null}
+	 * @return the collection of published source IDs, never {@code null}
 	 * @since 2.1
 	 */
 	Collection<String> publishedSourceIds();

@@ -55,7 +55,7 @@ public interface TransientSettingDao {
 	 *        actually be declared as {@code ConcurrentMap&ltString, Object&gt;}
 	 * @param key
 	 *        the settings key to get
-	 * @return the settings for the given key, never {@literal null}
+	 * @return the settings for the given key, never {@code null}
 	 */
 	<V> ConcurrentMap<String, V> settings(String key);
 

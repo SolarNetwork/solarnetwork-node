@@ -40,7 +40,7 @@ public interface DatumMetadataService {
 	/**
 	 * Get the set of source IDs with associated datum metadata.
 	 * 
-	 * @return the available source IDs, never {@literal null}
+	 * @return the available source IDs, never {@code null}
 	 * @since 2.1
 	 */
 	default Set<String> availableSourceMetadataSourceIds() {
@@ -64,7 +64,7 @@ public interface DatumMetadataService {
 	 * 
 	 * @param sourceId
 	 *        the sourceId to get the metadta for
-	 * @return the metadata, or {@literal null} if none available
+	 * @return the metadata, or {@code null} if none available
 	 */
 	GeneralDatumMetadata getSourceMetadata(String sourceId);
 
@@ -78,7 +78,7 @@ public interface DatumMetadataService {
 	 *        unused
 	 * @param sourceId
 	 *        the source ID
-	 * @return the metadata, or {@literal null} if not available
+	 * @return the metadata, or {@code null} if not available
 	 * @since 1.1
 	 */
 	ObjectDatumStreamMetadata getDatumStreamMetadata(ObjectDatumKind kind, Long objectId,

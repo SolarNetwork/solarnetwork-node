@@ -141,7 +141,7 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 	 * @param instructionExecutionService
 	 *        the service to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SimpleExecuteInstructionsService(final ObjectMapper objectMapper,
 			final OptionalService<InstructionExecutionService> instructionExecutionService) {

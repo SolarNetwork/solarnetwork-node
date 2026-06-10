@@ -82,7 +82,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	 * @param opModesService
 	 *        the operational modes service
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SimpleDatumExpressionService(DatumService datumService,
 			OperationalModesService opModesService) {

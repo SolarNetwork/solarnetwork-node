@@ -55,7 +55,7 @@ public interface DatumService extends DatumHistorian {
 	 *
 	 * @param sourceId
 	 *        the source ID of the datum metadata to get
-	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @return the metadata, or {@code null} if no such metadata is available
 	 * @since 1.1
 	 */
 	DatumMetadataOperations datumMetadata(String sourceId);
@@ -65,8 +65,8 @@ public interface DatumService extends DatumHistorian {
 	 *
 	 * @param sourceIdFilter
 	 *        an optional set of Ant-style source ID patterns to filter by; use
-	 *        {@literal null} or an empty set to return all available sources
-	 * @return the matching metadata, never {@literal null}
+	 *        {@code null} or an empty set to return all available sources
+	 * @return the matching metadata, never {@code null}
 	 * @since 1.1
 	 */
 	Collection<DatumMetadataOperations> datumMetadata(Set<String> sourceIdFilter);

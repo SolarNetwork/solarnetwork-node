@@ -34,7 +34,7 @@ import java.util.Set;
  * <p>
  * A setting is based on a {@code key} and {@code type}, the combination of
  * which forms a unique key for its associated value. No values are allowed to
- * be {@literal null}, but empty strings are allowed.
+ * be {@code null}, but empty strings are allowed.
  * </p>
  *
  * @author matt
@@ -95,7 +95,7 @@ public class Setting implements SettingNote {
 		 *
 		 * @param mask
 		 *        the mask
-		 * @return the set (never {@literal null})
+		 * @return the set (never {@code null})
 		 */
 		public static Set<SettingFlag> setForMask(int mask) {
 			Set<SettingFlag> maskSet = new HashSet<Setting.SettingFlag>();

@@ -126,7 +126,7 @@ public class DatumHistory {
 	 * @param concurrencyLevel
 	 *        a concurrency level to use for sizing the internal data structures
 	 * @throws IllegalArgumentException
-	 *         if {@code config} is {@literal null}
+	 *         if {@code config} is {@code null}
 	 */
 	public DatumHistory(Configuration config, float loadFactor, int concurrencyLevel) {
 		this(config, new ConcurrentHashMap<>(8, loadFactor, concurrencyLevel));
@@ -140,7 +140,7 @@ public class DatumHistory {
 	 * @param raw
 	 *        a map to use for raw datum
 	 * @throws IllegalArgumentException
-	 *         if {@code config} is {@literal null}
+	 *         if {@code config} is {@code null}
 	 */
 	public DatumHistory(Configuration config, ConcurrentMap<String, Queue<NodeDatum>> raw) {
 		super();
@@ -155,7 +155,7 @@ public class DatumHistory {
 	 * Add a datum.
 	 * 
 	 * <p>
-	 * If {@code datum} is {@literal null} or does not have a source ID or
+	 * If {@code datum} is {@code null} or does not have a source ID or
 	 * creation date, nothing will be added.
 	 * </p>
 	 * 
@@ -181,7 +181,7 @@ public class DatumHistory {
 	 * This is equivalent to calling {@code offset(0)}.
 	 * </p>
 	 * 
-	 * @return the {@code Iterable}, never {@literal null}
+	 * @return the {@code Iterable}, never {@code null}
 	 * @see #offset(int)
 	 */
 	public Iterable<NodeDatum> latest() {
@@ -197,7 +197,7 @@ public class DatumHistory {
 	 * 
 	 * @param sourceId
 	 *        the source ID to find
-	 * @return the datum, or {@literal null}
+	 * @return the datum, or {@code null}
 	 * @see #offset(String,int)
 	 */
 	public NodeDatum latest(String sourceId) {
@@ -216,7 +216,7 @@ public class DatumHistory {
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the {@code Iterable}, never {@literal null}
+	 * @return the {@code Iterable}, never {@code null}
 	 * @since 1.1
 	 */
 	public Iterable<NodeDatum> offset(int offset) {
@@ -250,7 +250,7 @@ public class DatumHistory {
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the {@code Iterable}, never {@literal null}
+	 * @return the {@code Iterable}, never {@code null}
 	 * @since 1.1
 	 */
 	public NodeDatum offset(String sourceId, int offset) {
@@ -287,7 +287,7 @@ public class DatumHistory {
 	 * @param offset
 	 *        the offset from {@code timestamp}, {@literal 0} being the latest
 	 *        and {@literal 1} the next later, and so on
-	 * @return the {@code Iterable}, never {@literal null}
+	 * @return the {@code Iterable}, never {@code null}
 	 * @since 1.1
 	 */
 	public Iterable<NodeDatum> offset(Instant timestamp, int offset) {
@@ -324,7 +324,7 @@ public class DatumHistory {
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the datum, or {@literal null} if no such datum is available
+	 * @return the datum, or {@code null} if no such datum is available
 	 * @since 1.1
 	 */
 	public NodeDatum offset(String sourceId, Instant timestamp, int offset) {
@@ -448,7 +448,7 @@ public class DatumHistory {
 	/**
 	 * Get the configuration.
 	 * 
-	 * @return the configuration, never {@literal null}
+	 * @return the configuration, never {@code null}
 	 */
 	public Configuration getConfig() {
 		return config;

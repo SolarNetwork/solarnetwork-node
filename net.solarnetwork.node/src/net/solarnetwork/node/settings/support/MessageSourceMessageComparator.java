@@ -75,12 +75,12 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 	 * Compare two resolved message keys in a case-insensitive manner.
 	 * 
 	 * @param leftMessageSource
-	 *        the first message source, or {@literal null}
+	 *        the first message source, or {@code null}
 	 * @param leftDefault
 	 *        the first default message, if {@code leftMessageSource} is not
 	 *        available or does not resolve a value for {@link #getMessageKey()}
 	 * @param rightMessageSource
-	 *        the second message source, or {@literal null}
+	 *        the second message source, or {@code null}
 	 * @param rightDefault
 	 *        the second default message, if {@code rightMessageSource} is not
 	 *        available or does not resolve a value for {@link #getMessageKey()}

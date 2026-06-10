@@ -107,7 +107,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the key
 	 * @param type
 	 *        the type
-	 * @return the setting, or {@literal null} if not found
+	 * @return the setting, or {@code null} if not found
 	 */
 	Setting readSetting(String key, String type);
 
@@ -116,7 +116,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *
 	 * @param key
 	 *        the key to get the first value for
-	 * @return the first associated value, or {@literal null} if key not found
+	 * @return the first associated value, or {@code null} if key not found
 	 */
 	String getSetting(String key);
 
@@ -136,7 +136,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *
 	 * @param key
 	 *        the key to get the notes for
-	 * @return list of keys, never {@literal null}
+	 * @return list of keys, never {@code null}
 	 * @since 1.4
 	 */
 	List<SettingNote> notesForKey(String key);
@@ -157,7 +157,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the key to get the value for
 	 * @param type
 	 *        the type to get the value for
-	 * @return the associated value, or {@literal null} if key not found
+	 * @return the associated value, or {@code null} if key not found
 	 */
 	String getSetting(String key, String type);
 

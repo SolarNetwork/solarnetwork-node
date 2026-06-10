@@ -108,7 +108,7 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 	 * @param messageSendingOps
 	 *        the optional message sending service to use
 	 * @throws IllegalArgumentException
-	 *         if {@code messageSendingOps} is {@literal null}
+	 *         if {@code messageSendingOps} is {@code null}
 	 */
 	public EventMessageBridge(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
 		this(messageSendingOps, null);
@@ -122,7 +122,7 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 	 * @param executor
 	 *        the optional executor to use
 	 * @throws IllegalArgumentException
-	 *         if {@code messageSendingOps} is {@literal null}
+	 *         if {@code messageSendingOps} is {@code null}
 	 * @since 2.1
 	 */
 	public EventMessageBridge(OptionalService<SimpMessageSendingOperations> messageSendingOps,

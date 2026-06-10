@@ -89,7 +89,7 @@ public class DefaultDatumService
 	 * @param datumMetadataService
 	 *        the datum metadata service to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper,
 			OptionalService<DatumMetadataService> datumMetadataService) {

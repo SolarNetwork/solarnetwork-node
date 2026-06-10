@@ -83,7 +83,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * @param jobService
 	 *        the job service
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SimpleManagedJob(JobService jobService) {
 		this(jobService, null);
@@ -104,7 +104,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * @param schedule
 	 *        the default schedule to set
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SimpleManagedJob(JobService jobService, String schedule) {
 		super();

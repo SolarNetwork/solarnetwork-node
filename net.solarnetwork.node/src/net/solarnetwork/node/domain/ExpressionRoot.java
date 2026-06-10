@@ -214,7 +214,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * Create a copy with a given datum value.
 	 *
 	 * <p>
-	 * The samples and parameters values will be set to {@literal null}.
+	 * The samples and parameters values will be set to {@code null}.
 	 * </p>
 	 *
 	 * @param datum
@@ -335,11 +335,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
-	 * @return the latest datum, or {@literal null} if {@code sourceId} is
-	 *         {@literal null}, the {@link DatumService} provided to this
-	 *         instance's constructor was {@literal null}, or
+	 * @return the latest datum, or {@code null} if {@code sourceId} is
+	 *         {@code null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@code null}, or
 	 *         {@link DatumService#latest(java.util.Set, Class)} returns
-	 *         {@literal null} for the given {@code sourceId}
+	 *         {@code null} for the given {@code sourceId}
 	 */
 	public DatumExpressionRoot latest(String sourceId) {
 		return offset(sourceId, 0);
@@ -356,11 +356,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
-	 * @return the latest datum, or {@literal null} if {@code sourceId} is
-	 *         {@literal null}, the {@link DatumService} provided to this
-	 *         instance's constructor was {@literal null}, or
+	 * @return the latest datum, or {@code null} if {@code sourceId} is
+	 *         {@code null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@code null}, or
 	 *         {@link DatumHistorian#latest(java.util.Set, Class)} returns
-	 *         {@literal null} for the given {@code sourceId}
+	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.6
 	 */
 	public DatumExpressionRoot unfilteredLatest(String sourceId) {
@@ -455,7 +455,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 */
 	public Collection<DatumExpressionRoot> latestMatching(String sourceIdPattern) {
 		return latestMatching(datumService, sourceIdPattern);
@@ -472,7 +472,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.9
 	 */
 	public Collection<DatumExpressionRoot> latestMatching(Collection<String> sourceIdPatterns) {
@@ -490,7 +490,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.6
 	 */
 	public Collection<DatumExpressionRoot> unfilteredLatestMatching(String sourceIdPattern) {
@@ -508,7 +508,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.9
 	 */
 	public Collection<DatumExpressionRoot> unfilteredLatestMatching(
@@ -635,7 +635,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 */
 	public Collection<DatumExpressionRoot> latestOthersMatching(String sourceIdPattern) {
 		return latestOthersMatching(datumService, sourceIdPattern);
@@ -653,7 +653,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.9
 	 */
 	public Collection<DatumExpressionRoot> latestOthersMatching(Collection<String> sourceIdPatterns) {
@@ -672,7 +672,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.6
 	 */
 	public Collection<DatumExpressionRoot> unfilteredLatestOthersMatching(String sourceIdPattern) {
@@ -692,7 +692,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.9
 	 */
 	public Collection<DatumExpressionRoot> unfilteredLatestOthersMatching(
@@ -742,7 +742,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null} and always having at
+	 * @return the matching datum, never {@code null} and always having at
 	 *         least one value (this instance)
 	 */
 	public Collection<DatumExpressionRoot> selfAndLatestMatching(String sourceIdPattern) {
@@ -760,7 +760,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@literal null} and always having at
+	 * @return the matching datum, never {@code null} and always having at
 	 *         least one value (this instance)
 	 * @since 2.9
 	 */
@@ -780,7 +780,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@literal null} and always having at
+	 * @return the matching datum, never {@code null} and always having at
 	 *         least one value (this instance)
 	 * @since 2.6
 	 */
@@ -801,7 +801,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@literal null} and always having at
+	 * @return the matching datum, never {@code null} and always having at
 	 *         least one value (this instance)
 	 * @since 2.9
 	 */
@@ -911,12 +911,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@literal null} if
+	 * @return the offset from the latest datum, or {@code null} if
 	 *         {@link #getSourceId()} or {@link #getTimestamp()} are
-	 *         {@literal null}, the {@link DatumService} provided to this
-	 *         instance's constructor was {@literal null}, or
+	 *         {@code null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@code null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for {@link #getSourceId()}
+	 *         {@code null} for {@link #getSourceId()}
 	 * @since 2.1
 	 * @see #offset(String, Instant, int)
 	 */
@@ -943,12 +943,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@literal null} if
+	 * @return the offset from the latest datum, or {@code null} if
 	 *         {@link #getSourceId()} or {@link #getTimestamp()} are
-	 *         {@literal null}, the {@link DatumService} provided to this
-	 *         instance's constructor was {@literal null}, or
+	 *         {@code null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@code null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for {@link #getSourceId()}
+	 *         {@code null} for {@link #getSourceId()}
 	 * @since 2.6
 	 * @see #unfilteredOffset(String, Instant, int)
 	 */
@@ -1029,11 +1029,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@literal null} if
-	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
-	 *         provided to this instance's constructor was {@literal null}, or
+	 * @return the offset from the latest datum, or {@code null} if
+	 *         {@code sourceId} is {@code null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@code null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for the given {@code sourceId}
+	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.1
 	 */
 	public DatumExpressionRoot offset(String sourceId, int offset) {
@@ -1054,11 +1054,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@literal null} if
-	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
-	 *         provided to this instance's constructor was {@literal null}, or
+	 * @return the offset from the latest datum, or {@code null} if
+	 *         {@code sourceId} is {@code null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@code null}, or
 	 *         {@link DatumHistorian#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for the given {@code sourceId}
+	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.6
 	 */
 	public DatumExpressionRoot unfilteredOffset(String sourceId, int offset) {
@@ -1149,11 +1149,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@literal null} if
-	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
-	 *         provided to this instance's constructor was {@literal null}, or
+	 * @return the offset from the latest datum, or {@code null} if
+	 *         {@code sourceId} is {@code null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@code null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for the given {@code sourceId}
+	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.1
 	 */
 	public DatumExpressionRoot offset(String sourceId, Instant timestamp, int offset) {
@@ -1176,11 +1176,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@literal null} if
-	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
-	 *         provided to this instance's constructor was {@literal null}, or
+	 * @return the offset from the latest datum, or {@code null} if
+	 *         {@code sourceId} is {@code null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@code null}, or
 	 *         {@link DatumHistorian#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for the given {@code sourceId}
+	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.6
 	 */
 	public DatumExpressionRoot unfilteredOffset(String sourceId, Instant timestamp, int offset) {
@@ -1217,7 +1217,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param count
 	 *        the maximum number of datum to return, starting from
 	 *        {@code offset} and iterating over earlier datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.2
 	 */
 	public Collection<DatumExpressionRoot> slice(String sourceId, int offset, int count) {
@@ -1241,7 +1241,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param count
 	 *        the maximum number of datum to return, starting from
 	 *        {@code offset} and iterating over earlier datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.6
 	 */
 	public Collection<DatumExpressionRoot> unfilteredSlice(String sourceId, int offset, int count) {
@@ -1284,7 +1284,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param count
 	 *        the maximum number of datum to return, starting from
 	 *        {@code offset} and iterating over earlier datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.2
 	 */
 	public Collection<DatumExpressionRoot> slice(String sourceId, Instant timestamp, int offset,
@@ -1311,7 +1311,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param count
 	 *        the maximum number of datum to return, starting from
 	 *        {@code offset} and iterating over earlier datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 2.6
 	 */
 	public Collection<DatumExpressionRoot> unfilteredSlice(String sourceId, Instant timestamp,
@@ -1343,7 +1343,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param mode
 	 *        the mode to test
 	 * @return {@literal true} if the {@link OperationalModesService} provided
-	 *         to this instance's constructor was not {@literal null} and
+	 *         to this instance's constructor was not {@code null} and
 	 *         {@link OperationalModesService#isOperationalModeActive(String)}
 	 *         returns {@literal true} for the given mode
 	 * @see OperationalModesService#isOperationalModeActive(String)
@@ -1371,7 +1371,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	/**
 	 * Get the metadata for the {@link #getSourceId()} datum stream.
 	 *
-	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @return the metadata, or {@code null} if no such metadata is available
 	 * @since 2.1
 	 */
 	public DatumMetadataOperations getMeta() {
@@ -1403,7 +1403,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceId
 	 *        the source ID of the datum metadata to get
-	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @return the metadata, or {@code null} if no such metadata is available
 	 * @since 2.1
 	 */
 	public DatumMetadataOperations meta(String sourceId) {
@@ -1415,8 +1415,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdFilter
 	 *        an optional Ant-style source ID pattern to filter by; use
-	 *        {@literal null} to return metadata for all available sources
-	 * @return the matching metadata, never {@literal null}
+	 *        {@code null} to return metadata for all available sources
+	 * @return the matching metadata, never {@code null}
 	 * @since 2.1
 	 */
 	public Collection<DatumMetadataOperations> metaMatching(String sourceIdFilter) {
@@ -1427,7 +1427,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	/**
 	 * Get the general metadata.
 	 *
-	 * @return the general metadata, or {@literal null} if none available
+	 * @return the general metadata, or {@code null} if none available
 	 * @since 2.3
 	 */
 	public DatumMetadataOperations metadata() {
@@ -1485,7 +1485,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the ID of the location datum stream
 	 * @param sourceId
 	 *        the source ID of the location datum stream
-	 * @return the location metadata, or {@literal null} if not available
+	 * @return the location metadata, or {@code null} if not available
 	 * @since 2.4
 	 */
 	public DatumMetadataOperations locMeta(Long locationId, String sourceId) {

@@ -35,14 +35,14 @@ public interface IdentityService {
 	/**
 	 * Get the ID of the current node.
 	 * 
-	 * @return node ID, or {@literal null} if the ID is not known
+	 * @return node ID, or {@code null} if the ID is not known
 	 */
 	Long getNodeId();
 
 	/**
 	 * Get a {@link Principal} for the current node.
 	 * 
-	 * @return The node Principal, or {@literal null} if none available.
+	 * @return The node Principal, or {@code null} if none available.
 	 */
 	Principal getNodePrincipal();
 
@@ -83,7 +83,7 @@ public interface IdentityService {
 	/**
 	 * Get the URL to the SolarIn MQTT service.
 	 * 
-	 * @return the SolarIn MQTT URL, or {@literal null} if not available
+	 * @return the SolarIn MQTT URL, or {@code null} if not available
 	 * @since 1.2
 	 */
 	String getSolarInMqttUrl();

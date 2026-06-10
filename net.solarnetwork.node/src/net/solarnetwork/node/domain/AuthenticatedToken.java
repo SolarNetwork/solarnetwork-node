@@ -53,7 +53,7 @@ public class AuthenticatedToken extends User implements SecurityActor {
 	 * @param roles
 	 *        the granted roles
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null} or empty
+	 *         if any argument is {@code null} or empty
 	 */
 	public AuthenticatedToken(SecurityToken token, String... roles) {
 		super(requireNonNullArgument(token, "token").getId(), "", true, true, true, true, roles(roles));
@@ -68,7 +68,7 @@ public class AuthenticatedToken extends User implements SecurityActor {
 	 * @param authorities
 	 *        the granted authorities
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public AuthenticatedToken(SecurityToken token, Collection<? extends GrantedAuthority> authorities) {
 		super(requireNonNullArgument(token, "token").getId(), "", true, true, true, true,

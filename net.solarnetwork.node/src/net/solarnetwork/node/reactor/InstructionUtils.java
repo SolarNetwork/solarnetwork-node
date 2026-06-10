@@ -72,10 +72,10 @@ public final class InstructionUtils {
 	 * Create a new status for a given instruction.
 	 * 
 	 * @param instruction
-	 *        the instruction, or {@literal null}
+	 *        the instruction, or {@code null}
 	 * @param state
 	 *        the new state
-	 * @return the status, never {@literal null}
+	 * @return the status, never {@code null}
 	 */
 	public static InstructionStatus createStatus(Instruction instruction, InstructionState state) {
 		return createStatus(instruction, state, Instant.now(), null);
@@ -85,12 +85,12 @@ public final class InstructionUtils {
 	 * Create a new status for a given instruction.
 	 * 
 	 * @param instruction
-	 *        the instruction, or {@literal null}
+	 *        the instruction, or {@code null}
 	 * @param state
 	 *        the new state
 	 * @param resultParameters
 	 *        the optional result parameters
-	 * @return the status, never {@literal null}
+	 * @return the status, never {@code null}
 	 */
 	public static InstructionStatus createStatus(Instruction instruction, InstructionState state,
 			Map<String, ?> resultParameters) {
@@ -101,14 +101,14 @@ public final class InstructionUtils {
 	 * Create a new status for a given instruction.
 	 * 
 	 * @param instruction
-	 *        the instruction, or {@literal null}
+	 *        the instruction, or {@code null}
 	 * @param state
 	 *        the new state
 	 * @param date
 	 *        the status date
 	 * @param resultParameters
 	 *        the optional result parameters
-	 * @return the status, never {@literal null}
+	 * @return the status, never {@code null}
 	 */
 	public static InstructionStatus createStatus(Instruction instruction, InstructionState state,
 			Instant date, Map<String, ?> resultParameters) {
@@ -130,7 +130,7 @@ public final class InstructionUtils {
 	 *        the instruction topic
 	 * @param params
 	 *        an optional map of parameters
-	 * @return the new instruction, never {@literal null}
+	 * @return the new instruction, never {@code null}
 	 */
 	public static Instruction createLocalInstruction(String topic, Map<String, String> params) {
 		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
@@ -158,7 +158,7 @@ public final class InstructionUtils {
 	 * @param paramValue
 	 *        if {@code paramName} provided then the corresponding parameter
 	 *        value
-	 * @return the new instruction, never {@literal null}
+	 * @return the new instruction, never {@code null}
 	 */
 	public static Instruction createLocalInstruction(String topic, String paramName, String paramValue) {
 		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
@@ -181,7 +181,7 @@ public final class InstructionUtils {
 	 *        the ID of the control to set the control value to
 	 * @param controlValue
 	 *        the value to set the control to
-	 * @return the new instruction, never {@literal null}
+	 * @return the new instruction, never {@code null}
 	 */
 	public static Instruction createSetControlValueLocalInstruction(String controlId,
 			Object controlValue) {
@@ -196,7 +196,7 @@ public final class InstructionUtils {
 	 *        the message
 	 * @param code
 	 *        the code
-	 * @return the map, never {@literal null}
+	 * @return the map, never {@code null}
 	 * @since 1.1
 	 */
 	public static Map<String, Object> createErrorResultParameters(String message, String code) {

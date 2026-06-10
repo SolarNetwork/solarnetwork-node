@@ -101,7 +101,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * This can be used for logging, display, etc.
 	 * </p>
 	 *
-	 * @return an identifier, never {@literal null}
+	 * @return an identifier, never {@code null}
 	 */
 	default String getIdentifier() {
 		Long id = getId();
@@ -119,7 +119,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	/**
 	 * Get the instruction state.
 	 *
-	 * @return the state, or {@literal null} if none available
+	 * @return the state, or {@code null} if none available
 	 */
 	@Override
 	InstructionStatus getStatus();
@@ -133,7 +133,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * {@code long} epoch millisecond value or an ISO 8601 instant.
 	 * </p>
 	 *
-	 * @return the instruction execution date, or {@literal null} if one is not
+	 * @return the instruction execution date, or {@code null} if one is not
 	 *         available or cannot be parsed
 	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
 	 * @see #timestampParameterValue(String)
@@ -154,7 +154,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 *
 	 * @param parameterName
 	 *        the name of the parameter to parse as a timestamp
-	 * @return the parameter value parsed as a timestamp, or {@literal null} if
+	 * @return the parameter value parsed as a timestamp, or {@code null} if
 	 *         one is not available or cannot be parsed
 	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
 	 * @since 2.2
@@ -199,8 +199,8 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * value.
 	 * </p>
 	 *
-	 * @return the parameters as a map, or {@literal null} if
-	 *         {@link #getParameterMultiMap()} is {@literal null}
+	 * @return the parameters as a map, or {@code null} if
+	 *         {@link #getParameterMultiMap()} is {@code null}
 	 * @since 2.3
 	 */
 	default public Map<String, String> params() {

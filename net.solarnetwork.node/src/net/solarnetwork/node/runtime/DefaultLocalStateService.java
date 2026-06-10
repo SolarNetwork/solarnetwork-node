@@ -84,7 +84,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	 * @param localStateDao
 	 *        the DAO to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DefaultLocalStateService(OptionalService<LocalStateDao> localStateDao) {
 		super();

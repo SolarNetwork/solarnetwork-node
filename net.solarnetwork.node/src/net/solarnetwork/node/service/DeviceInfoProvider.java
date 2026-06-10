@@ -37,11 +37,11 @@ public interface DeviceInfoProvider {
 	 * Get a {@link DeviceInfo} instance.
 	 * 
 	 * <p>
-	 * This method returns {@literal null}. Extending classes must override to
+	 * This method returns {@code null}. Extending classes must override to
 	 * provide device info metadata.
 	 * </p>
 	 * 
-	 * @return the device info, or {@literal null} if none available
+	 * @return the device info, or {@code null} if none available
 	 */
 	default DeviceInfo deviceInfo() {
 		return null;
@@ -51,7 +51,7 @@ public interface DeviceInfoProvider {
 	 * Get the source ID to publish device info under.
 	 * 
 	 * <p>
-	 * This method returns {@literal null}. Extending classes must override to
+	 * This method returns {@code null}. Extending classes must override to
 	 * provide a source ID value if they wish to publish device info metadata.
 	 * </p>
 	 * 

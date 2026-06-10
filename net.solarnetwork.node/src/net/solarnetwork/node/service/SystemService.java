@@ -99,7 +99,7 @@ public interface SystemService {
 	/**
 	 * Get the available host aliases.
 	 * 
-	 * @return the host aliases, never {@literal null}
+	 * @return the host aliases, never {@code null}
 	 * @since 1.3
 	 */
 	MultiValueMap<InetAddress, String> hostAliases();

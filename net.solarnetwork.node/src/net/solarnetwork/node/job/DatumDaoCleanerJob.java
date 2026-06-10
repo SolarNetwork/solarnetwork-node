@@ -59,7 +59,7 @@ public class DatumDaoCleanerJob extends BaseIdentifiable implements JobService {
 	 * @param datumDao
 	 *        the datum DAO to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DatumDaoCleanerJob(DatumDao datumDao) {
 		super();

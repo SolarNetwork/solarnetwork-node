@@ -61,7 +61,7 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 	 * @param securityTokenDao
 	 *        the DAO to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DefaultSecurityTokenService(OptionalService<SecurityTokenDao> securityTokenDao) {
 		this(defaultRng(), securityTokenDao);
@@ -75,7 +75,7 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 	 * @param securityTokenDao
 	 *        the DAO to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DefaultSecurityTokenService(SecureRandom rng,
 			OptionalService<SecurityTokenDao> securityTokenDao) {

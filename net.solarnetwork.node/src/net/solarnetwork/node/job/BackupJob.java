@@ -45,7 +45,7 @@ public class BackupJob extends BaseIdentifiable implements JobService {
 	 * @param backupManager
 	 *        the backup manager
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public BackupJob(BackupManager backupManager) {
 		super();

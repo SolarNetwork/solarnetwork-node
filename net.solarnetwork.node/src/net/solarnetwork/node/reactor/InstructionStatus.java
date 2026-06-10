@@ -39,7 +39,7 @@ public interface InstructionStatus extends net.solarnetwork.domain.InstructionSt
 	 * This is the state that has been posted back to SolarNet.
 	 * </p>
 	 * 
-	 * @return the acknowledged instruction state, or {@literal null} if never
+	 * @return the acknowledged instruction state, or {@code null} if never
 	 *         acknowledged
 	 */
 	InstructionState getAcknowledgedInstructionState();

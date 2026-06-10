@@ -36,7 +36,7 @@ public interface DcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous DC current output, in amperes.
 	 * 
 	 * @param value
-	 *        amperes, or {@literal null} if not available
+	 *        amperes, or {@code null} if not available
 	 * @since 1.1
 	 */
 	default void setDcCurrent(Float value) {
@@ -47,7 +47,7 @@ public interface DcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous DC power output, in watts.
 	 * 
 	 * @param value
-	 *        watts, or {@literal null} if not available
+	 *        watts, or {@code null} if not available
 	 */
 	default void setDcPower(Integer value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, DC_POWER_KEY, value);
@@ -57,7 +57,7 @@ public interface DcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * Set the instantaneous DC voltage output, in volts.
 	 * 
 	 * @param value
-	 *        DC voltage, or{@literal null} if not available
+	 *        DC voltage, or{@code null} if not available
 	 */
 	default void setDcVoltage(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, DC_VOLTAGE_KEY, value);

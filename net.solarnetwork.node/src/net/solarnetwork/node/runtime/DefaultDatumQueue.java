@@ -127,7 +127,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param eventAdmin
 	 *        the event admin
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin) {
 		this(nodeDatumDao, eventAdmin, new StaticOptionalService<>(null));
@@ -144,7 +144,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *        the direct consumer, which is invoked directly on the queue
 	 *        processor thread
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 * @since 2.1
 	 */
 	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin,
@@ -695,7 +695,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	/**
 	 * Set the configured transform service.
 	 *
-	 * @return the transform service, or {@literal null}
+	 * @return the transform service, or {@code null}
 	 */
 	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
 		return datumFilterService;
@@ -761,7 +761,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	/**
 	 * Get an exception handler for the datum processor.
 	 *
-	 * @return the exception handler, or {@literal null}
+	 * @return the exception handler, or {@code null}
 	 */
 	public UncaughtExceptionHandler getDatumProcessorExceptionHandler() {
 		return datumProcessorExceptionHandler;

@@ -68,7 +68,7 @@ public interface DataAccessor {
 	/**
 	 * Gets the time stamp of the data.
 	 *
-	 * @return the data time stamp, or {@literal null} if no data has been
+	 * @return the data time stamp, or {@code null} if no data has been
 	 *         collected yet
 	 */
 	Instant getDataTimestamp();
@@ -81,7 +81,7 @@ public interface DataAccessor {
 	 * some standardized keys to use in the returned map.
 	 * </p>
 	 *
-	 * @return a map of device information, never {@literal null}
+	 * @return a map of device information, never {@code null}
 	 */
 	Map<String, Object> getDeviceInfo();
 
@@ -89,7 +89,7 @@ public interface DataAccessor {
 	 * Get a {@link DeviceInfo} instance based on the {@link #getDeviceInfo()}
 	 * data.
 	 *
-	 * @return the device info, or {@literal null} if no device properties are
+	 * @return the device info, or {@code null} if no device properties are
 	 *         available
 	 * @since 1.1
 	 */
@@ -102,7 +102,7 @@ public interface DataAccessor {
 	 * Get a {@link BasicDeviceInfo} builder, populated from
 	 * {@link #getDeviceInfo()}.
 	 *
-	 * @return the builder, never {@literal null}
+	 * @return the builder, never {@code null}
 	 * @since 1.1
 	 */
 	default BasicDeviceInfo.Builder deviceInfoBuilder() {
@@ -116,7 +116,7 @@ public interface DataAccessor {
 	 *
 	 * @param info
 	 *        the info to extract device properties from
-	 * @return the builder, never {@literal null}
+	 * @return the builder, never {@code null}
 	 */
 	static BasicDeviceInfo.Builder deviceInfoBuilderForInfo(Map<String, ?> info) {
 		BasicDeviceInfo.Builder b = BasicDeviceInfo.builder();

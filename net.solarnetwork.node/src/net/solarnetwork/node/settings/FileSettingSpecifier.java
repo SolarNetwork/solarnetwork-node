@@ -53,7 +53,7 @@ public interface FileSettingSpecifier extends KeyedSettingSpecifier<Resource> {
 	 * </p>
 	 * 
 	 * <p>
-	 * If the returned value is {@literal null} or empty, then all file types
+	 * If the returned value is {@code null} or empty, then all file types
 	 * are acceptable.
 	 * </p>
 	 * 

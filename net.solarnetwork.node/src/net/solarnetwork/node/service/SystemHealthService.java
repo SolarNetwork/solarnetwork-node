@@ -55,7 +55,7 @@ public interface SystemHealthService {
 		 * @param date
 		 *        The date the tests were executed at.
 		 * @param results
-		 *        The test results (or {@literal null} if none available).
+		 *        The test results (or {@code null} if none available).
 		 */
 		public PingTestResults(Instant date, Map<String, PingTestResultDisplay> results) {
 			super();
@@ -113,8 +113,8 @@ public interface SystemHealthService {
 	 * 
 	 * @param pingTestIds
 	 *        an optional set of ID regular expressions to limit the tests to,
-	 *        or {@literal null} or empty to perform all available tests
-	 * @return the results, never {@literal null}
+	 *        or {@code null} or empty to perform all available tests
+	 * @return the results, never {@code null}
 	 */
 	PingTestResults performPingTests(Set<String> pingTestIds);
 

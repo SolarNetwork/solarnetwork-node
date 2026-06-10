@@ -87,21 +87,21 @@ public interface PlatformPackageService {
 		/**
 		 * Get a result message.
 		 * 
-		 * @return a result message (or {@literal null})
+		 * @return a result message (or {@code null})
 		 */
 		String getMessage();
 
 		/**
 		 * Get a result exception.
 		 * 
-		 * @return an exception, or {@literal null} if no exception occurred
+		 * @return an exception, or {@code null} if no exception occurred
 		 */
 		Throwable getException();
 
 		/**
 		 * Get a complete list of files installed from the package.
 		 * 
-		 * @return the extracted paths, or {@literal null} if nothing installed
+		 * @return the extracted paths, or {@code null} if nothing installed
 		 */
 		List<Path> getExtractedPaths();
 
@@ -138,7 +138,7 @@ public interface PlatformPackageService {
 	 *        an optional listener of the progress of extracting the package
 	 * @param context
 	 *        a context object to pass to {@code progressListener} and provide
-	 *        in the result; may be {@literal null}
+	 *        in the result; may be {@code null}
 	 * @return a future for the package installation results
 	 * @throws IllegalArgumentException
 	 *         if {@code archive} is not a supported type (that is, the
@@ -152,20 +152,20 @@ public interface PlatformPackageService {
 	 * List named packages, optionally filtering by name and installed status.
 	 * 
 	 * @param nameFilter
-	 *        a regular expression to filter packages by, or {@literal null} to
+	 *        a regular expression to filter packages by, or {@code null} to
 	 *        include everything
 	 * @param installedFilter
 	 *        {@literal true} to include only installed packages,
-	 *        {@literal false} to exclude installed packages, or {@literal null}
+	 *        {@literal false} to exclude installed packages, or {@code null}
 	 *        to include everything
-	 * @return the matching packages, never {@literal null}
+	 * @return the matching packages, never {@code null}
 	 */
 	Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter, Boolean installedFilter);
 
 	/**
 	 * List upgradable named packages.
 	 * 
-	 * @return the upgradable packages, never {@literal null}
+	 * @return the upgradable packages, never {@code null}
 	 * @since 2.1
 	 */
 	Future<Iterable<PlatformPackage>> listUpgradableNamedPackages();
@@ -200,7 +200,7 @@ public interface PlatformPackageService {
 	 * @param name
 	 *        the package name to install
 	 * @param version
-	 *        the package version to install, or {@literal null} for the highest
+	 *        the package version to install, or {@code null} for the highest
 	 *        available version
 	 * @param baseDirectory
 	 *        a "base" directory to resolve relative file paths against
@@ -208,7 +208,7 @@ public interface PlatformPackageService {
 	 *        an optional listener of the progress of extracting the package
 	 * @param context
 	 *        a context object to pass to {@code progressListener} and provide
-	 *        in the result; may be {@literal null}
+	 *        in the result; may be {@code null}
 	 * @return a future for the package installation results
 	 */
 	<T> Future<PlatformPackageResult<T>> installNamedPackage(String name, String version,
@@ -230,7 +230,7 @@ public interface PlatformPackageService {
 	 *        an optional listener of the progress of extracting the package
 	 * @param context
 	 *        a context object to pass to {@code progressListener} and provide
-	 *        in the result; may be {@literal null}
+	 *        in the result; may be {@code null}
 	 * @return a future for the package installation results
 	 */
 	<T> Future<PlatformPackageResult<T>> removeNamedPackage(String name,
@@ -250,7 +250,7 @@ public interface PlatformPackageService {
 	 *        an optional listener of the progress of extracting the package
 	 * @param context
 	 *        a context object to pass to {@code progressListener} and provide
-	 *        in the result; may be {@literal null}
+	 *        in the result; may be {@code null}
 	 * @return a future for the package installation results
 	 */
 	<T> Future<PlatformPackageResult<T>> upgradeNamedPackages(ProgressListener<T> progressListener,

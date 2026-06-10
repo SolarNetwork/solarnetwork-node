@@ -230,7 +230,7 @@ public interface PlatformService {
 	/**
 	 * Get the current active platform task status.
 	 * 
-	 * @return the task info, or {@literal null} if no task is active
+	 * @return the task info, or {@code null} if no task is active
 	 */
 	PlatformTaskStatus activePlatformTaskStatus();
 
@@ -238,7 +238,7 @@ public interface PlatformService {
 	 * Get the current active platform task status, localized into task info.
 	 * 
 	 * @param locale
-	 *        the desired locale of the info, or {@literal null} for the system
+	 *        the desired locale of the info, or {@code null} for the system
 	 *        default
 	 * @return the localized platform task info
 	 */

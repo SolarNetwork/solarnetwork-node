@@ -45,14 +45,14 @@ public interface SecurityActor {
 	/**
 	 * Get the token.
 	 * 
-	 * @return the token, or {@literal null} if not authenticated with a token
+	 * @return the token, or {@code null} if not authenticated with a token
 	 */
 	SecurityToken getSecurityToken();
 
 	/**
 	 * Get the current active authentication.
 	 * 
-	 * @return the active Authentication, or {@literal null} if none available
+	 * @return the active Authentication, or {@code null} if none available
 	 */
 	static Authentication getCurrentAuthentication() {
 		return SecurityContextHolder.getContext().getAuthentication();
@@ -61,7 +61,7 @@ public interface SecurityActor {
 	/**
 	 * Get the current {@link SecurityActor}.
 	 * 
-	 * @return the current actor, never {@literal null}
+	 * @return the current actor, never {@code null}
 	 * @throws SecurityException
 	 *         if the actor is not available
 	 */

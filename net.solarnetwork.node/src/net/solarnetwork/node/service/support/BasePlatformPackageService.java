@@ -57,7 +57,7 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 * {@link AsyncTaskExecutor} if available.
 	 * 
 	 * <p>
-	 * If {@link #getTaskExecutor()} is {@literal null}, the task will be
+	 * If {@link #getTaskExecutor()} is {@code null}, the task will be
 	 * executed on the calling thread.
 	 * </p>
 	 * 
@@ -91,7 +91,7 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 * {@link AsyncTaskExecutor} if available.
 	 * 
 	 * <p>
-	 * If {@link #getTaskExecutor()} is {@literal null}, the task will be
+	 * If {@link #getTaskExecutor()} is {@code null}, the task will be
 	 * executed on the calling thread.
 	 * </p>
 	 * 
@@ -120,7 +120,7 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	/**
 	 * Get the configured task executor.
 	 * 
-	 * @return the task executor, or {@literal null}.
+	 * @return the task executor, or {@code null}.
 	 */
 	protected AsyncTaskExecutor taskExecutor() {
 		OptionalService<AsyncTaskExecutor> os = getTaskExecutor();

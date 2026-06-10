@@ -42,7 +42,7 @@ public interface SecurityTokenService {
 	 * The token secrets are not returned by this method.
 	 * </p>
 	 * 
-	 * @return the tokens, never {@literal null}
+	 * @return the tokens, never {@code null}
 	 */
 	Collection<SecurityToken> getAvailableTokens();
 
@@ -51,7 +51,7 @@ public interface SecurityTokenService {
 	 * 
 	 * @param tokenId
 	 *        the token ID
-	 * @return the token, or {@literal null} if not found
+	 * @return the token, or {@code null} if not found
 	 */
 	SecurityToken tokenForId(String tokenId);
 

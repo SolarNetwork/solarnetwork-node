@@ -37,7 +37,7 @@ public interface TariffScheduleProvider extends Identifiable {
 	/**
 	 * Get the tariff schedule offered by this service.
 	 *
-	 * @return the tariff schedule, or {@literal null} if not available
+	 * @return the tariff schedule, or {@code null} if not available
 	 */
 	TariffSchedule tariffSchedule();
 

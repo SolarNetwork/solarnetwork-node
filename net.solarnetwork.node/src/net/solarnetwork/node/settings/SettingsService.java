@@ -84,7 +84,7 @@ public interface SettingsService {
 	 * {@link #DEFAULT_SETTING_RESOURCE_DIR} if not defined.
 	 * </p>
 	 *
-	 * @return the setting resource directory, never {@literal null}
+	 * @return the setting resource directory, never {@code null}
 	 * @since 1.4
 	 */
 	static Path settingResourceDirectory() {
@@ -136,7 +136,7 @@ public interface SettingsService {
 	/**
 	 * Get a list of all possible non-factory setting providers.
 	 *
-	 * @return list of setting providers (never {@literal null})
+	 * @return list of setting providers (never {@code null})
 	 */
 	List<SettingSpecifierProvider> getProviders();
 
@@ -146,7 +146,7 @@ public interface SettingsService {
 	 * @param filter
 	 *        the search filter; the filter is applied to the factory service
 	 *        properties
-	 * @return list of setting providers (never {@literal null})
+	 * @return list of setting providers (never {@code null})
 	 * @since 1.6
 	 */
 	List<SettingSpecifierProvider> getProviders(SearchFilter filter);
@@ -154,7 +154,7 @@ public interface SettingsService {
 	/**
 	 * Get a list of all possible setting provider factories.
 	 *
-	 * @return list of setting provider factories (never {@literal null})
+	 * @return list of setting provider factories (never {@code null})
 	 */
 	List<SettingSpecifierProviderFactory> getProviderFactories();
 
@@ -164,7 +164,7 @@ public interface SettingsService {
 	 * @param filter
 	 *        the search filter; the filter is applied to the factory service
 	 *        properties
-	 * @return list of setting provider factories (never {@literal null})
+	 * @return list of setting provider factories (never {@code null})
 	 * @since 1.6
 	 */
 	List<SettingSpecifierProviderFactory> getProviderFactories(SearchFilter filter);
@@ -175,7 +175,7 @@ public interface SettingsService {
 	 * @param factoryUid
 	 *        the factory UID to get the providers for
 	 *
-	 * @return the factory, or {@literal null} if not available
+	 * @return the factory, or {@code null} if not available
 	 */
 	SettingSpecifierProviderFactory getProviderFactory(String factoryUid);
 
@@ -223,7 +223,7 @@ public interface SettingsService {
 	 *        the factory UID to create the new instance for
 	 * @param instanceUid
 	 *        the instance UID to create the new instance for, or
-	 *        {@literal null} to automatically assign one
+	 *        {@code null} to automatically assign one
 	 * @return the new instance ID
 	 * @since 2.1
 	 */
@@ -275,7 +275,7 @@ public interface SettingsService {
 	 *        the factory UID to get the providers for
 	 *
 	 * @return mapping of instance IDs to associated setting providers (never
-	 *         {@literal null})
+	 *         {@code null})
 	 */
 	Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUid);
 
@@ -301,7 +301,7 @@ public interface SettingsService {
 	/**
 	 * Get a list of all available setting resource handlers.
 	 *
-	 * @return the handlers, never {@literal null}
+	 * @return the handlers, never {@code null}
 	 * @since 2.1
 	 */
 	List<SettingResourceHandler> getSettingResourceHandlers();
@@ -313,8 +313,8 @@ public interface SettingsService {
 	 *        the ID if the {@link SettingResourceHandler} to get
 	 * @param instanceKey
 	 *        if {@code handlerKey} is a factory, the ID of the instance to
-	 *        import the resources for, otherwise {@literal null}
-	 * @return the resource handler, or {@literal null} if not available
+	 *        import the resources for, otherwise {@code null}
+	 * @return the resource handler, or {@code null} if not available
 	 * @since 1.4
 	 */
 	SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey);
@@ -327,10 +327,10 @@ public interface SettingsService {
 	 *        from
 	 * @param instanceKey
 	 *        if {@code handlerKey} is a factory, the ID of the instance to
-	 *        import the resources for, otherwise {@literal null}
+	 *        import the resources for, otherwise {@code null}
 	 * @param settingKey
 	 *        the setting ID to get the resources for
-	 * @return the resources (never {@literal null})
+	 * @return the resources (never {@code null})
 	 * @throws IOException
 	 *         if any IO error occurs
 	 * @since 1.4
@@ -353,7 +353,7 @@ public interface SettingsService {
 	 *        the ID if the {@link SettingResourceHandler} to import to
 	 * @param instanceKey
 	 *        if {@code handlerKey} is a factory, the ID of the instance to
-	 *        import the resources for, otherwise {@literal null}
+	 *        import the resources for, otherwise {@code null}
 	 * @param settingKey
 	 *        the setting ID to import the resources for
 	 * @param resources
@@ -376,7 +376,7 @@ public interface SettingsService {
 	 *        the ID if the {@link SettingResourceHandler} to remove from
 	 * @param instanceKey
 	 *        if {@code handlerKey} is a factory, the ID of the instance to
-	 *        remove the resources for, otherwise {@literal null}
+	 *        remove the resources for, otherwise {@code null}
 	 * @param settingKey
 	 *        the setting ID to remove the resources for
 	 * @param resources
@@ -402,7 +402,7 @@ public interface SettingsService {
 	 * Export all settings matching a filter as CSV formatted text.
 	 *
 	 * @param filter
-	 *        the filter, or {@literal null} for all available settings
+	 *        the filter, or {@code null} for all available settings
 	 * @param out
 	 *        the output stream
 	 * @throws IOException
@@ -418,13 +418,13 @@ public interface SettingsService {
 	 * ID.
 	 *
 	 * @param factoryUid
-	 *        the UID of the factory to get, or {@literal null} for a
+	 *        the UID of the factory to get, or {@code null} for a
 	 *        non-factory component
 	 * @param instanceUid
 	 *        if UID of the instance
-	 * @return the available settings, never {@literal null}
+	 * @return the available settings, never {@code null}
 	 * @throws IllegalArgumentException
-	 *         if both arguments are {@literal null}
+	 *         if both arguments are {@code null}
 	 * @since 2.1
 	 */
 	List<Setting> getSettings(String factoryUid, String instanceUid);
@@ -434,7 +434,7 @@ public interface SettingsService {
 	 *
 	 * @param key
 	 *        the setting key to get the notes for
-	 * @return the available notes, never {@literal null}
+	 * @return the available notes, never {@code null}
 	 * @since 2.6
 	 */
 	List<SettingNote> notesForKey(String key);
@@ -481,10 +481,10 @@ public interface SettingsService {
 	 * <p>
 	 * A new backup need not be created if the settings are unchanged. In that
 	 * case, or if this method does not create a backup for any reason, this
-	 * method should return {@literal null}.
+	 * method should return {@code null}.
 	 * </p>
 	 *
-	 * @return the backup object, or {@literal null} if no backup created
+	 * @return the backup object, or {@code null} if no backup created
 	 */
 	@SuppressWarnings("deprecation")
 	SettingsBackup backupSettings();
@@ -492,7 +492,7 @@ public interface SettingsService {
 	/**
 	 * Get a collection of all known settings backups.
 	 *
-	 * @return the backups, never {@literal null}
+	 * @return the backups, never {@code null}
 	 */
 	@SuppressWarnings("deprecation")
 	Collection<SettingsBackup> getAvailableBackups();
@@ -503,7 +503,7 @@ public interface SettingsService {
 	 *
 	 * @param backup
 	 *        the backup to get the Reader for
-	 * @return the Reader, or {@literal null} if the backup cannot be found
+	 * @return the Reader, or {@code null} if the backup cannot be found
 	 */
 	@SuppressWarnings("deprecation")
 	Reader getReaderForBackup(SettingsBackup backup);

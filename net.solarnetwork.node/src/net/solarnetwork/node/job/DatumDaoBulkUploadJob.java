@@ -65,7 +65,7 @@ public class DatumDaoBulkUploadJob extends BaseIdentifiable implements JobServic
 	 * @param uploadService
 	 *        the upload service to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DatumDaoBulkUploadJob(DatumDao dao, BulkUploadService uploadService) {
 		super();

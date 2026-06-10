@@ -49,9 +49,9 @@ public interface PlaceholderService {
 	 * @param s
 	 *        the string to resolve placeholders in
 	 * @param parameters
-	 *        parameters to use while resolving placeholders, or {@literal null}
-	 * @return the resolved string, or {@literal null} if {@code s} is
-	 *         {@literal null}
+	 *        parameters to use while resolving placeholders, or {@code null}
+	 * @return the resolved string, or {@code null} if {@code s} is
+	 *         {@code null}
 	 */
 	String resolvePlaceholders(String s, Map<String, ?> parameters);
 
@@ -241,9 +241,9 @@ public interface PlaceholderService {
 	 * @param s
 	 *        the string to resolve placeholders
 	 * @param parameters
-	 *        to use while resolving placeholders, or {@literal null}
-	 * @return the resolved string, or {@literal null} if {@code s} is
-	 *         {@literal null}
+	 *        to use while resolving placeholders, or {@code null}
+	 * @return the resolved string, or {@code null} if {@code s} is
+	 *         {@code null}
 	 */
 	static String resolvePlaceholders(OptionalService<PlaceholderService> service, String s,
 			Map<String, ?> parameters) {

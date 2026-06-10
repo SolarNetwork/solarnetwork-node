@@ -76,7 +76,7 @@ public interface SettingResourceHandler {
 	 *        the setting key, generally a
 	 *        {@link net.solarnetwork.settings.KeyedSettingSpecifier#getKey()}
 	 *        value
-	 * @return the resources, never {@literal null}
+	 * @return the resources, never {@code null}
 	 */
 	Iterable<Resource> currentSettingResources(String settingKey);
 
@@ -97,7 +97,7 @@ public interface SettingResourceHandler {
 	 * @param resources
 	 *        the resources with the settings to apply
 	 * @return any setting values that should be persisted as a result of
-	 *         applying the given resources (never {@literal null}
+	 *         applying the given resources (never {@code null}
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */

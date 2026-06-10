@@ -36,7 +36,7 @@ public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Lo
 	/**
 	 * Get the location this setting is for.
 	 * 
-	 * @return a Location, or {@literal null} if none available
+	 * @return a Location, or {@code null} if none available
 	 */
 	DatumLocation getLocation();
 

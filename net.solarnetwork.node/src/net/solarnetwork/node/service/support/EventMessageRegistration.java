@@ -52,7 +52,7 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	 * @param registrar
 	 *        the registrar
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public EventMessageRegistration(EventMessageRegistrar registrar) {
 		super();

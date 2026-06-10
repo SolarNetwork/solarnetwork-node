@@ -75,7 +75,7 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * Constructor.
 	 *
 	 * @param values
-	 *        the values, or {@literal null} to have a list created
+	 *        the values, or {@code null} to have a list created
 	 *        automatically
 	 */
 	public SettingsCommand(List<SettingValueBean> values) {
@@ -86,10 +86,10 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * Constructor.
 	 *
 	 * @param values
-	 *        the values, or {@literal null} to have a list created
+	 *        the values, or {@code null} to have a list created
 	 *        automatically
 	 * @param settingKeyPatternsToClean
-	 *        the key patterns to clean, or {@literal null}
+	 *        the key patterns to clean, or {@code null}
 	 */
 	public SettingsCommand(List<SettingValueBean> values, Iterable<Pattern> settingKeyPatternsToClean) {
 		super();

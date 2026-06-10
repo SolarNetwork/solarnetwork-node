@@ -66,7 +66,7 @@ public class SecurityToken extends BasicStringEntity {
 	 * @param tokenSecret
 	 *        the token secret
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SecurityToken(String tokenId, String tokenSecret) {
 		this(tokenId, null, tokenSecret, null, null);
@@ -86,7 +86,7 @@ public class SecurityToken extends BasicStringEntity {
 	 * @param description
 	 *        the description
 	 * @throws IllegalArgumentException
-	 *         if {@code tokenId} or {@code tokenSecret} are {@literal null}
+	 *         if {@code tokenId} or {@code tokenSecret} are {@code null}
 	 */
 	public SecurityToken(String tokenId, Instant created, String tokenSecret, String name,
 			String description) {
@@ -142,10 +142,10 @@ public class SecurityToken extends BasicStringEntity {
 	 * Create a copy without the token secret populated.
 	 * 
 	 * @param newName
-	 *        if non-{@literal null} then use for the {@code name} in the new
+	 *        if non-{@code null} then use for the {@code name} in the new
 	 *        copy
 	 * @param newDescription
-	 *        if non-{@literal null} then use for the {@code description} in the
+	 *        if non-{@code null} then use for the {@code description} in the
 	 *        new copy
 	 * @return the copy
 	 */
@@ -164,7 +164,7 @@ public class SecurityToken extends BasicStringEntity {
 	 *        {@link AbstractAuthorizationBuilder#saveSigningKey(String)} on
 	 * @return the {@code builder} instance
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 * @throws net.solarnetwork.security.SecurityException
 	 *         if any error occurs computing the key
 	 */

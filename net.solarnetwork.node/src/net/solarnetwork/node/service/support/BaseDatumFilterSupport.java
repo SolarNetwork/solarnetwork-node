@@ -100,7 +100,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * Constructor.
 	 *
 	 * @param stats
-	 *        the status to use (can be {@literal null}
+	 *        the status to use (can be {@code null}
 	 * @since 1.2
 	 */
 	public BaseDatumFilterSupport(Stat[] stats) {
@@ -113,7 +113,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * Populate settings for the {@code BaseDatumFilterSupport} class.
 	 *
 	 * <p>
-	 * This will use {@literal null} for all default values.
+	 * This will use {@code null} for all default values.
 	 * </p>
 	 *
 	 * @param settings
@@ -261,7 +261,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @param value
 	 *        the value to test
 	 * @param emptyPatternMatches
-	 *        {@literal true} if a {@literal null} regular expression is treated
+	 *        {@literal true} if a {@code null} regular expression is treated
 	 *        as a match (thus matching any value)
 	 * @return {@literal true} if at least one regular expression matches
 	 *         {@code value}
@@ -355,9 +355,9 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * </p>
 	 *
 	 * @param datum
-	 *        the datum (may be {@literal null})
+	 *        the datum (may be {@code null})
 	 * @param samples
-	 *        the samples (may be {@literal null})
+	 *        the samples (may be {@code null})
 	 * @return {@literal true} if the configured {@code requiredTag} expression
 	 *         matches either {@code samples} or {@code datum}
 	 * @since 1.1
@@ -453,7 +453,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @param parameters
 	 *        an optional set of parameters to copy into the result
-	 * @return a new map, never {@literal null}
+	 * @return a new map, never {@code null}
 	 * @since 1.1
 	 */
 	protected Map<String, Object> smartPlaceholders(Map<String, Object> parameters) {
@@ -519,7 +519,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @param sourceIdPattern
 	 *        The source ID regex to match. Syntax errors in the pattern will be
-	 *        ignored and a {@literal null} value will be set instead.
+	 *        ignored and a {@code null} value will be set instead.
 	 */
 	public void setSourceId(String sourceIdPattern) {
 		try {
@@ -535,7 +535,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	/**
 	 * Get the operational modes service to use.
 	 *
-	 * @return the service, or {@literal null}
+	 * @return the service, or {@code null}
 	 */
 	public OperationalModesService getOpModesService() {
 		return opModesService;
@@ -555,7 +555,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	/**
 	 * Get an operational mode that is required by this service.
 	 *
-	 * @return the required operational mode, or {@literal null} for none
+	 * @return the required operational mode, or {@code null} for none
 	 * @since 1.1
 	 */
 	public String getRequiredOperationalMode() {
@@ -566,8 +566,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * Set an operational mode that is required by this service.
 	 *
 	 * @param requiredOperationalMode
-	 *        the required operational mode, or {@literal null} or an empty
-	 *        string that will be treated as {@literal null}
+	 *        the required operational mode, or {@code null} or an empty
+	 *        string that will be treated as {@code null}
 	 * @since 1.1
 	 */
 	public void setRequiredOperationalMode(String requiredOperationalMode) {

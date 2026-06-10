@@ -50,7 +50,7 @@ public interface DatumHistorian {
 	 *        an optional set of Ant-style source ID patterns to filter by
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @see #offset(Set, int, Class)
 	 */
 	<T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type);
@@ -69,7 +69,7 @@ public interface DatumHistorian {
 	 *        the source ID to find
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, or {@literal null} if not available
+	 * @return the matching datum, or {@code null} if not available
 	 * @see #offset(String, int, Class)
 	 */
 	<T extends NodeDatum> T latest(String sourceId, Class<T> type);
@@ -82,13 +82,13 @@ public interface DatumHistorian {
 	 *        the type of datum to get
 	 * @param sourceIdFilter
 	 *        an optional set of Ant-style source ID patterns to filter by; use
-	 *        {@literal null} or an empty set to return all available sources
+	 *        {@code null} or an empty set to return all available sources
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 */
 	<T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset, Class<T> type);
 
@@ -105,7 +105,7 @@ public interface DatumHistorian {
 	 *        {@literal 1} the next later, and so on
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, or {@literal null} if not available
+	 * @return the matching datum, or {@code null} if not available
 	 */
 	<T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type);
 
@@ -117,7 +117,7 @@ public interface DatumHistorian {
 	 *        the type of datum to get
 	 * @param sourceIdFilter
 	 *        an optional set of Ant-style source ID patterns to filter by; use
-	 *        {@literal null} or an empty set to return all available sources
+	 *        {@code null} or an empty set to return all available sources
 	 * @param timestamp
 	 *        the timestamp to reference
 	 * @param offset
@@ -125,7 +125,7 @@ public interface DatumHistorian {
 	 *        and {@literal 1} the next later, and so on
 	 * @param type
 	 *        the type of datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 * @since 1.1
 	 */
 	<T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, Instant timestamp, int offset,
@@ -145,7 +145,7 @@ public interface DatumHistorian {
 	 *        and {@literal 1} the next later, and so on
 	 * @param type
 	 *        the type of datum
-	 * @return the datum, or {@literal null} if no such datum is available
+	 * @return the datum, or {@code null} if no such datum is available
 	 */
 	<T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset, Class<T> type);
 
@@ -164,9 +164,9 @@ public interface DatumHistorian {
 	 *        the maximum number of datum to return, starting from
 	 *        {@code offset} and iterating over earlier datum
 	 * @param type
-	 *        the type of datum to filter the results by, or {@literal null} to
+	 *        the type of datum to filter the results by, or {@code null} to
 	 *        accept all datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 */
 	<T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count, Class<T> type);
 
@@ -186,9 +186,9 @@ public interface DatumHistorian {
 	 *        the maximum number of datum to return, starting from
 	 *        {@code offset} and iterating over earlier datum
 	 * @param type
-	 *        the type of datum to filter the results by, or {@literal null} to
+	 *        the type of datum to filter the results by, or {@code null} to
 	 *        accept all datum
-	 * @return the matching datum, never {@literal null}
+	 * @return the matching datum, never {@code null}
 	 */
 	<T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset, int count,
 			Class<T> type);

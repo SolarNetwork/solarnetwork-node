@@ -52,7 +52,7 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 	 * @param handlers
 	 *        the handlers
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SimpleInstructionExecutionService(List<InstructionHandler> handlers) {
 		super();

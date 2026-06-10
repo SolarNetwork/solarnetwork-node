@@ -42,7 +42,7 @@ public interface TariffScheduleProvidersOperations {
 	/**
 	 * Get a collection of available tariff schedule providers.
 	 *
-	 * @return the providers collection, possibly {@literal null}
+	 * @return the providers collection, possibly {@code null}
 	 */
 	OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders();
 
@@ -53,7 +53,7 @@ public interface TariffScheduleProvidersOperations {
 	 *        the UID of the schedule to resolve
 	 * @return the schedule from the first available provider whose
 	 *         {@link TariffScheduleProvider#getUid()} matches {@code uid} in a
-	 *         case-insensitive manner, or {@literal null} if no match is
+	 *         case-insensitive manner, or {@code null} if no match is
 	 *         available or the matching provider returns a {@code null}
 	 *         schedule
 	 */

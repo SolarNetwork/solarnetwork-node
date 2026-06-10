@@ -251,7 +251,7 @@ public class SerialPortBean implements Cloneable {
 	/**
 	 * Get the parity as a string value.
 	 * 
-	 * @return the parity, or {@literal null} if not supported
+	 * @return the parity, or {@code null} if not supported
 	 * @see #setParityString(String)
 	 * @since 1.1
 	 */

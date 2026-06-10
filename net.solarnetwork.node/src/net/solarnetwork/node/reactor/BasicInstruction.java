@@ -50,8 +50,8 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 *        the common instruction
 	 * @param instructorId
 	 *        the instructor ID
-	 * @return the new instruction, or {@literal null} if {@code instr} is
-	 *         {@literal null}
+	 * @return the new instruction, or {@code null} if {@code instr} is
+	 *         {@code null}
 	 */
 	public static BasicInstruction from(net.solarnetwork.domain.Instruction instr, String instructorId) {
 		if ( instr == null ) {
@@ -94,7 +94,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 * @param instructorId
 	 *        the instructor ID
 	 * @param status
-	 *        the status, or {@literal null}
+	 *        the status, or {@code null}
 	 */
 	public BasicInstruction(String topic, Instant instructionDate, String instructorId,
 			InstructionStatus status) {
@@ -113,7 +113,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 * @param instructorId
 	 *        the instructor ID
 	 * @param status
-	 *        the status, or {@literal null}
+	 *        the status, or {@code null}
 	 */
 	public BasicInstruction(Long id, String topic, Instant instructionDate, String instructorId,
 			InstructionStatus status) {

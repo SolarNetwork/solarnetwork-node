@@ -66,7 +66,7 @@ public class DefaultSystemHealthService extends BasicIdentifiable implements Sys
 	 * @param tests
 	 *        the list of all available tests
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public DefaultSystemHealthService(List<PingTest> tests) {
 		super();

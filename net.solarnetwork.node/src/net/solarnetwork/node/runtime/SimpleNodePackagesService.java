@@ -148,7 +148,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 		 *
 		 * @param value
 		 *        the parameter value to get the enum instance for
-		 * @return the enumeration instance, never {@literal null}
+		 * @return the enumeration instance, never {@code null}
 		 */
 		public static Status forParameterValue(String value) {
 			if ( value != null && !value.isEmpty() ) {
@@ -182,7 +182,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 	 * @param providers
 	 *        the collection of package service providers
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public SimpleNodePackagesService(Collection<PlatformPackageService> providers) {
 		super();

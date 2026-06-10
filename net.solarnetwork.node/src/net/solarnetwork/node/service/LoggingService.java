@@ -112,7 +112,7 @@ public interface LoggingService {
 	 * This represents the list of active loggers in the system.
 	 * </p>
 	 * 
-	 * @return the loggers, never {@literal null}
+	 * @return the loggers, never {@code null}
 	 */
 	Collection<String> loggers();
 
@@ -124,7 +124,7 @@ public interface LoggingService {
 	 * may be lost if the application is restarted.
 	 * </p>
 	 * 
-	 * @return the current logger levels, never {@literal null}
+	 * @return the current logger levels, never {@code null}
 	 */
 	Map<String, Level> loggerLevels();
 

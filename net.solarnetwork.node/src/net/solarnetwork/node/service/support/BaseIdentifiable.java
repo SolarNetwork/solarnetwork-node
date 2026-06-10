@@ -123,8 +123,8 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *
 	 * @param s
 	 *        the string to resolve placeholder values on
-	 * @return the resolved string, or {@literal null} if {@code s} is
-	 *         {@literal null}
+	 * @return the resolved string, or {@code null} if {@code s} is
+	 *         {@code null}
 	 * @since 1.3
 	 */
 	protected String resolvePlaceholders(String s) {
@@ -137,9 +137,9 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @param s
 	 *        the string to resolve placeholder values on
 	 * @param parameters
-	 *        optional parameters to use, or {@literal null}
-	 * @return the resolved string, or {@literal null} if {@code s} is
-	 *         {@literal null}
+	 *        optional parameters to use, or {@code null}
+	 * @return the resolved string, or {@code null} if {@code s} is
+	 *         {@code null}
 	 * @since 1.3
 	 */
 	protected String resolvePlaceholders(String s, Map<String, ?> parameters) {

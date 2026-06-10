@@ -48,7 +48,7 @@ public interface InstructionDao {
 	 *        the instruction ID
 	 * @param instructorId
 	 *        the instructor ID
-	 * @return the Instruction, or {@literal null} if not found
+	 * @return the Instruction, or {@code null} if not found
 	 */
 	Instruction getInstruction(Long id, String instructorId);
 
