@@ -69,9 +69,8 @@ public class LocalStateRowMapper implements RowMapper<LocalState> {
 		Instant modified = JdbcUtils.getUtcTimestampColumnValue(rs, 3);
 		String typeKey = rs.getString(4);
 		byte[] data = rs.getBytes(5);
-		LocalState state = new LocalState(key, created);
+		LocalState state = new LocalState(key, created, LocalStateType.forKey(typeKey));
 		state.setModified(modified);
-		state.setType(LocalStateType.forKey(typeKey));
 		state.setData(data);
 		return state;
 	}

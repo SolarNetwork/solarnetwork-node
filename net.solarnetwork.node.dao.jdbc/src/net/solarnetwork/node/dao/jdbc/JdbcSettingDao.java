@@ -24,6 +24,7 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -501,11 +502,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	@Override
 	protected Setting getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
 			throws SQLException {
-		Setting s = new Setting();
+		Setting s = new Setting(nonnull(resultSet.getString(3), "Key"),
+				nonnull(resultSet.getString(4), "Type"));
 		s.setValue(resultSet.getString(1));
 		s.setModified(resultSet.getTimestamp(2));
-		s.setKey(resultSet.getString(3));
-		s.setType(resultSet.getString(4));
 		s.setFlags(SettingFlag.setForMask(resultSet.getInt(5)));
 		s.setNote(resultSet.getString(6));
 		return s;
