@@ -23,6 +23,7 @@
 package net.solarnetwork.node.backup;
 
 import java.util.Date;
+import org.jspecify.annotations.Nullable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.domain.Unique;
@@ -64,6 +65,7 @@ public interface BackupIdentity extends Unique<String> {
 	 *
 	 * @return the node ID
 	 */
+	@Nullable
 	Long getNodeId();
 
 	/**
@@ -81,8 +83,9 @@ public interface BackupIdentity extends Unique<String> {
 	 * or tag.
 	 * </p>
 	 *
-	 * @return the qualifier, or {@literal null} if not known
+	 * @return the qualifier, or {@code null} if not known
 	 */
+	@Nullable
 	String getQualifier();
 
 }

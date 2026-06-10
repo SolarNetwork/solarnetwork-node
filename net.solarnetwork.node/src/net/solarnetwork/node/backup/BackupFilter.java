@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.backup;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.PaginationCriteria;
 
 /**
  * API for backup search filter.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.1
  */
 public interface BackupFilter extends PaginationCriteria {
@@ -38,6 +39,7 @@ public interface BackupFilter extends PaginationCriteria {
 	 *
 	 * @return the node ID
 	 */
+	@Nullable
 	Long getNodeId();
 
 	/**
@@ -56,6 +58,23 @@ public interface BackupFilter extends PaginationCriteria {
 	 */
 	default boolean hasAnyCriteria() {
 		return hasNodeCriteria() || getMax() != null || getOffset() != null;
+	}
+
+	/**
+	 * Get the node ID.
+	 *
+	 * <p>
+	 * This method is designed to be used after a call to
+	 * {@link #hasNodeCriteria()} returns {@code true}, to avoid nullness
+	 * warnings.
+	 * </p>
+	 *
+	 * @return the node ID (presumed non-null)
+	 * @since 1.1
+	 */
+	@SuppressWarnings("NullAway")
+	default Long nodeId() {
+		return getNodeId();
 	}
 
 }

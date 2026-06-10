@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -53,7 +54,7 @@ public interface BackupService {
 	/**
 	 * Get general status information about the service.
 	 *
-	 * @return status info (never {@literal null})
+	 * @return status info (never {@code null})
 	 */
 	BackupServiceInfo getInfo();
 
@@ -66,8 +67,10 @@ public interface BackupService {
 	 *
 	 * @param resources
 	 *        the resources to include in the backup
-	 * @return backup instance
+	 * @return backup instance, or {@code null} if one cannot be created or if
+	 *         {@code resources} is empty
 	 */
+	@Nullable
 	Backup performBackup(Iterable<BackupResource> resources);
 
 	/**
@@ -77,6 +80,7 @@ public interface BackupService {
 	 *        the key
 	 * @return the backup
 	 */
+	@Nullable
 	Backup backupForKey(String key);
 
 	/**
@@ -86,7 +90,7 @@ public interface BackupService {
 	 * These should be ideally ordered in newest to oldest order.
 	 * </p>
 	 *
-	 * @return the available backups, never {@literal null}
+	 * @return the available backups, never {@code null}
 	 */
 	Collection<Backup> getAvailableBackups();
 
@@ -98,7 +102,7 @@ public interface BackupService {
 	 * @return the filtered backups, never {@code null}
 	 * @since 2.1
 	 */
-	default FilterResults<Backup, String> findBackups(final BackupFilter filter) {
+	default FilterResults<Backup, String> findBackups(final @Nullable BackupFilter filter) {
 		final Collection<Backup> allBackups = getAvailableBackups();
 		if ( allBackups == null ) {
 			return new BasicFilterResults<>(List.of());
@@ -106,7 +110,7 @@ public interface BackupService {
 			return new BasicFilterResults<>(allBackups);
 		}
 		final List<Backup> allMatching = allBackups.stream().filter(b -> {
-			if ( filter.hasNodeCriteria() && !filter.getNodeId().equals(b.getNodeId()) ) {
+			if ( filter.hasNodeCriteria() && !filter.nodeId().equals(b.getNodeId()) ) {
 				return false;
 			}
 			return true;
@@ -136,8 +140,9 @@ public interface BackupService {
 	/**
 	 * Get a {@link SettingSpecifierProvider} for this service.
 	 *
-	 * @return provider, or {@literal null} if not supported
+	 * @return provider, or {@code null} if not supported
 	 */
+	@Nullable
 	SettingSpecifierProvider getSettingSpecifierProvider();
 
 	/**
@@ -145,14 +150,14 @@ public interface BackupService {
 	 * {@link #markedBackupForRestore(Map)}.
 	 *
 	 * @param backup
-	 *        The backup to mark for restoration later, or {@literal null} to
-	 *        clear a previous marked backup.
+	 *        The backup to mark for restoration later, or {@code null} to clear
+	 *        a previous marked backup.
 	 * @param props
 	 *        An optional map of properties to save with the mark.
 	 * @return {@literal true} on success
 	 * @since 1.1
 	 */
-	boolean markBackupForRestore(Backup backup, Map<String, String> props);
+	boolean markBackupForRestore(@Nullable Backup backup, @Nullable Map<String, String> props);
 
 	/**
 	 * Get a backup previously set via
@@ -162,34 +167,39 @@ public interface BackupService {
 	 *        An optional map in which any properties passed to
 	 *        {@link #markBackupForRestore(Backup, Map)} should be populated
 	 *        into
-	 * @return The marked backup, or {@literal null} if none exists.
+	 * @return The marked backup, or {@code null} if none exists.
 	 * @since 1.1
 	 */
-	Backup markedBackupForRestore(Map<String, String> props);
+	@Nullable
+	Backup markedBackupForRestore(@Nullable Map<String, String> props);
 
 	/**
 	 * Import a set of backup resources as a new {@code Backup}.
 	 *
 	 * @param date
-	 *        The backup date, or {@literal null} if not known.
+	 *        The backup date, or {@code null} if not known.
 	 * @param resources
 	 *        The resources to include in the backup.
 	 * @param props
 	 *        An optional map of properties to pass to the import process. The
 	 *        {@link BackupManager#BACKUP_KEY} property can be used to provide a
 	 *        proposed backup key.
-	 * @return A backup instance for the imported resources.
+	 * @return A backup instance for the imported resources, or {@code null} if
+	 *         no backup was created.
 	 * @since 1.2
 	 */
-	Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props);
+	@Nullable
+	Backup importBackup(@Nullable Date date, BackupResourceIterable resources,
+			@Nullable Map<String, String> props);
 
 	/**
 	 * Get a {@link SettingSpecifierProvider} for this service, when restoring
 	 * from an existing backup.
 	 *
-	 * @return provider, or {@literal null} if not supported
+	 * @return provider, or {@code null} if not supported
 	 * @since 1.3
 	 */
+	@Nullable
 	SettingSpecifierProvider getSettingSpecifierProviderForRestore();
 
 }

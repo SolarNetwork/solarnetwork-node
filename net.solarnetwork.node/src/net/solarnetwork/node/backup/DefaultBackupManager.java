@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.HierarchicalMessageSource;
@@ -54,6 +55,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.service.DynamicServiceUnavailableException;
 import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.util.StringUtils;
@@ -69,8 +71,8 @@ public class DefaultBackupManager implements BackupManager {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private Collection<BackupService> backupServices;
-	private Collection<BackupResourceProvider> resourceProviders;
+	private @Nullable Collection<BackupService> backupServices;
+	private @Nullable Collection<BackupResourceProvider> resourceProviders;
 	private ExecutorService executorService = defaultExecutorService();
 	private int backupRestoreDelaySeconds = 15;
 	private String preferredBackupServiceKey = FileSystemBackupService.KEY;
@@ -162,10 +164,18 @@ public class DefaultBackupManager implements BackupManager {
 	@Override
 	public MessageSource getMessageSource() {
 		HierarchicalMessageSource source = getMessageSourceInstance();
-		Map<String, MessageSource> delegates = new HashMap<String, MessageSource>();
-		for ( BackupService backupService : backupServices ) {
-			delegates.put(backupService.getKey() + ".",
-					backupService.getSettingSpecifierProvider().getMessageSource());
+		Map<String, MessageSource> delegates = new HashMap<>();
+		final Collection<BackupService> backupServices = this.backupServices;
+		if ( backupServices != null ) {
+			for ( BackupService backupService : backupServices ) {
+				SettingSpecifierProvider ssp = backupService.getSettingSpecifierProvider();
+				if ( ssp != null ) {
+					MessageSource ms = ssp.getMessageSource();
+					if ( ms != null ) {
+						delegates.put(backupService.getKey() + ".", ms);
+					}
+				}
+			}
 		}
 		PrefixedMessageSource ps = new PrefixedMessageSource();
 		ps.setDelegates(delegates);
@@ -175,13 +185,21 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		List<SettingSpecifier> results = new ArrayList<>(20);
 		BasicRadioGroupSettingSpecifier serviceSpec = new BasicRadioGroupSettingSpecifier(
 				"preferredBackupServiceKey", FileSystemBackupService.KEY);
-		Map<String, String> serviceSpecValues = new TreeMap<String, String>();
-		for ( BackupService service : backupServices ) {
-			serviceSpecValues.put(service.getKey(),
-					service.getSettingSpecifierProvider().getDisplayName());
+		Map<String, String> serviceSpecValues = new TreeMap<>();
+		final Collection<BackupService> backupServices = this.backupServices;
+		if ( backupServices != null ) {
+			for ( BackupService backupService : backupServices ) {
+				SettingSpecifierProvider ssp = backupService.getSettingSpecifierProvider();
+				if ( ssp != null ) {
+					String dispName = ssp.getDisplayName();
+					if ( dispName != null ) {
+						serviceSpecValues.put(backupService.getKey(), dispName);
+					}
+				}
+			}
 		}
 		serviceSpec.setValueTitles(serviceSpecValues);
 		results.add(serviceSpec);
@@ -189,14 +207,17 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public BackupService activeBackupService() {
+	public @Nullable BackupService activeBackupService() {
 		BackupService fallback = null;
-		for ( BackupService service : backupServices ) {
-			if ( preferredBackupServiceKey.equals(service.getKey()) ) {
-				return service;
-			}
-			if ( FileSystemBackupService.KEY.equals(service.getKey()) ) {
-				fallback = service;
+		final Collection<BackupService> backupServices = this.backupServices;
+		if ( backupServices != null ) {
+			for ( BackupService backupService : backupServices ) {
+				if ( preferredBackupServiceKey.equals(backupService.getKey()) ) {
+					return backupService;
+				}
+				if ( FileSystemBackupService.KEY.equals(backupService.getKey()) ) {
+					fallback = backupService;
+				}
 			}
 		}
 		return fallback;
@@ -204,7 +225,7 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public Iterable<BackupResource> resourcesForBackup() {
-		BackupService service = activeBackupService();
+		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.debug("No BackupService available, can't find resources for backup");
 			return Collections.emptyList();
@@ -216,11 +237,13 @@ public class DefaultBackupManager implements BackupManager {
 		}
 
 		final List<Iterator<BackupResource>> resources = new ArrayList<Iterator<BackupResource>>(10);
-		for ( BackupResourceProvider provider : resourceProviders ) {
-			// map each resource into a sub directory
-			Iterator<BackupResource> itr = provider.getBackupResources().iterator();
-			resources.add(new PrefixedBackupResourceIterator(itr, provider.getKey()));
-
+		final Collection<BackupResourceProvider> resourceProviders = this.resourceProviders;
+		if ( resourceProviders != null ) {
+			for ( BackupResourceProvider provider : resourceProviders ) {
+				// map each resource into a sub directory
+				Iterator<BackupResource> itr = provider.getBackupResources().iterator();
+				resources.add(new PrefixedBackupResourceIterator(itr, provider.getKey()));
+			}
 		}
 		return new Iterable<BackupResource>() {
 
@@ -233,12 +256,12 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public Backup createBackup() {
+	public @Nullable Backup createBackup() {
 		return createBackup(null);
 	}
 
 	@Override
-	public Backup createBackup(final Map<String, String> props) {
+	public @Nullable Backup createBackup(final @Nullable Map<String, String> props) {
 		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.info("No active backup service available, cannot perform backup");
@@ -262,17 +285,17 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public Future<Backup> createAsynchronousBackup() {
+	public Future<@Nullable Backup> createAsynchronousBackup() {
 		return createAsynchronousBackup(null);
 	}
 
 	@Override
-	public Future<Backup> createAsynchronousBackup(final Map<String, String> props) {
+	public Future<@Nullable Backup> createAsynchronousBackup(final @Nullable Map<String, String> props) {
 		assert executorService != null;
-		return executorService.submit(new Callable<Backup>() {
+		return executorService.submit(new Callable<@Nullable Backup>() {
 
 			@Override
-			public Backup call() throws Exception {
+			public @Nullable Backup call() throws Exception {
 				return createBackup(props);
 			}
 
@@ -285,8 +308,8 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public void exportBackupArchive(String backupKey, OutputStream out, Map<String, String> props)
-			throws IOException {
+	public void exportBackupArchive(String backupKey, OutputStream out,
+			@Nullable Map<String, String> props) throws IOException {
 		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			return;
@@ -321,23 +344,23 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public Future<Backup> importBackupArchive(InputStream archive) throws IOException {
+	public Future<@Nullable Backup> importBackupArchive(InputStream archive) throws IOException {
 		return importBackupArchive(archive, null);
 	}
 
 	@Override
-	public Future<Backup> importBackupArchive(InputStream archive, final Map<String, String> props)
-			throws IOException {
+	public Future<@Nullable Backup> importBackupArchive(InputStream archive,
+			final @Nullable Map<String, String> props) throws IOException {
 		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			throw new DynamicServiceUnavailableException(
 					"No BackupService available to import backup with");
 		}
 		final ZipInputStream zin = new ZipInputStream(archive);
-		return executorService.submit(new Callable<Backup>() {
+		return executorService.submit(new Callable<@Nullable Backup>() {
 
 			@Override
-			public Backup call() throws Exception {
+			public @Nullable Backup call() throws Exception {
 				final BackupResourceIterable itr = new ZipStreamBackupResourceIterable(zin, props);
 				return service.importBackup(null, itr, props);
 			}
@@ -350,11 +373,11 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public void restoreBackup(Backup backup, Map<String, String> props) {
+	public void restoreBackup(Backup backup, @Nullable Map<String, String> props) {
 		restoreBackupInternal(backup, props);
 	}
 
-	private boolean restoreBackupInternal(Backup backup, Map<String, String> props) {
+	private boolean restoreBackupInternal(Backup backup, @Nullable Map<String, String> props) {
 		BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.warn("No BackupService available to restore backup with");
@@ -379,39 +402,42 @@ public class DefaultBackupManager implements BackupManager {
 						continue;
 					}
 					boolean resourceHandled = false;
-					for ( BackupResourceProvider provider : resourceProviders ) {
-						if ( providerKey.equals(provider.getKey()) ) {
-							log.debug("Restoring backup {} resource {}", backup.getKey(), path);
-							resourceHandled = provider.restoreBackupResource(new BackupResource() {
+					final Collection<BackupResourceProvider> resourceProviders = this.resourceProviders;
+					if ( resourceProviders != null ) {
+						for ( BackupResourceProvider provider : resourceProviders ) {
+							if ( providerKey.equals(provider.getKey()) ) {
+								log.debug("Restoring backup {} resource {}", backup.getKey(), path);
+								resourceHandled = provider.restoreBackupResource(new BackupResource() {
 
-								@Override
-								public String getProviderKey() {
-									return providerKey;
+									@Override
+									public String getProviderKey() {
+										return providerKey;
+									}
+
+									@Override
+									public String getBackupPath() {
+										return path.substring(providerIndex + 1);
+									}
+
+									@Override
+									public InputStream getInputStream() throws IOException {
+										return r.getInputStream();
+									}
+
+									@Override
+									public long getModificationDate() {
+										return r.getModificationDate();
+									}
+
+									@Override
+									public @Nullable String getSha256Digest() {
+										return r.getSha256Digest();
+									}
+
+								});
+								if ( resourceHandled ) {
+									break;
 								}
-
-								@Override
-								public String getBackupPath() {
-									return path.substring(providerIndex + 1);
-								}
-
-								@Override
-								public InputStream getInputStream() throws IOException {
-									return r.getInputStream();
-								}
-
-								@Override
-								public long getModificationDate() {
-									return r.getModificationDate();
-								}
-
-								@Override
-								public String getSha256Digest() {
-									return r.getSha256Digest();
-								}
-
-							});
-							if ( resourceHandled ) {
-								break;
 							}
 						}
 					}
@@ -436,7 +462,7 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public BackupInfo infoForBackup(final String key, final Locale locale) {
+	public @Nullable BackupInfo infoForBackup(final String key, final @Nullable Locale locale) {
 		BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.debug("No BackupService available, can't find resources for backup");
@@ -487,7 +513,7 @@ public class DefaultBackupManager implements BackupManager {
 		return new SimpleBackupInfo(key, backup.getDate(), providerInfos.values(), resourceInfos);
 	}
 
-	private BackupResourceProvider providerForKey(String key) {
+	private @Nullable BackupResourceProvider providerForKey(String key) {
 		Collection<BackupResourceProvider> providers = resourceProviders;
 		if ( providers == null || providers.isEmpty() ) {
 			return null;
@@ -507,7 +533,7 @@ public class DefaultBackupManager implements BackupManager {
 	 * @param backupServices
 	 *        the backup services to use
 	 */
-	public void setBackupServices(Collection<BackupService> backupServices) {
+	public void setBackupServices(@Nullable Collection<BackupService> backupServices) {
 		this.backupServices = backupServices;
 	}
 
@@ -518,7 +544,7 @@ public class DefaultBackupManager implements BackupManager {
 	 * @param resourceProviders
 	 *        the resource providers to backup resources from
 	 */
-	public void setResourceProviders(Collection<BackupResourceProvider> resourceProviders) {
+	public void setResourceProviders(@Nullable Collection<BackupResourceProvider> resourceProviders) {
 		this.resourceProviders = resourceProviders;
 	}
 

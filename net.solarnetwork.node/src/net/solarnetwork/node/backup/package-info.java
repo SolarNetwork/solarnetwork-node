@@ -1,7 +1,7 @@
 /* ==================================================================
- * Backup.java - Mar 27, 2013 7:10:38 AM
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,33 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.backup;
-
-import org.jspecify.annotations.Nullable;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
 /**
- * An individual backup.
- *
- * @author matt
- * @version 1.2
+ * Package info.
  */
-@JsonPropertyOrder({ "key", "nodeId", "date", "qualifier", "size", "complete" })
-public interface Backup extends BackupIdentity {
 
-	/**
-	 * Boolean flag indicating if this backup is complete.
-	 *
-	 * @return {@literal true} if the backup is finished, {@literal false}
-	 *         otherwise
-	 */
-	boolean isComplete();
-
-	/**
-	 * Get the size, in bytes, of this backup.
-	 *
-	 * @return the size in bytes, or {@code null} if not known
-	 */
-	@Nullable
-	Long getSize();
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.backup;

@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import org.apache.commons.io.input.TeeInputStream;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.Constants;
 
 /**
@@ -48,7 +49,7 @@ public class ZipStreamBackupResource implements BackupResource {
 	private final String providerKey;
 	private final String path;
 
-	private File tempFile;
+	private @Nullable File tempFile;
 
 	/**
 	 * Construct with values.
@@ -122,7 +123,7 @@ public class ZipStreamBackupResource implements BackupResource {
 	}
 
 	@Override
-	public String getSha256Digest() {
+	public @Nullable String getSha256Digest() {
 		return null;
 	}
 

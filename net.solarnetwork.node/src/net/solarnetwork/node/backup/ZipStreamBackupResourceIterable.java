@@ -1,63 +1,66 @@
 /* ==================================================================
  *ZipStreamBackupResourceIterable.java - 2/11/2016 11:02:04 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.backup;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Iterator over a zip stream of backup resources.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 1.46
  */
 public final class ZipStreamBackupResourceIterable implements BackupResourceIterable {
 
-	private final ZipInputStream zin;
-	private final Set<String> providerKeySet;
-	private final String backupKey;
+	private static final Logger log = LoggerFactory.getLogger(ZipStreamBackupResourceIterable.class);
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private final ZipInputStream zin;
+	private final @Nullable Set<String> providerKeySet;
+	private final @Nullable String backupKey;
 
 	/**
 	 * Construct with a zip stream and properties.
-	 * 
+	 *
 	 * The supported properties are those from {@link BackupManager}.
-	 * 
+	 *
 	 * @param zin
 	 *        The zip input stream to read.
 	 * @param props
 	 *        The properties.
 	 */
-	public ZipStreamBackupResourceIterable(ZipInputStream zin, Map<String, String> props) {
+	public ZipStreamBackupResourceIterable(ZipInputStream zin, @Nullable Map<String, String> props) {
 		this.zin = zin;
 		this.providerKeySet = (props == null ? null
 				: StringUtils.commaDelimitedStringToSet(
@@ -74,8 +77,8 @@ public final class ZipStreamBackupResourceIterable implements BackupResourceIter
 	public Iterator<BackupResource> iterator() {
 		return new Iterator<BackupResource>() {
 
-			private ZipEntry currEntry = null;
-			private String currProviderKey = null;
+			private @Nullable ZipEntry currEntry;
+			private @Nullable String currProviderKey;
 
 			@Override
 			public void remove() {
@@ -120,15 +123,16 @@ public final class ZipStreamBackupResourceIterable implements BackupResourceIter
 			@Override
 			public BackupResource next() {
 				if ( !hasNext() ) {
-					return null;
+					throw new NoSuchElementException();
 				}
 				final ZipEntry entry = currEntry;
-				BackupResource result = null;
-				if ( entry != null ) {
-					result = new ZipStreamBackupResource(zin, entry, currProviderKey, entry.getName());
-					currEntry = null;
-					currProviderKey = null;
+				if ( entry == null ) {
+					throw new NoSuchElementException();
 				}
+				BackupResource result = new ZipStreamBackupResource(zin, entry,
+						nonnull(currProviderKey, "Provider key"), entry.getName());
+				currEntry = null;
+				currProviderKey = null;
 				return result;
 			}
 		};

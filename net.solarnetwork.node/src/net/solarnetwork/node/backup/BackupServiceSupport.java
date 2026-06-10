@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -131,14 +132,14 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * </p>
 	 *
 	 * @param date
-	 *        if not {@literal null} then return this value
+	 *        if not {@code null} then return this value
 	 * @param props
 	 *        a mapping of properties, which may include a
 	 *        {@link BackupManager#BACKUP_KEY} value
-	 * @return the date, never {@literal null}
+	 * @return the date, never {@code null}
 	 * @see #backupDateFromProps(Date, Map, Pattern, String)
 	 */
-	protected Date backupDateFromProps(Date date, Map<String, String> props) {
+	protected Date backupDateFromProps(@Nullable Date date, @Nullable Map<String, String> props) {
 		return backupDateFromProps(date, props, NODE_AND_DATE_BACKUP_KEY_PATTERN,
 				BACKUP_KEY_DATE_FORMAT);
 	}
@@ -152,7 +153,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * </p>
 	 *
 	 * @param date
-	 *        if not {@literal null} then return this value
+	 *        if not {@code null} then return this value
 	 * @param props
 	 *        a mapping of properties, which may include a
 	 *        {@link BackupManager#BACKUP_KEY} value
@@ -161,9 +162,9 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * @param dateFormat
 	 *        the format of the date extracted from the
 	 *        {@code nodeIdAndDatePattern}
-	 * @return the date, never {@literal null}
+	 * @return the date, never {@code null}
 	 */
-	protected Date backupDateFromProps(Date date, Map<String, String> props,
+	protected Date backupDateFromProps(@Nullable Date date, @Nullable Map<String, String> props,
 			Pattern nodeIdAndDatePattern, String dateFormat) {
 		if ( date != null ) {
 			return date;
@@ -193,14 +194,14 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * </p>
 	 *
 	 * @param nodeId
-	 *        if not {@literal null} then return this value
+	 *        if not {@code null} then return this value
 	 * @param props
 	 *        a mapping of properties, which may include a
 	 *        {@link BackupManager#BACKUP_KEY} value
 	 * @return the node ID, or {@literal 0} if not available
 	 * @see #backupNodeIdFromProps(Long, Map, Pattern)
 	 */
-	protected Long backupNodeIdFromProps(Long nodeId, Map<String, String> props) {
+	protected Long backupNodeIdFromProps(@Nullable Long nodeId, @Nullable Map<String, String> props) {
 		return backupNodeIdFromProps(nodeId, props, NODE_AND_DATE_BACKUP_KEY_PATTERN);
 	}
 
@@ -208,7 +209,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * Parse a node ID from a backup key.
 	 *
 	 * @param nodeId
-	 *        if not {@literal null} then return this value
+	 *        if not {@code null} then return this value
 	 * @param props
 	 *        a mapping of properties, which may include a
 	 *        {@link BackupManager#BACKUP_KEY} value
@@ -216,7 +217,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 *        a regular expression to match a node ID and date from a backup key
 	 * @return the node ID, or {@literal 0} if not available
 	 */
-	protected Long backupNodeIdFromProps(Long nodeId, Map<String, String> props,
+	protected Long backupNodeIdFromProps(@Nullable Long nodeId, @Nullable Map<String, String> props,
 			Pattern nodeIdAndDatePattern) {
 		if ( nodeId != null ) {
 			return nodeId;
@@ -249,10 +250,10 @@ public abstract class BackupServiceSupport implements BackupService {
 	 *
 	 * @param key
 	 *        the key to extract the details from
-	 * @return the extracted details, or {@literal null} if none found
+	 * @return the extracted details, or {@code null} if none found
 	 * @since 1.1
 	 */
-	public static final BackupIdentity identityFromBackupKey(String key) {
+	public static final @Nullable BackupIdentity identityFromBackupKey(String key) {
 		return identityFromBackupKey(NODE_AND_DATE_BACKUP_KEY_PATTERN, BACKUP_KEY_DATE_FORMAT, key);
 	}
 
@@ -266,10 +267,10 @@ public abstract class BackupServiceSupport implements BackupService {
 	 *        the date format to parse the date with
 	 * @param key
 	 *        the key to extract the details from
-	 * @return the extracted details, or {@literal null} if none found
+	 * @return the extracted details, or {@code null} if none found
 	 * @since 1.1
 	 */
-	public static final BackupIdentity identityFromBackupKey(Pattern nodeIdAndDatePattern,
+	public static final @Nullable BackupIdentity identityFromBackupKey(Pattern nodeIdAndDatePattern,
 			String dateFormat, String key) {
 		BackupIdentity result = null;
 		if ( key != null ) {
@@ -296,7 +297,8 @@ public abstract class BackupServiceSupport implements BackupService {
 	}
 
 	@Override
-	public synchronized boolean markBackupForRestore(Backup backup, Map<String, String> props) {
+	public synchronized boolean markBackupForRestore(@Nullable Backup backup,
+			@Nullable Map<String, String> props) {
 		File markFile = markedBackupForRestoreFile();
 		if ( backup == null ) {
 			if ( markFile.exists() ) {
@@ -331,7 +333,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	}
 
 	@Override
-	public synchronized Backup markedBackupForRestore(Map<String, String> props) {
+	public synchronized @Nullable Backup markedBackupForRestore(@Nullable Map<String, String> props) {
 		File markFile = markedBackupForRestoreFile();
 		if ( markFile.exists() ) {
 			try {

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.backup;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.SimplePagination;
 
 /**
@@ -33,7 +34,7 @@ import net.solarnetwork.domain.SimplePagination;
  */
 public class SimpleBackupFilter extends SimplePagination implements BackupFilter {
 
-	private Long nodeId;
+	private @Nullable Long nodeId;
 
 	/**
 	 * Constructor.
@@ -49,7 +50,7 @@ public class SimpleBackupFilter extends SimplePagination implements BackupFilter
 	 *        the node ID to filter on
 	 * @return the new filter instance
 	 */
-	public static SimpleBackupFilter filterForNode(Long nodeId) {
+	public static SimpleBackupFilter filterForNode(@Nullable Long nodeId) {
 		SimpleBackupFilter f = new SimpleBackupFilter();
 		f.setNodeId(nodeId);
 		return f;
@@ -68,7 +69,7 @@ public class SimpleBackupFilter extends SimplePagination implements BackupFilter
 	}
 
 	@Override
-	public Long getNodeId() {
+	public @Nullable Long getNodeId() {
 		return nodeId;
 	}
 
@@ -78,7 +79,7 @@ public class SimpleBackupFilter extends SimplePagination implements BackupFilter
 	 * @param nodeId
 	 *        the node ID to set
 	 */
-	public void setNodeId(Long nodeId) {
+	public void setNodeId(@Nullable Long nodeId) {
 		this.nodeId = nodeId;
 	}
 

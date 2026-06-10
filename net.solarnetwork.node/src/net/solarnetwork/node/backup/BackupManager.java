@@ -1,21 +1,21 @@
 /* ==================================================================
  * BackupManager.java - Mar 27, 2013 9:10:39 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,11 +29,12 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Manager API for node-level backups.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -43,73 +44,76 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * A property key for a comma-delimited list of
 	 * {@link BackupResourceProvider#getKey()} values to limit the backup
 	 * operation to. If not specified, all providers are included.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	String RESOURCE_PROVIDER_FILTER = "ResourceProviderFilter";
 
 	/**
 	 * A property key a {@link Backup} {@code key} value.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	String BACKUP_KEY = "BackupKey";
 
 	/**
 	 * Get the active {@link BackupService}.
-	 * 
-	 * @return the BackupService, or {@literal null} if none configured
+	 *
+	 * @return the BackupService, or {@code null} if none configured
 	 */
+	@Nullable
 	BackupService activeBackupService();
 
 	/**
 	 * Get a {@link Iterator} of {@link BackupResource} needing to be backed up.
-	 * 
+	 *
 	 * @return the backup resources
 	 */
 	Iterable<BackupResource> resourcesForBackup();
 
 	/**
 	 * Create a new Backup, using the active backup service.
-	 * 
-	 * @return the backup, or {@literal null} if none could be created
+	 *
+	 * @return the backup, or {@code null} if none could be created
 	 */
+	@Nullable
 	Backup createBackup();
 
 	/**
 	 * Create a new Backup, using the active backup service.
-	 * 
+	 *
 	 * @param props
 	 *        An optional set of properties to customize the backup with.
-	 * @return the backup, or {@literal null} if none could be created
+	 * @return the backup, or {@code null} if none could be created
 	 * @since 1.1
 	 */
-	Backup createBackup(Map<String, String> props);
+	@Nullable
+	Backup createBackup(@Nullable Map<String, String> props);
 
 	/**
 	 * Create a new Backup, using the active backup service, in the background.
 	 * This method will immediately return a Future where you can track the
 	 * status of the background backup, if desired.
-	 * 
-	 * @return the backup, or {@literal null} if none could be created
+	 *
+	 * @return the backup, or {@code null} if none could be created
 	 */
-	Future<Backup> createAsynchronousBackup();
+	Future<@Nullable Backup> createAsynchronousBackup();
 
 	/**
 	 * Create a new Backup, using the active backup service, in the background.
 	 * This method will immediately return a Future where you can track the
 	 * status of the background backup, if desired.
-	 * 
+	 *
 	 * @param props
 	 *        An optional set of properties to customize the backup with.
-	 * @return the backup, or {@literal null} if none could be created
+	 * @return the backup, or {@code null} if none could be created
 	 * @since 1.1
 	 */
-	Future<Backup> createAsynchronousBackup(Map<String, String> props);
+	Future<@Nullable Backup> createAsynchronousBackup(@Nullable Map<String, String> props);
 
 	/**
 	 * Restore all resources from a given backup.
-	 * 
+	 *
 	 * @param backup
 	 *        the backup to restore
 	 */
@@ -117,18 +121,18 @@ public interface BackupManager extends SettingSpecifierProvider {
 
 	/**
 	 * Restore all resources from a given backup.
-	 * 
+	 *
 	 * @param backup
 	 *        the backup to restore
 	 * @param props
 	 *        An optional set of properties to customize the backup with.
 	 * @since 1.1
 	 */
-	void restoreBackup(Backup backup, Map<String, String> props);
+	void restoreBackup(Backup backup, @Nullable Map<String, String> props);
 
 	/**
 	 * Export a backup zip archive.
-	 * 
+	 *
 	 * @param backupKey
 	 *        the backup to export
 	 * @param out
@@ -140,7 +144,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 
 	/**
 	 * Export a backup zip archive.
-	 * 
+	 *
 	 * @param backupKey
 	 *        the backup to export
 	 * @param out
@@ -151,27 +155,27 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 * @since 1.1
 	 */
-	void exportBackupArchive(String backupKey, OutputStream out, Map<String, String> props)
+	void exportBackupArchive(String backupKey, OutputStream out, @Nullable Map<String, String> props)
 			throws IOException;
 
 	/**
 	 * Import a backup archive into the active backup service.
-	 * 
+	 *
 	 * This method can import an archive exported via
 	 * {@link #exportBackupArchive(String, OutputStream)}. Once imported, the
 	 * backup will appear as a new backup in the active backup service.
-	 * 
+	 *
 	 * @param archive
 	 *        the archive input stream to import
 	 * @return the backup future
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	Future<Backup> importBackupArchive(InputStream archive) throws IOException;
+	Future<@Nullable Backup> importBackupArchive(InputStream archive) throws IOException;
 
 	/**
 	 * Import a backup archive with properties.
-	 * 
+	 *
 	 * This method can import an archive exported via
 	 * {@link #exportBackupArchive(String, OutputStream)}. The
 	 * {@link #RESOURCE_PROVIDER_FILTER} property can be used to filter which
@@ -179,7 +183,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * {@link #BACKUP_KEY} can be used to provide a hint of the original backup
 	 * key (and possibly date). Once imported, the backup will appear as a new
 	 * backup in the active backup service.
-	 * 
+	 *
 	 * @param archive
 	 *        the archive input stream to import
 	 * @param props
@@ -189,20 +193,22 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 * @since 1.1
 	 */
-	Future<Backup> importBackupArchive(InputStream archive, Map<String, String> props)
-			throws IOException;
+	Future<@Nullable Backup> importBackupArchive(InputStream archive,
+			@Nullable Map<String, String> props) throws IOException;
 
 	/**
 	 * Get metadata about a particular backup.
-	 * 
+	 *
 	 * @param key
 	 *        The key of the backup to get the information for.
 	 * @param locale
-	 *        The desired locale of the information, or {@literal null} for the
+	 *        The desired locale of the information, or {@code null} for the
 	 *        system locale.
-	 * @return The backup info, or {@literal null} if no backup is available for
+	 * @return The backup info, or {@code null} if no backup is available for
 	 *         the given key.
 	 * @since 1.2
 	 */
-	BackupInfo infoForBackup(String key, Locale locale);
+	@Nullable
+	BackupInfo infoForBackup(String key, @Nullable Locale locale);
+
 }

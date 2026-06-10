@@ -1,21 +1,21 @@
 /* ==================================================================
  * ZipEntryBackupResource.java - Mar 27, 2013 4:18:59 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,10 +26,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link BackupResource} for a file in a zip archive.
- * 
+ *
  * @author matt
  * @version 1.3
  */
@@ -41,9 +42,9 @@ public class ZipEntryBackupResource implements BackupResource {
 
 	/**
 	 * Constructor.
-	 * 
-	 * The {@code providerKey} will be set to {@literal null}.
-	 * 
+	 *
+	 * The {@code providerKey} will be set to {@code null}.
+	 *
 	 * @param archiveFile
 	 *        the archive file
 	 * @param entry
@@ -55,7 +56,7 @@ public class ZipEntryBackupResource implements BackupResource {
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param archiveFile
 	 *        the archive file
 	 * @param entry
@@ -64,7 +65,7 @@ public class ZipEntryBackupResource implements BackupResource {
 	 *        the provider key
 	 * @since 1.1
 	 */
-	public ZipEntryBackupResource(ZipFile archiveFile, ZipEntry entry, String providerKey) {
+	public ZipEntryBackupResource(ZipFile archiveFile, ZipEntry entry, @Nullable String providerKey) {
 		super();
 		this.archiveFile = archiveFile;
 		this.entry = entry;
@@ -73,6 +74,8 @@ public class ZipEntryBackupResource implements BackupResource {
 			final int providerIndex = entry.getName().indexOf('/');
 			if ( providerIndex != -1 ) {
 				providerKey = entry.getName().substring(0, providerIndex);
+			} else {
+				providerKey = "";
 			}
 		}
 		this.providerKey = providerKey;
@@ -99,7 +102,7 @@ public class ZipEntryBackupResource implements BackupResource {
 	}
 
 	@Override
-	public String getSha256Digest() {
+	public @Nullable String getSha256Digest() {
 		return null;
 	}
 

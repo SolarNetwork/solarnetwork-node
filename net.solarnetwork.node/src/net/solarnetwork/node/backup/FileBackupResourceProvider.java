@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.backup;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -56,7 +58,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	private String[] resourceDirectories = new String[] { "app/main" };
 	private String fileNamePattern = "\\.jar$";
 	private boolean defaultShouldRestore = true;
-	private MessageSource messageSource;
+	private @Nullable MessageSource messageSource;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -93,7 +95,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 				@Override
 				public boolean accept(File dir, String name) {
-					return pat.matcher(name).find();
+					return pat == null || pat.matcher(name).find();
 				}
 			});
 			if ( files == null || files.length < 1 ) {
@@ -197,19 +199,19 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	}
 
 	@Override
-	public BackupResourceProviderInfo providerInfo(Locale locale) {
+	public BackupResourceProviderInfo providerInfo(@Nullable Locale locale) {
 		String name = "File Backup Provider";
 		String desc = "Backs up system plugins.";
 		MessageSource ms = messageSource;
 		if ( ms != null ) {
-			name = ms.getMessage("title", null, name, locale);
-			desc = ms.getMessage("desc", null, desc, locale);
+			name = nonnull(ms.getMessage("title", null, name, locale), "Name");
+			desc = nonnull(ms.getMessage("desc", null, desc, locale), "Description");
 		}
 		return new SimpleBackupResourceProviderInfo(getKey(), name, desc, defaultShouldRestore);
 	}
 
 	@Override
-	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+	public @Nullable BackupResourceInfo resourceInfo(BackupResource resource, @Nullable Locale locale) {
 		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
@@ -310,7 +312,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 * @param messageSource
 	 *        The message source.
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
@@ -319,7 +321,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *
 	 * @return the message source
 	 */
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		return messageSource;
 	}
 

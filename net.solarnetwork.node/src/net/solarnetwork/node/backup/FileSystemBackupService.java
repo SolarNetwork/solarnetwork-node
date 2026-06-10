@@ -50,6 +50,7 @@ import java.util.regex.Matcher;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -84,9 +85,9 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private MessageSource messageSource;
+	private @Nullable MessageSource messageSource;
 	private File backupDir = defaultBackuprDir();
-	private OptionalService<IdentityService> identityService;
+	private @Nullable OptionalService<IdentityService> identityService;
 	private int additionalBackupCount = 1;
 	private BackupStatus status = Configured;
 
@@ -108,7 +109,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		return messageSource;
 	}
 
@@ -118,7 +119,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * @param messageSource
 	 *        the message source to set
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
@@ -153,22 +154,22 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	}
 
 	@Override
-	public Backup backupForKey(String key) {
+	public @Nullable Backup backupForKey(String key) {
 		final File archiveFile = getArchiveFileForBackup(key);
-		if ( !archiveFile.canRead() ) {
+		if ( archiveFile == null || !archiveFile.canRead() ) {
 			return null;
 		}
 		return createBackupForFile(archiveFile);
 	}
 
 	@Override
-	public Backup performBackup(final Iterable<BackupResource> resources) {
+	public @Nullable Backup performBackup(final Iterable<BackupResource> resources) {
 		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 		return performBackupInternal(resources, now, null);
 	}
 
-	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Instant now,
-			Map<String, String> props) {
+	private @Nullable Backup performBackupInternal(final Iterable<BackupResource> resources,
+			final Instant now, @Nullable Map<String, String> props) {
 		if ( resources == null ) {
 			return null;
 		}
@@ -252,7 +253,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return backup;
 	}
 
-	private final Long nodeIdForArchiveFileName(Map<String, String> props) {
+	private final Long nodeIdForArchiveFileName(@Nullable Map<String, String> props) {
 		Long nodeId = backupNodeIdFromProps(null, props);
 		if ( nodeId == 0L ) {
 			nodeId = nodeIdForArchiveFileName();
@@ -266,7 +267,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return (nodeId != null ? nodeId : 0L);
 	}
 
-	private File getArchiveFileForBackup(final String backupKey) {
+	private @Nullable File getArchiveFileForBackup(final String backupKey) {
 		final Long nodeId = nodeIdForArchiveFileName();
 		if ( nodeId.intValue() == 0 ) {
 			// hmm, might be restoring from corrupted db; look for file with matching key only
@@ -291,7 +292,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	@Override
 	public BackupResourceIterable getBackupResources(Backup backup) {
 		final File archiveFile = getArchiveFileForBackup(backup.getKey());
-		if ( !(archiveFile.isFile() && archiveFile.canRead()) ) {
+		if ( archiveFile == null || !(archiveFile.isFile() && archiveFile.canRead()) ) {
 			log.warn("No backup archive exists for key [{}]", backup.getKey());
 			Collection<BackupResource> col = Collections.emptyList();
 			return new CollectionBackupResourceIterable(col);
@@ -319,7 +320,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	}
 
 	@Override
-	public Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props) {
+	public @Nullable Backup importBackup(@Nullable Date date, BackupResourceIterable resources,
+			@Nullable Map<String, String> props) {
 		final Date backupDate = backupDateFromProps(date, props);
 		final Instant ts = backupDate.toInstant().truncatedTo(ChronoUnit.SECONDS);
 		return performBackupInternal(resources, ts, props);
@@ -345,8 +347,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * Get all available backup files, ordered in descending backup order
 	 * (newest to oldest).
 	 *
-	 * @return ordered array of backup files, or {@literal null} if directory
-	 *         does not exist
+	 * @return ordered array of backup files, or {@code null} if directory does
+	 *         not exist
 	 */
 	private File[] getAvailableBackupFiles() {
 		File[] archives = backupDir.listFiles(new ArchiveFilter());
@@ -377,7 +379,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return archives;
 	}
 
-	private SimpleBackup createBackupForFile(File f) {
+	private @Nullable SimpleBackup createBackupForFile(File f) {
 		Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(f.getName());
 		if ( m.find() ) {
 			try {
@@ -435,12 +437,12 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 			}
 
 			@Override
-			public MessageSource getMessageSource() {
+			public @Nullable MessageSource getMessageSource() {
 				return FileSystemBackupService.this.getMessageSource();
 			}
 
 			@Override
-			public String getDisplayName() {
+			public @Nullable String getDisplayName() {
 				return FileSystemBackupService.this.getDisplayName();
 			}
 		};
@@ -539,7 +541,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 *
 	 * @return the service
 	 */
-	public OptionalService<IdentityService> getIdentityService() {
+	public @Nullable OptionalService<IdentityService> getIdentityService() {
 		return identityService;
 	}
 
@@ -549,7 +551,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * @param identityService
 	 *        the service to use
 	 */
-	public void setIdentityService(OptionalService<IdentityService> identityService) {
+	public void setIdentityService(@Nullable OptionalService<IdentityService> identityService) {
 		this.identityService = identityService;
 	}
 
