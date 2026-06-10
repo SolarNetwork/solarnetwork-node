@@ -136,7 +136,9 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 							sample.set(result);
 						}
 					}
-					final ModelAccessor accessor = result.findTypedModel(getPrimaryModelAccessorType());
+					final ModelAccessor accessor = (result != null
+							? result.findTypedModel(getPrimaryModelAccessorType())
+							: null);
 					final List<ModelAccessor> secondaryAccessors = getSecondaryModelAccessors(result);
 					List<ModelAccessor> accessors = null;
 					if ( secondaryAccessors == null || secondaryAccessors.isEmpty() ) {
@@ -148,7 +150,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 						}
 						accessors.addAll(secondaryAccessors);
 					}
-					if ( accessors != null && !accessors.isEmpty() ) {
+					if ( result != null && accessors != null && !accessors.isEmpty() ) {
 						result.readModelData(connection, accessors);
 					}
 					return result;
@@ -173,6 +175,9 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	private List<ModelAccessor> getSecondaryModelAccessors(ModelData data) {
+		if ( data == null ) {
+			return null;
+		}
 		final Set<Integer> modelIds = getSecondaryModelIds();
 		if ( modelIds == null || modelIds.isEmpty() ) {
 			return null;

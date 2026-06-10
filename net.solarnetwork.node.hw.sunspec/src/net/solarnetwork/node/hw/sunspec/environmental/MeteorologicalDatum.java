@@ -1,21 +1,21 @@
 /* ==================================================================
  * MeteorologicalDatum.java - 10/07/2023 2:56:36 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,7 +36,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 
 /**
  * Datum for a SunSpec compatible meteorolgical device.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 4.2
@@ -96,7 +96,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Construct from a {@link ModelData}.
-	 * 
+	 *
 	 * @param data
 	 *        the sample data
 	 * @param sourceId
@@ -113,7 +113,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Construct from a {@link MeteorologicalModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the sample data
 	 * @param sourceId
@@ -127,7 +127,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Construct from a {@link MiniMeteorologicalModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the sample data
 	 * @param sourceId
@@ -141,7 +141,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Construct from a {@link IrradianceModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the sample data
 	 * @param sourceId
@@ -155,7 +155,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Populate datum properties from a {@link MeteorologicalModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the data
 	 */
@@ -178,7 +178,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Populate datum properties from a {@link MiniMeteorologicalModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the data
 	 */
@@ -194,7 +194,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Populate datum properties from a {@link IrradianceModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the data
 	 */
@@ -211,7 +211,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Populate datum properties from a {@link BomTemperatureModelAccessor}.
-	 * 
+	 *
 	 * @param data
 	 *        the data
 	 */
@@ -236,7 +236,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the raw data used to populate this datum.
-	 * 
+	 *
 	 * @return the data
 	 */
 	public ModelAccessor getData() {
@@ -245,7 +245,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous temperature.
-	 * 
+	 *
 	 * @return the temperature, in degrees Celsius
 	 */
 	public BigDecimal getBackOfModuleTemperature() {
@@ -254,7 +254,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous back-of-module temperature.
-	 * 
+	 *
 	 * @param value
 	 *        the temperature to set, in degrees Celsius
 	 */
@@ -264,7 +264,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous electric field.
-	 * 
+	 *
 	 * @return the temperature, in V/m
 	 */
 	public Integer getElectricField() {
@@ -273,7 +273,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous electric field.
-	 * 
+	 *
 	 * @param value
 	 *        the electric field to set, in V/m
 	 */
@@ -283,7 +283,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the precipitation type.
-	 * 
+	 *
 	 * @return the type
 	 */
 	public PrecipitationType getPrecipitationType() {
@@ -294,18 +294,18 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the precipitation type.
-	 * 
+	 *
 	 * @param value
 	 *        the precipitation type to set
 	 */
 	public void setPrecipitationType(PrecipitationType value) {
 		putSampleValue(Status, PRECIPITATION_TYPE_KEY, value != null ? value.getCode() : null);
-		setSkyConditions(value.getDescription(Locale.ENGLISH));
+		setSkyConditions(value != null ? value.getDescription(Locale.ENGLISH) : null);
 	}
 
 	/**
 	 * Get the instantaneous surface wetness.
-	 * 
+	 *
 	 * @return the wetness, in Ohm
 	 */
 	public Integer getSurfaceWetness() {
@@ -314,7 +314,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous surface wetness.
-	 * 
+	 *
 	 * @param value
 	 *        the wetness to set, in Ohm
 	 */
@@ -324,7 +324,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous soil moisture.
-	 * 
+	 *
 	 * @return the wetness, as an integer percent
 	 */
 	public Integer getSoilMoisture() {
@@ -333,7 +333,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous soil moisture.
-	 * 
+	 *
 	 * @param value
 	 *        the moisture to set, as an integer percentage
 	 */
@@ -343,7 +343,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous plane-of-array irradiance.
-	 * 
+	 *
 	 * @return the irradiance, in W/m2
 	 */
 	public BigDecimal getPlaneOfArrayIrradiance() {
@@ -352,7 +352,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous plane-of-array irradiance.
-	 * 
+	 *
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
@@ -362,7 +362,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous diffuse irradiance.
-	 * 
+	 *
 	 * @return the irradiance, in W/m2
 	 */
 	public BigDecimal getDiffuseIrradiance() {
@@ -371,7 +371,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous diffuse irradiance.
-	 * 
+	 *
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
@@ -381,7 +381,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous direct normal irradiance.
-	 * 
+	 *
 	 * @return the irradiance, in W/m2
 	 */
 	public BigDecimal getDirectNormalIrradiance() {
@@ -390,7 +390,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous direct normal irradiance.
-	 * 
+	 *
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
@@ -400,7 +400,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Get the instantaneous other irradiance.
-	 * 
+	 *
 	 * @return the irradiance, in W/m2
 	 */
 	public BigDecimal getOtherIrradiance() {
@@ -409,7 +409,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
 	/**
 	 * Set the instantaneous other irradiance.
-	 * 
+	 *
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
