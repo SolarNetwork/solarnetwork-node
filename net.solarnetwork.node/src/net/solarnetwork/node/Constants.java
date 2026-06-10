@@ -59,7 +59,7 @@ public final class Constants {
 	 * available, or else {@literal /home/solar}.
 	 * </p>
 	 *
-	 * @return the home directory, never {@literal null}
+	 * @return the home directory, never {@code null}
 	 * @since 1.2
 	 */
 	public static String solarNodeHome() {

@@ -9,7 +9,7 @@ Bundle-Version: 4.4.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Export-Package: 
- net.solarnetwork.node;version="2.1.0",
+ net.solarnetwork.node;version="2.2.0",
  net.solarnetwork.node.backup;version="2.3.0",
  net.solarnetwork.node.dao;version="3.1.0",
  net.solarnetwork.node.domain;version="2.11.2",
