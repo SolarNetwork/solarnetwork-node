@@ -26,6 +26,7 @@ package net.solarnetwork.node.dao;
 
 import java.util.Date;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.domain.Setting;
@@ -159,6 +160,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the type to get the value for
 	 * @return the associated value, or {@code null} if key not found
 	 */
+	@Nullable
 	String getSetting(String key, String type);
 
 	/**
@@ -196,8 +198,9 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the key
 	 * @param type
 	 *        the type
-	 * @return the date
+	 * @return the date, or {@code null} if the setting does not exist
 	 */
+	@Nullable
 	Date getSettingModificationDate(String key, String type);
 
 	/**
@@ -210,8 +213,9 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * recent modification date.
 	 * </p>
 	 *
-	 * @return the modification date
+	 * @return the modification date, or {@code null} if no settings exist
 	 */
+	@Nullable
 	Date getMostRecentModificationDate();
 
 }

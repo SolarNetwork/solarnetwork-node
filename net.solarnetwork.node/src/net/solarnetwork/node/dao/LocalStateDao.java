@@ -23,6 +23,7 @@
 package net.solarnetwork.node.dao;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.domain.LocalState;
@@ -47,7 +48,7 @@ public interface LocalStateDao extends GenericDao<LocalState, String>, Batchable
 	 *        holds this expected value; otherwise leave unchanged
 	 * @return the final stored object
 	 */
-	LocalState compareAndSave(LocalState entity, Object expectedValue);
+	LocalState compareAndSave(LocalState entity, @Nullable Object expectedValue);
 
 	/**
 	 * Persist an entity if it does not exist or its value differs from the
@@ -90,10 +91,10 @@ public interface LocalStateDao extends GenericDao<LocalState, String>, Batchable
 	 * @return the modification date, or {@code null} if no date available
 	 * @since 1.1
 	 */
-	default Instant getMostRecentModificationDate() {
+	default @Nullable Instant getMostRecentModificationDate() {
 		Instant result = null;
 		for ( LocalState s : getAll(null) ) {
-			if ( result == null || s.getModified().isAfter(result) ) {
+			if ( result == null || (s.getModified() != null && s.getModified().isAfter(result)) ) {
 				result = s.getModified();
 			}
 		}
