@@ -1,7 +1,7 @@
 /* ==================================================================
- * SettingNote.java - 23/08/2024 1:40:18 pm
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2024 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,39 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.domain;
-
-import org.jspecify.annotations.Nullable;
-
 /**
- * A setting note
- *
- * @author matt
- * @version 1.0
- * @since 3.18
+ * Package info.
  */
-public interface SettingNote {
 
-	/**
-	 * Get the key.
-	 *
-	 * @return the key
-	 */
-	String getKey();
-
-	/**
-	 * Get the type.
-	 *
-	 * @return the type
-	 */
-	String getType();
-
-	/**
-	 * Get the note.
-	 *
-	 * @return the note
-	 */
-	@Nullable
-	String getNote();
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.domain;

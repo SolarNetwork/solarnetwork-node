@@ -22,9 +22,11 @@
 
 package net.solarnetwork.node.domain;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import org.jspecify.annotations.Nullable;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.dao.BasicStringEntity;
@@ -34,7 +36,7 @@ import net.solarnetwork.domain.Differentiable;
  * A persistent local state entity.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 3.23
  */
 @JsonIgnoreProperties({ "data", "id" })
@@ -44,22 +46,33 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	private static final long serialVersionUID = 6892709852567164350L;
 
 	/** The modification date. */
-	private Instant modified;
+	private @Nullable Instant modified;
 
 	/** The data type. */
 	private LocalStateType type;
 
 	/** The data value. */
-	private byte[] data;
+	private byte @Nullable [] data;
 
 	/** A cached decoded value. */
-	private Object value;
+	private @Nullable Object value;
 
 	/**
 	 * Constructor.
+	 *
+	 * <p>
+	 * The {@code String} type will be used.
+	 * </p>
+	 *
+	 * @param id
+	 *        the ID
+	 * @param created
+	 *        the creation date
+	 * @throws IllegalArgumentException
+	 *         if {@code id} is {@code null}
 	 */
-	public LocalState() {
-		super();
+	public LocalState(String id, @Nullable Instant created) {
+		this(id, created, LocalStateType.String);
 	}
 
 	/**
@@ -69,9 +82,13 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *        the ID
 	 * @param created
 	 *        the creation date
+	 * @param type
+	 *        the type
+	 * @throws IllegalArgumentException
+	 *         if {@code id} or {@code type} are {@code null}
 	 */
-	public LocalState(String id, Instant created) {
-		super(id, created);
+	public LocalState(String id, @Nullable Instant created, LocalStateType type) {
+		this(id, created, type, null);
 	}
 
 	/**
@@ -83,8 +100,10 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *        the type
 	 * @param value
 	 *        the value
+	 * @throws IllegalArgumentException
+	 *         if {@code id} or {@code type} are {@code null}
 	 */
-	public LocalState(String id, LocalStateType type, Object value) {
+	public LocalState(String id, LocalStateType type, @Nullable Object value) {
 		this(id, Instant.now().truncatedTo(ChronoUnit.MILLIS), type, value);
 	}
 
@@ -99,10 +118,13 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *        the type
 	 * @param value
 	 *        the value
+	 * @throws IllegalArgumentException
+	 *         if {@code id} or {@code type} are {@code null}
 	 */
-	public LocalState(String id, Instant created, LocalStateType type, Object value) {
-		super(id, created);
-		this.type = type;
+	public LocalState(String id, @Nullable Instant created, LocalStateType type,
+			@Nullable Object value) {
+		super(requireNonNullArgument(id, "id"), created);
+		this.type = requireNonNullArgument(type, "type");
 		setValue(value);
 	}
 
@@ -112,7 +134,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	}
 
 	@Override
-	public boolean differsFrom(LocalState other) {
+	public boolean differsFrom(@Nullable LocalState other) {
 		return !isSameAs(other);
 	}
 
@@ -130,7 +152,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 * @return {@code true} if the properties of this instance are equal to the
 	 *         other
 	 */
-	public boolean isSameAs(LocalState other) {
+	public boolean isSameAs(@Nullable LocalState other) {
 		if ( other == null ) {
 			return false;
 		}
@@ -173,13 +195,13 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 * Get the key value.
 	 *
 	 * <p>
-	 * This is an alias for {@link #getId()}.
+	 * This is an alias for {@link #id()}.
 	 * </p>
 	 *
 	 * @return the identifier
 	 */
 	public String getKey() {
-		return getId();
+		return id();
 	}
 
 	/**
@@ -187,7 +209,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *
 	 * @return the value
 	 */
-	public synchronized Object getValue() {
+	public synchronized @Nullable Object getValue() {
 		if ( value == null ) {
 			value = decodeValue(type, data);
 		}
@@ -200,7 +222,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 * @param value
 	 *        the value to set
 	 */
-	public synchronized void setValue(Object value) {
+	public synchronized void setValue(@Nullable Object value) {
 		this.value = value;
 		this.data = encodeValue(type, value);
 	}
@@ -214,7 +236,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *        the value bytes to decode
 	 * @return the decoded value
 	 */
-	public static Object decodeValue(LocalStateType type, byte[] data) {
+	public static @Nullable Object decodeValue(LocalStateType type, byte @Nullable [] data) {
 		if ( type == null || data == null ) {
 			return null;
 		}
@@ -230,7 +252,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *        the value to encode
 	 * @return the encoded data value
 	 */
-	public static byte[] encodeValue(LocalStateType type, Object value) {
+	public static byte @Nullable [] encodeValue(LocalStateType type, @Nullable Object value) {
 		if ( type == null || value == null ) {
 			return null;
 		}
@@ -242,7 +264,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *
 	 * @return the modification date
 	 */
-	public Instant getModified() {
+	public @Nullable Instant getModified() {
 		return modified;
 	}
 
@@ -252,7 +274,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 * @param modified
 	 *        the modification date to set
 	 */
-	public void setModified(Instant modified) {
+	public void setModified(@Nullable Instant modified) {
 		this.modified = modified;
 	}
 
@@ -283,7 +305,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 *
 	 * @return the data
 	 */
-	public byte[] getData() {
+	public byte @Nullable [] getData() {
 		return data;
 	}
 
@@ -293,7 +315,7 @@ public class LocalState extends BasicStringEntity implements Differentiable<Loca
 	 * @param data
 	 *        the data to set
 	 */
-	public synchronized void setData(byte[] data) {
+	public synchronized void setData(byte @Nullable [] data) {
 		this.data = data;
 		if ( value != null ) {
 			value = null;

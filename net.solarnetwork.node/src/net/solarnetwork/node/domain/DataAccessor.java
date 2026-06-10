@@ -28,6 +28,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
 
@@ -71,6 +72,7 @@ public interface DataAccessor {
 	 * @return the data time stamp, or {@code null} if no data has been
 	 *         collected yet
 	 */
+	@Nullable
 	Instant getDataTimestamp();
 
 	/**
@@ -93,7 +95,7 @@ public interface DataAccessor {
 	 *         available
 	 * @since 1.1
 	 */
-	default DeviceInfo deviceInfo() {
+	default @Nullable DeviceInfo deviceInfo() {
 		BasicDeviceInfo.Builder b = deviceInfoBuilder();
 		return (b.isEmpty() ? null : b.build());
 	}
@@ -118,7 +120,7 @@ public interface DataAccessor {
 	 *        the info to extract device properties from
 	 * @return the builder, never {@code null}
 	 */
-	static BasicDeviceInfo.Builder deviceInfoBuilderForInfo(Map<String, ?> info) {
+	static BasicDeviceInfo.Builder deviceInfoBuilderForInfo(@Nullable Map<String, ?> info) {
 		BasicDeviceInfo.Builder b = BasicDeviceInfo.builder();
 		if ( info != null && !info.isEmpty() ) {
 			Object o = info.get(INFO_KEY_DEVICE_NAME);

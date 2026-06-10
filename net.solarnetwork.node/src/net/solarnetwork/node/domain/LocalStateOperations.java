@@ -23,6 +23,7 @@
 package net.solarnetwork.node.domain;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Operations to work with {@link LocalState} entities.
@@ -51,7 +52,7 @@ public interface LocalStateOperations {
 	 *        the key of the state to get
 	 * @return the state value, or {@code null}
 	 */
-	default Object localState(String key) {
+	default @Nullable Object localState(String key) {
 		return localState(key, null);
 	}
 
@@ -64,7 +65,8 @@ public interface LocalStateOperations {
 	 *        the value to return if {@code key} does not exist
 	 * @return the state value, or {@code defaultValue}
 	 */
-	Object localState(String key, Object defaultValue);
+	@Nullable
+	Object localState(String key, @Nullable Object defaultValue);
 
 	/**
 	 * Save a local state value.
@@ -79,7 +81,7 @@ public interface LocalStateOperations {
 	 *        the value to set
 	 * @return the saved value
 	 */
-	default Object saveLocalState(String key, Object value) {
+	default @Nullable Object saveLocalState(String key, @Nullable Object value) {
 		return saveLocalState(key, LocalStateType.detect(value), value);
 	}
 
@@ -94,7 +96,7 @@ public interface LocalStateOperations {
 	 *        the value to set
 	 * @return the saved value
 	 */
-	default Object saveLocalState(String key, String type, Object value) {
+	default @Nullable Object saveLocalState(String key, String type, @Nullable Object value) {
 		return saveLocalState(key, LocalStateType.valueOf(type), value);
 	}
 
@@ -109,7 +111,8 @@ public interface LocalStateOperations {
 	 *        the value to set
 	 * @return the saved value
 	 */
-	Object saveLocalState(String key, LocalStateType type, Object value);
+	@Nullable
+	Object saveLocalState(String key, LocalStateType type, @Nullable Object value);
 
 	/**
 	 * Save a local state value.
@@ -128,7 +131,8 @@ public interface LocalStateOperations {
 	 * @return the final state value: the given value if it currently has the
 	 *         expected value, otherwise the previously held value
 	 */
-	default Object saveLocalState(String key, Object value, Object expectedValue) {
+	default @Nullable Object saveLocalState(String key, @Nullable Object value,
+			@Nullable Object expectedValue) {
 		return saveLocalState(key, LocalStateType.detect(value), value, expectedValue);
 	}
 
@@ -147,7 +151,8 @@ public interface LocalStateOperations {
 	 * @return the final state value: the given value if it currently has the
 	 *         expected value, otherwise the previously held value
 	 */
-	default Object saveLocalState(String key, String type, Object value, Object expectedValue) {
+	default @Nullable Object saveLocalState(String key, String type, Object value,
+			Object expectedValue) {
 		return saveLocalState(key, LocalStateType.valueOf(type), value, expectedValue);
 	}
 
@@ -166,7 +171,9 @@ public interface LocalStateOperations {
 	 * @return the final state value: the given value if it currently has the
 	 *         expected value, otherwise the previously held value
 	 */
-	Object saveLocalState(String key, LocalStateType type, Object value, Object expectedValue);
+	@Nullable
+	Object saveLocalState(String key, LocalStateType type, @Nullable Object value,
+			@Nullable Object expectedValue);
 
 	/**
 	 * Save a local state value, returning its previous value.
@@ -181,7 +188,7 @@ public interface LocalStateOperations {
 	 *        the value to set
 	 * @return the previous state value
 	 */
-	default Object getAndSaveLocalState(String key, Object value) {
+	default @Nullable Object getAndSaveLocalState(String key, @Nullable Object value) {
 		return getAndSaveLocalState(key, LocalStateType.detect(value), value);
 	}
 
@@ -196,7 +203,7 @@ public interface LocalStateOperations {
 	 *        the value to set
 	 * @return the previous state value
 	 */
-	default Object getAndSaveLocalState(String key, String type, Object value) {
+	default @Nullable Object getAndSaveLocalState(String key, String type, @Nullable Object value) {
 		return getAndSaveLocalState(key, LocalStateType.valueOf(type), value);
 	}
 
@@ -211,7 +218,8 @@ public interface LocalStateOperations {
 	 *        the value to set
 	 * @return the previous state value
 	 */
-	Object getAndSaveLocalState(String key, LocalStateType type, Object value);
+	@Nullable
+	Object getAndSaveLocalState(String key, LocalStateType type, @Nullable Object value);
 
 	/**
 	 * Save a local state value, returning {@code true} if {@code value} is
@@ -230,7 +238,7 @@ public interface LocalStateOperations {
 	 *         {@code false} if {@code value} is unchanged from the previous
 	 *         value
 	 */
-	default boolean changeLocalState(String key, Object value) {
+	default boolean changeLocalState(String key, @Nullable Object value) {
 		return !Objects.equals(value, getAndSaveLocalState(key, value));
 	}
 
@@ -249,7 +257,7 @@ public interface LocalStateOperations {
 	 *         {@code false} if {@code value} is unchanged from the previous
 	 *         value
 	 */
-	default boolean changeLocalState(String key, String type, Object value) {
+	default boolean changeLocalState(String key, String type, @Nullable Object value) {
 		return !Objects.equals(value, getAndSaveLocalState(key, type, value));
 	}
 
@@ -268,7 +276,7 @@ public interface LocalStateOperations {
 	 *         {@code false} if {@code value} is unchanged from the previous
 	 *         value
 	 */
-	default boolean changeLocalState(String key, LocalStateType type, Object value) {
+	default boolean changeLocalState(String key, LocalStateType type, @Nullable Object value) {
 		return !Objects.equals(value, getAndSaveLocalState(key, type, value));
 	}
 

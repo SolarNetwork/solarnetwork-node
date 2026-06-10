@@ -22,10 +22,11 @@
 
 package net.solarnetwork.node.domain;
 
-import static java.util.Collections.emptyList;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.node.service.TariffScheduleProvider;
 import net.solarnetwork.service.OptionalServiceCollection;
@@ -44,6 +45,7 @@ public interface TariffScheduleProvidersOperations {
 	 *
 	 * @return the providers collection, possibly {@code null}
 	 */
+	@Nullable
 	OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders();
 
 	/**
@@ -53,11 +55,10 @@ public interface TariffScheduleProvidersOperations {
 	 *        the UID of the schedule to resolve
 	 * @return the schedule from the first available provider whose
 	 *         {@link TariffScheduleProvider#getUid()} matches {@code uid} in a
-	 *         case-insensitive manner, or {@code null} if no match is
-	 *         available or the matching provider returns a {@code null}
-	 *         schedule
+	 *         case-insensitive manner, or {@code null} if no match is available
+	 *         or the matching provider returns a {@code null} schedule
 	 */
-	default TariffSchedule tariffSchedule(String uid) {
+	default @Nullable TariffSchedule tariffSchedule(@Nullable String uid) {
 		if ( uid == null || uid.isEmpty() ) {
 			return null;
 		}
@@ -83,13 +84,13 @@ public interface TariffScheduleProvidersOperations {
 	 *         {@code groupUid} in a case-insensitive manner, of an empty
 	 *         collection if none available
 	 */
-	default Collection<TariffSchedule> tariffScheduleGroup(String groupUid) {
+	default Collection<TariffSchedule> tariffScheduleGroup(@Nullable String groupUid) {
 		if ( groupUid == null || groupUid.isEmpty() ) {
-			return emptyList();
+			return List.of();
 		}
 		Iterable<TariffScheduleProvider> providers = services(getTariffScheduleProviders());
 		if ( providers == null ) {
-			return null;
+			return List.of();
 		}
 		Collection<TariffSchedule> result = null;
 		for ( TariffScheduleProvider p : providers ) {
@@ -103,7 +104,7 @@ public interface TariffScheduleProvidersOperations {
 				}
 			}
 		}
-		return (result != null ? result : emptyList());
+		return (result != null ? result : List.of());
 	}
 
 }

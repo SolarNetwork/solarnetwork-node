@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -104,7 +105,7 @@ public enum LocalStateType {
 	 *         {@code null} or cannot be encoded for any reason
 	 * @see #decode(byte[])
 	 */
-	public byte[] encode(Object value) {
+	public byte @Nullable [] encode(@Nullable Object value) {
 		if ( value == null ) {
 			return null;
 		}
@@ -121,7 +122,7 @@ public enum LocalStateType {
 				} else {
 					d = new BigInteger(value.toString());
 				}
-				return d.toByteArray();
+				return (d != null ? d.toByteArray() : null);
 			} else if ( this == LocalStateType.Decimal ) {
 				BigDecimal d = null;
 				if ( value instanceof Number ) {
@@ -129,7 +130,7 @@ public enum LocalStateType {
 				} else {
 					d = new BigDecimal(value.toString());
 				}
-				return d.toString().getBytes(UTF_8);
+				return (d != null ? d.toString().getBytes(UTF_8) : null);
 			} else if ( this == LocalStateType.Boolean ) {
 				// @formatter:off
 				boolean b = (value instanceof Boolean
@@ -146,6 +147,9 @@ public enum LocalStateType {
 					d = NumberUtils.bigDecimalForNumber((Number) value);
 				} else {
 					d = new BigDecimal(value.toString());
+				}
+				if ( d == null ) {
+					return null;
 				}
 				ByteBuffer buf = ByteBuffer.allocate(size);
 				switch (this) {
@@ -186,7 +190,7 @@ public enum LocalStateType {
 	 *         {@code null} or cannot be decoded for any reason
 	 * @see #encode(Object)
 	 */
-	public Object decode(byte[] data) {
+	public @Nullable Object decode(byte @Nullable [] data) {
 		if ( data == null || data.length == 0 ) {
 			return null;
 		}
@@ -261,8 +265,7 @@ public enum LocalStateType {
 		for ( LocalStateType e : LocalStateType.values() ) {
 			if ( key != null && key.charValue() == e.key ) {
 				return e;
-			}
-			if ( s.equalsIgnoreCase(e.name()) ) {
+			} else if ( s != null && s.equalsIgnoreCase(e.name()) ) {
 				return e;
 			}
 
@@ -277,7 +280,7 @@ public enum LocalStateType {
 	 *        the value to test
 	 * @return the best-fit type, never {@code null}
 	 */
-	public static LocalStateType detect(Object value) {
+	public static LocalStateType detect(@Nullable Object value) {
 		if ( value == null ) {
 			return LocalStateType.String;
 		}

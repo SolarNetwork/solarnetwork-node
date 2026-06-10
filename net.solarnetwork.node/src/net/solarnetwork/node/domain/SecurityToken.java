@@ -1,32 +1,34 @@
 /* ==================================================================
  * SecurityToken.java - 6/09/2023 2:41:36 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.domain;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.Date;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.dao.BasicStringEntity;
@@ -34,11 +36,11 @@ import net.solarnetwork.security.AbstractAuthorizationBuilder;
 
 /**
  * A security token, for API access.
- * 
+ *
  * <p>
  * The {@link #getId()} value is the security token identifier.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 3.4
@@ -50,17 +52,17 @@ public class SecurityToken extends BasicStringEntity {
 	private static final long serialVersionUID = -440817156290937870L;
 
 	/** The token secret. */
-	private final String tokenSecret;
+	private final @Nullable String tokenSecret;
 
 	/** The name. */
-	private final String name;
+	private final @Nullable String name;
 
 	/** The description. */
-	private final String description;
+	private final @Nullable String description;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param tokenId
 	 *        the token identifier
 	 * @param tokenSecret
@@ -74,7 +76,7 @@ public class SecurityToken extends BasicStringEntity {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param tokenId
 	 *        the token identifier
 	 * @param created
@@ -88,8 +90,8 @@ public class SecurityToken extends BasicStringEntity {
 	 * @throws IllegalArgumentException
 	 *         if {@code tokenId} or {@code tokenSecret} are {@code null}
 	 */
-	public SecurityToken(String tokenId, Instant created, String tokenSecret, String name,
-			String description) {
+	public SecurityToken(String tokenId, @Nullable Instant created, String tokenSecret,
+			@Nullable String name, @Nullable String description) {
 		super(requireNonNullArgument(tokenId, "tokenId"), created);
 		this.tokenSecret = requireNonNullArgument(tokenSecret, "tokenSecret");
 		this.name = name;
@@ -98,7 +100,7 @@ public class SecurityToken extends BasicStringEntity {
 
 	/**
 	 * Create a token from just the detail properties.
-	 * 
+	 *
 	 * @param tokenId
 	 *        the token ID
 	 * @param name
@@ -107,24 +109,27 @@ public class SecurityToken extends BasicStringEntity {
 	 *        the description
 	 * @return the token instance
 	 */
-	public static SecurityToken tokenDetails(String tokenId, String name, String description) {
+	public static SecurityToken tokenDetails(String tokenId, @Nullable String name,
+			@Nullable String description) {
 		return new SecurityToken(tokenId, null, name, description);
 	}
 
 	/**
 	 * Create a token from just the detail properties.
-	 * 
+	 *
 	 * @param name
 	 *        the name
 	 * @param description
 	 *        the description
 	 * @return the token instance
 	 */
+	@SuppressWarnings("NullAway")
 	public static SecurityToken tokenDetails(String name, String description) {
 		return new SecurityToken(null, name, description);
 	}
 
-	private SecurityToken(String tokenId, Instant created, String name, String description) {
+	private SecurityToken(String tokenId, @Nullable Instant created, @Nullable String name,
+			@Nullable String description) {
 		super(requireNonNullArgument(tokenId, "tokenId"), created);
 		this.tokenSecret = null;
 		this.name = name;
@@ -140,23 +145,22 @@ public class SecurityToken extends BasicStringEntity {
 
 	/**
 	 * Create a copy without the token secret populated.
-	 * 
+	 *
 	 * @param newName
-	 *        if non-{@code null} then use for the {@code name} in the new
-	 *        copy
+	 *        if non-{@code null} then use for the {@code name} in the new copy
 	 * @param newDescription
 	 *        if non-{@code null} then use for the {@code description} in the
 	 *        new copy
 	 * @return the copy
 	 */
 	public SecurityToken copyWithoutSecret(String newName, String newDescription) {
-		return new SecurityToken(getId(), getCreated(), newName != null ? newName : name,
+		return new SecurityToken(id(), getCreated(), newName != null ? newName : name,
 				newDescription != null ? newDescription : description);
 	}
 
 	/**
 	 * Save the signing key from the token secret.
-	 * 
+	 *
 	 * @param <T>
 	 *        the builder type
 	 * @param builder
@@ -170,22 +174,23 @@ public class SecurityToken extends BasicStringEntity {
 	 */
 	public <T extends AbstractAuthorizationBuilder<T>> T saveSigningKey(
 			AbstractAuthorizationBuilder<T> builder) {
-		return requireNonNullArgument(builder, "builder").saveSigningKey(tokenSecret);
+		return requireNonNullArgument(builder, "builder")
+				.saveSigningKey(nonnull(tokenSecret, "Token secret"));
 	}
 
 	/**
 	 * Copy the secret to a consumer.
-	 * 
+	 *
 	 * @param dest
 	 *        the consumer
 	 */
 	public void copySecret(Consumer<String> dest) {
-		dest.accept(tokenSecret);
+		dest.accept(nonnull(tokenSecret, "Token secret"));
 	}
 
 	/**
 	 * Apply the secret to a function.
-	 * 
+	 *
 	 * @param <T>
 	 *        the function return type
 	 * @param dest
@@ -193,7 +198,7 @@ public class SecurityToken extends BasicStringEntity {
 	 * @return the function result
 	 */
 	public <T> T applySecret(Function<String, T> dest) {
-		return dest.apply(tokenSecret);
+		return dest.apply(nonnull(tokenSecret, "Token secret"));
 	}
 
 	@Override
@@ -212,29 +217,29 @@ public class SecurityToken extends BasicStringEntity {
 
 	/**
 	 * Get the created date as a {@link Date} instance.
-	 * 
-	 * @return the date
+	 *
+	 * @return the date, or {@code null} if no creation date is available
 	 */
-	public Date getCreatedDate() {
+	public @Nullable Date getCreatedDate() {
 		Instant ts = getCreated();
 		return (ts != null ? Date.from(ts) : null);
 	}
 
 	/**
 	 * Get the name.
-	 * 
+	 *
 	 * @return the name
 	 */
-	public String getName() {
+	public @Nullable String getName() {
 		return name;
 	}
 
 	/**
 	 * Get the description.
-	 * 
+	 *
 	 * @return the description
 	 */
-	public String getDescription() {
+	public @Nullable String getDescription() {
 		return description;
 	}
 

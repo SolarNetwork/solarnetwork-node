@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.domain;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An application setting object.
@@ -130,16 +132,23 @@ public class Setting implements SettingNote {
 
 	private String key;
 	private String type;
-	private String value;
-	private String note;
-	private Date modified;
-	private Set<SettingFlag> flags;
+	private @Nullable String value;
+	private @Nullable String note;
+	private @Nullable Date modified;
+	private @Nullable Set<SettingFlag> flags;
 
 	/**
 	 * Default constructor.
+	 *
+	 * @param key
+	 *        the key
+	 * @param type
+	 *        the type
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
-	public Setting() {
-		super();
+	public Setting(String key, String type) {
+		this(key, type, null, null);
 	}
 
 	/**
@@ -152,9 +161,11 @@ public class Setting implements SettingNote {
 	 * @param value
 	 *        the value
 	 * @param flags
-	 *        the falgs
+	 *        the flags
+	 * @throws IllegalArgumentException
+	 *         if {@code key} or {@code type} is {@code null}
 	 */
-	public Setting(String key, String type, String value, Set<SettingFlag> flags) {
+	public Setting(String key, String type, @Nullable String value, @Nullable Set<SettingFlag> flags) {
 		this(key, type, value, null, flags);
 	}
 
@@ -170,13 +181,16 @@ public class Setting implements SettingNote {
 	 * @param note
 	 *        the note
 	 * @param flags
-	 *        the falgs
+	 *        the flags
+	 * @throws IllegalArgumentException
+	 *         if {@code key} or {@code type} is {@code null}
 	 * @since 2.1
 	 */
-	public Setting(String key, String type, String value, String note, Set<SettingFlag> flags) {
+	public Setting(String key, String type, @Nullable String value, @Nullable String note,
+			@Nullable Set<SettingFlag> flags) {
 		super();
-		this.key = key;
-		this.type = type;
+		this.key = requireNonNullArgument(key, "key");
+		this.type = requireNonNullArgument(type, "type");
 		this.value = value;
 		this.note = note;
 		this.flags = flags;
@@ -194,7 +208,7 @@ public class Setting implements SettingNote {
 	 * @return the note instance
 	 * @since 2.1
 	 */
-	public static SettingNote note(String key, String type, String note) {
+	public static SettingNote note(String key, String type, @Nullable String note) {
 		return new Setting(key, type, null, note, null);
 	}
 
@@ -279,7 +293,7 @@ public class Setting implements SettingNote {
 	 *
 	 * @return the value
 	 */
-	public String getValue() {
+	public @Nullable String getValue() {
 		return value;
 	}
 
@@ -289,7 +303,7 @@ public class Setting implements SettingNote {
 	 * @param value
 	 *        the value to set
 	 */
-	public void setValue(String value) {
+	public void setValue(@Nullable String value) {
 		this.value = value;
 	}
 
@@ -300,7 +314,7 @@ public class Setting implements SettingNote {
 	 * @since 2.1
 	 */
 	@Override
-	public final String getNote() {
+	public final @Nullable String getNote() {
 		return note;
 	}
 
@@ -311,7 +325,7 @@ public class Setting implements SettingNote {
 	 *        the note to set
 	 * @since 2.1
 	 */
-	public final void setNote(String note) {
+	public final void setNote(@Nullable String note) {
 		this.note = note;
 	}
 
@@ -320,7 +334,7 @@ public class Setting implements SettingNote {
 	 *
 	 * @return the flags
 	 */
-	public Set<SettingFlag> getFlags() {
+	public @Nullable Set<SettingFlag> getFlags() {
 		return flags;
 	}
 
@@ -330,7 +344,7 @@ public class Setting implements SettingNote {
 	 * @param flags
 	 *        the flags to set
 	 */
-	public void setFlags(Set<SettingFlag> flags) {
+	public void setFlags(@Nullable Set<SettingFlag> flags) {
 		this.flags = flags;
 	}
 
@@ -339,7 +353,7 @@ public class Setting implements SettingNote {
 	 *
 	 * @return the date
 	 */
-	public Date getModified() {
+	public @Nullable Date getModified() {
 		return modified;
 	}
 
@@ -349,7 +363,7 @@ public class Setting implements SettingNote {
 	 * @param modified
 	 *        the date to set
 	 */
-	public void setModified(Date modified) {
+	public void setModified(@Nullable Date modified) {
 		this.modified = modified;
 	}
 

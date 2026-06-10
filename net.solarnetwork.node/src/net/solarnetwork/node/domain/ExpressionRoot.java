@@ -23,7 +23,6 @@
 package net.solarnetwork.node.domain;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.service.OptionalService.service;
@@ -34,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.datum.Datum;
@@ -79,12 +79,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 
 	private static final Logger log = LoggerFactory.getLogger(ExpressionRoot.class);
 
-	private final DatumService datumService;
-	private final OperationalModesService opModesService;
-	private final MetadataService metadataService;
-	private final LocationService locationService;
-	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
-	private OptionalService<LocalStateDao> localStateDao;
+	private final @Nullable DatumService datumService;
+	private final @Nullable OperationalModesService opModesService;
+	private final @Nullable MetadataService metadataService;
+	private final @Nullable LocationService locationService;
+	private @Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
+	private @Nullable OptionalService<LocalStateDao> localStateDao;
 
 	/**
 	 * Constructor.
@@ -92,7 +92,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param datum
 	 *        the datum currently being populated
 	 */
-	public ExpressionRoot(Datum datum) {
+	public ExpressionRoot(@Nullable Datum datum) {
 		this(datum, null, null, null);
 	}
 
@@ -104,7 +104,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param samples
 	 *        the samples
 	 */
-	public ExpressionRoot(Datum datum, DatumSamplesOperations samples) {
+	public ExpressionRoot(@Nullable Datum datum, @Nullable DatumSamplesOperations samples) {
 		this(datum, samples, null, null);
 	}
 
@@ -117,7 +117,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the datum currently being populated
 	 * @since 1.2
 	 */
-	public ExpressionRoot(Map<String, ?> data, Datum datum) {
+	public ExpressionRoot(@Nullable Map<String, ?> data, @Nullable Datum datum) {
 		this(datum, null, data, null);
 	}
 
@@ -133,8 +133,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @param datumService
 	 *        the optional datum service
 	 */
-	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
-			DatumService datumService) {
+	public ExpressionRoot(@Nullable Datum datum, @Nullable DatumSamplesOperations samples,
+			@Nullable Map<String, ?> parameters, @Nullable DatumService datumService) {
 		this(datum, samples, parameters, datumService, null);
 	}
 
@@ -153,8 +153,9 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the optional operational modes service
 	 * @since 2.1
 	 */
-	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
-			DatumService datumService, OperationalModesService opModesService) {
+	public ExpressionRoot(@Nullable Datum datum, @Nullable DatumSamplesOperations samples,
+			@Nullable Map<String, ?> parameters, @Nullable DatumService datumService,
+			@Nullable OperationalModesService opModesService) {
 		this(datum, samples, parameters, datumService, opModesService, null);
 	}
 
@@ -175,9 +176,10 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the metadata service
 	 * @since 2.3
 	 */
-	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
-			DatumService datumService, OperationalModesService opModesService,
-			MetadataService metadataService) {
+	public ExpressionRoot(@Nullable Datum datum, @Nullable DatumSamplesOperations samples,
+			@Nullable Map<String, ?> parameters, @Nullable DatumService datumService,
+			@Nullable OperationalModesService opModesService,
+			@Nullable MetadataService metadataService) {
 		this(datum, samples, parameters, datumService, opModesService, metadataService, null);
 	}
 
@@ -200,9 +202,10 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the location service
 	 * @since 2.4
 	 */
-	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
-			DatumService datumService, OperationalModesService opModesService,
-			MetadataService metadataService, LocationService locationService) {
+	public ExpressionRoot(@Nullable Datum datum, @Nullable DatumSamplesOperations samples,
+			@Nullable Map<String, ?> parameters, @Nullable DatumService datumService,
+			@Nullable OperationalModesService opModesService, @Nullable MetadataService metadataService,
+			@Nullable LocationService locationService) {
 		super(datum, samples, parameters);
 		this.datumService = datumService;
 		this.opModesService = opModesService;
@@ -222,7 +225,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return a new instance using {@code datum}
 	 * @since 2.5
 	 */
-	public ExpressionRoot copyWith(Datum datum) {
+	public ExpressionRoot copyWith(@Nullable Datum datum) {
 		return copyWith(datum, null, null);
 	}
 
@@ -239,8 +242,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code parameters}
 	 * @since 2.5
 	 */
-	public ExpressionRoot copyWith(Datum datum, DatumSamplesOperations samples,
-			Map<String, ?> parameters) {
+	public ExpressionRoot copyWith(@Nullable Datum datum, @Nullable DatumSamplesOperations samples,
+			@Nullable Map<String, ?> parameters) {
 		ExpressionRoot r = new ExpressionRoot(datum, samples, parameters, datumService, opModesService,
 				metadataService, locationService);
 		r.setTariffScheduleProviders(tariffScheduleProviders);
@@ -341,7 +344,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@link DatumService#latest(java.util.Set, Class)} returns
 	 *         {@code null} for the given {@code sourceId}
 	 */
-	public DatumExpressionRoot latest(String sourceId) {
+	public @Nullable DatumExpressionRoot latest(String sourceId) {
 		return offset(sourceId, 0);
 	}
 
@@ -363,7 +366,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.6
 	 */
-	public DatumExpressionRoot unfilteredLatest(String sourceId) {
+	public @Nullable DatumExpressionRoot unfilteredLatest(String sourceId) {
 		return unfilteredOffset(sourceId, 0);
 	}
 
@@ -516,16 +519,16 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		return latestMatching(datumService != null ? datumService.unfiltered() : null, sourceIdPatterns);
 	}
 
-	private Collection<DatumExpressionRoot> latestMatching(DatumHistorian history,
-			String sourceIdPattern) {
+	private Collection<DatumExpressionRoot> latestMatching(@Nullable DatumHistorian history,
+			@Nullable String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
 		return latestMatching(history, singleton(sourceIdPattern));
 	}
 
-	private Collection<DatumExpressionRoot> latestMatching(DatumHistorian history,
-			Collection<String> sourceIdPatterns) {
+	private Collection<DatumExpressionRoot> latestMatching(@Nullable DatumHistorian history,
+			@Nullable Collection<String> sourceIdPatterns) {
 		if ( history == null || sourceIdPatterns == null ) {
 			return emptyList();
 		}
@@ -701,16 +704,16 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 				sourceIdPatterns);
 	}
 
-	private Collection<DatumExpressionRoot> latestOthersMatching(DatumHistorian history,
-			String sourceIdPattern) {
+	private Collection<DatumExpressionRoot> latestOthersMatching(@Nullable DatumHistorian history,
+			@Nullable String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
 		return latestOthersMatching(history, singleton(sourceIdPattern));
 	}
 
-	private Collection<DatumExpressionRoot> latestOthersMatching(DatumHistorian history,
-			Collection<String> sourceIdPatterns) {
+	private Collection<DatumExpressionRoot> latestOthersMatching(@Nullable DatumHistorian history,
+			@Nullable Collection<String> sourceIdPatterns) {
 		if ( history == null || sourceIdPatterns == null ) {
 			return emptyList();
 		}
@@ -742,8 +745,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@code null} and always having at
-	 *         least one value (this instance)
+	 * @return the matching datum, never {@code null} and always having at least
+	 *         one value (this instance)
 	 */
 	public Collection<DatumExpressionRoot> selfAndLatestMatching(String sourceIdPattern) {
 		return selfAndLatestMatching(datumService, sourceIdPattern);
@@ -760,8 +763,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@code null} and always having at
-	 *         least one value (this instance)
+	 * @return the matching datum, never {@code null} and always having at least
+	 *         one value (this instance)
 	 * @since 2.9
 	 */
 	public Collection<DatumExpressionRoot> selfAndLatestMatching(Collection<String> sourceIdPatterns) {
@@ -780,8 +783,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
-	 * @return the matching datum, never {@code null} and always having at
-	 *         least one value (this instance)
+	 * @return the matching datum, never {@code null} and always having at least
+	 *         one value (this instance)
 	 * @since 2.6
 	 */
 	public Collection<DatumExpressionRoot> selfAndUnfilteredLatestMatching(String sourceIdPattern) {
@@ -801,8 +804,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
-	 * @return the matching datum, never {@code null} and always having at
-	 *         least one value (this instance)
+	 * @return the matching datum, never {@code null} and always having at least
+	 *         one value (this instance)
 	 * @since 2.9
 	 */
 	public Collection<DatumExpressionRoot> selfAndUnfilteredLatestMatching(
@@ -811,16 +814,16 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 				sourceIdPatterns);
 	}
 
-	private Collection<DatumExpressionRoot> selfAndLatestMatching(DatumHistorian history,
-			String sourceIdPattern) {
+	private Collection<DatumExpressionRoot> selfAndLatestMatching(@Nullable DatumHistorian history,
+			@Nullable String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
 			return emptyList();
 		}
 		return selfAndLatestMatching(history, singleton(sourceIdPattern));
 	}
 
-	private Collection<DatumExpressionRoot> selfAndLatestMatching(DatumHistorian history,
-			Collection<String> sourceIdPatterns) {
+	private Collection<DatumExpressionRoot> selfAndLatestMatching(@Nullable DatumHistorian history,
+			@Nullable Collection<String> sourceIdPatterns) {
 		if ( history == null || sourceIdPatterns == null ) {
 			return emptyList();
 		}
@@ -920,7 +923,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.1
 	 * @see #offset(String, Instant, int)
 	 */
-	public DatumExpressionRoot offset(int offset) {
+	public @Nullable DatumExpressionRoot offset(int offset) {
 		Datum datum = getDatum();
 		if ( datum == null ) {
 			return null;
@@ -952,7 +955,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.6
 	 * @see #unfilteredOffset(String, Instant, int)
 	 */
-	public DatumExpressionRoot unfilteredOffset(int offset) {
+	public @Nullable DatumExpressionRoot unfilteredOffset(int offset) {
 		Datum datum = getDatum();
 		if ( datum == null ) {
 			return null;
@@ -1003,11 +1006,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code sourceId} will return a non-null value
 	 * @since 2.6
 	 */
-	public boolean hasUnfilteredOffset(String sourceId, int offset) {
+	public boolean hasUnfilteredOffset(@Nullable String sourceId, int offset) {
 		return hasOffset(datumService != null ? datumService.unfiltered() : null, sourceId, offset);
 	}
 
-	private boolean hasOffset(DatumHistorian history, String sourceId, int offset) {
+	private boolean hasOffset(@Nullable DatumHistorian history, @Nullable String sourceId, int offset) {
 		if ( history == null || sourceId == null ) {
 			return false;
 		}
@@ -1036,7 +1039,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.1
 	 */
-	public DatumExpressionRoot offset(String sourceId, int offset) {
+	public @Nullable DatumExpressionRoot offset(@Nullable String sourceId, int offset) {
 		return offset(datumService, sourceId, offset);
 	}
 
@@ -1061,11 +1064,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.6
 	 */
-	public DatumExpressionRoot unfilteredOffset(String sourceId, int offset) {
+	public @Nullable DatumExpressionRoot unfilteredOffset(@Nullable String sourceId, int offset) {
 		return offset(datumService != null ? datumService.unfiltered() : null, sourceId, offset);
 	}
 
-	private DatumExpressionRoot offset(DatumHistorian history, String sourceId, int offset) {
+	private @Nullable DatumExpressionRoot offset(@Nullable DatumHistorian history,
+			@Nullable String sourceId, int offset) {
 		if ( history == null || sourceId == null ) {
 			return null;
 		}
@@ -1096,7 +1100,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code sourceId} will return a non-null value
 	 * @since 2.1
 	 */
-	public boolean hasOffset(String sourceId, Instant timestamp, int offset) {
+	public boolean hasOffset(@Nullable String sourceId, @Nullable Instant timestamp, int offset) {
 		return hasOffset(datumService, sourceId, timestamp, offset);
 	}
 
@@ -1120,12 +1124,14 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code sourceId} will return a non-null value
 	 * @since 2.1
 	 */
-	public boolean hasUnfilteredOffset(String sourceId, Instant timestamp, int offset) {
+	public boolean hasUnfilteredOffset(@Nullable String sourceId, @Nullable Instant timestamp,
+			int offset) {
 		return hasOffset(datumService != null ? datumService.unfiltered() : null, sourceId, timestamp,
 				offset);
 	}
 
-	private boolean hasOffset(DatumHistorian history, String sourceId, Instant timestamp, int offset) {
+	private boolean hasOffset(@Nullable DatumHistorian history, @Nullable String sourceId,
+			@Nullable Instant timestamp, int offset) {
 		if ( history == null || sourceId == null || timestamp == null ) {
 			return false;
 		}
@@ -1156,7 +1162,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.1
 	 */
-	public DatumExpressionRoot offset(String sourceId, Instant timestamp, int offset) {
+	public @Nullable DatumExpressionRoot offset(@Nullable String sourceId, @Nullable Instant timestamp,
+			int offset) {
 		return offset(datumService, sourceId, timestamp, offset);
 	}
 
@@ -1183,13 +1190,14 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *         {@code null} for the given {@code sourceId}
 	 * @since 2.6
 	 */
-	public DatumExpressionRoot unfilteredOffset(String sourceId, Instant timestamp, int offset) {
+	public @Nullable DatumExpressionRoot unfilteredOffset(@Nullable String sourceId,
+			@Nullable Instant timestamp, int offset) {
 		return offset(datumService != null ? datumService.unfiltered() : null, sourceId, timestamp,
 				offset);
 	}
 
-	private DatumExpressionRoot offset(DatumHistorian history, String sourceId, Instant timestamp,
-			int offset) {
+	private @Nullable DatumExpressionRoot offset(@Nullable DatumHistorian history,
+			@Nullable String sourceId, @Nullable Instant timestamp, int offset) {
 		if ( history == null || sourceId == null || timestamp == null ) {
 			return null;
 		}
@@ -1220,7 +1228,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the matching datum, never {@code null}
 	 * @since 2.2
 	 */
-	public Collection<DatumExpressionRoot> slice(String sourceId, int offset, int count) {
+	public Collection<DatumExpressionRoot> slice(@Nullable String sourceId, int offset, int count) {
 		return slice(datumService, sourceId, offset, count);
 	}
 
@@ -1244,12 +1252,13 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the matching datum, never {@code null}
 	 * @since 2.6
 	 */
-	public Collection<DatumExpressionRoot> unfilteredSlice(String sourceId, int offset, int count) {
+	public Collection<DatumExpressionRoot> unfilteredSlice(@Nullable String sourceId, int offset,
+			int count) {
 		return slice(datumService != null ? datumService.unfiltered() : null, sourceId, offset, count);
 	}
 
-	private Collection<DatumExpressionRoot> slice(DatumHistorian history, String sourceId, int offset,
-			int count) {
+	private Collection<DatumExpressionRoot> slice(@Nullable DatumHistorian history,
+			@Nullable String sourceId, int offset, int count) {
 		if ( history == null || sourceId == null ) {
 			return emptyList();
 		}
@@ -1287,8 +1296,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the matching datum, never {@code null}
 	 * @since 2.2
 	 */
-	public Collection<DatumExpressionRoot> slice(String sourceId, Instant timestamp, int offset,
-			int count) {
+	public Collection<DatumExpressionRoot> slice(@Nullable String sourceId, @Nullable Instant timestamp,
+			int offset, int count) {
 		return slice(datumService, sourceId, timestamp, offset, count);
 	}
 
@@ -1314,14 +1323,14 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the matching datum, never {@code null}
 	 * @since 2.6
 	 */
-	public Collection<DatumExpressionRoot> unfilteredSlice(String sourceId, Instant timestamp,
-			int offset, int count) {
+	public Collection<DatumExpressionRoot> unfilteredSlice(@Nullable String sourceId,
+			@Nullable Instant timestamp, int offset, int count) {
 		return slice(datumService != null ? datumService.unfiltered() : null, sourceId, timestamp,
 				offset, count);
 	}
 
-	private Collection<DatumExpressionRoot> slice(DatumHistorian history, String sourceId,
-			Instant timestamp, int offset, int count) {
+	private Collection<DatumExpressionRoot> slice(@Nullable DatumHistorian history,
+			@Nullable String sourceId, @Nullable Instant timestamp, int offset, int count) {
 		if ( history == null || sourceId == null ) {
 			return emptyList();
 		}
@@ -1374,7 +1383,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the metadata, or {@code null} if no such metadata is available
 	 * @since 2.1
 	 */
-	public DatumMetadataOperations getMeta() {
+	public @Nullable DatumMetadataOperations getMeta() {
 		final Long locationId = getLocId();
 		if ( locationId == null ) {
 			return meta(getSourceId());
@@ -1394,7 +1403,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return {@literal true} if metadata for {@code sourceId} is available
 	 * @since 2.1
 	 */
-	public boolean hasMeta(String sourceId) {
+	public boolean hasMeta(@Nullable String sourceId) {
 		return meta(sourceId) != null;
 	}
 
@@ -1406,7 +1415,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the metadata, or {@code null} if no such metadata is available
 	 * @since 2.1
 	 */
-	public DatumMetadataOperations meta(String sourceId) {
+	public @Nullable DatumMetadataOperations meta(@Nullable String sourceId) {
 		return (datumService != null && sourceId != null ? datumService.datumMetadata(sourceId) : null);
 	}
 
@@ -1430,48 +1439,48 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the general metadata, or {@code null} if none available
 	 * @since 2.3
 	 */
-	public DatumMetadataOperations metadata() {
+	public @Nullable DatumMetadataOperations metadata() {
 		return (metadataService != null ? metadataService.getAllMetadata() : null);
 	}
 
 	@Override
-	public Map<String, ?> getInfo() {
+	public @Nullable Map<String, ?> getInfo() {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getInfo() : emptyMap());
+		return (delegate != null ? delegate.getInfo() : null);
 	}
 
 	@Override
 	public Set<String> getPropertyInfoKeys() {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getPropertyInfoKeys() : emptySet());
+		return (delegate != null ? delegate.getPropertyInfoKeys() : Set.of());
 	}
 
 	@Override
-	public Map<String, ?> getPropertyInfo(String key) {
+	public @Nullable Map<String, ?> getPropertyInfo(String key) {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getPropertyInfo(key) : emptyMap());
+		return (delegate != null ? delegate.getPropertyInfo(key) : null);
 	}
 
 	@Override
-	public Set<String> getTags() {
+	public @Nullable Set<String> getTags() {
 		final DatumMetadataOperations delegate = metadata();
-		return (delegate != null ? delegate.getTags() : emptySet());
+		return (delegate != null ? delegate.getTags() : null);
 	}
 
 	@Override
-	public Object metadataAtPath(String path) {
+	public @Nullable Object metadataAtPath(@Nullable String path) {
 		final DatumMetadataOperations delegate = metadata();
 		return (delegate != null ? delegate.metadataAtPath(path) : null);
 	}
 
 	@Override
-	public <T> T metadataAtPath(String path, Class<T> clazz) {
+	public <T> @Nullable T metadataAtPath(@Nullable String path, Class<T> clazz) {
 		final DatumMetadataOperations delegate = metadata();
 		return (delegate != null ? delegate.metadataAtPath(path, clazz) : null);
 	}
 
-	private GeneralLocationSourceMetadata locationSourceMetadata(final Long locationId,
-			final String sourceId) {
+	private @Nullable GeneralLocationSourceMetadata locationSourceMetadata(
+			final @Nullable Long locationId, final @Nullable String sourceId) {
 		if ( locationId == null || sourceId == null || sourceId.isEmpty() || locationService == null ) {
 			return null;
 		}
@@ -1488,7 +1497,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the location metadata, or {@code null} if not available
 	 * @since 2.4
 	 */
-	public DatumMetadataOperations locMeta(Long locationId, String sourceId) {
+	public @Nullable DatumMetadataOperations locMeta(@Nullable Long locationId,
+			@Nullable String sourceId) {
 		GeneralLocationSourceMetadata m = locationSourceMetadata(locationId, sourceId);
 		return (m != null ? m.getMeta() : null);
 	}
@@ -1511,7 +1521,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the sorted list
 	 * @since 2.5
 	 */
-	public <T> Collection<T> sort(Collection<T> collection, String... propNames) {
+	public <T> @Nullable Collection<T> sort(@Nullable Collection<T> collection,
+			String @Nullable... propNames) {
 		return CollectionUtils.sort(collection, propNames);
 	}
 
@@ -1535,7 +1546,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the sorted list
 	 * @since 2.5
 	 */
-	public <T> Collection<T> sort(Collection<T> collection, boolean reverse, String... propNames) {
+	public <T> @Nullable Collection<T> sort(@Nullable Collection<T> collection, boolean reverse,
+			String @Nullable... propNames) {
 		return CollectionUtils.sort(collection, reverse, propNames);
 	}
 
@@ -1548,27 +1560,29 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	@Override
-	public Object localState(String key, Object defaultValue) {
+	public @Nullable Object localState(String key, @Nullable Object defaultValue) {
 		LocalState state = localStateDao().get(key);
 		return (state != null ? state.getValue() : defaultValue);
 	}
 
 	@Override
-	public Object saveLocalState(String key, LocalStateType type, Object value) {
+	public @Nullable Object saveLocalState(String key, LocalStateType type, @Nullable Object value) {
 		LocalState state = new LocalState(key, type, value);
 		localStateDao().compareAndChange(state); // not save to avoid excessive STORED entity events
 		return value;
 	}
 
 	@Override
-	public Object saveLocalState(String key, LocalStateType type, Object value, Object expectedValue) {
+	public @Nullable Object saveLocalState(String key, LocalStateType type, @Nullable Object value,
+			@Nullable Object expectedValue) {
 		LocalState state = new LocalState(key, type, value);
 		LocalState result = localStateDao().compareAndSave(state, expectedValue);
 		return result.getValue();
 	}
 
 	@Override
-	public Object getAndSaveLocalState(String key, LocalStateType type, Object value) {
+	public @Nullable Object getAndSaveLocalState(String key, LocalStateType type,
+			@Nullable Object value) {
 		LocalState state = new LocalState(key, type, value);
 		LocalState result = localStateDao().getAndSave(state);
 		return result != null ? result.getValue() : null;
@@ -1581,7 +1595,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.5
 	 */
 	@Override
-	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+	public final @Nullable OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
 		return tariffScheduleProviders;
 	}
 
@@ -1593,7 +1607,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.5
 	 */
 	public final void setTariffScheduleProviders(
-			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
 
@@ -1603,7 +1617,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the DAO
 	 * @since 2.8
 	 */
-	public OptionalService<LocalStateDao> getLocalStateDao() {
+	public @Nullable OptionalService<LocalStateDao> getLocalStateDao() {
 		return localStateDao;
 	}
 
@@ -1614,7 +1628,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the DAO to set
 	 * @since 2.8
 	 */
-	public void setLocalStateDao(OptionalService<LocalStateDao> localStateDao) {
+	public void setLocalStateDao(@Nullable OptionalService<LocalStateDao> localStateDao) {
 		this.localStateDao = localStateDao;
 	}
 
