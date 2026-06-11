@@ -165,7 +165,7 @@ public interface PlatformPackageService {
 	 *        include everything
 	 * @return the matching packages, never {@code null}
 	 */
-	Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter,
+	Future<Iterable<PlatformPackage>> listNamedPackages(@Nullable String nameFilter,
 			@Nullable Boolean installedFilter);
 
 	/**

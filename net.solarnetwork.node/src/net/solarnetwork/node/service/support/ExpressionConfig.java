@@ -1,21 +1,21 @@
 /* ==================================================================
  * ExpressionConfig.java - 20/02/2019 7:36:01 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import org.jspecify.annotations.Nullable;
 import org.springframework.expression.Expression;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
@@ -45,20 +46,20 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single datum property to be set via an expression.
- * 
+ *
  * <p>
  * The {@link #getConfig()} value represents the expression to evaluate.
  * </p>
- * 
+ *
  * @author matt
  * @version 2.0
  * @since 1.79
  */
 public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
-	private String expressionServiceId;
+	private @Nullable String expressionServiceId;
 
-	private Expression cachedExpression;
+	private @Nullable Expression cachedExpression;
 
 	/**
 	 * Default constructor.
@@ -69,7 +70,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param name
 	 *        the datum property name
 	 * @param propertyType
@@ -79,15 +80,15 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 * @param expressionServiceId
 	 *        the expression service ID
 	 */
-	public ExpressionConfig(String name, DatumSamplesType propertyType, String expression,
-			String expressionServiceId) {
+	public ExpressionConfig(@Nullable String name, @Nullable DatumSamplesType propertyType,
+			@Nullable String expression, @Nullable String expressionServiceId) {
 		super(name, propertyType, expression);
 		this.expressionServiceId = expressionServiceId;
 	}
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to get the relative
 	 *        {@literal ExpressionConfig.properties} resource from
@@ -98,7 +99,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 * @return the settings, never {@code null}
 	 */
 	public static List<SettingSpecifier> settings(Class<?> clazz, String prefix,
-			Iterable<ExpressionService> expressionServices) {
+			@Nullable Iterable<ExpressionService> expressionServices) {
 		ExpressionConfig defaults = new ExpressionConfig();
 		List<SettingSpecifier> results = new ArrayList<>(3);
 
@@ -141,7 +142,7 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 	/**
 	 * Generate a list of setting values from this instance.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider key to use
 	 * @param instanceId
@@ -165,13 +166,13 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 	/**
 	 * Get a link to an expression service guide.
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to get the relative
 	 *        {@literal ExpressionConfig.properties} resource from
 	 * @return a link to an expression guide
 	 */
-	public static URI expressionReferenceLink(Class<?> clazz) {
+	public static @Nullable URI expressionReferenceLink(Class<?> clazz) {
 		String result = null;
 		Properties props = new Properties();
 		try (InputStream in = clazz.getResourceAsStream("ExpressionConfig.properties")) {
@@ -201,19 +202,26 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	 * Get the appropriate {@link Expression} to use for this property
 	 * configuration, if an expression is configured and the appropriate service
 	 * is available.
-	 * 
+	 *
 	 * @param services
 	 *        the available services
 	 * @return the expression instance, or {@code null} if no expression
 	 *         configured or the appropriate service is not found
 	 * @since 1.1
 	 */
-	public synchronized ExpressionServiceExpression getExpression(Iterable<ExpressionService> services) {
+	public synchronized @Nullable ExpressionServiceExpression getExpression(
+			@Nullable Iterable<ExpressionService> services) {
+		final String expressionServiceId = getExpressionServiceId();
+		final String expression = getExpression();
+		if ( services == null || expressionServiceId == null || expression == null
+				|| expression.isEmpty() ) {
+			return null;
+		}
 		for ( ExpressionService service : services ) {
-			if ( service != null && service.getUid().equalsIgnoreCase(expressionServiceId) ) {
+			if ( service != null && expressionServiceId.equalsIgnoreCase(service.getUid()) ) {
 				Expression expr = cachedExpression;
 				if ( expr == null ) {
-					expr = service.parseExpression(getExpression());
+					expr = service.parseExpression(expression);
 					if ( expr != null ) {
 						cachedExpression = expr;
 					}
@@ -228,54 +236,54 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 	/**
 	 * Get the datum property name used for this configuration.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #getPropertyKey()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the property name
 	 */
-	public String getName() {
+	public @Nullable String getName() {
 		return getPropertyKey();
 	}
 
 	/**
 	 * Set the datum property name to use.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #setPropertyKey(String)}.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *        the property name
 	 */
-	public void setName(String name) {
+	public void setName(@Nullable String name) {
 		setPropertyKey(name);
 	}
 
 	/**
 	 * Get the expression.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #getConfig()}.
-	 * 
+	 *
 	 * @return the expression
 	 */
-	public synchronized String getExpression() {
+	public synchronized @Nullable String getExpression() {
 		return getConfig();
 	}
 
 	/**
 	 * Set the expression.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link DatumSamplePropertyConfig#setConfig(Object)}.
 	 * </p>
-	 * 
+	 *
 	 * @param expression
 	 *        the expression to set
 	 */
-	public synchronized void setExpression(String expression) {
+	public synchronized void setExpression(@Nullable String expression) {
 		setConfig(expression);
 		this.cachedExpression = null;
 	}
@@ -283,50 +291,50 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 	/**
 	 * Get the {@link ExpressionService} ID to use when evaluating
 	 * {@link #getExpression()}.
-	 * 
+	 *
 	 * @return the service ID
 	 */
-	public String getExpressionServiceId() {
+	public @Nullable String getExpressionServiceId() {
 		return expressionServiceId;
 	}
 
 	/**
 	 * Set the {@link ExpressionService} ID to use when evaluating
 	 * {@link #getExpression()}.
-	 * 
+	 *
 	 * @param expressionServiceId
 	 *        the service ID, or {@code null} to not evaluate
 	 */
-	public synchronized void setExpressionServiceId(String expressionServiceId) {
+	public synchronized void setExpressionServiceId(@Nullable String expressionServiceId) {
 		this.expressionServiceId = expressionServiceId;
 		this.cachedExpression = null;
 	}
 
 	/**
 	 * Get the datum property type.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #getPropertyType()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the type
 	 */
-	public DatumSamplesType getDatumPropertyType() {
+	public @Nullable DatumSamplesType getDatumPropertyType() {
 		return getPropertyType();
 	}
 
 	/**
 	 * Set the datum property type.
-	 * 
+	 *
 	 * <p>
 	 * This is an alias for {@link #setPropertyType(DatumSamplesType)}, and
 	 * ignores a {@code null} argument.
 	 * </p>
-	 * 
+	 *
 	 * @param datumPropertyType
 	 *        the datum property type to set
 	 */
-	public void setDatumPropertyType(DatumSamplesType datumPropertyType) {
+	public void setDatumPropertyType(@Nullable DatumSamplesType datumPropertyType) {
 		if ( datumPropertyType == null ) {
 			return;
 		}
@@ -335,13 +343,13 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 	/**
 	 * Get the property type key.
-	 * 
+	 *
 	 * <p>
 	 * This returns the configured {@link #getPropertyType()}
 	 * {@link DatumSamplesType#toKey()} value as a string. If the type is not
 	 * available, {@link DatumSamplesType#Instantaneous} will be returned.
 	 * </p>
-	 * 
+	 *
 	 * @return the property type key
 	 */
 	public String getDatumPropertyTypeKey() {
@@ -354,14 +362,14 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 	/**
 	 * Set the property type via a key value.
-	 * 
+	 *
 	 * <p>
 	 * This uses the first character of {@code key} as a
 	 * {@link DatumSamplesType} key value to call
 	 * {@link #setPropertyType(DatumSamplesType)}. If there is any problem
 	 * parsing the type, {@link DatumSamplesType#Instantaneous} is set.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the datum property type key to set
 	 */

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.service.support;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
+import org.jspecify.annotations.Nullable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.service.RemoteServiceException;
@@ -61,7 +63,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	/** The JSON MIME type. */
 	public static final String JSON_MIME_TYPE = "application/json";
 
-	private ObjectMapper objectMapper;
+	private @Nullable ObjectMapper objectMapper;
 	private boolean compress = false;
 
 	/**
@@ -107,10 +109,11 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 * @since 1.3
 	 */
-	protected final InputStream doJson(String url, String method, Object data,
-			Consumer<URLConnection> connectionCustomizer) throws IOException {
+	protected final InputStream doJson(String url, String method, @Nullable Object data,
+			@Nullable Consumer<URLConnection> connectionCustomizer) throws IOException {
 		URLConnection conn = getURLConnection(url, method, JSON_MIME_TYPE, connectionCustomizer);
 		if ( data != null ) {
+			final ObjectMapper mapper = nonnull(getObjectMapper(), "ObjectMapper");
 			conn.setRequestProperty("Content-Type", JSON_MIME_TYPE + ";charset=UTF-8");
 			if ( compress ) {
 				conn.setRequestProperty("Content-Encoding", "gzip");
@@ -122,9 +125,9 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 			if ( log.isDebugEnabled() ) {
 				log.debug("Posting JSON data: {}",
-						objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(data));
+						mapper.writerWithDefaultPrettyPrinter().writeValueAsString(data));
 			}
-			objectMapper.writeValue(out, data);
+			mapper.writeValue(out, data);
 			out.flush();
 			out.close();
 		}
@@ -158,8 +161,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 * @since 1.3
 	 */
-	protected final InputStream jsonGET(String url, Consumer<URLConnection> connectionCustomizer)
-			throws IOException {
+	protected final InputStream jsonGET(String url,
+			@Nullable Consumer<URLConnection> connectionCustomizer) throws IOException {
 		return doJson(url, HTTP_METHOD_GET, null, connectionCustomizer);
 	}
 
@@ -194,7 +197,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 * @since 1.3
 	 */
 	protected final InputStream jsonPOST(String url, Object data,
-			Consumer<URLConnection> connectionCustomizer) throws IOException {
+			@Nullable Consumer<URLConnection> connectionCustomizer) throws IOException {
 		return doJson(url, HTTP_METHOD_POST, data, connectionCustomizer);
 	}
 
@@ -215,13 +218,9 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected <T> T extractResponseData(InputStream in, Class<T> dataType)
+	protected <T> @Nullable T extractResponseData(InputStream in, Class<T> dataType)
 			throws RemoteServiceException, IOException {
-		final ObjectMapper mapper = getObjectMapper();
-		if ( mapper == null ) {
-			throw new RuntimeException(
-					"No ObjectMapper configured for extracting JSON response data with.");
-		}
+		final ObjectMapper mapper = nonnull(getObjectMapper(), "ObjectMapper");
 		try {
 			JsonNode root = mapper.readTree(in);
 			if ( root.isObject() ) {
@@ -229,7 +228,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 				if ( child != null && child.asBoolean() ) {
 					child = root.get("data");
 					if ( child != null ) {
-						return objectMapper.treeToValue(child, dataType);
+						return mapper.treeToValue(child, dataType);
 					}
 					log.debug("Server returned no data for request.");
 					return null;
@@ -262,10 +261,11 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 * @since 1.1
 	 */
-	protected <T> Collection<T> extractCollectionResponseData(InputStream in, Class<T> dataType)
-			throws RemoteServiceException, IOException {
+	protected <T> @Nullable Collection<T> extractCollectionResponseData(InputStream in,
+			Class<T> dataType) throws RemoteServiceException, IOException {
+		final ObjectMapper mapper = nonnull(getObjectMapper(), "ObjectMapper");
 		try {
-			JsonNode root = getObjectMapper().readTree(in);
+			JsonNode root = mapper.readTree(in);
 			if ( root.isObject() ) {
 				JsonNode child = root.get("success");
 				if ( child != null && child.asBoolean() ) {
@@ -275,7 +275,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 						List<T> result = new ArrayList<T>();
 						while ( children.hasNext() ) {
 							child = children.next();
-							result.add(objectMapper.treeToValue(child, dataType));
+							result.add(mapper.treeToValue(child, dataType));
 						}
 						return result;
 					}
@@ -311,10 +311,11 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 * @since 1.2
 	 */
-	protected <T> Collection<T> extractFilterResultsCollectionResponseData(InputStream in,
+	protected <T> @Nullable Collection<T> extractFilterResultsCollectionResponseData(InputStream in,
 			Class<T> dataType) throws RemoteServiceException, IOException {
+		final ObjectMapper mapper = nonnull(getObjectMapper(), "ObjectMapper");
 		try {
-			JsonNode root = getObjectMapper().readTree(in);
+			JsonNode root = mapper.readTree(in);
 			if ( root.isObject() ) {
 				JsonNode child = root.get("success");
 				if ( child != null && child.asBoolean() ) {
@@ -327,7 +328,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 						List<T> result = new ArrayList<T>();
 						while ( children.hasNext() ) {
 							child = children.next();
-							result.add(objectMapper.treeToValue(child, dataType));
+							result.add(mapper.treeToValue(child, dataType));
 						}
 						return result;
 					}
@@ -357,8 +358,9 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 */
 	protected void verifyResponseSuccess(InputStream in) throws RemoteServiceException, IOException {
+		final ObjectMapper mapper = nonnull(getObjectMapper(), "ObjectMapper");
 		try {
-			JsonNode root = getObjectMapper().readTree(in);
+			JsonNode root = mapper.readTree(in);
 			if ( root.isObject() ) {
 				JsonNode child = root.get("success");
 				if ( child != null && child.asBoolean() ) {
@@ -379,7 +381,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *
 	 * @return the mapper
 	 */
-	public final ObjectMapper getObjectMapper() {
+	public final @Nullable ObjectMapper getObjectMapper() {
 		return objectMapper;
 	}
 
@@ -389,7 +391,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 * @param objectMapper
 	 *        the mapper
 	 */
-	public final void setObjectMapper(ObjectMapper objectMapper) {
+	public final void setObjectMapper(@Nullable ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 

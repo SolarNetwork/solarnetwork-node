@@ -1,21 +1,21 @@
 /* ==================================================================
  * HttpClientSupport.java - Nov 19, 2013 3:46:57 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
@@ -43,7 +44,7 @@ import net.solarnetwork.service.SSLService;
 
 /**
  * Supporting methods for HTTP client operations.
- * 
+ *
  * @author matt
  * @version 1.2
  * @since 2.0
@@ -66,8 +67,8 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	public static final String HTTP_METHOD_POST = "POST";
 
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
-	private IdentityService identityService = null;
-	private OptionalService<SSLService> sslService = null;
+	private @Nullable IdentityService identityService;
+	private @Nullable OptionalService<SSLService> sslService;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -81,12 +82,12 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Get an InputStream from a URLConnection response, handling compression.
-	 * 
+	 *
 	 * <p>
 	 * This method handles decompressing the response if the encoding is set to
 	 * {@code gzip} or {@code deflate}.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the URLConnection
 	 * @return the InputStream
@@ -99,12 +100,12 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Get a Reader for a Unicode encoded URL connection response.
-	 * 
+	 *
 	 * <p>
 	 * This calls {@link #getInputStreamFromURLConnection(URLConnection)} so
 	 * compressed responses are handled appropriately.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the URLConnection
 	 * @return the Reader
@@ -117,11 +118,11 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Get a URLConnection for a specific URL and HTTP method.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to the {@link #ACCEPT_TEXT} accept value.
 	 * </p>
-	 * 
+	 *
 	 * @param url
 	 *        the URL to connect to
 	 * @param httpMethod
@@ -137,27 +138,27 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Get a URLConnection for a specific URL and HTTP method.
-	 * 
+	 *
 	 * <p>
 	 * If the httpMethod equals {@code POST} then the connection's
 	 * {@code doOutput} property will be set to {@literal true}, otherwise it
 	 * will be set to {@literal false}. The {@code doInput} property is always
 	 * set to {@literal true}.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method also sets up the request property
 	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
 	 * The {@link #getInputStreamFromURLConnection(URLConnection)} automatically
 	 * handles compressed responses.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * If the {@link #getSslService()} property is configured and the URL
 	 * represents an HTTPS connection, then that factory will be used to for the
 	 * connection.
 	 * </p>
-	 * 
+	 *
 	 * @param url
 	 *        the URL to connect to
 	 * @param httpMethod
@@ -175,27 +176,27 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Get a URLConnection for a specific URL and HTTP method.
-	 * 
+	 *
 	 * <p>
 	 * If the httpMethod equals {@code POST} then the connection's
 	 * {@code doOutput} property will be set to {@literal true}, otherwise it
 	 * will be set to {@literal false}. The {@code doInput} property is always
 	 * set to {@literal true}.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This method also sets up the request property
 	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
 	 * The {@link #getInputStreamFromURLConnection(URLConnection)} automatically
 	 * handles compressed responses.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * If the {@link #getSslService()} property is configured and the URL
 	 * represents an HTTPS connection, then that factory will be used to for the
 	 * connection.
 	 * </p>
-	 * 
+	 *
 	 * @param url
 	 *        the URL to connect to
 	 * @param httpMethod
@@ -211,7 +212,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 * @since 1.5
 	 */
 	protected URLConnection getURLConnection(String url, String httpMethod, String accept,
-			Consumer<URLConnection> connectionCustomizer) throws IOException {
+			@Nullable Consumer<URLConnection> connectionCustomizer) throws IOException {
 		URLConnection conn = UrlUtils.getURLConnection(url, httpMethod, accept, connectionTimeout,
 				OptionalService.service(sslService));
 		if ( connectionCustomizer != null ) {
@@ -223,7 +224,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	/**
 	 * Populate SolarNetwork token authorization headers on a
 	 * {@code URLConnection}.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection to populate
 	 * @param builder
@@ -235,7 +236,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 * @since 1.5
 	 */
 	public void setupTokenAuthorization(URLConnection conn, Snws2AuthorizationBuilder builder,
-			Instant requestDate, Map<String, List<String>> headers) {
+			Instant requestDate, @Nullable Map<String, List<String>> headers) {
 		if ( headers != null ) {
 			for ( Map.Entry<String, List<String>> me : headers.entrySet() ) {
 				boolean first = true;
@@ -268,7 +269,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Append a URL-escaped key/value pair to a string buffer.
-	 * 
+	 *
 	 * @param buf
 	 *        the buffer to append to
 	 * @param key
@@ -284,7 +285,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 * Encode a map of data into a string suitable for posting to a web server
 	 * as the content type {@code application/x-www-form-urlencoded}. Arrays and
 	 * Collections of values are supported as well.
-	 * 
+	 *
 	 * @param data
 	 *        the map of data to encode
 	 * @return the encoded data, or an empty string if nothing to encode
@@ -296,7 +297,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	/**
 	 * HTTP POST data as {@code application/x-www-form-urlencoded} (e.g. a web
 	 * form) to a URL.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to post to
 	 * @param accept
@@ -318,7 +319,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	/**
 	 * HTTP POST data as {@code application/x-www-form-urlencoded} (e.g. a web
 	 * form) to a URL and return the response body as a string.
-	 * 
+	 *
 	 * @param url
 	 *        the URL to post to
 	 * @param data
@@ -338,58 +339,58 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the connection timeout.
-	 * 
+	 *
 	 * @param connectionTimeout
 	 *        the connection timeout
 	 */
-	public void setConnectionTimeout(int connectionTimeout) {
+	public final void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
 	}
 
 	/**
 	 * Get the connection timeout.
-	 * 
+	 *
 	 * @return the connection timeout
 	 */
-	public int getConnectionTimeout() {
+	public final int getConnectionTimeout() {
 		return connectionTimeout;
 	}
 
 	/**
 	 * Get the identity service.
-	 * 
+	 *
 	 * @return the service
 	 */
-	public IdentityService getIdentityService() {
+	public final @Nullable IdentityService getIdentityService() {
 		return identityService;
 	}
 
 	/**
 	 * Set the identity service.
-	 * 
+	 *
 	 * @param identityService
 	 *        the service to use
 	 */
-	public void setIdentityService(IdentityService identityService) {
+	public final void setIdentityService(@Nullable IdentityService identityService) {
 		this.identityService = identityService;
 	}
 
 	/**
 	 * Get the SSL service.
-	 * 
+	 *
 	 * @return the SSL service
 	 */
-	public OptionalService<SSLService> getSslService() {
+	public final @Nullable OptionalService<SSLService> getSslService() {
 		return sslService;
 	}
 
 	/**
 	 * Set the SSL service.
-	 * 
+	 *
 	 * @param sslService
 	 *        the service to use
 	 */
-	public void setSslService(OptionalService<SSLService> sslService) {
+	public final void setSslService(@Nullable OptionalService<SSLService> sslService) {
 		this.sslService = sslService;
 	}
 

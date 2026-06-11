@@ -1,25 +1,26 @@
 /* ===================================================================
  * XmlServiceSupport.java
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ===================================================================
  */
 
 package net.solarnetwork.node.service.support;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyEditor;
 import java.io.ByteArrayOutputStream;
@@ -31,11 +32,12 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TimeZone;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -54,6 +56,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.BeanWrapper;
@@ -70,7 +73,7 @@ import net.solarnetwork.util.ClassUtils;
 
 /**
  * A helper class to support services that use XML.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -80,12 +83,12 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/** Special attribute key for a node ID value. */
 	public static final String ATTR_NODE_ID = "node-id";
 
-	private NamespaceContext nsContext = null;
-	private DocumentBuilderFactory docBuilderFactory = null;
-	private XPathFactory xpathFactory = null;
-	private TransformerFactory transformerFactory = null;
+	private @Nullable NamespaceContext nsContext;
+	private @Nullable DocumentBuilderFactory docBuilderFactory;
+	private @Nullable XPathFactory xpathFactory;
+	private @Nullable TransformerFactory transformerFactory;
 
-	private OptionalService<EventAdmin> eventAdmin;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * Default constructor.
@@ -103,7 +106,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Compile XPathExpression mappings from String XPath expressions.
-	 * 
+	 *
 	 * @param xpathMap
 	 *        the XPath string expressions
 	 * @return the XPathExperssion mapping
@@ -112,7 +115,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 		Map<String, XPathExpression> datumXPathMap = new LinkedHashMap<String, XPathExpression>();
 		for ( Map.Entry<String, String> me : xpathMap.entrySet() ) {
 			try {
-				XPath xp = getXpathFactory().newXPath();
+				XPath xp = nonnull(getXpathFactory(), "XPathFactory").newXPath();
 				if ( getNsContext() != null ) {
 					xp.setNamespaceContext(getNsContext());
 				}
@@ -126,14 +129,15 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Get an XSLT Templates object from an XSLT Resource.
-	 * 
+	 *
 	 * @param resource
 	 *        the XSLT Resource to load
 	 * @return the compiled Templates
 	 */
 	public Templates getTemplates(Resource resource) {
 		try {
-			return getTransformerFactory().newTemplates(new StreamSource(resource.getInputStream()));
+			return nonnull(getTransformerFactory(), "TransformerFactory")
+					.newTemplates(new StreamSource(resource.getInputStream()));
 		} catch ( TransformerConfigurationException e ) {
 			throw new RuntimeException("Unable to load XSLT from resource [" + resource + ']');
 		} catch ( IOException e ) {
@@ -143,19 +147,19 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Turn an object into a simple XML Document.
-	 * 
+	 *
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributed. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
 	 *   ... /&gt;
 	 * </pre>
-	 * 
+	 *
 	 * @param o
 	 *        the object to turn into XML
 	 * @param elementName
@@ -170,19 +174,19 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Turn an object into a simple XML Document.
-	 * 
+	 *
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributes. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
 	 *   ... /&gt;
 	 * </pre>
-	 * 
+	 *
 	 * @param o
 	 *        the object to turn into XML
 	 * @param elementName
@@ -191,17 +195,22 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 */
 	public Document getSimpleDocument(Object o, String elementName) {
 		Document dom = null;
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 		try {
-			dom = getDocBuilderFactory().newDocumentBuilder().newDocument();
+			dom = nonnull(getDocBuilderFactory(), "DocumentBuilderFactory").newDocumentBuilder()
+					.newDocument();
 			Element root = dom.createElement(elementName);
 			dom.appendChild(root);
 			Map<String, Object> props = ClassUtils.getBeanProperties(o, null);
 			for ( Map.Entry<String, Object> me : props.entrySet() ) {
 				Object val = me.getValue();
-				if ( val instanceof Date ) {
-					val = sdf.format((Date) val);
+				if ( val instanceof Date d ) {
+					val = d.toInstant().toString();
+				} else if ( val instanceof Instant ts ) {
+					val = ts.toString();
+				} else if ( val instanceof ZonedDateTime ts ) {
+					val = ts.toInstant().toString();
+				} else if ( val instanceof OffsetDateTime ts ) {
+					val = ts.toInstant().toString();
 				}
 				root.setAttribute(me.getKey(), val.toString());
 
@@ -219,24 +228,24 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Turn an object into a simple XML Document, supporting custom property
 	 * editors.
-	 * 
+	 *
 	 * <p>
 	 * The returned XML will be a document with a single element with all
 	 * JavaBean properties turned into attributes. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
 	 *   ... /&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * {@link PropertyEditor} instances can be registered with the supplied
 	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.
 	 * </p>
-	 * 
+	 *
 	 * @param bean
 	 *        the object to turn into XML
 	 * @param elementName
@@ -246,7 +255,8 @@ public class XmlServiceSupport extends HttpClientSupport {
 	public Document getDocument(BeanWrapper bean, String elementName) {
 		Document dom = null;
 		try {
-			dom = getDocBuilderFactory().newDocumentBuilder().newDocument();
+			dom = nonnull(getDocBuilderFactory(), "DocumentBuilderFactory").newDocumentBuilder()
+					.newDocument();
 			dom.appendChild(getElement(bean, elementName, dom));
 		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
@@ -257,25 +267,25 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Turn an object into a simple XML Element, supporting custom property
 	 * editors.
-	 * 
+	 *
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributes and the element named after the bean object's
 	 * class name. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * &lt;PowerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
 	 *   ... /&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * {@link PropertyEditor} instances can be registered with the supplied
 	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.
 	 * </p>
-	 * 
+	 *
 	 * @param bean
 	 *        the object to turn into XML
 	 * @param dom
@@ -290,24 +300,24 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Turn an object into a simple XML Element, supporting custom property
 	 * editors.
-	 * 
+	 *
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributes. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
 	 *   ... /&gt;
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * {@link PropertyEditor} instances can be registered with the supplied
 	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.
 	 * </p>
-	 * 
+	 *
 	 * @param bean
 	 *        the object to turn into XML
 	 * @param elementName
@@ -351,19 +361,19 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Turn an object into a simple XML Document, supporting custom property
 	 * editors.
-	 * 
+	 *
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributed. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
 	 *   ... /&gt;
 	 * </pre>
-	 * 
+	 *
 	 * @param bean
 	 *        the object to turn into XML
 	 * @param elementName
@@ -378,11 +388,11 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Turn a Document into a Source.
-	 * 
+	 *
 	 * <p>
 	 * This method will log the XML document at the FINEST level.
 	 * </p>
-	 * 
+	 *
 	 * @param dom
 	 *        the Document to turn into XSLT source
 	 * @return the document, as XSLT Source
@@ -397,7 +407,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Turn an XML Source into a String.
-	 * 
+	 *
 	 * @param source
 	 *        the XML Source
 	 * @param indent
@@ -407,7 +417,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	public String getXmlAsString(Source source, boolean indent) {
 		ByteArrayOutputStream byos = new ByteArrayOutputStream();
 		try {
-			Transformer xform = getTransformerFactory().newTransformer();
+			Transformer xform = nonnull(getTransformerFactory(), "TransformerFactory").newTransformer();
 			if ( indent ) {
 				xform.setOutputProperty(OutputKeys.INDENT, "yes");
 				xform.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
@@ -423,12 +433,12 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Populate JavaBean properties via XPath extraction.
-	 * 
+	 *
 	 * <p>
 	 * This method will call {@link #registerCustomEditors(BeanWrapper)} so
 	 * custom editors can be registered if desired.
 	 * </p>
-	 * 
+	 *
 	 * @param obj
 	 *        the object to set properties on, or a BeanWrapper
 	 * @param xml
@@ -459,12 +469,12 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Extending classes can override this method to register custom bean
 	 * editors.
-	 * 
+	 *
 	 * <p>
 	 * This method does nothing itself, and is designed to have custom
 	 * implementation in extending classes.
 	 * </p>
-	 * 
+	 *
 	 * @param bean
 	 *        the bean in question
 	 */
@@ -474,12 +484,12 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Get a SAX InputSource from a URLConnection's InputStream.
-	 * 
+	 *
 	 * <p>
 	 * This method handles {@code gzip} and {@code deflate} decoding
 	 * automatically, if the {@code contentType} is reported as such.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the URLConnection
 	 * @return the InputSource
@@ -516,7 +526,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Send a bean as a web form POST and return an XML InputSource from the
 	 * response content.
-	 * 
+	 *
 	 * @param bean
 	 *        the bean
 	 * @param url
@@ -590,7 +600,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Send a bean as a web form GET and return an XML InputSource from the
 	 * response content.
-	 * 
+	 *
 	 * @param bean
 	 *        the bean to extract GET parameters from, or {@code null} for no
 	 *        parameters
@@ -625,7 +635,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Send a bean as a web form POST and parse the XML response as bean
 	 * properties.
-	 * 
+	 *
 	 * @param bean
 	 *        the bean to POST
 	 * @param obj
@@ -642,7 +652,8 @@ public class XmlServiceSupport extends HttpClientSupport {
 		InputSource is = webFormPost(bean, url, attributes);
 		Document doc;
 		try {
-			doc = getDocBuilderFactory().newDocumentBuilder().parse(is);
+			doc = nonnull(getDocBuilderFactory(), "DocumentBuilderFactory").newDocumentBuilder()
+					.parse(is);
 		} catch ( SAXException e ) {
 			throw new RuntimeException(e);
 		} catch ( IOException e ) {
@@ -656,12 +667,12 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Send a bean as a web GET and parse the XML response as bean properties.
-	 * 
+	 *
 	 * <p>
 	 * This method calls {@link #webFormGet(BeanWrapper, String, Map)} followed
 	 * by {@link #extractBeanDataFromXml(Object, Node, Map)}.
 	 * </p>
-	 * 
+	 *
 	 * @param bean
 	 *        the bean whose properties to send as GET parameters, or
 	 *        {@code null} for no parameters
@@ -680,7 +691,8 @@ public class XmlServiceSupport extends HttpClientSupport {
 		InputSource is = webFormGet(bean, url, attributes);
 		Document doc;
 		try {
-			doc = getDocBuilderFactory().newDocumentBuilder().parse(is);
+			doc = nonnull(getDocBuilderFactory(), "DocumentBuilderFactory").newDocumentBuilder()
+					.parse(is);
 		} catch ( SAXException e ) {
 			throw new RuntimeException(e);
 		} catch ( IOException e ) {
@@ -694,7 +706,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Extract a tracking ID from an XML string.
-	 * 
+	 *
 	 * @param xml
 	 *        the XML to extract from
 	 * @param xp
@@ -703,7 +715,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 *        the XPath as a string (for debugging)
 	 * @return the tracking ID, or {@code null} if not found
 	 */
-	public Long extractTrackingId(InputSource xml, XPathExpression xp, String xpath) {
+	public @Nullable Long extractTrackingId(InputSource xml, XPathExpression xp, String xpath) {
 		Double tid;
 		try {
 			tid = (Double) xp.evaluate(xml, XPathConstants.NUMBER);
@@ -719,7 +731,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Send a bean as a web form POST and parse the XML response for a bean.
-	 * 
+	 *
 	 * @param bean
 	 *        the bean
 	 * @param url
@@ -732,8 +744,8 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 *        extra POST attributes and bean override values
 	 * @return the extracted tracking ID, or {@code null} if none found
 	 */
-	public Long webFormPostForTrackingId(BeanWrapper bean, String url, XPathExpression trackingIdXPath,
-			String xpath, Map<String, ?> attributes) {
+	public @Nullable Long webFormPostForTrackingId(BeanWrapper bean, String url,
+			XPathExpression trackingIdXPath, String xpath, Map<String, ?> attributes) {
 		InputSource is = webFormPost(bean, url, attributes);
 
 		// extract the returned tracking ID via XPath
@@ -742,18 +754,18 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Post an {@link Event}.
-	 * 
+	 *
 	 * <p>
 	 * This method only works if a {@link EventAdmin} has been configured via
 	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
 	 * ignored.
 	 * </p>
-	 * 
+	 *
 	 * @param event
 	 *        the event to post
 	 * @since 1.5
 	 */
-	public final void postEvent(Event event) {
+	public final void postEvent(@Nullable Event event) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || event == null ) {
 			return;
@@ -763,36 +775,36 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Get the configured namespace context.
-	 * 
+	 *
 	 * @return the context
 	 */
-	public NamespaceContext getNsContext() {
+	public final @Nullable NamespaceContext getNsContext() {
 		return nsContext;
 	}
 
 	/**
 	 * Set an optional {@link NamespaceContext} to use for proper XML namespace
 	 * handling in some contexts, such as XPath.
-	 * 
+	 *
 	 * @param nsContext
 	 *        the context to use
 	 */
-	public void setNsContext(NamespaceContext nsContext) {
+	public final void setNsContext(@Nullable NamespaceContext nsContext) {
 		this.nsContext = nsContext;
 	}
 
 	/**
 	 * Get the DOM factory.
-	 * 
+	 *
 	 * <p>
 	 * If an explicit one has not been configured via
 	 * {@link #setDocBuilderFactory(DocumentBuilderFactory)} then a default one
 	 * will be instantiated and cached when this method is called.
 	 * </p>
-	 * 
+	 *
 	 * @return the DOM factory
 	 */
-	public DocumentBuilderFactory getDocBuilderFactory() {
+	public final @Nullable DocumentBuilderFactory getDocBuilderFactory() {
 		DocumentBuilderFactory f = docBuilderFactory;
 		if ( f == null ) {
 			f = DocumentBuilderFactory.newInstance();
@@ -804,26 +816,26 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Set a JAXP {@link DocumentBuilderFactory} to use.
-	 * 
+	 *
 	 * @param docBuilderFactory
 	 *        the DOM factory to use
 	 */
-	public void setDocBuilderFactory(DocumentBuilderFactory docBuilderFactory) {
+	public final void setDocBuilderFactory(@Nullable DocumentBuilderFactory docBuilderFactory) {
 		this.docBuilderFactory = docBuilderFactory;
 	}
 
 	/**
 	 * Get the XPath factory.
-	 * 
+	 *
 	 * <p>
 	 * If not explicit factory has been configured via
 	 * {@link #setXpathFactory(XPathFactory)} then a default one will be
 	 * instantiated and cached when this method is called.
 	 * </p>
-	 * 
+	 *
 	 * @return the factory
 	 */
-	public XPathFactory getXpathFactory() {
+	public final @Nullable XPathFactory getXpathFactory() {
 		XPathFactory f = xpathFactory;
 		if ( f == null ) {
 			// work around Oracle JDK issues loading XPathFactory, see
@@ -847,26 +859,26 @@ public class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Set a JAXP {@link XPathFactory} for handling XPath operations with.
-	 * 
+	 *
 	 * @param xpathFactory
 	 *        the factory to use
 	 */
-	public void setXpathFactory(XPathFactory xpathFactory) {
+	public final void setXpathFactory(@Nullable XPathFactory xpathFactory) {
 		this.xpathFactory = xpathFactory;
 	}
 
 	/**
 	 * Get the XSLT factory to use.
-	 * 
+	 *
 	 * <p>
 	 * If an expliciy one has not been configured via
 	 * {@link #setTransformerFactory(TransformerFactory)} then a default one
 	 * will be created and cached when this method is called.
 	 * </p>
-	 * 
+	 *
 	 * @return the XSLT factory
 	 */
-	public TransformerFactory getTransformerFactory() {
+	public final @Nullable TransformerFactory getTransformerFactory() {
 		TransformerFactory f = transformerFactory;
 		if ( f == null ) {
 			f = TransformerFactory.newInstance();
@@ -878,30 +890,30 @@ public class XmlServiceSupport extends HttpClientSupport {
 	/**
 	 * Set a JAXP {@link TransformerFactory} for handling XSLT transformations
 	 * with.
-	 * 
+	 *
 	 * @param transformerFactory
 	 *        the factory
 	 */
-	public void setTransformerFactory(TransformerFactory transformerFactory) {
+	public final void setTransformerFactory(@Nullable TransformerFactory transformerFactory) {
 		this.transformerFactory = transformerFactory;
 	}
 
 	/**
 	 * Get the {@link EventAdmin} service.
-	 * 
+	 *
 	 * @return the EventAdmin service
 	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
+	public final @Nullable OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
 	/**
 	 * Set an {@link EventAdmin} service to use.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the EventAdmin to use
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public final void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 

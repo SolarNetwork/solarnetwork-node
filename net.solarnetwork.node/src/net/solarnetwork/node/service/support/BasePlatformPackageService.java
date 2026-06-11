@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasePlatformPackageService.java - 22/05/2019 6:23:58 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,6 +25,7 @@ package net.solarnetwork.node.service.support;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -33,17 +34,17 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Base implementation of {@link PlatformPackageService}.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
  */
 public abstract class BasePlatformPackageService implements PlatformPackageService {
 
-	private OptionalService<AsyncTaskExecutor> taskExecutor;
+	private @Nullable OptionalService<AsyncTaskExecutor> taskExecutor;
 
 	/** A class-level logger. */
-	protected Logger log = LoggerFactory.getLogger(getClass());
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Default constructor.
@@ -55,12 +56,12 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	/**
 	 * Perform the extraction task, using the configured
 	 * {@link AsyncTaskExecutor} if available.
-	 * 
+	 *
 	 * <p>
-	 * If {@link #getTaskExecutor()} is {@code null}, the task will be
-	 * executed on the calling thread.
+	 * If {@link #getTaskExecutor()} is {@code null}, the task will be executed
+	 * on the calling thread.
 	 * </p>
-	 * 
+	 *
 	 * @param <T>
 	 *        the context type
 	 * @param task
@@ -70,7 +71,7 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 * @return the task future
 	 */
 	protected <T> Future<PlatformPackageResult<T>> performPackageResultTask(
-			Callable<PlatformPackageResult<T>> task, T context) {
+			Callable<PlatformPackageResult<T>> task, @Nullable T context) {
 		AsyncTaskExecutor executor = taskExecutor();
 		if ( executor != null ) {
 			return executor.submit(task);
@@ -89,12 +90,12 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	/**
 	 * Perform the extraction task, using the configured
 	 * {@link AsyncTaskExecutor} if available.
-	 * 
+	 *
 	 * <p>
-	 * If {@link #getTaskExecutor()} is {@code null}, the task will be
-	 * executed on the calling thread.
+	 * If {@link #getTaskExecutor()} is {@code null}, the task will be executed
+	 * on the calling thread.
 	 * </p>
-	 * 
+	 *
 	 * @param <T>
 	 *        the context type
 	 * @param task
@@ -119,30 +120,29 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 
 	/**
 	 * Get the configured task executor.
-	 * 
+	 *
 	 * @return the task executor, or {@code null}.
 	 */
-	protected AsyncTaskExecutor taskExecutor() {
-		OptionalService<AsyncTaskExecutor> os = getTaskExecutor();
-		return (os != null ? os.service() : null);
+	protected final @Nullable AsyncTaskExecutor taskExecutor() {
+		return OptionalService.service(taskExecutor);
 	}
 
 	/**
 	 * Get the task executor.
-	 * 
+	 *
 	 * @return the task executor
 	 */
-	public OptionalService<AsyncTaskExecutor> getTaskExecutor() {
+	public final @Nullable OptionalService<AsyncTaskExecutor> getTaskExecutor() {
 		return taskExecutor;
 	}
 
 	/**
 	 * Set the task executor.
-	 * 
+	 *
 	 * @param taskExecutor
 	 *        the task executor
 	 */
-	public void setTaskExecutor(OptionalService<AsyncTaskExecutor> taskExecutor) {
+	public final void setTaskExecutor(@Nullable OptionalService<AsyncTaskExecutor> taskExecutor) {
 		this.taskExecutor = taskExecutor;
 	}
 

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.service.support;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NetworkIdentity;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
@@ -63,10 +65,10 @@ public class UserMetadataService extends JsonHttpClientSupport
 
 	private final OptionalService<SetupService> setupService;
 	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
-	private String token = null;
-	private String tokenSecret = null;
+	private @Nullable String token;
+	private @Nullable String tokenSecret;
 
-	private CachedResult<GeneralDatumMetadata> cachedMetadata;
+	private @Nullable CachedResult<GeneralDatumMetadata> cachedMetadata;
 
 	/**
 	 * Constructor.
@@ -76,15 +78,15 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 */
 	public UserMetadataService(OptionalService<SetupService> setupService) {
 		super();
-		this.setupService = setupService;
+		this.setupService = requireNonNullArgument(setupService, "setupService");
 	}
 
 	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
+	public synchronized void configurationChanged(@Nullable Map<String, Object> properties) {
 		cachedMetadata = null;
 	}
 
-	private String solarQueryUrl() {
+	private @Nullable String solarQueryUrl() {
 		SetupService s = OptionalService.service(setupService);
 		NodeAppConfiguration cfg = (s != null ? s.getAppConfiguration() : null);
 		Map<String, String> urls = (cfg != null ? cfg.getNetworkServiceUrls() : null);
@@ -92,7 +94,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public synchronized GeneralDatumMetadata getAllMetadata() {
+	public synchronized @Nullable GeneralDatumMetadata getAllMetadata() {
 		if ( cachedMetadata != null && cachedMetadata.isValid() ) {
 			return cachedMetadata.getResult();
 		}
@@ -147,9 +149,12 @@ public class UserMetadataService extends JsonHttpClientSupport
 		return result;
 	}
 
-	private String getStatusMessage() {
+	private @Nullable String getStatusMessage() {
 		final CachedResult<GeneralDatumMetadata> cached = this.cachedMetadata;
 		final MessageSource msgSource = getMessageSource();
+		if ( msgSource == null ) {
+			return null;
+		}
 		if ( cached == null ) {
 			return msgSource.getMessage("status.noneCached", null, Locale.getDefault());
 		}
@@ -174,7 +179,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 *        the maximum number of seconds to cache metadata for, or anything
 	 *        less than {@literal 1} to disable
 	 */
-	public void setCacheSeconds(int cacheSeconds) {
+	void setCacheSeconds(int cacheSeconds) {
 		this.cacheSeconds = cacheSeconds;
 	}
 
@@ -184,7 +189,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 * @param token
 	 *        the token to set
 	 */
-	public void setToken(String token) {
+	void setToken(@Nullable String token) {
 		this.token = token;
 	}
 
@@ -194,7 +199,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 * @param tokenSecret
 	 *        the token secret to set
 	 */
-	public void setTokenSecret(String tokenSecret) {
+	void setTokenSecret(@Nullable String tokenSecret) {
 		this.tokenSecret = tokenSecret;
 	}
 

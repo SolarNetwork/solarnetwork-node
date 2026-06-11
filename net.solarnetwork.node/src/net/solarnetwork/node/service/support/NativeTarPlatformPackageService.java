@@ -37,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.service.PlatformPackageService;
 import net.solarnetwork.service.ProgressListener;
 
@@ -92,7 +93,7 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> installPackage(Path archive, Path baseDirectory,
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		return performPackageResultTask(createTask(archive, baseDirectory, progressListener, context),
 				context);
 	}
@@ -113,7 +114,7 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 	 * @return the task
 	 */
 	protected <T> Callable<PlatformPackageResult<T>> createTask(Path archive, Path baseDirectory,
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		return new Callable<PlatformPackageService.PlatformPackageResult<T>>() {
 
 			@Override
@@ -172,8 +173,8 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 	}
 
 	@Override
-	public Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter,
-			Boolean installedFilter) {
+	public Future<Iterable<PlatformPackage>> listNamedPackages(@Nullable String nameFilter,
+			@Nullable Boolean installedFilter) {
 		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
@@ -194,19 +195,19 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> installNamedPackage(String name, String version,
-			Path baseDirectory, ProgressListener<T> progressListener, T context) {
+			Path baseDirectory, @Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> removeNamedPackage(String name,
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> upgradeNamedPackages(
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		throw new UnsupportedOperationException();
 	}
 

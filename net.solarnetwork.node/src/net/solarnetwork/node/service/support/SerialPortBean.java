@@ -1,21 +1,21 @@
 /* ==================================================================
  * SerialPortBean.java - Oct 27, 2011 3:43:27 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,19 +24,20 @@ package net.solarnetwork.node.service.support;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A basic JavaBean class for serial port configuration elements.
- * 
+ *
  * <p>
  * The {@code dataBits}, {@code stopBits}, and {@code parity} class properties
  * should be initialized to values corresponding to the constants defined in the
  * {@code gnu.io.SerialPort} class (e.g. {@code gnu.io.SerialPort#DATABITS_8},
  * etc.).
  * </p>
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -64,7 +65,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get a list of setting specifiers for this bean.
-	 * 
+	 *
 	 * @param prefix
 	 *        bean prefix to use
 	 * @return setting specifiers
@@ -75,7 +76,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get a list of setting specifiers for this bean.
-	 * 
+	 *
 	 * @param defaults
 	 *        the default values to use
 	 * @param prefix
@@ -119,7 +120,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the DTR toggle.
-	 * 
+	 *
 	 * @return the DTR toggle
 	 */
 	public boolean isDtr() {
@@ -128,7 +129,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the DTR toggle.
-	 * 
+	 *
 	 * @param dtr
 	 *        the DTR toggle to set
 	 */
@@ -138,7 +139,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the RTS toggle.
-	 * 
+	 *
 	 * @return the RTS toggle
 	 */
 	public boolean isRts() {
@@ -147,7 +148,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the RTS toggle.
-	 * 
+	 *
 	 * @param rts
 	 *        the RTS toggle to set
 	 */
@@ -157,7 +158,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the SerialPort communication speed.
-	 * 
+	 *
 	 * @return the baud; defaults to {@literal 19200}
 	 */
 	public int getBaud() {
@@ -166,7 +167,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort communication speed.
-	 * 
+	 *
 	 * @param baud
 	 *        the baud to use
 	 */
@@ -176,7 +177,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the serial port data bits.
-	 * 
+	 *
 	 * @return the number of data bits; defaults to {@literal 8}
 	 */
 	public int getDataBits() {
@@ -185,7 +186,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the serial port number of data bits.
-	 * 
+	 *
 	 * @param dataBits
 	 *        the number of data bits to use
 	 */
@@ -195,7 +196,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the serial port number of stop bits.
-	 * 
+	 *
 	 * @return the stop bits; defaults to {@literal 1}
 	 */
 	public int getStopBits() {
@@ -204,7 +205,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the serial port number of stop bits.
-	 * 
+	 *
 	 * @param stopBits
 	 *        the number of stop bits to use
 	 */
@@ -214,7 +215,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the serial port parity.
-	 * 
+	 *
 	 * @return the parity; defaults to {@literal 0}
 	 */
 	public int getParity() {
@@ -223,11 +224,11 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * The serial port parity setting to use.
-	 * 
+	 *
 	 * <p>
 	 * Valid values are:
 	 * </p>
-	 * 
+	 *
 	 * <dl>
 	 * <dt>0</dt>
 	 * <dd>None</dd>
@@ -240,7 +241,7 @@ public class SerialPortBean implements Cloneable {
 	 * <dt>4</dt>
 	 * <dd>Space</dd>
 	 * </dl>
-	 * 
+	 *
 	 * @param parity
 	 *        the parity
 	 */
@@ -250,12 +251,12 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the parity as a string value.
-	 * 
+	 *
 	 * @return the parity, or {@code null} if not supported
 	 * @see #setParityString(String)
 	 * @since 1.1
 	 */
-	public String getParityString() {
+	public @Nullable String getParityString() {
 		switch (getParity()) {
 			case 0:
 				return "none";
@@ -273,17 +274,17 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the parity as a string value.
-	 * 
+	 *
 	 * <p>
 	 * This method accepts the following values:
 	 * </p>
-	 * 
+	 *
 	 * <ul>
 	 * <li>none</li>
 	 * <li>odd</li>
 	 * <li>even</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param parity
 	 *        the parity value to set
 	 * @since 1.1
@@ -301,7 +302,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the receive threshold.
-	 * 
+	 *
 	 * @return the receive threshold; defaults to {@literal 40}
 	 */
 	public int getReceiveThreshold() {
@@ -310,12 +311,12 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort receive threshold setting.
-	 * 
+	 *
 	 * <p>
 	 * If set to anything less than 0 then the receive threshold will be
 	 * disabled.
 	 * </p>
-	 * 
+	 *
 	 * @param receiveThreshold
 	 *        the receive threshold to use
 	 */
@@ -325,7 +326,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the SerialPort flow control setting to use.
-	 * 
+	 *
 	 * @return the flow control; defaults to -1
 	 */
 	public int getFlowControl() {
@@ -334,11 +335,11 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort flow control setting to use.
-	 * 
+	 *
 	 * <p>
 	 * If less than 0 flow control will not be configured. The settings are:
 	 * </p>
-	 * 
+	 *
 	 * <dl>
 	 * <dt>0</dt>
 	 * <dd>None</dd>
@@ -351,7 +352,7 @@ public class SerialPortBean implements Cloneable {
 	 * <dt>8</dt>
 	 * <dd>XON XOFF out</dd>
 	 * </dl>
-	 * 
+	 *
 	 * @param flowControl
 	 *        the flow control to use
 	 */
@@ -361,7 +362,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the receive timeout.
-	 * 
+	 *
 	 * @return the receive timeout; defaults to {@literal -1}
 	 */
 	public int getReceiveTimeout() {
@@ -370,11 +371,11 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort receive timeout setting.
-	 * 
+	 *
 	 * <p>
 	 * If set to anything less than 0 then the receive timeout will be disabled.
 	 * </p>
-	 * 
+	 *
 	 * @param receiveTimeout
 	 *        the receive timeout to use
 	 */
@@ -384,7 +385,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the receive framing.
-	 * 
+	 *
 	 * @return the receive framing; defaults to {@literal -1}
 	 */
 	public int getReceiveFraming() {
@@ -393,11 +394,11 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort receive framing setting.
-	 * 
+	 *
 	 * <p>
 	 * If set to anything less than 0 then the receive framing will be disabled.
 	 * </p>
-	 * 
+	 *
 	 * @param receiveFraming
 	 *        the receive framing to use
 	 */
@@ -407,7 +408,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the DTR flag.
-	 * 
+	 *
 	 * @return the DTR flag; defaults to {@literal 1}
 	 */
 	public int getDtrFlag() {
@@ -416,14 +417,14 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort DTR setting to use.
-	 * 
+	 *
 	 * <p>
 	 * When set to {@code 0} DTR will be set to {@literal false}. When set to
 	 * {@literal 1} DTR will be set to {@literal true}. When configured as less
 	 * than zero the DTR setting will not be changed. The {@code dtr} property
 	 * can also be used to set this as a boolean.
 	 * </p>
-	 * 
+	 *
 	 * @param dtrFlag
 	 *        the DTR flag to use
 	 */
@@ -433,7 +434,7 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Get the RTS flag.
-	 * 
+	 *
 	 * @return the RTS flag; defaults to {@literal 0}
 	 */
 	public int getRtsFlag() {
@@ -442,14 +443,14 @@ public class SerialPortBean implements Cloneable {
 
 	/**
 	 * Set the SerialPort RTS setting to use.
-	 * 
+	 *
 	 * <p>
 	 * When set to {@literal 0} RTS will be set to {@literal false}. When set to
 	 * {@literal 1} RTS will be set to {@literal true}. When configured as less
 	 * than zero the RTS setting will not be changed. The {@code rts} property
 	 * can also be used to set this as a boolean.
 	 * </p>
-	 * 
+	 *
 	 * @param rtsFlag
 	 *        the RTS flag to use
 	 */

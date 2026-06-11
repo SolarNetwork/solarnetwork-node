@@ -1,21 +1,21 @@
 /* ==================================================================
  * BaseSolarPkgPlatformPackageService.java - 24/05/2019 2:07:43 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.StringUtils;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.service.PlatformPackageService;
@@ -45,21 +46,21 @@ import net.solarnetwork.service.ProgressListener;
 /**
  * Base implementation of {@link PlatformPackageService}, with support for using
  * an OS-level helper program that adheres to a <i>solarpkg</i> API.
- * 
+ *
  * <p>
  * The <i>solarpkg</i> program API follows this simple pattern:
  * </p>
- * 
+ *
  * <pre>
  * <code>solarpkg &lt;action&gt; [arguments...]</code>
  * </pre>
- * 
+ *
  * <p>
  * All invocations are expected to return a status code <code>0</code> on
  * success. All "return" values are printed to STDOUT. The <code>action</code>
  * values include:
  * </p>
- * 
+ *
  * <dl>
  * <dt><code>clean</code></dt>
  * <dd>Remove any cached download packages or temporary files. Remove any
@@ -100,7 +101,7 @@ import net.solarnetwork.service.ProgressListener;
  * <dd>Upgrade all packages. If <i>major</i> defined, then perform a "major"
  * upgrade, allowing for more aggressive upgrading.</dd>
  * </dl>
- * 
+ *
  * @author matt
  * @version 1.1
  * @since 2.0
@@ -158,7 +159,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 		/**
 		 * Get the action command value.
-		 * 
+		 *
 		 * @return the command value
 		 */
 		public String getCommand() {
@@ -167,7 +168,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 		/**
 		 * Get an enum from a command value.
-		 * 
+		 *
 		 * @param cmd
 		 *        the command value
 		 * @return the associated enum
@@ -197,14 +198,14 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 	/**
 	 * Get an OS command to run, based on the configured {@code command}
 	 * program, an action verb, and optional arguments.
-	 * 
+	 *
 	 * @param action
 	 *        the action verb
 	 * @param args
 	 *        the arguments
 	 * @return the command as a list
 	 */
-	protected List<String> pkgCommand(Action action, String... args) {
+	protected List<String> pkgCommand(Action action, String @Nullable... args) {
 		List<String> result = new ArrayList<>(2 + (args != null ? args.length : 0));
 		result.add(getCommand());
 		result.add(action.getCommand());
@@ -220,7 +221,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	/**
 	 * Execute an OS command that prints out file paths.
-	 * 
+	 *
 	 * @param <T>
 	 *        the context type
 	 * @param cmd
@@ -231,7 +232,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 	 * @throws Exception
 	 *         if an error occurs
 	 */
-	protected <T> PlatformPackageResult<T> executePackageCommand(List<String> cmd, T context)
+	protected <T> PlatformPackageResult<T> executePackageCommand(List<String> cmd, @Nullable T context)
 			throws Exception {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Package command: {}", delimitedStringFromCollection(cmd, " "));
@@ -247,7 +248,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	/**
 	 * Execute an OS command.
-	 * 
+	 *
 	 * @param cmd
 	 *        the command to execute
 	 * @return the STDOUT result
@@ -298,7 +299,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> installPackage(Path archive, Path baseDirectory,
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		Callable<PlatformPackageResult<T>> task = new Callable<PlatformPackageService.PlatformPackageResult<T>>() {
 
 			@Override
@@ -312,15 +313,16 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 	}
 
 	@Override
-	public Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter,
-			Boolean installedFilter) {
+	public Future<Iterable<PlatformPackage>> listNamedPackages(@Nullable String nameFilter,
+			@Nullable Boolean installedFilter) {
 		Callable<Iterable<PlatformPackage>> task = new Callable<Iterable<PlatformPackage>>() {
 
 			@Override
 			public Iterable<PlatformPackage> call() throws Exception {
 				Action action = installedFilter == null ? Action.List
 						: installedFilter == true ? Action.ListInstalled : Action.ListAvailable;
-				List<String> cmd = pkgCommand(action, nameFilter);
+				List<String> cmd = pkgCommand(action,
+						nameFilter != null ? new String[] { nameFilter } : null);
 				List<String> csv = executeCommand(cmd);
 				if ( csv == null || csv.isEmpty() ) {
 					return Collections.emptyList();
@@ -364,7 +366,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> installNamedPackage(String name, String version,
-			Path baseDirectory, ProgressListener<T> progressListener, T context) {
+			Path baseDirectory, @Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		Callable<PlatformPackageResult<T>> task = new Callable<PlatformPackageService.PlatformPackageResult<T>>() {
 
 			@Override
@@ -379,7 +381,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> removeNamedPackage(String name,
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		Callable<PlatformPackageResult<T>> task = new Callable<PlatformPackageService.PlatformPackageResult<T>>() {
 
 			@Override
@@ -394,7 +396,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	@Override
 	public <T> Future<PlatformPackageResult<T>> upgradeNamedPackages(
-			ProgressListener<T> progressListener, T context) {
+			@Nullable ProgressListener<T> progressListener, @Nullable T context) {
 		Callable<PlatformPackageResult<T>> task = new Callable<PlatformPackageService.PlatformPackageResult<T>>() {
 
 			@Override
@@ -437,40 +439,40 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 	/**
 	 * Get the OS command for the package helper program to use.
-	 * 
+	 *
 	 * @return the OS command; defaults to {@link #DEFAULT_COMMAND}
 	 */
-	public String getCommand() {
+	public final String getCommand() {
 		return command;
 	}
 
 	/**
 	 * Set the OS command for the package helper program to use.
-	 * 
+	 *
 	 * @param command
 	 *        the OS command
 	 */
-	public void setCommand(String command) {
+	public final void setCommand(String command) {
 		this.command = command;
 	}
 
 	/**
 	 * Get the timeout, in seconds, to use for package actions.
-	 * 
+	 *
 	 * @return the seconds; defaults to
 	 *         {@link #DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS}
 	 */
-	public long getPackageActionTimeoutSecs() {
+	public final long getPackageActionTimeoutSecs() {
 		return packageActionTimeoutSecs;
 	}
 
 	/**
 	 * Set a timeout, in seconds, to use for package actions.
-	 * 
+	 *
 	 * @param packageActionTimeoutSecs
 	 *        the timeout to use
 	 */
-	public void setPackageActionTimeoutSecs(long packageActionTimeoutSecs) {
+	public final void setPackageActionTimeoutSecs(long packageActionTimeoutSecs) {
 		this.packageActionTimeoutSecs = packageActionTimeoutSecs;
 	}
 }

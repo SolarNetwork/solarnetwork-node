@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
+import org.jspecify.annotations.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -87,18 +88,18 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/** The {@code publishDeviceInfoMetadata} property default value. */
 	public static final boolean DEFAULT_PUBLISH_DEVICE_INFO_METADATA = true;
 
-	private OptionalService<DatumMetadataService> datumMetadataService;
-	private OptionalService<DatumQueue> datumQueue;
-	private OptionalService<DatumService> datumService;
-	private TaskScheduler taskScheduler = null;
-	private Long subSampleFrequency = null;
+	private @Nullable OptionalService<DatumMetadataService> datumMetadataService;
+	private @Nullable OptionalService<DatumQueue> datumQueue;
+	private @Nullable OptionalService<DatumService> datumService;
+	private @Nullable TaskScheduler taskScheduler;
+	private @Nullable Long subSampleFrequency;
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
-	private OptionalFilterableService<DatumFilterService> datumFilterService;
-	private ExpressionConfig[] expressionConfigs;
+	private @Nullable OptionalFilterableService<DatumFilterService> datumFilterService;
+	private ExpressionConfig @Nullable [] expressionConfigs;
 	private boolean publishDeviceInfoMetadata = DEFAULT_PUBLISH_DEVICE_INFO_METADATA;
-	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
+	private @Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
 
-	private ScheduledFuture<?> subSampleFuture;
+	private @Nullable ScheduledFuture<?> subSampleFuture;
 
 	/**
 	 * Default constructor.
@@ -243,11 +244,11 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param dataSource
 	 *        the data source
-	 * @return the scheduled future or {@code null} if sub-sampling support
-	 *         is not configured; canceling this will stop the sub-sampling task
+	 * @return the scheduled future or {@code null} if sub-sampling support is
+	 *         not configured; canceling this will stop the sub-sampling task
 	 * @see #stopSubSampling()
 	 */
-	protected synchronized ScheduledFuture<?> startSubSampling(DatumDataSource dataSource) {
+	protected synchronized @Nullable ScheduledFuture<?> startSubSampling(DatumDataSource dataSource) {
 		stopSubSampling();
 		final long freq = (subSampleFrequency != null ? subSampleFrequency.longValue() : 0);
 		if ( taskScheduler == null || freq < 1 ) {
@@ -324,7 +325,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @return the same datum, possibly transformed, or {@code null} if the
 	 *         datum has been filtered out completely
 	 */
-	protected NodeDatum applyDatumFilter(NodeDatum datum, Map<String, Object> props) {
+	protected @Nullable NodeDatum applyDatumFilter(NodeDatum datum,
+			@Nullable Map<String, Object> props) {
 		DatumFilterService xformService = service(getDatumFilterService());
 		if ( xformService != null ) {
 			DatumSamplesOperations out = xformService.filter(datum, datum.asSampleOperations(), props);
@@ -409,7 +411,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the service to use
 	 */
-	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+	public final @Nullable OptionalService<DatumMetadataService> getDatumMetadataService() {
 		return datumMetadataService;
 	}
 
@@ -419,7 +421,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param datumMetadataService
 	 *        the service to use
 	 */
-	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+	public final void setDatumMetadataService(
+			@Nullable OptionalService<DatumMetadataService> datumMetadataService) {
 		this.datumMetadataService = datumMetadataService;
 	}
 
@@ -428,7 +431,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the task scheduler
 	 */
-	public TaskScheduler getTaskScheduler() {
+	public final @Nullable TaskScheduler getTaskScheduler() {
 		return taskScheduler;
 	}
 
@@ -438,7 +441,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 */
-	public void setTaskScheduler(TaskScheduler taskScheduler) {
+	public final void setTaskScheduler(@Nullable TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}
 
@@ -448,7 +451,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @return the sub-sample frequency, in milliseconds, or {@code null} or
 	 *         anything less than {@literal 1} to disable sub-sampling
 	 */
-	public Long getSubSampleFrequency() {
+	public final @Nullable Long getSubSampleFrequency() {
 		return subSampleFrequency;
 	}
 
@@ -463,7 +466,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param subSampleFrequency
 	 *        the frequency, to set, in milliseconds
 	 */
-	public void setSubSampleFrequency(Long subSampleFrequency) {
+	public final void setSubSampleFrequency(@Nullable Long subSampleFrequency) {
 		this.subSampleFrequency = subSampleFrequency;
 	}
 
@@ -472,7 +475,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the delay, in milliseconds
 	 */
-	public long getSubSampleStartDelay() {
+	public final long getSubSampleStartDelay() {
 		return subSampleStartDelay;
 	}
 
@@ -482,7 +485,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param subSampleStartDelay
 	 *        the sub-sample start delay to set, in milliseconds
 	 */
-	public void setSubSampleStartDelay(long subSampleStartDelay) {
+	public final void setSubSampleStartDelay(long subSampleStartDelay) {
 		this.subSampleStartDelay = subSampleStartDelay;
 	}
 
@@ -491,7 +494,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the service
 	 */
-	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
+	public final @Nullable OptionalFilterableService<DatumFilterService> getDatumFilterService() {
 		return datumFilterService;
 	}
 
@@ -501,7 +504,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param datumFilterService
 	 *        the service to set
 	 */
-	public void setDatumFilterService(OptionalFilterableService<DatumFilterService> datumFilterService) {
+	public final void setDatumFilterService(
+			@Nullable OptionalFilterableService<DatumFilterService> datumFilterService) {
 		this.datumFilterService = datumFilterService;
 	}
 
@@ -510,7 +514,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the expression configurations
 	 */
-	public ExpressionConfig[] getExpressionConfigs() {
+	public final ExpressionConfig @Nullable [] getExpressionConfigs() {
 		return expressionConfigs;
 	}
 
@@ -520,7 +524,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param expressionConfigs
 	 *        the configs to use
 	 */
-	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+	public final void setExpressionConfigs(ExpressionConfig @Nullable [] expressionConfigs) {
 		this.expressionConfigs = expressionConfigs;
 	}
 
@@ -529,7 +533,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 */
-	public int getExpressionConfigsCount() {
+	public final int getExpressionConfigsCount() {
 		ExpressionConfig[] confs = this.expressionConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
@@ -545,7 +549,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 */
-	public void setExpressionConfigsCount(int count) {
+	public final void setExpressionConfigsCount(int count) {
 		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
 				ExpressionConfig.class, null);
 	}
@@ -556,7 +560,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @return {@literal true} to publish device metadata; defaults to
 	 *         {@link DEFAULT_PUBLISH_DEVICE_INFO_METADATA}
 	 */
-	public boolean isPublishDeviceInfoMetadata() {
+	public final boolean isPublishDeviceInfoMetadata() {
 		return publishDeviceInfoMetadata;
 	}
 
@@ -567,7 +571,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        {@literal true} to publish device metadata once, after the first
 	 *        datum has been captured
 	 */
-	public void setPublishDeviceInfoMetadata(boolean publishDeviceInfoMetadata) {
+	public final void setPublishDeviceInfoMetadata(boolean publishDeviceInfoMetadata) {
 		this.publishDeviceInfoMetadata = publishDeviceInfoMetadata;
 	}
 
@@ -576,7 +580,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the queue
 	 */
-	public OptionalService<DatumQueue> getDatumQueue() {
+	public final @Nullable OptionalService<DatumQueue> getDatumQueue() {
 		return datumQueue;
 	}
 
@@ -586,7 +590,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param datumQueue
 	 *        the queue to set
 	 */
-	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
+	public final void setDatumQueue(@Nullable OptionalService<DatumQueue> datumQueue) {
 		this.datumQueue = datumQueue;
 	}
 
@@ -595,7 +599,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the datum service
 	 */
-	public OptionalService<DatumService> getDatumService() {
+	public final @Nullable OptionalService<DatumService> getDatumService() {
 		return datumService;
 	}
 
@@ -605,7 +609,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param datumService
 	 *        the datum service
 	 */
-	public void setDatumService(OptionalService<DatumService> datumService) {
+	public final void setDatumService(@Nullable OptionalService<DatumService> datumService) {
 		this.datumService = datumService;
 	}
 
@@ -615,7 +619,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @return the providers
 	 * @since 1.3
 	 */
-	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+	public final @Nullable OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
 		return tariffScheduleProviders;
 	}
 
@@ -627,7 +631,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @since 1.3
 	 */
 	public final void setTariffScheduleProviders(
-			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
 

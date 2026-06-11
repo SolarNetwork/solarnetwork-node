@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.service.support;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.ObjectUtils.requireNonEmptyArgument;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,6 +34,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.service.DatumFilterService;
@@ -67,9 +71,9 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	private final String settingUid;
 	private final List<DatumFilterService> transformServices;
 	private final boolean configurableUid;
-	private final DatumFilterService staticService;
-	private String[] transformUids;
-	private List<DatumFilterService> alternateDatumFilterServices;
+	private final @Nullable DatumFilterService staticService;
+	private String @Nullable [] transformUids;
+	private @Nullable List<DatumFilterService> alternateDatumFilterServices;
 	private boolean ignoreTransformUids;
 	private boolean abortOnFilterException;
 
@@ -131,23 +135,17 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *         {@code null}
 	 */
 	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices,
-			boolean configurableUid, DatumFilterService staticService) {
+			boolean configurableUid, @Nullable DatumFilterService staticService) {
 		super();
-		if ( settingUid == null || settingUid.isEmpty() ) {
-			throw new IllegalArgumentException("The settingUid argument must not be null.");
-		}
-		this.settingUid = settingUid;
-		if ( transformServices == null ) {
-			throw new IllegalArgumentException("The transformServices argument must not be null.");
-		}
-		this.transformServices = transformServices;
+		this.settingUid = requireNonEmptyArgument(settingUid, "settingUid");
+		this.transformServices = requireNonNullArgument(transformServices, "transformServices");
 		this.configurableUid = configurableUid;
 		this.staticService = staticService;
 		this.ignoreTransformUids = false;
 	}
 
 	@Override
-	public String getSettingUid() {
+	public final String getSettingUid() {
 		return settingUid;
 	}
 
@@ -176,8 +174,8 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 				uidsList, new SettingUtils.KeyedListCallback<String>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
-							String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(@Nullable String value,
+							int index, String key) {
 						return Collections.singletonList(new BasicTextFieldSettingSpecifier(key, null,
 								false,
 								"(&(objectClass=net.solarnetwork.service.DatumFilterService)(role=user))"));
@@ -189,9 +187,12 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	}
 
 	private String availableAlternateDatumFilterUidsStatus() {
-		List<String> names = new ArrayList<>();
-		for ( DatumFilterService s : alternateDatumFilterServices ) {
-			names.add(s.getDescription());
+		final List<String> names = new ArrayList<>();
+		final List<DatumFilterService> alternateDatumFilterServices = this.alternateDatumFilterServices;
+		if ( alternateDatumFilterServices != null ) {
+			for ( DatumFilterService s : alternateDatumFilterServices ) {
+				names.add(s.getDescription());
+			}
 		}
 		if ( names.isEmpty() ) {
 			return "N/A";
@@ -226,8 +227,8 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	}
 
 	@Override
-	public DatumSamplesOperations filter(final Datum datum, final DatumSamplesOperations samples,
-			final Map<String, Object> parameters) {
+	public @Nullable DatumSamplesOperations filter(final Datum datum,
+			final DatumSamplesOperations samples, final @Nullable Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
@@ -270,7 +271,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 			if ( transformServices != null ) {
 				for ( DatumFilterService s : transformServices ) {
 					try {
-						out = s.filter(outDatum, out, p);
+						out = s.filter(outDatum, nonnull(out, "Samples"), p);
 						if ( out == null ) {
 							incrementStats(start, samples, out);
 							return null;
@@ -300,7 +301,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 				DatumFilterService s = findService(uid);
 				if ( s != null ) {
 					try {
-						out = s.filter(outDatum, out, p);
+						out = s.filter(outDatum, nonnull(out, "Samples"), p);
 						if ( out == null ) {
 							incrementStats(start, samples, out);
 							return null;
@@ -321,7 +322,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		incrementStats(start, samples, out);
 		if ( outDatum != datum ) {
 			// this is a way for filters to provide a new datum timestamp, by returning a full Datum
-			Datum outDatumCopy = outDatum.copyWithSamples(out);
+			Datum outDatumCopy = outDatum.copyWithSamples(nonnull(out, "Samples"));
 			if ( outDatumCopy instanceof DatumSamplesOperations ) {
 				out = (DatumSamplesOperations) outDatumCopy;
 			}
@@ -334,7 +335,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *
 	 * @return the transform UIDs.
 	 */
-	public String[] getTransformUids() {
+	public final String @Nullable [] getTransformUids() {
 		return transformUids;
 	}
 
@@ -349,7 +350,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * @param transformUids
 	 *        the UIDs to set
 	 */
-	public void setTransformUids(String[] transformUids) {
+	public final void setTransformUids(String @Nullable [] transformUids) {
 		this.transformUids = transformUids;
 	}
 
@@ -358,7 +359,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *
 	 * @return the number of UIDs to support
 	 */
-	public int getTransformUidsCount() {
+	public final int getTransformUidsCount() {
 		String[] uids = getTransformUids();
 		return (uids != null ? uids.length : 0);
 	}
@@ -369,7 +370,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * @param count
 	 *        the number of UIDs to support
 	 */
-	public void setTransformUidsCount(int count) {
+	public final void setTransformUidsCount(int count) {
 		this.transformUids = ArrayUtils.arrayWithLength(this.transformUids, count, String.class, null);
 	}
 
@@ -385,7 +386,8 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * @param alternateDatumFilterServices
 	 *        the transformers to use
 	 */
-	public void setAlternateDatumFilterServices(List<DatumFilterService> alternateDatumFilterServices) {
+	public final void setAlternateDatumFilterServices(
+			@Nullable List<DatumFilterService> alternateDatumFilterServices) {
 		this.alternateDatumFilterServices = alternateDatumFilterServices;
 	}
 
@@ -396,7 +398,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *         {@code transformServices} property; defaults to {@literal false}
 	 * @since 1.2
 	 */
-	public boolean isIgnoreTransformUids() {
+	public final boolean isIgnoreTransformUids() {
 		return ignoreTransformUids;
 	}
 
@@ -408,7 +410,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 *        {@code transformServices} property
 	 * @since 1.2
 	 */
-	public void setIgnoreTransformUids(boolean ignoreTransformUids) {
+	public final void setIgnoreTransformUids(boolean ignoreTransformUids) {
 		this.ignoreTransformUids = ignoreTransformUids;
 	}
 

@@ -25,6 +25,7 @@ package net.solarnetwork.node.service.support;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +44,8 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	private static final Logger log = LoggerFactory.getLogger(EventMessageRegistration.class);
 
 	private final EventMessageRegistrar registrar;
-	private Map<String, String> topicMappings;
-	private Map<String, Function<Event, Map<String, ?>>> eventExtractors;
+	private @Nullable Map<String, String> topicMappings;
+	private @Nullable Map<String, Function<Event, Map<String, ?>>> eventExtractors;
 
 	/**
 	 * Constructor.
@@ -100,7 +101,7 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	 *
 	 * @return the topic mappings
 	 */
-	public final Map<String, String> getTopicMappings() {
+	public final @Nullable Map<String, String> getTopicMappings() {
 		return topicMappings;
 	}
 
@@ -110,7 +111,7 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	 * @param topicMappings
 	 *        the topic mappings to set
 	 */
-	public final void setTopicMappings(Map<String, String> topicMappings) {
+	public final void setTopicMappings(@Nullable Map<String, String> topicMappings) {
 		this.topicMappings = topicMappings;
 	}
 
@@ -119,7 +120,7 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	 *
 	 * @return the event extractors
 	 */
-	public final Map<String, Function<Event, Map<String, ?>>> getEventExtractors() {
+	public final @Nullable Map<String, Function<Event, Map<String, ?>>> getEventExtractors() {
 		return eventExtractors;
 	}
 
@@ -129,7 +130,8 @@ public class EventMessageRegistration implements ServiceLifecycleObserver {
 	 * @param eventExtractors
 	 *        the event extractors to set
 	 */
-	public final void setEventExtractors(Map<String, Function<Event, Map<String, ?>>> eventExtractors) {
+	public final void setEventExtractors(
+			@Nullable Map<String, Function<Event, Map<String, ?>>> eventExtractors) {
 		this.eventExtractors = eventExtractors;
 	}
 

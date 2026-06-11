@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -36,7 +37,6 @@ import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.DatumLocation;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.domain.datum.PriceLocation;
 import net.solarnetwork.node.domain.datum.SimpleDatumLocation;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.LocationService;
@@ -83,20 +83,20 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	/** Bundle name for price location lookup messages. */
 	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.service.support.PriceLocationDatumDataSource";
 
-	private DatumDataSource delegate;
-	private OptionalService<LocationService> locationService;
+	private @Nullable DatumDataSource delegate;
+	private @Nullable OptionalService<LocationService> locationService;
 	private String locationType = DatumLocation.PRICE_TYPE;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private String sourceIdPropertyName = DEFAULT_SOURCE_ID_PROP_NAME;
 	private boolean requireLocationService = false;
 	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
-	private Long locationId = null;
-	private String sourceId = null;
-	private Set<String> datumClassNameIgnore;
+	private @Nullable Long locationId;
+	private @Nullable String sourceId;
+	private @Nullable Set<String> datumClassNameIgnore;
 	private boolean includeLocationTypeSetting;
 
-	private DatumLocation location = null;
-	private MessageSource messageSource;
+	private @Nullable DatumLocation location;
+	private @Nullable MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -154,13 +154,13 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		if ( delegate instanceof SettingsChangeObserver ) {
 			((SettingsChangeObserver) delegate).configurationChanged(properties);
 		}
 	}
 
-	private ServiceLifecycleObserver serviceLifecycleObserver() {
+	private @Nullable ServiceLifecycleObserver serviceLifecycleObserver() {
 		if ( delegate instanceof ServiceLifecycleObserver ) {
 			return (ServiceLifecycleObserver) delegate;
 		}
@@ -169,7 +169,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
-		return delegate.getDatumType();
+		return (delegate != null ? delegate.getDatumType() : NodeDatum.class);
 	}
 
 	@Override
@@ -177,11 +177,15 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 		if ( delegate instanceof MultiDatumDataSource ) {
 			return ((MultiDatumDataSource) delegate).getMultiDatumType();
 		}
-		return delegate.getDatumType();
+		return getDatumType();
 	}
 
 	@Override
 	public Collection<NodeDatum> readMultipleDatum() {
+		final DatumDataSource delegate = getDelegate();
+		if ( delegate == null ) {
+			return List.of();
+		}
 		Collection<NodeDatum> datumList = null;
 		if ( delegate instanceof MultiDatumDataSource ) {
 			datumList = ((MultiDatumDataSource) delegate).readMultipleDatum();
@@ -209,7 +213,11 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	}
 
 	@Override
-	public NodeDatum readCurrentDatum() {
+	public @Nullable NodeDatum readCurrentDatum() {
+		final DatumDataSource delegate = getDelegate();
+		if ( delegate == null ) {
+			return null;
+		}
 		NodeDatum datum = delegate.readCurrentDatum();
 		if ( datum != null && locationId != null ) {
 			datum = populateLocation(datum);
@@ -236,22 +244,32 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 
 	@Override
 	public String toString() {
+		final DatumDataSource delegate = getDelegate();
 		return delegate != null ? delegate.toString() + "[LocationDatumDataSource proxy]"
 				: "LocationDatumDataSource";
 	}
 
 	@Override
-	public String getUid() {
+	public @Nullable String getUid() {
+		final DatumDataSource delegate = getDelegate();
+		if ( delegate == null ) {
+			return null;
+		}
 		return delegate.getUid();
 	}
 
 	@Override
-	public String getGroupUid() {
+	public @Nullable String getGroupUid() {
+		final DatumDataSource delegate = getDelegate();
+		if ( delegate == null ) {
+			return null;
+		}
 		return delegate.getGroupUid();
 	}
 
 	@Override
 	public String getSettingUid() {
+		final DatumDataSource delegate = getDelegate();
 		if ( delegate instanceof SettingSpecifierProvider ) {
 			return ((SettingSpecifierProvider) delegate).getSettingUid();
 		}
@@ -259,7 +277,8 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	}
 
 	@Override
-	public String getDisplayName() {
+	public @Nullable String getDisplayName() {
+		final DatumDataSource delegate = getDelegate();
 		if ( delegate instanceof SettingSpecifierProvider ) {
 			return ((SettingSpecifierProvider) delegate).getDisplayName();
 		}
@@ -267,7 +286,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	}
 
 	@Override
-	public synchronized MessageSource getMessageSource() {
+	public synchronized @Nullable MessageSource getMessageSource() {
 		if ( messageSource == null ) {
 			MessageSource other = null;
 			if ( delegate instanceof SettingSpecifierProvider ) {
@@ -298,7 +317,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param messageSource
 	 *        the message source to set
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
@@ -356,7 +375,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the delegate
 	 */
-	public DatumDataSource getDelegate() {
+	public final @Nullable DatumDataSource getDelegate() {
 		return delegate;
 	}
 
@@ -366,7 +385,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param delegate
 	 *        the delegate to set
 	 */
-	public void setDelegate(DatumDataSource delegate) {
+	public final void setDelegate(@Nullable DatumDataSource delegate) {
 		this.delegate = delegate;
 	}
 
@@ -376,7 +395,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the location service
 	 */
-	public OptionalService<LocationService> getLocationService() {
+	public final @Nullable OptionalService<LocationService> getLocationService() {
 		return locationService;
 	}
 
@@ -387,7 +406,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param locationService
 	 *        the service to use
 	 */
-	public void setLocationService(OptionalService<LocationService> locationService) {
+	public final void setLocationService(@Nullable OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
 	}
 
@@ -399,7 +418,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @return the location ID property name; defaults to
 	 *         {@link #DEFAULT_LOCATION_ID_PROP_NAME}
 	 */
-	public String getLocationIdPropertyName() {
+	public final String getLocationIdPropertyName() {
 		return locationIdPropertyName;
 	}
 
@@ -413,10 +432,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * </p>
 	 *
 	 * @param locationIdPropertyName
-	 *        the property name to use
+	 *        the property name to use; if {@code null} then
+	 *        {@link #DEFAULT_LOCATION_ID_PROP_NAME} will be used
 	 */
-	public void setLocationIdPropertyName(String locationIdPropertyName) {
-		this.locationIdPropertyName = locationIdPropertyName;
+	public final void setLocationIdPropertyName(String locationIdPropertyName) {
+		this.locationIdPropertyName = (locationIdPropertyName != null ? locationIdPropertyName
+				: DEFAULT_LOCATION_ID_PROP_NAME);
 	}
 
 	/**
@@ -424,7 +445,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the location service reqiured flag; defaults to {@literal false}
 	 */
-	public boolean isRequireLocationService() {
+	public final boolean isRequireLocationService() {
 		return requireLocationService;
 	}
 
@@ -441,16 +462,16 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param requireLocationService
 	 *        the required setting to use
 	 */
-	public void setRequireLocationService(boolean requireLocationService) {
+	public final void setRequireLocationService(boolean requireLocationService) {
 		this.requireLocationService = requireLocationService;
 	}
 
 	/**
 	 * Get the type of location to search for.
 	 *
-	 * @return the type; defaults to {@link PriceLocation}
+	 * @return the type; defaults to {@link DatumLocation#PRICE_TYPE}
 	 */
-	public String getLocationType() {
+	public final String getLocationType() {
 		return locationType;
 	}
 
@@ -458,10 +479,11 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * Set the type of location to search for.
 	 *
 	 * @param locationType
-	 *        the location type
+	 *        the location type; if {@code null} then
+	 *        {@link DatumLocation#PRICE_TYPE} will be used
 	 */
-	public void setLocationType(String locationType) {
-		this.locationType = locationType;
+	public final void setLocationType(String locationType) {
+		this.locationType = (locationType != null ? locationType : DatumLocation.PRICE_TYPE);
 	}
 
 	/**
@@ -469,7 +491,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the basename; defaults to {@link #PRICE_LOCATION_MESSAGE_BUNDLE}
 	 */
-	public String getMessageBundleBasename() {
+	public final String getMessageBundleBasename() {
 		return messageBundleBasename;
 	}
 
@@ -482,10 +504,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * </p>
 	 *
 	 * @param messageBundleBaseName
-	 *        the basename to use
+	 *        the basename to use; if {@code null} then
+	 *        {@link #PRICE_LOCATION_MESSAGE_BUNDLE} will be used
 	 */
-	public void setMessageBundleBasename(String messageBundleBaseName) {
-		this.messageBundleBasename = messageBundleBaseName;
+	public final void setMessageBundleBasename(String messageBundleBaseName) {
+		this.messageBundleBasename = (messageBundleBaseName != null ? messageBundleBaseName
+				: PRICE_LOCATION_MESSAGE_BUNDLE);
 	}
 
 	/**
@@ -495,7 +519,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @return the location key, or {@code null} if both the location ID and
 	 *         source ID values are {@code null}
 	 */
-	public String getLocationKey() {
+	public final @Nullable String getLocationKey() {
 		StringBuilder buf = new StringBuilder();
 		Long locId = getLocationId();
 		String sourceId = getSourceId();
@@ -517,7 +541,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param key
 	 *        the location and source ID key
 	 */
-	public void setLocationKey(String key) {
+	public final void setLocationKey(@Nullable String key) {
 		Long newLocationId = null;
 		String newSourceId = null;
 		if ( key != null ) {
@@ -536,7 +560,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the location ID
 	 */
-	public Long getLocationId() {
+	public final @Nullable Long getLocationId() {
 		return locationId;
 	}
 
@@ -546,7 +570,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param locationId
 	 *        the location ID
 	 */
-	public void setLocationId(Long locationId) {
+	public final void setLocationId(@Nullable Long locationId) {
 		if ( this.location != null && locationId != null
 				&& !locationId.equals(this.location.getLocationId()) ) {
 			this.location = null; // set to null so we re-fetch from server
@@ -559,7 +583,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the location
 	 */
-	public DatumLocation getLocation() {
+	public final @Nullable DatumLocation getLocation() {
 		return location;
 	}
 
@@ -568,7 +592,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the ignore set
 	 */
-	public Set<String> getDatumClassNameIgnore() {
+	public final @Nullable Set<String> getDatumClassNameIgnore() {
 		return datumClassNameIgnore;
 	}
 
@@ -578,7 +602,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param datumClassNameIgnore
 	 *        the ignore set
 	 */
-	public void setDatumClassNameIgnore(Set<String> datumClassNameIgnore) {
+	public final void setDatumClassNameIgnore(@Nullable Set<String> datumClassNameIgnore) {
 		this.datumClassNameIgnore = datumClassNameIgnore;
 	}
 
@@ -587,7 +611,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *
 	 * @return the source ID
 	 */
-	public String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -597,7 +621,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @param sourceId
 	 *        the source ID to use
 	 */
-	public void setSourceId(String sourceId) {
+	public final void setSourceId(@Nullable String sourceId) {
 		if ( this.location != null && sourceId != null
 				&& !sourceId.equals(this.location.getSourceId()) ) {
 			this.location = null; // set to null so we re-fetch from server
@@ -613,7 +637,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * @return the source ID property name; defaults to
 	 *         {@link #DEFAULT_SOURCE_ID_PROP_NAME}
 	 */
-	public String getSourceIdPropertyName() {
+	public final String getSourceIdPropertyName() {
 		return sourceIdPropertyName;
 	}
 
@@ -627,10 +651,12 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 * </p>
 	 *
 	 * @param sourceIdPropertyName
-	 *        the source ID property name to use
+	 *        the source ID property name to use; if {@code null} then
+	 *        {@link #DEFAULT_SOURCE_ID_PROP_NAME} will be used
 	 */
-	public void setSourceIdPropertyName(String sourceIdPropertyName) {
-		this.sourceIdPropertyName = sourceIdPropertyName;
+	public final void setSourceIdPropertyName(String sourceIdPropertyName) {
+		this.sourceIdPropertyName = (sourceIdPropertyName != null ? sourceIdPropertyName
+				: DEFAULT_SOURCE_ID_PROP_NAME);
 	}
 
 	/**
@@ -640,7 +666,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *         {@link #getSettingSpecifiers()}
 	 * @since 1.1
 	 */
-	public boolean isIncludeLocationTypeSetting() {
+	public final boolean isIncludeLocationTypeSetting() {
 		return includeLocationTypeSetting;
 	}
 
@@ -652,7 +678,7 @@ public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataS
 	 *        {@link #getSettingSpecifiers()}
 	 * @since 1.1
 	 */
-	public void setIncludeLocationTypeSetting(boolean includeLocationTypeSetting) {
+	public final void setIncludeLocationTypeSetting(boolean includeLocationTypeSetting) {
 		this.includeLocationTypeSetting = includeLocationTypeSetting;
 	}
 

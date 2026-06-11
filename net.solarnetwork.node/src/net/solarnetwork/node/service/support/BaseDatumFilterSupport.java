@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -81,13 +82,13 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 */
 	protected final StatCounter stats;
 
-	private Pattern sourceId;
-	private OperationalModesService opModesService;
-	private String requiredOperationalMode;
-	private String requiredTag;
+	private @Nullable Pattern sourceId;
+	private @Nullable OperationalModesService opModesService;
+	private @Nullable String requiredOperationalMode;
+	private @Nullable String requiredTag;
 
-	private OptionalService<DatumService> datumService;
-	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
+	private @Nullable OptionalService<DatumService> datumService;
+	private @Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
 
 	/**
 	 * Constructor.
@@ -103,7 +104,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *        the status to use (can be {@code null}
 	 * @since 1.2
 	 */
-	public BaseDatumFilterSupport(Stat[] stats) {
+	public BaseDatumFilterSupport(Stat @Nullable [] stats) {
 		super();
 		this.stats = new StatCounter("Transform", "", log, DEFAULT_STAT_LOG_FREQUENCY,
 				DatumFilterStats.values(), stats);
@@ -145,7 +146,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @since 1.1
 	 */
 	public static void populateBaseSampleTransformSupportSettings(List<SettingSpecifier> settings,
-			String sourceIdDefault, String requiredOperationalModeDefault, String requiredTagDefault) {
+			@Nullable String sourceIdDefault, @Nullable String requiredOperationalModeDefault,
+			@Nullable String requiredTagDefault) {
 		settings.add(new BasicTextFieldSettingSpecifier("sourceId", sourceIdDefault));
 		settings.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode",
 				requiredOperationalModeDefault));
@@ -176,7 +178,12 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @return the status message
 	 */
-	protected String getStatusMessage() {
+	protected @Nullable String getStatusMessage() {
+		final MessageSource msgs = getMessageSource();
+		if ( msgs == null ) {
+			return null;
+		}
+
 		final int len = DatumFilterStats.values().length;
 		Object[] params = new Object[len + 2];
 		for ( int i = 0; i < len; i++ ) {
@@ -200,7 +207,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 				? String.format("%dms", notIgnoredTime / notIgnoredCount)
 				: "-");
 
-		return getMessageSource().getMessage("status.msg", params, Locale.getDefault());
+		return msgs.getMessage("status.msg", params, Locale.getDefault());
 	}
 
 	/**
@@ -242,7 +249,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @since 1.2
 	 */
 	protected void incrementStats(final long startTime, final DatumSamplesOperations in,
-			final DatumSamplesOperations out) {
+			final @Nullable DatumSamplesOperations out) {
 		final long duration = System.currentTimeMillis() - startTime;
 		if ( out == null ) {
 			stats.incrementAndGet(DatumFilterStats.Filtered);
@@ -261,12 +268,12 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @param value
 	 *        the value to test
 	 * @param emptyPatternMatches
-	 *        {@literal true} if a {@code null} regular expression is treated
-	 *        as a match (thus matching any value)
+	 *        {@literal true} if a {@code null} regular expression is treated as
+	 *        a match (thus matching any value)
 	 * @return {@literal true} if at least one regular expression matches
 	 *         {@code value}
 	 */
-	public static boolean matchesAny(final Pattern[] pats, final String value,
+	public static boolean matchesAny(final Pattern @Nullable [] pats, final @Nullable String value,
 			final boolean emptyPatternMatches) {
 		if ( pats == null || pats.length < 1 || value == null ) {
 			return true;
@@ -294,7 +301,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @return {@literal true} if the datum's {@code sourceId} value matches the
 	 *         configured source ID pattern, or no pattern is configured
 	 */
-	protected boolean sourceIdMatches(Datum datum) {
+	protected boolean sourceIdMatches(@Nullable Datum datum) {
 		Pattern sourceIdPat = getSourceIdPattern();
 		if ( sourceIdPat != null ) {
 			if ( datum == null || datum.getSourceId() == null
@@ -362,7 +369,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *         matches either {@code samples} or {@code datum}
 	 * @since 1.1
 	 */
-	protected boolean tagMatches(final Datum datum, final DatumSamplesOperations samples) {
+	protected boolean tagMatches(final @Nullable Datum datum,
+			final @Nullable DatumSamplesOperations samples) {
 		final String requiredTagExpr = getRequiredTag();
 		if ( requiredTagExpr == null || requiredTagExpr.isEmpty() ) {
 			// no required tag, so automatically matches
@@ -389,7 +397,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 		return result;
 	}
 
-	private boolean anyTagMatches(String[] tags, final DatumSamplesOperations samples) {
+	private boolean anyTagMatches(String[] tags, final @Nullable DatumSamplesOperations samples) {
 		if ( samples == null ) {
 			return false;
 		}
@@ -436,7 +444,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @since 1.1
 	 */
 	protected boolean conditionsMatch(Datum datum, DatumSamplesOperations samples,
-			Map<String, Object> parameters) {
+			@Nullable Map<String, Object> parameters) {
 		return (sourceIdMatches(datum) && operationalModeMatches() && tagMatches(datum, samples));
 	}
 
@@ -456,7 +464,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @return a new map, never {@code null}
 	 * @since 1.1
 	 */
-	protected Map<String, Object> smartPlaceholders(Map<String, Object> parameters) {
+	protected Map<String, Object> smartPlaceholders(@Nullable Map<String, Object> parameters) {
 		Map<String, Object> params = new HashMap<>(8);
 		smartCopyPlaceholders(getPlaceholderService(), params);
 		if ( parameters != null ) {
@@ -470,7 +478,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @return the regex
 	 */
-	protected Pattern getSourceIdPattern() {
+	protected @Nullable Pattern getSourceIdPattern() {
 		return sourceId;
 	}
 
@@ -479,10 +487,13 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @return the description
 	 */
-	public String getDescription() {
+	public @Nullable String getDescription() {
+		final MessageSource msgs = getMessageSource();
+		if ( msgs == null ) {
+			return null;
+		}
 		String uid = getUid();
-		MessageSource msg = getMessageSource();
-		String title = msg.getMessage("title", null, getClass().getSimpleName(), Locale.getDefault());
+		String title = msgs.getMessage("title", null, getClass().getSimpleName(), Locale.getDefault());
 		if ( uid != null && !DEFAULT_UID.equals(uid) ) {
 			return String.format("%s (%s)", uid, title);
 		}
@@ -490,7 +501,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	}
 
 	@Override
-	public void setUid(String uid) {
+	public void setUid(@Nullable String uid) {
 		super.setUid(uid);
 		stats.setUid(uid);
 	}
@@ -500,7 +511,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @return The pattern.
 	 */
-	public String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return (sourceId != null ? sourceId.pattern() : null);
 	}
 
@@ -521,7 +532,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *        The source ID regex to match. Syntax errors in the pattern will be
 	 *        ignored and a {@code null} value will be set instead.
 	 */
-	public void setSourceId(String sourceIdPattern) {
+	public final void setSourceId(@Nullable String sourceIdPattern) {
 		try {
 			this.sourceId = (sourceIdPattern != null
 					? Pattern.compile(sourceIdPattern, Pattern.CASE_INSENSITIVE)
@@ -537,7 +548,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @return the service, or {@code null}
 	 */
-	public OperationalModesService getOpModesService() {
+	public final @Nullable OperationalModesService getOpModesService() {
 		return opModesService;
 	}
 
@@ -548,7 +559,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *        the service to use
 	 * @since 1.1
 	 */
-	public void setOpModesService(OperationalModesService opModesService) {
+	public final void setOpModesService(@Nullable OperationalModesService opModesService) {
 		this.opModesService = opModesService;
 	}
 
@@ -558,7 +569,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @return the required operational mode, or {@code null} for none
 	 * @since 1.1
 	 */
-	public String getRequiredOperationalMode() {
+	public final @Nullable String getRequiredOperationalMode() {
 		return requiredOperationalMode;
 	}
 
@@ -566,11 +577,11 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * Set an operational mode that is required by this service.
 	 *
 	 * @param requiredOperationalMode
-	 *        the required operational mode, or {@code null} or an empty
-	 *        string that will be treated as {@code null}
+	 *        the required operational mode, or {@code null} or an empty string
+	 *        that will be treated as {@code null}
 	 * @since 1.1
 	 */
-	public void setRequiredOperationalMode(String requiredOperationalMode) {
+	public final void setRequiredOperationalMode(@Nullable String requiredOperationalMode) {
 		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
 			requiredOperationalMode = null;
 		}
@@ -582,7 +593,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *
 	 * @return the datum service
 	 */
-	public OptionalService<DatumService> getDatumService() {
+	public final @Nullable OptionalService<DatumService> getDatumService() {
 		return datumService;
 	}
 
@@ -592,7 +603,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @param datumService
 	 *        the datum service
 	 */
-	public void setDatumService(OptionalService<DatumService> datumService) {
+	public final void setDatumService(@Nullable OptionalService<DatumService> datumService) {
 		this.datumService = datumService;
 	}
 
@@ -602,7 +613,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @return the required tag
 	 * @since 1.1
 	 */
-	public String getRequiredTag() {
+	public final @Nullable String getRequiredTag() {
 		return requiredTag;
 	}
 
@@ -613,7 +624,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *        the tag expression to set
 	 * @since 1.1
 	 */
-	public void setRequiredTag(String requiredTag) {
+	public final void setRequiredTag(@Nullable String requiredTag) {
 		this.requiredTag = requiredTag;
 	}
 
@@ -623,7 +634,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @return the providers
 	 * @since 1.2
 	 */
-	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+	public final @Nullable OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
 		return tariffScheduleProviders;
 	}
 
@@ -635,7 +646,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @since 1.2
 	 */
 	public final void setTariffScheduleProviders(
-			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
 

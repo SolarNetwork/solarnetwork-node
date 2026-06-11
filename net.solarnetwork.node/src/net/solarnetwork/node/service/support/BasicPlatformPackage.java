@@ -59,17 +59,17 @@ public class BasicPlatformPackage implements PlatformPackage {
 	}
 
 	@Override
-	public String getName() {
+	public final String getName() {
 		return name;
 	}
 
 	@Override
-	public String getVersion() {
+	public final String getVersion() {
 		return version;
 	}
 
 	@Override
-	public boolean isInstalled() {
+	public final boolean isInstalled() {
 		return installed;
 	}
 

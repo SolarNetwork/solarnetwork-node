@@ -46,6 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import de.siegmar.fastcsv.reader.CommentStrategy;
@@ -134,11 +135,6 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	}
 
 	@Override
-	public String getSettingUid() {
-		return null;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		return List.of();
 	}
@@ -219,7 +215,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	}
 
 	@Override
-	public StringDateKey backupCsvConfiguration() {
+	public @Nullable StringDateKey backupCsvConfiguration() {
 		final Instant mrd = mostRecentCsvConfigurationModificationDate();
 		final Instant lastBackupDate = mostRecentCsvConfigurationBackupDate();
 		if ( mrd == null || (lastBackupDate != null && lastBackupDate.isAfter(mrd)) ) {
@@ -299,8 +295,9 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 								path.getFileName(), e.getMessage());
 					}
 				}
-				return new StringDateKey(key, ts);
-			}).sorted().toList();
+				return (key != null && ts != null ? new StringDateKey(key, ts)
+						: StringDateKey.UNDEFINED_KEY);
+			}).filter(k -> k != StringDateKey.UNDEFINED_KEY).sorted().toList();
 		} catch ( IOException e ) {
 			log.warn("Unable to list backup files: {}", e.getMessage());
 			return List.of();
@@ -308,7 +305,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	}
 
 	@Override
-	public Reader getCsvConfigurationBackup(final String backupKey) {
+	public @Nullable Reader getCsvConfigurationBackup(final String backupKey) {
 		final String uncompressedFileName = filenamePrefix + backupKey + CSV_FILENAME_EXT;
 		final String compressedFileName = uncompressedFileName + GZIP_FILENAME_EXT;
 		final boolean compress = isCompress();
@@ -338,7 +335,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 *
 	 * @return the path
 	 */
-	public String getBackupDestinationPath() {
+	public final String getBackupDestinationPath() {
 		return backupDestinationPath;
 	}
 
@@ -346,10 +343,12 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 * Set the backup destination path.
 	 *
 	 * @param backupDestinationPath
-	 *        the path to set
+	 *        the path to set; if {@code null} then
+	 *        {@link #DEFAULT_BACKUP_DESTINATION_PATH} will be used
 	 */
-	public void setBackupDestinationPath(String backupDestinationPath) {
-		this.backupDestinationPath = backupDestinationPath;
+	public final void setBackupDestinationPath(String backupDestinationPath) {
+		this.backupDestinationPath = (backupDestinationPath != null ? backupDestinationPath
+				: DEFAULT_BACKUP_DESTINATION_PATH);
 	}
 
 	/**
@@ -357,7 +356,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 *
 	 * @return the count
 	 */
-	public int getBackupMaxCount() {
+	public final int getBackupMaxCount() {
 		return backupMaxCount;
 	}
 
@@ -367,7 +366,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 * @param backupMaxCount
 	 *        the count to set
 	 */
-	public void setBackupMaxCount(int backupMaxCount) {
+	public final void setBackupMaxCount(int backupMaxCount) {
 		this.backupMaxCount = backupMaxCount;
 	}
 
@@ -376,7 +375,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 *
 	 * @return the compress mode
 	 */
-	public boolean isCompress() {
+	public final boolean isCompress() {
 		return compress;
 	}
 
@@ -386,7 +385,7 @@ public abstract class CsvConfigurableBackupServiceSupport extends BasicIdentifia
 	 * @param compress
 	 *        {@code true} to compress CSV files
 	 */
-	public void setCompress(boolean compress) {
+	public final void setCompress(boolean compress) {
 		this.compress = compress;
 	}
 

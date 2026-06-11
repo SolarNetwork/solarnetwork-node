@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingsPlaceholderService.java - 25/08/2020 10:48:10 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,6 +23,7 @@
 package net.solarnetwork.node.service.support;
 
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -55,20 +57,20 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Implementation of {@link PlaceholderService} that manages parameter values
  * via a {@link SettingDao}.
- * 
+ *
  * <p>
  * The {@link StringUtils#expandTemplateString(String, Map)} method is used for
  * parameter resolution, so parameters take the form <code>{name:default}</code>
  * where <i>:default</i> is optional.
  * </p>
- * 
+ *
  * <p>
  * This service can also load "static" parameter values from a directory of
  * property files or a single property file. Note that these properties are
  * loaded lazily, the first time {@link #resolvePlaceholders(String, Map)} is
  * called, and then cached for the life of the instance.
  * </p>
- * 
+ *
  * @author matt
  * @version 2.4
  */
@@ -79,44 +81,47 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 	/**
 	 * The default {@code cacheSeconds} property value.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final int DEFAULT_CACHE_SECONDS = 20;
 
 	/**
 	 * The default {@code daoRetryCount} property value.
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final int DEFAULT_DAO_RETRY_COUNT = 3;
 
 	private final OptionalService<SettingDao> settingDao;
-	private Path staticPropertiesPath;
+	private @Nullable Path staticPropertiesPath;
 	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
-	private AsyncTaskExecutor taskExecutor;
+	private @Nullable AsyncTaskExecutor taskExecutor;
 	private int daoRetryCount = DEFAULT_DAO_RETRY_COUNT;
 
-	private Map<String, ?> staticProps;
+	private @Nullable Map<String, ?> staticProps;
 
-	private volatile CachedResult<Map<String, ?>> placeholdersCache;
-	private volatile Future<Map<String, ?>> refreshCacheTask;
+	private volatile @Nullable CachedResult<Map<String, ?>> placeholdersCache;
+	private volatile @Nullable Future<@Nullable Map<String, ?>> refreshCacheTask;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingDao
 	 *        the DAO to persist placeholders with
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public SettingsPlaceholderService(OptionalService<SettingDao> settingDao) {
 		super();
-		this.settingDao = settingDao;
+		this.settingDao = requireNonNullArgument(settingDao, "settingDao");
 	}
 
 	@Override
-	public String resolvePlaceholders(String s, Map<String, ?> parameters) {
+	public @Nullable String resolvePlaceholders(@Nullable String s,
+			@Nullable Map<String, ?> parameters) {
 		// don't try to resolve null/empty input
 		if ( s == null || s.isEmpty() ) {
 			return s;
@@ -130,7 +135,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		String resolved = s;
 		Map<String, ?> placeholders = allPlaceholders(parameters);
 		String result = StringUtils.expandTemplateString(resolved, placeholders);
-		if ( log.isTraceEnabled() && !result.equals(s) ) {
+		if ( log.isTraceEnabled() && !s.equals(result) ) {
 			log.trace("Placeholders in [{}] resolved to [{}]", s, result);
 		}
 		return result;
@@ -139,7 +144,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> void mapPlaceholders(Map<String, T> destination,
-			Function<Stream<Entry<String, ?>>, Stream<Entry<String, T>>> filter) {
+			@Nullable Function<Stream<Entry<String, ?>>, Stream<Entry<String, T>>> filter) {
 		Map<String, ?> placeholders = allPlaceholders(null);
 		if ( placeholders == null || placeholders.isEmpty() ) {
 			return;
@@ -157,7 +162,8 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	}
 
 	@Override
-	public <T> void copyPlaceholders(Map<String, T> destination, Predicate<Entry<String, T>> filter) {
+	public <T> void copyPlaceholders(Map<String, T> destination,
+			@Nullable Predicate<Entry<String, T>> filter) {
 		@SuppressWarnings("unchecked")
 		Map<String, T> placeholders = (Map<String, T>) allPlaceholders(null);
 		if ( placeholders == null || placeholders.isEmpty() ) {
@@ -172,7 +178,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		}
 	}
 
-	private Map<String, ?> allPlaceholders(Map<String, ?> parameters) {
+	private @Nullable Map<String, ?> allPlaceholders(@Nullable Map<String, ?> parameters) {
 		Map<String, ?> result = null;
 		if ( cacheSeconds > 0 && settingDao.service() != null ) {
 			final CachedResult<Map<String, ?>> cached = this.placeholdersCache;
@@ -181,7 +187,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 				final AsyncTaskExecutor executor = this.taskExecutor;
 				synchronized ( this ) {
 					if ( refreshCacheTask == null || refreshCacheTask.isDone() ) {
-						final Callable<Map<String, ?>> task = new CacheRefreshTask();
+						final Callable<@Nullable Map<String, ?>> task = new CacheRefreshTask();
 						try {
 							if ( executor != null && result != null ) {
 								// refresh cache asynchronously and return expired data
@@ -203,10 +209,10 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		return placeholdersMergedWithParameters(result, parameters);
 	}
 
-	private final class CacheRefreshTask implements Callable<Map<String, ?>> {
+	private final class CacheRefreshTask implements Callable<@Nullable Map<String, ?>> {
 
 		@Override
-		public Map<String, ?> call() throws Exception {
+		public @Nullable Map<String, ?> call() throws Exception {
 			final CachedResult<Map<String, ?>> cached;
 			synchronized ( SettingsPlaceholderService.this ) {
 				cached = placeholdersCache;
@@ -237,8 +243,8 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 	}
 
-	private Map<String, ?> placeholdersMergedWithParameters(Map<String, ?> placeholders,
-			Map<String, ?> parameters) {
+	private @Nullable Map<String, ?> placeholdersMergedWithParameters(
+			@Nullable Map<String, ?> placeholders, @Nullable Map<String, ?> parameters) {
 		// try to return the minimum level of placeholders, if some levels are null
 		if ( parameters == null ) {
 			return placeholders;
@@ -248,7 +254,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		return new AbstractMap<String, Object>() {
 
 			@Override
-			public Object get(Object key) {
+			public @Nullable Object get(Object key) {
 				// method argument takes highest precedence
 				if ( parameters != null && parameters.containsKey(key) ) {
 					return parameters.get(key);
@@ -259,12 +265,12 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 			@Override
 			public Set<Entry<String, Object>> entrySet() {
-				return null;
+				return Set.of();
 			}
 		};
 	}
 
-	private Map<String, Object> allPlaceholdersWithoutCache() {
+	private @Nullable Map<String, Object> allPlaceholdersWithoutCache() {
 		List<KeyValuePair> kp = settingValues();
 		Map<String, ?> props = staticPropValues();
 
@@ -295,7 +301,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		return props;
 	}
 
-	private List<KeyValuePair> settingValues() {
+	private @Nullable List<KeyValuePair> settingValues() {
 		SettingDao dao = service(settingDao);
 		if ( dao != null ) {
 			return settingValues(dao, daoRetryCount);
@@ -305,7 +311,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		return null;
 	}
 
-	private List<KeyValuePair> settingValues(SettingDao dao, int i) {
+	private @Nullable List<KeyValuePair> settingValues(SettingDao dao, int i) {
 		try {
 			return dao.getSettingValues(SETTING_KEY);
 		} catch ( TransientDataAccessException e ) {
@@ -327,7 +333,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	}
 
 	@Override
-	public void registerParameters(Map<String, ?> parameters) {
+	public void registerParameters(@Nullable Map<String, ?> parameters) {
 		if ( parameters == null || parameters.isEmpty() ) {
 			return;
 		}
@@ -384,17 +390,17 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 	/**
 	 * Get the path to the static properties directory.
-	 * 
+	 *
 	 * @return the properties directory
 	 */
-	public Path getStaticPropertiesPath() {
+	public final @Nullable Path getStaticPropertiesPath() {
 		return staticPropertiesPath;
 	}
 
 	/**
 	 * Set a path to a directory of static properties files to load as
 	 * placeholders.
-	 * 
+	 *
 	 * <p>
 	 * If this path represents a properties file, that file will be loaded as
 	 * placeholder parameter values. If this path represents a directory, the
@@ -402,27 +408,27 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	 * and their values made available as placeholder parameters. A property
 	 * file must have a {@literal .properties} file name suffix.
 	 * </p>
-	 * 
+	 *
 	 * @param staticPropertiesPath
 	 *        the directory path to set
 	 */
-	public void setStaticPropertiesPath(Path staticPropertiesPath) {
+	public final void setStaticPropertiesPath(@Nullable Path staticPropertiesPath) {
 		this.staticPropertiesPath = staticPropertiesPath;
 	}
 
 	/**
 	 * Get the cache seconds value.
-	 * 
+	 *
 	 * @return the cache seconds; defaults to {@link #DEFAULT_CACHE_SECONDS}
 	 * @since 1.1
 	 */
-	public int getCacheSeconds() {
+	public final int getCacheSeconds() {
 		return cacheSeconds;
 	}
 
 	/**
 	 * Set the cache seconds value.
-	 * 
+	 *
 	 * <p>
 	 * If set to a value greater than {@literal 0} then placeholder values read
 	 * from {@link SettingDao} will be cached for a minimum of the given number
@@ -431,61 +437,61 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	 * refreshing from the DAO fails for any reason, the previously cached
 	 * values will be used.
 	 * </p>
-	 * 
+	 *
 	 * @param cacheSeconds
 	 *        the cache seconds to set, or {@code 0} to disable
 	 * @since 1.1
 	 */
-	public void setCacheSeconds(int cacheSeconds) {
+	public final void setCacheSeconds(int cacheSeconds) {
 		this.cacheSeconds = cacheSeconds;
 	}
 
 	/**
 	 * Get the task executor.
-	 * 
+	 *
 	 * @return the task executor
 	 * @since 1.1
 	 */
-	public AsyncTaskExecutor getTaskExecutor() {
+	public final @Nullable AsyncTaskExecutor getTaskExecutor() {
 		return this.taskExecutor;
 	}
 
 	/**
 	 * An executor to handle cache refreshing with.
-	 * 
+	 *
 	 * <p>
 	 * If configured then cache refresh operations will occur asynchronously
 	 * after expiring.
 	 * </p>
-	 * 
+	 *
 	 * @param taskExecutor
 	 *        a task executor
 	 * @since 1.1
 	 */
-	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
+	public final void setTaskExecutor(@Nullable AsyncTaskExecutor taskExecutor) {
 		this.taskExecutor = taskExecutor;
 	}
 
 	/**
 	 * Get the maximum number of time to retry transient DAO exceptions when
 	 * loading placeholder values from {@link SettingDao}.
-	 * 
+	 *
 	 * @return the maximum number of retry times
 	 * @since 2.2
 	 */
-	public int getDaoRetryCount() {
+	public final int getDaoRetryCount() {
 		return daoRetryCount;
 	}
 
 	/**
 	 * Set the number of time to retry transient DAO exceptions when loading
 	 * placeholder values from {@link SettingDao}.
-	 * 
+	 *
 	 * @param daoRetryCount
 	 *        the maximum number of retry times, or {@literal 0} to disable
 	 * @since 2.2
 	 */
-	public void setDaoRetryCount(int daoRetryCount) {
+	public final void setDaoRetryCount(int daoRetryCount) {
 		this.daoRetryCount = daoRetryCount;
 	}
 

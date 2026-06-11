@@ -26,6 +26,7 @@ import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionException;
@@ -63,11 +64,11 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	private OptionalService<PlaceholderService> placeholderService;
-	private OptionalService<MetadataService> metadataService;
-	private OptionalService<LocationService> locationService;
-	private OptionalServiceCollection<ExpressionService> expressionServices;
-	private OptionalService<LocalStateDao> localStateDao;
+	private @Nullable OptionalService<PlaceholderService> placeholderService;
+	private @Nullable OptionalService<MetadataService> metadataService;
+	private @Nullable OptionalService<LocationService> locationService;
+	private @Nullable OptionalServiceCollection<ExpressionService> expressionServices;
+	private @Nullable OptionalService<LocalStateDao> localStateDao;
 
 	/**
 	 * Default constructor.
@@ -90,7 +91,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the settings
 	 * @see #baseIdentifiableSettings(String, String, String)
 	 */
-	public static List<SettingSpecifier> baseIdentifiableSettings(String prefix) {
+	public static List<SettingSpecifier> baseIdentifiableSettings(@Nullable String prefix) {
 		return baseIdentifiableSettings(prefix, "", "");
 	}
 
@@ -107,8 +108,8 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the settings
 	 * @since 1.1
 	 */
-	public static List<SettingSpecifier> baseIdentifiableSettings(String prefix, String defaultUid,
-			String defaultGroupUid) {
+	public static List<SettingSpecifier> baseIdentifiableSettings(@Nullable String prefix,
+			@Nullable String defaultUid, @Nullable String defaultGroupUid) {
 		if ( prefix == null ) {
 			prefix = "";
 		}
@@ -123,11 +124,10 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *
 	 * @param s
 	 *        the string to resolve placeholder values on
-	 * @return the resolved string, or {@code null} if {@code s} is
-	 *         {@code null}
+	 * @return the resolved string, or {@code null} if {@code s} is {@code null}
 	 * @since 1.3
 	 */
-	protected String resolvePlaceholders(String s) {
+	protected @Nullable String resolvePlaceholders(@Nullable String s) {
 		return resolvePlaceholders(s, null);
 	}
 
@@ -138,11 +138,11 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the string to resolve placeholder values on
 	 * @param parameters
 	 *        optional parameters to use, or {@code null}
-	 * @return the resolved string, or {@code null} if {@code s} is
-	 *         {@code null}
+	 * @return the resolved string, or {@code null} if {@code s} is {@code null}
 	 * @since 1.3
 	 */
-	protected String resolvePlaceholders(String s, Map<String, ?> parameters) {
+	protected @Nullable String resolvePlaceholders(@Nullable String s,
+			@Nullable Map<String, ?> parameters) {
 		return PlaceholderService.resolvePlaceholders(placeholderService, s, parameters);
 	}
 
@@ -158,16 +158,16 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the expression root object
 	 * @since 1.4
 	 */
-	protected void populateExpressionDatumProperties(final MutableDatumSamplesOperations d,
-			final ExpressionConfig[] expressionConfs, final Object root) {
+	protected void populateExpressionDatumProperties(final @Nullable MutableDatumSamplesOperations d,
+			final ExpressionConfig @Nullable [] expressionConfs, final @Nullable Object root) {
 		Iterable<ExpressionService> services = services(expressionServices);
-		if ( services == null || expressionConfs == null || expressionConfs.length < 1
-				|| root == null ) {
+		if ( services == null || expressionConfs == null || expressionConfs.length < 1 || root == null
+				|| d == null ) {
 			return;
 		}
 		for ( ExpressionConfig config : expressionConfs ) {
 			if ( config.getName() == null || config.getName().isEmpty() || config.getExpression() == null
-					|| config.getExpression().isEmpty() ) {
+					|| config.getExpression().isEmpty() || config.getDatumPropertyType() == null ) {
 				continue;
 			}
 			final ExpressionServiceExpression expr;
@@ -210,7 +210,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the service
 	 * @since 1.3
 	 */
-	public OptionalService<PlaceholderService> getPlaceholderService() {
+	public final @Nullable OptionalService<PlaceholderService> getPlaceholderService() {
 		return placeholderService;
 	}
 
@@ -221,7 +221,8 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the service to set
 	 * @since 1.3
 	 */
-	public void setPlaceholderService(OptionalService<PlaceholderService> placeholderService) {
+	public final void setPlaceholderService(
+			@Nullable OptionalService<PlaceholderService> placeholderService) {
 		this.placeholderService = placeholderService;
 	}
 
@@ -231,7 +232,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the optional {@link ExpressionService} collection to use
 	 * @since 1.4
 	 */
-	public OptionalServiceCollection<ExpressionService> getExpressionServices() {
+	public final @Nullable OptionalServiceCollection<ExpressionService> getExpressionServices() {
 		return expressionServices;
 	}
 
@@ -242,7 +243,8 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the optional {@link ExpressionService} collection to use
 	 * @since 1.4
 	 */
-	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
+	public final void setExpressionServices(
+			@Nullable OptionalServiceCollection<ExpressionService> expressionServices) {
 		this.expressionServices = expressionServices;
 	}
 
@@ -252,7 +254,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the service
 	 * @since 2.1
 	 */
-	public OptionalService<MetadataService> getMetadataService() {
+	public final @Nullable OptionalService<MetadataService> getMetadataService() {
 		return metadataService;
 	}
 
@@ -263,7 +265,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the service to set
 	 * @since 2.1
 	 */
-	public void setMetadataService(OptionalService<MetadataService> metadataService) {
+	public final void setMetadataService(@Nullable OptionalService<MetadataService> metadataService) {
 		this.metadataService = metadataService;
 	}
 
@@ -273,7 +275,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the service
 	 * @since 2.2
 	 */
-	public final OptionalService<LocationService> getLocationService() {
+	public final @Nullable OptionalService<LocationService> getLocationService() {
 		return locationService;
 	}
 
@@ -284,7 +286,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the service to set
 	 * @since 2.2
 	 */
-	public final void setLocationService(OptionalService<LocationService> locationService) {
+	public final void setLocationService(@Nullable OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
 	}
 
@@ -294,7 +296,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 * @return the DAO
 	 * @since 2.3
 	 */
-	public OptionalService<LocalStateDao> getLocalStateDao() {
+	public final @Nullable OptionalService<LocalStateDao> getLocalStateDao() {
 		return localStateDao;
 	}
 
@@ -305,7 +307,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	 *        the DAO to set
 	 * @since 2.3
 	 */
-	public void setLocalStateDao(OptionalService<LocalStateDao> localStateDao) {
+	public final void setLocalStateDao(@Nullable OptionalService<LocalStateDao> localStateDao) {
 		this.localStateDao = localStateDao;
 	}
 
