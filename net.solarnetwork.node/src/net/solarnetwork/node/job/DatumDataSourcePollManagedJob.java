@@ -23,6 +23,7 @@
 package net.solarnetwork.node.job;
 
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.DeviceInfo;
@@ -71,10 +73,10 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	// a static concurrent set to tack the publication of device infos
 	private static final Set<String> PUBLISHED_DEVICE_INFO_SOURCE_IDS = new ConcurrentSkipListSet<>();
 
-	private DatumDataSource datumDataSource = null;
-	private MultiDatumDataSource multiDatumDataSource = null;
-	private OptionalService<DatumQueue> datumQueue = null;
-	private OptionalService<DatumMetadataService> datumMetadataService = null;
+	private @Nullable DatumDataSource datumDataSource;
+	private @Nullable MultiDatumDataSource multiDatumDataSource;
+	private @Nullable OptionalService<DatumQueue> datumQueue;
+	private @Nullable OptionalService<DatumMetadataService> datumMetadataService;
 
 	/**
 	 * Default constructor.
@@ -152,7 +154,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		if ( datumDataSource instanceof SettingsChangeObserver ) {
 			((SettingsChangeObserver) datumDataSource).configurationChanged(properties);
 		}
@@ -162,6 +164,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	}
 
 	private void executeForDatumDataSource() {
+		final DatumDataSource datumDataSource = nonnull(this.datumDataSource, "DatumDataSource");
 		if ( log.isDebugEnabled() ) {
 			log.debug("Collecting [{}] from [{}]", datumDataSource.getDatumType().getSimpleName(),
 					datumDataSource);
@@ -175,6 +178,8 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	}
 
 	private void executeForMultiDatumDataSource() {
+		final MultiDatumDataSource multiDatumDataSource = nonnull(this.multiDatumDataSource,
+				"MultiDatumDataSource");
 		if ( log.isDebugEnabled() ) {
 			log.debug("Collecting [{}] from [{}]",
 					multiDatumDataSource.getMultiDatumType().getSimpleName(), multiDatumDataSource);
@@ -256,7 +261,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		PUBLISHED_DEVICE_INFO_SOURCE_IDS.add(metaSourceId);
 	}
 
-	private SettingSpecifierProvider settingSpecifierProvider() {
+	private @Nullable SettingSpecifierProvider settingSpecifierProvider() {
 		if ( multiDatumDataSource instanceof SettingSpecifierProvider ) {
 			return (SettingSpecifierProvider) multiDatumDataSource;
 		}
@@ -266,7 +271,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		return null;
 	}
 
-	private ServiceLifecycleObserver serviceLifecycleObserver() {
+	private @Nullable ServiceLifecycleObserver serviceLifecycleObserver() {
 		if ( multiDatumDataSource instanceof ServiceLifecycleObserver ) {
 			return (ServiceLifecycleObserver) multiDatumDataSource;
 		}
@@ -278,15 +283,19 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	@Override
 	public String getSettingUid() {
-		SettingSpecifierProvider delegate = settingSpecifierProvider();
+		final SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate != null ) {
 			return delegate.getSettingUid();
 		}
-		return getDatumDataSource().getClass().getName();
+		final MultiDatumDataSource mdds = getMultiDatumDataSource();
+		if ( mdds != null ) {
+			return mdds.getClass().getName();
+		}
+		return nonnull(getDatumDataSource(), "DatumDataSource").getClass().getName();
 	}
 
 	@Override
-	public String getDisplayName() {
+	public @Nullable String getDisplayName() {
 		SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate != null ) {
 			return delegate.getDisplayName();
@@ -295,7 +304,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate != null ) {
 			return delegate.getMessageSource();
@@ -325,7 +334,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T unwrap(Class<T> type) {
+	public <T> @Nullable T unwrap(Class<T> type) {
 		T result = JobService.super.unwrap(type);
 		if ( result != null ) {
 			return result;
@@ -348,7 +357,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 *
 	 * @return the data source
 	 */
-	public DatumDataSource getDatumDataSource() {
+	public final @Nullable DatumDataSource getDatumDataSource() {
 		return datumDataSource;
 	}
 
@@ -358,7 +367,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 * @param datumDataSource
 	 *        the data source
 	 */
-	public void setDatumDataSource(DatumDataSource datumDataSource) {
+	public final void setDatumDataSource(@Nullable DatumDataSource datumDataSource) {
 		this.datumDataSource = datumDataSource;
 	}
 
@@ -367,7 +376,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 *
 	 * @return the data source
 	 */
-	public MultiDatumDataSource getMultiDatumDataSource() {
+	public final @Nullable MultiDatumDataSource getMultiDatumDataSource() {
 		return multiDatumDataSource;
 	}
 
@@ -377,7 +386,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 * @param multiDatumDataSource
 	 *        the data source
 	 */
-	public void setMultiDatumDataSource(MultiDatumDataSource multiDatumDataSource) {
+	public final void setMultiDatumDataSource(@Nullable MultiDatumDataSource multiDatumDataSource) {
 		this.multiDatumDataSource = multiDatumDataSource;
 	}
 
@@ -386,7 +395,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 *
 	 * @return the queue
 	 */
-	public OptionalService<DatumQueue> getDatumQueue() {
+	public final @Nullable OptionalService<DatumQueue> getDatumQueue() {
 		return datumQueue;
 	}
 
@@ -396,7 +405,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 * @param datumQueue
 	 *        the queue
 	 */
-	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
+	public final void setDatumQueue(@Nullable OptionalService<DatumQueue> datumQueue) {
 		this.datumQueue = datumQueue;
 	}
 
@@ -405,7 +414,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 *
 	 * @return the service to use
 	 */
-	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+	public final @Nullable OptionalService<DatumMetadataService> getDatumMetadataService() {
 		return datumMetadataService;
 	}
 
@@ -415,7 +424,8 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	 * @param datumMetadataService
 	 *        the service to use
 	 */
-	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+	public final void setDatumMetadataService(
+			@Nullable OptionalService<DatumMetadataService> datumMetadataService) {
 		this.datumMetadataService = datumMetadataService;
 	}
 

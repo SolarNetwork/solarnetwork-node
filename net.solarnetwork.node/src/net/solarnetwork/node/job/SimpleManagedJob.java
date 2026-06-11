@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.InvalidPropertyException;
@@ -71,10 +72,10 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	private final JobService jobService;
 	private String scheduleSettingKey = DEFAULT_SCHEDULE_SETTING_KEY;
-	private String schedule;
-	private Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
+	private @Nullable String schedule;
+	private @Nullable Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
 
-	private PropertyAccessor jobServiceAccessor;
+	private @Nullable PropertyAccessor jobServiceAccessor;
 	private boolean ignoreLegacySchedule = false;
 
 	/**
@@ -106,7 +107,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@code null}
 	 */
-	public SimpleManagedJob(JobService jobService, String schedule) {
+	public SimpleManagedJob(JobService jobService, @Nullable String schedule) {
 		super();
 		this.jobService = requireNonNullArgument(jobService, "jobService");
 		this.schedule = schedule;
@@ -128,7 +129,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 *
 	 * @return the trigger
 	 */
-	public Trigger getTrigger() {
+	public @Nullable Trigger getTrigger() {
 		final String expression = getSchedule();
 		if ( expression != null ) {
 			try {
@@ -152,7 +153,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	}
 
 	@Override
-	public String getDisplayName() {
+	public @Nullable String getDisplayName() {
 		String name = jobService.getDisplayName();
 		return (name != null && !name.isEmpty() ? name : super.getDisplayName());
 	}
@@ -203,6 +204,10 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	private void populateLegacySettingDefaultValue(final String propKey,
 			final KeyedSettingSpecifier<?> spec) {
+		final PropertyAccessor jobServiceAccessor = this.jobServiceAccessor;
+		if ( jobServiceAccessor == null ) {
+			return;
+		}
 		PropertyAccessor specAccessor = PropertyAccessorFactory.forBeanPropertyAccess(spec);
 		if ( specAccessor.isWritableProperty(DEFAULT_VALUE_PROPERTY) ) {
 			if ( jobServiceAccessor.isReadableProperty(propKey) ) {
@@ -221,7 +226,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		if ( super.getMessageSource() == null ) {
 			PrefixedMessageSource pSource = new PrefixedMessageSource();
 			pSource.setPrefix(JOB_SERVICE_SETTING_PREFIX);
@@ -232,7 +237,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	}
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		Object scheduleVal = (properties != null ? properties.get(getScheduleSettingKey()) : null);
 		if ( scheduleVal != null ) {
 			String newSchedule = scheduleVal.toString();
@@ -293,7 +298,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 				}
 			}
 		}
-		return result;
+		return (result != null ? result : List.of());
 	}
 
 	/**
@@ -350,10 +355,11 @@ public class SimpleManagedJob extends BaseIdentifiable
 		if ( jobServiceAccessor == null ) {
 			jobServiceAccessor = PropertyAccessorFactory.forBeanPropertyAccess(jobService);
 		}
+		final PropertyAccessor jobServiceAccessor = this.jobServiceAccessor;
 		return new AbstractMap<String, Object>() {
 
 			@Override
-			public Object get(Object key) {
+			public @Nullable Object get(Object key) {
 				if ( key == null ) {
 					return null;
 				}
@@ -364,7 +370,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 			}
 
 			@Override
-			public Object put(String key, Object value) {
+			public @Nullable Object put(String key, @Nullable Object value) {
 				if ( key == null ) {
 					return null;
 				}
@@ -386,7 +392,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSchedule() {
+	public final @Nullable String getSchedule() {
 		return schedule;
 	}
 
@@ -401,7 +407,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * @param schedule
 	 *        the trigger schedule expression to set
 	 */
-	public void setSchedule(String schedule) {
+	public final void setSchedule(@Nullable String schedule) {
 		this.ignoreLegacySchedule = true;
 		this.schedule = schedule;
 	}
@@ -419,7 +425,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * @param schedule
 	 *        the schedule to set
 	 */
-	public void setTriggerCronExpression(String schedule) {
+	public final void setTriggerCronExpression(@Nullable String schedule) {
 		if ( !ignoreLegacySchedule ) {
 			this.schedule = schedule;
 		}
@@ -432,7 +438,7 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 *         {@link #DEFAULT_SCHEDULE_SETTING_KEY}
 	 */
 	@Override
-	public String getScheduleSettingKey() {
+	public final String getScheduleSettingKey() {
 		return scheduleSettingKey;
 	}
 
@@ -448,10 +454,12 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * </p>
 	 *
 	 * @param scheduleSettingKey
-	 *        the setting key to set
+	 *        the setting key to set; if {@code null} then
+	 *        {@link #DEFAULT_SCHEDULE_SETTING_KEY} will be used
 	 */
-	public void setScheduleSettingKey(String scheduleSettingKey) {
-		this.scheduleSettingKey = scheduleSettingKey;
+	public final void setScheduleSettingKey(String scheduleSettingKey) {
+		this.scheduleSettingKey = (scheduleSettingKey != null ? scheduleSettingKey
+				: DEFAULT_SCHEDULE_SETTING_KEY);
 	}
 
 }

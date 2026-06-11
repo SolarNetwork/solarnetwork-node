@@ -23,7 +23,7 @@
 package net.solarnetwork.node.job;
 
 import java.util.Collection;
-import java.util.Collections;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
@@ -71,8 +71,9 @@ public interface ManagedJob extends Identifiable, ServiceProvider, SettingSpecif
 	 * millisecond period.
 	 * </p>
 	 *
-	 * @return the schedule expression, never {@code null}
+	 * @return the schedule expression, or {@code null} if not known
 	 */
+	@Nullable
 	String getSchedule();
 
 	/**
@@ -98,12 +99,12 @@ public interface ManagedJob extends Identifiable, ServiceProvider, SettingSpecif
 	 * @return A collection of configuration objects.
 	 */
 	@Override
-	default Collection<ServiceConfiguration> getServiceConfigurations() {
-		return Collections.emptyList();
+	default @Nullable Collection<ServiceConfiguration> getServiceConfigurations() {
+		return null;
 	}
 
 	@Override
-	default public <T> T unwrap(Class<T> type) {
+	default public <T> @Nullable T unwrap(Class<T> type) {
 		T result = SettingSpecifierProvider.super.unwrap(type);
 		if ( result == null ) {
 			JobService js = getJobService();

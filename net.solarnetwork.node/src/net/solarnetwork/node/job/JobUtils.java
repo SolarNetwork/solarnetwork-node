@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.Trigger;
@@ -40,7 +41,7 @@ import org.springframework.scheduling.support.PeriodicTrigger;
  * @version 2.1
  * @since 1.71
  */
-public class JobUtils {
+public final class JobUtils {
 
 	/** A pattern to match a digit-only second field number value. */
 	public static final Pattern CRON_PLAIN_SECOND_FIELD_PATTERN = Pattern.compile("^\\s*\\d+(?=\\s+)");
@@ -67,12 +68,12 @@ public class JobUtils {
 	 *        the time unit to use for periodic triggers
 	 * @param randomized
 	 *        {@literal true} to randomize the second field of cron triggers
-	 * @return the trigger, or {@code null} if the expression cannot be
-	 *         parsed into one
+	 * @return the trigger, or {@code null} if the expression cannot be parsed
+	 *         into one
 	 * @since 2.0
 	 */
-	public static Trigger triggerForExpression(final String expression, TimeUnit timeUnit,
-			boolean randomized) {
+	public static @Nullable Trigger triggerForExpression(final @Nullable String expression,
+			TimeUnit timeUnit, boolean randomized) {
 		if ( expression != null ) {
 			try {
 				try {

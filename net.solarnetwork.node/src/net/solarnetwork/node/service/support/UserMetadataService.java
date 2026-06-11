@@ -179,7 +179,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 *        the maximum number of seconds to cache metadata for, or anything
 	 *        less than {@literal 1} to disable
 	 */
-	void setCacheSeconds(int cacheSeconds) {
+	public final void setCacheSeconds(int cacheSeconds) {
 		this.cacheSeconds = cacheSeconds;
 	}
 
@@ -189,7 +189,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 * @param token
 	 *        the token to set
 	 */
-	void setToken(@Nullable String token) {
+	public final void setToken(@Nullable String token) {
 		this.token = token;
 	}
 
@@ -199,7 +199,7 @@ public class UserMetadataService extends JsonHttpClientSupport
 	 * @param tokenSecret
 	 *        the token secret to set
 	 */
-	void setTokenSecret(@Nullable String tokenSecret) {
+	public final void setTokenSecret(@Nullable String tokenSecret) {
 		this.tokenSecret = tokenSecret;
 	}
 
