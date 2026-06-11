@@ -26,6 +26,7 @@ package net.solarnetwork.node.service;
 
 import java.util.Collection;
 import java.util.Collections;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.service.Identifiable;
 
@@ -63,6 +64,7 @@ public interface DatumDataSource extends Identifiable, DeviceInfoProvider, Datum
 	 *
 	 * @return Datum
 	 */
+	@Nullable
 	NodeDatum readCurrentDatum();
 
 	/**

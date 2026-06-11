@@ -1,33 +1,34 @@
 /* ==================================================================
  * MetadataService.java - 7/05/2021 10:05:17 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.service;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.service.Identifiable;
 
 /**
  * API for accessing dynamic metadata.
- * 
+ *
  * @author matt
  * @version 2.0
  * @since 1.83
@@ -36,27 +37,28 @@ public interface MetadataService extends Identifiable {
 
 	/**
 	 * Get all metadata available.
-	 * 
+	 *
 	 * @return the metadata, or {@code null} if none available
 	 */
+	@Nullable
 	GeneralDatumMetadata getAllMetadata();
 
 	/**
 	 * Get a metadata value at a given path.
-	 * 
+	 *
 	 * @param path
 	 *        the path of the metadata object to get
 	 * @return the value, or {@code null}
 	 * @see GeneralDatumMetadata#metadataAtPath(String)
 	 */
-	default Object metadataAtPath(String path) {
+	default @Nullable Object metadataAtPath(@Nullable String path) {
 		GeneralDatumMetadata meta = getAllMetadata();
 		return (meta != null ? meta.metadataAtPath(path) : null);
 	}
 
 	/**
 	 * Get a metadata value of a given type at a given path.
-	 * 
+	 *
 	 * @param <T>
 	 *        the expected value type
 	 * @param path
@@ -66,7 +68,7 @@ public interface MetadataService extends Identifiable {
 	 * @return the value, or {@code null}
 	 * @see GeneralDatumMetadata#metadataAtPath(String, Class)
 	 */
-	default <T> T metadataAtPath(String path, Class<T> clazz) {
+	default <T> @Nullable T metadataAtPath(@Nullable String path, Class<T> clazz) {
 		GeneralDatumMetadata meta = getAllMetadata();
 		return (meta != null ? meta.metadataAtPath(path, clazz) : null);
 	}

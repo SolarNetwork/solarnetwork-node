@@ -1,7 +1,7 @@
 /* ==================================================================
- * NodeMetadataService.java - 21/06/2017 1:23:04 PM
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,36 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.service;
-
-import org.jspecify.annotations.Nullable;
-import net.solarnetwork.domain.datum.GeneralDatumMetadata;
-
 /**
- * API for managing node metadata.
- *
- * @author matt
- * @version 2.0
- * @since 1.50
+ * Package info.
  */
-public interface NodeMetadataService {
 
-	/**
-	 * Add node metadata. If metadata already exists for the given source, the
-	 * values will be merged such that tags are only added and only new info
-	 * values will be added.
-	 *
-	 * @param meta
-	 *        the metadata to add
-	 */
-	void addNodeMetadata(GeneralDatumMetadata meta);
-
-	/**
-	 * Get all metadata for the active node.
-	 *
-	 * @return the metadata, or {@code null} if none available
-	 */
-	@Nullable
-	GeneralDatumMetadata getNodeMetadata();
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.service;

@@ -1,21 +1,21 @@
 /* ==================================================================
  * PKIService.java - Dec 6, 2012 4:20:20 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,11 +23,12 @@
 package net.solarnetwork.node.service;
 
 import java.security.cert.X509Certificate;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.service.CertificateException;
 
 /**
  * API for managing the node's certificate infrastructure.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -36,12 +37,12 @@ public interface PKIService {
 
 	/**
 	 * Save the trusted CA certificate.
-	 * 
+	 *
 	 * <p>
 	 * The node maintains a root CA certificate for the SolarNet network it is
 	 * associated with.
 	 * </p>
-	 * 
+	 *
 	 * @param cert
 	 *        the certificate
 	 * @throws CertificateException
@@ -51,33 +52,35 @@ public interface PKIService {
 
 	/**
 	 * Get the configured CA certificate.
-	 * 
+	 *
 	 * @return the CA certificate, or {@code null} if not available
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
+	@Nullable
 	X509Certificate getCACertificate() throws CertificateException;
 
 	/**
 	 * Get the configured node certificate.
-	 * 
+	 *
 	 * @return the node certificate, or {@code null} if not available
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
+	@Nullable
 	X509Certificate getNodeCertificate() throws CertificateException;
 
 	/**
 	 * Check if the node's certificate is valid.
-	 * 
+	 *
 	 * <p>
 	 * The certificate is considered valid if it is signed by the given
 	 * authority and its chain can be verified and it has not expired.
 	 * </p>
-	 * 
+	 *
 	 * @param issuerDN
 	 *        the expected issuer subject DN
-	 * 
+	 *
 	 * @return boolean {@literal true} if considered valid
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
@@ -87,7 +90,7 @@ public interface PKIService {
 	/**
 	 * Generate a new public and private key pair, and a new self-signed
 	 * certificate.
-	 * 
+	 *
 	 * @param dn
 	 *        the certificate subject DN
 	 * @return the Certificate
@@ -99,7 +102,7 @@ public interface PKIService {
 	/**
 	 * Generate a PKCS#10 certificate signing request (CSR) for the node's
 	 * certificate.
-	 * 
+	 *
 	 * @return the PEM-encoded CSR
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
@@ -108,7 +111,7 @@ public interface PKIService {
 
 	/**
 	 * Generate a PKCS#7 PEM encoding of the node's certificate.
-	 * 
+	 *
 	 * @return the PEM-encoded certificate
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
@@ -117,7 +120,7 @@ public interface PKIService {
 
 	/**
 	 * Generate a PKCS#7 PEM encoding of the node's certificate chain.
-	 * 
+	 *
 	 * @return the PEM-encoded certificate chain
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
@@ -127,13 +130,13 @@ public interface PKIService {
 	/**
 	 * Save a signed node certificate (previously created via
 	 * {@link #generateNodeSelfSignedCertificate(String)}).
-	 * 
+	 *
 	 * <p>
 	 * The issuer of the certificate must match the subject of the configured CA
 	 * certificate, and the certificate's subject must match the existing node
 	 * certificate's subject.
 	 * </p>
-	 * 
+	 *
 	 * @param certificateChain
 	 *        the PKCS#7 signed certificate chain
 	 * @throws CertificateException
@@ -143,12 +146,12 @@ public interface PKIService {
 
 	/**
 	 * Save a PKCS#12 keystore as the node's certificate.
-	 * 
+	 *
 	 * <p>
 	 * The keystore can contain either a single self-signed certificate or a
 	 * signed certificate chain.
 	 * </p>
-	 * 
+	 *
 	 * @param keystore
 	 *        the PKCS#12 keystore as a Base64 encoded string
 	 * @param password
@@ -161,7 +164,7 @@ public interface PKIService {
 	/**
 	 * Generate a PKCS#12 keystore from the node's keystore, encrpyted with the
 	 * given password.
-	 * 
+	 *
 	 * @param password
 	 *        The password to encrypt the keystore with.
 	 * @return The generated keystore.

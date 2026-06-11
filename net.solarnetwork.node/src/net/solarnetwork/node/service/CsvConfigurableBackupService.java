@@ -24,6 +24,7 @@ package net.solarnetwork.node.service;
 
 import java.io.Reader;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.StringDateKey;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
@@ -48,6 +49,7 @@ public interface CsvConfigurableBackupService extends CsvConfigurableService, Se
 	 *
 	 * @return the backup ID, or {@code null} if no backup created
 	 */
+	@Nullable
 	StringDateKey backupCsvConfiguration();
 
 	/**
@@ -65,6 +67,7 @@ public interface CsvConfigurableBackupService extends CsvConfigurableService, Se
 	 *        the key of the backup to get the CSV for
 	 * @return the Reader, or {@code null} if the backup cannot be found
 	 */
+	@Nullable
 	Reader getCsvConfigurationBackup(String backupKey);
 
 }

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.service;
 
 import java.util.Collection;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.LocalState;
 
 /**
@@ -47,6 +48,7 @@ public interface LocalStateService extends CsvConfigurableBackupService {
 	 *        the key of the local state to get
 	 * @return the state entity, or {@code null} if not found
 	 */
+	@Nullable
 	LocalState localStateForKey(String key);
 
 	/**

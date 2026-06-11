@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.service;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.service.Identifiable;
 
@@ -39,6 +40,7 @@ public interface TariffScheduleProvider extends Identifiable {
 	 *
 	 * @return the tariff schedule, or {@code null} if not available
 	 */
+	@Nullable
 	TariffSchedule tariffSchedule();
 
 }

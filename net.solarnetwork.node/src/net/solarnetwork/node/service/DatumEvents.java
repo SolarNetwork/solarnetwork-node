@@ -1,21 +1,21 @@
 /* ==================================================================
  * DatumEvents.java - 8/04/2021 7:41:41 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,7 @@ import net.solarnetwork.util.ClassUtils;
 
 /**
  * Support for {@link NodeDatum} {@link Event} handling.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -55,14 +56,14 @@ public final class DatumEvents {
 
 	/**
 	 * A property name for a {@code Datum} instance associated with an event.
-	 * 
+	 *
 	 * @since 2.0
 	 */
 	public static final String DATUM_PROPERTY = "_Datum";
 
 	/**
 	 * Create an event with a datum class and property map.
-	 * 
+	 *
 	 * @param topic
 	 *        the event topic
 	 * @param clazz
@@ -72,7 +73,8 @@ public final class DatumEvents {
 	 * @return the new event, or {@code null} if {@code datumMap} is
 	 *         {@code null} or empty
 	 */
-	public static Event datumEvent(String topic, Class<? extends Datum> clazz, Map<String, ?> datumMap) {
+	public static @Nullable Event datumEvent(String topic, Class<? extends Datum> clazz,
+			Map<String, ?> datumMap) {
 		if ( datumMap == null || datumMap.isEmpty() ) {
 			return null;
 		}
@@ -101,14 +103,14 @@ public final class DatumEvents {
 
 	/**
 	 * Create an event with a datum.
-	 * 
+	 *
 	 * @param topic
 	 *        the event topic
 	 * @param datum
 	 *        the datum to add as the {@link #DATUM_PROPERTY} event property
 	 * @return the new event instance
 	 */
-	public static Event datumEvent(String topic, NodeDatum datum) {
+	public static Event datumEvent(String topic, @Nullable NodeDatum datum) {
 		if ( datum == null ) {
 			return new Event(topic, Collections.emptyMap());
 		}
@@ -130,13 +132,13 @@ public final class DatumEvents {
 
 	/**
 	 * Create a map out of event properties, unwrapping datum properties.
-	 * 
+	 *
 	 * <p>
 	 * If a {@link NodeDatum} is found on the {@link #DATUM_PROPERTY} event
 	 * property, then the result of {@link NodeDatum#asSimpleMap()} will be
 	 * added to the returned map rather than the datum itself.
 	 * </p>
-	 * 
+	 *
 	 * @param event
 	 *        the event to get a map of event properties for
 	 * @return the event properties as a map, never {@code null}
@@ -159,23 +161,23 @@ public final class DatumEvents {
 	/**
 	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
 	 * {@link Event} object out of a {@link NodeDatum}.
-	 * 
+	 *
 	 * <p>
 	 * This method calls {@link #datumEvent(String, NodeDatum)}.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to create the event for
 	 * @return the new event instance
 	 * @see DatumEvents#datumEvent(String, NodeDatum)
 	 */
-	public static Event datumCapturedEvent(NodeDatum datum) {
+	public static Event datumCapturedEvent(@Nullable NodeDatum datum) {
 		return datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
 	}
 
 	/**
 	 * A cache of datum type mappings.
-	 * 
+	 *
 	 * <p>
 	 * The {@link #datumTypes(Class)} method populates this cache.
 	 * </p>
@@ -184,11 +186,11 @@ public final class DatumEvents {
 
 	/**
 	 * Get an array of datum types for a class.
-	 * 
+	 *
 	 * <p>
 	 * This method caches the results for performance.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the datum class to get the types for
 	 * @return the types

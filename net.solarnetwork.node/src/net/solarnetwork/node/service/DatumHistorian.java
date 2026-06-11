@@ -25,6 +25,7 @@ package net.solarnetwork.node.service;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
@@ -49,30 +50,26 @@ public interface DatumHistorian {
 	 * @param sourceIdFilter
 	 *        an optional set of Ant-style source ID patterns to filter by
 	 * @param type
-	 *        the type of datum
+	 *        the type of datum, or {@code null} for any type
 	 * @return the matching datum, never {@code null}
 	 * @see #offset(Set, int, Class)
 	 */
-	<T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type);
+	<T extends NodeDatum> Collection<T> latest(@Nullable Set<String> sourceIdFilter,
+			@Nullable Class<T> type);
 
 	/**
-	 * Get the latest available datum of a given type, optionally filtered by
-	 * source IDs.
-	 *
-	 * <p>
-	 * This is equivalent to calling {@code offset(sourceIdFilter, 0, type)}.
-	 * </p>
+	 * Get the latest available datum of a given type.
 	 *
 	 * @param <T>
 	 *        the type of datum to get
 	 * @param sourceId
 	 *        the source ID to find
 	 * @param type
-	 *        the type of datum
+	 *        the type of datum, or {@code null} for any type
 	 * @return the matching datum, or {@code null} if not available
 	 * @see #offset(String, int, Class)
 	 */
-	<T extends NodeDatum> T latest(String sourceId, Class<T> type);
+	<T extends NodeDatum> T latest(String sourceId, @Nullable Class<T> type);
 
 	/**
 	 * Get an offset from the latest available datum of a given type, optionally
@@ -87,14 +84,14 @@ public interface DatumHistorian {
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
 	 * @param type
-	 *        the type of datum
+	 *        the type of datum, or {@code null} for any type
 	 * @return the matching datum, never {@code null}
 	 */
-	<T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset, Class<T> type);
+	<T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter, int offset,
+			@Nullable Class<T> type);
 
 	/**
-	 * Get an offset from the latest available datum of a given type, optionally
-	 * filtered by source IDs.
+	 * Get an offset from the latest available datum of a given type.
 	 *
 	 * @param <T>
 	 *        the type of datum to get
@@ -104,10 +101,10 @@ public interface DatumHistorian {
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
 	 * @param type
-	 *        the type of datum
+	 *        the type of datum, or {@code null} for any type
 	 * @return the matching datum, or {@code null} if not available
 	 */
-	<T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type);
+	<T extends NodeDatum> T offset(String sourceId, int offset, @Nullable Class<T> type);
 
 	/**
 	 * Get datum offset from a given timestamp, optionally filtered by source
@@ -124,12 +121,12 @@ public interface DatumHistorian {
 	 *        the offset from {@code timestamp}, {@literal 0} being the latest
 	 *        and {@literal 1} the next later, and so on
 	 * @param type
-	 *        the type of datum
+	 *        the type of datum, or {@code null} for any type
 	 * @return the matching datum, never {@code null}
 	 * @since 1.1
 	 */
-	<T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, Instant timestamp, int offset,
-			Class<T> type);
+	<T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter, Instant timestamp,
+			int offset, @Nullable Class<T> type);
 
 	/**
 	 * Get a datum offset from a given timestamp.
@@ -144,10 +141,11 @@ public interface DatumHistorian {
 	 *        the offset from {@code timestamp}, {@literal 0} being the latest
 	 *        and {@literal 1} the next later, and so on
 	 * @param type
-	 *        the type of datum
+	 *        the type of datum, or {@code null} for any type
 	 * @return the datum, or {@code null} if no such datum is available
 	 */
-	<T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset, Class<T> type);
+	<T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset,
+			@Nullable Class<T> type);
 
 	/**
 	 * Get an set of datum offset from the latest available datum of a given
@@ -168,7 +166,8 @@ public interface DatumHistorian {
 	 *        accept all datum
 	 * @return the matching datum, never {@code null}
 	 */
-	<T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count, Class<T> type);
+	<T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count,
+			@Nullable Class<T> type);
 
 	/**
 	 * Get a set of datum offset from a given timestamp.
@@ -191,6 +190,6 @@ public interface DatumHistorian {
 	 * @return the matching datum, never {@code null}
 	 */
 	<T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset, int count,
-			Class<T> type);
+			@Nullable Class<T> type);
 
 }

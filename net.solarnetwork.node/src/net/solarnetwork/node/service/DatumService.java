@@ -24,6 +24,7 @@ package net.solarnetwork.node.service;
 
 import java.util.Collection;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.DatumMetadataOperations;
 
 /**
@@ -58,6 +59,7 @@ public interface DatumService extends DatumHistorian {
 	 * @return the metadata, or {@code null} if no such metadata is available
 	 * @since 1.1
 	 */
+	@Nullable
 	DatumMetadataOperations datumMetadata(String sourceId);
 
 	/**
@@ -69,6 +71,6 @@ public interface DatumService extends DatumHistorian {
 	 * @return the matching metadata, never {@code null}
 	 * @since 1.1
 	 */
-	Collection<DatumMetadataOperations> datumMetadata(Set<String> sourceIdFilter);
+	Collection<DatumMetadataOperations> datumMetadata(@Nullable Set<String> sourceIdFilter);
 
 }

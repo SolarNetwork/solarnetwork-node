@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.service.OptionalService.service;
@@ -263,6 +262,9 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 							data += "\nDatum [" + d.getSourceId() + "]: " + d;
 						}
 						for ( NodeDatum d : latestDatum ) {
+							if ( d.getSourceId() == null ) {
+								continue;
+							}
 							try {
 								DatumMetadataOperations meta = datumService
 										.datumMetadata(d.getSourceId());
@@ -522,21 +524,22 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	private Collection<DatumExpressionRoot> latestMatching(@Nullable DatumHistorian history,
 			@Nullable String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
-			return emptyList();
+			return List.of();
 		}
 		return latestMatching(history, singleton(sourceIdPattern));
 	}
 
 	private Collection<DatumExpressionRoot> latestMatching(@Nullable DatumHistorian history,
 			@Nullable Collection<String> sourceIdPatterns) {
-		if ( history == null || sourceIdPatterns == null ) {
-			return emptyList();
+		final Instant ts = getTimestamp();
+		if ( history == null || sourceIdPatterns == null || ts == null ) {
+			return List.of();
 		}
 		Set<String> pats = (sourceIdPatterns instanceof Set<?> ? (Set<String>) sourceIdPatterns
 				: new LinkedHashSet<>(sourceIdPatterns));
-		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		Collection<NodeDatum> found = history.offset(pats, ts, 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
-			return emptyList();
+			return List.of();
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		for ( Datum d : found ) {
@@ -707,21 +710,23 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	private Collection<DatumExpressionRoot> latestOthersMatching(@Nullable DatumHistorian history,
 			@Nullable String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
-			return emptyList();
+			return List.of();
 		}
 		return latestOthersMatching(history, singleton(sourceIdPattern));
 	}
 
 	private Collection<DatumExpressionRoot> latestOthersMatching(@Nullable DatumHistorian history,
 			@Nullable Collection<String> sourceIdPatterns) {
-		if ( history == null || sourceIdPatterns == null ) {
-			return emptyList();
+		final Instant ts = getTimestamp();
+		if ( history == null || sourceIdPatterns == null || ts == null ) {
+			return List.of();
 		}
+
 		Set<String> pats = (sourceIdPatterns instanceof Set<?> ? (Set<String>) sourceIdPatterns
 				: new LinkedHashSet<>(sourceIdPatterns));
-		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		Collection<NodeDatum> found = history.offset(pats, ts, 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
-			return emptyList();
+			return List.of();
 		}
 		final String sourceId = getSourceId();
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
@@ -817,19 +822,20 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	private Collection<DatumExpressionRoot> selfAndLatestMatching(@Nullable DatumHistorian history,
 			@Nullable String sourceIdPattern) {
 		if ( history == null || sourceIdPattern == null ) {
-			return emptyList();
+			return List.of();
 		}
 		return selfAndLatestMatching(history, singleton(sourceIdPattern));
 	}
 
 	private Collection<DatumExpressionRoot> selfAndLatestMatching(@Nullable DatumHistorian history,
 			@Nullable Collection<String> sourceIdPatterns) {
-		if ( history == null || sourceIdPatterns == null ) {
-			return emptyList();
+		final Instant ts = getTimestamp();
+		if ( history == null || sourceIdPatterns == null || ts == null ) {
+			return List.of();
 		}
 		Set<String> pats = (sourceIdPatterns instanceof Set<?> ? (Set<String>) sourceIdPatterns
 				: new LinkedHashSet<>(sourceIdPatterns));
-		Collection<NodeDatum> found = history.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		Collection<NodeDatum> found = history.offset(pats, ts, 0, NodeDatum.class);
 		if ( found == null || found.isEmpty() ) {
 			return singleton(this);
 		}
@@ -1260,7 +1266,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	private Collection<DatumExpressionRoot> slice(@Nullable DatumHistorian history,
 			@Nullable String sourceId, int offset, int count) {
 		if ( history == null || sourceId == null ) {
-			return emptyList();
+			return List.of();
 		}
 		Collection<NodeDatum> found = history.slice(sourceId, offset, count, null);
 		if ( found == null || found.isEmpty() ) {
@@ -1332,7 +1338,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	private Collection<DatumExpressionRoot> slice(@Nullable DatumHistorian history,
 			@Nullable String sourceId, @Nullable Instant timestamp, int offset, int count) {
 		if ( history == null || sourceId == null ) {
-			return emptyList();
+			return List.of();
 		}
 		Collection<NodeDatum> found = history.slice(sourceId, offset, count, null);
 		if ( found == null || found.isEmpty() ) {
@@ -1430,7 +1436,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 */
 	public Collection<DatumMetadataOperations> metaMatching(String sourceIdFilter) {
 		return (datumService != null ? datumService.datumMetadata(singleton(sourceIdFilter))
-				: emptyList());
+				: List.of());
 	}
 
 	/**
