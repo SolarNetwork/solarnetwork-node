@@ -26,6 +26,7 @@ import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.NumberUtils.parseNumber;
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumId;
@@ -71,7 +72,7 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 	 * @param timestamp
 	 *        the timestamp
 	 */
-	public SimpleNodeControlInfoDatum(NodeControlInfo info, Instant timestamp) {
+	public SimpleNodeControlInfoDatum(NodeControlInfo info, @Nullable Instant timestamp) {
 		super(DatumId.nodeId(null, info.getControlId(), timestamp), new DatumSamples());
 		this.info = info;
 		populateInfo(info);
@@ -93,7 +94,7 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 	 * @param infos
 	 *        a collection of info to construct from
 	 */
-	public SimpleNodeControlInfoDatum(NodeControlInfo info, Instant timestamp,
+	public SimpleNodeControlInfoDatum(NodeControlInfo info, @Nullable Instant timestamp,
 			Iterable<NodeControlInfo> infos) {
 		this(info, timestamp);
 		for ( NodeControlInfo n : infos ) {
@@ -113,11 +114,15 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 		}
 		String value = controlInfo.getValue();
 		MutableDatumSamplesOperations ops = asMutableSampleOperations();
-		switch (controlInfo.getType()) {
+		NodeControlPropertyType type = controlInfo.getType();
+		if ( type == null ) {
+			type = NodeControlPropertyType.String;
+		}
+		switch (type) {
 			case Boolean:
 				// store boolean flag as a status sample value of 0 or 1
-				if ( value.length() > 0 && (value.equals("1") || value.equalsIgnoreCase("yes")
-						|| value.equalsIgnoreCase("true")) ) {
+				if ( value != null && value.length() > 0 && (value.equals("1")
+						|| value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("true")) ) {
 					ops.putSampleValue(Status, propertyName, 1);
 				} else {
 					ops.putSampleValue(Status, propertyName, 0);
@@ -158,32 +163,32 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 	}
 
 	@Override
-	public String getControlId() {
+	public @Nullable String getControlId() {
 		return info.getControlId();
 	}
 
 	@Override
-	public String getPropertyName() {
+	public @Nullable String getPropertyName() {
 		return info.getPropertyName();
 	}
 
 	@Override
-	public NodeControlPropertyType getType() {
+	public @Nullable NodeControlPropertyType getType() {
 		return info.getType();
 	}
 
 	@Override
-	public String getValue() {
+	public @Nullable String getValue() {
 		return info.getValue();
 	}
 
 	@Override
-	public Boolean getReadonly() {
+	public @Nullable Boolean getReadonly() {
 		return info.getReadonly();
 	}
 
 	@Override
-	public String getUnit() {
+	public @Nullable String getUnit() {
 		return info.getUnit();
 	}
 

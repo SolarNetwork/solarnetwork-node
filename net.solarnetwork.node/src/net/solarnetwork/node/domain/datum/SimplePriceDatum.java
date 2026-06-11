@@ -1,21 +1,21 @@
 /* ==================================================================
  * SimplePriceDatum.java - Oct 22, 2014 4:01:27 PM
- * 
+ *
  * Copyright 2007-2014 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,13 +23,14 @@
 package net.solarnetwork.node.domain.datum;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
  * Extension of {@link SimpleDatum} that implements {@link PriceDatum}.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -43,7 +44,7 @@ public class SimplePriceDatum extends SimpleDatum implements PriceDatum {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param locationId
 	 *        the location ID
 	 * @param sourceId
@@ -53,19 +54,20 @@ public class SimplePriceDatum extends SimpleDatum implements PriceDatum {
 	 * @param samples
 	 *        the samples
 	 */
-	public SimplePriceDatum(Long locationId, String sourceId, Instant timestamp, DatumSamples samples) {
+	public SimplePriceDatum(@Nullable Long locationId, @Nullable String sourceId,
+			@Nullable Instant timestamp, @Nullable DatumSamples samples) {
 		super(DatumId.locationId(locationId, sourceId, timestamp), samples);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param id
 	 *        the ID
 	 * @param samples
 	 *        the samples
 	 */
-	public SimplePriceDatum(DatumId id, DatumSamples samples) {
+	public SimplePriceDatum(@Nullable DatumId id, @Nullable DatumSamples samples) {
 		super(id, samples);
 	}
 
@@ -75,7 +77,7 @@ public class SimplePriceDatum extends SimpleDatum implements PriceDatum {
 	}
 
 	@Override
-	public SimplePriceDatum copyWithSamples(DatumSamplesOperations samples) {
+	public SimplePriceDatum copyWithSamples(@Nullable DatumSamplesOperations samples) {
 		DatumSamples newSamples = new DatumSamples();
 		newSamples.copyFrom(samples);
 		return new SimplePriceDatum(getId(), newSamples);

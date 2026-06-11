@@ -1,23 +1,23 @@
 /* ===================================================================
  * SimpleDatum.java
- * 
+ *
  * Created Dec 1, 2009 4:10:14 PM
- * 
+ *
  * Copyright 2007-2009 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ===================================================================
  */
@@ -25,6 +25,7 @@
 package net.solarnetwork.node.domain.datum;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -32,7 +33,7 @@ import net.solarnetwork.domain.datum.GeneralDatum;
 
 /**
  * Abstract base class for {@link NodeDatum} implementations.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -42,52 +43,52 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	private static final long serialVersionUID = 6865265065461341282L;
 
 	/** The uploaded date. */
-	private Instant uploaded;
+	private @Nullable Instant uploaded;
 
 	/**
 	 * Create a node datum.
-	 * 
+	 *
 	 * <p>
-	 * The {@code nodeId} property will be set to {@code null} and presumed
-	 * to be equal to the ID of the running node. The {@code timestamp} will be
-	 * set to the system time. A new {@code samples} instance will be created.
+	 * The {@code nodeId} property will be set to {@code null} and presumed to
+	 * be equal to the ID of the running node. The {@code timestamp} will be set
+	 * to the system time. A new {@code samples} instance will be created.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID
 	 * @return the new instance
 	 */
-	public static SimpleDatum nodeDatum(String sourceId) {
+	public static SimpleDatum nodeDatum(@Nullable String sourceId) {
 		return nodeDatum(sourceId, Instant.now(), new DatumSamples());
 	}
 
 	/**
 	 * Create a node datum.
-	 * 
+	 *
 	 * <p>
-	 * The {@code nodeId} property will be set to {@code null} and presumed
-	 * to be equal to the ID of the running node. A new {@code samples} instance
+	 * The {@code nodeId} property will be set to {@code null} and presumed to
+	 * be equal to the ID of the running node. A new {@code samples} instance
 	 * will be created.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID
 	 * @param timestamp
 	 *        the timestamp
 	 * @return the new instance
 	 */
-	public static SimpleDatum nodeDatum(String sourceId, Instant timestamp) {
+	public static SimpleDatum nodeDatum(@Nullable String sourceId, @Nullable Instant timestamp) {
 		return nodeDatum(sourceId, timestamp, new DatumSamples());
 	}
 
 	/**
 	 * Create a node datum.
-	 * 
+	 *
 	 * <p>
-	 * The {@code nodeId} property will be set to {@code null} and presumed
-	 * to be equal to the ID of the running node.
+	 * The {@code nodeId} property will be set to {@code null} and presumed to
+	 * be equal to the ID of the running node.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID
 	 * @param timestamp
@@ -96,17 +97,18 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 *        the samples
 	 * @return the new instance
 	 */
-	public static SimpleDatum nodeDatum(String sourceId, Instant timestamp, DatumSamples samples) {
+	public static SimpleDatum nodeDatum(@Nullable String sourceId, @Nullable Instant timestamp,
+			@Nullable DatumSamples samples) {
 		return new SimpleDatum(DatumId.nodeId(null, sourceId, timestamp), samples);
 	}
 
 	/**
 	 * Create a location datum.
-	 * 
+	 *
 	 * <p>
 	 * A new {@code samples} instance will be created.
 	 * </p>
-	 * 
+	 *
 	 * @param locationId
 	 *        the location ID
 	 * @param sourceId
@@ -115,13 +117,14 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 *        the timestamp
 	 * @return the new instance
 	 */
-	public static SimpleDatum locationDatum(Long locationId, String sourceId, Instant timestamp) {
+	public static SimpleDatum locationDatum(@Nullable Long locationId, @Nullable String sourceId,
+			@Nullable Instant timestamp) {
 		return locationDatum(locationId, sourceId, timestamp, new DatumSamples());
 	}
 
 	/**
 	 * Create a location datum.
-	 * 
+	 *
 	 * @param locationId
 	 *        the location ID
 	 * @param sourceId
@@ -132,20 +135,20 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 *        the samples
 	 * @return the new instance
 	 */
-	public static SimpleDatum locationDatum(Long locationId, String sourceId, Instant timestamp,
-			DatumSamples samples) {
+	public static SimpleDatum locationDatum(@Nullable Long locationId, @Nullable String sourceId,
+			@Nullable Instant timestamp, @Nullable DatumSamples samples) {
 		return new SimpleDatum(DatumId.locationId(locationId, sourceId, timestamp), samples);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param id
-	 *        the ID
+	 *        the ID; if {@code null} a new instance will be created
 	 * @param samples
 	 *        the samples; if {@code null} a new instance will be created
 	 */
-	public SimpleDatum(DatumId id, DatumSamples samples) {
+	public SimpleDatum(@Nullable DatumId id, @Nullable DatumSamples samples) {
 		super(id, samples);
 	}
 
@@ -155,7 +158,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	}
 
 	@Override
-	public SimpleDatum copyWithSamples(DatumSamplesOperations samples) {
+	public SimpleDatum copyWithSamples(@Nullable DatumSamplesOperations samples) {
 		SimpleDatum d = new SimpleDatum(getId(), new DatumSamples(samples));
 		d.uploaded = this.uploaded;
 		return d;
@@ -169,17 +172,17 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	}
 
 	@Override
-	public Instant getUploaded() {
+	public @Nullable Instant getUploaded() {
 		return uploaded;
 	}
 
 	/**
 	 * Set the uploaded date.
-	 * 
+	 *
 	 * @param uploaded
 	 *        the date to set
 	 */
-	public void setUploaded(Instant uploaded) {
+	public void setUploaded(@Nullable Instant uploaded) {
 		this.uploaded = uploaded;
 	}
 

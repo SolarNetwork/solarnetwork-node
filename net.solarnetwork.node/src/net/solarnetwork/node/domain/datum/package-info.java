@@ -1,7 +1,7 @@
 /* ==================================================================
- * PriceDatum.java - Oct 22, 2014 4:01:43 PM
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,28 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.domain.datum;
-
-import java.math.BigDecimal;
-import org.jspecify.annotations.Nullable;
-import net.solarnetwork.domain.datum.DatumSamplesType;
-
 /**
- * API for price data.
- *
- * @author matt
- * @version 2.0
+ * Package info.
  */
-public interface PriceDatum extends net.solarnetwork.domain.datum.PriceDatum, MutableNodeDatum {
 
-	/**
-	 * Set the price value.
-	 *
-	 * @param value
-	 *        the price to set
-	 */
-	default void setPrice(@Nullable BigDecimal value) {
-		asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous, PRICE_KEY, value);
-	}
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.domain.datum;
