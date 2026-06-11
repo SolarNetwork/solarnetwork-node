@@ -53,7 +53,7 @@ public class PriceLocation extends SimpleDatumLocation {
 	 *
 	 * @return the currency symbol
 	 */
-	public @Nullable String getCurrency() {
+	public final @Nullable String getCurrency() {
 		return currency;
 	}
 
@@ -63,7 +63,7 @@ public class PriceLocation extends SimpleDatumLocation {
 	 * @param currency
 	 *        the currency symbol to set
 	 */
-	public void setCurrency(@Nullable String currency) {
+	public final void setCurrency(@Nullable String currency) {
 		this.currency = currency;
 	}
 
@@ -72,7 +72,7 @@ public class PriceLocation extends SimpleDatumLocation {
 	 *
 	 * @return the unit
 	 */
-	public @Nullable String getUnit() {
+	public final @Nullable String getUnit() {
 		return unit;
 	}
 
@@ -82,7 +82,7 @@ public class PriceLocation extends SimpleDatumLocation {
 	 * @param unit
 	 *        the unit to set
 	 */
-	public void setUnit(@Nullable String unit) {
+	public final void setUnit(@Nullable String unit) {
 		this.unit = unit;
 	}
 

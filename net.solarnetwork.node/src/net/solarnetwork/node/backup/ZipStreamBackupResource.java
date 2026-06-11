@@ -88,17 +88,17 @@ public class ZipStreamBackupResource implements BackupResource {
 	}
 
 	@Override
-	public String getProviderKey() {
+	public final String getProviderKey() {
 		return providerKey;
 	}
 
 	@Override
-	public String getBackupPath() {
+	public final String getBackupPath() {
 		return path;
 	}
 
 	@Override
-	public InputStream getInputStream() throws IOException {
+	public final InputStream getInputStream() throws IOException {
 		// to support calling getInputStream() more than once, tee the input to a temp file
 		// the first time, and subsequent times
 		if ( tempFile != null ) {
@@ -118,12 +118,12 @@ public class ZipStreamBackupResource implements BackupResource {
 	}
 
 	@Override
-	public long getModificationDate() {
+	public final long getModificationDate() {
 		return entry.getTime();
 	}
 
 	@Override
-	public @Nullable String getSha256Digest() {
+	public final @Nullable String getSha256Digest() {
 		return null;
 	}
 

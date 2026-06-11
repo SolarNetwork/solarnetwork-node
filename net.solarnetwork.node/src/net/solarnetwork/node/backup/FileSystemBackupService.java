@@ -498,7 +498,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 *
 	 * @return the backup directory
 	 */
-	public File getBackupDir() {
+	public final File getBackupDir() {
 		return backupDir;
 	}
 
@@ -508,7 +508,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * @param backupDir
 	 *        the directory to use
 	 */
-	public void setBackupDir(File backupDir) {
+	public final void setBackupDir(File backupDir) {
 		this.backupDir = backupDir;
 	}
 
@@ -517,7 +517,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 *
 	 * @return the additional backup count
 	 */
-	public int getAdditionalBackupCount() {
+	public final int getAdditionalBackupCount() {
 		return additionalBackupCount;
 	}
 
@@ -532,7 +532,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * @param additionalBackupCount
 	 *        the additional backup count to use
 	 */
-	public void setAdditionalBackupCount(int additionalBackupCount) {
+	public final void setAdditionalBackupCount(int additionalBackupCount) {
 		this.additionalBackupCount = additionalBackupCount;
 	}
 
@@ -541,7 +541,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 *
 	 * @return the service
 	 */
-	public @Nullable OptionalService<IdentityService> getIdentityService() {
+	public final @Nullable OptionalService<IdentityService> getIdentityService() {
 		return identityService;
 	}
 
@@ -551,7 +551,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * @param identityService
 	 *        the service to use
 	 */
-	public void setIdentityService(@Nullable OptionalService<IdentityService> identityService) {
+	public final void setIdentityService(@Nullable OptionalService<IdentityService> identityService) {
 		this.identityService = identityService;
 	}
 

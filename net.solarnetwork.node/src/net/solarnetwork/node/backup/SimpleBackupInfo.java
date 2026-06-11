@@ -82,12 +82,12 @@ public class SimpleBackupInfo extends SimpleBackupIdentity implements BackupInfo
 	}
 
 	@Override
-	public Collection<BackupResourceProviderInfo> getProviderInfos() {
+	public final Collection<BackupResourceProviderInfo> getProviderInfos() {
 		return providerInfos;
 	}
 
 	@Override
-	public Collection<BackupResourceInfo> getResourceInfos() {
+	public final Collection<BackupResourceInfo> getResourceInfos() {
 		return resourceInfos;
 	}
 

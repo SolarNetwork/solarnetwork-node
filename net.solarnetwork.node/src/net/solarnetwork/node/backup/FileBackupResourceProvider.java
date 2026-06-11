@@ -221,7 +221,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 * @param list
 	 *        a comma-delimited list of paths
 	 */
-	public void setResourceDirs(String list) {
+	public final void setResourceDirs(String list) {
 		setResourceDirectories(StringUtils.commaDelimitedListToStringArray(list));
 	}
 
@@ -231,7 +231,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *
 	 * @return a comma-delimited list of paths
 	 */
-	public String getResourceDirs() {
+	public final String getResourceDirs() {
 		return StringUtils.arrayToCommaDelimitedString(getResourceDirectories());
 	}
 
@@ -240,7 +240,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *
 	 * @return the root path
 	 */
-	public String getRootPath() {
+	public final String getRootPath() {
 		return rootPath;
 	}
 
@@ -257,7 +257,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 * @param rootPath
 	 *        the root path to use
 	 */
-	public void setRootPath(String rootPath) {
+	public final void setRootPath(String rootPath) {
 		this.rootPath = rootPath;
 	}
 
@@ -267,7 +267,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *
 	 * @return the paths to use
 	 */
-	public String[] getResourceDirectories() {
+	public final String[] getResourceDirectories() {
 		return resourceDirectories;
 	}
 
@@ -278,7 +278,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 * @param bundlePaths
 	 *        the paths to use; defaults to {@literal [app/main]}
 	 */
-	public void setResourceDirectories(String[] bundlePaths) {
+	public final void setResourceDirectories(String[] bundlePaths) {
 		this.resourceDirectories = bundlePaths;
 	}
 
@@ -287,7 +287,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *
 	 * @return the pattern to use
 	 */
-	public String getFileNamePattern() {
+	public final String getFileNamePattern() {
 		return fileNamePattern;
 	}
 
@@ -302,7 +302,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 * @param fileNamePattern
 	 *        the pattern to use; defaults to {@literal \.jar$}
 	 */
-	public void setFileNamePattern(String fileNamePattern) {
+	public final void setFileNamePattern(String fileNamePattern) {
 		this.fileNamePattern = fileNamePattern;
 	}
 
@@ -312,7 +312,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 * @param messageSource
 	 *        The message source.
 	 */
-	public void setMessageSource(@Nullable MessageSource messageSource) {
+	public final void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
@@ -321,7 +321,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *
 	 * @return the message source
 	 */
-	public @Nullable MessageSource getMessageSource() {
+	public final @Nullable MessageSource getMessageSource() {
 		return messageSource;
 	}
 
@@ -337,7 +337,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *         be selected for restore by default; defaults to {@literal true}
 	 * @since 1.3
 	 */
-	public boolean isDefaultShouldRestore() {
+	public final boolean isDefaultShouldRestore() {
 		return defaultShouldRestore;
 	}
 
@@ -354,7 +354,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 *        be selected for restore by default
 	 * @since 1.3
 	 */
-	public void setDefaultShouldRestore(boolean defaultShouldRestore) {
+	public final void setDefaultShouldRestore(boolean defaultShouldRestore) {
 		this.defaultShouldRestore = defaultShouldRestore;
 	}
 

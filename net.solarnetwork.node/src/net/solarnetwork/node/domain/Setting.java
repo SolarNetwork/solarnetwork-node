@@ -254,7 +254,7 @@ public class Setting implements SettingNote {
 	 * @return the key
 	 */
 	@Override
-	public String getKey() {
+	public final String getKey() {
 		return key;
 	}
 
@@ -264,7 +264,7 @@ public class Setting implements SettingNote {
 	 * @param key
 	 *        the key to set
 	 */
-	public void setKey(String key) {
+	public final void setKey(String key) {
 		this.key = key;
 	}
 
@@ -274,7 +274,7 @@ public class Setting implements SettingNote {
 	 * @return the type
 	 */
 	@Override
-	public String getType() {
+	public final String getType() {
 		return type;
 	}
 
@@ -284,7 +284,7 @@ public class Setting implements SettingNote {
 	 * @param type
 	 *        the type to set
 	 */
-	public void setType(String type) {
+	public final void setType(String type) {
 		this.type = type;
 	}
 
@@ -293,7 +293,7 @@ public class Setting implements SettingNote {
 	 *
 	 * @return the value
 	 */
-	public @Nullable String getValue() {
+	public final @Nullable String getValue() {
 		return value;
 	}
 
@@ -303,7 +303,7 @@ public class Setting implements SettingNote {
 	 * @param value
 	 *        the value to set
 	 */
-	public void setValue(@Nullable String value) {
+	public final void setValue(@Nullable String value) {
 		this.value = value;
 	}
 
@@ -334,7 +334,7 @@ public class Setting implements SettingNote {
 	 *
 	 * @return the flags
 	 */
-	public @Nullable Set<SettingFlag> getFlags() {
+	public final @Nullable Set<SettingFlag> getFlags() {
 		return flags;
 	}
 
@@ -344,7 +344,7 @@ public class Setting implements SettingNote {
 	 * @param flags
 	 *        the flags to set
 	 */
-	public void setFlags(@Nullable Set<SettingFlag> flags) {
+	public final void setFlags(@Nullable Set<SettingFlag> flags) {
 		this.flags = flags;
 	}
 
@@ -353,7 +353,7 @@ public class Setting implements SettingNote {
 	 *
 	 * @return the date
 	 */
-	public @Nullable Date getModified() {
+	public final @Nullable Date getModified() {
 		return modified;
 	}
 
@@ -363,7 +363,7 @@ public class Setting implements SettingNote {
 	 * @param modified
 	 *        the date to set
 	 */
-	public void setModified(@Nullable Date modified) {
+	public final void setModified(@Nullable Date modified) {
 		this.modified = modified;
 	}
 

@@ -69,7 +69,7 @@ public class SimpleBackupFilter extends SimplePagination implements BackupFilter
 	}
 
 	@Override
-	public @Nullable Long getNodeId() {
+	public final @Nullable Long getNodeId() {
 		return nodeId;
 	}
 
@@ -79,7 +79,7 @@ public class SimpleBackupFilter extends SimplePagination implements BackupFilter
 	 * @param nodeId
 	 *        the node ID to set
 	 */
-	public void setNodeId(@Nullable Long nodeId) {
+	public final void setNodeId(@Nullable Long nodeId) {
 		this.nodeId = nodeId;
 	}
 

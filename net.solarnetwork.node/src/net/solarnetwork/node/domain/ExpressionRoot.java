@@ -1623,7 +1623,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @return the DAO
 	 * @since 2.8
 	 */
-	public @Nullable OptionalService<LocalStateDao> getLocalStateDao() {
+	public final @Nullable OptionalService<LocalStateDao> getLocalStateDao() {
 		return localStateDao;
 	}
 
@@ -1634,7 +1634,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the DAO to set
 	 * @since 2.8
 	 */
-	public void setLocalStateDao(@Nullable OptionalService<LocalStateDao> localStateDao) {
+	public final void setLocalStateDao(@Nullable OptionalService<LocalStateDao> localStateDao) {
 		this.localStateDao = localStateDao;
 	}
 

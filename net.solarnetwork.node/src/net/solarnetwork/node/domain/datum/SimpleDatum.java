@@ -172,7 +172,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	}
 
 	@Override
-	public @Nullable Instant getUploaded() {
+	public final @Nullable Instant getUploaded() {
 		return uploaded;
 	}
 
@@ -182,7 +182,7 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 * @param uploaded
 	 *        the date to set
 	 */
-	public void setUploaded(@Nullable Instant uploaded) {
+	public final void setUploaded(@Nullable Instant uploaded) {
 		this.uploaded = uploaded;
 	}
 

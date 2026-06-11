@@ -55,17 +55,17 @@ public class SimpleBackupResourceInfo implements BackupResourceInfo {
 	}
 
 	@Override
-	public String getProviderKey() {
+	public final String getProviderKey() {
 		return providerKey;
 	}
 
 	@Override
-	public String getName() {
+	public final String getName() {
 		return name;
 	}
 
 	@Override
-	public @Nullable String getDescription() {
+	public final @Nullable String getDescription() {
 		return description;
 	}
 

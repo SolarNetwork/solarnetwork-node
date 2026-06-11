@@ -32,9 +32,16 @@ import net.solarnetwork.domain.BaseId;
  * A composite key of a string and timestamp.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class StringDateKey extends BaseId implements Serializable, Cloneable, Comparable<StringDateKey> {
+
+	/**
+	 * A key representing "undefined".
+	 *
+	 * @since 1.1
+	 */
+	public static final StringDateKey UNDEFINED_KEY = new StringDateKey("", Instant.EPOCH);
 
 	@Serial
 	private static final long serialVersionUID = 5231664826434959612L;
@@ -145,7 +152,7 @@ public class StringDateKey extends BaseId implements Serializable, Cloneable, Co
 	 *
 	 * @return the key
 	 */
-	public String getKey() {
+	public final String getKey() {
 		return key;
 	}
 
@@ -154,7 +161,7 @@ public class StringDateKey extends BaseId implements Serializable, Cloneable, Co
 	 *
 	 * @return the timestamp
 	 */
-	public Instant getTimestamp() {
+	public final Instant getTimestamp() {
 		return timestamp;
 	}
 

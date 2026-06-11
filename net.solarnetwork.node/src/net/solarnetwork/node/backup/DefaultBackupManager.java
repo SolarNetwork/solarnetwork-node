@@ -533,7 +533,7 @@ public class DefaultBackupManager implements BackupManager {
 	 * @param backupServices
 	 *        the backup services to use
 	 */
-	public void setBackupServices(@Nullable Collection<BackupService> backupServices) {
+	public final void setBackupServices(@Nullable Collection<BackupService> backupServices) {
 		this.backupServices = backupServices;
 	}
 
@@ -544,7 +544,8 @@ public class DefaultBackupManager implements BackupManager {
 	 * @param resourceProviders
 	 *        the resource providers to backup resources from
 	 */
-	public void setResourceProviders(@Nullable Collection<BackupResourceProvider> resourceProviders) {
+	public final void setResourceProviders(
+			@Nullable Collection<BackupResourceProvider> resourceProviders) {
 		this.resourceProviders = resourceProviders;
 	}
 
@@ -554,7 +555,7 @@ public class DefaultBackupManager implements BackupManager {
 	 * @param executorService
 	 *        the service to use
 	 */
-	public void setExecutorService(ExecutorService executorService) {
+	public final void setExecutorService(ExecutorService executorService) {
 		this.executorService = executorService;
 	}
 
@@ -568,7 +569,7 @@ public class DefaultBackupManager implements BackupManager {
 	 *        The number of seconds to delay attempting to restore from backup.
 	 * @since 1.1
 	 */
-	public void setBackupRestoreDelaySeconds(int backupRestoreDelaySeconds) {
+	public final void setBackupRestoreDelaySeconds(int backupRestoreDelaySeconds) {
 		this.backupRestoreDelaySeconds = backupRestoreDelaySeconds;
 	}
 
@@ -579,7 +580,7 @@ public class DefaultBackupManager implements BackupManager {
 	 *        the service key to set
 	 * @since 1.4
 	 */
-	public void setPreferredBackupServiceKey(String preferredBackupServiceKey) {
+	public final void setPreferredBackupServiceKey(String preferredBackupServiceKey) {
 		this.preferredBackupServiceKey = preferredBackupServiceKey;
 	}
 

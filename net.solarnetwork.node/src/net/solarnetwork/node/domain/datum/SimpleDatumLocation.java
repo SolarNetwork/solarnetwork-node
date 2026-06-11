@@ -48,7 +48,7 @@ public class SimpleDatumLocation implements DatumLocation {
 	}
 
 	@Override
-	public @Nullable Long getLocationId() {
+	public final @Nullable Long getLocationId() {
 		return locationId;
 	}
 
@@ -58,12 +58,12 @@ public class SimpleDatumLocation implements DatumLocation {
 	 * @param locationId
 	 *        the ID to set
 	 */
-	public void setLocationId(@Nullable Long locationId) {
+	public final void setLocationId(@Nullable Long locationId) {
 		this.locationId = locationId;
 	}
 
 	@Override
-	public @Nullable String getLocationName() {
+	public final @Nullable String getLocationName() {
 		if ( sourceMetadata != null ) {
 			GeneralDatumMetadata meta = sourceMetadata.getMeta();
 			if ( meta != null ) {
@@ -79,12 +79,12 @@ public class SimpleDatumLocation implements DatumLocation {
 	 * @param locationName
 	 *        the location name to set
 	 */
-	public void setLocationName(@Nullable String locationName) {
+	public final void setLocationName(@Nullable String locationName) {
 		this.locationName = locationName;
 	}
 
 	@Override
-	public @Nullable String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -94,12 +94,12 @@ public class SimpleDatumLocation implements DatumLocation {
 	 * @param sourceId
 	 *        the source ID to set
 	 */
-	public void setSourceId(@Nullable String sourceId) {
+	public final void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
 	@Override
-	public @Nullable String getSourceName() {
+	public final @Nullable String getSourceName() {
 		if ( sourceMetadata != null ) {
 			return getSourceId();
 		}
@@ -112,12 +112,12 @@ public class SimpleDatumLocation implements DatumLocation {
 	 * @param sourceName
 	 *        the name to set
 	 */
-	public void setSourceName(@Nullable String sourceName) {
+	public final void setSourceName(@Nullable String sourceName) {
 		this.sourceName = sourceName;
 	}
 
 	@Override
-	public @Nullable GeneralDatumMetadata getMetadata() {
+	public final @Nullable GeneralDatumMetadata getMetadata() {
 		return (sourceMetadata == null ? null : sourceMetadata.getMeta());
 	}
 
@@ -126,7 +126,7 @@ public class SimpleDatumLocation implements DatumLocation {
 	 *
 	 * @return the metadata
 	 */
-	public @Nullable GeneralLocationSourceMetadata getSourceMetadata() {
+	public final @Nullable GeneralLocationSourceMetadata getSourceMetadata() {
 		return sourceMetadata;
 	}
 
@@ -136,7 +136,8 @@ public class SimpleDatumLocation implements DatumLocation {
 	 * @param sourceMetadata
 	 *        the metadata to set
 	 */
-	public void setSourceMetadata(@Nullable GeneralLocationSourceMetadata sourceMetadata) {
+	public final void setSourceMetadata(@Nullable GeneralLocationSourceMetadata sourceMetadata) {
 		this.sourceMetadata = sourceMetadata;
 	}
+
 }

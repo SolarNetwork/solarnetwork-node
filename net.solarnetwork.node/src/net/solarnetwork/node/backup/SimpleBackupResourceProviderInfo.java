@@ -77,22 +77,22 @@ public class SimpleBackupResourceProviderInfo implements BackupResourceProviderI
 	}
 
 	@Override
-	public String getProviderKey() {
+	public final String getProviderKey() {
 		return providerKey;
 	}
 
 	@Override
-	public String getName() {
+	public final String getName() {
 		return name;
 	}
 
 	@Override
-	public String getDescription() {
+	public final String getDescription() {
 		return description;
 	}
 
 	@Override
-	public boolean isDefaultShouldRestore() {
+	public final boolean isDefaultShouldRestore() {
 		return defaultShouldRestore;
 	}
 

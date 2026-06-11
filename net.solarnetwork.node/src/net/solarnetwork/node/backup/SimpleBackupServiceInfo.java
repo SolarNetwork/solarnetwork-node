@@ -51,12 +51,12 @@ public class SimpleBackupServiceInfo implements BackupServiceInfo {
 	}
 
 	@Override
-	public @Nullable Date getMostRecentBackupDate() {
+	public final @Nullable Date getMostRecentBackupDate() {
 		return mostRecentBackupDate;
 	}
 
 	@Override
-	public BackupStatus getStatus() {
+	public final BackupStatus getStatus() {
 		return status;
 	}
 

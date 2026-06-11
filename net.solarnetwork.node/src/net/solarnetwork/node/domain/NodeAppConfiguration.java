@@ -65,7 +65,7 @@ public class NodeAppConfiguration {
 	 *
 	 * @return the created date, as milliseconds since the epoch
 	 */
-	public long getCreated() {
+	public final long getCreated() {
 		return created;
 	}
 
@@ -74,7 +74,7 @@ public class NodeAppConfiguration {
 	 *
 	 * @return mapping of network service names to associated URLs
 	 */
-	public Map<String, String> getNetworkServiceUrls() {
+	public final Map<String, String> getNetworkServiceUrls() {
 		return networkServiceUrls;
 	}
 

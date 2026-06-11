@@ -220,7 +220,7 @@ public class SecurityToken extends BasicStringEntity {
 	 *
 	 * @return the date, or {@code null} if no creation date is available
 	 */
-	public @Nullable Date getCreatedDate() {
+	public final @Nullable Date getCreatedDate() {
 		Instant ts = getCreated();
 		return (ts != null ? Date.from(ts) : null);
 	}
@@ -230,7 +230,7 @@ public class SecurityToken extends BasicStringEntity {
 	 *
 	 * @return the name
 	 */
-	public @Nullable String getName() {
+	public final @Nullable String getName() {
 		return name;
 	}
 
@@ -239,7 +239,7 @@ public class SecurityToken extends BasicStringEntity {
 	 *
 	 * @return the description
 	 */
-	public @Nullable String getDescription() {
+	public final @Nullable String getDescription() {
 		return description;
 	}
 

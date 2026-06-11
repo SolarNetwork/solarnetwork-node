@@ -93,22 +93,22 @@ public class ResourceBackupResource implements BackupResource {
 	}
 
 	@Override
-	public String getProviderKey() {
+	public final String getProviderKey() {
 		return providerKey;
 	}
 
 	@Override
-	public String getBackupPath() {
+	public final String getBackupPath() {
 		return backupPath;
 	}
 
 	@Override
-	public InputStream getInputStream() throws IOException {
+	public final InputStream getInputStream() throws IOException {
 		return resource.getInputStream();
 	}
 
 	@Override
-	public long getModificationDate() {
+	public final long getModificationDate() {
 		try {
 			return resource.getFile().lastModified();
 		} catch ( IOException e ) {
@@ -118,7 +118,7 @@ public class ResourceBackupResource implements BackupResource {
 	}
 
 	@Override
-	public @Nullable String getSha256Digest() {
+	public final @Nullable String getSha256Digest() {
 		return sha256Digest;
 	}
 

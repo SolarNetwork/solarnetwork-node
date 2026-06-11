@@ -60,22 +60,22 @@ public class SimpleBackupIdentity implements BackupIdentity {
 	}
 
 	@Override
-	public String getKey() {
+	public final String getKey() {
 		return key;
 	}
 
 	@Override
-	public Date getDate() {
+	public final Date getDate() {
 		return date;
 	}
 
 	@Override
-	public @Nullable Long getNodeId() {
+	public final @Nullable Long getNodeId() {
 		return nodeId;
 	}
 
 	@Override
-	public @Nullable String getQualifier() {
+	public final @Nullable String getQualifier() {
 		return qualifier;
 	}
 

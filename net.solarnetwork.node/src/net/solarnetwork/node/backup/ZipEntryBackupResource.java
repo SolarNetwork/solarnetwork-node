@@ -82,27 +82,27 @@ public class ZipEntryBackupResource implements BackupResource {
 	}
 
 	@Override
-	public String getProviderKey() {
+	public final String getProviderKey() {
 		return providerKey;
 	}
 
 	@Override
-	public String getBackupPath() {
+	public final String getBackupPath() {
 		return entry.getName();
 	}
 
 	@Override
-	public InputStream getInputStream() throws IOException {
+	public final InputStream getInputStream() throws IOException {
 		return archiveFile.getInputStream(entry);
 	}
 
 	@Override
-	public long getModificationDate() {
+	public final long getModificationDate() {
 		return entry.getTime();
 	}
 
 	@Override
-	public @Nullable String getSha256Digest() {
+	public final @Nullable String getSha256Digest() {
 		return null;
 	}
 
