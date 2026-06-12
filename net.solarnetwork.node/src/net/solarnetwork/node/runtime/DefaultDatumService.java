@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
@@ -105,29 +106,33 @@ public class DefaultDatumService
 				new DatumHistory.Configuration(DEFAFULT_HISTORY_RAW_COUNT));
 
 		@Override
-		public <T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
+		public <T extends NodeDatum> Collection<T> latest(@Nullable Set<String> sourceIdFilter,
+				@Nullable Class<T> type) {
 			return offset(sourceIdFilter, 0, type);
 		}
 
 		@Override
-		public <T extends NodeDatum> T latest(String sourceId, Class<T> type) {
+		public <T extends NodeDatum> @Nullable T latest(String sourceId, @Nullable Class<T> type) {
 			return offset(sourceId, 0, type);
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type) {
+		public <T extends NodeDatum> @Nullable T offset(String sourceId, int offset,
+				@Nullable Class<T> type) {
 			NodeDatum result = history.offset(sourceId, offset);
-			return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
+			return (result != null && (type == null || type.isAssignableFrom(result.getClass()))
+					? (T) result
+					: null);
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset,
-				Class<T> type) {
+		public <T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter,
+				int offset, @Nullable Class<T> type) {
 			List<T> result = new ArrayList<>();
 			for ( NodeDatum d : history.offset(offset) ) {
-				if ( !type.isAssignableFrom(d.getClass()) ) {
+				if ( type != null && !type.isAssignableFrom(d.getClass()) ) {
 					continue;
 				}
 				if ( sourceIdFilter != null && !sourceIdFilter.isEmpty() ) {
@@ -146,11 +151,11 @@ public class DefaultDatumService
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, Instant timestamp,
-				int offset, Class<T> type) {
+		public <T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter,
+				Instant timestamp, int offset, @Nullable Class<T> type) {
 			List<T> result = new ArrayList<>();
 			for ( NodeDatum d : history.offset(timestamp, offset) ) {
-				if ( !type.isAssignableFrom(d.getClass()) ) {
+				if ( type != null && !type.isAssignableFrom(d.getClass()) ) {
 					continue;
 				}
 				if ( sourceIdFilter != null && !sourceIdFilter.isEmpty() ) {
@@ -169,16 +174,18 @@ public class DefaultDatumService
 
 		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset,
-				Class<T> type) {
+		public <T extends NodeDatum> @Nullable T offset(String sourceId, Instant timestamp, int offset,
+				@Nullable Class<T> type) {
 			NodeDatum result = history.offset(sourceId, timestamp, offset);
-			return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
+			return (result != null && (type == null || type.isAssignableFrom(result.getClass()))
+					? (T) result
+					: null);
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public <T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count,
-				Class<T> type) {
+				@Nullable Class<T> type) {
 			List<T> result = new ArrayList<>(history.getConfig().getRawCount());
 			for ( NodeDatum d : history.slice(sourceId, offset, count) ) {
 				if ( type == null || type.isAssignableFrom(d.getClass()) ) {
@@ -191,7 +198,7 @@ public class DefaultDatumService
 		@SuppressWarnings("unchecked")
 		@Override
 		public <T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset,
-				int count, Class<T> type) {
+				int count, @Nullable Class<T> type) {
 			List<T> result = new ArrayList<>(history.getConfig().getRawCount());
 			for ( NodeDatum d : history.slice(sourceId, timestamp, offset, count) ) {
 				if ( type == null || type.isAssignableFrom(d.getClass()) ) {
@@ -257,12 +264,12 @@ public class DefaultDatumService
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -290,47 +297,49 @@ public class DefaultDatumService
 	}
 
 	@Override
-	public <T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
+	public <T extends NodeDatum> Collection<T> latest(@Nullable Set<String> sourceIdFilter,
+			@Nullable Class<T> type) {
 		return history.latest(sourceIdFilter, type);
 	}
 
 	@Override
-	public <T extends NodeDatum> T latest(String sourceId, Class<T> type) {
+	public <T extends NodeDatum> @Nullable T latest(String sourceId, @Nullable Class<T> type) {
 		return history.latest(sourceId, type);
 	}
 
 	@Override
-	public <T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type) {
+	public <T extends NodeDatum> @Nullable T offset(String sourceId, int offset,
+			@Nullable Class<T> type) {
 		return history.offset(sourceId, offset, type);
 	}
 
 	@Override
-	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset,
-			Class<T> type) {
+	public <T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter, int offset,
+			@Nullable Class<T> type) {
 		return history.offset(sourceIdFilter, offset, type);
 	}
 
 	@Override
-	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, Instant timestamp,
-			int offset, Class<T> type) {
+	public <T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter,
+			Instant timestamp, int offset, @Nullable Class<T> type) {
 		return history.offset(sourceIdFilter, timestamp, offset, type);
 	}
 
 	@Override
-	public <T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset,
-			Class<T> type) {
+	public <T extends NodeDatum> @Nullable T offset(String sourceId, Instant timestamp, int offset,
+			@Nullable Class<T> type) {
 		return history.offset(sourceId, timestamp, offset, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count,
-			Class<T> type) {
+			@Nullable Class<T> type) {
 		return history.slice(sourceId, offset, count, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset,
-			int count, Class<T> type) {
+			int count, @Nullable Class<T> type) {
 		return history.slice(sourceId, timestamp, offset, count, type);
 	}
 
@@ -340,13 +349,13 @@ public class DefaultDatumService
 	}
 
 	@Override
-	public DatumMetadataOperations datumMetadata(String sourceId) {
+	public @Nullable DatumMetadataOperations datumMetadata(String sourceId) {
 		DatumMetadataService service = OptionalService.service(datumMetadataService);
 		return (service != null ? service.getSourceMetadata(sourceId) : null);
 	}
 
 	@Override
-	public Collection<DatumMetadataOperations> datumMetadata(Set<String> sourceIdFilter) {
+	public Collection<DatumMetadataOperations> datumMetadata(@Nullable Set<String> sourceIdFilter) {
 		DatumMetadataService service = OptionalService.service(datumMetadataService);
 		if ( service == null ) {
 			return Collections.emptyList();

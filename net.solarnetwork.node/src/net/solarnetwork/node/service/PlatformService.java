@@ -154,7 +154,7 @@ public interface PlatformService {
 		 *        the desired locale of the title
 		 * @return the title
 		 */
-		String getTitle(Locale locale);
+		String getTitle(@Nullable Locale locale);
 
 		/**
 		 * Get a message describing what the task is currently doing.
@@ -163,7 +163,7 @@ public interface PlatformService {
 		 *        the desired locale of the message
 		 * @return the message
 		 */
-		String getMessage(Locale locale);
+		String getMessage(@Nullable Locale locale);
 
 		/**
 		 * Get the amount of work that has been completed, as a fractional

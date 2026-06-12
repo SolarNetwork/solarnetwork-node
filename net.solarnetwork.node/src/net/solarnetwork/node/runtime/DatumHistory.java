@@ -1,27 +1,28 @@
 /* ==================================================================
  * DatumHistory.java - 18/08/2021 7:44:31 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -36,24 +38,24 @@ import net.solarnetwork.util.CircularFifoQueue;
 
 /**
  * Class to help track the history of datum capture, by source ID.
- * 
+ *
  * <p>
  * This class maintains a fixed-size history of {@link NodeDatum} at various
  * time levels:
  * </p>
- * 
+ *
  * <dl>
  * <dt>raw</dt>
  * <dd>Individual datum stored as-is.</dd>
  * </dl>
- * 
+ *
  * <p>
  * <b>Note</b> that no time-based ordering of datum is maintained by this class.
  * They are maintained simply by insertion time, i.e. the time when
  * {@code #add(Datum)} is invoked. Concurrent invocation of {@code #add(Datum)}
  * is allowed, but the order of the added elements is undefined in that case.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.2
  * @since 1.89
@@ -77,7 +79,7 @@ public class DatumHistory {
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param rawCount
 		 *        the number of raw elements to maintain
 		 * @throws IllegalArgumentException
@@ -93,7 +95,7 @@ public class DatumHistory {
 
 		/**
 		 * Get the raw count.
-		 * 
+		 *
 		 * @return the count
 		 */
 		public int getRawCount() {
@@ -104,11 +106,11 @@ public class DatumHistory {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * A default load factory and concurrency level will be used.
 	 * </p>
-	 * 
+	 *
 	 * @param config
 	 *        the configuration to use
 	 */
@@ -118,7 +120,7 @@ public class DatumHistory {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param config
 	 *        the configuration to use
 	 * @param loadFactor
@@ -134,7 +136,7 @@ public class DatumHistory {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param config
 	 *        the configuration to use
 	 * @param raw
@@ -153,16 +155,16 @@ public class DatumHistory {
 
 	/**
 	 * Add a datum.
-	 * 
+	 *
 	 * <p>
-	 * If {@code datum} is {@code null} or does not have a source ID or
-	 * creation date, nothing will be added.
+	 * If {@code datum} is {@code null} or does not have a source ID or creation
+	 * date, nothing will be added.
 	 * </p>
-	 * 
+	 *
 	 * @param datum
 	 *        the datum to add
 	 */
-	public void add(NodeDatum datum) {
+	public void add(@Nullable NodeDatum datum) {
 		log.debug("Adding datum: {}", datum);
 		if ( datum == null || datum.getSourceId() == null || datum.getTimestamp() == null ) {
 			return;
@@ -176,11 +178,11 @@ public class DatumHistory {
 
 	/**
 	 * Get an {@code Iterable} over the latest available raw datum.
-	 * 
+	 *
 	 * <p>
 	 * This is equivalent to calling {@code offset(0)}.
 	 * </p>
-	 * 
+	 *
 	 * @return the {@code Iterable}, never {@code null}
 	 * @see #offset(int)
 	 */
@@ -190,29 +192,29 @@ public class DatumHistory {
 
 	/**
 	 * Get the latest datum available with a given source ID.
-	 * 
+	 *
 	 * <p>
 	 * This is equivalent to calling {@code offset(sourceId, 0)}.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to find
 	 * @return the datum, or {@code null}
 	 * @see #offset(String,int)
 	 */
-	public NodeDatum latest(String sourceId) {
+	public @Nullable NodeDatum latest(String sourceId) {
 		return offset(sourceId, 0);
 	}
 
 	/**
 	 * Get an {@code Iterable} over an offset from the latest available raw
 	 * datum.
-	 * 
+	 *
 	 * <p>
 	 * An offset of {@literal 0} means the latest datum, and {@literal 1} means
 	 * the one before the latest datum, and so on.
 	 * </p>
-	 * 
+	 *
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
@@ -239,12 +241,12 @@ public class DatumHistory {
 	/**
 	 * Get the datum offset from the latest available raw datum for a given
 	 * source ID.
-	 * 
+	 *
 	 * <p>
 	 * An offset of {@literal 0} means the latest datum, and {@literal 1} means
 	 * the one before the latest datum, and so on.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to find
 	 * @param offset
@@ -253,7 +255,7 @@ public class DatumHistory {
 	 * @return the {@code Iterable}, never {@code null}
 	 * @since 1.1
 	 */
-	public NodeDatum offset(String sourceId, int offset) {
+	public @Nullable NodeDatum offset(String sourceId, int offset) {
 		final Queue<NodeDatum> q = raw.get(sourceId);
 		log.debug("Queue [{}] @ {} : {}", sourceId, offset, q);
 		if ( q == null ) {
@@ -274,14 +276,14 @@ public class DatumHistory {
 	/**
 	 * Get an {@code Iterable} over an offset from a datum offset from a given
 	 * timestamp.
-	 * 
+	 *
 	 * <p>
 	 * An offset of {@literal 0} means the datum closest before or equal to the
 	 * given timestamp, and {@literal 1} means the next one before that, and so
 	 * on. Note that no sorting of datum is performed by this method: it assumes
 	 * elements have been added in ascending timestamp order already.
 	 * </p>
-	 * 
+	 *
 	 * @param timestamp
 	 *        the timestamp to offset from
 	 * @param offset
@@ -309,14 +311,14 @@ public class DatumHistory {
 
 	/**
 	 * Get the datum offset from a given timestamp for a given source ID.
-	 * 
+	 *
 	 * <p>
 	 * An offset of {@literal 0} means the datum closest before or equal to the
 	 * given timestamp, and {@literal 1} means the next one before that, and so
 	 * on. Note that no sorting of datum is performed by this method: it assumes
 	 * elements have been added in ascending timestamp order already.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to find
 	 * @param timestamp
@@ -327,7 +329,7 @@ public class DatumHistory {
 	 * @return the datum, or {@code null} if no such datum is available
 	 * @since 1.1
 	 */
-	public NodeDatum offset(String sourceId, Instant timestamp, int offset) {
+	public @Nullable NodeDatum offset(String sourceId, Instant timestamp, int offset) {
 		final Queue<NodeDatum> q = raw.get(sourceId);
 		log.debug("Queue [{}] @ {} @ {} : {}", sourceId, timestamp, offset, q);
 		if ( q == null ) {
@@ -338,7 +340,7 @@ public class DatumHistory {
 			int idx = q.size();
 			while ( --idx >= 0 ) {
 				NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
-				if ( d.getTimestamp().compareTo(timestamp) <= 0 ) {
+				if ( nonnull(d.getTimestamp(), "Datum timestamp").compareTo(timestamp) <= 0 ) {
 					// found reference, so return offset from here
 					int offsetIdx = idx - offset;
 					if ( offsetIdx > 0 ) {
@@ -354,7 +356,7 @@ public class DatumHistory {
 
 	/**
 	 * Get a slice of a source ID's history.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to find
 	 * @param offset
@@ -372,7 +374,7 @@ public class DatumHistory {
 		final Queue<NodeDatum> q = raw.get(sourceId);
 		log.debug("Queue [{}]: {}", sourceId, q);
 		if ( q == null ) {
-			return null;
+			return List.of();
 		}
 		return new Iterable<NodeDatum>() {
 
@@ -396,7 +398,7 @@ public class DatumHistory {
 
 	/**
 	 * Get a slice of a source ID's history.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to find
 	 * @param timestamp
@@ -416,7 +418,7 @@ public class DatumHistory {
 		final Queue<NodeDatum> q = raw.get(sourceId);
 		log.debug("Queue [{}]: {}", sourceId, q);
 		if ( q == null ) {
-			return null;
+			return List.of();
 		}
 		return new Iterable<NodeDatum>() {
 
@@ -427,7 +429,7 @@ public class DatumHistory {
 					int idx = q.size();
 					while ( --idx >= 0 ) {
 						NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
-						if ( d.getTimestamp().compareTo(timestamp) <= 0 ) {
+						if ( nonnull(d.getTimestamp(), "Datum timestamp").compareTo(timestamp) <= 0 ) {
 							// found reference, so return offset from here
 							final int max = idx - offset + 1;
 							idx = Math.max(max - count, 0);
@@ -447,10 +449,10 @@ public class DatumHistory {
 
 	/**
 	 * Get the configuration.
-	 * 
+	 *
 	 * @return the configuration, never {@code null}
 	 */
-	public Configuration getConfig() {
+	public final Configuration getConfig() {
 		return config;
 	}
 

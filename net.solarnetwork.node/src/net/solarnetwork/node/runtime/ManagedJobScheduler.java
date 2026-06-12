@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -45,6 +44,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.Nullable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -107,23 +107,23 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	private final BundleContext bundleContext;
 	private final TaskScheduler taskScheduler;
 	private boolean randomizedCron = DEFAULT_RANDOMIZED_CRON;
-	private MessageSource messageSource;
+	private @Nullable MessageSource messageSource;
 	private int jobStartDelaySeconds = DEFAULT_JOB_START_DELAY_SECS;
 
 	private long startTime = 0;
-	private ScheduledFuture<?> startupTask;
+	private @Nullable ScheduledFuture<?> startupTask;
 
 	// our runtime registration database; with nested map so jobs can be bundled into
 	// a single pid value, for example when a plugin registers several related jobs
 	private final Map<String, ScheduledJobs> pidMap = new HashMap<>();
 
-	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
+	private @Nullable ServiceRegistration<ConfigurationListener> configurationListenerRef;
 
 	private static class ScheduledJobs implements SettingSpecifierProvider {
 
 		private final Map<String, ScheduledJob> jobMap = new HashMap<>(2);
-		private ServiceRegistration<SettingSpecifierProvider> settingProviderReg;
-		private String settingUid;
+		private @Nullable ServiceRegistration<SettingSpecifierProvider> settingProviderReg;
+		private @Nullable String settingUid;
 
 		@Override
 		public String toString() {
@@ -139,7 +139,10 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			jobMap.put(sj.job.getUid(), sj);
 		}
 
-		private ScheduledJob removeJob(String uid) {
+		private @Nullable ScheduledJob removeJob(@Nullable String uid) {
+			if ( uid == null ) {
+				return null;
+			}
 			ScheduledJob sj = jobMap.remove(uid);
 			if ( jobMap.isEmpty() ) {
 				if ( settingProviderReg != null ) {
@@ -154,7 +157,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			return sj;
 		}
 
-		private ScheduledJob anyScheduledJob() {
+		private @Nullable ScheduledJob anyScheduledJob() {
 			if ( jobMap.isEmpty() ) {
 				return null;
 			}
@@ -171,17 +174,17 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 		@Override
 		public String getSettingUid() {
-			return settingUid;
+			return settingUid != null ? settingUid : "";
 		}
 
 		@Override
-		public String getDisplayName() {
+		public @Nullable String getDisplayName() {
 			ScheduledJob sj = anyScheduledJob();
 			return (sj != null ? sj.job.getDisplayName() : null);
 		}
 
 		@Override
-		public MessageSource getMessageSource() {
+		public @Nullable MessageSource getMessageSource() {
 			ScheduledJob sj = anyScheduledJob();
 			return (sj != null ? sj.job.getMessageSource() : null);
 		}
@@ -196,7 +199,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 
 		@Override
-		public <T> T unwrap(Class<T> type) {
+		public <T> @Nullable T unwrap(Class<T> type) {
 			T result = null;
 			for ( ScheduledJob sj : jobMap.values() ) {
 				result = sj.job.unwrap(type);
@@ -213,15 +216,15 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 		private final String pid;
 		private final ManagedJob job;
-		private final List<ServiceRegistration<?>> registeredServices;
+		private final @Nullable List<ServiceRegistration<?>> registeredServices;
 		private final String identifier;
-		private ScheduledFuture<?> future;
-		private String schedule;
-		private String triggerSchedule;
-		private Throwable throwable;
+		private @Nullable ScheduledFuture<?> future;
+		private @Nullable String schedule;
+		private @Nullable String triggerSchedule;
+		private @Nullable Throwable throwable;
 
 		private ScheduledJob(String pid, ManagedJob job,
-				List<ServiceRegistration<?>> registeredServices) {
+				@Nullable List<ServiceRegistration<?>> registeredServices) {
 			super();
 			this.pid = requireNonNullArgument(pid, "pid");
 			this.job = requireNonNullArgument(job, "job");
@@ -356,9 +359,11 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	public synchronized void serviceDidShutdown() {
 		for ( Entry<String, ScheduledJobs> e : pidMap.entrySet() ) {
 			ScheduledJobs sjs = e.getValue();
-			for ( String uid : new HashSet<>(sjs.jobMap.keySet()) ) {
+			for ( String uid : List.copyOf(sjs.jobMap.keySet()) ) {
 				ScheduledJob sj = sjs.removeJob(uid);
-				sj.stop();
+				if ( sj != null ) {
+					sj.stop();
+				}
 			}
 		}
 		pidMap.clear();
@@ -454,9 +459,11 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	private void scheduleJob(final ScheduledJob sj) {
 		String expr = sj.job.getSchedule();
 		Trigger trigger = triggerForSchedule(expr);
-		if ( trigger != null ) {
+		if ( expr != null && trigger != null ) {
 			ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
-			sj.scheduled(f, expr, trigger);
+			if ( f != null ) {
+				sj.scheduled(f, expr, trigger);
+			}
 		}
 	}
 
@@ -524,6 +531,10 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			log.warn("Exception processing job [{}] configuration update event", pid, e);
 		}
 
+		if ( props == null ) {
+			return;
+		}
+
 		for ( ScheduledJob sj : sjList ) {
 			final String oldSchedule = sj.schedule;
 			String newSchedule = null;
@@ -538,7 +549,9 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				if ( trigger != null ) {
 					sj.stop(true);
 					ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
-					sj.scheduled(f, newSchedule, trigger);
+					if ( f != null ) {
+						sj.scheduled(f, newSchedule, trigger);
+					}
 				} else if ( sj.future != null ) {
 					sj.stop();
 					log.info("Stopped job [{}]", sj.identifier, oldSchedule, newSchedule);
@@ -547,7 +560,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 	}
 
-	private Trigger triggerForSchedule(String schedule) {
+	private @Nullable Trigger triggerForSchedule(@Nullable String schedule) {
 		return triggerForExpression(schedule, TimeUnit.MILLISECONDS, randomizedCron);
 	}
 
@@ -574,8 +587,8 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	@Override
 	public synchronized Result performPingTest() throws Exception {
 		boolean ok = true;
-		Map<String, String> errors = new TreeMap<>();
-		Map<String, String> all = new TreeMap<>();
+		final Map<String, String> errors = new TreeMap<>();
+		final Map<String, String> all = new TreeMap<>();
 		for ( Entry<String, ScheduledJobs> e : pidMap.entrySet() ) {
 			ScheduledJobs sjs = e.getValue();
 			for ( Entry<String, ScheduledJob> sje : sjs.jobMap.entrySet() ) {
@@ -592,15 +605,20 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				all.put(ident, String.format("%s @ %s", sj.identifier, sj.schedule));
 			}
 		}
-		Map<String, Object> props = new LinkedHashMap<>();
+		final Map<String, Object> props = new LinkedHashMap<>();
 		if ( !errors.isEmpty() ) {
 			props.put("errors", errors);
 		}
 		if ( !all.isEmpty() ) {
 			props.put("jobs", all);
 		}
-		String msg = messageSource.getMessage("msg.jobCountStatus",
-				new Object[] { all.size(), errors.size() }, "Scheduler running.", Locale.getDefault());
+
+		String msg = "Scheduler running.";
+		final MessageSource msgSrc = getMessageSource();
+		if ( msgSrc != null ) {
+			msg = msgSrc.getMessage("msg.jobCountStatus", new Object[] { all.size(), errors.size() },
+					msg, Locale.getDefault());
+		}
 		return new PingTestResult(ok, msg, props);
 	}
 
@@ -630,7 +648,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 *
 	 * @return the message source
 	 */
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		return messageSource;
 	}
 
@@ -640,7 +658,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 * @param messageSource
 	 *        the message source to set
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 

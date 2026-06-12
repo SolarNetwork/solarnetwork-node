@@ -47,6 +47,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -114,14 +115,14 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	private final ConcurrentMap<String, Long> activeModes;
 	private final ConcurrentMap<UUID, OperationalModeInfo> registeredModes;
 	private final OptionalService<SettingDao> settingDao;
-	private final OptionalService<EventAdmin> eventAdmin;
+	private final @Nullable OptionalService<EventAdmin> eventAdmin;
 	private long startupDelay = DEFAULT_STARTUP_DELAY;
-	private TaskScheduler taskScheduler;
-	private OptionalService<PlatformTransactionManager> transactionManager;
+	private @Nullable TaskScheduler taskScheduler;
+	private @Nullable OptionalService<PlatformTransactionManager> transactionManager;
 	private int autoExpireModesFrequency = DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY;
 
-	private ScheduledFuture<?> startupScheduledFuture;
-	private ScheduledFuture<?> autoExpireScheduledFuture;
+	private @Nullable ScheduledFuture<?> startupScheduledFuture;
+	private @Nullable ScheduledFuture<?> autoExpireScheduledFuture;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -136,7 +137,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *         if {@code settingDao} is {@code null}
 	 */
 	public DefaultOperationalModesService(OptionalService<SettingDao> settingDao,
-			OptionalService<EventAdmin> eventAdmin) {
+			@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this(new ConcurrentHashMap<>(16, 0.9f, 2), settingDao, eventAdmin);
 	}
 
@@ -154,7 +155,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 * @since 1.3
 	 */
 	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
-			OptionalService<SettingDao> settingDao, OptionalService<EventAdmin> eventAdmin) {
+			OptionalService<SettingDao> settingDao, @Nullable OptionalService<EventAdmin> eventAdmin) {
 		this(modeCache, new ConcurrentHashMap<>(8, 0.9f, 2), settingDao, eventAdmin);
 	}
 
@@ -176,7 +177,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 */
 	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
 			ConcurrentMap<UUID, OperationalModeInfo> registeredModes,
-			OptionalService<SettingDao> settingDao, OptionalService<EventAdmin> eventAdmin) {
+			OptionalService<SettingDao> settingDao, @Nullable OptionalService<EventAdmin> eventAdmin) {
 		super();
 		this.activeModes = requireNonNullArgument(modeCache, "modeCache");
 		this.registeredModes = requireNonNullArgument(registeredModes, "registeredModes");
@@ -186,11 +187,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	@Override
 	public synchronized void serviceDidStartup() {
-		Runnable task = new Runnable() {
+		final TaskScheduler taskScheduler = this.taskScheduler;
+		final Runnable task = new Runnable() {
 
 			@Override
 			public void run() {
-				if ( settingDao.service() == null ) {
+				if ( settingDao.service() == null && taskScheduler != null ) {
 					// wait for settings service to appear
 					synchronized ( DefaultOperationalModesService.this ) {
 						startupScheduledFuture = taskScheduler.schedule(this,
@@ -228,11 +230,11 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	private synchronized Set<String> initActiveModes() {
 		activeModes.clear();
-		SettingDao dao = settingDao.service();
+		final SettingDao dao = settingDao.service();
 		if ( dao == null ) {
 			return emptySet();
 		}
-		PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+		final PlatformTransactionManager txManager = OptionalService.service(transactionManager);
 		TransactionStatus tx = null;
 		if ( txManager != null ) {
 			tx = txManager.getTransaction(TX_RW);
@@ -254,7 +256,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			}
 			return active;
 		} finally {
-			if ( tx != null ) {
+			if ( tx != null && txManager != null ) {
 				txManager.commit(tx);
 			}
 		}
@@ -279,11 +281,11 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 				// no expired values
 				return;
 			}
-			SettingDao dao = settingDao.service();
+			final SettingDao dao = settingDao.service();
 			if ( dao == null ) {
 				return;
 			}
-			PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+			final PlatformTransactionManager txManager = OptionalService.service(transactionManager);
 			TransactionStatus tx = null;
 			if ( txManager != null ) {
 				tx = txManager.getTransaction(TX_RW);
@@ -300,7 +302,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 						commaDelimitedStringFromCollection(newActive));
 				postOperationalModesChangedEvent(newActive);
 			} finally {
-				if ( tx != null ) {
+				if ( tx != null && txManager != null ) {
 					txManager.commit(tx);
 				}
 			}
@@ -342,19 +344,20 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		MessageSource messages = getMessageSource();
+		final MessageSource messages = getMessageSource();
+		if ( messages == null ) {
+			return List.of();
+		}
 		StringBuilder buf = new StringBuilder();
 		Set<String> modes = new TreeSet<>(activeModes.keySet());
 		for ( String mode : modes ) {
 			Long exp = activeModes.get(mode);
-			buf.append(messages.getMessage("activeModes.row",
-					new Object[] { mode,
-							!NO_EXPIRATION.equals(exp) ? DateTimeFormatter
-									.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.MEDIUM)
-									.format(ZonedDateTime.ofInstant(
-											Instant.ofEpochMilli(exp.longValue()),
-											ZoneId.systemDefault()))
-									: "-" },
+			buf.append(messages.getMessage("activeModes.row", new Object[] { mode,
+					exp != null && !NO_EXPIRATION.equals(exp) ? DateTimeFormatter
+							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.MEDIUM)
+							.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(exp.longValue()),
+									ZoneId.systemDefault()))
+							: "-" },
 					null));
 		}
 		String status = messages.getMessage("activeModes.msg", new Object[] { buf }, null);
@@ -363,26 +366,26 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return (TOPIC_ENABLE_OPERATIONAL_MODES.equals(topic)
 				|| TOPIC_DISABLE_OPERATIONAL_MODES.equals(topic));
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null ) {
 			return null;
 		}
-		String topic = instruction.getTopic();
-		if ( !handlesTopic(topic) ) {
+		final String topic = instruction.getTopic();
+		if ( topic == null || !handlesTopic(topic) ) {
 			return null;
 		}
-		String[] modes = instruction.getAllParameterValues(INSTRUCTION_PARAM_OPERATIONAL_MODE);
+		final String[] modes = instruction.getAllParameterValues(INSTRUCTION_PARAM_OPERATIONAL_MODE);
 		if ( modes == null || modes.length < 1 ) {
 			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
-		Instant expire = OperationalModesService.expirationDate(instruction);
-		Set<String> opModes = new LinkedHashSet<>(Arrays.asList(modes));
+		final Instant expire = OperationalModesService.expirationDate(instruction);
+		final Set<String> opModes = new LinkedHashSet<>(Arrays.asList(modes));
 		switch (topic) {
 			case TOPIC_ENABLE_OPERATIONAL_MODES:
 				enableOperationalModes(opModes, expire);
@@ -435,8 +438,8 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		}).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 	}
 
-	private Long modeExpiration(SettingDao dao, String mode) {
-		if ( dao == null ) {
+	private @Nullable Long modeExpiration(@Nullable SettingDao dao, @Nullable String mode) {
+		if ( dao == null || mode == null ) {
 			return null;
 		}
 		String exp = dao.getSetting(SETTING_OP_MODE_EXPIRE, mode);
@@ -456,7 +459,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	}
 
 	@Override
-	public synchronized Set<String> enableOperationalModes(Set<String> modes, Instant expire) {
+	public synchronized Set<String> enableOperationalModes(Set<String> modes, @Nullable Instant expire) {
 		if ( modes == null || modes.isEmpty() ) {
 			return activeOperationalModes();
 		}
@@ -508,7 +511,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			postOperationalModesChangedEvent(active);
 			return active;
 		} finally {
-			if ( tx != null ) {
+			if ( tx != null && txManager != null ) {
 				txManager.commit(tx);
 			}
 		}
@@ -560,7 +563,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			postOperationalModesChangedEvent(active);
 			return active;
 		} finally {
-			if ( tx != null ) {
+			if ( tx != null && txManager != null ) {
 				txManager.commit(tx);
 			}
 		}
@@ -583,7 +586,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		return registeredModes.remove(registrationId) != null;
 	}
 
-	private void postOperationalModesChangedEvent(Set<String> activeModes) {
+	private void postOperationalModesChangedEvent(@Nullable Set<String> activeModes) {
 		if ( activeModes == null ) {
 			return;
 		}
@@ -598,7 +601,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *        the active modes
 	 * @return the event
 	 */
-	protected Event createOperationalModesChangedEvent(Set<String> activeModes) {
+	protected Event createOperationalModesChangedEvent(@Nullable Set<String> activeModes) {
 		if ( activeModes == null ) {
 			activeModes = emptySet();
 		}
@@ -612,7 +615,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 * @param event
 	 *        the event to post
 	 */
-	protected final void postEvent(Event event) {
+	protected final void postEvent(@Nullable Event event) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || event == null ) {
 			return;
@@ -632,7 +635,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *        a startup delay, in milliseconds, or {@literal 0} for no delay;
 	 *        defaults to {@link #DEFAULT_STARTUP_DELAY}
 	 */
-	public void setStartupDelay(long startupDelay) {
+	public final void setStartupDelay(long startupDelay) {
 		this.startupDelay = startupDelay;
 	}
 
@@ -648,7 +651,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *        a task executor
 	 * @see #setStartupDelay(long)
 	 */
-	public void setTaskScheduler(TaskScheduler taskScheduler) {
+	public final void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}
 
@@ -662,7 +665,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *         if {@code autoExpireModesFrequency} is less than {@literal 1}
 	 * @since 1.1
 	 */
-	public void setAutoExpireModesFrequency(int autoExpireModesFrequency) {
+	public final void setAutoExpireModesFrequency(int autoExpireModesFrequency) {
 		if ( autoExpireModesFrequency < 1 ) {
 			throw new IllegalArgumentException("autoExpireModesFrequency must be > 0");
 		}
@@ -675,7 +678,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 * @return the transaction manager to use
 	 * @since 1.3
 	 */
-	public OptionalService<PlatformTransactionManager> getTransactionManager() {
+	public final @Nullable OptionalService<PlatformTransactionManager> getTransactionManager() {
 		return transactionManager;
 	}
 
@@ -686,7 +689,8 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 *        the transaction manager to use
 	 * @since 1.3
 	 */
-	public void setTransactionManager(OptionalService<PlatformTransactionManager> transactionManager) {
+	public final void setTransactionManager(
+			@Nullable OptionalService<PlatformTransactionManager> transactionManager) {
 		this.transactionManager = transactionManager;
 	}
 

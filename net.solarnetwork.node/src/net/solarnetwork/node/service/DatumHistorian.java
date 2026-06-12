@@ -69,7 +69,7 @@ public interface DatumHistorian {
 	 * @return the matching datum, or {@code null} if not available
 	 * @see #offset(String, int, Class)
 	 */
-	<T extends NodeDatum> T latest(String sourceId, @Nullable Class<T> type);
+	<T extends NodeDatum> @Nullable T latest(String sourceId, @Nullable Class<T> type);
 
 	/**
 	 * Get an offset from the latest available datum of a given type, optionally
@@ -104,7 +104,7 @@ public interface DatumHistorian {
 	 *        the type of datum, or {@code null} for any type
 	 * @return the matching datum, or {@code null} if not available
 	 */
-	<T extends NodeDatum> T offset(String sourceId, int offset, @Nullable Class<T> type);
+	<T extends NodeDatum> @Nullable T offset(String sourceId, int offset, @Nullable Class<T> type);
 
 	/**
 	 * Get datum offset from a given timestamp, optionally filtered by source
@@ -144,7 +144,7 @@ public interface DatumHistorian {
 	 *        the type of datum, or {@code null} for any type
 	 * @return the datum, or {@code null} if no such datum is available
 	 */
-	<T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset,
+	<T extends NodeDatum> @Nullable T offset(String sourceId, Instant timestamp, int offset,
 			@Nullable Class<T> type);
 
 	/**

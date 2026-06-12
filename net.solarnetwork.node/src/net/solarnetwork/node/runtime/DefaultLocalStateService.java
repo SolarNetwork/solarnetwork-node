@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.Reader;
@@ -31,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import de.siegmar.fastcsv.reader.CsvReader;
@@ -76,7 +78,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 
 	private final OptionalService<LocalStateDao> localStateDao;
 	private final BackupService backupService;
-	private OptionalService<PlatformTransactionManager> txManager;
+	private @Nullable OptionalService<PlatformTransactionManager> txManager;
 
 	/**
 	 * Constructor.
@@ -116,14 +118,14 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	}
 
 	@Override
-	public LocalState localStateForKey(String key) {
+	public @Nullable LocalState localStateForKey(String key) {
 		return dao().get(key);
 	}
 
 	@Override
 	public LocalState saveLocalState(LocalState state) {
 		final LocalStateDao dao = dao();
-		return dao.get(dao.save(state));
+		return nonnull(dao.get(dao.save(state)), "Persisted LocalState");
 	}
 
 	@Override
@@ -147,7 +149,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	}
 
 	@Override
-	public StringDateKey backupCsvConfiguration() {
+	public @Nullable StringDateKey backupCsvConfiguration() {
 		return backupService.backupCsvConfiguration();
 	}
 
@@ -157,7 +159,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	}
 
 	@Override
-	public Reader getCsvConfigurationBackup(String backupKey) {
+	public @Nullable Reader getCsvConfigurationBackup(String backupKey) {
 		return backupService.getCsvConfigurationBackup(backupKey);
 	}
 
@@ -175,11 +177,22 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	public final class BackupService extends CsvConfigurableBackupServiceSupport {
 
 		/**
+		 * The setting UID.
+		 */
+		public static final String SETTING_UID = DefaultLocalStateService.SETTING_UID
+				+ ".CsvBackupService";
+
+		/**
 		 * Constructor.
 		 */
 		private BackupService() {
 			super(BACKUP_IDENT, BACKUP_FILENAME_PREFIX);
 			setBackupDestinationPath(DefaultLocalStateService.DEFAULT_BACKUP_DESTINATION_PATH);
+		}
+
+		@Override
+		public String getSettingUid() {
+			return SETTING_UID;
 		}
 
 		private static List<SettingSpecifier> settingSpecifiers() {
@@ -194,7 +207,8 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 		@Override
 		protected Instant mostRecentCsvConfigurationModificationDate() {
 			final LocalStateDao dao = dao();
-			return dao.getMostRecentModificationDate();
+			final Instant ts = dao.getMostRecentModificationDate();
+			return (ts != null ? ts : Instant.now());
 		}
 
 		@Override
@@ -286,10 +300,13 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 					if ( val == null ) {
 						return BatchCallbackResult.CONTINUE;
 					}
+					@Nullable
 					String[] row = new String[CsvColumns.values().length];
 					row[CsvColumns.Key.ordinal()] = state.getKey();
-					row[CsvColumns.Created.ordinal()] = state.getCreated().toString();
-					row[CsvColumns.Modified.ordinal()] = state.getModified().toString();
+					row[CsvColumns.Created.ordinal()] = nonnull(state.getCreated(), "Created")
+							.toString();
+					row[CsvColumns.Modified.ordinal()] = nonnull(state.getModified(), "Modified")
+							.toString();
 					row[CsvColumns.Type.ordinal()] = state.getType().name();
 					row[CsvColumns.Value.ordinal()] = val instanceof Map<?, ?> map
 							? JsonUtils.getJSONString(map)
@@ -306,7 +323,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	 *
 	 * @return the backup service
 	 */
-	public BackupService getBackupService() {
+	public final BackupService getBackupService() {
 		return backupService;
 	}
 
@@ -315,7 +332,7 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	 *
 	 * @return the transaction manager
 	 */
-	public OptionalService<PlatformTransactionManager> getTransactionManager() {
+	public final @Nullable OptionalService<PlatformTransactionManager> getTransactionManager() {
 		return txManager;
 	}
 
@@ -325,7 +342,8 @@ public final class DefaultLocalStateService extends BaseIdentifiable
 	 * @param txManager
 	 *        the manager to set
 	 */
-	public void setTransactionManager(OptionalService<PlatformTransactionManager> txManager) {
+	public final void setTransactionManager(
+			@Nullable OptionalService<PlatformTransactionManager> txManager) {
 		this.txManager = txManager;
 	}
 

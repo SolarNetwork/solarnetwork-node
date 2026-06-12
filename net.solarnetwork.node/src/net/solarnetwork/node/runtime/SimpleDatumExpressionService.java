@@ -32,6 +32,7 @@ import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Map;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.GeneralDatum;
@@ -72,7 +73,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 	private final DatumService datumService;
 	private final OperationalModesService opModesService;
-	private OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
+	private @Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
 
 	/**
 	 * Constructor.
@@ -92,12 +93,12 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return TOPIC_DATUM_EXPRESSION.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -185,7 +186,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	 * @return the providers
 	 * @since 1.3
 	 */
-	public final OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
+	public final @Nullable OptionalServiceCollection<TariffScheduleProvider> getTariffScheduleProviders() {
 		return tariffScheduleProviders;
 	}
 
@@ -197,7 +198,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	 * @since 1.3
 	 */
 	public final void setTariffScheduleProviders(
-			OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
+			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
 }

@@ -1,21 +1,21 @@
 /* ==================================================================
  * SimpleNodeSettingsService.java - 19/07/2023 6:57:05 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.domain.Setting;
@@ -68,7 +69,7 @@ import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Service to support node settings management.
- * 
+ *
  * <p>
  * This {@link InstructionHandler} responds to
  * {@link InstructionHandler#TOPIC_SYSTEM_CONFIGURATION
@@ -81,7 +82,7 @@ import net.solarnetwork.util.ObjectUtils;
  * {@link InstructionHandler#PARAM_SERVICE_RESULT PARAM_SERVICE_RESULT} result
  * parameter.
  * </p>
- * 
+ *
  * <table style="border: 1px solid #ccc; min-width: 50%;">
  * <caption>How the {@code uid} and {@code id} parameters control the result
  * format.</caption> <thead>
@@ -119,30 +120,30 @@ import net.solarnetwork.util.ObjectUtils;
  * </tr>
  * </tbody>
  * </table>
- * 
+ *
  * <h2 id="list-providers">List all available non-factory setting UIDs</h2>
- * 
+ *
  * <p>
  * Pass a {@code uid} parameter value of {@literal *} to generate a JSON array
  * of objects, each representing a single provider, with the following
  * properties:
  * </p>
- * 
+ *
  * <dl>
  * <dt>id</dt>
  * <dd>The provider ID ({@code settingUid}).</dd>
  * <dt>title</dt>
  * <dd>The component title.</dd>
  * </dl>
- * 
+ *
  * <h2 id="list-settings">List the settings for a non-factory provider</h2>
- * 
+ *
  * <p>
  * Pass a {@code uid} parameter value of the specific setting UID you'd like to
  * get the settings for. The result will be a JSON array of objects, each
  * representing a single setting, with the following properties:
  * </p>
- * 
+ *
  * <dl>
  * <dt>key</dt>
  * <dd>The setting key.</dd>
@@ -154,37 +155,37 @@ import net.solarnetwork.util.ObjectUtils;
  * configured. This property might be omitted entirely instead of appearing with
  * a {@literal false} value.</dd>
  * </dl>
- * 
+ *
  * <h2 id="list-factories">List all available factory setting UIDs</h2>
- * 
+ *
  * <p>
  * Pass a {@code uid} parameter value of {@literal *} <b>and</b> a {@code id}
  * parameter value of {@literal *} to generate a JSON array of objects, each
  * representing a single factory, as shown in the <a href="#list-providers">list
  * providers</a> section.
  * </p>
- * 
+ *
  * <h2 id="list-factory-instances">List the available instance IDs for a
  * factory</h2>
- * 
+ *
  * <p>
  * To generate a JSON array of instance IDs for a specific factory UID, pass a
  * {@code uid} parameter value of the factory UID you'd like the list for, and a
  * {@code id} parameter value of {@literal *}.
  * </p>
- * 
+ *
  * <h2 id="list-factory-instance-settings">List the settings for a factory
  * instance provider</h2>
- * 
+ *
  * <p>
  * Pass a {@code uid} parameter value of the specific factory UID and a
  * {@code id} parameter value of the specific factory instance ID you'd like to
  * list the settings for. The result will be a JSON array of objects, as shown
  * in the <a href="#list-settings">list settings</a> section.
  * </p>
- * 
+ *
  * <h2>Specification mode</h2>
- * 
+ *
  * <p>
  * By passing a {@code spec} parameter value of {@literal true}, then instead of
  * returning component setting values, setting specification objects will be
@@ -192,9 +193,9 @@ import net.solarnetwork.util.ObjectUtils;
  * property that is the setting type. Other specifications provide more
  * properties, as listed below.
  * </p>
- * 
+ *
  * <h3>Group specification</h3>
- * 
+ *
  * <p>
  * A group specification has the type
  * {@literal net.solarnetwork.settings.GroupSettingSpecifier}. It will include a
@@ -202,14 +203,14 @@ import net.solarnetwork.util.ObjectUtils;
  * list of specifications. The {@code groupSettings} property will be an array
  * of nested specification objects that make up the group.
  * </p>
- * 
+ *
  * <h3>Other specifications</h3>
- * 
+ *
  * <p>
  * Most specifications provide a {@code key} property representing the setting
  * key for that specification.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 3.3
@@ -228,7 +229,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 	/**
 	 * An optional instruction parameter containing a specific setting factory
 	 * instance ID to get the settings for.
-	 * 
+	 *
 	 * <p>
 	 * If this is provided, then the {@link #PARAM_SETTING_UID} parameter must
 	 * also be provided, and that will be interpreted as the factory UID.
@@ -247,7 +248,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 	 * An optional instruction parameter containing a boolean flag that, when
 	 * {@literal true}, means the result JSON should be gzip-compressed and
 	 * encoded into a Base64 string representation.
-	 * 
+	 *
 	 * <p>
 	 * Note that only successful results will be compressed. If the compressed
 	 * result is larger than the uncompressed JSON, the uncompressed JSON will
@@ -272,7 +273,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingsService
 	 *        the settings service
 	 * @throws IllegalArgumentException
@@ -284,12 +285,12 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SYSTEM_CONFIGURATION.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -337,7 +338,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 				createErrorResultParameters("Required parameter [uid] missing.", "SNS.00000"));
 	}
 
-	private String jsonResult(Instruction instruction, Object obj, String defaultJson) {
+	private @Nullable String jsonResult(Instruction instruction, Object obj, String defaultJson) {
 		String json = JsonUtils.getJSONString(obj, defaultJson);
 		if ( json == null || (defaultJson != null && defaultJson.equals(json)) ) {
 			return json;
@@ -489,7 +490,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 		}
 	}
 
-	private static String settingValue(Setting setting) {
+	private static @Nullable String settingValue(Setting setting) {
 		String key = setting.getType();
 		String value = setting.getValue();
 		if ( value != null && key != null && SENSITVE_PATTERN.matcher(key).find() ) {

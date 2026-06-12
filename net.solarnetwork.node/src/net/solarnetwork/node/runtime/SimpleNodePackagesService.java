@@ -46,6 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.zip.GZIPOutputStream;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.reactor.Instruction;
@@ -132,9 +133,9 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 		/** Include both installed and available packages. */
 		All(null);
 
-		private Boolean flag;
+		private @Nullable Boolean flag;
 
-		private Status(Boolean flag) {
+		private Status(@Nullable Boolean flag) {
 			this.flag = flag;
 		}
 
@@ -150,7 +151,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 		 *        the parameter value to get the enum instance for
 		 * @return the enumeration instance, never {@code null}
 		 */
-		public static Status forParameterValue(String value) {
+		public static Status forParameterValue(@Nullable String value) {
 			if ( value != null && !value.isEmpty() ) {
 				value = value.toLowerCase();
 				if ( "available".equals(value) ) {
@@ -168,7 +169,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 		 *
 		 * @return the flag value
 		 */
-		public Boolean flagValue() {
+		public @Nullable Boolean flagValue() {
 			return flag;
 		}
 
@@ -190,11 +191,11 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SYSTEM_CONFIGURATION.equals(topic);
 	}
 
-	private Pattern filter(Instruction instruction) {
+	private @Nullable Pattern filter(Instruction instruction) {
 		final String filter = instruction.getParameterValue(PARAM_FILTER);
 		if ( filter == null ) {
 			return DEFAULT_FILTER;
@@ -213,7 +214,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -256,7 +257,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 				return createStatus(instruction, Declined,
 						createErrorResultParameters("Timeout waiting for package listing.", "NPS.0002"));
 			} catch ( ExecutionException e ) {
-				Throwable cause = e.getCause();
+				final Throwable cause = e.getCause() != null ? e.getCause() : e;
 				return createStatus(instruction, Declined, createErrorResultParameters(
 						"Error listing packages: " + cause.getMessage(), "NPS.0003"));
 			} catch ( CancellationException | InterruptedException e ) {
@@ -269,7 +270,7 @@ public class SimpleNodePackagesService extends BaseIdentifiable implements Instr
 				singletonMap(PARAM_SERVICE_RESULT, resultValue(instruction, packages)));
 	}
 
-	private Object resultValue(Instruction instruction, Object result) {
+	private @Nullable Object resultValue(Instruction instruction, Object result) {
 		final String compressParamValue = instruction.getParameterValue(PARAM_COMPRESSED);
 		final boolean force = "force".equalsIgnoreCase(compressParamValue);
 		final boolean compress = force || parseBoolean(compressParamValue);

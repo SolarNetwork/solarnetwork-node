@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultPlatformService.java - 21/11/2017 10:51:28 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.messaging.Message;
@@ -46,17 +47,17 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Default implementation of {@link PlatformService}.
- * 
+ *
  * @author matt
  * @version 2.0
  */
 public class DefaultPlatformService implements PlatformService {
 
 	private final AtomicInteger activeState = new AtomicInteger(PlatformState.Normal.ordinal());
-	private final AtomicReference<PlatformTask<?>> activeSingletonTask = new AtomicReference<PlatformTask<?>>();
+	private final AtomicReference<@Nullable PlatformTask<?>> activeSingletonTask = new AtomicReference<>();
 	private ExecutorService singletonExecutorService = defaultSingletonExecutorService();
-	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
+	private @Nullable OptionalService<SimpMessageSendingOperations> messageSendingOps;
 
 	private static ExecutorService defaultSingletonExecutorService() {
 		// we want at most one task happening at a time for this service;
@@ -96,21 +97,21 @@ public class DefaultPlatformService implements PlatformService {
 	}
 
 	@Override
-	public PlatformTaskStatus activePlatformTaskStatus() {
+	public @Nullable PlatformTaskStatus activePlatformTaskStatus() {
 		return activeSingletonTask.get();
 	}
 
 	@Override
-	public PlatformTaskInfo activePlatformTaskInfo(Locale locale) {
+	public @Nullable PlatformTaskInfo activePlatformTaskInfo(@Nullable Locale locale) {
 		PlatformTaskStatus status = activePlatformTaskStatus();
 		if ( status == null ) {
 			return null;
 		}
-		return new SimplePlatformTaskInfo(status, locale);
+		return new SimplePlatformTaskInfo(status, locale != null ? locale : Locale.getDefault());
 	}
 
 	@Override
-	public void subscribeToActivePlatformTaskInfo(Locale locale) {
+	public void subscribeToActivePlatformTaskInfo(@Nullable Locale locale) {
 		PlatformTask<?> task = activeSingletonTask.get();
 		if ( task != null ) {
 			final Locale loc = (locale != null ? locale : Locale.getDefault());
@@ -170,37 +171,38 @@ public class DefaultPlatformService implements PlatformService {
 	/**
 	 * Configure the {@link ExecutorService} to use for the singleton task
 	 * queue.
-	 * 
+	 *
 	 * <p>
 	 * This service is expected to perform just one task at a time.
 	 * </p>
-	 * 
+	 *
 	 * @param singletonExecutorService
 	 *        the service to use; defaults to a service using an array-based
 	 *        blocking queue with a single thread
 	 */
-	public void setSingletonExecutorService(ExecutorService singletonExecutorService) {
-		this.singletonExecutorService = singletonExecutorService;
+	public void setSingletonExecutorService(@Nullable ExecutorService singletonExecutorService) {
+		this.singletonExecutorService = (singletonExecutorService != null ? singletonExecutorService
+				: defaultSingletonExecutorService());
 	}
 
 	/**
 	 * Set the {@link EventAdmin} to use.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the service to use
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
 	/**
 	 * Set a {@link SimpMessageSendingOperations} for posting messages to.
-	 * 
+	 *
 	 * @param messageSendingOps
 	 *        the message sender to use
 	 */
 	public void setMessageSendingOperations(
-			OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+			@Nullable OptionalService<SimpMessageSendingOperations> messageSendingOps) {
 		this.messageSendingOps = messageSendingOps;
 	}
 

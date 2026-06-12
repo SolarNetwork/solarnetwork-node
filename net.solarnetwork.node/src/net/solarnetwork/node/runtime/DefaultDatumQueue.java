@@ -25,6 +25,7 @@ package net.solarnetwork.node.runtime;
 import static java.util.stream.Collectors.joining;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Instant;
@@ -40,8 +41,10 @@ import java.util.concurrent.Delayed;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -112,11 +115,11 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final OptionalService<DatumQueueProcessObserver> processObserver;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
-	private OptionalFilterableService<DatumFilterService> datumFilterService;
-	private UncaughtExceptionHandler datumProcessorExceptionHandler;
+	private @Nullable OptionalFilterableService<DatumFilterService> datumFilterService;
+	private @Nullable UncaughtExceptionHandler datumProcessorExceptionHandler;
 
 	private long processorStartupDelayMs;
-	private ProcessorThread datumProcessor;
+	private @Nullable ProcessorThread datumProcessor;
 	private boolean discardDatumOnFilterException;
 
 	/**
@@ -272,7 +275,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			int result = Long.compare(ts, other.ts);
 			if ( result == 0 ) {
 				// fall back to sort by source ID when ts are equal
-				result = datum.getSourceId().compareTo(other.datum.getSourceId());
+				result = nonnull(datum.getSourceId(), "Source ID")
+						.compareTo(nonnull(other.datum.getSourceId(), "Source ID"));
 				if ( result == 0 ) {
 					result = Boolean.compare(other.persist, persist);
 				}
@@ -429,7 +433,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 									// which is then received via both offer() and handleEvent(DATUM_CAPTURED)
 									stats.incrementAndGet(QueueStats.Duplicates);
 									continue EVENT;
-								} else if ( !p.datum.getSourceId().equals(event.datum.getSourceId()) ) {
+								} else if ( !nonnull(p.datum.getSourceId(), "Source ID")
+										.equals(nonnull(event.datum.getSourceId(), "Source ID")) ) {
 									// as events sorted by time,source,persist then we can stop looking now
 									break;
 								}
@@ -524,7 +529,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *         {@code NodeDatum} instance; a new datum with the result of the
 	 *         transform service
 	 */
-	private NodeDatum applyTransform(DelayedDatum event) {
+	private @Nullable NodeDatum applyTransform(DelayedDatum event) {
 		DatumFilterService xform = service(datumFilterService);
 		if ( xform == null ) {
 			return event.datum;
@@ -602,11 +607,12 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	public void uncaughtException(Thread t, Throwable e) {
 		synchronized ( this ) {
 			final Thread processor = this.datumProcessor;
-			if ( !processor.isAlive() ) {
+			if ( processor != null && !processor.isAlive() ) {
 				datumProcessor = null;
 				startup();
 			}
 		}
+		final UncaughtExceptionHandler datumProcessorExceptionHandler = this.datumProcessorExceptionHandler;
 		if ( datumProcessorExceptionHandler != null ) {
 			datumProcessorExceptionHandler.uncaughtException(t, e);
 		}
@@ -629,7 +635,12 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		return result;
 	}
 
-	private String getStatusMessage() {
+	private @Nullable String getStatusMessage() {
+		final MessageSource msgSource = getMessageSource();
+		if ( msgSource == null ) {
+			return null;
+		}
+
 		final int len = QueueStats.values().length;
 		Object[] params = new Object[len + 2];
 		for ( int i = 0; i < len; i++ ) {
@@ -650,7 +661,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		params[params.length - 1] = (persistCount > 0 ? String.format("%dms", persistTime / persistCount)
 				: "-");
 
-		return getMessageSource().getMessage("status.msg", params, Locale.getDefault());
+		return msgSource.getMessage("status.msg", params, Locale.getDefault());
 	}
 
 	/**
@@ -658,7 +669,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the startup delay; defaults to {@link #DEFAULT_STARTUP_DELAY_MS}
 	 */
-	public long getStartupDelayMs() {
+	public final long getStartupDelayMs() {
 		return startupDelayMs;
 	}
 
@@ -668,7 +679,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param startupDelayMs
 	 *        the delay to set
 	 */
-	public void setStartupDelayMs(long startupDelayMs) {
+	public final void setStartupDelayMs(long startupDelayMs) {
 		this.startupDelayMs = startupDelayMs;
 	}
 
@@ -677,7 +688,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the delay; defaults to {@link #DEFAULT_QUEUE_DELAY_MS}
 	 */
-	public long getQueueDelayMs() {
+	public final long getQueueDelayMs() {
 		return queueDelayMs;
 	}
 
@@ -688,7 +699,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *        the delay to set; setting to anything less than {@code 1}
 	 *        essentially disables the delay
 	 */
-	public void setQueueDelayMs(long queueDelayMs) {
+	public final void setQueueDelayMs(long queueDelayMs) {
 		this.queueDelayMs = queueDelayMs;
 	}
 
@@ -697,7 +708,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the transform service, or {@code null}
 	 */
-	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
+	public final @Nullable OptionalFilterableService<DatumFilterService> getDatumFilterService() {
 		return datumFilterService;
 	}
 
@@ -707,7 +718,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param transformService
 	 *        the transform service to set
 	 */
-	public void setDatumFilterService(OptionalFilterableService<DatumFilterService> transformService) {
+	public final void setDatumFilterService(
+			@Nullable OptionalFilterableService<DatumFilterService> transformService) {
 		this.datumFilterService = transformService;
 	}
 
@@ -716,8 +728,9 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the service UID
 	 */
-	public String getTransformServiceUid() {
-		return datumFilterService.getPropertyValue(UID_PROPERTY);
+	public final @Nullable String getTransformServiceUid() {
+		final OptionalFilterableService<DatumFilterService> datumFilterService = getDatumFilterService();
+		return (datumFilterService != null ? datumFilterService.getPropertyValue(UID_PROPERTY) : null);
 	}
 
 	/**
@@ -726,7 +739,11 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param uid
 	 *        the service UID
 	 */
-	public void setTransformServiceUid(String uid) {
+	public final void setTransformServiceUid(@Nullable String uid) {
+		final OptionalFilterableService<DatumFilterService> datumFilterService = getDatumFilterService();
+		if ( datumFilterService == null ) {
+			return;
+		}
 		datumFilterService.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
@@ -735,7 +752,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the DAO
 	 */
-	public DatumDao getNodeDatumDao() {
+	public final DatumDao getNodeDatumDao() {
 		return nodeDatumDao;
 	}
 
@@ -744,7 +761,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the frequency
 	 */
-	public int getStatisticLogFrequency() {
+	public final int getStatisticLogFrequency() {
 		return stats.getLogFrequency();
 	}
 
@@ -754,7 +771,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param logFrequency
 	 *        the frequency to set
 	 */
-	public void setStatisticLogFrequency(int logFrequency) {
+	public final void setStatisticLogFrequency(int logFrequency) {
 		stats.setLogFrequency(logFrequency);
 	}
 
@@ -763,7 +780,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *
 	 * @return the exception handler, or {@code null}
 	 */
-	public UncaughtExceptionHandler getDatumProcessorExceptionHandler() {
+	public final @Nullable UncaughtExceptionHandler getDatumProcessorExceptionHandler() {
 		return datumProcessorExceptionHandler;
 	}
 
@@ -773,8 +790,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param datumProcessorExceptionHandler
 	 *        the handler to set
 	 */
-	public void setDatumProcessorExceptionHandler(
-			UncaughtExceptionHandler datumProcessorExceptionHandler) {
+	public final void setDatumProcessorExceptionHandler(
+			@Nullable UncaughtExceptionHandler datumProcessorExceptionHandler) {
 		this.datumProcessorExceptionHandler = datumProcessorExceptionHandler;
 	}
 
@@ -784,7 +801,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @return the stats
 	 * @see QueueStats
 	 */
-	public StatCounter getStats() {
+	public final StatCounter getStats() {
 		return stats;
 	}
 

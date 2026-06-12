@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.BasicInstruction;
@@ -120,7 +121,7 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 		 *        enumeration value
 		 * @return the resolved enumeration value
 		 */
-		public static SuccessMode forParameterValue(String val, SuccessMode defaultValue) {
+		public static SuccessMode forParameterValue(@Nullable String val, SuccessMode defaultValue) {
 			for ( SuccessMode mode : values() ) {
 				if ( mode.name().equalsIgnoreCase(val) ) {
 					return mode;
@@ -152,12 +153,12 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return TOPIC_EXECUTE_INSTRUCTIONS.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(TOPIC_EXECUTE_INSTRUCTIONS) ) {
 			return null;
 		}
@@ -182,7 +183,7 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 					"EIS.0002"));
 		}
 		final int instructionCount = (instructions != null ? instructions.length : 0);
-		if ( instructionCount < 1 ) {
+		if ( instructions == null || instructionCount < 1 ) {
 			return createStatus(instruction, InstructionState.Declined, createErrorResultParameters(
 					"No instructions given on instructions parameter.", "EIS.0003"));
 		}
@@ -223,8 +224,8 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 				Collections.singletonMap(RESULT_PARAM_STATUSES, results));
 	}
 
-	private net.solarnetwork.domain.Instruction[] parseInstructions(String parameterValue)
-			throws IOException {
+	private net.solarnetwork.domain.Instruction @Nullable [] parseInstructions(
+			@Nullable String parameterValue) throws IOException {
 		if ( parameterValue == null || parameterValue.isEmpty() ) {
 			return null;
 		}

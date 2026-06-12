@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultSecurityTokenService.java - 7/09/2023 6:18:46 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,6 +27,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Collection;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SecurityTokenDao;
 import net.solarnetwork.node.domain.SecurityToken;
@@ -36,7 +37,7 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Default implementation of {@link SecurityTokenService}
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 3.4
@@ -57,7 +58,7 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param securityTokenDao
 	 *        the DAO to use
 	 * @throws IllegalArgumentException
@@ -69,7 +70,7 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param rng
 	 *        the random number generator
 	 * @param securityTokenDao
@@ -106,7 +107,7 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 	}
 
 	@Override
-	public SecurityToken tokenForId(String tokenId) {
+	public @Nullable SecurityToken tokenForId(String tokenId) {
 		return dao().get(requireNonNullArgument(tokenId, "tokenId"));
 	}
 

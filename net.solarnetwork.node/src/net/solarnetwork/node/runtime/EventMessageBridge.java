@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
@@ -77,7 +79,7 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 	public static final String PUBLIC_MESSAGE_TOPIC_PREFIX = "/pub/topic/";
 
 	private final OptionalService<SimpMessageSendingOperations> messageSendingOps;
-	private final Executor executor;
+	private final @Nullable Executor executor;
 
 	private Map<String, String> topicMapping;
 	private Map<String, String> publicTopicMapping;
@@ -126,7 +128,7 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 	 * @since 2.1
 	 */
 	public EventMessageBridge(OptionalService<SimpMessageSendingOperations> messageSendingOps,
-			Executor executor) {
+			@Nullable Executor executor) {
 		super();
 		this.messageSendingOps = ObjectUtils.requireNonNullArgument(messageSendingOps,
 				"messageSendingOps");
@@ -232,7 +234,7 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 				pubTopic = true;
 			}
 		}
-		topic = StringUtils.expandTemplateString(topic, data);
+		topic = nonnull(StringUtils.expandTemplateString(topic, data), "Event topic");
 		if ( topic.startsWith(NODE_EVENT_PREFIX) ) {
 			topic = topic.substring(NODE_EVENT_PREFIX.length());
 		} else if ( topic.startsWith(SN_EVENT_PREFIX) ) {
@@ -289,7 +291,8 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 	 *        {@literal false} to send without any conversion
 	 * @since 1.1
 	 */
-	protected void postMessage(String dest, Object body, Map<String, Object> headers, boolean convert) {
+	protected void postMessage(String dest, Object body, @Nullable Map<String, Object> headers,
+			boolean convert) {
 		SimpMessageSendingOperations ops = (messageSendingOps != null ? messageSendingOps.service()
 				: null);
 		if ( ops == null ) {
