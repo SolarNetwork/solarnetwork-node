@@ -127,9 +127,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 	public void insertVolatile() {
 		replay(eventAdminMock);
 
-		Setting s = new Setting();
-		s.setKey(TEST_KEY);
-		s.setType(TEST_TYPE);
+		Setting s = new Setting(TEST_KEY, TEST_TYPE);
 		s.setValue(TEST_VALUE);
 		s.setFlags(EnumSet.of(SettingFlag.Volatile));
 
@@ -305,9 +303,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
 		replay(eventAdminMock);
 
-		Setting s = new Setting();
-		s.setKey(TEST_KEY);
-		s.setType(TEST_TYPE);
+		Setting s = new Setting(TEST_KEY, TEST_TYPE);
 		s.setValue("foo");
 		s.setFlags(EnumSet.of(SettingFlag.Volatile));
 
