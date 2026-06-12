@@ -153,7 +153,7 @@ public class SecurityToken extends BasicStringEntity {
 	 *        new copy
 	 * @return the copy
 	 */
-	public SecurityToken copyWithoutSecret(String newName, String newDescription) {
+	public SecurityToken copyWithoutSecret(@Nullable String newName, @Nullable String newDescription) {
 		return new SecurityToken(id(), getCreated(), newName != null ? newName : name,
 				newDescription != null ? newDescription : description);
 	}
