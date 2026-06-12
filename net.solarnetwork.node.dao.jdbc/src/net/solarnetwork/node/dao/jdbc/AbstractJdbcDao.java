@@ -53,6 +53,7 @@ import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Base class for JDBC based DAO implementations.
@@ -718,6 +719,18 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	@Override
 	public final @Nullable MessageSource getMessageSource() {
 		return messageSource;
+	}
+
+	/**
+	 * Get the message source.
+	 *
+	 * @return the message source
+	 * @throws IllegalStateException
+	 *         if {@code messageSource} is {@code null}
+	 * @since 2.3
+	 */
+	public final MessageSource messageSource() {
+		return ObjectUtils.nonnull(messageSource, "MessageSource");
 	}
 
 	/**

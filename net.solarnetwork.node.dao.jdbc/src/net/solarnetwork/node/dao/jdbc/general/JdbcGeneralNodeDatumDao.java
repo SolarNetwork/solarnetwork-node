@@ -24,6 +24,7 @@ package net.solarnetwork.node.dao.jdbc.general;
 
 import static java.lang.String.format;
 import static net.solarnetwork.node.dao.jdbc.JdbcUtils.setUtcTimestampStatementValue;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,6 +36,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -68,7 +70,7 @@ import net.solarnetwork.util.StatCounter;
  * {@link NodeDatum} domain objects.
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		implements DatumDao, SettingSpecifierProvider, PingTest {
@@ -135,7 +137,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
 
 	private final StatCounter stats;
-	private ObjectMapper objectMapper;
+	private @Nullable ObjectMapper objectMapper;
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
 	private int maxCountPingFail = DEFAULT_MAX_COUNT_PING_FAIL;
@@ -198,7 +200,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 				String jdata = rs.getString(++col);
 				if ( jdata != null ) {
 					try {
-						s = objectMapper.readValue(jdata, DatumSamples.class);
+						s = objectMapper().readValue(jdata, DatumSamples.class);
 					} catch ( IOException e ) {
 						log.error("Error deserializing JSON into GeneralNodeDatumSamples: {}",
 								e.getMessage());
@@ -219,7 +221,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		DatumSamples s = ((DatumSamplesContainer) datum).getSamples();
 		String json;
 		try {
-			json = objectMapper.writeValueAsString(s);
+			json = objectMapper().writeValueAsString(s);
 		} catch ( IOException e ) {
 			log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
 			json = "{}";
@@ -239,7 +241,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 				}
 			}
 			try {
-				json = objectMapper.writeValueAsString(s2);
+				json = objectMapper().writeValueAsString(s2);
 			} catch ( IOException e ) {
 				log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
 				json = "{}";
@@ -270,25 +272,6 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	/**
-	 * Get the object mapper.
-	 *
-	 * @return the mapper
-	 */
-	public ObjectMapper getObjectMapper() {
-		return objectMapper;
-	}
-
-	/**
-	 * Set the object mapper.
-	 *
-	 * @param objectMapper
-	 *        the mapper to set
-	 */
-	public void setObjectMapper(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
-	}
-
-	/**
 	 * Execute a SQL update to delete data that has already been "uploaded" and
 	 * is older than a specified number of hours.
 	 *
@@ -312,7 +295,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * @return the number of rows deleted
 	 */
 	protected int deleteUploadedDataOlderThanHours(final int hours) {
-		int result = getJdbcTemplate().update(new PreparedStatementCreator() {
+		int result = jdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -344,7 +327,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * @return the matching rows, never {@code null}
 	 */
 	protected List<NodeDatum> findDatumNotUploaded(final RowMapper<NodeDatum> rowMapper) {
-		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+		List<NodeDatum> result = jdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -382,7 +365,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 */
 	protected List<NodeDatum> findDatum(final String sqlResource, final PreparedStatementSetter setter,
 			final RowMapper<NodeDatum> rowMapper) {
-		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+		List<NodeDatum> result = jdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -445,8 +428,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
-		if ( !(LOG_SOURCE_ID.equalsIgnoreCase(datum.getSourceId())
-				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX)) ) {
+		final String sourceId = datum.getSourceId();
+		if ( !(LOG_SOURCE_ID.equalsIgnoreCase(sourceId)
+				|| (sourceId != null && sourceId.startsWith(LOG_SOURCE_ID_PREFIX))) ) {
 			log.info("Persisted datum locally: {}", datum);
 		}
 		stats.incrementAndGet(DatumDaoStat.DatumStored);
@@ -483,7 +467,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 *        the date the upload happened
 	 */
 	protected void updateDatumUpload(final NodeDatum datum, final Instant timestamp) {
-		updateDatumUpload(datum.getTimestamp(), datum.getSourceId(), timestamp);
+		updateDatumUpload(nonnull(datum.getTimestamp(), "Datum timestamp"),
+				nonnull(datum.getSourceId(), "Datum source ID"), timestamp);
 	}
 
 	/**
@@ -509,7 +494,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * @return the number of updated rows
 	 */
 	protected int updateDatumUpload(final Instant created, final Object id, final Instant timestamp) {
-		int result = getJdbcTemplate().update(new PreparedStatementCreator() {
+		int result = jdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -577,7 +562,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		final long rowCount = rowCount();
 		final int maxCount = getMaxCountPingFail();
 		boolean ok = true;
-		String msg = getMessageSource().getMessage("db.rowCount", new Object[] { rowCount },
+		String msg = messageSource().getMessage("db.rowCount", new Object[] { rowCount },
 				Locale.getDefault());
 		if ( maxCount > 0 && rowCount > maxCount ) {
 			ok = false;
@@ -586,7 +571,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	private long rowCount() {
-		final Number rowCountNum = getJdbcTemplate().queryForObject(getSqlResource(SQL_RESOURCE_COUNT),
+		final Number rowCountNum = jdbcTemplate().queryForObject(getSqlResource(SQL_RESOURCE_COUNT),
 				Number.class);
 		return (rowCountNum == null ? 0 : rowCountNum.longValue());
 	}
@@ -615,7 +600,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		} catch ( Exception e ) {
 			log.warn("Error finding datum row count.", e);
 		}
-		return getMessageSource().getMessage("status.msg",
+		return messageSource().getMessage("status.msg",
 				new Object[] {
 						rowCount,
 						stats.get(DatumDaoStat.DatumStored),
@@ -627,11 +612,42 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	/**
+	 * Get the object mapper.
+	 *
+	 * @return the mapper
+	 */
+	public final @Nullable ObjectMapper getObjectMapper() {
+		return objectMapper;
+	}
+
+	/**
+	 * Get the object mapper.
+	 *
+	 * @return the mapper
+	 * @throws IllegalStateException
+	 *         if {@code objectMapper} is {@code null}
+	 * @since 2.5
+	 */
+	public final ObjectMapper objectMapper() {
+		return nonnull(objectMapper, "ObjectMapper");
+	}
+
+	/**
+	 * Set the object mapper.
+	 *
+	 * @param objectMapper
+	 *        the mapper to set
+	 */
+	public final void setObjectMapper(@Nullable ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+	}
+
+	/**
 	 * Get the maximum number of datum to fetch for upload at one time.
 	 *
 	 * @return the maximum number of datum rows to fetch
 	 */
-	public int getMaxFetchForUpload() {
+	public final int getMaxFetchForUpload() {
 		return maxFetchForUpload;
 	}
 
@@ -646,7 +662,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * @param maxFetchForUpload
 	 *        the maximum upload value
 	 */
-	public void setMaxFetchForUpload(int maxFetchForUpload) {
+	public final void setMaxFetchForUpload(int maxFetchForUpload) {
 		this.maxFetchForUpload = maxFetchForUpload;
 	}
 
@@ -655,7 +671,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 *
 	 * @return {@literal true} to not store any mock data
 	 */
-	public boolean isIgnoreMockData() {
+	public final boolean isIgnoreMockData() {
 		return ignoreMockData;
 	}
 
@@ -671,7 +687,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * @param ignoreMockData
 	 *        the ignore mock data value
 	 */
-	public void setIgnoreMockData(boolean ignoreMockData) {
+	public final void setIgnoreMockData(boolean ignoreMockData) {
 		this.ignoreMockData = ignoreMockData;
 	}
 
@@ -682,7 +698,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 *         to {@link #DEFAULT_MAX_COUNT_PING_FAIL}
 	 * @since 2.1
 	 */
-	public int getMaxCountPingFail() {
+	public final int getMaxCountPingFail() {
 		return maxCountPingFail;
 	}
 
@@ -693,7 +709,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 *        the maximum count, or {@literal 0} to disable the test
 	 * @since 2.1
 	 */
-	public void setMaxCountPingFail(int maxCountPingFail) {
+	public final void setMaxCountPingFail(int maxCountPingFail) {
 		this.maxCountPingFail = maxCountPingFail;
 	}
 
