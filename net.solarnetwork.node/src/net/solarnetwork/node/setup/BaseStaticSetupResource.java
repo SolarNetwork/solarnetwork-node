@@ -1,21 +1,21 @@
 /* ==================================================================
  * BaseStaticSetupResource.java - 21/09/2016 9:01:04 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,11 +25,12 @@ package net.solarnetwork.node.setup;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.Resource;
 
 /**
  * Abstract base class for static {@link SetupResource} implementations.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -38,17 +39,17 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	private final String uid;
 	private final String contentType;
 	private final int cacheSeconds;
-	private final Set<String> consumerTypes;
-	private final Set<String> roles;
+	private final @Nullable Set<String> consumerTypes;
+	private final @Nullable Set<String> roles;
 	private final long contentLength;
 	private final long lastModified;
-	private final Locale locale;
-	private final SetupResourceScope scope;
+	private final @Nullable Locale locale;
+	private final @Nullable SetupResourceScope scope;
 
 	/**
 	 * Construct with values. Caching will be disabled and the content length
 	 * and last modified timestamp will be set to {@code -1}.
-	 * 
+	 *
 	 * @param uid
 	 *        the {@code resourceUID}
 	 * @param contentType
@@ -66,7 +67,7 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	/**
 	 * Construct with values. Caching will be disabled and the content length
 	 * and last modified timestamp will be set to {@code -1}.
-	 * 
+	 *
 	 * @param uid
 	 *        the {@code resourceUID}
 	 * @param contentType
@@ -85,8 +86,9 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 * @throws IOException
 	 *         if the {@link Resource} throws one when accessed
 	 */
-	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
-			Set<String> roles, Set<String> consumerTypes, Resource resource) throws IOException {
+	public BaseStaticSetupResource(String uid, String contentType, @Nullable Locale locale,
+			int cacheSeconds, @Nullable Set<String> roles, @Nullable Set<String> consumerTypes,
+			Resource resource) throws IOException {
 		this(uid, contentType, locale, cacheSeconds, resource.contentLength(), resource.lastModified(),
 				roles, consumerTypes);
 	}
@@ -94,7 +96,7 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	/**
 	 * Construct with values. Caching will be disabled and the content length
 	 * and last modified timestamp will be set to {@code -1}.
-	 * 
+	 *
 	 * @param uid
 	 *        the {@code resourceUID}
 	 * @param contentType
@@ -116,16 +118,16 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 *         if the {@link Resource} throws one when accessed
 	 * @since 1.1
 	 */
-	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
-			Set<String> roles, Set<String> consumerTypes, Resource resource, SetupResourceScope scope)
-			throws IOException {
+	public BaseStaticSetupResource(String uid, String contentType, @Nullable Locale locale,
+			int cacheSeconds, @Nullable Set<String> roles, @Nullable Set<String> consumerTypes,
+			Resource resource, @Nullable SetupResourceScope scope) throws IOException {
 		this(uid, contentType, locale, cacheSeconds, resource.contentLength(), resource.lastModified(),
 				roles, consumerTypes, scope);
 	}
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param uid
 	 *        the {@code resourceUID}
 	 * @param contentType
@@ -143,15 +145,16 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 * @param roles
 	 *        the optional required roles
 	 */
-	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
-			long contentLength, long lastModified, Set<String> consumerTypes, Set<String> roles) {
+	public BaseStaticSetupResource(String uid, String contentType, @Nullable Locale locale,
+			int cacheSeconds, long contentLength, long lastModified, @Nullable Set<String> consumerTypes,
+			@Nullable Set<String> roles) {
 		this(uid, contentType, locale, cacheSeconds, contentLength, lastModified, consumerTypes, roles,
 				null);
 	}
 
 	/**
 	 * Construct with values.
-	 * 
+	 *
 	 * @param uid
 	 *        the {@code resourceUID}
 	 * @param contentType
@@ -172,9 +175,9 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 *        the scope
 	 * @since 1.1
 	 */
-	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
-			long contentLength, long lastModified, Set<String> consumerTypes, Set<String> roles,
-			SetupResourceScope scope) {
+	public BaseStaticSetupResource(String uid, String contentType, @Nullable Locale locale,
+			int cacheSeconds, long contentLength, long lastModified, @Nullable Set<String> consumerTypes,
+			@Nullable Set<String> roles, @Nullable SetupResourceScope scope) {
 		super();
 		this.uid = uid;
 		this.contentType = contentType;
@@ -198,7 +201,7 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	}
 
 	@Override
-	public Set<String> getRequiredRoles() {
+	public @Nullable Set<String> getRequiredRoles() {
 		return roles;
 	}
 
@@ -218,17 +221,17 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	}
 
 	@Override
-	public Set<String> getSupportedConsumerTypes() {
+	public @Nullable Set<String> getSupportedConsumerTypes() {
 		return consumerTypes;
 	}
 
 	@Override
-	public Locale getLocale() {
+	public @Nullable Locale getLocale() {
 		return locale;
 	}
 
 	@Override
-	public SetupResourceScope getScope() {
+	public @Nullable SetupResourceScope getScope() {
 		return scope;
 	}
 

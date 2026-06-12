@@ -1,21 +1,21 @@
 /* ==================================================================
  * SimpleSetupResourceProvider.java - 21/09/2016 7:30:18 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,18 +30,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Basic implementation of {@link SetupResourceProvider} for serving static
  * content.
- * 
+ *
  * @author matt
  * @version 1.0
  */
 public class SimpleSetupResourceProvider implements SetupResourceProvider {
 
 	private Locale defaultLocale = Locale.US;
-	private List<SetupResource> resources;
+	private @Nullable List<SetupResource> resources;
 
 	/**
 	 * Default constructor.
@@ -51,7 +52,7 @@ public class SimpleSetupResourceProvider implements SetupResourceProvider {
 	}
 
 	@Override
-	public SetupResource getSetupResource(String resourceUID, Locale locale) {
+	public @Nullable SetupResource getSetupResource(String resourceUID, @Nullable Locale locale) {
 		if ( resources == null ) {
 			return null;
 		}
@@ -73,7 +74,8 @@ public class SimpleSetupResourceProvider implements SetupResourceProvider {
 	}
 
 	@Override
-	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale) {
+	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType,
+			@Nullable Locale locale) {
 		Collection<SetupResource> result;
 		Map<String, SetupResource> bestMatches;
 		if ( resources == null ) {
@@ -98,27 +100,27 @@ public class SimpleSetupResourceProvider implements SetupResourceProvider {
 
 	/**
 	 * Get the setup resources.
-	 * 
+	 *
 	 * @return the resources
 	 */
-	public List<SetupResource> getResources() {
+	public @Nullable List<SetupResource> getResources() {
 		return resources;
 	}
 
 	/**
 	 * Set the list of resources to use.
-	 * 
+	 *
 	 * @param resources
 	 *        The fixed set of resources managed by this service.
 	 */
-	public void setResources(List<SetupResource> resources) {
+	public void setResources(@Nullable List<SetupResource> resources) {
 		this.resources = resources;
 	}
 
 	/**
 	 * Set the locale to use for resources that have no locale specified in
 	 * their filename.
-	 * 
+	 *
 	 * @param defaultLocale
 	 *        The default locale.
 	 */

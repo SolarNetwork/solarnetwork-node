@@ -27,12 +27,12 @@ import static net.solarnetwork.node.setup.SetupResourceUtils.localeScore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -64,10 +64,10 @@ public class PatternMatchingSetupResourceProvider
 	private Set<String> consumerTypes = SetupResource.WEB_CONSUMER_TYPES;
 	private Set<String> roles = SetupResource.USER_ROLES;
 	private SetupResourceScope scope = SetupResourceScope.Default;
-	private String[] basenames;
-	private ResourcePatternResolver resourcePatternResolver;
+	private String @Nullable [] basenames;
+	private @Nullable ResourcePatternResolver resourcePatternResolver;
 	private int cacheSeconds = 86400;
-	private Map<String, String> fileExtensionContentTypeMapping = net.solarnetwork.node.setup.SetupResourceUtils.DEFAULT_FILENAME_EXTENSION_CONTENT_TYPES;
+	private Map<String, String> fileExtensionContentTypeMapping = SetupResourceUtils.DEFAULT_FILENAME_EXTENSION_CONTENT_TYPES;
 
 	private static final Logger LOG = LoggerFactory
 			.getLogger(PatternMatchingSetupResourceProvider.class);
@@ -87,7 +87,11 @@ public class PatternMatchingSetupResourceProvider
 	}
 
 	@Override
-	public SetupResource getSetupResource(String resourceUID, Locale locale) {
+	public @Nullable SetupResource getSetupResource(String resourceUID, @Nullable Locale locale) {
+		final String @Nullable [] basenames = this.basenames;
+		if ( basenames == null ) {
+			return null;
+		}
 		int bestScore = -1;
 		SetupResource bestMatch = null;
 		for ( String basename : basenames ) {
@@ -109,9 +113,11 @@ public class PatternMatchingSetupResourceProvider
 	}
 
 	@Override
-	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale) {
-		if ( !consumerTypes.contains(consumerType) ) {
-			return Collections.emptyList();
+	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType,
+			@Nullable Locale locale) {
+		final String @Nullable [] basenames = this.basenames;
+		if ( basenames == null || !consumerTypes.contains(consumerType) ) {
+			return List.of();
 		}
 		List<SetupResource> results = new ArrayList<SetupResource>(basenames.length);
 		for ( String basename : basenames ) {
@@ -133,6 +139,10 @@ public class PatternMatchingSetupResourceProvider
 	}
 
 	private List<SetupResource> resolveSetupResourcesForBasename(String basename) {
+		final ResourcePatternResolver resourcePatternResolver = this.resourcePatternResolver;
+		if ( resourcePatternResolver == null ) {
+			return List.of();
+		}
 		final String pattern = basename + "*.*";
 		List<SetupResource> result = null;
 		try {
@@ -148,17 +158,18 @@ public class PatternMatchingSetupResourceProvider
 					if ( contentType == null ) {
 						contentType = UNKNOWN_CONTENT_TYPE;
 					}
-					result.add(new ResourceSetupResource(r, baseFilenameForPath(filename), contentType,
-							cacheSeconds, consumerTypes, roles, scope));
+					final @Nullable String uid = baseFilenameForPath(filename);
+					if ( uid == null ) {
+						continue;
+					}
+					result.add(new ResourceSetupResource(r, uid, contentType, cacheSeconds,
+							consumerTypes, roles, scope));
 				}
 			}
 		} catch ( IOException e ) {
 			LOG.error("Error resolving basename [{}]: {}", e);
 		}
-		if ( result == null ) {
-			result = Collections.emptyList();
-		}
-		return result;
+		return (result != null ? result : List.of());
 	}
 
 	/**
@@ -178,7 +189,7 @@ public class PatternMatchingSetupResourceProvider
 	 * @param basenames
 	 *        The list of base names (file paths without extensions) to use.
 	 */
-	public void setBasenames(String[] basenames) {
+	public void setBasenames(String @Nullable [] basenames) {
 		this.basenames = basenames;
 	}
 

@@ -1,21 +1,21 @@
 /* ==================================================================
  * SetupResourceUtils.java - 23/09/2016 10:20:14 AM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,11 +28,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
  * Utility methods for setup resources.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -66,17 +67,17 @@ public final class SetupResourceUtils {
 
 	/**
 	 * Get a {@link Locale} based on a path.
-	 * 
+	 *
 	 * The path is expected to follow {@link java.util.ResourceBundle} naming
 	 * conventions, for example {@code file.txt} for no locale,
 	 * {@code file_en.txt} for a specific language, and {@code file_en_US.txt}
 	 * for a language plus country variant.
-	 * 
+	 *
 	 * @param path
 	 *        The path to derive a locale from.
 	 * @return The Locale, or {@code null} if not appropriate or none found.
 	 */
-	public static Locale localeForPath(String path) {
+	public static @Nullable Locale localeForPath(@Nullable String path) {
 		if ( path == null ) {
 			return null;
 		}
@@ -95,13 +96,13 @@ public final class SetupResourceUtils {
 	/**
 	 * Get a base filename for a given path, without any extension or locale
 	 * specifier.
-	 * 
+	 *
 	 * @param path
 	 *        The path to get the base filename from.
 	 * @return The base filename, or {@code null} if {@code path} is
 	 *         {@code null}.
 	 */
-	public static String baseFilenameForPath(String path) {
+	public static @Nullable String baseFilenameForPath(@Nullable String path) {
 		if ( path == null ) {
 			return null;
 		}
@@ -119,12 +120,12 @@ public final class SetupResourceUtils {
 
 	/**
 	 * Get a locale for just a language.
-	 * 
+	 *
 	 * @param lang
 	 *        The language to get the locale for.
 	 * @return The Locale, or {@code null} if {@code lang} is {@code null}.
 	 */
-	public static Locale localeForLanguage(String lang) {
+	public static @Nullable Locale localeForLanguage(@Nullable String lang) {
 		if ( lang == null ) {
 			return null;
 		}
@@ -137,7 +138,7 @@ public final class SetupResourceUtils {
 	/**
 	 * Assign a score to a resource for how closely it matches the desired
 	 * locale.
-	 * 
+	 *
 	 * @param rsrc
 	 *        The resource to test
 	 * @param desiredLocale
@@ -148,7 +149,8 @@ public final class SetupResourceUtils {
 	 * @return A matching score. Higher values more closely match. If
 	 *         {@link Integer#MAX_VALUE} is returned then the match is exact.
 	 */
-	public static int localeScore(SetupResource rsrc, Locale desiredLocale, Locale defaultLocale) {
+	public static int localeScore(@Nullable SetupResource rsrc, @Nullable Locale desiredLocale,
+			@Nullable Locale defaultLocale) {
 		if ( rsrc == null ) {
 			return Integer.MIN_VALUE;
 		}
