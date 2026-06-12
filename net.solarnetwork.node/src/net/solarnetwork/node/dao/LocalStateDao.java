@@ -68,6 +68,7 @@ public interface LocalStateDao extends GenericDao<LocalState, String>, Batchable
 	 *        the domain object so store
 	 * @return the previously stored object, or {@code null} if inserted
 	 */
+	@Nullable
 	LocalState getAndSave(LocalState entity);
 
 	/**

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.locstate;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.ConnectionCallback;
 import net.solarnetwork.node.dao.LocalStateDao;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
@@ -138,12 +140,11 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 		} catch ( Exception e ) {
 			log.warn("Error finding Local State row count.", e);
 		}
-		return getMessageSource().getMessage("status.msg", new Object[] { rowCount },
-				Locale.getDefault());
+		return messageSource().getMessage("status.msg", new Object[] { rowCount }, Locale.getDefault());
 	}
 
 	private long rowCount() {
-		final Number rowCountNum = getJdbcTemplate()
+		final Number rowCountNum = jdbcTemplate()
 				.queryForObject(getSqlResource(SqlResource.Count.getResource()), Number.class);
 		return (rowCountNum == null ? 0 : rowCountNum.longValue());
 	}
@@ -161,8 +162,8 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 	}
 
 	@Override
-	public LocalState compareAndSave(LocalState entity, Object expectedValue) {
-		return getJdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
+	public LocalState compareAndSave(LocalState entity, @Nullable Object expectedValue) {
+		return nonnull(jdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
 			LocalState copy = copyState(entity);
 			PreparedStatement stmt = conn
 					.prepareStatement(getSqlResource(SqlResource.CompareAndSave.getResource()));
@@ -173,7 +174,8 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 				try (ResultSet rs = stmt.getResultSet()) {
 					if ( rs.next() ) {
 						LocalState result = getRowMapper().mapRow(stmt.getResultSet(), 1);
-						if ( Objects.equals(copy.getModified(), result.getModified()) ) {
+						if ( result != null
+								&& Objects.equals(copy.getModified(), result.getModified()) ) {
 							postEntityEvent(result.getId(), entity, EntityEventType.STORED);
 						}
 						return result;
@@ -181,12 +183,12 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 				}
 			}
 			return entity;
-		});
+		}), "Entity");
 	}
 
 	@Override
 	public LocalState compareAndChange(LocalState entity) {
-		return getJdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
+		return nonnull(jdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
 			LocalState copy = copyState(entity);
 			PreparedStatement stmt = conn
 					.prepareStatement(getSqlResource(SqlResource.CompareAndChange.getResource()));
@@ -196,7 +198,8 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 				try (ResultSet rs = stmt.getResultSet()) {
 					if ( rs.next() ) {
 						LocalState result = getRowMapper().mapRow(stmt.getResultSet(), 1);
-						if ( Objects.equals(copy.getModified(), result.getModified()) ) {
+						if ( result != null
+								&& Objects.equals(copy.getModified(), result.getModified()) ) {
 							postEntityEvent(result.getId(), entity, EntityEventType.STORED);
 						}
 						return result;
@@ -204,13 +207,13 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 				}
 			}
 			return entity;
-		});
+		}), "Entity");
 	}
 
 	private static LocalState copyState(LocalState entity) {
 		LocalState copy;
 		if ( entity.getCreated() == null ) {
-			copy = new LocalState(entity.getId(), Instant.now().truncatedTo(ChronoUnit.MILLIS),
+			copy = new LocalState(entity.id(), Instant.now().truncatedTo(ChronoUnit.MILLIS),
 					entity.getType(), null);
 			copy.setData(entity.getData());
 			copy.setModified(copy.getCreated());
@@ -222,8 +225,8 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 	}
 
 	@Override
-	public LocalState getAndSave(LocalState entity) {
-		return getJdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
+	public @Nullable LocalState getAndSave(LocalState entity) {
+		return jdbcTemplate().execute((ConnectionCallback<LocalState>) conn -> {
 			PreparedStatement stmt = conn
 					.prepareStatement(getSqlResource(SqlResource.GetAndSave.getResource()));
 			setUpdateStatementValues(entity, stmt);
@@ -232,7 +235,7 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 				try (ResultSet rs = stmt.getResultSet()) {
 					if ( rs.next() ) {
 						LocalState result = getRowMapper().mapRow(stmt.getResultSet(), 1);
-						if ( result.differsFrom(entity) ) {
+						if ( result != null && result.differsFrom(entity) ) {
 							postEntityEvent(result.getId(), entity, EntityEventType.STORED);
 						}
 						return result;
@@ -246,15 +249,15 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 
 	@Override
 	public int deleteAll() {
-		return getJdbcTemplate().execute((ConnectionCallback<Integer>) conn -> {
+		return nonnull(jdbcTemplate().execute((ConnectionCallback<Integer>) conn -> {
 			return conn.prepareStatement(getSqlResource(SqlResource.DeleteAll.getResource()))
 					.executeUpdate();
-		});
+		}), "Count");
 	}
 
 	@Override
-	public Instant getMostRecentModificationDate() {
-		return getJdbcTemplate().query(conn -> {
+	public @Nullable Instant getMostRecentModificationDate() {
+		return jdbcTemplate().query(conn -> {
 			PreparedStatement ps = conn.prepareStatement(
 					getSqlResource(SqlResource.GetMostRecentModificationDate.getResource()));
 			ps.setMaxRows(1);
@@ -275,7 +278,7 @@ public class JdbcLocalStateDao extends BaseJdbcBatchableDao<LocalState, String>
 	@Override
 	protected LocalState getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
 			throws SQLException {
-		return getRowMapper().mapRow(resultSet, rowCount);
+		return nonnull(getRowMapper().mapRow(resultSet, rowCount), "Entity");
 	}
 
 	@Override
