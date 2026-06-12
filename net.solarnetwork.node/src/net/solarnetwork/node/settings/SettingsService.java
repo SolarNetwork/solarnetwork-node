@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.domain.Setting;
@@ -177,6 +178,7 @@ public interface SettingsService {
 	 *
 	 * @return the factory, or {@code null} if not available
 	 */
+	@Nullable
 	SettingSpecifierProviderFactory getProviderFactory(String factoryUid);
 
 	/**
@@ -222,8 +224,8 @@ public interface SettingsService {
 	 * @param factoryUid
 	 *        the factory UID to create the new instance for
 	 * @param instanceUid
-	 *        the instance UID to create the new instance for, or
-	 *        {@code null} to automatically assign one
+	 *        the instance UID to create the new instance for, or {@code null}
+	 *        to automatically assign one
 	 * @return the new instance ID
 	 * @since 2.1
 	 */
@@ -288,6 +290,7 @@ public interface SettingsService {
 	 *        the setting
 	 * @return the current setting value
 	 */
+	@Nullable
 	Object getSettingValue(SettingSpecifierProvider provider, SettingSpecifier setting);
 
 	/**
@@ -317,6 +320,7 @@ public interface SettingsService {
 	 * @return the resource handler, or {@code null} if not available
 	 * @since 1.4
 	 */
+	@Nullable
 	SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey);
 
 	/**
@@ -335,8 +339,8 @@ public interface SettingsService {
 	 *         if any IO error occurs
 	 * @since 1.4
 	 */
-	Iterable<Resource> getSettingResources(String handlerKey, String instanceKey, String settingKey)
-			throws IOException;
+	Iterable<Resource> getSettingResources(String handlerKey, @Nullable String instanceKey,
+			String settingKey) throws IOException;
 
 	/**
 	 * Import setting resources.
@@ -362,7 +366,7 @@ public interface SettingsService {
 	 *         if any IO error occurs
 	 * @since 1.4
 	 */
-	void importSettingResources(String handlerKey, String instanceKey, String settingKey,
+	void importSettingResources(String handlerKey, @Nullable String instanceKey, String settingKey,
 			Iterable<Resource> resources) throws IOException;
 
 	/**
@@ -385,7 +389,7 @@ public interface SettingsService {
 	 *         if any IO error occurs
 	 * @since 2.3
 	 */
-	void removeSettingResources(String handlerKey, String instanceKey, String settingKey,
+	void removeSettingResources(String handlerKey, @Nullable String instanceKey, String settingKey,
 			Iterable<Resource> resources) throws IOException;
 
 	/**
@@ -418,8 +422,8 @@ public interface SettingsService {
 	 * ID.
 	 *
 	 * @param factoryUid
-	 *        the UID of the factory to get, or {@code null} for a
-	 *        non-factory component
+	 *        the UID of the factory to get, or {@code null} for a non-factory
+	 *        component
 	 * @param instanceUid
 	 *        if UID of the instance
 	 * @return the available settings, never {@code null}
@@ -427,7 +431,7 @@ public interface SettingsService {
 	 *         if both arguments are {@code null}
 	 * @since 2.1
 	 */
-	List<Setting> getSettings(String factoryUid, String instanceUid);
+	List<Setting> getSettings(@Nullable String factoryUid, String instanceUid);
 
 	/**
 	 * Get a list of available setting notes for a given key.
@@ -487,6 +491,7 @@ public interface SettingsService {
 	 * @return the backup object, or {@code null} if no backup created
 	 */
 	@SuppressWarnings("deprecation")
+	@Nullable
 	SettingsBackup backupSettings();
 
 	/**
@@ -506,5 +511,7 @@ public interface SettingsService {
 	 * @return the Reader, or {@code null} if the backup cannot be found
 	 */
 	@SuppressWarnings("deprecation")
+	@Nullable
 	Reader getReaderForBackup(SettingsBackup backup);
+
 }

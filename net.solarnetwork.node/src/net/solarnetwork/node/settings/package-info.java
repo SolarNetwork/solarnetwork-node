@@ -1,7 +1,7 @@
 /* ==================================================================
- * SettingsFilter.java - 8/06/2024 8:40:41 am
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2024 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,38 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.settings;
-
-import org.jspecify.annotations.Nullable;
-
 /**
- * API for a filter on settings.
- *
- * <p>
- * For any non-null property, the filter implies only settings that match that
- * property should be included in the filtered result set.
- * </p>
- *
- * @author matt
- * @version 1.0
- * @since 3.9
+ * Package info.
  */
-public interface SettingsFilter {
 
-	/**
-	 * Get the provider key.
-	 *
-	 * @return the provider key
-	 */
-	@Nullable
-	String getProviderKey();
-
-	/**
-	 * Get the instance key.
-	 *
-	 * @return the instance key
-	 */
-	@Nullable
-	String getInstanceKey();
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.settings;

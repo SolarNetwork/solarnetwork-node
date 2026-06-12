@@ -53,7 +53,7 @@ public class SettingsImportOptions {
 	 *
 	 * @return the flag
 	 */
-	public boolean isAddOnly() {
+	public final boolean isAddOnly() {
 		return addOnly;
 	}
 
@@ -63,7 +63,7 @@ public class SettingsImportOptions {
 	 * @param addOnly
 	 *        the flag value to set
 	 */
-	public void setAddOnly(boolean addOnly) {
+	public final void setAddOnly(boolean addOnly) {
 		this.addOnly = addOnly;
 	}
 

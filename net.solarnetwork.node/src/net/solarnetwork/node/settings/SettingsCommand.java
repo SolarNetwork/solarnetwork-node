@@ -24,10 +24,10 @@ package net.solarnetwork.node.settings;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Edit settings command object.
@@ -37,8 +37,8 @@ import java.util.regex.Pattern;
  */
 public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 
-	private String providerKey;
-	private String instanceKey;
+	private @Nullable String providerKey;
+	private @Nullable String instanceKey;
 	private List<SettingValueBean> values;
 	private boolean force;
 
@@ -75,10 +75,9 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * Constructor.
 	 *
 	 * @param values
-	 *        the values, or {@code null} to have a list created
-	 *        automatically
+	 *        the values, or {@code null} to have a list created automatically
 	 */
-	public SettingsCommand(List<SettingValueBean> values) {
+	public SettingsCommand(@Nullable List<SettingValueBean> values) {
 		this(values, null);
 	}
 
@@ -86,16 +85,16 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * Constructor.
 	 *
 	 * @param values
-	 *        the values, or {@code null} to have a list created
-	 *        automatically
+	 *        the values, or {@code null} to have a list created automatically
 	 * @param settingKeyPatternsToClean
 	 *        the key patterns to clean, or {@code null}
 	 */
-	public SettingsCommand(List<SettingValueBean> values, Iterable<Pattern> settingKeyPatternsToClean) {
+	public SettingsCommand(@Nullable List<SettingValueBean> values,
+			@Nullable Iterable<Pattern> settingKeyPatternsToClean) {
 		super();
-		setValues(values != null ? values : new ArrayList<>(8));
+		this.values = (values != null ? values : new ArrayList<>(8));
 		this.settingKeyPatternsToClean = (settingKeyPatternsToClean != null ? settingKeyPatternsToClean
-				: Collections.emptyList());
+				: List.of());
 	}
 
 	@Override
@@ -111,7 +110,7 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 
 	@Override
 	public boolean hasSettingValueUpdates() {
-		return (force || (values != null && !values.isEmpty()));
+		return (force || !values.isEmpty());
 	}
 
 	@Override
@@ -153,7 +152,7 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 *
 	 * @return the values
 	 */
-	public List<SettingValueBean> getValues() {
+	public final List<SettingValueBean> getValues() {
 		return values;
 	}
 
@@ -163,12 +162,12 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * @param values
 	 *        the values to set
 	 */
-	public void setValues(List<SettingValueBean> values) {
-		this.values = values;
+	public final void setValues(List<SettingValueBean> values) {
+		this.values = (values != null ? values : List.of());
 	}
 
 	@Override
-	public String getProviderKey() {
+	public final @Nullable String getProviderKey() {
 		return providerKey;
 	}
 
@@ -178,12 +177,12 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * @param providerKey
 	 *        the provider key
 	 */
-	public void setProviderKey(String providerKey) {
+	public final void setProviderKey(@Nullable String providerKey) {
 		this.providerKey = providerKey;
 	}
 
 	@Override
-	public String getInstanceKey() {
+	public final @Nullable String getInstanceKey() {
 		return instanceKey;
 	}
 
@@ -193,7 +192,7 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * @param instanceKey
 	 *        the instance key to set
 	 */
-	public void setInstanceKey(String instanceKey) {
+	public final void setInstanceKey(@Nullable String instanceKey) {
 		this.instanceKey = instanceKey;
 	}
 
@@ -204,7 +203,7 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 * @return {@literal true} if the update should be forced
 	 * @since 1.1
 	 */
-	public boolean isForce() {
+	public final boolean isForce() {
 		return force;
 	}
 
@@ -216,7 +215,7 @@ public class SettingsCommand implements SettingsUpdates, SettingsFilter {
 	 *        {@literal true} if the update should be forced
 	 * @since 1.1
 	 */
-	public void setForce(boolean force) {
+	public final void setForce(boolean force) {
 		this.force = force;
 	}
 

@@ -26,6 +26,7 @@ import java.io.Serial;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.StringDateKey;
 
 /**
@@ -49,8 +50,9 @@ public class SettingsBackup extends StringDateKey {
 	 * @param backupDate
 	 *        the backup date
 	 */
-	public SettingsBackup(String backupKey, Date backupDate) {
-		super(backupKey, backupDate != null ? backupDate.toInstant() : null);
+	@Deprecated
+	public SettingsBackup(String backupKey, @Nullable Date backupDate) {
+		super(backupKey, backupDate != null ? backupDate.toInstant() : Instant.EPOCH);
 	}
 
 	/**
@@ -58,11 +60,9 @@ public class SettingsBackup extends StringDateKey {
 	 *
 	 * @return date string
 	 */
+	@Deprecated
 	public String getStandardDateString() {
 		Date date = getBackupDate();
-		if ( date == null ) {
-			return null;
-		}
 		SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm");
 		return sdf.format(date);
 	}
@@ -72,6 +72,7 @@ public class SettingsBackup extends StringDateKey {
 	 *
 	 * @return the backup key
 	 */
+	@Deprecated
 	public String getBackupKey() {
 		return getKey();
 	}
@@ -81,8 +82,9 @@ public class SettingsBackup extends StringDateKey {
 	 *
 	 * @return the backup date
 	 */
+	@Deprecated
 	public Date getBackupDate() {
 		Instant ts = getTimestamp();
-		return ts != null ? Date.from(ts) : null;
+		return Date.from(ts);
 	}
 }

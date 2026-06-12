@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.settings;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * An individual setting value.
  *
@@ -30,11 +32,11 @@ package net.solarnetwork.node.settings;
  */
 public class SettingValueBean implements SettingsUpdates.Change {
 
-	private String providerKey;
-	private String instanceKey;
-	private String key;
-	private String value;
-	private String note;
+	private @Nullable String providerKey;
+	private @Nullable String instanceKey;
+	private @Nullable String key;
+	private @Nullable String value;
+	private @Nullable String note;
 	private boolean trans;
 	private boolean remove;
 
@@ -54,7 +56,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the value
 	 * @since 1.2
 	 */
-	public SettingValueBean(String key, String value) {
+	public SettingValueBean(String key, @Nullable String value) {
 		this(null, null, key, value);
 	}
 
@@ -71,7 +73,8 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the value
 	 * @since 1.3
 	 */
-	public SettingValueBean(String providerKey, String instanceKey, String key, String value) {
+	public SettingValueBean(@Nullable String providerKey, @Nullable String instanceKey, String key,
+			@Nullable String value) {
 		this(providerKey, instanceKey, key, value, null);
 	}
 
@@ -104,8 +107,8 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the note
 	 * @since 1.4
 	 */
-	public SettingValueBean(String providerKey, String instanceKey, String key, String value,
-			String note) {
+	public SettingValueBean(@Nullable String providerKey, @Nullable String instanceKey, String key,
+			@Nullable String value, @Nullable String note) {
 		super();
 		this.providerKey = providerKey;
 		this.instanceKey = instanceKey;
@@ -163,7 +166,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	}
 
 	@Override
-	public String getProviderKey() {
+	public @Nullable String getProviderKey() {
 		return providerKey;
 	}
 
@@ -173,12 +176,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @param providerKey
 	 *        the key to set
 	 */
-	public void setProviderKey(String providerKey) {
+	public void setProviderKey(@Nullable String providerKey) {
 		this.providerKey = providerKey;
 	}
 
 	@Override
-	public String getKey() {
+	public @Nullable String getKey() {
 		return key;
 	}
 
@@ -188,12 +191,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @param key
 	 *        the key to set
 	 */
-	public void setKey(String key) {
+	public void setKey(@Nullable String key) {
 		this.key = key;
 	}
 
 	@Override
-	public String getValue() {
+	public @Nullable String getValue() {
 		return value;
 	}
 
@@ -203,12 +206,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @param value
 	 *        the value to set
 	 */
-	public void setValue(String value) {
+	public void setValue(@Nullable String value) {
 		this.value = value;
 	}
 
 	@Override
-	public String getInstanceKey() {
+	public @Nullable String getInstanceKey() {
 		return instanceKey;
 	}
 
@@ -218,7 +221,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @param instanceKey
 	 *        the key to set
 	 */
-	public void setInstanceKey(String instanceKey) {
+	public void setInstanceKey(@Nullable String instanceKey) {
 		this.instanceKey = (instanceKey != null && !instanceKey.isEmpty() ? instanceKey : null);
 	}
 
@@ -229,7 +232,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 * @since 1.4
 	 */
 	@Override
-	public final String getNote() {
+	public final @Nullable String getNote() {
 		return note;
 	}
 
@@ -240,7 +243,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the note to set
 	 * @since 1.4
 	 */
-	public final void setNote(String note) {
+	public final void setNote(@Nullable String note) {
 		this.note = note;
 	}
 

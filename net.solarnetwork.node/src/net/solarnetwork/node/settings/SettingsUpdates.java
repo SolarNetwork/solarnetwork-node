@@ -23,6 +23,7 @@
 package net.solarnetwork.node.settings;
 
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /**
  * API for a set of setting updates to be applied.
@@ -43,6 +44,7 @@ public interface SettingsUpdates {
 		 *
 		 * @return the setting provider key
 		 */
+		@Nullable
 		String getProviderKey();
 
 		/**
@@ -51,6 +53,7 @@ public interface SettingsUpdates {
 		 *
 		 * @return the setting instance key, or {@code null}
 		 */
+		@Nullable
 		String getInstanceKey();
 
 		/**
@@ -58,6 +61,7 @@ public interface SettingsUpdates {
 		 *
 		 * @return the key
 		 */
+		@Nullable
 		String getKey();
 
 		/**
@@ -65,6 +69,7 @@ public interface SettingsUpdates {
 		 *
 		 * @return the value
 		 */
+		@Nullable
 		String getValue();
 
 		/**
@@ -87,6 +92,7 @@ public interface SettingsUpdates {
 		 * @return the note, or {@code null}
 		 * @since 1.1
 		 */
+		@Nullable
 		String getNote();
 	}
 
