@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.control;
 
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +37,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.context.MessageSource;
@@ -58,7 +60,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * persisting of changes.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 		implements SettingSpecifierProvider, EventHandler, MultiDatumDataSource {
@@ -70,8 +72,8 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	public static final QueuePersistMode DEFAULT_PERSIST_MODE = QueuePersistMode.Poll;
 
 	private final List<NodeControlProvider> providers;
-	private Executor executor;
-	private Pattern controlIdRegex;
+	private @Nullable Executor executor;
+	private @Nullable Pattern controlIdRegex;
 	private ControlEventMode eventMode = DEFAULT_EVENT_MODE;
 	private QueuePersistMode persistMode = DEFAULT_PERSIST_MODE;
 
@@ -88,20 +90,8 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	public NodeControlInfoDatumDataSource(OptionalService<DatumQueue> datumQueue,
 			List<NodeControlProvider> providers) {
 		super();
-		if ( datumQueue == null ) {
-			throw new IllegalArgumentException("The datumQueue argument must not be null.");
-		}
-		super.setDatumQueue(datumQueue);
-		if ( providers == null ) {
-			throw new IllegalArgumentException("The providers argument must not be null.");
-		}
-		this.providers = providers;
-	}
-
-	@Override
-	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
-		throw new UnsupportedOperationException(
-				"Not allowed to change datumQueue property after construction.");
+		super.setDatumQueue(requireNonNullArgument(datumQueue, "datumQueue"));
+		this.providers = requireNonNullArgument(providers, "providers");
 	}
 
 	@Override
@@ -292,7 +282,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 * @param executor
 	 *        the executor
 	 */
-	public void setExecutor(Executor executor) {
+	public final void setExecutor(@Nullable Executor executor) {
 		this.executor = executor;
 	}
 
@@ -302,7 +292,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 * @return the control ID expression, or {@literal null} for including all
 	 *         control IDs
 	 */
-	public Pattern getControlIdRegex() {
+	public final @Nullable Pattern getControlIdRegex() {
 		return controlIdRegex;
 	}
 
@@ -314,7 +304,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *        will only be generated for controls with matching control ID
 	 *        values; if {@literal null} then generate datum for all controls
 	 */
-	public void setControlIdRegex(Pattern controlIdRegex) {
+	public final void setControlIdRegex(@Nullable Pattern controlIdRegex) {
 		this.controlIdRegex = controlIdRegex;
 	}
 
@@ -324,7 +314,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 * @return the control ID expression string, or {@literal null} for
 	 *         including all control IDs
 	 */
-	public String getControlIdRegexValue() {
+	public final @Nullable String getControlIdRegexValue() {
 		Pattern p = getControlIdRegex();
 		return (p != null ? p.pattern() : null);
 	}
@@ -343,7 +333,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *        will only be generated for controls with matching control ID
 	 *        values; if {@literal null} then generate datum for all controls
 	 */
-	public void setControlIdRegexValue(String controlIdRegex) {
+	public final void setControlIdRegexValue(@Nullable String controlIdRegex) {
 		Pattern p = null;
 		if ( controlIdRegex != null ) {
 			try {
@@ -360,7 +350,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the mode, never {@literal null}
 	 */
-	public ControlEventMode getEventMode() {
+	public final ControlEventMode getEventMode() {
 		return eventMode;
 	}
 
@@ -371,7 +361,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
 	 */
-	public void setEventMode(ControlEventMode eventMode) {
+	public final void setEventMode(@Nullable ControlEventMode eventMode) {
 		if ( eventMode == null ) {
 			eventMode = DEFAULT_EVENT_MODE;
 		}
@@ -383,7 +373,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the mode as a string, never {@literal null}
 	 */
-	public String getEventModeValue() {
+	public final String getEventModeValue() {
 		return getEventMode().name();
 	}
 
@@ -394,12 +384,14 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
 	 */
-	public void setEventModeValue(String value) {
-		ControlEventMode mode;
-		try {
-			mode = ControlEventMode.valueOf(value);
-		} catch ( IllegalArgumentException | NullPointerException e ) {
-			mode = DEFAULT_EVENT_MODE;
+	public final void setEventModeValue(@Nullable String value) {
+		ControlEventMode mode = null;
+		if ( value != null ) {
+			try {
+				mode = ControlEventMode.valueOf(value);
+			} catch ( IllegalArgumentException e ) {
+				mode = DEFAULT_EVENT_MODE;
+			}
 		}
 		setEventMode(mode);
 	}
@@ -409,7 +401,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the mode, never {@literal null}
 	 */
-	public QueuePersistMode getPersistMode() {
+	public final QueuePersistMode getPersistMode() {
 		return persistMode;
 	}
 
@@ -420,7 +412,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_PERSIST_MODE} will be set
 	 */
-	public void setPersistMode(QueuePersistMode persistMode) {
+	public final void setPersistMode(@Nullable QueuePersistMode persistMode) {
 		if ( persistMode == null ) {
 			persistMode = DEFAULT_PERSIST_MODE;
 		}
@@ -432,7 +424,7 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the mode as a string, never {@literal null}
 	 */
-	public String getPersistModeValue() {
+	public final String getPersistModeValue() {
 		return getPersistMode().name();
 	}
 
@@ -443,12 +435,14 @@ public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
 	 *        the mode to set; if {@literal null} then
 	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
 	 */
-	public void setPersistModeValue(String value) {
-		QueuePersistMode mode;
-		try {
-			mode = QueuePersistMode.valueOf(value);
-		} catch ( IllegalArgumentException | NullPointerException e ) {
-			mode = DEFAULT_PERSIST_MODE;
+	public final void setPersistModeValue(@Nullable String value) {
+		QueuePersistMode mode = null;
+		if ( value != null ) {
+			try {
+				mode = QueuePersistMode.valueOf(value);
+			} catch ( IllegalArgumentException e ) {
+				mode = DEFAULT_PERSIST_MODE;
+			}
 		}
 		setPersistMode(mode);
 	}
