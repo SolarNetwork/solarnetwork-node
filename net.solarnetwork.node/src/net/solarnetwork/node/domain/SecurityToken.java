@@ -185,7 +185,10 @@ public class SecurityToken extends BasicStringEntity {
 	 *        the consumer
 	 */
 	public void copySecret(Consumer<String> dest) {
-		dest.accept(nonnull(tokenSecret, "Token secret"));
+		final String tokenSecret = this.tokenSecret;
+		if ( tokenSecret != null ) {
+			dest.accept(tokenSecret);
+		}
 	}
 
 	/**
