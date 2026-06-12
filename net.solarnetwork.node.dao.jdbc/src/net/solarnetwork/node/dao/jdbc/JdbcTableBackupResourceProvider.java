@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,6 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import org.apache.commons.codec.binary.Hex;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -84,8 +87,8 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	private final TransactionTemplate transactionTemplate;
 	private final TaskExecutor taskExecutor;
 
-	private MessageSource messageSource;
-	private String[] tableNames;
+	private @Nullable MessageSource messageSource;
+	private String @Nullable [] tableNames;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -103,6 +106,8 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 *        A transaction template to use, for supporting savepoints.
 	 * @param taskExecutor
 	 *        A task executor to use.
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate,
 			TransactionTemplate transactionTemplate, TaskExecutor taskExecutor) {
@@ -121,15 +126,17 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 *        A transaction template to use, for supporting savepoints.
 	 * @param taskExecutor
 	 *        A task executor to use.
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 * @since 1.3
 	 */
 	public JdbcTableBackupResourceProvider(String key, JdbcTemplate jdbcTemplate,
 			TransactionTemplate transactionTemplate, TaskExecutor taskExecutor) {
 		super();
-		this.key = key;
-		this.jdbcTemplate = jdbcTemplate;
-		this.transactionTemplate = transactionTemplate;
-		this.taskExecutor = taskExecutor;
+		this.key = requireNonNullArgument(key, "key");
+		this.jdbcTemplate = requireNonNullArgument(jdbcTemplate, "jdbcTemplate");
+		this.transactionTemplate = requireNonNullArgument(transactionTemplate, "transactionTemplate");
+		this.taskExecutor = requireNonNullArgument(taskExecutor, "taskExecutor");
 	}
 
 	@Override
@@ -139,7 +146,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	@Override
 	public Iterable<BackupResource> getBackupResources() {
-		List<BackupResource> result = new ArrayList<BackupResource>(tableNames.length);
+		final String[] tableNames = this.tableNames;
+		if ( tableNames == null || tableNames.length < 1 ) {
+			return List.of();
+		}
+		List<BackupResource> result = new ArrayList<>(tableNames.length);
 		for ( String tableName : tableNames ) {
 			result.add(new JdbcTableBackupResource(tableName));
 		}
@@ -181,7 +192,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		}
 
 		@Override
-		public String getSha256Digest() {
+		public @Nullable String getSha256Digest() {
 			return null;
 		}
 
@@ -200,10 +211,10 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 		@Override
 		public void run() {
-			jdbcTemplate.execute(new ConnectionCallback<Object>() {
+			jdbcTemplate.execute(new ConnectionCallback<Void>() {
 
 				@Override
-				public Object doInConnection(Connection con) throws SQLException, DataAccessException {
+				public Void doInConnection(Connection con) throws SQLException, DataAccessException {
 					try {
 						exportTable(con);
 					} catch ( IOException e ) {
@@ -314,24 +325,24 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 				return false;
 			}
 		}
-		return transactionTemplate.execute(new TransactionCallback<Boolean>() {
+		return nonnull(transactionTemplate.execute(new TransactionCallback<Boolean>() {
 
 			@Override
 			public Boolean doInTransaction(TransactionStatus status) {
-				return jdbcTemplate.execute(new ConnectionCallback<Boolean>() {
+				return nonnull(jdbcTemplate.execute(new ConnectionCallback<Boolean>() {
 
 					@Override
 					public Boolean doInConnection(Connection con)
 							throws SQLException, DataAccessException {
 						return restoreWithConnection(resource, con, tableName);
 					}
-				});
+				}), "Result");
 			}
-		});
+		}), "Result");
 	}
 
 	@Override
-	public BackupResourceProviderInfo providerInfo(Locale locale) {
+	public BackupResourceProviderInfo providerInfo(@Nullable Locale locale) {
 		String name = "Database Table Backup Provider";
 		String desc = "Backs up the SolarNode database tables.";
 		MessageSource ms = messageSource;
@@ -339,11 +350,12 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 			name = ms.getMessage("title", null, name, locale);
 			desc = ms.getMessage("desc", null, desc, locale);
 		}
-		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+		return new SimpleBackupResourceProviderInfo(getKey(), nonnull(name, "Name"),
+				nonnull(desc, "Description"));
 	}
 
 	@Override
-	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+	public BackupResourceInfo resourceInfo(BackupResource resource, @Nullable Locale locale) {
 		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
@@ -359,11 +371,10 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 						.commentStrategy(CommentStrategy.NONE)
 						.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
 								resource.getInputStream())) {
-			List<String> header = null;
 			Map<String, Integer> csvColumns = null;
 			for ( CsvRecord row : reader ) {
-				if ( header == null ) {
-					header = row.getFields();
+				if ( csvColumns == null ) {
+					List<String> header = row.getFields();
 					csvColumns = JdbcUtils.csvColumnIndexMapping(header);
 					continue;
 				}
@@ -428,7 +439,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 * @param tableNames
 	 *        The tables to back up.
 	 */
-	public void setTableNames(String[] tableNames) {
+	public final void setTableNames(String @Nullable [] tableNames) {
 		this.tableNames = tableNames;
 	}
 
@@ -439,7 +450,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 *        The message source to use.
 	 * @since 1.2
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public final void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 

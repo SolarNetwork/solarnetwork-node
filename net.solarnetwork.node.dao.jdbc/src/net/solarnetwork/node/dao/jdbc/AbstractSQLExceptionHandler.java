@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -43,7 +44,7 @@ public abstract class AbstractSQLExceptionHandler implements SQLExceptionHandler
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	private List<Pattern> sqlStatePatterns;
+	private @Nullable List<Pattern> sqlStatePatterns;
 
 	/**
 	 * Constructor.
@@ -64,10 +65,10 @@ public abstract class AbstractSQLExceptionHandler implements SQLExceptionHandler
 	 *
 	 * @param e
 	 *        the exception to compare
-	 * @return the root exception that matched a pattern, or {@literal null} if
+	 * @return the root exception that matched a pattern, or {@code null} if
 	 *         none match or no patterns are configured
 	 */
-	protected SQLException exceptionMatchingSqlStatePattern(SQLException e) {
+	protected @Nullable SQLException exceptionMatchingSqlStatePattern(SQLException e) {
 		SQLException root = e;
 		while ( root.getNextException() != null ) {
 			root = root.getNextException();
@@ -94,7 +95,7 @@ public abstract class AbstractSQLExceptionHandler implements SQLExceptionHandler
 	 *
 	 * @return the list of regular expressions
 	 */
-	public List<Pattern> getSqlStatePatterns() {
+	public final @Nullable List<Pattern> getSqlStatePatterns() {
 		return sqlStatePatterns;
 	}
 
@@ -105,7 +106,7 @@ public abstract class AbstractSQLExceptionHandler implements SQLExceptionHandler
 	 * @param sqlStatePatterns
 	 *        the regular expressions that should trigger an action
 	 */
-	public void setSqlStatePatterns(List<Pattern> sqlStatePatterns) {
+	public final void setSqlStatePatterns(@Nullable List<Pattern> sqlStatePatterns) {
 		this.sqlStatePatterns = sqlStatePatterns;
 	}
 
@@ -118,7 +119,7 @@ public abstract class AbstractSQLExceptionHandler implements SQLExceptionHandler
 	 *        an action
 	 * @see #setSqlStatePatterns(List)
 	 */
-	public void setSqlStateRegex(String regexes) {
+	public final void setSqlStateRegex(@Nullable String regexes) {
 		List<Pattern> pats = null;
 		String[] list = StringUtils.delimitedListToStringArray(regexes, ",");
 		if ( regexes != null && list.length > 0 ) {

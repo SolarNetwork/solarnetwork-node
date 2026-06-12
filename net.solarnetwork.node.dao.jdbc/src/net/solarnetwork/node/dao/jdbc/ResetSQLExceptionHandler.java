@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Reset a database by deleting and exiting the application.
@@ -82,7 +83,7 @@ public class ResetSQLExceptionHandler extends AbstractSQLExceptionHandler {
 					String path = url.substring(split + 1);
 					Path p = Paths.get(path);
 					Path dir = p.getParent();
-					if ( Files.isDirectory(dir) ) {
+					if ( dir != null && Files.isDirectory(dir) ) {
 						String name = p.getFileName().toString();
 						Path dest = Files.createDirectory(
 								dir.resolve(name + "-reset." + System.currentTimeMillis()));
@@ -107,7 +108,7 @@ public class ResetSQLExceptionHandler extends AbstractSQLExceptionHandler {
 		shutdown(root.getMessage());
 	}
 
-	private void shutdown(String msg) {
+	private void shutdown(@Nullable String msg) {
 		log.error("Shutting down now due to database corruption error: {}", msg);
 		// graceful would be bundleContext.getBundle(0).stop();, but we don't need to wait for that here
 		System.exit(1);

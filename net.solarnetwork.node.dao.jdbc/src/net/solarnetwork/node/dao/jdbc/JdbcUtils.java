@@ -43,6 +43,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
@@ -86,7 +87,7 @@ public abstract class JdbcUtils {
 			while ( rs.next() ) {
 				String colName = rs.getString(4);
 				int sqlType = rs.getInt(5);
-				Function<Object, Object> processor = null;
+				Function<Object, @Nullable Object> processor = null;
 				switch (sqlType) {
 					case Types.BINARY:
 					case Types.VARBINARY:
@@ -234,7 +235,7 @@ public abstract class JdbcUtils {
 	 * @param sqlResourceCache
 	 *        a cache to use for the loaded resource
 	 * @return the SQL as a string
-	 * @throws RuntimeException
+	 * @throws IllegalStateException
 	 *         if the SQL resource cannot be loaded
 	 * @since 1.2
 	 */
@@ -274,7 +275,7 @@ public abstract class JdbcUtils {
 			}
 			return result;
 		} catch ( IOException e ) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -284,7 +285,7 @@ public abstract class JdbcUtils {
 	 * @param resource
 	 *        the SQL resource to load
 	 * @return the String
-	 * @throws RuntimeException
+	 * @throws IllegalStateException
 	 *         if the resource cannot be loaded
 	 * @since 1.2
 	 */
@@ -292,7 +293,7 @@ public abstract class JdbcUtils {
 		try {
 			return FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
 		} catch ( IOException e ) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -307,7 +308,7 @@ public abstract class JdbcUtils {
 	 *         if the resource cannot be loaded
 	 * @since 1.2
 	 */
-	public static String[] getBatchSqlResource(Resource sqlResource) {
+	public static String @Nullable [] getBatchSqlResource(Resource sqlResource) {
 		String sql = getSqlResource(sqlResource);
 		if ( sql == null ) {
 			return null;
@@ -334,7 +335,7 @@ public abstract class JdbcUtils {
 	 * @since 1.3
 	 */
 	public static void setUtcTimestampStatementValue(PreparedStatement stmt, int parameterIndex,
-			Instant time) throws SQLException {
+			@Nullable Instant time) throws SQLException {
 		if ( time == null ) {
 			stmt.setNull(parameterIndex, Types.TIMESTAMP);
 		} else {
@@ -355,12 +356,13 @@ public abstract class JdbcUtils {
 	 *        the result set
 	 * @param columnIndex
 	 *        the column index
-	 * @return the new instant, or {@literal null} if the column was null
+	 * @return the new instant, or {@code null} if the column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 * @since 1.3
 	 */
-	public static Instant getUtcTimestampColumnValue(ResultSet rs, int columnIndex) throws SQLException {
+	public static @Nullable Instant getUtcTimestampColumnValue(ResultSet rs, int columnIndex)
+			throws SQLException {
 		LocalDateTime ltd = rs.getObject(columnIndex, LocalDateTime.class);
 		return (ltd != null ? ltd.toInstant(ZoneOffset.UTC) : null);
 	}
@@ -393,12 +395,12 @@ public abstract class JdbcUtils {
 	 * @param columnIndex
 	 *        the column index of the UUID upper bits; the lower bits will be
 	 *        read from column {@code columnIndex + 1}
-	 * @return the new UUID, or {@literal null} if either column was null
+	 * @return the new UUID, or {@code null} if either column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 * @since 1.3
 	 */
-	public static UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
+	public static @Nullable UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
 		long hi = rs.getLong(columnIndex);
 		if ( rs.wasNull() ) {
 			return null;

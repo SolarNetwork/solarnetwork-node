@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -30,8 +31,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -51,13 +54,13 @@ import net.solarnetwork.dao.BatchableDao;
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport implements BatchableDao<T> {
 
-	private TransactionTemplate transactionTemplate;
+	private @Nullable TransactionTemplate transactionTemplate;
 	private String sqlForUpdateSuffix = " FOR UPDATE";
-	private String sqlResourcePrefix = null;
+	private @Nullable String sqlResourcePrefix;
 
 	private final Map<String, String> sqlResourceCache = new HashMap<>(10);
 
@@ -73,6 +76,18 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 */
 	public AbstractBatchableJdbcDao() {
 		super();
+	}
+
+	/**
+	 * Get the JDBC template.
+	 *
+	 * @return the template
+	 * @throws IllegalStateException
+	 *         if the template is not available
+	 * @since 2.1
+	 */
+	protected final JdbcTemplate jdbcTemplate() {
+		return nonnull(getJdbcTemplate(), "JdbcTemplate");
 	}
 
 	@Override
@@ -91,7 +106,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 					log.info("Detected SQL resource prefix [{}] for from database type {}", prefix,
 							product);
 					String currPrefix = getSqlResourcePrefix();
-					if ( !currPrefix.contains(prefix) ) {
+					if ( currPrefix == null || !currPrefix.contains(prefix) ) {
 						setSqlResourcePrefix(prefix + "-" + currPrefix);
 					}
 				}
@@ -109,7 +124,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 *        the requested batch options
 	 * @return the SQL query
 	 */
-	protected abstract String getBatchJdbcStatement(BatchOptions options);
+	protected abstract String getBatchJdbcStatement(@Nullable BatchOptions options);
 
 	/**
 	 * Get an entity from the current row in a ResultSet for batch processing.
@@ -124,8 +139,8 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 */
-	protected abstract T getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
-			throws SQLException;
+	protected abstract T getBatchRowEntity(@Nullable BatchOptions options, ResultSet resultSet,
+			int rowCount) throws SQLException;
 
 	/**
 	 * Update the current row in a ResulSet for batch processing.
@@ -152,13 +167,14 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	@Override
 	public BatchResult batchProcess(final BatchCallback<T> callback, final BatchOptions options) {
 		if ( transactionTemplate != null ) {
-			return transactionTemplate.execute(new TransactionCallback<BatchResult>() {
+			final BatchResult result = transactionTemplate.execute(new TransactionCallback<>() {
 
 				@Override
 				public BatchableDao.BatchResult doInTransaction(TransactionStatus status) {
 					return batchProcessInternal(callback, options);
 				}
 			});
+			return nonnull(result, "Result");
 		} else {
 			return batchProcessInternal(callback, options);
 		}
@@ -168,11 +184,10 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 			final BatchOptions options) {
 		final String querySql = getBatchJdbcStatement(options);
 		final AtomicInteger rowCount = new AtomicInteger(0);
-		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
+		jdbcTemplate().execute(new ConnectionCallback<Void>() {
 
 			@Override
-			public BatchableDao.BatchResult doInConnection(Connection con)
-					throws SQLException, DataAccessException {
+			public Void doInConnection(Connection con) throws SQLException, DataAccessException {
 				PreparedStatement queryStmt = null;
 				ResultSet queryResult = null;
 				DatabaseMetaData meta = con.getMetaData();
@@ -233,7 +248,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * @since 1.5
 	 */
 	protected String getSqlResource(String classPathResource) {
-		return JdbcUtils.getSqlResource(classPathResource, getClass(), getSqlResourcePrefix(),
+		return JdbcUtils.getSqlResource(classPathResource, getClass(), sqlResourcePrefix(),
 				sqlResourceCache);
 	}
 
@@ -260,7 +275,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * @see JdbcUtils#getBatchSqlResource(Resource)
 	 * @since 1.5
 	 */
-	protected String[] getBatchSqlResource(Resource sqlResource) {
+	protected String @Nullable [] getBatchSqlResource(Resource sqlResource) {
 		return JdbcUtils.getBatchSqlResource(sqlResource);
 	}
 
@@ -269,7 +284,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 *
 	 * @return the template
 	 */
-	public TransactionTemplate getTransactionTemplate() {
+	public final @Nullable TransactionTemplate getTransactionTemplate() {
 		return transactionTemplate;
 	}
 
@@ -279,7 +294,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * @param transactionTemplate
 	 *        the template to set
 	 */
-	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+	public final void setTransactionTemplate(@Nullable TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
 	}
 
@@ -287,10 +302,10 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * Set a SQL fragment to append to SQL statements where an updatable result
 	 * set is desired.
 	 *
-	 * @return the SQL suffix, or {@literal null} if not desired
+	 * @return the SQL suffix, or {@code null} if not desired
 	 * @since 1.4
 	 */
-	public String getSqlForUpdateSuffix() {
+	public final String getSqlForUpdateSuffix() {
 		return sqlForUpdateSuffix;
 	}
 
@@ -300,14 +315,14 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 *
 	 * <p>
 	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
-	 * included at the beginning. Set to {@literal null} to disable.
+	 * included at the beginning. Set to {@code null} to disable.
 	 * </p>
 	 *
 	 * @param sqlForUpdateSuffix
 	 *        the suffix to set
 	 * @since 1.4
 	 */
-	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
+	public final void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
 		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
 	}
 
@@ -317,8 +332,18 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * @return the prefix
 	 * @since 1.5
 	 */
-	public String getSqlResourcePrefix() {
+	public final @Nullable String getSqlResourcePrefix() {
 		return sqlResourcePrefix;
+	}
+
+	/**
+	 * Get the SQL resource prefix.
+	 *
+	 * @return the prefix, or an empty string if none configured
+	 * @since 2.1
+	 */
+	public final String sqlResourcePrefix() {
+		return Objects.requireNonNullElse(sqlResourcePrefix, "");
 	}
 
 	/**
@@ -328,7 +353,7 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 *        the prefix to set
 	 * @since 1.5
 	 */
-	public void setSqlResourcePrefix(String sqlResourcePrefix) {
+	public final void setSqlResourcePrefix(@Nullable String sqlResourcePrefix) {
 		this.sqlResourcePrefix = sqlResourcePrefix;
 	}
 

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -39,6 +40,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -76,7 +78,7 @@ import net.solarnetwork.util.ObjectUtils;
 public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements JobService {
 
 	private final JdbcOperations jdbcOperations;
-	private OptionalService<DatabaseSystemService> dbSystemService;
+	private @Nullable OptionalService<DatabaseSystemService> dbSystemService;
 	private String schemaName = "SOLARNODE";
 	private String tableName = "SN_GENERAL_NODE_DATUM";
 	private String dateColumnName = "CREATED";
@@ -93,11 +95,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 * @param jdbcOperations
 	 *        the JDBC operations
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public TimeBasedTableDiskSizeManager(JdbcOperations jdbcOperations) {
 		super();
-		this.jdbcOperations = ObjectUtils.requireNonNullArgument(jdbcOperations, "jdbcOperations");
+		this.jdbcOperations = requireNonNullArgument(jdbcOperations, "jdbcOperations");
 	}
 
 	@Override
@@ -167,7 +169,7 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	}
 
 	private int deleteOldestData(DatabaseSystemService dbService) {
-		int deleted = jdbcOperations.execute(new ConnectionCallback<Integer>() {
+		final int deleted = ObjectUtils.nonnull(jdbcOperations.execute(new ConnectionCallback<>() {
 
 			@Override
 			public Integer doInConnection(Connection conn) throws SQLException, DataAccessException {
@@ -206,7 +208,7 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 				return deleted;
 			}
 
-		});
+		}), "Count");
 
 		if ( deleted > 0 ) {
 			// now that we've deleted data, perform a vacuum to reclaim space if possible
@@ -226,11 +228,14 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 * </p>
 	 *
 	 * @param conn
+	 *        the connection
 	 * @param fullTableName
-	 * @return
+	 *        the table name
+	 * @return the oldest date, or {@code null} if none available
 	 * @throws SQLException
+	 *         if any SQL error occurs
 	 */
-	private Instant findOldestDate(final Connection conn, final String fullTableName)
+	private @Nullable Instant findOldestDate(final Connection conn, final String fullTableName)
 			throws SQLException {
 		String oldestDateSql = String.format(OLDEST_DATE_QUERY_TEMPLATE, dateColumnName, fullTableName);
 
@@ -287,7 +292,7 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 * @param dbSystemService
 	 *        the database system service
 	 */
-	public void setDbSystemService(OptionalService<DatabaseSystemService> dbSystemService) {
+	public void setDbSystemService(@Nullable OptionalService<DatabaseSystemService> dbSystemService) {
 		this.dbSystemService = dbSystemService;
 	}
 
@@ -300,9 +305,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 *
 	 * @param schemaName
 	 *        the database schema name of the table to manage
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public void setSchemaName(String schemaName) {
-		this.schemaName = schemaName;
+		this.schemaName = requireNonNullArgument(schemaName, "schemaName");
 	}
 
 	/**
@@ -314,9 +321,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 *
 	 * @param tableName
 	 *        the name of the database table to manage
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public void setTableName(String tableName) {
-		this.tableName = tableName;
+		this.tableName = requireNonNullArgument(tableName, "tableName");
 	}
 
 	/**
@@ -330,9 +339,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 *
 	 * @param dateColumnName
 	 *        the name of the date column on the database table to manage
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public void setDateColumnName(String dateColumnName) {
-		this.dateColumnName = dateColumnName;
+		this.dateColumnName = requireNonNullArgument(dateColumnName, "dateColumnName");
 	}
 
 	/**

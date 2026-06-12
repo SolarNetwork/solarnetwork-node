@@ -1,27 +1,28 @@
 /* ==================================================================
  * RestoreFromBackupSQLExceptionHandler.java - 24/07/2016 4:04:23 PM
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.springframework.util.FileSystemUtils;
@@ -43,7 +45,7 @@ import net.solarnetwork.service.OptionalService;
 
 /**
  * Recover from connection exceptions by restoring from backup.
- * 
+ *
  * @author matt
  * @version 2.1
  */
@@ -52,34 +54,40 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 	private final int minimumExceptionCount;
 	private final BundleContext bundleContext;
 	private int restoreDelaySeconds = 15;
-	private String backupResourceProviderFilter;
-	private OptionalService<IdentityService> identityService;
+	private @Nullable String backupResourceProviderFilter;
+	private @Nullable OptionalService<IdentityService> identityService;
 
 	private final AtomicInteger exceptionCount = new AtomicInteger(0);
 	private final AtomicBoolean restoreScheduled = new AtomicBoolean(false);
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param bundleContext
 	 *        The active bundle context.
 	 * @param minimumExceptionCount
 	 *        The minimum number of exceptions to witness before attempting to
 	 *        restore from backup.
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public RestoreFromBackupSQLExceptionHandler(BundleContext bundleContext, int minimumExceptionCount) {
 		super();
-		this.bundleContext = bundleContext;
+		this.bundleContext = requireNonNullArgument(bundleContext, "bundleContext");
 		this.minimumExceptionCount = minimumExceptionCount;
 	}
 
 	@Override
 	public synchronized void handleGetConnectionException(SQLException e) {
-		handleConnectionException(null, e);
+		handleExceptionInternal(null, e);
 	}
 
 	@Override
 	public void handleConnectionException(Connection conn, SQLException e) {
+		handleExceptionInternal(conn, e);
+	}
+
+	private void handleExceptionInternal(@Nullable Connection conn, SQLException e) {
 		SQLException root = exceptionMatchingSqlStatePattern(e);
 		if ( root == null ) {
 			return;
@@ -93,7 +101,7 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 		scheduleRestoreFromBackup(count);
 	}
 
-	private File getDbDir() {
+	private @Nullable File getDbDir() {
 		String dbDir = System.getProperty("derby.system.home");
 		if ( dbDir == null ) {
 			return null;
@@ -168,7 +176,7 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 		t.start();
 	}
 
-	private BackupService getBackupService() {
+	private @Nullable BackupService getBackupService() {
 		BackupManager mgr = backupManager();
 		if ( mgr == null ) {
 			log.debug("No BackupManager available to restore from");
@@ -178,7 +186,7 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 		return result;
 	}
 
-	private Backup getBackupToRestore(BackupService backupService) {
+	private @Nullable Backup getBackupToRestore(BackupService backupService) {
 		if ( backupService == null ) {
 			log.debug("No BackupService available to restore from");
 			return null;
@@ -202,7 +210,7 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 		return backup;
 	}
 
-	private BackupManager backupManager() {
+	private @Nullable BackupManager backupManager() {
 		ServiceReference<BackupManager> mgrRef = bundleContext.getServiceReference(BackupManager.class);
 		if ( mgrRef == null ) {
 			return null;
@@ -220,34 +228,34 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 	 * Set the number of seconds to delay the restore from backup. This is
 	 * mainly to give the framework a time to boot up and provide the
 	 * {@link BackupManager} service.
-	 * 
+	 *
 	 * @param restoreDelaySeconds
 	 *        The number of seconds to delay attempting the restore from backup.
 	 */
-	public void setRestoreDelaySeconds(int restoreDelaySeconds) {
+	public final void setRestoreDelaySeconds(int restoreDelaySeconds) {
 		this.restoreDelaySeconds = restoreDelaySeconds;
 	}
 
 	/**
 	 * Set a filter to pass as {@link BackupManager#RESOURCE_PROVIDER_FILTER} to
 	 * limit the scope of the backup.
-	 * 
+	 *
 	 * @param backupResourceProviderFilter
 	 *        The filter to set.
 	 */
-	public void setBackupResourceProviderFilter(String backupResourceProviderFilter) {
+	public final void setBackupResourceProviderFilter(@Nullable String backupResourceProviderFilter) {
 		this.backupResourceProviderFilter = backupResourceProviderFilter;
 	}
 
 	/**
 	 * Set an {@link IdentityService} to know the current node identity to
 	 * associate backups with.
-	 * 
+	 *
 	 * @param identityService
 	 *        the identity service to use
 	 * @since 1.1
 	 */
-	public void setIdentityService(OptionalService<IdentityService> identityService) {
+	public final void setIdentityService(@Nullable OptionalService<IdentityService> identityService) {
 		this.identityService = identityService;
 	}
 

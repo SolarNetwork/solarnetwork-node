@@ -23,6 +23,8 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import javax.sql.DataSource;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -133,19 +136,15 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        init resource.
 	 * @param version
 	 *        the tables version, to manage DDL migrations
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public BaseJdbcGenericDao(Class<? extends T> objectType, Class<? extends K> keyType,
 			RowMapper<T> rowMapper, String tableNameTemplate, String entityName, int version) {
-		if ( objectType == null ) {
-			throw new IllegalArgumentException("The objectType parameter must not be null.");
-		}
-		if ( keyType == null ) {
-			throw new IllegalArgumentException("The keyType parameter must not be null.");
-		}
-		this.objectType = objectType;
-		this.keyType = keyType;
-		this.rowMapper = rowMapper;
-		this.entityName = entityName;
+		this.objectType = requireNonNullArgument(objectType, "objectType");
+		this.keyType = requireNonNullArgument(keyType, "keyType");
+		this.rowMapper = requireNonNullArgument(rowMapper, "rowMapper");
+		this.entityName = requireNonNullArgument(entityName, "entityName");
 		setSqlResourcePrefix(format(SQL_RESOURCE_PREFIX, entityName));
 		setTableName(format(tableNameTemplate, entityName));
 		setTablesVersion(version);
@@ -162,7 +161,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	/**
 	 * Get the key type.
 	 *
-	 * @return the type, never {@literal null}
+	 * @return the type, never {@code null}
 	 */
 	public Class<? extends K> getKeyType() {
 		return keyType;
@@ -199,12 +198,16 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 						} else if ( !currPrefix.contains(prefix) ) {
 							setSqlResourcePrefix(prefix + "-" + currPrefix);
 						}
-						Resource initResource = getInitSqlResource();
-						if ( initResource != null && !initResource.getFilename().startsWith(prefix) ) {
+						final Resource initResource = getInitSqlResource();
+						final String initResourceFilename = (initResource != null
+								? initResource.getFilename()
+								: null);
+						if ( initResource != null && initResourceFilename != null
+								&& !initResourceFilename.startsWith(prefix) ) {
 							// look for prefix-specific init resource to change to
 							try {
 								Resource prefixInitResource = initResource
-										.createRelative(prefix + "-" + initResource.getFilename());
+										.createRelative(prefix + "-" + initResourceFilename);
 								if ( prefixInitResource.exists() ) {
 									log.info("Detected SQL init resource [{}] for entity {}",
 											prefixInitResource.getFilename(), entityName);
@@ -249,7 +252,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 		}
 
 		postEntityEvent(result, entity, EntityEventType.STORED);
-		return result;
+		return nonnull(result, "PK");
 	}
 
 	/**
@@ -267,12 +270,12 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 * @param eventType
 	 *        the type of event
 	 */
-	protected void postEntityEvent(K id, T entity, EntityEventType eventType) {
+	protected void postEntityEvent(@Nullable K id, T entity, EntityEventType eventType) {
 		if ( id == null ) {
 			return;
 		}
-		Map<String, Object> props = GenericDao.createEntityEventProperties(id, entity);
-		String url = getJdbcTemplate().execute((ConnectionCallback<String>) conn -> {
+		Map<String, Object> props = nonnull(GenericDao.createEntityEventProperties(id, entity), "Event");
+		String url = jdbcTemplate().execute((ConnectionCallback<String>) conn -> {
 			return conn.getMetaData().getURL();
 		});
 		if ( url != null ) {
@@ -286,7 +289,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	}
 
 	@Override
-	public T get(K id) {
+	public @Nullable T get(K id) {
 		if ( id == null ) {
 			throw new IllegalArgumentException("The id parameter must not be null.");
 		}
@@ -304,10 +307,10 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        the SQL to execute
 	 * @param parameters
 	 *        the optional parameters
-	 * @return the first result, or {@literal null}
+	 * @return the first result, or {@code null}
 	 */
-	protected T findFirst(String sql, Object... parameters) {
-		List<T> results = getJdbcTemplate().query(sql, rowMapper, parameters);
+	protected @Nullable T findFirst(String sql, Object... parameters) {
+		List<T> results = jdbcTemplate().query(sql, rowMapper, parameters);
 		return (results != null && !results.isEmpty() ? results.get(0) : null);
 	}
 
@@ -333,8 +336,8 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	}
 
 	@Override
-	public Collection<T> getAll(List<SortDescriptor> sorts) {
-		return getJdbcTemplate().query(querySql(SQL_FIND_ALL, sorts), rowMapper);
+	public Collection<T> getAll(@Nullable List<SortDescriptor> sorts) {
+		return jdbcTemplate().query(querySql(SQL_FIND_ALL, sorts), rowMapper);
 	}
 
 	/**
@@ -351,7 +354,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        the sorts to apply
 	 * @return the SQL
 	 */
-	protected String querySql(String classPathResource, List<SortDescriptor> sorts) {
+	protected String querySql(String classPathResource, @Nullable List<SortDescriptor> sorts) {
 		String sql = getSqlResource(classPathResource);
 		List<String> orders = sqlOrderClauses(classPathResource, sorts);
 		if ( orders != null ) {
@@ -382,7 +385,8 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        the sort descriptors
 	 * @return the order clauses
 	 */
-	protected List<String> sqlOrderClauses(String classPathResource, List<SortDescriptor> sorts) {
+	protected @Nullable List<String> sqlOrderClauses(String classPathResource,
+			@Nullable List<SortDescriptor> sorts) {
 		List<String> clauses = null;
 		if ( sorts != null && !sorts.isEmpty() ) {
 			for ( SortDescriptor d : sorts ) {
@@ -422,9 +426,9 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        {@link #sqlOrderClause(String, boolean)}
 	 * @return the SQL
 	 */
-	public static String applySqlOrderClauses(String sql, List<String> orderClauses) {
+	public static String applySqlOrderClauses(String sql, @Nullable List<String> orderClauses) {
 		final int len = orderClauses != null ? orderClauses.size() : 0;
-		if ( len < 1 ) {
+		if ( orderClauses == null || len < 1 ) {
 			return sql;
 		}
 		StringBuilder buf = new StringBuilder(sql);
@@ -465,7 +469,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 		if ( entity == null || entity.getId() == null ) {
 			throw new IllegalArgumentException("The entity id parameter must not be null.");
 		}
-		getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK), primaryKeyArguments(entity.getId()));
+		jdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK), primaryKeyArguments(entity.getId()));
 		postEntityEvent(entity.getId(), entity, EntityEventType.DELETED);
 	}
 
@@ -496,14 +500,14 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 *        the result set
 	 * @param columnIndex
 	 *        the column index
-	 * @return the new instant, or {@literal null} if the column was null
+	 * @return the new instant, or {@code null} if the column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 * @deprecated use
 	 *             {@link JdbcUtils#getUtcTimestampColumnValue(ResultSet, int)}
 	 */
 	@Deprecated
-	public static Instant getInstantColumn(ResultSet rs, int columnIndex) throws SQLException {
+	public static @Nullable Instant getInstantColumn(ResultSet rs, int columnIndex) throws SQLException {
 		return JdbcUtils.getUtcTimestampColumnValue(rs, columnIndex);
 	}
 
@@ -536,13 +540,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K extends Comparab
 	 * @param columnIndex
 	 *        the column index of the UUID upper bits; the lower bits will be
 	 *        read from column {@code columnIndex + 1}
-	 * @return the new UUID, or {@literal null} if either column was null
+	 * @return the new UUID, or {@code null} if either column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 * @deprecated use {@link JdbcUtils#getUuidColumns(ResultSet, int)}
 	 */
 	@Deprecated
-	public static UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
+	public static @Nullable UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
 		return JdbcUtils.getUuidColumns(rs, columnIndex);
 	}
 

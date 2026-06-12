@@ -24,6 +24,7 @@ package net.solarnetwork.node.dao.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Recover from connection exceptions by shutting down.
@@ -42,11 +43,15 @@ public class ShutdownSQLExceptionHandler extends AbstractSQLExceptionHandler {
 
 	@Override
 	public void handleGetConnectionException(SQLException e) {
-		handleConnectionException(null, e);
+		handleExceptionInternal(null, e);
 	}
 
 	@Override
 	public void handleConnectionException(Connection conn, SQLException e) {
+		handleExceptionInternal(conn, e);
+	}
+
+	private void handleExceptionInternal(@Nullable Connection conn, SQLException e) {
 		SQLException root = exceptionMatchingSqlStatePattern(e);
 		if ( root == null ) {
 			return;
@@ -54,7 +59,7 @@ public class ShutdownSQLExceptionHandler extends AbstractSQLExceptionHandler {
 		shutdown(root.getMessage());
 	}
 
-	private void shutdown(String msg) {
+	private void shutdown(@Nullable String msg) {
 		log.error("Shutting down now due to database connection error: {}", msg);
 		// graceful would be bundleContext.getBundle(0).stop();, but we don't need to wait for that here
 		System.exit(1);

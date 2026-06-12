@@ -24,13 +24,15 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static java.lang.String.format;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
@@ -61,7 +63,7 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * </dl>
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class DatabaseSetup {
 
@@ -77,7 +79,7 @@ public class DatabaseSetup {
 
 	private static final int TABLES_VERSION = 7;
 
-	private DataSource dataSource = null;
+	private @Nullable DataSource dataSource;
 	private Resource initSqlResource = new ClassPathResource(DEFAULT_INIT_SQL_RESOURCE,
 			DatabaseSetup.class);
 
@@ -120,25 +122,19 @@ public class DatabaseSetup {
 			setSqlResourcePrefix("settings");
 		}
 
-		@Override
-		public MessageSource getMessageSource() {
-			return null;
-		}
-
 		private static final String CREATE_SCHEMA_SQL_TEMPLATE = "CREATE SCHEMA %s";
 
 		@Override
-		protected void verifyDatabaseExists(String schema, String table, Resource initSql) {
+		protected void verifyDatabaseExists(String schema, String table, @Nullable Resource initSql) {
 			// first verify our schema exists
-			getJdbcTemplate().execute(new ConnectionCallback<Object>() {
+			jdbcTemplate().execute(new ConnectionCallback<Void>() {
 
 				@Override
-				public Object doInConnection(Connection con) throws SQLException, DataAccessException {
+				public Void doInConnection(Connection con) throws SQLException, DataAccessException {
 					if ( !schemaExists(con, schema) ) {
 						PreparedStatement stmt = null;
 						try {
-							stmt = con
-									.prepareStatement(String.format(CREATE_SCHEMA_SQL_TEMPLATE, schema));
+							stmt = con.prepareStatement(format(CREATE_SCHEMA_SQL_TEMPLATE, schema));
 							log.info("Initializing database schema [{}]", schema);
 							stmt.executeUpdate();
 						} finally {
@@ -160,7 +156,7 @@ public class DatabaseSetup {
 	 *
 	 * @return the dataSource
 	 */
-	public DataSource getDataSource() {
+	public @Nullable DataSource getDataSource() {
 		return dataSource;
 	}
 
@@ -170,7 +166,7 @@ public class DatabaseSetup {
 	 * @param dataSource
 	 *        the dataSource to set
 	 */
-	public void setDataSource(DataSource dataSource) {
+	public void setDataSource(@Nullable DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
 
@@ -188,9 +184,11 @@ public class DatabaseSetup {
 	 *
 	 * @param initSqlResource
 	 *        the initSqlResource to set
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public void setInitSqlResource(Resource initSqlResource) {
-		this.initSqlResource = initSqlResource;
+		this.initSqlResource = requireNonNullArgument(initSqlResource, "initSqlResource");
 	}
 
 }

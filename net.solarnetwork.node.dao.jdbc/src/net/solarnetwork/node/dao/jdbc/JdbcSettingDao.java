@@ -36,6 +36,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.dao.DataAccessException;
@@ -43,9 +44,6 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
@@ -103,7 +101,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	/** The SQL resource for a fetch for most recent date. */
 	public static final String SQL_RESOURCE_GET_MOST_RECENT_DATE = "get-most-recent-date";
 
-	private OptionalService<EventAdmin> eventAdmin;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * Constructor.
@@ -119,7 +117,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	public String getSetting(String key) {
+	public @Nullable String getSetting(String key) {
 		return getSetting(key, "");
 	}
 
@@ -129,16 +127,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	public boolean deleteSetting(final String key, final String type) {
+	public boolean deleteSetting(final String key, final @Nullable String type) {
 		TransactionTemplate tt = getTransactionTemplate();
 		if ( tt != null ) {
-			return tt.execute(new TransactionCallback<Boolean>() {
-
-				@Override
-				public Boolean doInTransaction(TransactionStatus status) {
-					return deleteSettingInternal(key, type);
-				}
-			});
+			return nonnull(tt.execute((status) -> deleteSettingInternal(key, type)), "Result");
 		} else {
 			return deleteSettingInternal(key, type);
 		}
@@ -148,7 +140,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		return (getSqlForUpdateSuffix() != null ? sql + getSqlForUpdateSuffix() : sql);
 	}
 
-	private boolean deleteSettingInternal(final String key, final String type) {
+	private boolean deleteSettingInternal(final String key, final @Nullable String type) {
 		// check if will delete, to emit change event
 		final String sql;
 		//check if we are taking type into consideration
@@ -157,7 +149,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		} else {
 			sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET));
 		}
-		Setting setting = getJdbcTemplate().query(new PreparedStatementCreator() {
+		Setting setting = jdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -169,10 +161,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				}
 				return queryStmt;
 			}
-		}, new ResultSetExtractor<Setting>() {
+		}, new ResultSetExtractor<@Nullable Setting>() {
 
 			@Override
-			public Setting extractData(ResultSet rs) throws SQLException, DataAccessException {
+			public @Nullable Setting extractData(ResultSet rs) throws SQLException, DataAccessException {
 				Setting s = null;
 				while ( rs.next() ) {
 					s = getBatchRowEntity(null, rs, 1);
@@ -191,8 +183,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	public String getSetting(String key, String type) {
-		List<String> res = getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_TYPED_GET),
+	public @Nullable String getSetting(String key, String type) {
+		List<String> res = jdbcTemplate().query(getSqlResource(SQL_RESOURCE_TYPED_GET),
 				new RowMapper<String>() {
 
 					@Override
@@ -208,7 +200,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public List<KeyValuePair> getSettingValues(String key) {
-		return getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_FIND), new RowMapper<KeyValuePair>() {
+		return jdbcTemplate().query(getSqlResource(SQL_RESOURCE_FIND), new RowMapper<KeyValuePair>() {
 
 			@Override
 			public KeyValuePair mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -219,7 +211,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public List<SettingNote> notesForKey(String key) {
-		return getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_FIND_NOTES_FOR_KEY),
+		return jdbcTemplate().query(getSqlResource(SQL_RESOURCE_FIND_NOTES_FOR_KEY),
 				new RowMapper<SettingNote>() {
 
 					@Override
@@ -233,12 +225,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	public void storeSetting(final String key, final String type, final String value) {
 		TransactionTemplate tt = getTransactionTemplate();
 		if ( tt != null ) {
-			tt.execute(new TransactionCallbackWithoutResult() {
-
-				@Override
-				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					storeSettingInternal(key, type, value, null, 0, false);
-				}
+			tt.execute((status) -> {
+				storeSettingInternal(key, type, value, null, 0, false);
+				return null;
 			});
 		} else {
 			storeSettingInternal(key, type, value, null, 0, false);
@@ -249,13 +238,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	public void storeSetting(final Setting setting) {
 		TransactionTemplate tt = getTransactionTemplate();
 		if ( tt != null ) {
-			tt.execute(new TransactionCallbackWithoutResult() {
-
-				@Override
-				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
-							setting.getNote(), SettingFlag.maskForSet(setting.getFlags()), true);
-				}
+			tt.execute((status) -> {
+				storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
+						setting.getNote(), SettingFlag.maskForSet(setting.getFlags()), true);
+				return null;
 			});
 		} else {
 			storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
@@ -267,14 +253,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	public void storeNotes(Iterable<? extends SettingNote> notes) {
 		TransactionTemplate tt = getTransactionTemplate();
 		if ( tt != null ) {
-			tt.execute(new TransactionCallbackWithoutResult() {
-
-				@Override
-				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					for ( SettingNote note : notes ) {
-						storeNoteInternal(note.getKey(), note.getType(), note.getNote());
-					}
+			tt.execute((status) -> {
+				for ( SettingNote note : notes ) {
+					storeNoteInternal(note.getKey(), note.getType(), note.getNote());
 				}
+				return null;
 			});
 		} else {
 			for ( SettingNote note : notes ) {
@@ -283,17 +266,18 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		}
 	}
 
-	private void storeNoteInternal(final String key, final String ttype, final String note) {
+	private void storeNoteInternal(final String key, final @Nullable String ttype,
+			final @Nullable String note) {
 		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
 		final String sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET_NOTE));
 		final String noteToSave = (note != null && !note.isEmpty() ? note : null);
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
-		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {
+		jdbcTemplate().execute(new ConnectionCallback<Void>() {
 
 			@Override
-			public Boolean doInConnection(Connection con) throws SQLException, DataAccessException {
+			public Void doInConnection(Connection con) throws SQLException, DataAccessException {
 				PreparedStatement stmt = null;
 				ResultSet rs = null;
 				boolean updated = false;
@@ -341,14 +325,14 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 						rs.close();
 					}
 				}
-				return updated;
+				return null;
 			}
 		});
 	}
 
 	@Override
-	public Setting readSetting(String key, String type) {
-		List<Setting> res = getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_TYPED_GET),
+	public @Nullable Setting readSetting(String key, String type) {
+		List<Setting> res = jdbcTemplate().query(getSqlResource(SQL_RESOURCE_TYPED_GET),
 				new RowMapper<Setting>() {
 
 					@Override
@@ -362,15 +346,17 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		return null;
 	}
 
-	private void storeSettingInternal(final String key, final String ttype, final String value,
-			final String note, final int flags, final boolean updateNote) {
+	private void storeSettingInternal(final String key, final @Nullable String ttype,
+			final @Nullable String vvalue, final @Nullable String note, final int flags,
+			final boolean updateNote) {
 		final String type = (ttype == null ? "" : ttype);
+		final String value = (vvalue == null ? "" : vvalue);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
 		final String sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET));
 		final String noteToSave = (note != null && !note.isEmpty() ? note : null);
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
-		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {
+		jdbcTemplate().execute(new ConnectionCallback<Boolean>() {
 
 			@Override
 			public Boolean doInConnection(Connection con) throws SQLException, DataAccessException {
@@ -442,8 +428,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	// --- Batch support ---
 
 	@Override
-	public Date getSettingModificationDate(final String key, final String type) {
-		return getJdbcTemplate().query(new PreparedStatementCreator() {
+	public @Nullable Date getSettingModificationDate(final String key, final String type) {
+		return jdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -453,10 +439,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				stmt.setString(2, type);
 				return stmt;
 			}
-		}, new ResultSetExtractor<Date>() {
+		}, new ResultSetExtractor<@Nullable Date>() {
 
 			@Override
-			public Date extractData(ResultSet rs) throws SQLException, DataAccessException {
+			public @Nullable Date extractData(ResultSet rs) throws SQLException, DataAccessException {
 				if ( rs.next() ) {
 					return rs.getTimestamp(1);
 				}
@@ -466,8 +452,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	public Date getMostRecentModificationDate() {
-		return getJdbcTemplate().query(new PreparedStatementCreator() {
+	public @Nullable Date getMostRecentModificationDate() {
+		return jdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -480,10 +466,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				stmt.setMaxRows(1);
 				return stmt;
 			}
-		}, new ResultSetExtractor<Date>() {
+		}, new ResultSetExtractor<@Nullable Date>() {
 
 			@Override
-			public Date extractData(ResultSet rs) throws SQLException, DataAccessException {
+			public @Nullable Date extractData(ResultSet rs) throws SQLException, DataAccessException {
 				if ( rs.next() ) {
 					return rs.getTimestamp(1);
 				}
@@ -493,15 +479,15 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	protected String getBatchJdbcStatement(BatchOptions options) {
+	protected String getBatchJdbcStatement(@Nullable BatchOptions options) {
 		return (options != null && options.isUpdatable()
 				? getSqlResource(SQL_RESOURCE_BATCH_GET_FOR_UPDATE)
 				: getSqlResource(SQL_RESOURCE_BATCH_GET));
 	}
 
 	@Override
-	protected Setting getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
-			throws SQLException {
+	protected Setting getBatchRowEntity(@Nullable BatchOptions options, ResultSet resultSet,
+			int rowCount) throws SQLException {
 		Setting s = new Setting(nonnull(resultSet.getString(3), "Key"),
 				nonnull(resultSet.getString(4), "Type"));
 		s.setValue(resultSet.getString(1));
@@ -523,8 +509,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		resultSet.updateString(6, entity.getNote());
 	}
 
-	private final void postSettingUpdatedEvent(final String key, final String type, final String value) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+	private final void postSettingUpdatedEvent(final @Nullable String key, final @Nullable String type,
+			final @Nullable String value) {
+		EventAdmin ea = OptionalService.service(eventAdmin);
 		if ( ea == null ) {
 			return;
 		}
@@ -547,7 +534,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	 *
 	 * @return the EventAdmin service
 	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
+	public final @Nullable OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
@@ -557,7 +544,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	 * @param eventAdmin
 	 *        The event admin service to use.
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public final void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 

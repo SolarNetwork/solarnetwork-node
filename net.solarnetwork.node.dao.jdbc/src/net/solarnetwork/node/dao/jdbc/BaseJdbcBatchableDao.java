@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.RowMapper;
@@ -46,14 +48,13 @@ import net.solarnetwork.dao.Entity;
  * @param <K>
  *        the primary key type
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.29
  */
 public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Comparable<K>>
 		extends BaseJdbcGenericDao<T, K> implements BatchableDao<T> {
 
-	private TransactionTemplate transactionTemplate;
-	private String sqlForUpdateSuffix = " FOR UPDATE";
+	private @Nullable TransactionTemplate transactionTemplate;
 
 	/**
 	 * Init with an an entity name and table version, deriving various names
@@ -74,6 +75,8 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Compar
 	 *        init resource.
 	 * @param version
 	 *        the tables version, to manage DDL migrations
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public BaseJdbcBatchableDao(Class<? extends T> objectType, Class<? extends K> keyType,
 			RowMapper<T> rowMapper, String tableNameTemplate, String entityName, int version) {
@@ -178,14 +181,14 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Compar
 	@Override
 	public BatchResult batchProcess(final BatchCallback<T> callback, final BatchOptions options) {
 		if ( transactionTemplate != null ) {
-			return transactionTemplate.execute(new TransactionCallback<BatchResult>() {
+			final BatchResult result = transactionTemplate.execute(new TransactionCallback<>() {
 
 				@Override
-				public net.solarnetwork.dao.BatchableDao.BatchResult doInTransaction(
-						TransactionStatus status) {
+				public BatchResult doInTransaction(TransactionStatus status) {
 					return batchProcessInternal(callback, options);
 				}
 			});
+			return nonnull(result, "Result");
 		} else {
 			return batchProcessInternal(callback, options);
 		}
@@ -195,11 +198,10 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Compar
 			final BatchOptions options) {
 		final String querySql = getBatchJdbcStatement(options);
 		final AtomicInteger rowCount = new AtomicInteger(0);
-		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
+		jdbcTemplate().execute(new ConnectionCallback<Void>() {
 
 			@Override
-			public BatchableDao.BatchResult doInConnection(Connection con)
-					throws SQLException, DataAccessException {
+			public Void doInConnection(Connection con) throws SQLException, DataAccessException {
 				PreparedStatement queryStmt = null;
 				ResultSet queryResult = null;
 				DatabaseMetaData meta = con.getMetaData();
@@ -258,7 +260,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Compar
 	 *
 	 * @return the template
 	 */
-	public TransactionTemplate getTransactionTemplate() {
+	public final @Nullable TransactionTemplate getTransactionTemplate() {
 		return transactionTemplate;
 	}
 
@@ -268,38 +270,8 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K extends Compar
 	 * @param transactionTemplate
 	 *        the template to set
 	 */
-	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+	public final void setTransactionTemplate(@Nullable TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
-	}
-
-	/**
-	 * Set a SQL fragment to append to SQL statements where an updatable result
-	 * set is desired.
-	 *
-	 * @return the SQL suffix, or {@literal null} if not desired
-	 * @since 1.4
-	 */
-	@Override
-	public String getSqlForUpdateSuffix() {
-		return sqlForUpdateSuffix;
-	}
-
-	/**
-	 * Set a SQL fragment to append to SQL statements where an updatable result
-	 * set is desired.
-	 *
-	 * <p>
-	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
-	 * included at the beginning. Set to {@literal null} to disable.
-	 * </p>
-	 *
-	 * @param sqlForUpdateSuffix
-	 *        the suffix to set
-	 * @since 1.4
-	 */
-	@Override
-	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
-		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
 	}
 
 }

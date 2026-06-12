@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Metadata about a JDBC table column for use in CSV processing.
@@ -34,7 +36,7 @@ import java.util.function.Function;
 public class ColumnCsvMetaData {
 
 	private final String columnName;
-	private final Function<Object, Object> cellProcessor;
+	private final @Nullable Function<Object, @Nullable Object> cellProcessor;
 	private final int sqlType;
 	private final boolean primaryKey;
 
@@ -48,7 +50,8 @@ public class ColumnCsvMetaData {
 	 * @param sqlType
 	 *        The JDBC {@link java.sql.Types} value to use for this column.
 	 */
-	public ColumnCsvMetaData(String columnName, Function<Object, Object> cellProcessor, int sqlType) {
+	public ColumnCsvMetaData(String columnName,
+			@Nullable Function<Object, @Nullable Object> cellProcessor, int sqlType) {
 		this(columnName, cellProcessor, sqlType, false);
 	}
 
@@ -64,49 +67,14 @@ public class ColumnCsvMetaData {
 	 * @param primaryKey
 	 *        {@code true} if this is a primary key column.
 	 */
-	public ColumnCsvMetaData(String columnName, Function<Object, Object> cellProcessor, int sqlType,
+	public ColumnCsvMetaData(String columnName,
+			@Nullable Function<Object, @Nullable Object> cellProcessor, int sqlType,
 			boolean primaryKey) {
 		super();
-		this.columnName = columnName;
+		this.columnName = requireNonNullArgument(columnName, "columnName");
 		this.cellProcessor = cellProcessor;
 		this.sqlType = sqlType;
 		this.primaryKey = primaryKey;
-	}
-
-	/**
-	 * Get the JDBC column name.
-	 *
-	 * @return The column name.
-	 */
-	public String getColumnName() {
-		return columnName;
-	}
-
-	/**
-	 * Get a {@code CellProcessor} to use with the associated CSV conversion.
-	 *
-	 * @return A cell processor.
-	 */
-	public Function<Object, Object> getCellProcessor() {
-		return cellProcessor;
-	}
-
-	/**
-	 * Get the JDBC column type, from the {@link java.sql.Types} class.
-	 *
-	 * @return The JDBC column type.
-	 */
-	public int getSqlType() {
-		return sqlType;
-	}
-
-	/**
-	 * Flag if this column is part of the table's primary key.
-	 *
-	 * @return {@code true} if part of the table's primary key.
-	 */
-	public boolean isPrimaryKey() {
-		return primaryKey;
 	}
 
 	/**
@@ -116,6 +84,42 @@ public class ColumnCsvMetaData {
 	 */
 	public ColumnCsvMetaData asPrimaryKeyColumn() {
 		return new ColumnCsvMetaData(columnName, cellProcessor, sqlType, true);
+	}
+
+	/**
+	 * Get the JDBC column name.
+	 *
+	 * @return The column name.
+	 */
+	public final String getColumnName() {
+		return columnName;
+	}
+
+	/**
+	 * Get a {@code CellProcessor} to use with the associated CSV conversion.
+	 *
+	 * @return A cell processor.
+	 */
+	public final @Nullable Function<Object, @Nullable Object> getCellProcessor() {
+		return cellProcessor;
+	}
+
+	/**
+	 * Get the JDBC column type, from the {@link java.sql.Types} class.
+	 *
+	 * @return The JDBC column type.
+	 */
+	public final int getSqlType() {
+		return sqlType;
+	}
+
+	/**
+	 * Flag if this column is part of the table's primary key.
+	 *
+	 * @return {@code true} if part of the table's primary key.
+	 */
+	public final boolean isPrimaryKey() {
+		return primaryKey;
 	}
 
 }
