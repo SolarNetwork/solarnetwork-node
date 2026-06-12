@@ -23,6 +23,7 @@
 package net.solarnetwork.node.dao.mqtt.jdbc;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -141,7 +143,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 				getStatusMessage(), true, true));
 	}
 
-	private String getStatusMessage() {
+	private @Nullable String getStatusMessage() {
 		// @formatter:off
 		long rowCount = 0;
 		try {
@@ -149,7 +151,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		} catch ( Exception e ) {
 			log.warn("Error finding MQTT message row count.", e);
 		}
-		return getMessageSource().getMessage("status.msg",
+		return messageSource().getMessage("status.msg",
 				new Object[] {
 						rowCount,
 						stats.get(MqttMessageDaoStat.MessagesStored),
@@ -159,7 +161,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	}
 
 	private long rowCount() {
-		final Number rowCountNum = getJdbcTemplate()
+		final Number rowCountNum = jdbcTemplate()
 				.queryForObject(getSqlResource(SqlResource.Count.getResource()), Number.class);
 		return (rowCountNum == null ? 0 : rowCountNum.longValue());
 	}
@@ -289,7 +291,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	@Override
 	protected MqttMessageEntity getBatchRowEntity(BatchOptions options, ResultSet resultSet,
 			int rowCount) throws SQLException {
-		return getRowMapper().mapRow(resultSet, rowCount);
+		return nonnull(getRowMapper().mapRow(resultSet, rowCount), "Entity");
 	}
 
 	@Override
@@ -323,7 +325,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		final long rowCount = rowCount();
 		final int maxCount = getMaxCountPingFail();
 		boolean ok = true;
-		String msg = getMessageSource().getMessage("msg.messageCount", new Object[] { rowCount },
+		String msg = messageSource().getMessage("msg.messageCount", new Object[] { rowCount },
 				Locale.getDefault());
 		if ( maxCount > 0 && rowCount > maxCount ) {
 			ok = false;
