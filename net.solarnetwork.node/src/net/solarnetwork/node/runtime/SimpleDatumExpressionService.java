@@ -104,7 +104,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 		}
 
 		final Map<String, String> params = instruction.params();
-		final String expression = params.get(PARAM_EXPRESSION);
+		final String expression = (params != null ? params.get(PARAM_EXPRESSION) : null);
 		if ( expression == null || expression.isEmpty() ) {
 			return createStatus(instruction, Declined,
 					createErrorResultParameters("No expression parameter provided.", "SDE.00001"));

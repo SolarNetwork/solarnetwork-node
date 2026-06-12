@@ -1,21 +1,21 @@
 /* ==================================================================
  * SimpleInstructionExecutionService.java - 8/06/2018 7:24:46 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,14 +24,16 @@ package net.solarnetwork.node.reactor;
 
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 
 /**
  * Default implementation of {@link InstructionExecutionService}.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -48,22 +50,19 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param handlers
 	 *        the handlers
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@code null}
 	 */
-	public SimpleInstructionExecutionService(List<InstructionHandler> handlers) {
+	public SimpleInstructionExecutionService(@Nullable List<InstructionHandler> handlers) {
 		super();
-		if ( handlers == null ) {
-			throw new IllegalArgumentException("The handlers argument must not be null.");
-		}
-		this.handlers = handlers;
+		this.handlers = requireNonNullArgument(handlers, "handlers");
 	}
 
 	@Override
-	public synchronized InstructionStatus executeInstruction(Instruction instruction) {
+	public synchronized @Nullable InstructionStatus executeInstruction(Instruction instruction) {
 		if ( instruction == null ) {
 			return null;
 		}
@@ -119,7 +118,7 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 	 * the {@link InstructionState#Declined} state. This prevents instructions
 	 * not handled by any handler from sticking around on the node indefinitely.
 	 * Defaults to {@link #DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT}.
-	 * 
+	 *
 	 * @param executionReceivedHourLimit
 	 *        the hour limit
 	 */

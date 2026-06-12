@@ -25,6 +25,7 @@ package net.solarnetwork.node.runtime;
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -197,8 +198,8 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 				results.add(null);
 				continue;
 			}
-			final BasicInstruction nodeInstr = BasicInstruction.from(instr,
-					instruction.getInstructorId());
+			final BasicInstruction nodeInstr = nonnull(
+					BasicInstruction.from(instr, instruction.getInstructorId()), "Instruction");
 			InstructionStatus s = service.executeInstruction(nodeInstr);
 			if ( s == null ) {
 				// not handled: failure

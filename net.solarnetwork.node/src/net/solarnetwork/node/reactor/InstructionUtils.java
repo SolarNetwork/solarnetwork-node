@@ -1,37 +1,39 @@
 /* ==================================================================
  * InstructionUtils.java - Jul 20, 2013 6:16:07 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 
 /**
  * Utilities for dealing with common Instruction patterns.
- * 
+ *
  * @author matt
  * @version 1.2
  * @since 2.0
@@ -54,14 +56,14 @@ public final class InstructionUtils {
 
 	/**
 	 * Generate a new local ID.
-	 * 
+	 *
 	 * <p>
 	 * Local IDs are sequentially generated, but seeded by the current date when
 	 * this method is first invoked. This is to help reduce the risk of
 	 * generating duplicate IDs across JVM restarts, but is dependent on the
 	 * system clock to achieve that.
 	 * </p>
-	 * 
+	 *
 	 * @return a new local ID
 	 */
 	private static Long localId() {
@@ -70,7 +72,7 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a new status for a given instruction.
-	 * 
+	 *
 	 * @param instruction
 	 *        the instruction, or {@code null}
 	 * @param state
@@ -83,7 +85,7 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a new status for a given instruction.
-	 * 
+	 *
 	 * @param instruction
 	 *        the instruction, or {@code null}
 	 * @param state
@@ -93,13 +95,13 @@ public final class InstructionUtils {
 	 * @return the status, never {@code null}
 	 */
 	public static InstructionStatus createStatus(Instruction instruction, InstructionState state,
-			Map<String, ?> resultParameters) {
+			@Nullable Map<String, ?> resultParameters) {
 		return createStatus(instruction, state, Instant.now(), resultParameters);
 	}
 
 	/**
 	 * Create a new status for a given instruction.
-	 * 
+	 *
 	 * @param instruction
 	 *        the instruction, or {@code null}
 	 * @param state
@@ -111,7 +113,7 @@ public final class InstructionUtils {
 	 * @return the status, never {@code null}
 	 */
 	public static InstructionStatus createStatus(Instruction instruction, InstructionState state,
-			Instant date, Map<String, ?> resultParameters) {
+			@Nullable Instant date, @Nullable Map<String, ?> resultParameters) {
 		final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
 		return (status != null ? status.newCopyWithState(state, resultParameters)
 				: new BasicInstructionStatus(instruction != null ? instruction.getId() : null, state,
@@ -120,19 +122,20 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a new local instruction with an optional parameter.
-	 * 
+	 *
 	 * <p>
 	 * The returned {@link Instruction#getInstructorId()} value will be
 	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
 	 * </p>
-	 * 
+	 *
 	 * @param topic
 	 *        the instruction topic
 	 * @param params
 	 *        an optional map of parameters
 	 * @return the new instruction, never {@code null}
 	 */
-	public static Instruction createLocalInstruction(String topic, Map<String, String> params) {
+	public static Instruction createLocalInstruction(String topic,
+			@Nullable Map<String, String> params) {
 		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
 				Instruction.LOCAL_INSTRUCTION_ID, null);
 		if ( params != null ) {
@@ -145,12 +148,12 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a new local instruction with an optional parameter.
-	 * 
+	 *
 	 * <p>
 	 * The returned {@link Instruction#getInstructorId()} value will be
 	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
 	 * </p>
-	 * 
+	 *
 	 * @param topic
 	 *        the instruction topic
 	 * @param paramName
@@ -160,7 +163,8 @@ public final class InstructionUtils {
 	 *        value
 	 * @return the new instruction, never {@code null}
 	 */
-	public static Instruction createLocalInstruction(String topic, String paramName, String paramValue) {
+	public static Instruction createLocalInstruction(String topic, @Nullable String paramName,
+			@Nullable String paramValue) {
 		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
 				Instruction.LOCAL_INSTRUCTION_ID, null);
 		if ( paramName != null && paramValue != null ) {
@@ -171,12 +175,12 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a new local instruction for
-	 * 
+	 *
 	 * <p>
 	 * The returned {@link Instruction#getInstructorId()} value will be
 	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
 	 * </p>
-	 * 
+	 *
 	 * @param controlId
 	 *        the ID of the control to set the control value to
 	 * @param controlValue
@@ -191,7 +195,7 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a result parameter map for an error message and/or code.
-	 * 
+	 *
 	 * @param message
 	 *        the message
 	 * @param code
@@ -199,7 +203,8 @@ public final class InstructionUtils {
 	 * @return the map, never {@code null}
 	 * @since 1.1
 	 */
-	public static Map<String, Object> createErrorResultParameters(String message, String code) {
+	public static Map<String, Object> createErrorResultParameters(@Nullable String message,
+			@Nullable String code) {
 		Map<String, Object> result = new LinkedHashMap<>(2);
 		if ( message != null && !message.isEmpty() ) {
 			result.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
@@ -212,14 +217,15 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a local instruction from another instruction.
-	 * 
+	 *
 	 * @param instr
 	 *        the instruction
 	 * @return the new instruction with a local ID assigned
 	 * @since 1.2
 	 */
 	public static Instruction localInstructionFrom(net.solarnetwork.domain.Instruction instr) {
-		return new BasicInstruction(BasicInstruction.from(instr, Instruction.LOCAL_INSTRUCTION_ID),
+		return new BasicInstruction(
+				nonnull(BasicInstruction.from(instr, Instruction.LOCAL_INSTRUCTION_ID), "Instruction"),
 				localId(), null);
 	}
 

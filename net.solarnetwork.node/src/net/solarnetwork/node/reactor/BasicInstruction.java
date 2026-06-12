@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Basic implementation of {@link Instruction}.
@@ -53,7 +54,8 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 * @return the new instruction, or {@code null} if {@code instr} is
 	 *         {@code null}
 	 */
-	public static BasicInstruction from(net.solarnetwork.domain.Instruction instr, String instructorId) {
+	public static @Nullable BasicInstruction from(net.solarnetwork.domain.@Nullable Instruction instr,
+			String instructorId) {
 		if ( instr == null ) {
 			return null;
 		}
@@ -72,11 +74,16 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 *        the destination instruction to copy to
 	 * @since 2.1
 	 */
-	public static void copyParameters(net.solarnetwork.domain.Instruction instr, BasicInstruction dest) {
+	public static void copyParameters(net.solarnetwork.domain.@Nullable Instruction instr,
+			BasicInstruction dest) {
 		if ( instr == null || dest == null ) {
 			return;
 		}
-		for ( String paramName : instr.getParameterNames() ) {
+		final Iterable<String> paramNames = instr.getParameterNames();
+		if ( paramNames == null ) {
+			return;
+		}
+		for ( String paramName : paramNames ) {
 			String[] paramValues = instr.getAllParameterValues(paramName);
 			if ( paramValues != null ) {
 				dest.putParameters(paramName, Arrays.asList(paramValues));
@@ -96,8 +103,8 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 * @param status
 	 *        the status, or {@code null}
 	 */
-	public BasicInstruction(String topic, Instant instructionDate, String instructorId,
-			InstructionStatus status) {
+	public BasicInstruction(@Nullable String topic, @Nullable Instant instructionDate,
+			String instructorId, @Nullable InstructionStatus status) {
 		this(null, topic, instructionDate, instructorId, status);
 	}
 
@@ -115,8 +122,8 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 * @param status
 	 *        the status, or {@code null}
 	 */
-	public BasicInstruction(Long id, String topic, Instant instructionDate, String instructorId,
-			InstructionStatus status) {
+	public BasicInstruction(@Nullable Long id, @Nullable String topic, @Nullable Instant instructionDate,
+			String instructorId, @Nullable InstructionStatus status) {
 		super(id, topic, instructionDate, status);
 		this.instructorId = instructorId;
 	}
@@ -132,7 +139,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 *        if provided, the new status to use
 	 * @since 1.2
 	 */
-	public BasicInstruction(Instruction other, Long id, InstructionStatus status) {
+	public BasicInstruction(Instruction other, @Nullable Long id, @Nullable InstructionStatus status) {
 		this((id != null ? id : other.getId()), other.getTopic(), other.getInstructionDate(),
 				other.getInstructorId(), (status != null ? status : other.getStatus()));
 		Map<String, List<String>> otherParams = other.getParameterMultiMap();
@@ -177,7 +184,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	}
 
 	@Override
-	public InstructionStatus getStatus() {
+	public @Nullable InstructionStatus getStatus() {
 		return (InstructionStatus) super.getStatus();
 	}
 

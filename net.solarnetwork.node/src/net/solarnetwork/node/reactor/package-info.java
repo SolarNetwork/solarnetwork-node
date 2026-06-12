@@ -1,7 +1,7 @@
 /* ==================================================================
- * InstructionExecutionService.java - 8/06/2018 7:21:47 AM
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,28 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.reactor;
-
-import org.jspecify.annotations.Nullable;
-
 /**
- * API for executing instructions.
- *
- * @author matt
- * @version 2.0
- * @since 1.58
+ * Package info.
  */
-public interface InstructionExecutionService {
 
-	/**
-	 * Execute a single instruction.
-	 *
-	 * @param instruction
-	 *        the instruction to execute
-	 * @return the resulting status for the instruction, or {@code null} if not
-	 *         handled
-	 */
-	@Nullable
-	InstructionStatus executeInstruction(Instruction instruction);
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.reactor;

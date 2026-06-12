@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicInstructionStatus.java - Feb 28, 2011 11:28:09 AM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,10 +25,11 @@ package net.solarnetwork.node.reactor;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Basic implementation of {@link InstructionStatus}.
- * 
+ *
  * @author matt
  * @version 2.1
  */
@@ -38,11 +39,11 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 	private static final long serialVersionUID = 2582625556107338247L;
 
 	/** The acknowledged instruction state. */
-	private final InstructionState acknowledgedInstructionState;
+	private final @Nullable InstructionState acknowledgedInstructionState;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionId
 	 *        the instruction ID
 	 * @param instructionState
@@ -50,14 +51,14 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 	 * @param statusDate
 	 *        the status date
 	 */
-	public BasicInstructionStatus(Long instructionId, InstructionState instructionState,
-			Instant statusDate) {
+	public BasicInstructionStatus(@Nullable Long instructionId,
+			@Nullable InstructionState instructionState, @Nullable Instant statusDate) {
 		this(instructionId, instructionState, statusDate, null, null);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionId
 	 *        the instruction ID
 	 * @param instructionState
@@ -67,14 +68,15 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 	 * @param ackInstructionState
 	 *        the acknowledged state
 	 */
-	public BasicInstructionStatus(Long instructionId, InstructionState instructionState,
-			Instant statusDate, InstructionState ackInstructionState) {
+	public BasicInstructionStatus(@Nullable Long instructionId,
+			@Nullable InstructionState instructionState, @Nullable Instant statusDate,
+			@Nullable InstructionState ackInstructionState) {
 		this(instructionId, instructionState, statusDate, ackInstructionState, null);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionId
 	 *        the instruction ID
 	 * @param instructionState
@@ -87,8 +89,9 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 	 *        the result parameters
 	 * @since 1.2
 	 */
-	public BasicInstructionStatus(Long instructionId, InstructionState instructionState,
-			Instant statusDate, InstructionState ackInstructionState, Map<String, ?> resultParameters) {
+	public BasicInstructionStatus(@Nullable Long instructionId,
+			@Nullable InstructionState instructionState, @Nullable Instant statusDate,
+			@Nullable InstructionState ackInstructionState, @Nullable Map<String, ?> resultParameters) {
 		super(instructionId, instructionState, statusDate, resultParameters);
 		this.acknowledgedInstructionState = ackInstructionState;
 	}
@@ -127,7 +130,7 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 
 	@Override
 	public InstructionStatus newCopyWithState(InstructionState newState,
-			Map<String, ?> resultParameters) {
+			@Nullable Map<String, ?> resultParameters) {
 		return new BasicInstructionStatus(getInstructionId(), newState, getStatusDate(),
 				this.acknowledgedInstructionState,
 				resultParameters != null ? resultParameters : getResultParameters());
@@ -135,13 +138,13 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 
 	@Override
 	public InstructionStatus newCopyWithAcknowledgedState(InstructionState newState,
-			Map<String, ?> resultParameters) {
+			@Nullable Map<String, ?> resultParameters) {
 		return new BasicInstructionStatus(getInstructionId(), getInstructionState(), getStatusDate(),
 				newState, resultParameters != null ? resultParameters : getResultParameters());
 	}
 
 	@Override
-	public InstructionState getAcknowledgedInstructionState() {
+	public @Nullable InstructionState getAcknowledgedInstructionState() {
 		return acknowledgedInstructionState;
 	}
 

@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.jspecify.annotations.Nullable;
 
 /**
  * API for a single, immutable instruction with associated parameters.
@@ -122,6 +123,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * @return the state, or {@code null} if none available
 	 */
 	@Override
+	@Nullable
 	InstructionStatus getStatus();
 
 	/**
@@ -139,7 +141,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * @see #timestampParameterValue(String)
 	 * @since 2.1
 	 */
-	default Instant getExecutionDate() {
+	default @Nullable Instant getExecutionDate() {
 		return timestampParameterValue(PARAM_EXECUTION_DATE);
 	}
 
@@ -154,12 +156,12 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 *
 	 * @param parameterName
 	 *        the name of the parameter to parse as a timestamp
-	 * @return the parameter value parsed as a timestamp, or {@code null} if
-	 *         one is not available or cannot be parsed
+	 * @return the parameter value parsed as a timestamp, or {@code null} if one
+	 *         is not available or cannot be parsed
 	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
 	 * @since 2.2
 	 */
-	default Instant timestampParameterValue(String parameterName) {
+	default @Nullable Instant timestampParameterValue(String parameterName) {
 		if ( parameterName == null ) {
 			return null;
 		}
@@ -203,7 +205,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 *         {@link #getParameterMultiMap()} is {@code null}
 	 * @since 2.3
 	 */
-	default public Map<String, String> params() {
+	default public @Nullable Map<String, String> params() {
 		Map<String, List<String>> mm = getParameterMultiMap();
 		if ( mm == null ) {
 			return null;
