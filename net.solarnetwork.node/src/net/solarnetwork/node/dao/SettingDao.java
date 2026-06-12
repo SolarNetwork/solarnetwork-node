@@ -110,6 +110,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the type
 	 * @return the setting, or {@code null} if not found
 	 */
+	@Nullable
 	Setting readSetting(String key, String type);
 
 	/**
@@ -119,6 +120,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the key to get the first value for
 	 * @return the first associated value, or {@code null} if key not found
 	 */
+	@Nullable
 	String getSetting(String key);
 
 	/**
@@ -186,10 +188,11 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * @param key
 	 *        the key to delete
 	 * @param type
-	 *        the type to delete
+	 *        the type to delete, or {@code null} to delete all types for the
+	 *        given {@code key}
 	 * @return true if the key existed and was deleted
 	 */
-	boolean deleteSetting(String key, String type);
+	boolean deleteSetting(String key, @Nullable String type);
 
 	/**
 	 * Get the modification date for a specific setting.

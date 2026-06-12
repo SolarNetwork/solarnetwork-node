@@ -119,7 +119,7 @@ public class Setting implements SettingNote {
 		 *        the set
 		 * @return the mask
 		 */
-		public static int maskForSet(Set<SettingFlag> set) {
+		public static int maskForSet(@Nullable Set<SettingFlag> set) {
 			int mask = 0;
 			if ( set != null ) {
 				for ( SettingFlag flag : set ) {
