@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicFileSettingSpecifier.java - 16/09/2019 5:21:33 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -23,6 +23,7 @@
 package net.solarnetwork.node.settings.support;
 
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.settings.FileSettingSpecifier;
 import net.solarnetwork.settings.MappableSpecifier;
@@ -31,49 +32,49 @@ import net.solarnetwork.settings.support.BaseKeyedSettingSpecifier;
 
 /**
  * Basic implementation of {@link FileSettingSpecifier}.
- * 
+ *
  * @author matt
  * @version 2.0
  */
 public class BasicFileSettingSpecifier extends BaseKeyedSettingSpecifier<Resource>
 		implements FileSettingSpecifier {
 
-	private final Set<String> acceptableFileTypeSpecifiers;
+	private final @Nullable Set<String> acceptableFileTypeSpecifiers;
 	private final boolean multiple;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * This sets {@code acceptableFileTypeSpecifiers} to {@code null} and
 	 * {@code multiple} to {@literal false}.
 	 * </p>
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @param defaultValue
 	 *        the default value
 	 */
-	public BasicFileSettingSpecifier(String key, Resource defaultValue) {
+	public BasicFileSettingSpecifier(String key, @Nullable Resource defaultValue) {
 		this(key, defaultValue, null, false);
 	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @param defaultValue
 	 *        the default value
 	 * @param acceptableFileTypeSpecifiers
-	 *        the acceptable file type specifiers, or {@code null} if all
-	 *        files are acceptable
+	 *        the acceptable file type specifiers, or {@code null} if all files
+	 *        are acceptable
 	 * @param multiple
 	 *        {@literal true} if multiple files can be accepted,
 	 *        {@literal false} if only a single file is acceptable
 	 */
-	public BasicFileSettingSpecifier(String key, Resource defaultValue,
-			Set<String> acceptableFileTypeSpecifiers, boolean multiple) {
+	public BasicFileSettingSpecifier(String key, @Nullable Resource defaultValue,
+			@Nullable Set<String> acceptableFileTypeSpecifiers, boolean multiple) {
 		super(key, defaultValue);
 		this.acceptableFileTypeSpecifiers = acceptableFileTypeSpecifiers;
 		this.multiple = multiple;
@@ -98,7 +99,7 @@ public class BasicFileSettingSpecifier extends BaseKeyedSettingSpecifier<Resourc
 	}
 
 	@Override
-	public Set<String> getAcceptableFileTypeSpecifiers() {
+	public @Nullable Set<String> getAcceptableFileTypeSpecifiers() {
 		return acceptableFileTypeSpecifiers;
 	}
 

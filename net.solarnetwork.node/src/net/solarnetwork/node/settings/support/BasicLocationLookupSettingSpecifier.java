@@ -1,27 +1,28 @@
 /* ==================================================================
  * BasicLocationLookupSettingSpecifier.java - Nov 19, 2013 1:12:41 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.datum.DatumLocation;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
@@ -31,19 +32,19 @@ import net.solarnetwork.settings.support.BaseKeyedSettingSpecifier;
 
 /**
  * Basic implementation of {@link LocationLookupSettingSpecifier}.
- * 
+ *
  * @author matt
  * @version 2.0
  */
 public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifier<Long>
 		implements LocationLookupSettingSpecifier {
 
-	private final DatumLocation location;
+	private final @Nullable DatumLocation location;
 	private final String locationType;
 
 	/**
 	 * Construct with a key and default value.
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @param locationType
@@ -51,7 +52,8 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	 * @param location
 	 *        the location
 	 */
-	public BasicLocationLookupSettingSpecifier(String key, String locationType, DatumLocation location) {
+	public BasicLocationLookupSettingSpecifier(String key, String locationType,
+			@Nullable DatumLocation location) {
 		super(key, (location == null ? null : location.getLocationId()));
 		this.locationType = locationType;
 		this.location = location;
@@ -74,32 +76,32 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	}
 
 	@Override
-	public DatumLocation getLocation() {
+	public @Nullable DatumLocation getLocation() {
 		return location;
 	}
 
 	@Override
-	public Long getLocationId() {
+	public @Nullable Long getLocationId() {
 		return (location == null ? null : location.getLocationId());
 	}
 
 	@Override
-	public String getLocationName() {
+	public @Nullable String getLocationName() {
 		return (location == null ? null : location.getLocationName());
 	}
 
 	@Override
-	public String getSourceId() {
+	public @Nullable String getSourceId() {
 		return (location == null ? null : location.getSourceId());
 	}
 
 	@Override
-	public String getSourceName() {
+	public @Nullable String getSourceName() {
 		return (location == null ? null : location.getSourceName());
 	}
 
 	@Override
-	public GeneralDatumMetadata getMetadata() {
+	public @Nullable GeneralDatumMetadata getMetadata() {
 		return (location == null ? null : location.getMetadata());
 	}
 

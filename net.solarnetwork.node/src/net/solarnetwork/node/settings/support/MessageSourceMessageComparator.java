@@ -1,21 +1,21 @@
 /* ==================================================================
  * MessageSourceMessageComparator.java - 18/02/2020 8:45:12 am
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,11 +24,12 @@ package net.solarnetwork.node.settings.support;
 
 import java.util.Comparator;
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 
 /**
  * Abstract {@link Comparator} for comparing two resolved messages.
- * 
+ *
  * @param <T>
  *        the comparison type
  * @author matt
@@ -45,11 +46,11 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * This defaults the {@code messageKey} to {@link #DEFAULT_MESSAGE_KEY}.
 	 * </p>
-	 * 
+	 *
 	 * @param locale
 	 *        the desired locale of the messages to compare
 	 */
@@ -59,7 +60,7 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param locale
 	 *        the desired locale of the messages to compare
 	 * @param messageKey
@@ -73,7 +74,7 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 
 	/**
 	 * Compare two resolved message keys in a case-insensitive manner.
-	 * 
+	 *
 	 * @param leftMessageSource
 	 *        the first message source, or {@code null}
 	 * @param leftDefault
@@ -87,8 +88,9 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 	 * @return a negative integer, zero, or a positive integer as the first
 	 *         argument is less than, equal to, or greater than the second
 	 */
-	public int compareMessageKeyValues(MessageSource leftMessageSource, String leftDefault,
-			MessageSource rightMessageSource, String rightDefault) {
+	public int compareMessageKeyValues(@Nullable MessageSource leftMessageSource,
+			@Nullable String leftDefault, @Nullable MessageSource rightMessageSource,
+			@Nullable String rightDefault) {
 		String leftTitle = leftDefault;
 		String rightTitle = rightDefault;
 		if ( leftMessageSource != null ) {
@@ -109,7 +111,7 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 
 	/**
 	 * Get the locale.
-	 * 
+	 *
 	 * @return the locale
 	 */
 	public Locale getLocale() {
@@ -118,7 +120,7 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 
 	/**
 	 * Get the message key.
-	 * 
+	 *
 	 * @return the messageKey
 	 */
 	public String getMessageKey() {
