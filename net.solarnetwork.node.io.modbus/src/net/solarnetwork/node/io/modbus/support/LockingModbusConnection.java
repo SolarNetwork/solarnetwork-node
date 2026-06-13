@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -71,7 +72,7 @@ public class LockingModbusConnection implements ModbusConnection {
 	 * @param log
 	 *        the logger to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public LockingModbusConnection(ModbusConnection delegate, ReentrantLock lock, long timeout,
 			TimeUnit timeoutUnit, String description, Logger log) {
@@ -225,7 +226,7 @@ public class LockingModbusConnection implements ModbusConnection {
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
+	public @Nullable String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			Charset charset) throws IOException {
 		return delegate.readString(function, address, count, trim, charset);
 	}

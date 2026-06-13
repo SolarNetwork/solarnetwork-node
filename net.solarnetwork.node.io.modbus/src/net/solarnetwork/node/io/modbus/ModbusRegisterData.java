@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusRegisterData.java - 18/09/2020 7:27:27 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -35,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 
 /**
  * Data for a Modbus register set.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 4.2
@@ -58,7 +59,7 @@ public class ModbusRegisterData {
 
 		/**
 		 * Perform updates to the data.
-		 * 
+		 *
 		 * @param bits
 		 *        the bits to update
 		 * @return {@literal true} if {@code dataTimestamp} should be updated to
@@ -78,12 +79,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
-	 * If any argument is {@literal null} a new instance will be created and
-	 * used for that value.
+	 * If any argument is {@code null} a new instance will be created and used
+	 * for that value.
 	 * </p>
-	 * 
+	 *
 	 * @param coils
 	 *        the coil register data
 	 * @param discretes
@@ -105,11 +106,11 @@ public class ModbusRegisterData {
 
 	/**
 	 * Copy constructor.
-	 * 
+	 *
 	 * <p>
 	 * This method provides a thread-safe way to get a copy of the current data.
 	 * </p>
-	 * 
+	 *
 	 * @param other
 	 *        the object to copy
 	 */
@@ -161,11 +162,11 @@ public class ModbusRegisterData {
 
 	/**
 	 * Create a copy of this object.
-	 * 
+	 *
 	 * <p>
 	 * This method provides a thread-safe way to get a copy of the current data.
 	 * </p>
-	 * 
+	 *
 	 * @return the new instance
 	 * @see #ModbusRegisterData(ModbusRegisterData)
 	 */
@@ -175,7 +176,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Test if the registers are all empty.
-	 * 
+	 *
 	 * @return {@literal true} if no registers or bits have been set
 	 */
 	public boolean isEmpty() {
@@ -200,7 +201,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Test if there is holding or input register data.
-	 * 
+	 *
 	 * @return {@literal true} if either holding or input registers have been
 	 *         set
 	 */
@@ -210,12 +211,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the data timestamp (last update time) for a given data block.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type
-	 * @return the update timestamp, or {@literal null} if never updated
+	 * @return the update timestamp, or {@code null} if never updated
 	 */
-	public Instant getDataTimestamp(ModbusRegisterBlockType blockType) {
+	public @Nullable Instant getDataTimestamp(ModbusRegisterBlockType blockType) {
 		long ts = 0;
 		switch (blockType) {
 			case Coil:
@@ -242,12 +243,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Force a data timestamp to be expired.
-	 * 
+	 *
 	 * <p>
 	 * Calling this method will reset the data timestamp to zero, effectively
 	 * expiring the data.
 	 * </p>
-	 * 
+	 *
 	 * @param blockType
 	 *        the type of register block to expire
 	 */
@@ -275,7 +276,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Test if a block of data was updated before a specific date.
-	 * 
+	 *
 	 * @param blockType
 	 *        the type of register block to compare the data timestamp against
 	 * @param date
@@ -314,7 +315,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the word order.
-	 * 
+	 *
 	 * @return the word order
 	 */
 	public ModbusWordOrder getWordOrder() {
@@ -323,7 +324,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Set the word order.
-	 * 
+	 *
 	 * @param order
 	 *        the word order
 	 */
@@ -334,7 +335,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a bit to a coil or discrete block type.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type, must be either {@literal Coil} or
 	 *        {@literal Discrete}
@@ -362,7 +363,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a set of bits to a coil or discrete block type.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type, must be either {@literal Coil} or
 	 *        {@literal Discrete}
@@ -392,7 +393,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a non-bit register value.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type, must be either {@literal Holding} or
 	 *        {@literal Input}
@@ -416,7 +417,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write to a set of registers.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type to update
 	 * @param address
@@ -424,7 +425,8 @@ public class ModbusRegisterData {
 	 * @param dataValue
 	 *        the register values to write
 	 */
-	public void writeRegisters(ModbusRegisterBlockType blockType, int address, short[] dataValue) {
+	public void writeRegisters(ModbusRegisterBlockType blockType, int address,
+			short @Nullable [] dataValue) {
 		if ( dataValue == null || dataValue.length < 1 ) {
 			return;
 		}
@@ -443,7 +445,8 @@ public class ModbusRegisterData {
 		}
 	}
 
-	private short[] encodeValue(ModbusDataType dataType, int address, int count, Object value) {
+	private short @Nullable [] encodeValue(ModbusDataType dataType, int address, int count,
+			@Nullable Object value) {
 		if ( value == null ) {
 			return null;
 		}
@@ -479,7 +482,7 @@ public class ModbusRegisterData {
 		return result;
 	}
 
-	private static short[] limitLength(short[] array, int max) {
+	private static short @Nullable [] limitLength(short @Nullable [] array, int max) {
 		if ( array == null || array.length <= max ) {
 			return array;
 		}
@@ -490,12 +493,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read a set of coil values.
-	 * 
+	 *
 	 * <p>
 	 * The returned set starts at index {@code 0}, meaning the indexes are
 	 * shifted down by {@code address} positions.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address
 	 * @param count
@@ -508,7 +511,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a single coil register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address
 	 * @param value
@@ -520,7 +523,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a set of coil register values.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to start at
 	 * @param count
@@ -534,7 +537,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a single discrete register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address
 	 * @param value
@@ -546,7 +549,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a set of discrete register values.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to start at
 	 * @param count
@@ -584,12 +587,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read a set of discrete values.
-	 * 
+	 *
 	 * <p>
 	 * The returned set starts at index {@code 0}, meaning the indexes are
 	 * shifted down by {@code address} positions.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address
 	 * @param count
@@ -602,7 +605,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read holding register data into a byte array.
-	 * 
+	 *
 	 * @param address
 	 *        the starting address
 	 * @param count
@@ -615,7 +618,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read holding register data into a byte array.
-	 * 
+	 *
 	 * @param address
 	 *        the starting address
 	 * @param count
@@ -628,7 +631,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Perform a thread-safe read action on a register block.
-	 * 
+	 *
 	 * @param <T>
 	 *        the result type
 	 * @param blockType
@@ -656,7 +659,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Perform a thread-safe read action on a register block.
-	 * 
+	 *
 	 * @param <T>
 	 *        the result type
 	 * @param blockType
@@ -686,7 +689,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a holding register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to save
 	 * @param value
@@ -698,7 +701,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write holding register values.
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address to save
 	 * @param values
@@ -712,7 +715,7 @@ public class ModbusRegisterData {
 		writeRegisters(address, values, holdings);
 	}
 
-	private static String[] hexValues(short[] values) {
+	private static String @Nullable [] hexValues(short @Nullable [] values) {
 		if ( values == null ) {
 			return null;
 		}
@@ -725,7 +728,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write an input register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to save
 	 * @param value
@@ -737,7 +740,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write input register values.
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address to save
 	 * @param values
@@ -769,7 +772,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Perform a set of updates to saved register data.
-	 * 
+	 *
 	 * @param blockType
 	 *        the register block type to perform updates on; must be
 	 *        {@code Holding} or {@code Input}
@@ -800,7 +803,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Perform a set of updates to saved register data.
-	 * 
+	 *
 	 * @param blockType
 	 *        the register block type to perform updates on; must be
 	 *        {@code Coil} or {@code Discrete}
@@ -870,8 +873,8 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the coil register data.
-	 * 
-	 * @return the coil registers, never {@literal null}
+	 *
+	 * @return the coil registers, never {@code null}
 	 */
 	public BitSet getCoils() {
 		return coils;
@@ -879,8 +882,8 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the discrete register data.
-	 * 
-	 * @return the discrete registers, never {@literal null}
+	 *
+	 * @return the discrete registers, never {@code null}
 	 */
 	public BitSet getDiscretes() {
 		return discretes;
@@ -888,8 +891,8 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the input register data.
-	 * 
-	 * @return the input registers, never {@literal null}
+	 *
+	 * @return the input registers, never {@code null}
 	 */
 	public ModbusData getInputs() {
 		return inputs;
@@ -897,8 +900,8 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the holding register data.
-	 * 
-	 * @return the holding registers, never {@literal null}
+	 *
+	 * @return the holding registers, never {@code null}
 	 */
 	public ModbusData getHoldings() {
 		return holdings;

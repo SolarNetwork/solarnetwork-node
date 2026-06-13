@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.domain.DataAccessor;
@@ -53,9 +54,9 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	/** The {@code unitId} property default value. */
 	public static final int DEFAULT_UNIT_ID = 1;
 
-	private Map<String, Object> deviceInfo;
+	private @Nullable Map<String, Object> deviceInfo;
 	private int unitId = DEFAULT_UNIT_ID;
-	private OptionalService<ModbusNetwork> modbusNetwork;
+	private @Nullable OptionalService<ModbusNetwork> modbusNetwork;
 
 	/**
 	 * Constructor.
@@ -96,12 +97,12 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
-	 * service, or {@literal null} if not available or not configured.
+	 * service, or {@code null} if not available or not configured.
 	 *
 	 * @return ModbusNetwork
 	 */
-	protected final ModbusNetwork modbusNetwork() {
-		return (modbusNetwork == null ? null : modbusNetwork.service());
+	protected final @Nullable ModbusNetwork modbusNetwork() {
+		return OptionalService.service(modbusNetwork);
 	}
 
 	/**
@@ -114,24 +115,25 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *
 	 * @param conn
 	 *        the connection to use
-	 * @return a map with general device information populated
+	 * @return a map with general device information populated, or {@code null}
+	 *         if the details are unavailable
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	protected abstract Map<String, Object> readDeviceInfo(ModbusConnection conn) throws IOException;
+	protected abstract @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn);
 
 	/**
 	 * Return an informational message composed of general device info.
 	 *
 	 * <p>
 	 * This method will call {@link #getDeviceInfo()} and return a {@code /}
-	 * (forward slash) delimited string of the resulting values, or
-	 * {@literal null} if that method returns {@literal null}.
+	 * (forward slash) delimited string of the resulting values, or {@code null}
+	 * if that method returns {@code null}.
 	 * </p>
 	 *
 	 * @return info message
 	 */
-	public String getDeviceInfoMessage() {
+	public @Nullable String getDeviceInfoMessage() {
 		Map<String, ?> info = getDeviceInfo();
 		if ( info == null ) {
 			return null;
@@ -150,17 +152,17 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * Note the returned map cannot be modified.
 	 * </p>
 	 *
-	 * @return the device info, or {@literal null}
+	 * @return the device info, or {@code null}
 	 * @see #readDeviceInfo(ModbusConnection)
 	 */
-	public Map<String, ?> getDeviceInfo() {
+	public @Nullable Map<String, ?> getDeviceInfo() {
 		Map<String, Object> info = deviceInfo;
 		if ( info == null ) {
 			try {
 				info = performAction(new ModbusConnectionAction<Map<String, Object>>() {
 
 					@Override
-					public Map<String, Object> doWithConnection(ModbusConnection conn)
+					public @Nullable Map<String, Object> doWithConnection(ModbusConnection conn)
 							throws IOException {
 						return readDeviceInfo(conn);
 					}
@@ -187,14 +189,15 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *        the result type
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or {@literal null} if the action is
+	 * @return the result of the callback, or {@code null} if the action is
 	 *         never invoked
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
+	protected final <T> @Nullable T performAction(final ModbusConnectionAction<T> action)
+			throws IOException {
 		T result = null;
-		ModbusNetwork device = (modbusNetwork == null ? null : modbusNetwork.service());
+		ModbusNetwork device = modbusNetwork();
 		if ( device != null ) {
 			result = device.performAction(unitId, action);
 		}
@@ -204,9 +207,9 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	/**
 	 * Get direct access to the device info data.
 	 *
-	 * @return the device info, or {@literal null}
+	 * @return the device info, or {@code null}
 	 */
-	protected Map<String, Object> getDeviceInfoMap() {
+	protected @Nullable Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
@@ -214,8 +217,8 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * Set the device info data.
 	 *
 	 * <p>
-	 * Setting the {@code deviceInfo} to {@literal null} will force the next
-	 * call to {@link #getDeviceInfo()} to read from the device to populate this
+	 * Setting the {@code deviceInfo} to {@code null} will force the next call
+	 * to {@link #getDeviceInfo()} to read from the device to populate this
 	 * data, and setting this to anything else will force all subsequent calls
 	 * to {@link #getDeviceInfo()} to simply return that map.
 	 * </p>
@@ -223,7 +226,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @param deviceInfo
 	 *        the device info map to set
 	 */
-	protected void setDeviceInfoMap(Map<String, Object> deviceInfo) {
+	protected void setDeviceInfoMap(@Nullable Map<String, Object> deviceInfo) {
 		this.deviceInfo = deviceInfo;
 	}
 
@@ -234,7 +237,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *         method
 	 * @since 2.2
 	 */
-	public DeviceInfo deviceInfo() {
+	public @Nullable DeviceInfo deviceInfo() {
 		Map<String, ?> info = getDeviceInfo();
 		BasicDeviceInfo.Builder b = DataAccessor.deviceInfoBuilderForInfo(info);
 		return (b.isEmpty() ? null : b.build());
@@ -255,7 +258,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *
 	 * @return the modbus network
 	 */
-	public OptionalService<ModbusNetwork> getModbusNetwork() {
+	public final @Nullable OptionalService<ModbusNetwork> getModbusNetwork() {
 		return modbusNetwork;
 	}
 
@@ -265,7 +268,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @param modbusDevice
 	 *        the modbus network
 	 */
-	public void setModbusNetwork(OptionalService<ModbusNetwork> modbusDevice) {
+	public final void setModbusNetwork(@Nullable OptionalService<ModbusNetwork> modbusDevice) {
 		this.modbusNetwork = modbusDevice;
 	}
 
@@ -274,7 +277,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *
 	 * @return the unit ID; defauts to {@link #DEFAULT_UNIT_ID}
 	 */
-	public int getUnitId() {
+	public final int getUnitId() {
 		return unitId;
 	}
 
@@ -284,7 +287,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @param unitId
 	 *        the unit ID
 	 */
-	public void setUnitId(int unitId) {
+	public final void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}
 

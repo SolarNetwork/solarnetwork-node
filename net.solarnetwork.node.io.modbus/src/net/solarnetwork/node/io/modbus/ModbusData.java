@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.CollectionUtils;
@@ -121,7 +122,7 @@ public class ModbusData implements DataAccessor {
 	}
 
 	@Override
-	public Instant getDataTimestamp() {
+	public @Nullable Instant getDataTimestamp() {
 		return dataTimestamp > 0 ? Instant.ofEpochMilli(dataTimestamp) : null;
 	}
 
@@ -149,12 +150,12 @@ public class ModbusData implements DataAccessor {
 	 *
 	 * @param ref
 	 *        the reference to get the number value for
-	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 * @return the value, or {@code null} if {@code ref} is {@code null}
 	 * @throws IllegalArgumentException
 	 *         if the reference data type is not numeric
 	 * @since 1.4
 	 */
-	public final Number getNumber(ModbusReference ref) {
+	public final @Nullable Number getNumber(@Nullable ModbusReference ref) {
 		return getNumber(ref, 0);
 	}
 
@@ -165,12 +166,12 @@ public class ModbusData implements DataAccessor {
 	 *        the relative reference to get the number value for
 	 * @param offset
 	 *        the address offset to add to {@link ModbusReference#getAddress()}
-	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 * @return the value, or {@code null} if {@code ref} is {@code null}
 	 * @throws IllegalArgumentException
 	 *         if the reference data type is not numeric
 	 * @since 1.4
 	 */
-	public final Number getNumber(ModbusReference ref, int offset) {
+	public final @Nullable Number getNumber(@Nullable ModbusReference ref, int offset) {
 		if ( ref == null ) {
 			return null;
 		}
@@ -220,7 +221,7 @@ public class ModbusData implements DataAccessor {
 	 *
 	 * @param addr
 	 *        the address
-	 * @return the boolean, never {@literal null}
+	 * @return the boolean, never {@code null}
 	 */
 	public final Boolean getBoolean(final int addr) {
 		short s = dataRegisters.getValue(addr);
@@ -232,7 +233,7 @@ public class ModbusData implements DataAccessor {
 	 *
 	 * @param addr
 	 *        the register address
-	 * @return the integer, never {@literal null}
+	 * @return the integer, never {@code null}
 	 */
 	public final Integer getUnsignedInt16(final int addr) {
 		short s = dataRegisters.getValue(addr);
@@ -244,7 +245,7 @@ public class ModbusData implements DataAccessor {
 	 *
 	 * @param addr
 	 *        the register address
-	 * @return the short, never {@literal null}
+	 * @return the short, never {@code null}
 	 */
 	public final Short getInt16(final int addr) {
 		return dataRegisters.getValue(addr);
@@ -257,9 +258,9 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the high 16 bits
 	 * @param loAddr
 	 *        the address of the low 16 bits
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 */
-	public final Long getUnsignedInt32(final int hiAddr, final int loAddr) {
+	public final @Nullable Long getUnsignedInt32(final int hiAddr, final int loAddr) {
 		return ModbusDataUtils.parseUnsignedInt32(dataRegisters.getValue(hiAddr),
 				dataRegisters.getValue(loAddr));
 	}
@@ -271,10 +272,10 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the high 16 bits
 	 * @param loAddr
 	 *        the address of the low 16 bits
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 * @since 1.1
 	 */
-	public final Integer getInt32(final int hiAddr, final int loAddr) {
+	public final @Nullable Integer getInt32(final int hiAddr, final int loAddr) {
 		return ModbusDataUtils.parseInt32(dataRegisters.getValue(hiAddr),
 				dataRegisters.getValue(loAddr));
 	}
@@ -289,10 +290,10 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 * @since 1.1
 	 */
-	public final Integer getInt32(final int addr) {
+	public final @Nullable Integer getInt32(final int addr) {
 		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getInt32(addr, addr + 1)
 				: getInt32(addr + 1, addr));
 	}
@@ -308,9 +309,9 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 */
-	public final Long getUnsignedInt32(final int addr) {
+	public final @Nullable Long getUnsignedInt32(final int addr) {
 		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getUnsignedInt32(addr, addr + 1)
 				: getUnsignedInt32(addr + 1, addr));
 	}
@@ -320,10 +321,10 @@ public class ModbusData implements DataAccessor {
 	 *
 	 * @param addr
 	 *        the address of the 16 bits
-	 * @return the parsed value, or {@literal null} if not available.
+	 * @return the parsed value, or {@code null} if not available.
 	 * @since 1.4
 	 */
-	public final Half getFloat16(final int addr) {
+	public final @Nullable Half getFloat16(final int addr) {
 		return ModbusDataUtils.parseFloat16(dataRegisters.getValue(addr));
 	}
 
@@ -334,9 +335,9 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the high 16 bits
 	 * @param loAddr
 	 *        the address of the low 16 bits
-	 * @return the parsed value, or {@literal null} if not available.
+	 * @return the parsed value, or {@code null} if not available.
 	 */
-	public final Float getFloat32(final int hiAddr, final int loAddr) {
+	public final @Nullable Float getFloat32(final int hiAddr, final int loAddr) {
 		return ModbusDataUtils.parseFloat32(dataRegisters.getValue(hiAddr),
 				dataRegisters.getValue(loAddr));
 	}
@@ -351,9 +352,9 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
-	 * @return The parsed value, or {@literal null} if not available.
+	 * @return The parsed value, or {@code null} if not available.
 	 */
-	public final Float getFloat32(final int addr) {
+	public final @Nullable Float getFloat32(final int addr) {
 		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getFloat32(addr, addr + 1)
 				: getFloat32(addr + 1, addr));
 	}
@@ -387,7 +388,7 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the first register; the remaining three registers
 	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
 	 *        {@code addr + 3}
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 */
 	public final Long getInt64(final int addr) {
 		return (wordOrder == ModbusWordOrder.MostToLeastSignificant
@@ -406,7 +407,7 @@ public class ModbusData implements DataAccessor {
 	 *        the address of bits 31-16
 	 * @param l2Addr
 	 *        the address of bits 15-0
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 * @since 1.1
 	 */
 	public final BigInteger getUnsignedInt64(final int h1Addr, final int h2Addr, final int l1Addr,
@@ -427,7 +428,7 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the first register; the remaining three registers
 	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
 	 *        {@code addr + 3}
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 * @since 1.1
 	 */
 	public final BigInteger getUnsignedInt64(final int addr) {
@@ -447,9 +448,9 @@ public class ModbusData implements DataAccessor {
 	 *        the address of bits 31-16
 	 * @param l2Addr
 	 *        the address of bits 15-0
-	 * @return the parsed value, or {@literal null} if not available
+	 * @return the parsed value, or {@code null} if not available
 	 */
-	public final Double getFloat64(final int h1Addr, final int h2Addr, final int l1Addr,
+	public final @Nullable Double getFloat64(final int h1Addr, final int h2Addr, final int l1Addr,
 			final int l2Addr) {
 		return ModbusDataUtils.parseFloat64(dataRegisters.getValue(h1Addr),
 				dataRegisters.getValue(h2Addr), dataRegisters.getValue(l1Addr),
@@ -467,9 +468,9 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the first register; the remaining three registers
 	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
 	 *        {@code addr + 3}
-	 * @return The parsed value, or {@literal null} if not available.
+	 * @return The parsed value, or {@code null} if not available.
 	 */
-	public final Double getFloat64(final int addr) {
+	public final @Nullable Double getFloat64(final int addr) {
 		return (wordOrder == ModbusWordOrder.MostToLeastSignificant
 				? getFloat64(addr, addr + 1, addr + 2, addr + 3)
 				: getFloat64(addr + 3, addr + 2, addr + 1, addr));
@@ -517,7 +518,7 @@ public class ModbusData implements DataAccessor {
 	 *        the resulting string
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
-	 * @return the parsed string, or {@literal null} if {@code count} is
+	 * @return the parsed string, or {@code null} if {@code count} is
 	 *         {@literal 0}
 	 * @throws IllegalCharsetNameException
 	 *         If the given character set name is illegal
@@ -526,7 +527,7 @@ public class ModbusData implements DataAccessor {
 	 * @throws UnsupportedCharsetException
 	 *         If no support for the named character set is available
 	 */
-	public final String getString(final int addr, final int count, final boolean trim,
+	public final @Nullable String getString(final int addr, final int count, final boolean trim,
 			final String charsetName) {
 		return getString(addr, count, trim, Charset.forName(charsetName));
 	}
@@ -549,10 +550,10 @@ public class ModbusData implements DataAccessor {
 	 *        the resulting string as well as any null bytes, i.e. {@literal \0}
 	 * @param charset
 	 *        the character set to interpret the bytes as
-	 * @return the parsed string, or {@literal null} if {@code count} is
+	 * @return the parsed string, or {@code null} if {@code count} is
 	 *         {@literal 0}
 	 */
-	public final String getString(final int addr, final int count, final boolean trim,
+	public final @Nullable String getString(final int addr, final int count, final boolean trim,
 			final Charset charset) {
 		final byte[] bytes = getBytes(addr, count);
 		String result = null;
@@ -577,7 +578,7 @@ public class ModbusData implements DataAccessor {
 	 *        the resulting string
 	 * @return the parsed string
 	 */
-	public final String getUtf8String(final int addr, final int count, final boolean trim) {
+	public final @Nullable String getUtf8String(final int addr, final int count, final boolean trim) {
 		return getString(addr, count, trim, ByteUtils.UTF8);
 	}
 
@@ -593,7 +594,7 @@ public class ModbusData implements DataAccessor {
 	 *        the resulting string
 	 * @return the parsed string
 	 */
-	public final String getAsciiString(final int addr, final int count, final boolean trim) {
+	public final @Nullable String getAsciiString(final int addr, final int count, final boolean trim) {
 		return getString(addr, count, trim, ByteUtils.ASCII);
 	}
 
@@ -608,7 +609,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 * @since 1.4
 	 */
-	public final String getUtf8String(final ModbusReference ref, final boolean trim) {
+	public final @Nullable String getUtf8String(final ModbusReference ref, final boolean trim) {
 		return getUtf8String(ref, 0, trim);
 	}
 
@@ -625,7 +626,8 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 * @since 1.4
 	 */
-	public final String getUtf8String(final ModbusReference ref, int offset, final boolean trim) {
+	public final @Nullable String getUtf8String(final ModbusReference ref, int offset,
+			final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.UTF8);
 	}
 
@@ -640,7 +642,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 * @since 1.4
 	 */
-	public final String getAsciiString(final ModbusReference ref, final boolean trim) {
+	public final @Nullable String getAsciiString(final ModbusReference ref, final boolean trim) {
 		return getAsciiString(ref, 0, trim);
 	}
 
@@ -657,7 +659,8 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 * @since 1.4
 	 */
-	public final String getAsciiString(final ModbusReference ref, final int offset, final boolean trim) {
+	public final @Nullable String getAsciiString(final ModbusReference ref, final int offset,
+			final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.ASCII);
 	}
 
@@ -674,7 +677,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 * @since 1.8
 	 */
-	public final String getLatin1String(final ModbusReference ref, final int offset,
+	public final @Nullable String getLatin1String(final ModbusReference ref, final int offset,
 			final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.LATIN1);
 	}
@@ -721,10 +724,10 @@ public class ModbusData implements DataAccessor {
 	 *
 	 * @param ref
 	 *        the reference to get the number value for
-	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 * @return the value, or {@code null} if {@code ref} is {@code null}
 	 * @since 3.1
 	 */
-	public Object getValue(ModbusReference ref) {
+	public @Nullable Object getValue(ModbusReference ref) {
 		return getValue(ref.getDataType(), ref.getAddress(), ref.getWordLength());
 	}
 
@@ -737,10 +740,10 @@ public class ModbusData implements DataAccessor {
 	 *        the register address
 	 * @param count
 	 *        the word length, for variable-length data types only
-	 * @return the decoded value, or {@literal null}
+	 * @return the decoded value, or {@code null}
 	 * @since 3.1
 	 */
-	public Object getValue(ModbusDataType dataType, int address, int count) {
+	public @Nullable Object getValue(ModbusDataType dataType, int address, int count) {
 		switch (dataType) {
 			case Boolean:
 				return getBoolean(address);
@@ -1081,7 +1084,7 @@ public class ModbusData implements DataAccessor {
 	 * Set the word ordering to use when reading multi-register data types.
 	 *
 	 * @param wordOrder
-	 *        the word order to use; {@literal null} will be ignored
+	 *        the word order to use; {@code null} will be ignored
 	 * @since 1.3
 	 */
 	public final void setWordOrder(ModbusWordOrder wordOrder) {
@@ -1150,7 +1153,10 @@ public class ModbusData implements DataAccessor {
 	 *         if any communication error occurs
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
-			final Collection<IntRange> ranges) throws IOException {
+			final @Nullable Collection<IntRange> ranges) throws IOException {
+		if ( ranges == null || ranges.isEmpty() ) {
+			return;
+		}
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -1177,7 +1183,10 @@ public class ModbusData implements DataAccessor {
 	 *         if any communication error occurs
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
-			final Collection<IntRange> ranges, final MutableModbusData m) throws IOException {
+			final @Nullable Collection<IntRange> ranges, final MutableModbusData m) throws IOException {
+		if ( ranges == null || ranges.isEmpty() ) {
+			return;
+		}
 		for ( IntRange r : ranges ) {
 			short[] data = conn.readWords(readFunction, r.getMin(), r.length());
 			m.saveDataArray(data, r.getMin());
@@ -1188,7 +1197,7 @@ public class ModbusData implements DataAccessor {
 	 * Get a read-only Map view of all modbus registers as unsigned integer
 	 * values.
 	 *
-	 * @return the data map, never {@literal null}
+	 * @return the data map, never {@code null}
 	 * @since 1.7
 	 */
 	public final Map<Integer, Integer> getUnsignedDataMap() {
@@ -1199,7 +1208,7 @@ public class ModbusData implements DataAccessor {
 	/**
 	 * Get direct access to all modbus registers.
 	 *
-	 * @return the data map, never {@literal null}
+	 * @return the data map, never {@code null}
 	 * @since 3.1
 	 */
 	public final IntShortMap dataRegisters() {

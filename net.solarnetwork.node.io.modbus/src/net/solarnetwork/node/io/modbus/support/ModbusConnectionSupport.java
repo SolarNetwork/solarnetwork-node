@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.modbus.support;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
@@ -36,7 +37,7 @@ import net.solarnetwork.node.service.LockTimeoutException;
  * <p>
  * This class has been created to help with Modbus testing. All write methods
  * throw an {@link UnsupportedOperationException} and all read methods return
- * {@literal null}. The {@link #open()} and {@link #close()} methods do nothing.
+ * {@code null}. The {@link #open()} and {@link #close()} methods do nothing.
  * </p>
  *
  * @author matt
@@ -83,28 +84,28 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 
 	@Override
 	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
-		return null;
+		return new int[0];
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
+	public @Nullable String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			Charset charset) {
 		return null;
 	}
 
 	@Override
 	public short[] readWords(ModbusReadFunction function, int address, int count) {
-		return null;
+		return new short[0];
 	}
 
 	@Override
 	public BitSet readDiscreteValues(int address, int count) throws IOException {
-		return null;
+		return new BitSet();
 	}
 
 	@Override
 	public BitSet readDiscreteValues(int[] addresses, int count) throws IOException {
-		return null;
+		return new BitSet();
 	}
 
 	@Override
@@ -120,12 +121,12 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 
 	@Override
 	public BitSet readInputDiscreteValues(final int address, final int count) {
-		return null;
+		return new BitSet();
 	}
 
 	@Override
 	public byte[] readBytes(ModbusReadFunction function, int address, int count) {
-		return null;
+		return new byte[0];
 	}
 
 }

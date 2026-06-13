@@ -1,21 +1,21 @@
 /* ==================================================================
  * AbstractModbusNetwork.java - 3/02/2018 8:01:09 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -44,7 +45,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Abstract implementation of {@link ModbusNetwork}.
- * 
+ *
  * @author matt
  * @version 3.1
  * @since 2.4
@@ -56,35 +57,35 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * A default value for the {@code uid} property.
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	public static final String DEFAULT_UID = "Modbus Port";
 
 	/**
 	 * A default value for the {@code timeout} property.
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	public static final long DEFAULT_TIMEOUT_SECS = 10L;
 
 	/**
 	 * A default value for the {@code retries} property.
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	public static int DEFAULT_RETRIES = 3;
 
 	/**
 	 * A default value for the {@code retries} property.
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	public static boolean DEFAULT_HEADLESS = true;
 
 	/**
 	 * A default value for the {@code retryReconnect} property.
-	 * 
+	 *
 	 * @since 3.0
 	 */
 	public static boolean DEFAULT_RETRY_RECONNECT = false;
@@ -119,7 +120,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Get the set of class names to convert to {@link IOException} instances if
 	 * caught at runtime.
-	 * 
+	 *
 	 * @return the set of class names
 	 * @since 2.0
 	 */
@@ -130,7 +131,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Add class names to the set of names to convert to {@link IOException} if
 	 * caught at runtime.
-	 * 
+	 *
 	 * @param classNames
 	 *        the names to convert when caught
 	 * @return the final set of configured names
@@ -152,7 +153,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Remove class names from the set of names to convert to
 	 * {@link IOException} if caught at runtime.
-	 * 
+	 *
 	 * @param classNames
 	 *        the names to no longer convert when caught
 	 * @return the final set of configured names
@@ -182,7 +183,8 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	}
 
 	@Override
-	public <T> T performAction(int unitId, ModbusConnectionAction<T> action) throws IOException {
+	public <T> @Nullable T performAction(int unitId, ModbusConnectionAction<T> action)
+			throws IOException {
 		ModbusConnection conn = null;
 		try {
 			conn = createConnection(unitId);
@@ -221,7 +223,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Acquire a network-wide lock, returning if lock acquired.
-	 * 
+	 *
 	 * @throws LockTimeoutException
 	 *         if the lock cannot be obtained
 	 */
@@ -257,7 +259,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Release the network-wide lock previously obtained via
 	 * {@link #acquireLock()}.
-	 * 
+	 *
 	 * <p>
 	 * This method is safe to call even if the lock has already been released.
 	 * </p>
@@ -273,12 +275,12 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Create a new connection that wraps the network-wide lock around another
 	 * connection.
-	 * 
+	 *
 	 * <p>
 	 * The {@link ModbusConnection#open()} call will acquire the lock, and
 	 * {@link ModbusConnection#close()} will release it.
 	 * </p>
-	 * 
+	 *
 	 * @param connection
 	 *        the connection to warp
 	 * @return a new connection that uses the network-wide lock
@@ -296,12 +298,12 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get a description of this network.
-	 * 
+	 *
 	 * <p>
 	 * This implementation simply calls {@code toString()} on this object.
 	 * Extending classes may want to provide something more meaningful.
 	 * </p>
-	 * 
+	 *
 	 * @return a description of this network
 	 */
 	protected String getNetworkDescription() {
@@ -310,7 +312,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get a list of base settings.
-	 * 
+	 *
 	 * @return the base settings
 	 */
 	protected List<SettingSpecifier> getBaseSettingSpecifiers() {
@@ -326,7 +328,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get the timeout value.
-	 * 
+	 *
 	 * @return the timeout value, defaults to {@literal 10}
 	 */
 	public long getTimeout() {
@@ -335,7 +337,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Set a timeout value.
-	 * 
+	 *
 	 * @param timeout
 	 *        the timeout
 	 */
@@ -345,7 +347,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get the timeout unit.
-	 * 
+	 *
 	 * @return the timeout unit; defaults to seconds
 	 */
 	public TimeUnit getTimeoutUnit() {
@@ -354,7 +356,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Set the timeout unit.
-	 * 
+	 *
 	 * @param unit
 	 *        the unit
 	 */
@@ -364,7 +366,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get the "headless" operation flag.
-	 * 
+	 *
 	 * @return the headless mode; defaults to {@literal true}
 	 * @see #setHeadless(boolean)
 	 */
@@ -374,14 +376,14 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Set the "headless" operation flag.
-	 * 
+	 *
 	 * <p>
 	 * When {@literal true}, a 6-byte Modbus header with a transaction ID, etc.
 	 * is left off requests. This is most often used for Modbus RTU over serial
 	 * connections. When {@literal false} the header is included. This is most
 	 * often used with Modbus TCP.
 	 * </p>
-	 * 
+	 *
 	 * @param headless
 	 *        {@literal true} for headless operation, {@literal false} otherwise
 	 */
@@ -392,7 +394,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Get the number of "retries" to perform on each transaction in the event
 	 * of errors.
-	 * 
+	 *
 	 * @return the number of retries; defaults to {@literal 3}
 	 */
 	public int getRetries() {
@@ -402,7 +404,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	/**
 	 * Set the number of "retries" to perform on each transaction in the event
 	 * of errors.
-	 * 
+	 *
 	 * @param retries
 	 *        the number of retries
 	 */
@@ -412,7 +414,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get the retry delay.
-	 * 
+	 *
 	 * @return the retry delay
 	 */
 	public long getRetryDelay() {
@@ -421,7 +423,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Set a retry delay between error retries.
-	 * 
+	 *
 	 * @param retryDelay
 	 *        the delay, or {@literal 0} for no delay
 	 */
@@ -431,7 +433,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get the retry delay time unit.
-	 * 
+	 *
 	 * @return the time unit; defaults to {@link TimeUnit#MILLISECONDS}
 	 */
 	public TimeUnit getRetryDelayUnit() {
@@ -440,7 +442,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Set the retry delay time unit.
-	 * 
+	 *
 	 * @param retryDelayUnit
 	 *        the unit to set
 	 */
@@ -450,7 +452,7 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Get the retry reconnect mode.
-	 * 
+	 *
 	 * @return {@literal} true to reconnect between error retries,
 	 *         {@literal false} to continue using the same connection; defaults
 	 *         to {@literal false}
@@ -461,12 +463,12 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 
 	/**
 	 * Toggle the mode to reconnect between error retries.
-	 * 
+	 *
 	 * <p>
 	 * When enabled, if an IO error occurs while executing a transaction the
 	 * connection will be closed and reopened.
 	 * </p>
-	 * 
+	 *
 	 * @param retryReconnect
 	 *        {@literal} true to reconnect between error retries,
 	 *        {@literal false} to continue using the same connection

@@ -24,10 +24,12 @@ package net.solarnetwork.node.io.modbus.support;
 
 import java.nio.charset.Charset;
 import java.util.BitSet;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.util.IntShortMap;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * {@link ModbusConnection} for reading static data.
@@ -49,10 +51,12 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	 *
 	 * @param data
 	 *        the starting data
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public StaticDataMapReadonlyModbusConnection(IntShortMap data) {
 		super();
-		this.data = data;
+		this.data = ObjectUtils.requireNonNullArgument(data, "data");
 	}
 
 	/**
@@ -62,7 +66,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	 *        the starting data, starting from Modbus register address
 	 *        {@literal 0}
 	 */
-	public StaticDataMapReadonlyModbusConnection(int[] data) {
+	public StaticDataMapReadonlyModbusConnection(int @Nullable [] data) {
 		this(data, 0);
 
 	}
@@ -75,7 +79,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	 * @param address
 	 *        the starting Modbus register address for {@code data}
 	 */
-	public StaticDataMapReadonlyModbusConnection(int[] data, int address) {
+	public StaticDataMapReadonlyModbusConnection(int @Nullable [] data, int address) {
 		this(ModbusDataUtils.shortArray(data), address);
 
 	}
@@ -88,10 +92,12 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	 * @param address
 	 *        the starting Modbus register address for {@code data}
 	 */
-	public StaticDataMapReadonlyModbusConnection(short[] data, int address) {
+	public StaticDataMapReadonlyModbusConnection(short @Nullable [] data, int address) {
 		this(new IntShortMap());
-		for ( int i = 0; i < data.length; i++ ) {
-			this.data.putValue(address + i, data[i]);
+		if ( data != null ) {
+			for ( int i = 0; i < data.length; i++ ) {
+				this.data.putValue(address + i, data[i]);
+			}
 		}
 	}
 
@@ -114,7 +120,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
+	public @Nullable String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			Charset charset) {
 		final byte[] bytes = readBytes(function, address, count);
 		String result = null;

@@ -22,10 +22,12 @@
 
 package net.solarnetwork.node.io.modbus.support;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -101,7 +103,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 * @throws IOException
 	 *         if a communication error occurs
 	 */
-	protected T getCurrentSample(ModbusConnection connection) throws IOException {
+	protected T getCurrentSample(@Nullable ModbusConnection connection) throws IOException {
 		T currSample = null;
 		if ( isCachedSampleExpired() ) {
 			ModbusConnectionAction<T> action = new ModbusConnectionAction<T>() {
@@ -130,7 +132,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 		} else {
 			currSample = createSampleSnapshot(getSample());
 		}
-		return currSample;
+		return nonnull(currSample, "Sample");
 	}
 
 	/**
@@ -162,7 +164,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 * @since 1.5
 	 */
 	@Override
-	public DeviceInfo deviceInfo() {
+	public @Nullable DeviceInfo deviceInfo() {
 		ModbusData s = sample.copy();
 		return s.deviceInfo();
 	}
@@ -238,7 +240,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) throws IOException {
+	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		try {
 			T sample = getCurrentSample(conn);
 			return sample.getDeviceInfo();
@@ -254,7 +256,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 *
 	 * @return the data
 	 */
-	public T getSample() {
+	public final T getSample() {
 		return sample;
 	}
 
@@ -263,7 +265,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 *
 	 * @return the cache milliseconds
 	 */
-	public long getSampleCacheMs() {
+	public final long getSampleCacheMs() {
 		return sampleCacheMs;
 	}
 
@@ -273,7 +275,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
+	public final void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
 }

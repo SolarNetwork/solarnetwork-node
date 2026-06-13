@@ -26,6 +26,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
@@ -331,6 +332,7 @@ public interface ModbusConnection extends Closeable {
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
+	@Nullable
 	String readString(ModbusReadFunction function, int address, int count, boolean trim, Charset charset)
 			throws IOException;
 

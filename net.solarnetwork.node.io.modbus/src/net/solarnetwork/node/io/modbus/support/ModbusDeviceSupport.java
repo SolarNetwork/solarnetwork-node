@@ -27,12 +27,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -67,9 +69,9 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
-	private Map<String, Object> deviceInfo;
+	private @Nullable Map<String, Object> deviceInfo;
 	private int unitId = DEFAULT_UNIT_ID;
-	private OptionalFilterableService<ModbusNetwork> modbusNetwork;
+	private @Nullable OptionalFilterableService<ModbusNetwork> modbusNetwork;
 
 	/**
 	 * Constructor.
@@ -105,12 +107,12 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
-	 * service, or {@literal null} if not available or not configured.
+	 * service, or {@code null} if not available or not configured.
 	 *
 	 * @return ModbusNetwork
 	 */
-	protected final ModbusNetwork modbusNetwork() {
-		return (modbusNetwork == null ? null : modbusNetwork.service());
+	protected final @Nullable ModbusNetwork modbusNetwork() {
+		return OptionalService.service(modbusNetwork);
 	}
 
 	/**
@@ -120,21 +122,23 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 *
 	 * @param conn
 	 *        the connection to use
-	 * @return a map with general device information populated
+	 * @return a map with general device information populated, or {@code null}
+	 *         if one cannot be obtained
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected abstract Map<String, Object> readDeviceInfo(ModbusConnection conn) throws IOException;
+	protected abstract @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn)
+			throws IOException;
 
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or {@literal null} if
-	 * that method returns {@literal null}.
+	 * slash) delimited string of the resulting values, or {@code null} if that
+	 * method returns {@code null}.
 	 *
 	 * @return info message
 	 */
-	public String getDeviceInfoMessage() {
+	public @Nullable String getDeviceInfoMessage() {
 		Map<String, ?> info = getDeviceInfo();
 		if ( info == null ) {
 			return null;
@@ -148,17 +152,17 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * subsequent calls will not attempt to read from the device. Note the
 	 * returned map cannot be modified.
 	 *
-	 * @return the device info, or {@literal null}
+	 * @return the device info, or {@code null}
 	 * @see #readDeviceInfo(ModbusConnection)
 	 */
-	public Map<String, ?> getDeviceInfo() {
+	public @Nullable Map<String, ?> getDeviceInfo() {
 		Map<String, Object> info = deviceInfo;
 		if ( info == null ) {
 			try {
 				info = performAction(new ModbusConnectionAction<Map<String, Object>>() {
 
 					@Override
-					public Map<String, Object> doWithConnection(ModbusConnection conn)
+					public @Nullable Map<String, Object> doWithConnection(ModbusConnection conn)
 							throws IOException {
 						return readDeviceInfo(conn);
 					}
@@ -182,12 +186,13 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 *        the result type
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or {@literal null} if the action is
+	 * @return the result of the callback, or {@code null} if the action is
 	 *         never invoked
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
+	protected final <T> @Nullable T performAction(final ModbusConnectionAction<T> action)
+			throws IOException {
 		T result = null;
 		ModbusNetwork device = (modbusNetwork == null ? null : modbusNetwork.service());
 		if ( device != null ) {
@@ -199,23 +204,23 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Get direct access to the device info data.
 	 *
-	 * @return the device info, or {@literal null}
+	 * @return the device info, or {@code null}
 	 */
-	protected Map<String, Object> getDeviceInfoMap() {
+	protected final @Nullable Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to
-	 * {@literal null} will force the next call to {@link #getDeviceInfo()} to
-	 * read from the device to populate this data, and setting this to anything
-	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
-	 * simply return that map.
+	 * Set the device info data. Setting the {@code deviceInfo} to {@code null}
+	 * will force the next call to {@link #getDeviceInfo()} to read from the
+	 * device to populate this data, and setting this to anything else will
+	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
+	 * that map.
 	 *
 	 * @param deviceInfo
 	 *        the device info map to set
 	 */
-	protected void setDeviceInfoMap(Map<String, Object> deviceInfo) {
+	protected final void setDeviceInfoMap(@Nullable Map<String, Object> deviceInfo) {
 		this.deviceInfo = deviceInfo;
 	}
 
@@ -234,7 +239,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 *
 	 * @return the network
 	 */
-	public OptionalFilterableService<ModbusNetwork> getModbusNetwork() {
+	public final @Nullable OptionalFilterableService<ModbusNetwork> getModbusNetwork() {
 		return modbusNetwork;
 	}
 
@@ -244,7 +249,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * @param modbusDevice
 	 *        the network
 	 */
-	public void setModbusNetwork(OptionalFilterableService<ModbusNetwork> modbusDevice) {
+	public final void setModbusNetwork(@Nullable OptionalFilterableService<ModbusNetwork> modbusDevice) {
 		this.modbusNetwork = modbusDevice;
 	}
 
@@ -253,7 +258,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 *
 	 * @return the unit ID; defaults to {@link #DEFAULT_UNIT_ID}
 	 */
-	public int getUnitId() {
+	public final int getUnitId() {
 		return unitId;
 	}
 
@@ -267,7 +272,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * @param unitId
 	 *        the ID to use
 	 */
-	public void setUnitId(int unitId) {
+	public final void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}
 

@@ -27,6 +27,7 @@ import static net.solarnetwork.node.io.modbus.ModbusWordOrder.MostToLeastSignifi
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.util.Half;
 
 /**
@@ -52,10 +53,10 @@ public final class ModbusDataUtils {
 	 *
 	 * @param array
 	 *        the array to convert
-	 * @return the converted array, or {@literal null} if {@code array} is
-	 *         {@literal null}
+	 * @return the converted array, or {@code null} if {@code array} is
+	 *         {@code null}
 	 */
-	public static Integer[] integerArray(short[] array) {
+	public static Integer @Nullable [] integerArray(short @Nullable [] array) {
 		if ( array == null ) {
 			return null;
 		}
@@ -72,10 +73,10 @@ public final class ModbusDataUtils {
 	 *
 	 * @param array
 	 *        the array to convert
-	 * @return the converted array, or {@literal null} if {@code array} is
-	 *         {@literal null}
+	 * @return the converted array, or {@code null} if {@code array} is
+	 *         {@code null}
 	 */
-	public static int[] unsignedIntArray(short[] array) {
+	public static int @Nullable [] unsignedIntArray(short @Nullable [] array) {
 		if ( array == null ) {
 			return null;
 		}
@@ -92,10 +93,10 @@ public final class ModbusDataUtils {
 	 *
 	 * @param array
 	 *        the array to convert
-	 * @return the converted array, or {@literal null} if {@code array} is
-	 *         {@literal null}
+	 * @return the converted array, or {@code null} if {@code array} is
+	 *         {@code null}
 	 */
-	public static short[] shortArray(int[] array) {
+	public static short @Nullable [] shortArray(int @Nullable [] array) {
 		if ( array == null ) {
 			return null;
 		}
@@ -120,7 +121,7 @@ public final class ModbusDataUtils {
 	 *         if {@code dataType} is not supported
 	 * @see #encodeNumber(ModbusDataType, Number, ModbusWordOrder)
 	 */
-	public static short[] encodeNumber(ModbusDataType dataType, Number number) {
+	public static short @Nullable [] encodeNumber(ModbusDataType dataType, @Nullable Number number) {
 		return encodeNumber(dataType, number, MostToLeastSignificant);
 	}
 
@@ -128,8 +129,8 @@ public final class ModbusDataUtils {
 	 * Encode a number into raw Modbus register values.
 	 *
 	 * <p>
-	 * This method always returns a value if {@code number} is {@literal null}.
-	 * If {@code dataType} is not a supported type an,
+	 * This method always returns a value if {@code number} is {@code null}. If
+	 * {@code dataType} is not a supported type an,
 	 * {@link IllegalArgumentException} will be thrown.
 	 * </p>
 	 *
@@ -144,7 +145,7 @@ public final class ModbusDataUtils {
 	 *         if {@code dataType} is not supported
 	 * @since 1.1
 	 */
-	public static short[] encodeNumber(ModbusDataType dataType, Number number,
+	public static short @Nullable [] encodeNumber(ModbusDataType dataType, @Nullable Number number,
 			ModbusWordOrder wordOrder) {
 		short[] result = null;
 		switch (dataType) {
@@ -223,7 +224,7 @@ public final class ModbusDataUtils {
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 1}
 	 */
-	public static short[] encodeInt16(Short value) {
+	public static short[] encodeInt16(@Nullable Short value) {
 		short bits = (value != null ? value.shortValue() : (short) 0);
 		return new short[] { bits };
 	}
@@ -236,7 +237,7 @@ public final class ModbusDataUtils {
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 1}
 	 */
-	public static short[] encodeUnsignedInt16(Integer value) {
+	public static short[] encodeUnsignedInt16(@Nullable Integer value) {
 		int bits = (value != null ? value : 0);
 		return new short[] { (short) (bits & 0xFFFF) };
 	}
@@ -250,7 +251,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeInt32(Integer value) {
+	public static short[] encodeInt32(@Nullable Integer value) {
 		return encodeInt32(value, MostToLeastSignificant);
 	}
 
@@ -265,7 +266,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2}
 	 * @since 1.1
 	 */
-	public static short[] encodeInt32(Integer value, ModbusWordOrder wordOrder) {
+	public static short[] encodeInt32(@Nullable Integer value, ModbusWordOrder wordOrder) {
 		int bits = (value != null ? value : 0);
 		short[] result = new short[] { (short) ((bits >> 16) & 0xFFFF), (short) (bits & 0xFFFF) };
 		if ( wordOrder == LeastToMostSignificant ) {
@@ -283,7 +284,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeUnsignedInt32(Long value) {
+	public static short[] encodeUnsignedInt32(@Nullable Long value) {
 		return encodeUnsignedInt32(value, MostToLeastSignificant);
 	}
 
@@ -298,7 +299,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2}
 	 * @since 1.1
 	 */
-	public static short[] encodeUnsignedInt32(Long value, ModbusWordOrder wordOrder) {
+	public static short[] encodeUnsignedInt32(@Nullable Long value, ModbusWordOrder wordOrder) {
 		short[] words = encodeInt64(value, wordOrder);
 		if ( wordOrder == MostToLeastSignificant ) {
 			return new short[] { words[2], words[3] };
@@ -315,7 +316,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeInt64(Long value) {
+	public static short[] encodeInt64(@Nullable Long value) {
 		return encodeInt64(value, MostToLeastSignificant);
 	}
 
@@ -330,7 +331,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4}
 	 * @since 1.1
 	 */
-	public static short[] encodeInt64(Long value, ModbusWordOrder wordOrder) {
+	public static short[] encodeInt64(@Nullable Long value, ModbusWordOrder wordOrder) {
 		long bits = (value != null ? value : 0);
 		short[] result = new short[] { (short) ((bits >> 48) & 0xFFFF), (short) ((bits >> 32) & 0xFFFF),
 				(short) ((bits >> 16) & 0xFFFF), (short) (bits & 0xFFFF) };
@@ -349,7 +350,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeUnsignedInt64(BigInteger value) {
+	public static short[] encodeUnsignedInt64(@Nullable BigInteger value) {
 		return encodeUnsignedInt64(value, MostToLeastSignificant);
 	}
 
@@ -364,8 +365,8 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4}
 	 * @since 1.1
 	 */
-	public static short[] encodeUnsignedInt64(BigInteger value, ModbusWordOrder wordOrder) {
-		byte[] bytes = value.toByteArray();
+	public static short[] encodeUnsignedInt64(@Nullable BigInteger value, ModbusWordOrder wordOrder) {
+		byte[] bytes = (value != null ? value.toByteArray() : new byte[] { 0, 0 });
 
 		// drop sign byte, if present and not already an even number of bytes
 		if ( bytes[0] == 0 && bytes.length % 2 == 1 && bytes.length < 9 ) {
@@ -486,7 +487,7 @@ public final class ModbusDataUtils {
 	 * @return the register value
 	 * @since 2.2
 	 */
-	public static short encodeFloat16(Half value) {
+	public static short encodeFloat16(@Nullable Half value) {
 		return (value != null ? value.halfValue() : (short) 0);
 	}
 
@@ -499,7 +500,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeFloat32(Float value) {
+	public static short[] encodeFloat32(@Nullable Float value) {
 		return encodeFloat32(value, MostToLeastSignificant);
 	}
 
@@ -514,7 +515,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2}
 	 * @since 1.1
 	 */
-	public static short[] encodeFloat32(Float value, ModbusWordOrder wordOrder) {
+	public static short[] encodeFloat32(@Nullable Float value, ModbusWordOrder wordOrder) {
 		int bits = Float.floatToIntBits(value != null ? value : 0f);
 		return encodeInt32(bits, wordOrder);
 	}
@@ -528,7 +529,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeFloat64(Double value) {
+	public static short[] encodeFloat64(@Nullable Double value) {
 		return encodeFloat64(value, MostToLeastSignificant);
 	}
 
@@ -544,7 +545,7 @@ public final class ModbusDataUtils {
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 * @since 1.1
 	 */
-	public static short[] encodeFloat64(Double value, ModbusWordOrder wordOrder) {
+	public static short[] encodeFloat64(@Nullable Double value, ModbusWordOrder wordOrder) {
 		long bits = Double.doubleToLongBits(value != null ? value : 0.0);
 		return encodeInt64(bits, wordOrder);
 	}
@@ -562,7 +563,7 @@ public final class ModbusDataUtils {
 	 *         {@code data.length / 2} and use
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static short[] encodeBytes(byte[] data) {
+	public static short[] encodeBytes(byte @Nullable [] data) {
 		return encodeBytes(data, MostToLeastSignificant);
 	}
 
@@ -581,7 +582,7 @@ public final class ModbusDataUtils {
 	 *         {@code data.length / 2}
 	 * @since 1.1
 	 */
-	public static short[] encodeBytes(byte[] data, ModbusWordOrder wordOrder) {
+	public static short[] encodeBytes(byte @Nullable [] data, ModbusWordOrder wordOrder) {
 		if ( data == null || data.length < 1 ) {
 			return new short[0];
 		}
@@ -609,12 +610,13 @@ public final class ModbusDataUtils {
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 * @param offset
 	 *        an offset within {@code words} to start reading from
-	 * @return the parsed number, or {@literal null} if {@code words} is
-	 *         {@literal null} or not long enough for the requested data type
+	 * @return the parsed number, or {@code null} if {@code words} is
+	 *         {@code null} or not long enough for the requested data type
 	 * @throws IllegalArgumentException
 	 *         if {@code dataType} is not supported
 	 */
-	public static Number parseNumber(ModbusDataType dataType, short[] words, int offset) {
+	public static @Nullable Number parseNumber(ModbusDataType dataType, short @Nullable [] words,
+			int offset) {
 		return parseNumber(dataType, words, offset, MostToLeastSignificant);
 	}
 
@@ -629,14 +631,17 @@ public final class ModbusDataUtils {
 	 *        an offset within {@code words} to start reading from
 	 * @param wordOrder
 	 *        the word order of {@code words}
-	 * @return the parsed number, or {@literal null} if {@code words} is
-	 *         {@literal null} or not long enough for the requested data type
+	 * @return the parsed number, or {@code null} if {@code words} is
+	 *         {@code null} or not long enough for the requested data type
 	 * @throws IllegalArgumentException
 	 *         if {@code dataType} is not supported
 	 * @since 1.1
 	 */
-	public static Number parseNumber(ModbusDataType dataType, short[] words, int offset,
-			ModbusWordOrder wordOrder) {
+	public static @Nullable Number parseNumber(ModbusDataType dataType, short @Nullable [] words,
+			int offset, ModbusWordOrder wordOrder) {
+		if ( words == null ) {
+			return null;
+		}
 		Number result = null;
 		switch (dataType) {
 			case Boolean:
@@ -763,7 +768,7 @@ public final class ModbusDataUtils {
 	 *
 	 * @param lo
 	 *        bits 15-0
-	 * @return the parsed integer, never {@literal null}
+	 * @return the parsed integer, never {@code null}
 	 */
 	public static Short parseInt16(final short lo) {
 		return lo;
@@ -786,7 +791,7 @@ public final class ModbusDataUtils {
 	 *
 	 * @param lo
 	 *        bits 15-0
-	 * @return the parsed integer, never {@literal null}
+	 * @return the parsed integer, never {@code null}
 	 */
 	public static Integer parseUnsignedInt16(final short lo) {
 		return toUnsignedInt16(lo);
@@ -813,7 +818,7 @@ public final class ModbusDataUtils {
 	 *        bits 31-16
 	 * @param lo
 	 *        bits 15-0
-	 * @return the parsed integer, never {@literal null}
+	 * @return the parsed integer, never {@code null}
 	 */
 	public static Integer parseInt32(final short hi, final short lo) {
 		return toInt32(hi, lo);
@@ -848,7 +853,7 @@ public final class ModbusDataUtils {
 	 *        bits 31-16
 	 * @param lo
 	 *        bits 15-0
-	 * @return the parsed integer, never {@literal null}
+	 * @return the parsed integer, never {@code null}
 	 */
 	public static Long parseUnsignedInt32(final short hi, final short lo) {
 		return toUnsignedInt32(hi, lo);
@@ -884,7 +889,7 @@ public final class ModbusDataUtils {
 	 *        bits 31-16
 	 * @param l2
 	 *        bits 15-0
-	 * @return the parsed integer, never {@literal null}
+	 * @return the parsed integer, never {@code null}
 	 */
 	public static Long parseInt64(final short h1, final short h2, final short l1, final short l2) {
 		return toInt64(h1, h2, l1, l2);
@@ -901,7 +906,7 @@ public final class ModbusDataUtils {
 	 *        bits 31-16
 	 * @param l2
 	 *        bits 15-0
-	 * @return the parsed integer, never {@literal null}
+	 * @return the parsed integer, never {@code null}
 	 */
 	public static BigInteger parseUnsignedInt64(final short h1, final short h2, final short l1,
 			final short l2) {
@@ -921,11 +926,11 @@ public final class ModbusDataUtils {
 	 *
 	 * @param val
 	 *        the 16 bits
-	 * @return the parsed half, or {@literal null} if not available or parsed
-	 *         half is {@code NaN}
+	 * @return the parsed half, or {@code null} if not available or parsed half
+	 *         is {@code NaN}
 	 * @since 2.2
 	 */
-	public static Half parseFloat16(final short val) {
+	public static @Nullable Half parseFloat16(final short val) {
 		Half result = Half.valueOf(val);
 		if ( result.isNaN() ) {
 			result = null;
@@ -955,10 +960,10 @@ public final class ModbusDataUtils {
 	 *        the high 16 bits
 	 * @param lo
 	 *        the low 16 bits
-	 * @return the parsed float, or {@literal null} if not available or parsed
+	 * @return the parsed float, or {@code null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
-	public static Float parseFloat32(final short hi, final short lo) {
+	public static @Nullable Float parseFloat32(final short hi, final short lo) {
 		Float result = toFloat32(hi, lo);
 		if ( result.isNaN() ) {
 			result = null;
@@ -998,10 +1003,10 @@ public final class ModbusDataUtils {
 	 *        bits 31-16
 	 * @param l2
 	 *        bits 15-0
-	 * @return the parsed double, or {@literal null} if the result is
-	 *         {@code NaN}
+	 * @return the parsed double, or {@code null} if the result is {@code NaN}
 	 */
-	public static Double parseFloat64(final short h1, final short h2, final short l1, final short l2) {
+	public static @Nullable Double parseFloat64(final short h1, final short h2, final short l1,
+			final short l2) {
 		Double result = toFloat64(h1, h2, l1, l2);
 		if ( result.isNaN() ) {
 			result = null;
@@ -1019,7 +1024,7 @@ public final class ModbusDataUtils {
 	 *        the word offset to start from
 	 * @return the parsed bytes
 	 */
-	public static byte[] parseBytes(short[] words, int offset) {
+	public static byte[] parseBytes(short @Nullable [] words, int offset) {
 		return parseBytes(words, offset, MostToLeastSignificant);
 	}
 
@@ -1035,11 +1040,12 @@ public final class ModbusDataUtils {
 	 * @return the parsed bytes
 	 * @since 1.1
 	 */
-	public static byte[] parseBytes(short[] words, int offset, ModbusWordOrder wordOrder) {
-		byte[] bytes = new byte[2
-				* (words == null || offset >= words.length ? 0 : (words.length - offset))];
+	@SuppressWarnings({ "null", "NullAway" }) // does not pick up on size conditional
+	public static byte[] parseBytes(short @Nullable [] words, int offset, ModbusWordOrder wordOrder) {
+		final int size = (words != null ? words.length : 0);
+		byte[] bytes = new byte[2 * (offset >= size ? 0 : (size - offset))];
 		if ( bytes.length > 0 ) {
-			for ( int i = offset, p = 0; i < words.length; i++, p += 2 ) {
+			for ( int i = offset, p = 0; i < size; i++, p += 2 ) {
 				int idx = (wordOrder == MostToLeastSignificant ? p : bytes.length - p - 2);
 				bytes[idx] = (byte) ((words[i] >> 8) & 0xFF);
 				bytes[idx + 1] = (byte) ((words[i] & 0xFF));
@@ -1059,7 +1065,7 @@ public final class ModbusDataUtils {
 	 *        the offset within words to start reading from
 	 * @return the integer value
 	 */
-	public static BigInteger parseUnsignedInteger(short[] words, int offset) {
+	public static BigInteger parseUnsignedInteger(short @Nullable [] words, int offset) {
 		return parseUnsignedInteger(words, offset, MostToLeastSignificant);
 	}
 
@@ -1076,7 +1082,8 @@ public final class ModbusDataUtils {
 	 * @return the integer value
 	 * @since 1.1
 	 */
-	public static BigInteger parseUnsignedInteger(short[] words, int offset, ModbusWordOrder wordOrder) {
+	public static BigInteger parseUnsignedInteger(short @Nullable [] words, int offset,
+			ModbusWordOrder wordOrder) {
 		byte[] bytes = parseBytes(words, offset, wordOrder);
 		if ( bytes.length > 0 && bytes[0] != (byte) 0 ) {
 			byte[] tmp = new byte[bytes.length + 1];
@@ -1119,7 +1126,7 @@ public final class ModbusDataUtils {
 	 *        the number of words to fill
 	 * @param wordOrder
 	 *        the word order for the result
-	 * @return the words, never {@literal null}
+	 * @return the words, never {@code null}
 	 * @since 2.3
 	 */
 	public static short[] shortArrayForBitSet(BitSet bits, int count, ModbusWordOrder wordOrder) {
@@ -1146,7 +1153,7 @@ public final class ModbusDataUtils {
 	 *        the bit set
 	 * @param count
 	 *        the number of words to fill
-	 * @return the words, never {@literal null}
+	 * @return the words, never {@code null}
 	 * @since 2.3
 	 */
 	public static short[] shortArrayForBitSet(BitSet bits, int count) {
@@ -1160,13 +1167,14 @@ public final class ModbusDataUtils {
 	 *        the words
 	 * @param wordOrder
 	 *        the word order for the result
-	 * @return the bit set, never {@literal null}
+	 * @return the bit set, never {@code null}
 	 * @since 2.3
 	 */
-	public static BitSet bitSetForShortArray(short[] words, ModbusWordOrder wordOrder) {
+	public static BitSet bitSetForShortArray(short @Nullable [] words, ModbusWordOrder wordOrder) {
 		final int size = (words != null ? words.length : 0);
 		final BitSet result = new BitSet(size);
-		for ( int pos = 0; pos < words.length; pos++ ) {
+		for ( int pos = 0; pos < size; pos++ ) {
+			@SuppressWarnings({ "null", "NullAway" }) // does not pick up on size conditional
 			short w = words[pos];
 			for ( int i = 0; i < 16; i++ ) {
 				int bitPos = ((wordOrder == LeastToMostSignificant ? pos * 16 : (size - pos - 1) * 16)
@@ -1184,10 +1192,10 @@ public final class ModbusDataUtils {
 	 *
 	 * @param words
 	 *        the words
-	 * @return the bit set, never {@literal null}
+	 * @return the bit set, never {@code null}
 	 * @since 2.3
 	 */
-	public static BitSet bitSetForShortArray(short[] words) {
+	public static BitSet bitSetForShortArray(short @Nullable [] words) {
 		return bitSetForShortArray(words, MostToLeastSignificant);
 	}
 
