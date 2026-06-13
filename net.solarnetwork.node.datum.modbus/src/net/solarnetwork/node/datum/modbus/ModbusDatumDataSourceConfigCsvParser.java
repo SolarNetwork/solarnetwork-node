@@ -43,6 +43,7 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
@@ -170,7 +171,8 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		}
 	}
 
-	private String rowKeyValue(CsvRecord row, ModbusDatumDataSourceConfig currentConfig) {
+	private @Nullable String rowKeyValue(CsvRecord row,
+			@Nullable ModbusDatumDataSourceConfig currentConfig) {
 		String key = row.getField(0);
 		if ( key != null ) {
 			key = key.trim();
@@ -184,7 +186,7 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return (currentConfig != null ? currentConfig.getKey() : null);
 	}
 
-	private String parseStringValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable String parseStringValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		if ( colNum < rowLen ) {
 			String s = row.getField(colNum);
 			if ( s != null ) {
@@ -198,7 +200,7 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -212,7 +214,7 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private Long parseLongValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable Long parseLongValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -226,7 +228,8 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum,
+			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -240,7 +243,7 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private ModbusWordOrder parseModbusWordOrderValue(CsvRecord row, int rowLen, long rowNum,
+	private @Nullable ModbusWordOrder parseModbusWordOrderValue(CsvRecord row, int rowLen, long rowNum,
 			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
@@ -260,7 +263,7 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private DatumSamplesType parseDatumSamplesTypeValue(CsvRecord row, int rowLen, long rowNum,
+	private @Nullable DatumSamplesType parseDatumSamplesTypeValue(CsvRecord row, int rowLen, long rowNum,
 			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
@@ -280,8 +283,8 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private ModbusReadFunction parseModbusReadFunctionValue(CsvRecord row, int rowLen, long rowNum,
-			int colNum) {
+	private @Nullable ModbusReadFunction parseModbusReadFunctionValue(CsvRecord row, int rowLen,
+			long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
 			return null;
@@ -311,7 +314,8 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		return null;
 	}
 
-	private ModbusDataType parseModbusDataTypeValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable ModbusDataType parseModbusDataTypeValue(CsvRecord row, int rowLen, long rowNum,
+			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
 			return null;

@@ -26,6 +26,7 @@ import static java.util.Arrays.fill;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.Setting;
@@ -89,6 +90,7 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 		for ( Setting s : settings ) {
 			config.populateFromSetting(s);
 		}
+		@Nullable
 		String[] row = new String[rowLen];
 		row[ModbusCsvColumn.INSTANCE_ID.getCode()] = config.getKey();
 		row[ModbusCsvColumn.SOURCE_ID.getCode()] = config.getSourceId();
@@ -135,7 +137,7 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 		}
 	}
 
-	private String dataLengthValue(ModbusPropertyConfig propConfig) {
+	private @Nullable String dataLengthValue(@Nullable ModbusPropertyConfig propConfig) {
 		if ( propConfig == null ) {
 			return null;
 		}
@@ -150,7 +152,7 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 		return null;
 	}
 
-	private static String modbusWordOrderValue(ModbusWordOrder wordOrder) {
+	private static @Nullable String modbusWordOrderValue(@Nullable ModbusWordOrder wordOrder) {
 		if ( wordOrder == null ) {
 			return null;
 		}
@@ -166,14 +168,14 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 		}
 	}
 
-	private static String propertyTypeValue(DatumSamplesType type) {
+	private static @Nullable String propertyTypeValue(@Nullable DatumSamplesType type) {
 		if ( type == null ) {
 			return null;
 		}
 		return type.toString();
 	}
 
-	private static String registerTypeValue(ModbusReadFunction fn) {
+	private static @Nullable String registerTypeValue(@Nullable ModbusReadFunction fn) {
 		if ( fn == null ) {
 			return null;
 		}
@@ -191,7 +193,7 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 		}
 	}
 
-	private static String dataTypeValue(ModbusDataType type) {
+	private static @Nullable String dataTypeValue(@Nullable ModbusDataType type) {
 		if ( type == null ) {
 			return null;
 		}

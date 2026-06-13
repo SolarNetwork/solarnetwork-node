@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.modbus;
 
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.StringUtils.delimitedStringFromMap;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntConsumer;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.MutableDatumSamplesWithMetadata;
@@ -76,7 +77,7 @@ import net.solarnetwork.util.NumberUtils;
  * Generic Modbus device datum data source.
  *
  * @author matt
- * @version 3.12
+ * @version 3.13
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<Void>,
@@ -98,10 +99,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/** The {@code wordOrder} property default value. */
 	public static final ModbusWordOrder DEFAULT_WORD_ORDER = ModbusWordOrder.MostToLeastSignificant;
 
-	private String sourceId;
+	private @Nullable String sourceId;
 	private long sampleCacheMs;
 	private int maxReadWordCount;
-	private ModbusPropertyConfig[] propConfigs;
+	private ModbusPropertyConfig @Nullable [] propConfigs;
 
 	private final AtomicLong sampleDate = new AtomicLong(0);
 	private final ModbusRegisterData data;
@@ -118,7 +119,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		startSubSampling(this);
 		saveMetadata(getSourceId());
 	}
@@ -136,13 +137,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	@Override
 	public Collection<String> publishedSourceIds() {
 		final String sourceId = resolvePlaceholders(this.sourceId);
-		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
-				: Collections.singleton(sourceId));
+		return (sourceId == null || sourceId.isEmpty() ? List.of() : List.of(sourceId));
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
-		return Collections.emptyMap();
+	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+		return Map.of();
 	}
 
 	@Override
@@ -151,7 +151,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public NodeDatum readCurrentDatum() {
+	public @Nullable NodeDatum readCurrentDatum() {
 		return readCurrentDatum(null);
 	}
 
@@ -161,7 +161,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		log.debug("Got sub-sample datum: {}", datum);
 	}
 
-	private NodeDatum readCurrentDatum(Map<String, Object> xformProps) {
+	private @Nullable NodeDatum readCurrentDatum(@Nullable Map<String, Object> xformProps) {
 		boolean refreshed = refreshDeviceData();
 		if ( !refreshed ) {
 			return null;
@@ -182,7 +182,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private void populateDatumProperties(MutableNodeDatum d, GeneralDatumMetadata m,
-			ModbusPropertyConfig[] propConfs) {
+			ModbusPropertyConfig @Nullable [] propConfs) {
 		if ( propConfs == null ) {
 			return;
 		}
@@ -191,31 +191,32 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			if ( !conf.isValid() ) {
 				continue;
 			}
+			final DatumSamplesType samplesType = nonnull(conf.getPropertyType(), "Property type");
+			final String propName = nonnull(conf.getName(), "Property name");
 			Object propVal = currentValue(conf);
 			if ( propVal != null ) {
-				switch (conf.getPropertyType()) {
+				switch (samplesType) {
 					case Accumulating:
 					case Instantaneous:
 						if ( !(propVal instanceof Number) ) {
 							log.warn("Cannot set datum {} property {} to non-number value [{}]",
-									conf.getPropertyType(), conf.getPropertyKey(), propVal);
+									samplesType, propName, propVal);
 							continue;
 						}
 
 					default:
 						// nothing
 				}
-				if ( conf.getPropertyType() == DatumSamplesType.Metadata ) {
+				if ( samplesType == DatumSamplesType.Metadata ) {
 					m.populate(conf.getPropertyKey(), propVal.toString());
 				} else {
-					d.asMutableSampleOperations().putSampleValue(conf.getPropertyType(),
-							conf.getPropertyKey(), propVal);
+					d.asMutableSampleOperations().putSampleValue(samplesType, propName, propVal);
 				}
 			}
 		}
 	}
 
-	private Object currentValue(ModbusPropertyConfig config) {
+	private @Nullable Object currentValue(ModbusPropertyConfig config) {
 		Object propVal = currentRawValue(config);
 		if ( propVal instanceof Boolean && (config.getPropertyType() == DatumSamplesType.Accumulating
 				|| config.getPropertyType() == DatumSamplesType.Instantaneous) ) {
@@ -233,7 +234,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return propVal;
 	}
 
-	private Object currentRawValue(ModbusPropertyConfig config) {
+	private @Nullable Object currentRawValue(ModbusPropertyConfig config) {
 		final ModbusRegisterBlockType blockType = config.getFunction().blockType();
 		switch (blockType) {
 			case Coil:
@@ -247,7 +248,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private void populateDatumProperties(MutableNodeDatum d, GeneralDatumMetadata m,
-			ExpressionConfig[] expressionConfs) {
+			ExpressionConfig @Nullable [] expressionConfs) {
 		ExpressionRoot root = new ExpressionRoot(d, data, service(getDatumService()));
 		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(
@@ -255,23 +256,23 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				root);
 	}
 
-	private Number applyDecimalScale(Number value, int decimalScale) {
+	private @Nullable Number applyDecimalScale(@Nullable Number value, int decimalScale) {
 		if ( decimalScale < 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		if ( v.scale() > decimalScale ) {
+		if ( v != null && v.scale() > decimalScale ) {
 			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
 		}
 		return v;
 	}
 
-	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
+	private @Nullable Number applyUnitMultiplier(@Nullable Number value, BigDecimal multiplier) {
 		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.multiply(multiplier);
+		return (v != null ? v.multiply(multiplier) : null);
 	}
 
 	@Override
@@ -285,7 +286,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getReadFunctionSets(
-			ModbusPropertyConfig[] configs) {
+			ModbusPropertyConfig @Nullable [] configs) {
 		Map<ModbusReadFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
 				configs == null ? 0 : configs.length);
 		if ( configs == null ) {
@@ -297,7 +298,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return confsByFunction;
 	}
 
-	private static IntRangeSet getRegisterAddressSet(List<ModbusPropertyConfig> configs) {
+	private static IntRangeSet getRegisterAddressSet(@Nullable List<ModbusPropertyConfig> configs) {
 		IntRangeSet set = new IntRangeSet();
 		if ( configs != null ) {
 			for ( ModbusPropertyConfig config : configs ) {
@@ -340,17 +341,16 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		results.addAll(basicIdentifiableMetadataSettings(null, getMetadata()));
 
 		ModbusPropertyConfig[] confs = getPropConfigs();
-		List<ModbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
-				: Collections.<ModbusPropertyConfig> emptyList());
+		List<ModbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs) : List.of());
 		results.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
 				new SettingUtils.KeyedListCallback<ModbusPropertyConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(ModbusPropertyConfig value,
-							int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(
+							@Nullable ModbusPropertyConfig value, int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								ModbusPropertyConfig.settings(key + "."));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+						return List.of(configGroup);
 					}
 				}));
 
@@ -360,16 +360,16 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( exprServices != null ) {
 			ExpressionConfig[] exprConfs = getExpressionConfigs();
 			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
-					: Collections.<ExpressionConfig> emptyList());
+					: List.of());
 			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
 					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 						@Override
-						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
-								int index, String key) {
+						public Collection<SettingSpecifier> mapListSettingKey(
+								@Nullable ExpressionConfig value, int index, String key) {
 							BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 									ExpressionConfig.settings(key + ".", exprServices));
-							return Collections.<SettingSpecifier> singletonList(configGroup);
+							return List.of(configGroup);
 						}
 					}));
 		}
@@ -423,7 +423,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				&& !functionMap.containsKey(ModbusReadFunction.ReadHoldingRegister) ) {
 			// expressions configured but no read holding registers; add a "dummy" config to the loop below picks
 			// up the expression registers
-			functionMap.put(ModbusReadFunction.ReadHoldingRegister, Collections.emptyList());
+			functionMap.put(ModbusReadFunction.ReadHoldingRegister, List.of());
 		}
 		for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap.entrySet() ) {
 			ModbusReadFunction function = me.getKey();
@@ -573,7 +573,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *
 	 * @return the cache milliseconds
 	 */
-	public long getSampleCacheMs() {
+	public final long getSampleCacheMs() {
 		return sampleCacheMs;
 	}
 
@@ -583,7 +583,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
+	public final void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
 
@@ -592,7 +592,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *
 	 * @return the property configurations
 	 */
-	public ModbusPropertyConfig[] getPropConfigs() {
+	public final ModbusPropertyConfig @Nullable [] getPropConfigs() {
 		return propConfigs;
 	}
 
@@ -602,7 +602,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param propConfigs
 	 *        the configs to use
 	 */
-	public void setPropConfigs(ModbusPropertyConfig[] propConfigs) {
+	public final void setPropConfigs(ModbusPropertyConfig @Nullable [] propConfigs) {
 		this.propConfigs = propConfigs;
 	}
 
@@ -611,7 +611,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
-	public int getPropConfigsCount() {
+	public final int getPropConfigsCount() {
 		ModbusPropertyConfig[] confs = this.propConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
@@ -627,7 +627,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
-	public void setPropConfigsCount(int count) {
+	public final void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
 				ModbusPropertyConfig.class, null);
 	}
@@ -639,7 +639,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return the max read word count; defaults to
 	 *         {@link #DEFAULT_MAX_READ_WORD_COUNT}
 	 */
-	public int getMaxReadWordCount() {
+	public final int getMaxReadWordCount() {
 		return this.maxReadWordCount;
 	}
 
@@ -655,7 +655,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param maxReadWordCount
 	 *        the maximum word count
 	 */
-	public void setMaxReadWordCount(int maxReadWordCount) {
+	public final void setMaxReadWordCount(int maxReadWordCount) {
 		if ( maxReadWordCount < 1 ) {
 			return;
 		}
@@ -667,7 +667,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *
 	 * @return the source ID to use
 	 */
-	public String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -677,7 +677,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param sourceId
 	 *        the source ID to use
 	 */
-	public void setSourceId(String sourceId) {
+	public final void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -687,7 +687,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return the word order
 	 * @since 1.2
 	 */
-	public ModbusWordOrder getWordOrder() {
+	public final ModbusWordOrder getWordOrder() {
 		return data.getWordOrder();
 	}
 
@@ -698,7 +698,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *        the order to set; {@literal null} will be ignored
 	 * @since 1.2
 	 */
-	public void setWordOrder(ModbusWordOrder wordOrder) {
+	public final void setWordOrder(ModbusWordOrder wordOrder) {
 		if ( wordOrder == null ) {
 			return;
 		}
@@ -713,7 +713,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
 	 * @since 1.2
 	 */
-	public char getWordOrderKey() {
+	public final char getWordOrderKey() {
 		ModbusWordOrder order = getWordOrder();
 		if ( order == null ) {
 			order = ModbusWordOrder.MostToLeastSignificant;
@@ -729,7 +729,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
 	 * @since 1.2
 	 */
-	public void setWordOrderKey(char key) {
+	public final void setWordOrderKey(char key) {
 		ModbusWordOrder order;
 		try {
 			order = ModbusWordOrder.forKey(key);
@@ -746,31 +746,19 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @since 1.5
 	 */
 	@Override
-	public ExpressionConfig[] getExpressionConfigs() {
-		return (ExpressionConfig[]) super.getExpressionConfigs();
+	public ExpressionConfig @Nullable [] getExpressionConfigs() {
+		return (ExpressionConfig @Nullable []) super.getExpressionConfigs();
 	}
 
 	/**
 	 * Set the expression configurations to use.
 	 *
 	 * @param expressionConfigs
-	 *        the configs to use
+	 *        the configurations to use
 	 * @since 1.5
 	 */
-	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+	public void setExpressionConfigs(ExpressionConfig @Nullable [] expressionConfigs) {
 		super.setExpressionConfigs(expressionConfigs);
-	}
-
-	/**
-	 * Get the number of configured {@code expressionConfigs} elements.
-	 *
-	 * @return the number of {@code expressionConfigs} elements
-	 * @since 1.5
-	 */
-	@Override
-	public int getExpressionConfigsCount() {
-		ExpressionConfig[] confs = getExpressionConfigs();
-		return (confs == null ? 0 : confs.length);
 	}
 
 	/**

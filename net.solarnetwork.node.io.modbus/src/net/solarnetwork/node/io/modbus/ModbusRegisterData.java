@@ -640,7 +640,8 @@ public class ModbusRegisterData {
 	 *        the action to perform
 	 * @return the action result
 	 */
-	public <T> T readRegisters(ModbusRegisterBlockType blockType, Function<ModbusData, T> action) {
+	public <T> @Nullable T readRegisters(ModbusRegisterBlockType blockType,
+			Function<ModbusData, @Nullable T> action) {
 		ModbusData data = null;
 		switch (blockType) {
 			case Holding:
@@ -668,7 +669,8 @@ public class ModbusRegisterData {
 	 *        the action to perform
 	 * @return the action result
 	 */
-	public <T> T readBits(ModbusRegisterBlockType blockType, Function<BitSet, T> action) {
+	public <T> @Nullable T readBits(ModbusRegisterBlockType blockType,
+			Function<BitSet, @Nullable T> action) {
 		BitSet data = null;
 		switch (blockType) {
 			case Coil:

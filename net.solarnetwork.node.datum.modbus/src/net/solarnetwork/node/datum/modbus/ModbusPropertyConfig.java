@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.Setting;
@@ -79,9 +80,9 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		super(null, DatumSamplesType.Instantaneous, 0);
 		dataType = ModbusDataType.Float32;
 		function = ModbusReadFunction.ReadHoldingRegister;
-		setWordLength(1);
-		setUnitMultiplier(BigDecimal.ONE);
-		setDecimalScale(0);
+		this.wordLength = 1;
+		this.unitMultiplier = BigDecimal.ONE;
+		this.decimalScale = 0;
 	}
 
 	/**
@@ -161,6 +162,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *        for numbers, the maximum decimal scale to support, or
 	 *        {@literal -1} for no limit
 	 */
+	@SuppressWarnings("NullAway.Init")
 	public ModbusPropertyConfig(String name, DatumSamplesType datumPropertyType, ModbusDataType dataType,
 			int address, int wordLength, BigDecimal unitMultiplier, int decimalScale) {
 		super(name, datumPropertyType, address);
@@ -241,7 +243,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		Integer address = getAddress();
 		String propName = getName();
 		return (address != null && address.intValue() >= 0 && propName != null && !propName.isEmpty()
-				&& function != null && dataType != null);
+				&& getPropertyType() != null && function != null && dataType != null);
 	}
 
 	/**
@@ -256,7 +258,8 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @return the settings
 	 * @since 2.1
 	 */
-	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+	public List<SettingValueBean> toSettingValues(String providerId, @Nullable String instanceId,
+			int i) {
 		List<SettingValueBean> settings = new ArrayList<>(8);
 		addSetting(settings, providerId, instanceId, i, "name", getName());
 		addSetting(settings, providerId, instanceId, i, "datumPropertyTypeKey",
@@ -270,8 +273,8 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		return settings;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			int i, String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, int i, String key, @Nullable Object val) {
 		if ( val == null ) {
 			return;
 		}
@@ -397,7 +400,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the property name
 	 */
-	public String getName() {
+	public final @Nullable String getName() {
 		return getPropertyKey();
 	}
 
@@ -411,7 +414,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param name
 	 *        the property name
 	 */
-	public void setName(String name) {
+	public final void setName(@Nullable String name) {
 		setPropertyKey(name);
 	}
 
@@ -424,7 +427,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the property type key
 	 */
-	public String getDatumPropertyTypeValue() {
+	public final @Nullable String getDatumPropertyTypeValue() {
 		return getPropertyTypeKey();
 	}
 
@@ -438,7 +441,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param key
 	 *        the datum property type key to set
 	 */
-	public void setDatumPropertyTypeValue(String key) {
+	public final void setDatumPropertyTypeValue(@Nullable String key) {
 		setPropertyTypeKey(key);
 	}
 
@@ -451,7 +454,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the type
 	 */
-	public DatumSamplesType getDatumPropertyType() {
+	public final @Nullable DatumSamplesType getDatumPropertyType() {
 		return getPropertyType();
 	}
 
@@ -466,7 +469,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param datumPropertyType
 	 *        the datum property type to set
 	 */
-	public void setDatumPropertyType(DatumSamplesType datumPropertyType) {
+	public final void setDatumPropertyType(@Nullable DatumSamplesType datumPropertyType) {
 		if ( datumPropertyType == null ) {
 			return;
 		}
@@ -484,7 +487,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the property type key
 	 */
-	public String getDatumPropertyTypeKey() {
+	public final String getDatumPropertyTypeKey() {
 		DatumSamplesType type = getDatumPropertyType();
 		if ( type == null ) {
 			type = DatumSamplesType.Instantaneous;
@@ -505,7 +508,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param key
 	 *        the datum property type key to set
 	 */
-	public void setDatumPropertyTypeKey(String key) {
+	public final void setDatumPropertyTypeKey(String key) {
 		DatumSamplesType type = null;
 		if ( key != null && key.length() > 0 ) {
 			try {
@@ -525,7 +528,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the Modbus function
 	 */
-	public ModbusReadFunction getFunction() {
+	public final ModbusReadFunction getFunction() {
 		return function;
 	}
 
@@ -533,9 +536,12 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * Set the Modbus function to use.
 	 *
 	 * @param function
-	 *        the Modbus function
+	 *        the Modbus function; {@code null} will be ignored
 	 */
-	public void setFunction(ModbusReadFunction function) {
+	public final void setFunction(@Nullable ModbusReadFunction function) {
+		if ( function == null ) {
+			return;
+		}
 		this.function = function;
 	}
 
@@ -544,7 +550,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the Modbus function code as a string
 	 */
-	public String getFunctionCode() {
+	public final String getFunctionCode() {
 		return String.valueOf(function.getCode());
 	}
 
@@ -554,7 +560,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param function
 	 *        the Modbus function
 	 */
-	public void setFunctionCode(String function) {
+	public final void setFunctionCode(@Nullable String function) {
 		if ( function == null ) {
 			return;
 		}
@@ -566,7 +572,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the type
 	 */
-	public ModbusDataType getDataType() {
+	public final ModbusDataType getDataType() {
 		return dataType;
 	}
 
@@ -576,7 +582,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param dataType
 	 *        the type to set
 	 */
-	public void setDataType(ModbusDataType dataType) {
+	public final void setDataType(@Nullable ModbusDataType dataType) {
 		if ( dataType == null ) {
 			return;
 		}
@@ -588,9 +594,9 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the type as a key
 	 */
-	public String getDataTypeKey() {
+	public final String getDataTypeKey() {
 		ModbusDataType type = getDataType();
-		return (type != null ? type.getKey() : null);
+		return type.getKey();
 	}
 
 	/**
@@ -599,7 +605,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param key
 	 *        the type key to set
 	 */
-	public void setDataTypeKey(String key) {
+	public final void setDataTypeKey(@Nullable String key) {
 		setDataType(ModbusDataType.forKey(key));
 	}
 
@@ -612,7 +618,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the register count to read, never {@literal null}
 	 */
-	public Integer getWordLength() {
+	public final Integer getWordLength() {
 		return wordLength;
 	}
 
@@ -627,7 +633,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *        the register count to read; if {@literal null} or less than
 	 *        {@literal 1} then {@literal 1} will be set
 	 */
-	public void setWordLength(Integer wordLength) {
+	public final void setWordLength(@Nullable Integer wordLength) {
 		if ( wordLength == null || wordLength < 1 ) {
 			wordLength = 1;
 		}
@@ -644,7 +650,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the register address, never {@literal null}
 	 */
-	public Integer getAddress() {
+	public final Integer getAddress() {
 		Integer addr = getConfig();
 		return (addr != null ? addr : 0);
 	}
@@ -659,7 +665,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 * @param address
 	 *        the register address to set
 	 */
-	public void setAddress(Integer address) {
+	public final void setAddress(@Nullable Integer address) {
 		setConfig(address);
 	}
 
@@ -668,7 +674,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the multiplier, never {@literal null}
 	 */
-	public BigDecimal getUnitMultiplier() {
+	public final BigDecimal getUnitMultiplier() {
 		return unitMultiplier;
 	}
 
@@ -687,7 +693,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *        the mutliplier to set; if {@literal null} then {@literal 1} will
 	 *        be set instead
 	 */
-	public void setUnitMultiplier(BigDecimal unitMultiplier) {
+	public final void setUnitMultiplier(@Nullable BigDecimal unitMultiplier) {
 		if ( unitMultiplier == null ) {
 			unitMultiplier = BigDecimal.ONE;
 		}
@@ -699,7 +705,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *
 	 * @return the decimal scale, never {@literal null}
 	 */
-	public Integer getDecimalScale() {
+	public final Integer getDecimalScale() {
 		return decimalScale;
 	}
 
@@ -717,7 +723,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 	 *        the scale to set, or {@literal -1} to disable rounding completely;
 	 *        if {@literal null} then {@literal 0} will be set
 	 */
-	public void setDecimalScale(Integer decimalScale) {
+	public final void setDecimalScale(@Nullable Integer decimalScale) {
 		if ( decimalScale == null ) {
 			decimalScale = 0;
 		}

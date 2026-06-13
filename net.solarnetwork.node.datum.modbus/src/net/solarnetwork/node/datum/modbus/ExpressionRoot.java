@@ -1,21 +1,21 @@
 /* ==================================================================
  * ExpressionRoot.java - 20/02/2019 10:21:55 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusRegisterData;
@@ -37,7 +38,7 @@ import net.solarnetwork.util.IntShortMap;
 
 /**
  * An object to use as the "root" for {@link ExpressionService} evaluation.
- * 
+ *
  * @author matt
  * @version 3.2
  */
@@ -51,7 +52,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * A pattern for matching references to register numbers via getter methods
 	 * on {@link #getInputs()}, {@link #getHoldings()}, and
 	 * {@link #getSample()}, with up to 1, 2, or 4 captured integer arguments.
-	 * 
+	 *
 	 * <p>
 	 * This is designed to work with expressions like
 	 * {@code sample.getInt32(1, 2)} and {@code holdings.getInt64(1, 2, 3, 4)},
@@ -66,7 +67,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * A pattern for matching references to register ranges via getter methods
 	 * on {@link #getInputs()}, {@link #getHoldings()}, and
 	 * {@link #getSample()}.
-	 * 
+	 *
 	 * <p>
 	 * This is designed to work with expressions like
 	 * {@code sample.getUtf8String(0, 8, true)} and
@@ -84,7 +85,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum currently being populated
 	 * @param data
@@ -92,7 +93,8 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * @param datumService
 	 *        the datum service
 	 */
-	public ExpressionRoot(NodeDatum datum, ModbusRegisterData data, DatumService datumService) {
+	public ExpressionRoot(@Nullable NodeDatum datum, ModbusRegisterData data,
+			@Nullable DatumService datumService) {
 		super(datum, null, null, datumService);
 		this.data = data;
 
@@ -125,18 +127,18 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	/**
 	 * Get a set of referenced Modbus register addresses in the configured
 	 * expression.
-	 * 
+	 *
 	 * <p>
 	 * This will look for references like
 	 * {@literal regs[1] + sample.getInt32(2,3)} and return the referenced
 	 * addresses, a set containing {@literal [1, 2, 3]} in this case.
 	 * </p>
-	 * 
+	 *
 	 * @param expression
 	 *        the expression to inspect
 	 * @return the referenced addresses, never {@literal null}
 	 */
-	public static IntRangeSet registerAddressReferences(String expression) {
+	public static IntRangeSet registerAddressReferences(@Nullable String expression) {
 		if ( expression == null || expression.isEmpty() ) {
 			return EMPTY_SET;
 		}
@@ -187,12 +189,12 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the sample.
-	 * 
+	 *
 	 * <p>
 	 * This returns the {@code Holding} register map if it is not empty,
 	 * otherwise the {@code Input} block.
 	 * </p>
-	 * 
+	 *
 	 * @return the sample
 	 */
 	public ModbusData getSample() {
@@ -204,7 +206,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the holding register block.
-	 * 
+	 *
 	 * @return the holding data
 	 * @since 3.1
 	 */
@@ -214,7 +216,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the input register block.
-	 * 
+	 *
 	 * @return the input data
 	 * @since 3.1
 	 */
@@ -224,7 +226,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the {@link #getSample()} as an unsigned integer map.
-	 * 
+	 *
 	 * @return the sample data as unsigned integer values, never {@literal null}
 	 */
 	public Map<Integer, Integer> getRegs() {
@@ -233,7 +235,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the holding registers as an unsigned integer map.
-	 * 
+	 *
 	 * @return the holding register data as unsigned integer values, never
 	 *         {@literal null}
 	 * @since 3.1
@@ -244,7 +246,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the input registers as an unsigned integer map.
-	 * 
+	 *
 	 * @return the input register data as unsigned integer values, never
 	 *         {@literal null}
 	 * @since 3.1
@@ -255,7 +257,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the coil registers.
-	 * 
+	 *
 	 * @return the coils
 	 * @since 3.1
 	 */
@@ -265,7 +267,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 	/**
 	 * Get the discrete registers.
-	 * 
+	 *
 	 * @return the discrete registers
 	 * @since 3.1
 	 */

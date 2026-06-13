@@ -1,30 +1,32 @@
 /* ==================================================================
  * ModbusDataType.java - 20/12/2017 1:59:32 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.io.modbus;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * An enumeration of common Modbus data types.
- * 
+ *
  * @author matt
  * @version 1.1
  * @since 2.5
@@ -36,7 +38,7 @@ public enum ModbusDataType {
 
 	/**
 	 * 16-bit floating point.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	Float16("f16", 1),
@@ -84,7 +86,7 @@ public enum ModbusDataType {
 
 	/**
 	 * Get the key value for this enum.
-	 * 
+	 *
 	 * @return the key
 	 */
 	public String getKey() {
@@ -94,7 +96,7 @@ public enum ModbusDataType {
 	/**
 	 * Get the number of Modbus words (16-bit register values) this data type
 	 * requires.
-	 * 
+	 *
 	 * @return the number of words, or {@literal -1} for an unknown length (for
 	 *         example for strings)
 	 */
@@ -104,17 +106,19 @@ public enum ModbusDataType {
 
 	/**
 	 * Get an enum instance for a key value.
-	 * 
+	 *
 	 * @param key
 	 *        the key
 	 * @return the enum
 	 * @throws IllegalArgumentException
 	 *         if {@code key} is not a valid value
 	 */
-	public static ModbusDataType forKey(String key) {
-		for ( ModbusDataType e : ModbusDataType.values() ) {
-			if ( key.equals(e.key) ) {
-				return e;
+	public static ModbusDataType forKey(@Nullable String key) {
+		if ( key != null ) {
+			for ( ModbusDataType e : ModbusDataType.values() ) {
+				if ( key.equals(e.key) ) {
+					return e;
+				}
 			}
 		}
 
@@ -123,7 +127,7 @@ public enum ModbusDataType {
 
 	/**
 	 * Get a friendly display string for this data type.
-	 * 
+	 *
 	 * @return the display string
 	 */
 	public String toDisplayString() {
