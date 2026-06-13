@@ -25,7 +25,7 @@ Import-Package:
  net.solarnetwork.domain.datum;version="[3.21,4.0)",
  net.solarnetwork.node.backup;version="[2.4,3.0)",
  net.solarnetwork.node.dao;version="[3.2,4.0)",
- net.solarnetwork.node.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.domain;version="[2.12,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.4,2.0)",
  net.solarnetwork.node.job;version="[2.3,3.0)",
  net.solarnetwork.node.service;version="[1.15,2.0)",
