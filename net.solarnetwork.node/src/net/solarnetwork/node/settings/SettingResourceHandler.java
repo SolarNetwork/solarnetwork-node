@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingResourceHandler.java - 16/09/2019 4:41:04 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,19 +25,20 @@ package net.solarnetwork.node.settings;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.Resource;
 
 /**
  * API for something that can handle setting updates via resources, such as
  * external files.
- * 
+ *
  * <p>
  * This API can be used with
  * {@link net.solarnetwork.settings.TextAreaSettingSpecifier} or
  * {@link FileSettingSpecifier} to provide support for configuration from
  * external resources.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.1
  * @since 1.70
@@ -46,14 +47,14 @@ public interface SettingResourceHandler {
 
 	/**
 	 * Get a unique, application-wide setting ID.
-	 * 
+	 *
 	 * <p>
 	 * This ID must be unique across all setting resource handlers registered
 	 * within the system. Generally the implementation will also be a
 	 * {@link net.solarnetwork.settings.SettingSpecifierProvider} for the same
 	 * ID.
 	 * </p>
-	 * 
+	 *
 	 * @return unique ID
 	 */
 	String getSettingUid();
@@ -61,7 +62,7 @@ public interface SettingResourceHandler {
 	/**
 	 * Get a list of supported setting keys for the
 	 * {@link #currentSettingResources(String)} method.
-	 * 
+	 *
 	 * @return the set of supported keys
 	 * @since 1.1
 	 */
@@ -71,7 +72,7 @@ public interface SettingResourceHandler {
 
 	/**
 	 * Get the current setting resources for a specific key.
-	 * 
+	 *
 	 * @param settingKey
 	 *        the setting key, generally a
 	 *        {@link net.solarnetwork.settings.KeyedSettingSpecifier#getKey()}
@@ -82,14 +83,14 @@ public interface SettingResourceHandler {
 
 	/**
 	 * Apply settings for a specific key from a resource.
-	 * 
+	 *
 	 * <p>
 	 * This method returns a collection of setting values to update as a result
 	 * of applying the given resources. This provides a way for the handler to
 	 * generate a list of settings to be persisted elsewhere (for example via a
 	 * {@link SettingsService}.
 	 * </p>
-	 * 
+	 *
 	 * @param settingKey
 	 *        the setting key, generally a
 	 *        {@link net.solarnetwork.settings.KeyedSettingSpecifier#getKey()}
@@ -97,10 +98,11 @@ public interface SettingResourceHandler {
 	 * @param resources
 	 *        the resources with the settings to apply
 	 * @return any setting values that should be persisted as a result of
-	 *         applying the given resources (never {@code null}
+	 *         applying the given resources, or {@code null} for none
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
+	@Nullable
 	SettingsUpdates applySettingResources(String settingKey, Iterable<Resource> resources)
 			throws IOException;
 

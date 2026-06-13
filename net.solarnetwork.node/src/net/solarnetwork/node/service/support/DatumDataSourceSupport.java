@@ -167,7 +167,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @return {@literal true} if the metadata was saved successfully, or does
 	 *         not need to be updated
 	 */
-	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+	protected boolean addSourceMetadata(final @Nullable String sourceId,
+			final GeneralDatumMetadata meta) {
 		final String resolvedSourceId = resolvePlaceholders(sourceId);
 		if ( resolvedSourceId == null ) {
 			return false;
@@ -388,7 +389,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        the source ID to save the metadata on
 	 * @since 1.1
 	 */
-	protected void saveMetadata(String sourceId) {
+	protected void saveMetadata(@Nullable String sourceId) {
 		if ( sourceId == null || sourceId.isEmpty() ) {
 			return;
 		}
@@ -554,7 +555,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
-	 * @see #createExpressionConfigsArray(int)
 	 */
 	public void setExpressionConfigsCount(int count) {
 		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
