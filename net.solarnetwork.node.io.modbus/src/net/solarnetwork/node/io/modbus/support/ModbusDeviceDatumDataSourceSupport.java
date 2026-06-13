@@ -120,7 +120,8 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	protected abstract @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn);
+	protected abstract @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn)
+			throws IOException;
 
 	/**
 	 * Return an informational message composed of general device info.
