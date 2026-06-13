@@ -514,17 +514,22 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the expression configurations
 	 */
-	public final ExpressionConfig @Nullable [] getExpressionConfigs() {
+	public ExpressionConfig @Nullable [] getExpressionConfigs() {
 		return expressionConfigs;
 	}
 
 	/**
 	 * Set the expression configurations to use.
 	 *
+	 * <p>
+	 * Extending classes can override to specify a more-specific sub-class type
+	 * if needed.
+	 * </p>
+	 *
 	 * @param expressionConfigs
-	 *        the configs to use
+	 *        the configurations to use
 	 */
-	public final void setExpressionConfigs(ExpressionConfig @Nullable [] expressionConfigs) {
+	public void setExpressionConfigs(ExpressionConfig @Nullable [] expressionConfigs) {
 		this.expressionConfigs = expressionConfigs;
 	}
 
@@ -543,13 +548,15 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link ExpressionConfig} instances.
+	 * {@link ExpressionConfig} instances. Extending classes can override to
+	 * populate with a more specific sub-class.
 	 * </p>
 	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
+	 * @see #createExpressionConfigsArray(int)
 	 */
-	public final void setExpressionConfigsCount(int count) {
+	public void setExpressionConfigsCount(int count) {
 		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
 				ExpressionConfig.class, null);
 	}
