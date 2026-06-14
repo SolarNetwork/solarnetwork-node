@@ -26,6 +26,7 @@ import static java.util.Arrays.fill;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.domain.Setting;
@@ -89,6 +90,7 @@ public class ModbusControlConfigCsvWriter {
 		for ( Setting s : settings ) {
 			config.populateFromSetting(s);
 		}
+		@Nullable
 		String[] row = new String[rowLen];
 		row[ModbusControlCsvColumn.INSTANCE_ID.getCode()] = config.getKey();
 		row[ModbusControlCsvColumn.NETWORK_NAME.getCode()] = config.getModbusNetworkName();
@@ -120,7 +122,7 @@ public class ModbusControlConfigCsvWriter {
 		}
 	}
 
-	private String dataLengthValue(ModbusWritePropertyConfig propConfig) {
+	private @Nullable String dataLengthValue(@Nullable ModbusWritePropertyConfig propConfig) {
 		if ( propConfig == null ) {
 			return null;
 		}
@@ -135,7 +137,7 @@ public class ModbusControlConfigCsvWriter {
 		return null;
 	}
 
-	private static String modbusWordOrderValue(ModbusWordOrder wordOrder) {
+	private static @Nullable String modbusWordOrderValue(@Nullable ModbusWordOrder wordOrder) {
 		if ( wordOrder == null ) {
 			return null;
 		}
@@ -151,14 +153,14 @@ public class ModbusControlConfigCsvWriter {
 		}
 	}
 
-	private static String controlPropertyTypeValue(NodeControlPropertyType type) {
+	private static @Nullable String controlPropertyTypeValue(@Nullable NodeControlPropertyType type) {
 		if ( type == null ) {
 			return null;
 		}
 		return type.toString();
 	}
 
-	private static String registerTypeValue(ModbusWriteFunction fn) {
+	private static @Nullable String registerTypeValue(@Nullable ModbusWriteFunction fn) {
 		if ( fn == null ) {
 			return null;
 		}
@@ -172,7 +174,7 @@ public class ModbusControlConfigCsvWriter {
 		}
 	}
 
-	private static String dataTypeValue(ModbusDataType type) {
+	private static @Nullable String dataTypeValue(@Nullable ModbusDataType type) {
 		if ( type == null ) {
 			return null;
 		}

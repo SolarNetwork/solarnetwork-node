@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -83,7 +84,7 @@ public class ModbusWritePropertyConfig {
 
 	private Integer address;
 	private NodeControlPropertyType controlPropertyType;
-	private String controlId;
+	private @Nullable String controlId;
 	private ModbusWriteFunction function;
 	private ModbusDataType dataType;
 	private Integer wordLength;
@@ -109,8 +110,8 @@ public class ModbusWritePropertyConfig {
 	 * @param address
 	 *        the modbus register address
 	 */
-	public ModbusWritePropertyConfig(String controlId, NodeControlPropertyType controlPropertyType,
-			ModbusDataType dataType, int address) {
+	public ModbusWritePropertyConfig(@Nullable String controlId,
+			NodeControlPropertyType controlPropertyType, ModbusDataType dataType, int address) {
 		this(controlId, controlPropertyType, dataType, address, DEFAULT_WORD_LENGTH,
 				DEFAULT_UNIT_MULTIPLIER, DEFAULT_DECIMAL_SCALE);
 	}
@@ -129,8 +130,9 @@ public class ModbusWritePropertyConfig {
 	 * @param unitMultiplier
 	 *        the unit multiplier
 	 */
-	public ModbusWritePropertyConfig(String controlId, NodeControlPropertyType controlPropertyType,
-			ModbusDataType dataType, int address, BigDecimal unitMultiplier) {
+	public ModbusWritePropertyConfig(@Nullable String controlId,
+			NodeControlPropertyType controlPropertyType, ModbusDataType dataType, int address,
+			BigDecimal unitMultiplier) {
 		this(controlId, controlPropertyType, dataType, address, DEFAULT_WORD_LENGTH, unitMultiplier,
 				DEFAULT_DECIMAL_SCALE);
 	}
@@ -152,8 +154,9 @@ public class ModbusWritePropertyConfig {
 	 *        for numbers, the maximum decimal scale to support, or
 	 *        {@literal -1} for no limit
 	 */
-	public ModbusWritePropertyConfig(String controlId, NodeControlPropertyType controlPropertyType,
-			ModbusDataType dataType, int address, BigDecimal unitMultiplier, int decimalScale) {
+	public ModbusWritePropertyConfig(@Nullable String controlId,
+			NodeControlPropertyType controlPropertyType, ModbusDataType dataType, int address,
+			BigDecimal unitMultiplier, int decimalScale) {
 		this(controlId, controlPropertyType, dataType, address, DEFAULT_WORD_LENGTH, unitMultiplier,
 				decimalScale);
 	}
@@ -177,9 +180,9 @@ public class ModbusWritePropertyConfig {
 	 *        for numbers, the maximum decimal scale to support, or
 	 *        {@literal -1} for no limit
 	 */
-	public ModbusWritePropertyConfig(String controlId, NodeControlPropertyType controlPropertyType,
-			ModbusDataType dataType, int address, int wordLength, BigDecimal unitMultiplier,
-			int decimalScale) {
+	public ModbusWritePropertyConfig(@Nullable String controlId,
+			NodeControlPropertyType controlPropertyType, ModbusDataType dataType, int address,
+			int wordLength, BigDecimal unitMultiplier, int decimalScale) {
 		this.controlId = controlId;
 		this.controlPropertyType = controlPropertyType;
 		this.address = address;
@@ -268,7 +271,8 @@ public class ModbusWritePropertyConfig {
 	 * @return the settings
 	 * @since 2.1
 	 */
-	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+	public List<SettingValueBean> toSettingValues(String providerId, @Nullable String instanceId,
+			int i) {
 		List<SettingValueBean> settings = new ArrayList<>(8);
 		addSetting(settings, providerId, instanceId, i, "controlId", getControlId());
 		addSetting(settings, providerId, instanceId, i, "controlPropertyTypeKey",
@@ -282,8 +286,8 @@ public class ModbusWritePropertyConfig {
 		return settings;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			int i, String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, int i, String key, @Nullable Object val) {
 		if ( val == null ) {
 			return;
 		}
@@ -406,7 +410,7 @@ public class ModbusWritePropertyConfig {
 	 *
 	 * @return the control ID
 	 */
-	public String getControlId() {
+	public @Nullable String getControlId() {
 		return controlId;
 	}
 
@@ -416,7 +420,7 @@ public class ModbusWritePropertyConfig {
 	 * @param controlId
 	 *        the control ID to set
 	 */
-	public void setControlId(String controlId) {
+	public void setControlId(@Nullable String controlId) {
 		this.controlId = controlId;
 	}
 
@@ -435,7 +439,7 @@ public class ModbusWritePropertyConfig {
 	 * @param controlPropertyType
 	 *        the control property type
 	 */
-	public void setControlPropertyType(NodeControlPropertyType controlPropertyType) {
+	public void setControlPropertyType(@Nullable NodeControlPropertyType controlPropertyType) {
 		if ( controlPropertyType == null ) {
 			controlPropertyType = NodeControlPropertyType.Boolean;
 		}
@@ -454,9 +458,6 @@ public class ModbusWritePropertyConfig {
 	 */
 	public String getControlPropertyTypeKey() {
 		NodeControlPropertyType type = getControlPropertyType();
-		if ( type == null ) {
-			return null;
-		}
 		return Character.toString(type.getKey());
 	}
 
@@ -474,7 +475,7 @@ public class ModbusWritePropertyConfig {
 	 * @param key
 	 *        the datum property type key to set
 	 */
-	public void setControlPropertyTypeKey(String key) {
+	public void setControlPropertyTypeKey(@Nullable String key) {
 		if ( key == null || key.length() < 1 ) {
 			return;
 		}
@@ -502,7 +503,7 @@ public class ModbusWritePropertyConfig {
 	 * @param function
 	 *        the Modbus function
 	 */
-	public void setFunction(ModbusWriteFunction function) {
+	public void setFunction(@Nullable ModbusWriteFunction function) {
 		if ( function == null ) {
 			return;
 		}
@@ -524,7 +525,7 @@ public class ModbusWritePropertyConfig {
 	 * @param function
 	 *        the Modbus function
 	 */
-	public void setFunctionCode(String function) {
+	public void setFunctionCode(@Nullable String function) {
 		if ( function == null ) {
 			return;
 		}
@@ -546,7 +547,7 @@ public class ModbusWritePropertyConfig {
 	 * @param dataType
 	 *        the type to set
 	 */
-	public void setDataType(ModbusDataType dataType) {
+	public void setDataType(@Nullable ModbusDataType dataType) {
 		if ( dataType == null ) {
 			return;
 		}
@@ -558,7 +559,7 @@ public class ModbusWritePropertyConfig {
 	 *
 	 * @return the type as a key
 	 */
-	public String getDataTypeKey() {
+	public @Nullable String getDataTypeKey() {
 		ModbusDataType type = getDataType();
 		return (type != null ? type.getKey() : null);
 	}
@@ -569,7 +570,7 @@ public class ModbusWritePropertyConfig {
 	 * @param key
 	 *        the type to set
 	 */
-	public void setDataTypeKey(String key) {
+	public void setDataTypeKey(@Nullable String key) {
 		setDataType(ModbusDataType.forKey(key));
 	}
 
@@ -596,8 +597,8 @@ public class ModbusWritePropertyConfig {
 	 * @param wordLength
 	 *        the register count to read
 	 */
-	public void setWordLength(Integer wordLength) {
-		this.wordLength = wordLength;
+	public void setWordLength(@Nullable Integer wordLength) {
+		this.wordLength = (wordLength != null ? wordLength : DEFAULT_WORD_LENGTH);
 	}
 
 	/**
@@ -615,8 +616,8 @@ public class ModbusWritePropertyConfig {
 	 * @param address
 	 *        the register address to set
 	 */
-	public void setAddress(Integer address) {
-		this.address = address;
+	public void setAddress(@Nullable Integer address) {
+		this.address = (address != null ? address : DEFAULT_ADDRESS);
 	}
 
 	/**
@@ -642,8 +643,8 @@ public class ModbusWritePropertyConfig {
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
-	public void setUnitMultiplier(BigDecimal unitMultiplier) {
-		this.unitMultiplier = unitMultiplier;
+	public void setUnitMultiplier(@Nullable BigDecimal unitMultiplier) {
+		this.unitMultiplier = (unitMultiplier != null ? unitMultiplier : DEFAULT_UNIT_MULTIPLIER);
 	}
 
 	/**
@@ -668,8 +669,8 @@ public class ModbusWritePropertyConfig {
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
-	public void setDecimalScale(Integer decimalScale) {
-		this.decimalScale = decimalScale;
+	public void setDecimalScale(@Nullable Integer decimalScale) {
+		this.decimalScale = (decimalScale != null ? decimalScale : DEFAULT_DECIMAL_SCALE);
 	}
 
 }

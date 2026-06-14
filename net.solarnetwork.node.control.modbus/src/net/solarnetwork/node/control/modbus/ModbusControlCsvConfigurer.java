@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.control.modbus;
 
-import static java.util.Arrays.asList;
 import static net.solarnetwork.io.StreamUtils.inputStreamForPossibleGzipStream;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,11 +33,11 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
@@ -83,8 +83,8 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 
 	private String settingProviderId = ModbusControl.SETTING_UID;
 
-	private Throwable lastImportException = null;
-	private List<String> lastImportMessages = null;
+	private @Nullable Throwable lastImportException;
+	private @Nullable List<String> lastImportMessages;
 
 	/**
 	 * Constructor.
@@ -125,21 +125,21 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 				true));
 
 		results.add(new BasicFileSettingSpecifier(RESOURCE_KEY_CSV_FILE, null,
-				new LinkedHashSet<>(asList(".csv", ".csv.gz", "text/csv", "text/csv+gzip")), true));
+				new LinkedHashSet<>(List.of(".csv", ".csv.gz", "text/csv", "text/csv+gzip")), true));
 
 		return results;
 	}
 
 	@Override
 	public Collection<String> supportedCurrentResourceSettingKeys() {
-		return Collections.singletonList(RESOURCE_KEY_CSV_FILE);
+		return List.of(RESOURCE_KEY_CSV_FILE);
 	}
 
 	@Override
 	public Iterable<Resource> currentSettingResources(String settingKey) {
 		if ( !RESOURCE_KEY_CSV_FILE.equals(settingKey) ) {
 			log.warn("Ignoring setting resource key [{}]", settingKey);
-			return null;
+			return List.of();
 		}
 		final ByteArrayOutputStream byos = new ByteArrayOutputStream(4096);
 		try (CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(byos)) {
@@ -155,10 +155,10 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 			}
 		} catch ( UncheckedIOException | IOException e ) {
 			log.error("Error generating Modbus Device configuration CSV: {}", e.toString());
-			return Collections.emptyList();
+			return List.of();
 		}
 		return (byos.size() > 0
-				? Collections.singleton(new ByteArrayResource(byos.toByteArray(), "Modbus Device CSV") {
+				? List.of(new ByteArrayResource(byos.toByteArray(), "Modbus Device CSV") {
 
 					@Override
 					public String getFilename() {
@@ -170,11 +170,11 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 					}
 
 				})
-				: Collections.emptyList());
+				: List.of());
 	}
 
 	@Override
-	public synchronized SettingsUpdates applySettingResources(String settingKey,
+	public synchronized @Nullable SettingsUpdates applySettingResources(String settingKey,
 			Iterable<Resource> resources) throws IOException {
 		if ( resources == null ) {
 			return null;
@@ -213,7 +213,7 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 		List<ModbusControlConfig> configs = new ArrayList<>(8);
 		lastImportMessages = new ArrayList<>(8);
 		ModbusControlConfigCsvParser parser = new ModbusControlConfigCsvParser(configs,
-				getMessageSource(), lastImportMessages);
+				nonnull(getMessageSource(), "MessageSource"), lastImportMessages);
 		try (Reader in = new InputStreamReader(
 				inputStreamForPossibleGzipStream(resource.getInputStream()), StandardCharsets.UTF_8);
 				CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
@@ -226,7 +226,7 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 		return configs;
 	}
 
-	private SettingsUpdates toSettingsUpdates(List<ModbusControlConfig> configs) {
+	private @Nullable SettingsUpdates toSettingsUpdates(@Nullable List<ModbusControlConfig> configs) {
 		if ( configs == null || configs.isEmpty() ) {
 			return null;
 		}
@@ -244,8 +244,7 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 			}
 		}
 
-		SettingsCommand cmd = new SettingsCommand(settings, asList(Pattern.compile(".*")));
-		return cmd;
+		return new SettingsCommand(settings, List.of(Pattern.compile(".*")));
 	}
 
 }

@@ -24,6 +24,7 @@ package net.solarnetwork.node.control.modbus;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.node.settings.SettingValueBean;
@@ -37,11 +38,11 @@ import net.solarnetwork.node.settings.SettingValueBean;
  */
 public class ModbusControlConfig {
 
-	private String key;
-	private String modbusNetworkName;
-	private Integer unitId;
-	private Long sampleCacheMs;
-	private ModbusWordOrder wordOrder;
+	private @Nullable String key;
+	private @Nullable String modbusNetworkName;
+	private @Nullable Integer unitId;
+	private @Nullable Long sampleCacheMs;
+	private @Nullable ModbusWordOrder wordOrder;
 
 	private final List<ModbusWritePropertyConfig> propertyConfigs = new ArrayList<>(8);
 
@@ -108,8 +109,8 @@ public class ModbusControlConfig {
 		return false;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, String key, @Nullable Object val) {
 		if ( val == null ) {
 			return;
 		}
@@ -158,7 +159,7 @@ public class ModbusControlConfig {
 	 *
 	 * @return the key
 	 */
-	public String getKey() {
+	public final @Nullable String getKey() {
 		return key;
 	}
 
@@ -168,7 +169,7 @@ public class ModbusControlConfig {
 	 * @param key
 	 *        the key to set
 	 */
-	public void setKey(String key) {
+	public final void setKey(@Nullable String key) {
 		this.key = key;
 	}
 
@@ -177,7 +178,7 @@ public class ModbusControlConfig {
 	 *
 	 * @return the modbusNetworkName
 	 */
-	public String getModbusNetworkName() {
+	public final @Nullable String getModbusNetworkName() {
 		return modbusNetworkName;
 	}
 
@@ -187,7 +188,7 @@ public class ModbusControlConfig {
 	 * @param modbusNetworkName
 	 *        the modbusNetworkName to set
 	 */
-	public void setModbusNetworkName(String modbusNetworkName) {
+	public final void setModbusNetworkName(@Nullable String modbusNetworkName) {
 		this.modbusNetworkName = modbusNetworkName;
 	}
 
@@ -196,7 +197,7 @@ public class ModbusControlConfig {
 	 *
 	 * @return the unitId
 	 */
-	public Integer getUnitId() {
+	public final @Nullable Integer getUnitId() {
 		return unitId;
 	}
 
@@ -206,7 +207,7 @@ public class ModbusControlConfig {
 	 * @param unitId
 	 *        the unitId to set
 	 */
-	public void setUnitId(Integer unitId) {
+	public final void setUnitId(@Nullable Integer unitId) {
 		this.unitId = unitId;
 	}
 
@@ -215,7 +216,7 @@ public class ModbusControlConfig {
 	 *
 	 * @return the sampleCacheMs
 	 */
-	public Long getSampleCacheMs() {
+	public final @Nullable Long getSampleCacheMs() {
 		return sampleCacheMs;
 	}
 
@@ -225,7 +226,7 @@ public class ModbusControlConfig {
 	 * @param sampleCacheMs
 	 *        the sampleCacheMs to set
 	 */
-	public void setSampleCacheMs(Long sampleCacheMs) {
+	public final void setSampleCacheMs(@Nullable Long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
 
@@ -236,7 +237,7 @@ public class ModbusControlConfig {
 	 *         {@literal null} then
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
 	 */
-	public char getWordOrderKey() {
+	public final char getWordOrderKey() {
 		ModbusWordOrder order = getWordOrder();
 		if ( order == null ) {
 			order = ModbusWordOrder.MostToLeastSignificant;
@@ -251,7 +252,7 @@ public class ModbusControlConfig {
 	 *        the word order key to set; if {@code key} is not valid then
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
 	 */
-	public void setWordOrderKey(char key) {
+	public final void setWordOrderKey(char key) {
 		ModbusWordOrder order;
 		try {
 			order = ModbusWordOrder.forKey(key);
@@ -266,7 +267,7 @@ public class ModbusControlConfig {
 	 *
 	 * @return the wordOrder
 	 */
-	public ModbusWordOrder getWordOrder() {
+	public final @Nullable ModbusWordOrder getWordOrder() {
 		return wordOrder;
 	}
 
@@ -276,7 +277,7 @@ public class ModbusControlConfig {
 	 * @param wordOrder
 	 *        the wordOrder to set
 	 */
-	public void setWordOrder(ModbusWordOrder wordOrder) {
+	public final void setWordOrder(@Nullable ModbusWordOrder wordOrder) {
 		this.wordOrder = wordOrder;
 	}
 
@@ -285,7 +286,7 @@ public class ModbusControlConfig {
 	 *
 	 * @return the configurations, never {@literal null}
 	 */
-	public List<ModbusWritePropertyConfig> getPropertyConfigs() {
+	public final List<ModbusWritePropertyConfig> getPropertyConfigs() {
 		return propertyConfigs;
 	}
 

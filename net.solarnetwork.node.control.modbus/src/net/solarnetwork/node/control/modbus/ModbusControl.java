@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -41,6 +40,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
@@ -132,8 +132,8 @@ public class ModbusControl extends ModbusDeviceSupport
 	private final AtomicLong sampleDate = new AtomicLong(0);
 	private final ModbusRegisterData data;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
-	private ModbusWritePropertyConfig[] propConfigs;
-	private OptionalService<EventAdmin> eventAdmin;
+	private ModbusWritePropertyConfig @Nullable [] propConfigs;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
 	private int maxReadWordCount;
 
 	/**
@@ -145,7 +145,7 @@ public class ModbusControl extends ModbusDeviceSupport
 		this.maxReadWordCount = DEFAULT_MAX_READ_WORD_COUNT;
 	}
 
-	private SimpleNodeControlInfoDatum currentDatumValue(ModbusWritePropertyConfig config)
+	private @Nullable SimpleNodeControlInfoDatum currentDatumValue(ModbusWritePropertyConfig config)
 			throws IOException {
 		refreshDeviceData();
 		Object value = currentValue(config);
@@ -155,7 +155,7 @@ public class ModbusControl extends ModbusDeviceSupport
 		return newSimpleNodeControlInfoDatum(config, value);
 	}
 
-	private Object currentValue(ModbusWritePropertyConfig config) {
+	private @Nullable Object currentValue(ModbusWritePropertyConfig config) {
 		Object propVal = currentRawValue(config);
 		if ( propVal instanceof Number ) {
 			if ( config.getUnitMultiplier() != null ) {
@@ -168,7 +168,7 @@ public class ModbusControl extends ModbusDeviceSupport
 		return propVal;
 	}
 
-	private Object currentRawValue(ModbusWritePropertyConfig config) {
+	private @Nullable Object currentRawValue(ModbusWritePropertyConfig config) {
 		final ModbusRegisterBlockType blockType = config.getFunction().blockType();
 		switch (blockType) {
 			case Coil:
@@ -181,31 +181,31 @@ public class ModbusControl extends ModbusDeviceSupport
 		}
 	}
 
-	private Number applyDecimalScale(Number value, int decimalScale) {
+	private @Nullable Number applyDecimalScale(@Nullable Number value, int decimalScale) {
 		if ( decimalScale < 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		if ( v.scale() > decimalScale ) {
+		if ( v != null && v.scale() > decimalScale ) {
 			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
 		}
 		return v;
 	}
 
-	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
+	private @Nullable Number applyUnitMultiplier(@Nullable Number value, BigDecimal multiplier) {
 		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.multiply(multiplier);
+		return (v != null ? v.multiply(multiplier) : null);
 	}
 
-	private Number applyReverseUnitMultiplier(Number value, BigDecimal multiplier) {
+	private @Nullable Number applyReverseUnitMultiplier(@Nullable Number value, BigDecimal multiplier) {
 		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.divide(multiplier);
+		return (v != null ? v.divide(multiplier) : null);
 	}
 
 	/**
@@ -219,7 +219,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *         if an IO error occurs
 	 */
 	private synchronized boolean setValue(final ModbusWritePropertyConfig config,
-			final Object desiredValue) throws IOException {
+			final @Nullable Object desiredValue) throws IOException {
 		log.info("Setting {} value to {}", config.getControlId(), desiredValue);
 		final ModbusWriteFunction function = config.getFunction();
 		final ModbusWordOrder wordOrder = data.getHoldings().getWordOrder();
@@ -292,7 +292,11 @@ public class ModbusControl extends ModbusDeviceSupport
 		return (result != null ? result : false);
 	}
 
-	private Object controlValueForParameterValue(ModbusWritePropertyConfig config, String str) {
+	private @Nullable Object controlValueForParameterValue(final ModbusWritePropertyConfig config,
+			final @Nullable String str) {
+		if ( str == null ) {
+			return null;
+		}
 		switch (config.getControlPropertyType()) {
 			case Boolean:
 				return StringUtils.parseBoolean(str);
@@ -352,14 +356,14 @@ public class ModbusControl extends ModbusDeviceSupport
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		return null;
 	}
 
 	private static Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> getReadFunctionSets(
-			ModbusWritePropertyConfig[] configs) {
+			ModbusWritePropertyConfig @Nullable [] configs) {
 		if ( configs == null ) {
-			return Collections.emptyMap();
+			return Map.of();
 		}
 		Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> confsByFunction = new LinkedHashMap<>(
 				configs.length);
@@ -479,13 +483,13 @@ public class ModbusControl extends ModbusDeviceSupport
 	public List<String> getAvailableControlIds() {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( configs == null || configs.length < 1 ) {
-			return Collections.emptyList();
+			return List.of();
 		}
 		return Arrays.stream(configs).filter(ModbusWritePropertyConfig::isValid)
 				.map(ModbusWritePropertyConfig::getControlId).collect(Collectors.toList());
 	}
 
-	private ModbusWritePropertyConfig configForControlId(String controlId) {
+	private @Nullable ModbusWritePropertyConfig configForControlId(String controlId) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( controlId == null || configs == null || configs.length < 1 ) {
 			return null;
@@ -499,7 +503,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	}
 
 	@Override
-	public NodeControlInfo getCurrentControlInfo(String controlId) {
+	public @Nullable NodeControlInfo getCurrentControlInfo(String controlId) {
 		ModbusWritePropertyConfig config = configForControlId(controlId);
 		if ( config == null ) {
 			return null;
@@ -519,7 +523,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	}
 
 	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(ModbusWritePropertyConfig config,
-			Object value) {
+			@Nullable Object value) {
 		// @formatter:off
 		NodeControlInfo info = BasicNodeControlInfo.builder()
 				.withControlId(resolvePlaceholders(config.getControlId()))
@@ -543,13 +547,13 @@ public class ModbusControl extends ModbusDeviceSupport
 	// InstructionHandler
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic)
 				|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( !handlesTopic(instruction.getTopic()) || configs == null || configs.length < 1 ) {
 			return null;
@@ -596,7 +600,7 @@ public class ModbusControl extends ModbusDeviceSupport
 		return "Modbus Control";
 	}
 
-	private String controlInfo(MessageSource messageSource) {
+	private String controlInfo(@Nullable MessageSource messageSource) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( configs == null || configs.length < 1 ) {
 			return "N/A";
@@ -665,17 +669,16 @@ public class ModbusControl extends ModbusDeviceSupport
 		results.add(wordOrderSpec);
 
 		ModbusWritePropertyConfig[] confs = getPropConfigs();
-		List<ModbusWritePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
-				: Collections.<ModbusWritePropertyConfig> emptyList());
+		List<ModbusWritePropertyConfig> confsList = (confs != null ? Arrays.asList(confs) : List.of());
 		results.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
 				new SettingUtils.KeyedListCallback<ModbusWritePropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(
-							ModbusWritePropertyConfig value, int index, String key) {
+							@Nullable ModbusWritePropertyConfig value, int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								ModbusWritePropertyConfig.settings(key + "."));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+						return List.of(configGroup);
 					}
 				}));
 
@@ -687,7 +690,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *
 	 * @return the event admin
 	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
+	public final @Nullable OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
@@ -697,7 +700,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 * @param eventAdmin
 	 *        the service to set
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public final void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
@@ -706,7 +709,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *
 	 * @return the property configurations
 	 */
-	public ModbusWritePropertyConfig[] getPropConfigs() {
+	public final ModbusWritePropertyConfig @Nullable [] getPropConfigs() {
 		return propConfigs;
 	}
 
@@ -716,7 +719,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 * @param propConfigs
 	 *        the configs to use
 	 */
-	public void setPropConfigs(ModbusWritePropertyConfig[] propConfigs) {
+	public final void setPropConfigs(ModbusWritePropertyConfig @Nullable [] propConfigs) {
 		this.propConfigs = propConfigs;
 	}
 
@@ -725,8 +728,8 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
-	public int getPropConfigsCount() {
-		ModbusWritePropertyConfig[] confs = this.propConfigs;
+	public final int getPropConfigsCount() {
+		ModbusWritePropertyConfig @Nullable [] confs = this.propConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
 
@@ -741,7 +744,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
-	public void setPropConfigsCount(int count) {
+	public final void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
 				ModbusWritePropertyConfig.class, null);
 	}
@@ -754,7 +757,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *         {@link #DEFAULT_MAX_READ_WORD_COUNT}
 	 * @since 3.2
 	 */
-	public int getMaxReadWordCount() {
+	public final int getMaxReadWordCount() {
 		return this.maxReadWordCount;
 	}
 
@@ -771,7 +774,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *        the maximum word count
 	 * @since 3.2
 	 */
-	public void setMaxReadWordCount(int maxReadWordCount) {
+	public final void setMaxReadWordCount(int maxReadWordCount) {
 		if ( maxReadWordCount < 1 ) {
 			return;
 		}
@@ -784,7 +787,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 * @return the word order
 	 * @since 3.4
 	 */
-	public ModbusWordOrder getWordOrder() {
+	public final ModbusWordOrder getWordOrder() {
 		return data.getHoldings().getWordOrder();
 	}
 
@@ -795,7 +798,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *        the order to set; {@literal null} will be ignored
 	 * @since 3.4
 	 */
-	public void setWordOrder(ModbusWordOrder wordOrder) {
+	public final void setWordOrder(@Nullable ModbusWordOrder wordOrder) {
 		if ( wordOrder == null ) {
 			return;
 		}
@@ -811,7 +814,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
 	 * @since 3.4
 	 */
-	public char getWordOrderKey() {
+	public final char getWordOrderKey() {
 		ModbusWordOrder order = getWordOrder();
 		if ( order == null ) {
 			order = ModbusWordOrder.MostToLeastSignificant;
@@ -827,7 +830,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
 	 * @since 3.4
 	 */
-	public void setWordOrderKey(char key) {
+	public final void setWordOrderKey(char key) {
 		ModbusWordOrder order;
 		try {
 			order = ModbusWordOrder.forKey(key);
@@ -843,7 +846,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 * @return the cache milliseconds
 	 * @since 3.4
 	 */
-	public long getSampleCacheMs() {
+	public final long getSampleCacheMs() {
 		return sampleCacheMs;
 	}
 
@@ -854,7 +857,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	 *        the cache milliseconds
 	 * @since 3.4
 	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
+	public final void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
 
