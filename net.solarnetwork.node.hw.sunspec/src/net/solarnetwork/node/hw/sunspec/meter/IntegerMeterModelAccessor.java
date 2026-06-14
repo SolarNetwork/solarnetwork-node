@@ -1,21 +1,21 @@
 /* ==================================================================
  * IntegerMeterModelAccessor.java - 22/05/2018 6:31:57 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sunspec.meter;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -35,7 +36,7 @@ import net.solarnetwork.util.IntRange;
 
 /**
  * Data object for an integer meter model.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -46,7 +47,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -60,12 +61,12 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@link MeterModelId} class will be used as the {@code ModelId}
 	 * instance.
 	 * </p>
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -85,120 +86,120 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	/**
 	 * Get a frequency register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as a frequency value
 	 */
-	public Float getFrequencyValue(ModbusReference ref) {
+	public @Nullable Float getFrequencyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorFrequency);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
 	 * Get a current register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as a current value
 	 */
-	public Float getCurrentValue(ModbusReference ref) {
+	public @Nullable Float getCurrentValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorCurrent);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
 	 * Get a voltage register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as a voltage value
 	 */
-	public Float getVoltageValue(ModbusReference ref) {
+	public @Nullable Float getVoltageValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
 	 * Get a power factor register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as a power factor value
 	 */
-	public Float getPowerFactorValue(ModbusReference ref) {
+	public @Nullable Float getPowerFactorValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorPowerFactor);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
 	 * Get an active power register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as an active power value
 	 */
-	public Integer getActivePowerValue(ModbusReference ref) {
+	public @Nullable Integer getActivePowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorActivePower);
 		return (n != null ? n.intValue() : null);
 	}
 
 	/**
 	 * Get an apparent power register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as an apparent power value
 	 */
-	public Integer getApparentPowerValue(ModbusReference ref) {
+	public @Nullable Integer getApparentPowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorApparentPower);
 		return (n != null ? n.intValue() : null);
 	}
 
 	/**
 	 * Get an reactive power register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as an reactive power value
 	 */
-	public Integer getReactivePowerValue(ModbusReference ref) {
+	public @Nullable Integer getReactivePowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorReactivePower);
 		return (n != null ? n.intValue() : null);
 	}
 
 	/**
 	 * Get an active energy register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as an active energy value
 	 */
-	public Long getActiveEnergyValue(ModbusReference ref) {
+	public @Nullable Long getActiveEnergyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorActiveEnergy);
 		return (n != null ? n.longValue() : null);
 	}
 
 	/**
 	 * Get an apparent energy register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as an apparent energy value
 	 */
-	public Long getApparentEnergyValue(ModbusReference ref) {
+	public @Nullable Long getApparentEnergyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorApparentEnergy);
 		return (n != null ? n.longValue() : null);
 	}
 
 	/**
 	 * Get an reactive energy register value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as an reactive energy value
 	 */
-	public Long getReactiveEnergyValue(ModbusReference ref) {
+	public @Nullable Long getReactiveEnergyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerMeterModelRegister.ScaleFactorReactiveEnergy);
 		return (n != null ? n.longValue() : null);
 	}
@@ -212,118 +213,118 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	}
 
 	@Override
-	public Float getFrequency() {
+	public @Nullable Float getFrequency() {
 		return getFrequencyValue(IntegerMeterModelRegister.Frequency);
 	}
 
 	@Override
-	public Float getCurrent() {
+	public @Nullable Float getCurrent() {
 		return getCurrentValue(IntegerMeterModelRegister.CurrentTotal);
 	}
 
 	@Override
-	public Float getNeutralCurrent() {
+	public @Nullable Float getNeutralCurrent() {
 		// not supported in SunSpec
 		return null;
 	}
 
 	@Override
-	public Float getVoltage() {
+	public @Nullable Float getVoltage() {
 		return getVoltageValue(IntegerMeterModelRegister.VoltageLineNeutralAverage);
 	}
 
 	@Override
-	public Float getLineVoltage() {
+	public @Nullable Float getLineVoltage() {
 		return getVoltageValue(IntegerMeterModelRegister.VoltageLineLineAverage);
 	}
 
 	@Override
-	public Float getPowerFactor() {
+	public @Nullable Float getPowerFactor() {
 		return getPowerFactorValue(IntegerMeterModelRegister.PowerFactorAverage);
 	}
 
 	@Override
-	public Integer getActivePower() {
+	public @Nullable Integer getActivePower() {
 		return getActivePowerValue(IntegerMeterModelRegister.ActivePowerTotal);
 	}
 
 	@Override
-	public Integer getApparentPower() {
+	public @Nullable Integer getApparentPower() {
 		return getApparentPowerValue(IntegerMeterModelRegister.ApparentPowerTotal);
 	}
 
 	@Override
-	public Integer getReactivePower() {
+	public @Nullable Integer getReactivePower() {
 		return getReactivePowerValue(IntegerMeterModelRegister.ReactivePowerTotal);
 	}
 
 	@Override
-	public Long getActiveEnergyImported() {
+	public @Nullable Long getActiveEnergyImported() {
 		return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyImportedTotal);
 	}
 
 	@Override
-	public Long getActiveEnergyExported() {
+	public @Nullable Long getActiveEnergyExported() {
 		return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyExportedTotal);
 	}
 
 	@Override
-	public Long getReactiveEnergyImported() {
+	public @Nullable Long getReactiveEnergyImported() {
 		Long q1 = getReactiveEnergyValue(IntegerMeterModelRegister.ReactiveEnergyImportedQ1Total);
 		Long q2 = getReactiveEnergyValue(IntegerMeterModelRegister.ReactiveEnergyImportedQ2Total);
 		return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
 	}
 
 	@Override
-	public Long getReactiveEnergyExported() {
+	public @Nullable Long getReactiveEnergyExported() {
 		Long q3 = getReactiveEnergyValue(IntegerMeterModelRegister.ReactiveEnergyExportedQ3Total);
 		Long q4 = getReactiveEnergyValue(IntegerMeterModelRegister.ReactiveEnergyExportedQ4Total);
 		return (q3 != null ? q3.longValue() : 0) + (q4 != null ? q4.longValue() : 0);
 	}
 
 	@Override
-	public Long getApparentEnergyImported() {
+	public @Nullable Long getApparentEnergyImported() {
 		return getApparentEnergyValue(IntegerMeterModelRegister.ApparentEnergyImportedTotal);
 	}
 
 	@Override
-	public Long getApparentEnergyExported() {
+	public @Nullable Long getApparentEnergyExported() {
 		return getApparentEnergyValue(IntegerMeterModelRegister.ApparentEnergyExportedTotal);
 	}
 
 	@Override
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(IntegerMeterModelRegister.EventsBitmask);
-		return MeterModelEvent.forBitmask(n.longValue());
+		return MeterModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
-	public Long getActiveEnergyDelivered() {
+	public @Nullable Long getActiveEnergyDelivered() {
 		return getActiveEnergyImported();
 	}
 
 	@Override
-	public Long getActiveEnergyReceived() {
+	public @Nullable Long getActiveEnergyReceived() {
 		return getActiveEnergyExported();
 	}
 
 	@Override
-	public Long getApparentEnergyDelivered() {
+	public @Nullable Long getApparentEnergyDelivered() {
 		return getApparentEnergyImported();
 	}
 
 	@Override
-	public Long getApparentEnergyReceived() {
+	public @Nullable Long getApparentEnergyReceived() {
 		return getApparentEnergyExported();
 	}
 
 	@Override
-	public Long getReactiveEnergyDelivered() {
+	public @Nullable Long getReactiveEnergyDelivered() {
 		return getReactiveEnergyImported();
 	}
 
 	@Override
-	public Long getReactiveEnergyReceived() {
+	public @Nullable Long getReactiveEnergyReceived() {
 		return getReactiveEnergyExported();
 	}
 
@@ -347,7 +348,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Instant getDataTimestamp() {
+		public @Nullable Instant getDataTimestamp() {
 			return IntegerMeterModelAccessor.this.getDataTimestamp();
 		}
 
@@ -392,12 +393,12 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Float getFrequency() {
+		public @Nullable Float getFrequency() {
 			return IntegerMeterModelAccessor.this.getFrequency();
 		}
 
 		@Override
-		public Float getCurrent() {
+		public @Nullable Float getCurrent() {
 			switch (phase) {
 				case PhaseA:
 					return getCurrentValue(IntegerMeterModelRegister.CurrentPhaseA);
@@ -414,12 +415,12 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Float getNeutralCurrent() {
+		public @Nullable Float getNeutralCurrent() {
 			return null;
 		}
 
 		@Override
-		public Float getVoltage() {
+		public @Nullable Float getVoltage() {
 			switch (phase) {
 				case PhaseA:
 					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseANeutral);
@@ -436,7 +437,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Float getLineVoltage() {
+		public @Nullable Float getLineVoltage() {
 			switch (phase) {
 				case PhaseA:
 					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseAPhaseB);
@@ -453,7 +454,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Float getPowerFactor() {
+		public @Nullable Float getPowerFactor() {
 			switch (phase) {
 				case PhaseA:
 					return getPowerFactorValue(IntegerMeterModelRegister.PowerFactorPhaseA);
@@ -470,7 +471,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Integer getActivePower() {
+		public @Nullable Integer getActivePower() {
 			switch (phase) {
 				case PhaseA:
 					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
@@ -487,7 +488,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Integer getApparentPower() {
+		public @Nullable Integer getApparentPower() {
 			switch (phase) {
 				case PhaseA:
 					return getApparentPowerValue(IntegerMeterModelRegister.ApparentPowerPhaseA);
@@ -504,7 +505,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Integer getReactivePower() {
+		public @Nullable Integer getReactivePower() {
 			switch (phase) {
 				case PhaseA:
 					return getReactivePowerValue(IntegerMeterModelRegister.ReactivePowerPhaseA);
@@ -521,7 +522,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getActiveEnergyImported() {
+		public @Nullable Long getActiveEnergyImported() {
 			switch (phase) {
 				case PhaseA:
 					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyImportedPhaseA);
@@ -538,7 +539,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getActiveEnergyExported() {
+		public @Nullable Long getActiveEnergyExported() {
 			switch (phase) {
 				case PhaseA:
 					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyExportedPhaseA);
@@ -555,7 +556,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getReactiveEnergyImported() {
+		public @Nullable Long getReactiveEnergyImported() {
 			Long q1 = null;
 			Long q2 = null;
 			switch (phase) {
@@ -588,7 +589,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getReactiveEnergyExported() {
+		public @Nullable Long getReactiveEnergyExported() {
 			Long q1 = null;
 			Long q2 = null;
 			switch (phase) {
@@ -621,7 +622,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getApparentEnergyImported() {
+		public @Nullable Long getApparentEnergyImported() {
 			switch (phase) {
 				case PhaseA:
 					return getApparentEnergyValue(
@@ -641,7 +642,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getApparentEnergyExported() {
+		public @Nullable Long getApparentEnergyExported() {
 			switch (phase) {
 				case PhaseA:
 					return getApparentEnergyValue(
@@ -666,32 +667,32 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Long getActiveEnergyDelivered() {
+		public @Nullable Long getActiveEnergyDelivered() {
 			return getActiveEnergyImported();
 		}
 
 		@Override
-		public Long getActiveEnergyReceived() {
+		public @Nullable Long getActiveEnergyReceived() {
 			return getActiveEnergyExported();
 		}
 
 		@Override
-		public Long getApparentEnergyDelivered() {
+		public @Nullable Long getApparentEnergyDelivered() {
 			return getApparentEnergyImported();
 		}
 
 		@Override
-		public Long getApparentEnergyReceived() {
+		public @Nullable Long getApparentEnergyReceived() {
 			return getApparentEnergyExported();
 		}
 
 		@Override
-		public Long getReactiveEnergyDelivered() {
+		public @Nullable Long getReactiveEnergyDelivered() {
 			return getReactiveEnergyImported();
 		}
 
 		@Override
-		public Long getReactiveEnergyReceived() {
+		public @Nullable Long getReactiveEnergyReceived() {
 			return getReactiveEnergyExported();
 		}
 

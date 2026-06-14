@@ -1,21 +1,21 @@
 /* ==================================================================
  * ReversedMeterModelAccessor.java - 14/03/2019 10:33:42 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,13 +25,14 @@ package net.solarnetwork.node.hw.sunspec.meter;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
  * A "reversed" meter model accessor that swaps import/export values.
- * 
+ *
  * @author matt
  * @version 2.0
  * @since 1.3
@@ -42,7 +43,7 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param delegate
 	 *        the accessor to reverse
 	 */
@@ -67,84 +68,84 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	}
 
 	@Override
-	public Instant getDataTimestamp() {
+	public @Nullable Instant getDataTimestamp() {
 		return delegate.getDataTimestamp();
 	}
 
 	@Override
-	public Float getFrequency() {
+	public @Nullable Float getFrequency() {
 		return delegate.getFrequency();
 	}
 
 	@Override
-	public Float getCurrent() {
+	public @Nullable Float getCurrent() {
 		return delegate.getCurrent();
 	}
 
 	@Override
-	public Float getNeutralCurrent() {
+	public @Nullable Float getNeutralCurrent() {
 		return delegate.getNeutralCurrent();
 	}
 
 	@Override
-	public Float getVoltage() {
+	public @Nullable Float getVoltage() {
 		return delegate.getVoltage();
 	}
 
 	@Override
-	public Float getLineVoltage() {
+	public @Nullable Float getLineVoltage() {
 		return delegate.getLineVoltage();
 	}
 
 	@Override
-	public Float getPowerFactor() {
+	public @Nullable Float getPowerFactor() {
 		return delegate.getPowerFactor();
 	}
 
 	@Override
-	public Integer getActivePower() {
+	public @Nullable Integer getActivePower() {
 		Integer n = delegate.getActivePower();
 		return (n != null ? n * -1 : null);
 	}
 
 	@Override
-	public Integer getApparentPower() {
+	public @Nullable Integer getApparentPower() {
 		return delegate.getApparentPower();
 	}
 
 	@Override
-	public Integer getReactivePower() {
+	public @Nullable Integer getReactivePower() {
 		Integer n = delegate.getReactivePower();
 		return (n != null ? n * -1 : null);
 	}
 
 	@Override
-	public Long getActiveEnergyDelivered() {
+	public @Nullable Long getActiveEnergyDelivered() {
 		return delegate.getActiveEnergyReceived();
 	}
 
 	@Override
-	public Long getActiveEnergyReceived() {
+	public @Nullable Long getActiveEnergyReceived() {
 		return delegate.getActiveEnergyDelivered();
 	}
 
 	@Override
-	public Long getReactiveEnergyDelivered() {
+	public @Nullable Long getReactiveEnergyDelivered() {
 		return delegate.getReactiveEnergyReceived();
 	}
 
 	@Override
-	public Long getReactiveEnergyReceived() {
+	public @Nullable Long getReactiveEnergyReceived() {
 		return delegate.getReactiveEnergyDelivered();
 	}
 
 	@Override
-	public Long getApparentEnergyDelivered() {
+	public @Nullable Long getApparentEnergyDelivered() {
 		return delegate.getApparentEnergyReceived();
 	}
 
 	@Override
-	public Long getApparentEnergyReceived() {
+	public @Nullable Long getApparentEnergyReceived() {
 		return delegate.getApparentEnergyDelivered();
 	}
 
@@ -159,7 +160,7 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	}
 
 	@Override
-	public Long getActiveEnergyImported() {
+	public @Nullable Long getActiveEnergyImported() {
 		return delegate.getActiveEnergyExported();
 	}
 
@@ -174,12 +175,12 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	}
 
 	@Override
-	public Long getActiveEnergyExported() {
+	public @Nullable Long getActiveEnergyExported() {
 		return delegate.getActiveEnergyImported();
 	}
 
 	@Override
-	public Long getReactiveEnergyImported() {
+	public @Nullable Long getReactiveEnergyImported() {
 		return delegate.getReactiveEnergyExported();
 	}
 
@@ -189,17 +190,17 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	}
 
 	@Override
-	public Long getReactiveEnergyExported() {
+	public @Nullable Long getReactiveEnergyExported() {
 		return delegate.getReactiveEnergyImported();
 	}
 
 	@Override
-	public Long getApparentEnergyImported() {
+	public @Nullable Long getApparentEnergyImported() {
 		return delegate.getApparentEnergyExported();
 	}
 
 	@Override
-	public Long getApparentEnergyExported() {
+	public @Nullable Long getApparentEnergyExported() {
 		return delegate.getApparentEnergyImported();
 	}
 
