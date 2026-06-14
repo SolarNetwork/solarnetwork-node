@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.GenericModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -96,28 +97,28 @@ public class StringCombinerModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Float getDCCurrent() {
+	public @Nullable Float getDCCurrent() {
 		Number n = getScaledValue(StringCombinerModelRegister.DcCurrent,
 				StringCombinerModelRegister.ScaleFactorDcCurrent);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Long getDCChargeDelivered() {
+	public @Nullable Long getDCChargeDelivered() {
 		Number n = getScaledValue(StringCombinerModelRegister.DcCharge,
 				StringCombinerModelRegister.ScaleFactorDcCharge);
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public @Nullable Float getDCVoltage() {
 		Number n = getScaledValue(StringCombinerModelRegister.DcVoltage,
 				StringCombinerModelRegister.ScaleFactorDcVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Float getTemperature() {
+	public @Nullable Float getTemperature() {
 		Number n = getData().getNumber(StringCombinerModelRegister.Temperature, getBlockAddress());
 		return (n != null ? n.floatValue() : null);
 	}
@@ -139,13 +140,13 @@ public class StringCombinerModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(StringCombinerModelRegister.InputEventsBitmask, getBlockAddress());
-		return StringCombinerModelEvent.forBitmask(n.longValue());
+		return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
 	public Set<ModelEvent> getVendorEvents() {
 		Number n = getBitfield(StringCombinerModelRegister.InputVendorEventsBitmask, getBlockAddress());
-		return GenericModelEvent.forBitmask(n.longValue());
+		return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	private class StringCombinerDcInput implements DcInput {
@@ -158,14 +159,14 @@ public class StringCombinerModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getInputId() {
+		public @Nullable Integer getInputId() {
 			Number n = getData().getNumber(StringCombinerModelRegister.InputId,
 					getBlockAddress() + index * REPEATING_BLOCK_LENGTH);
 			return (n != null ? n.intValue() : null);
 		}
 
 		@Override
-		public Float getDCCurrent() {
+		public @Nullable Float getDCCurrent() {
 			final StringCombinerModelRegister scaleReg = (StringCombinerModelId.BasicStringCombiner2 == getModelId()
 					? StringCombinerModelRegister.ScaleFactorInputDcCurrent
 					: StringCombinerModelRegister.ScaleFactorDcCurrent);
@@ -175,7 +176,7 @@ public class StringCombinerModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getDCChargeDelivered() {
+		public @Nullable Long getDCChargeDelivered() {
 			final StringCombinerModelRegister scaleReg = (StringCombinerModelId.BasicStringCombiner2 == getModelId()
 					? StringCombinerModelRegister.ScaleFactorInputDcCharge
 					: StringCombinerModelRegister.ScaleFactorInputDcCharge);
@@ -188,14 +189,14 @@ public class StringCombinerModelAccessorImpl extends BaseModelAccessor
 		public Set<ModelEvent> getEvents() {
 			Number n = getBitfield(StringCombinerModelRegister.InputEventsBitmask,
 					getBlockAddress() + index * REPEATING_BLOCK_LENGTH);
-			return StringCombinerModelEvent.forBitmask(n.longValue());
+			return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 		@Override
 		public Set<ModelEvent> getVendorEvents() {
 			Number n = getBitfield(StringCombinerModelRegister.InputVendorEventsBitmask,
 					getBlockAddress() + index * REPEATING_BLOCK_LENGTH);
-			return GenericModelEvent.forBitmask(n.longValue());
+			return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 	}

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.GenericModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -113,47 +114,47 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Float getDCCurrent() {
+	public @Nullable Float getDCCurrent() {
 		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcCurrent,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcCurrent);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Long getDCChargeDelivered() {
+	public @Nullable Long getDCChargeDelivered() {
 		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcCharge,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcCharge);
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public @Nullable Float getDCVoltage() {
 		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcVoltage,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Float getTemperature() {
+	public @Nullable Float getTemperature() {
 		return getFloatValue(StringCombinerAdvancedModelRegister.Temperature);
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public @Nullable Integer getDCPower() {
 		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcPower,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcPower);
 		return (n != null ? n.intValue() : null);
 	}
 
 	@Override
-	public Long getDCEnergy() {
+	public @Nullable Long getDCEnergy() {
 		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcEnergy,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcEnergy);
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
-	public Float getDCPerformanceRatio() {
+	public @Nullable Float getDCPerformanceRatio() {
 		Float n = getFloatValue(StringCombinerAdvancedModelRegister.DcPerformanceRatio);
 		return (n != null ? n.floatValue() / 100f : null);
 	}
@@ -168,14 +169,14 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(StringCombinerAdvancedModelRegister.InputEventsBitmask,
 				getBlockAddress());
-		return StringCombinerModelEvent.forBitmask(n.longValue());
+		return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
 	public Set<ModelEvent> getVendorEvents() {
 		Number n = getBitfield(StringCombinerAdvancedModelRegister.InputVendorEventsBitmask,
 				getBlockAddress());
-		return GenericModelEvent.forBitmask(n.longValue());
+		return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
@@ -202,14 +203,14 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getInputId() {
+		public @Nullable Integer getInputId() {
 			Number n = getData().getNumber(StringCombinerAdvancedModelRegister.InputId,
 					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return (n != null ? n.intValue() : null);
 		}
 
 		@Override
-		public Float getDCCurrent() {
+		public @Nullable Float getDCCurrent() {
 			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCurrent
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcCurrent);
@@ -220,7 +221,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getDCChargeDelivered() {
+		public @Nullable Long getDCChargeDelivered() {
 			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge
 					: StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge);
@@ -234,18 +235,18 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		public Set<ModelEvent> getEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputEventsBitmask,
 					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
-			return StringCombinerModelEvent.forBitmask(n.longValue());
+			return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 		@Override
 		public Set<ModelEvent> getVendorEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputVendorEventsBitmask,
 					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
-			return GenericModelEvent.forBitmask(n.longValue());
+			return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 		@Override
-		public Float getDCVoltage() {
+		public @Nullable Float getDCVoltage() {
 			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcVoltage
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcVoltage);
@@ -256,7 +257,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getDCPower() {
+		public @Nullable Integer getDCPower() {
 			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcPower
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcPower);
@@ -267,7 +268,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getDCEnergy() {
+		public @Nullable Long getDCEnergy() {
 			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcEnergy
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcEnergy);
@@ -278,14 +279,14 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getDCPerformanceRatio() {
+		public @Nullable Float getDCPerformanceRatio() {
 			Float n = getFloatValue(StringCombinerAdvancedModelRegister.DcPerformanceRatio,
 					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return (n != null ? n.floatValue() / 100f : null);
 		}
 
 		@Override
-		public Integer getModuleCount() {
+		public @Nullable Integer getModuleCount() {
 			if ( repeatingBlockLength != REPEATING_BLOCK_LENGTH ) {
 				return null;
 			}

@@ -1,21 +1,21 @@
 /* ==================================================================
  * StringCombinerModelRegister.java - 10/09/2019 7:17:54 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,6 +28,7 @@ import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -36,7 +37,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 /**
  * Enumeration of Modbus register mappings for the SunSpec compliant basic
  * string combiner model.
- * 
+ *
  * <p>
  * These mappings correspond to the SunSpec model numbers <b>402</b> and
  * <b>404</b>.
@@ -46,7 +47,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Note that all register addresses are encoded as an offset from the block
  * address of the model block.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 1.4
@@ -149,14 +150,14 @@ public enum StringCombinerAdvancedModelRegister implements SunspecModbusReferenc
 	private final int address;
 	private final ModbusDataType dataType;
 	private final int wordLength;
-	private final DataClassification classification;
+	private final @Nullable DataClassification classification;
 
 	private StringCombinerAdvancedModelRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
 	private StringCombinerAdvancedModelRegister(int address, ModbusDataType dataType,
-			DataClassification classification) {
+			@Nullable DataClassification classification) {
 		this(address, dataType, dataType.getWordLength(), classification);
 	}
 
@@ -165,7 +166,7 @@ public enum StringCombinerAdvancedModelRegister implements SunspecModbusReferenc
 	}
 
 	private StringCombinerAdvancedModelRegister(int address, ModbusDataType dataType, int wordLength,
-			DataClassification classification) {
+			@Nullable DataClassification classification) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
@@ -193,7 +194,7 @@ public enum StringCombinerAdvancedModelRegister implements SunspecModbusReferenc
 	}
 
 	@Override
-	public DataClassification getClassification() {
+	public @Nullable DataClassification getClassification() {
 		return classification;
 	}
 
