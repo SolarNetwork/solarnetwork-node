@@ -27,13 +27,13 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.sunspec.GenericModelId;
@@ -65,9 +65,9 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	private final AtomicReference<ModelData> sample;
 
 	private long sampleCacheMs = 5000;
-	private String sourceId = null;
-	private Integer baseAddress = null;
-	private Set<Integer> secondaryModelIds;
+	private @Nullable String sourceId;
+	private @Nullable Integer baseAddress;
+	private @Nullable Set<Integer> secondaryModelIds;
 
 	/**
 	 * Default constructor.
@@ -90,8 +90,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	@Override
 	public Collection<String> publishedSourceIds() {
 		final String sourceId = resolvePlaceholders(getSourceId());
-		return (sourceId == null || sourceId.isEmpty() ? Collections.emptySet()
-				: Collections.singleton(sourceId));
+		return (sourceId == null || sourceId.isEmpty() ? List.of() : List.of(sourceId));
 	}
 
 	@Override
@@ -121,7 +120,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @throws IOException
 	 *         if a communication error occurs
 	 */
-	protected ModelData getCurrentSample() throws IOException {
+	protected @Nullable ModelData getCurrentSample() throws IOException {
 		ModelData currSample = getSample();
 		if ( isCachedSampleExpired(currSample) ) {
 			final ModelData data = currSample;
@@ -142,7 +141,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 					final List<ModelAccessor> secondaryAccessors = getSecondaryModelAccessors(result);
 					List<ModelAccessor> accessors = null;
 					if ( secondaryAccessors == null || secondaryAccessors.isEmpty() ) {
-						accessors = (accessor != null ? Collections.singletonList(accessor) : null);
+						accessors = (accessor != null ? List.of(accessor) : null);
 					} else {
 						accessors = new ArrayList<>(secondaryAccessors.size() + 1);
 						if ( accessor != null ) {
@@ -174,7 +173,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		return ModelDataFactory.getInstance().getModelData(conn, false);
 	}
 
-	private List<ModelAccessor> getSecondaryModelAccessors(ModelData data) {
+	private @Nullable List<ModelAccessor> getSecondaryModelAccessors(@Nullable ModelData data) {
 		if ( data == null ) {
 			return null;
 		}
@@ -209,7 +208,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	@Override
-	public ModelData modelData() {
+	public @Nullable ModelData modelData() {
 		try {
 			return getCurrentSample();
 		} catch ( IOException e ) {
@@ -219,7 +218,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	@Override
-	public ModbusConnection modelDataModbusConnection() {
+	public @Nullable ModbusConnection modelDataModbusConnection() {
 		ModbusNetwork network = OptionalService.service(getModbusNetwork());
 		if ( network == null ) {
 			return null;
@@ -237,13 +236,14 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *
 	 * @return the cached model data copy, or {@code null}
 	 */
-	public ModelData getSampleSnapshot() {
+	public @Nullable ModelData getSampleSnapshot() {
 		ModelData data = getSample();
 		return (data != null ? data.getSnapshot() : null);
 	}
 
 	@Override
-	protected final Map<String, Object> readDeviceInfo(ModbusConnection connection) throws IOException {
+	protected final @Nullable Map<String, Object> readDeviceInfo(ModbusConnection connection)
+			throws IOException {
 		ModelData data = getSample();
 		if ( data == null ) {
 			data = modelData(connection);
@@ -266,13 +266,13 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *        the connection to use
 	 * @param data
 	 *        the current data
-	 * @return a map with general device information populated, or
-	 *         {@code null} if no data available
+	 * @return a map with general device information populated, or {@code null}
+	 *         if no data available
 	 * @throws IOException
 	 *         if any communication error occurs
 	 * @since 2.4
 	 */
-	protected Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
+	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
 			throws IOException {
 		return (data != null ? data.getDeviceInfo() : null);
 	}
@@ -282,12 +282,12 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *
 	 * @return the configured source ID
 	 */
-	public String deviceInfoSourceId() {
+	public @Nullable String deviceInfoSourceId() {
 		return resolvePlaceholders(getSourceId());
 	}
 
 	@Override
-	public DeviceInfo deviceInfo() {
+	public @Nullable DeviceInfo deviceInfo() {
 		Map<String, ?> info = getDeviceInfo();
 		return (info != null ? DataAccessor.deviceInfoBuilderForInfo(info).build() : null);
 	}
@@ -421,7 +421,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *        the sample to derive the status message from
 	 * @return the message, or {@literal N/A} if no message is available
 	 */
-	protected String getStatusMessage(ModelData sample) {
+	protected String getStatusMessage(@Nullable ModelData sample) {
 		return "N/A";
 	}
 
@@ -436,7 +436,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *        the sample to derive the message from
 	 * @return the message, or {@literal N/A} if no message is available
 	 */
-	protected String getSampleMessage(ModelData sample) {
+	protected String getSampleMessage(@Nullable ModelData sample) {
 		return "N/A";
 	}
 
@@ -454,7 +454,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @return the message, or {@literal N/A} if no secondary types are
 	 *         available
 	 */
-	protected String getSecondaryTypesMessage(ModelData sample) {
+	protected String getSecondaryTypesMessage(@Nullable ModelData sample) {
 		List<ModelAccessor> accessors = (sample != null ? sample.getModels() : null);
 		if ( accessors == null || accessors.size() < 2 ) {
 			return "N/A";
@@ -494,7 +494,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *
 	 * @return the source ID
 	 */
-	public String getSourceId() {
+	public @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -504,7 +504,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
-	public void setSourceId(String sourceId) {
+	public void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -514,7 +514,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @return an optional set of model IDs
 	 * @since 1.4
 	 */
-	public Set<Integer> getSecondaryModelIds() {
+	public @Nullable Set<Integer> getSecondaryModelIds() {
 		return secondaryModelIds;
 	}
 
@@ -525,7 +525,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *        the secondary model IDs
 	 * @since 1.4
 	 */
-	public void setSecondaryModelIds(Set<Integer> secondaryModelIds) {
+	public void setSecondaryModelIds(@Nullable Set<Integer> secondaryModelIds) {
 		this.secondaryModelIds = secondaryModelIds;
 	}
 
@@ -535,7 +535,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @return the secondary model IDs as a delimited string
 	 * @since 1.4
 	 */
-	public String getSecondaryModelIdsValue() {
+	public @Nullable String getSecondaryModelIdsValue() {
 		return StringUtils.commaDelimitedStringFromCollection(getSecondaryModelIds());
 	}
 
@@ -546,7 +546,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *        the secondary model IDs as a delimited string
 	 * @since 1.4
 	 */
-	public void setSecondaryModelIdsValue(String value) {
+	public void setSecondaryModelIdsValue(@Nullable String value) {
 		Set<String> idStrings = StringUtils.commaDelimitedStringToSet(value);
 		Set<Integer> ids = null;
 		if ( idStrings != null && !idStrings.isEmpty() ) {
@@ -569,7 +569,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *         discover the base address
 	 * @since 1.5
 	 */
-	public Integer getBaseAddress() {
+	public @Nullable Integer getBaseAddress() {
 		return baseAddress;
 	}
 
@@ -581,7 +581,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *        automatically discover the base address
 	 * @since 1.5
 	 */
-	public void setBaseAddress(Integer baseAddress) {
+	public void setBaseAddress(@Nullable Integer baseAddress) {
 		if ( baseAddress != null && baseAddress.intValue() < 0 ) {
 			baseAddress = null;
 		}

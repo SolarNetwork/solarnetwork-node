@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModelDataProvider.java - 10/07/2023 10:25:25 am
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2023 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,35 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sunspec;
-
-import org.jspecify.annotations.Nullable;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.service.Identifiable;
-
 /**
- * API for an identifiable provider of {@link ModelData} instances.
- *
- * @author matt
- * @version 1.0
- * @since 4.2
+ * Package info.
  */
-public interface ModelDataProvider extends Identifiable {
 
-	/**
-	 * Get the model data.
-	 *
-	 * @return the model data
-	 */
-	@Nullable
-	ModelData modelData();
-
-	/**
-	 * Get a {@link ModbusConnection} suitable for refreshing model data.
-	 *
-	 * @return a modbus connection
-	 */
-	@Nullable
-	ModbusConnection modelDataModbusConnection();
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.hw.sunspec.support;

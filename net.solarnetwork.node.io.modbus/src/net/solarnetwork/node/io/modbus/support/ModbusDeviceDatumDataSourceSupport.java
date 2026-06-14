@@ -87,7 +87,8 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @return list of setting specifiers
 	 * @since 3.1
 	 */
-	public static List<SettingSpecifier> modbusNetworkSettingSpecifiers(String uid, int unitId) {
+	public static List<SettingSpecifier> modbusNetworkSettingSpecifiers(@Nullable String uid,
+			int unitId) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']", uid,
 				false, "(objectClass=net.solarnetwork.node.io.modbus.ModbusNetwork)"));
