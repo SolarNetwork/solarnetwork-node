@@ -1,44 +1,46 @@
 /* ==================================================================
  * ReferencePoint.java - 9/07/2023 4:30:30 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.hw.sunspec.environmental;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Reference point data.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 4.2
  */
 public class ReferencePoint {
 
-	private final Integer irradiance;
-	private final Float current;
-	private final Float voltage;
-	private final Float temperature;
+	private final @Nullable Integer irradiance;
+	private final @Nullable Float current;
+	private final @Nullable Float voltage;
+	private final @Nullable Float temperature;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param irradiance
 	 *        the irradiance, in W/m2
 	 * @param current
@@ -48,7 +50,8 @@ public class ReferencePoint {
 	 * @param temperature
 	 *        the temperature, in degrees Celsius
 	 */
-	public ReferencePoint(Integer irradiance, Float current, Float voltage, Float temperature) {
+	public ReferencePoint(@Nullable Integer irradiance, @Nullable Float current, @Nullable Float voltage,
+			@Nullable Float temperature) {
 		super();
 		this.irradiance = irradiance;
 		this.current = current;
@@ -58,53 +61,59 @@ public class ReferencePoint {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        an array of raw reference point data, in irradiance, current,
 	 *        voltage, temperature order; the array values are copied and
 	 *        adjusted to scale
 	 */
-	public ReferencePoint(Integer[] data) {
+	public ReferencePoint(@Nullable Integer @Nullable [] data) {
 		super();
 		this.irradiance = (data != null && data.length > 0 ? data[0] : null);
-		this.current = (data != null && data.length > 1 ? (data[1].floatValue() / 100f) : null);
-		this.voltage = (data != null && data.length > 2 ? (data[2].floatValue() / 100f) : null);
-		this.temperature = (data != null && data.length > 3 ? (data[3].floatValue() / 10f) : null);
+		this.current = (data != null && data.length > 1 && data[1] != null
+				? (data[1].floatValue() / 100f)
+				: null);
+		this.voltage = (data != null && data.length > 2 && data[2] != null
+				? (data[2].floatValue() / 100f)
+				: null);
+		this.temperature = (data != null && data.length > 3 && data[3] != null
+				? (data[3].floatValue() / 10f)
+				: null);
 	}
 
 	/**
 	 * Get the irradiance.
-	 * 
+	 *
 	 * @return the irradiance, in W/m2
 	 */
-	public Integer getIrradiance() {
+	public @Nullable Integer getIrradiance() {
 		return irradiance;
 	}
 
 	/**
 	 * Get the current.
-	 * 
+	 *
 	 * @return the current, in amps
 	 */
-	public Float getCurrent() {
+	public @Nullable Float getCurrent() {
 		return current;
 	}
 
 	/**
 	 * Get the voltage.
-	 * 
+	 *
 	 * @return the voltage, in volts
 	 */
-	public Float getVoltage() {
+	public @Nullable Float getVoltage() {
 		return voltage;
 	}
 
 	/**
 	 * Get the temperature, in degrees Celsius
-	 * 
+	 *
 	 * @return the temperature
 	 */
-	public Float getTemperature() {
+	public @Nullable Float getTemperature() {
 		return temperature;
 	}
 

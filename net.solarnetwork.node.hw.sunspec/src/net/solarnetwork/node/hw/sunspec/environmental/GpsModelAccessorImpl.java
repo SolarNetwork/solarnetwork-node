@@ -1,21 +1,21 @@
 /* ==================================================================
  * GpsModelAccessorImpl.java - 8/07/2023 9:38:58 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,6 +28,7 @@ import java.time.ZoneOffset;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
@@ -35,7 +36,7 @@ import net.solarnetwork.util.NumberUtils;
 
 /**
  * Implementation of {@link GpsModelAccessor}.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 4.2
@@ -54,7 +55,7 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -68,12 +69,12 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@link EnvironmentalModelId} class will be used as the
 	 * {@code ModelId} instance.
 	 * </p>
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -91,7 +92,7 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 	}
 
 	@Override
-	public Instant getGpsTimestamp() {
+	public @Nullable Instant getGpsTimestamp() {
 		String time = getData().getLatin1String(GpsModelRegister.Time, getBlockAddress(), true);
 		String date = getData().getLatin1String(GpsModelRegister.Date, getBlockAddress(), true);
 		try {
@@ -103,22 +104,22 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 	}
 
 	@Override
-	public String getLocationName() {
+	public @Nullable String getLocationName() {
 		return getData().getLatin1String(GpsModelRegister.Location, getBlockAddress(), true);
 	}
 
 	@Override
-	public BigDecimal getLatitude() {
+	public @Nullable BigDecimal getLatitude() {
 		return NumberUtils.scaled(getValue(GpsModelRegister.Latitude), COORDINATES_SCALE);
 	}
 
 	@Override
-	public BigDecimal getLongitude() {
+	public @Nullable BigDecimal getLongitude() {
 		return NumberUtils.scaled(getValue(GpsModelRegister.Longitude), COORDINATES_SCALE);
 	}
 
 	@Override
-	public Integer getAltitude() {
+	public @Nullable Integer getAltitude() {
 		return getIntegerValue(GpsModelRegister.Altitude);
 	}
 

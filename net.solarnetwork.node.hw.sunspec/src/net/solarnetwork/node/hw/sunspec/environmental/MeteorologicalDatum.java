@@ -28,6 +28,7 @@ import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
@@ -102,7 +103,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public MeteorologicalDatum(ModelData data, String sourceId) {
+	public MeteorologicalDatum(ModelData data, @Nullable String sourceId) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data.findTypedModel(MeteorologicalModelAccessor.class));
@@ -119,7 +120,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public MeteorologicalDatum(MeteorologicalModelAccessor data, String sourceId) {
+	public MeteorologicalDatum(MeteorologicalModelAccessor data, @Nullable String sourceId) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data);
@@ -133,7 +134,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public MeteorologicalDatum(MiniMeteorologicalModelAccessor data, String sourceId) {
+	public MeteorologicalDatum(MiniMeteorologicalModelAccessor data, @Nullable String sourceId) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data);
@@ -147,7 +148,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public MeteorologicalDatum(IrradianceModelAccessor data, String sourceId) {
+	public MeteorologicalDatum(IrradianceModelAccessor data, @Nullable String sourceId) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data);
@@ -159,7 +160,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param data
 	 *        the data
 	 */
-	public void populateMeasurements(MeteorologicalModelAccessor data) {
+	public void populateMeasurements(@Nullable MeteorologicalModelAccessor data) {
 		if ( data == null ) {
 			return;
 		}
@@ -182,7 +183,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param data
 	 *        the data
 	 */
-	public void populateMeasurements(MiniMeteorologicalModelAccessor data) {
+	public void populateMeasurements(@Nullable MiniMeteorologicalModelAccessor data) {
 		if ( data == null ) {
 			return;
 		}
@@ -198,7 +199,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param data
 	 *        the data
 	 */
-	public void populateMeasurements(IrradianceModelAccessor data) {
+	public void populateMeasurements(@Nullable IrradianceModelAccessor data) {
 		if ( data == null ) {
 			return;
 		}
@@ -215,7 +216,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param data
 	 *        the data
 	 */
-	public void populateMeasurements(BomTemperatureModelAccessor data) {
+	public void populateMeasurements(@Nullable BomTemperatureModelAccessor data) {
 		if ( data == null ) {
 			return;
 		}
@@ -248,7 +249,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the temperature, in degrees Celsius
 	 */
-	public BigDecimal getBackOfModuleTemperature() {
+	public @Nullable BigDecimal getBackOfModuleTemperature() {
 		return getSampleBigDecimal(Instantaneous, BOM_TEMPERATURE_KEY);
 	}
 
@@ -258,7 +259,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the temperature to set, in degrees Celsius
 	 */
-	public void setBackOfModuleTemperature(BigDecimal value) {
+	public void setBackOfModuleTemperature(@Nullable BigDecimal value) {
 		putSampleValue(Instantaneous, BOM_TEMPERATURE_KEY, value);
 	}
 
@@ -267,7 +268,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the temperature, in V/m
 	 */
-	public Integer getElectricField() {
+	public @Nullable Integer getElectricField() {
 		return getSampleInteger(Instantaneous, ELECTRIC_FIELD_KEY);
 	}
 
@@ -277,7 +278,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the electric field to set, in V/m
 	 */
-	public void setElectricField(Integer value) {
+	public void setElectricField(@Nullable Integer value) {
 		putSampleValue(Instantaneous, ELECTRIC_FIELD_KEY, value);
 	}
 
@@ -286,7 +287,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the type
 	 */
-	public PrecipitationType getPrecipitationType() {
+	public @Nullable PrecipitationType getPrecipitationType() {
 		Integer code = getSampleInteger(Status, PRECIPITATION_TYPE_KEY);
 		return (code != null ? CodedValue.forCodeValue(code.intValue(), PrecipitationType.class, null)
 				: null);
@@ -298,7 +299,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the precipitation type to set
 	 */
-	public void setPrecipitationType(PrecipitationType value) {
+	public void setPrecipitationType(@Nullable PrecipitationType value) {
 		putSampleValue(Status, PRECIPITATION_TYPE_KEY, value != null ? value.getCode() : null);
 		setSkyConditions(value != null ? value.getDescription(Locale.ENGLISH) : null);
 	}
@@ -308,7 +309,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the wetness, in Ohm
 	 */
-	public Integer getSurfaceWetness() {
+	public @Nullable Integer getSurfaceWetness() {
 		return getSampleInteger(Instantaneous, SURFACE_WETNESS_KEY);
 	}
 
@@ -318,7 +319,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the wetness to set, in Ohm
 	 */
-	public void setSurfaceWetness(Integer value) {
+	public void setSurfaceWetness(@Nullable Integer value) {
 		putSampleValue(Instantaneous, SURFACE_WETNESS_KEY, value);
 	}
 
@@ -327,7 +328,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the wetness, as an integer percent
 	 */
-	public Integer getSoilMoisture() {
+	public @Nullable Integer getSoilMoisture() {
 		return getSampleInteger(Instantaneous, SOIL_MOISTURE_KEY);
 	}
 
@@ -337,7 +338,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the moisture to set, as an integer percentage
 	 */
-	public void setSoilMoisture(Integer value) {
+	public void setSoilMoisture(@Nullable Integer value) {
 		putSampleValue(Instantaneous, SOIL_MOISTURE_KEY, value);
 	}
 
@@ -346,7 +347,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the irradiance, in W/m2
 	 */
-	public BigDecimal getPlaneOfArrayIrradiance() {
+	public @Nullable BigDecimal getPlaneOfArrayIrradiance() {
 		return getSampleBigDecimal(Instantaneous, POA_IRRADIANCE_KEY);
 	}
 
@@ -356,7 +357,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
-	public void setPlaneOfArrayIrradiance(BigDecimal value) {
+	public void setPlaneOfArrayIrradiance(@Nullable BigDecimal value) {
 		putSampleValue(Instantaneous, POA_IRRADIANCE_KEY, value);
 	}
 
@@ -365,7 +366,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the irradiance, in W/m2
 	 */
-	public BigDecimal getDiffuseIrradiance() {
+	public @Nullable BigDecimal getDiffuseIrradiance() {
 		return getSampleBigDecimal(Instantaneous, DF_IRRADIANCE_KEY);
 	}
 
@@ -375,7 +376,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
-	public void setDiffuseIrradiance(BigDecimal value) {
+	public void setDiffuseIrradiance(@Nullable BigDecimal value) {
 		putSampleValue(Instantaneous, DF_IRRADIANCE_KEY, value);
 	}
 
@@ -384,7 +385,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the irradiance, in W/m2
 	 */
-	public BigDecimal getDirectNormalIrradiance() {
+	public @Nullable BigDecimal getDirectNormalIrradiance() {
 		return getSampleBigDecimal(Instantaneous, DN_IRRADIANCE_KEY);
 	}
 
@@ -394,7 +395,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
-	public void setDirectNormalIrradiance(BigDecimal value) {
+	public void setDirectNormalIrradiance(@Nullable BigDecimal value) {
 		putSampleValue(Instantaneous, DN_IRRADIANCE_KEY, value);
 	}
 
@@ -403,7 +404,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *
 	 * @return the irradiance, in W/m2
 	 */
-	public BigDecimal getOtherIrradiance() {
+	public @Nullable BigDecimal getOtherIrradiance() {
 		return getSampleBigDecimal(Instantaneous, OTHER_IRRADIANCE_KEY);
 	}
 
@@ -413,7 +414,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 * @param value
 	 *        the irradiance to set, in W/m2
 	 */
-	public void setOtherIrradiance(BigDecimal value) {
+	public void setOtherIrradiance(@Nullable BigDecimal value) {
 		putSampleValue(Instantaneous, OTHER_IRRADIANCE_KEY, value);
 	}
 

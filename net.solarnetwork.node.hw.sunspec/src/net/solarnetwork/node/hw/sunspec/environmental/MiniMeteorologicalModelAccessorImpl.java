@@ -1,34 +1,35 @@
 /* ==================================================================
  * MiniMeteorologicalModelAccessorImpl.java - 10/07/2023 7:16:18 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.hw.sunspec.environmental;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
  * Implementation of {@link MiniMeteorologicalModelAccessor}.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 4.2
@@ -41,7 +42,7 @@ public class MiniMeteorologicalModelAccessorImpl extends BaseModelAccessor
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -55,12 +56,12 @@ public class MiniMeteorologicalModelAccessorImpl extends BaseModelAccessor
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@link EnvironmentalModelId} class will be used as the
 	 * {@code ModelId} instance.
 	 * </p>
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -78,24 +79,24 @@ public class MiniMeteorologicalModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Integer getGlobalHorizontalIrradiance() {
+	public @Nullable Integer getGlobalHorizontalIrradiance() {
 		return getIntegerValue(MiniMeteorologicalModelRegister.IrradianceGH);
 	}
 
 	@Override
-	public Float getBackOfModuleTemperature() {
+	public @Nullable Float getBackOfModuleTemperature() {
 		Number n = getValue(MiniMeteorologicalModelRegister.TemperatureBOM);
 		return (n != null ? n.floatValue() / 10f : null);
 	}
 
 	@Override
-	public Float getAmbientTemperature() {
+	public @Nullable Float getAmbientTemperature() {
 		Number n = getValue(MiniMeteorologicalModelRegister.TemperatureAmbient);
 		return (n != null ? n.floatValue() / 10f : null);
 	}
 
 	@Override
-	public Integer getWindSpeed() {
+	public @Nullable Integer getWindSpeed() {
 		return getIntegerValue(MiniMeteorologicalModelRegister.WindSpeed);
 	}
 

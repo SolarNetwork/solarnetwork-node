@@ -1,7 +1,7 @@
 /* ==================================================================
- * InclinometerModelAccessor.java - 8/07/2023 8:27:21 am
+ * package-info.java - 11/06/2026 7:00:00 am
  *
- * Copyright 2023 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,36 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sunspec.environmental;
-
-import java.util.List;
-import org.jspecify.annotations.Nullable;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-
 /**
- * API for accessing inclinometer model data.
- *
- * @author matt
- * @version 1.0
- * @since 4.2
+ * Package info.
  */
-public interface InclinometerModelAccessor extends ModelAccessor {
 
-	/**
-	 * Get the inclination data.
-	 *
-	 * @return the list of inclination data, never {@code null}
-	 */
-	List<Incline> getInclines();
-
-	/**
-	 * Get the first available incline element.
-	 *
-	 * @return the first available incline, or {@code null}
-	 */
-	default @Nullable Incline getIncline() {
-		List<Incline> temps = getInclines();
-		return (temps != null && !temps.isEmpty() ? temps.get(0) : null);
-	}
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.hw.sunspec.environmental;
