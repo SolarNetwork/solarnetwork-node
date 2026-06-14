@@ -167,7 +167,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Get the operating state.
 	 * 
-	 * @return the operating state, or {@literal null}
+	 * @return the operating state, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
@@ -188,7 +188,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	 * Set the operating state.
 	 * 
 	 * @param state
-	 *        the state to set, or {@literal null}
+	 *        the state to set, or {@code null}
 	 */
 	public void setOperatingState(OperatingState state) {
 		Integer code = (state != null ? state.getCode() : null);
@@ -198,7 +198,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Get the device operating state.
 	 * 
-	 * @return the device operating state, or {@literal null}
+	 * @return the device operating state, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
@@ -224,7 +224,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	 * Set the operating state.
 	 * 
 	 * @param state
-	 *        the state to set, or {@literal null}
+	 *        the state to set, or {@code null}
 	 */
 	public void setDeviceOperatingState(DeviceOperatingState state) {
 		Integer code = (state != null ? state.getCode() : null);
@@ -234,7 +234,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Get the events.
 	 * 
-	 * @return the events, or {@literal null}
+	 * @return the events, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
@@ -255,7 +255,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	 * Set the events.
 	 * 
 	 * @param events
-	 *        the events to set, or {@literal null}
+	 *        the events to set, or {@code null}
 	 */
 	public void setEvents(Set<ModelEvent> events) {
 		long bitmask = ModelEvent.bitField32Value(events);
@@ -265,7 +265,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Get the vendor events.
 	 * 
-	 * @return the events, or {@literal null}
+	 * @return the events, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore

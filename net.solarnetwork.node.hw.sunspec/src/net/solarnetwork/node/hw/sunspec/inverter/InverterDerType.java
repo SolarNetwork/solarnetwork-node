@@ -63,7 +63,7 @@ public enum InverterDerType implements DistributedEnergyResourceType {
 	 * 
 	 * @param code
 	 *        the code to get the enum value for
-	 * @return the enumeration value, or {@literal null} if {@code code} is
+	 * @return the enumeration value, or {@code null} if {@code code} is
 	 *         {@literal NaN}
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported

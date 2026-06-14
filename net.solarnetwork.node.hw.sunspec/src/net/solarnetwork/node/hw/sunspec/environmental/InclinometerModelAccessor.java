@@ -44,7 +44,7 @@ public interface InclinometerModelAccessor extends ModelAccessor {
 	/**
 	 * Get the first available incline element.
 	 * 
-	 * @return the first available incline, or {@literal null}
+	 * @return the first available incline, or {@code null}
 	 */
 	default Incline getIncline() {
 		List<Incline> temps = getInclines();

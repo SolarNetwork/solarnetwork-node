@@ -49,7 +49,7 @@ public interface OperatingState {
 	/**
 	 * Get a {@link DeviceOperatingState} out of this state.
 	 * 
-	 * @return the device operating state, never {@literal null}
+	 * @return the device operating state, never {@code null}
 	 * @since 1.1
 	 */
 	DeviceOperatingState asDeviceOperatingState();

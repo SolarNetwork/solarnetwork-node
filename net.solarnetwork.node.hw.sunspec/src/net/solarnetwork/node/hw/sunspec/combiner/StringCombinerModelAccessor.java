@@ -65,7 +65,7 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 		/**
 		 * Get the active events for the module.
 		 * 
-		 * @return the events, never {@literal null}
+		 * @return the events, never {@code null}
 		 * @see StringCombinerModelEvent
 		 */
 		Set<ModelEvent> getEvents();
@@ -73,7 +73,7 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 		/**
 		 * Get the active vendor events.
 		 * 
-		 * @return the vendor events, never {@literal null}
+		 * @return the vendor events, never {@code null}
 		 */
 		Set<ModelEvent> getVendorEvents();
 
@@ -110,7 +110,7 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 	/**
 	 * Get the active events.
 	 * 
-	 * @return the events, never {@literal null}
+	 * @return the events, never {@code null}
 	 * @see StringCombinerModelEvent
 	 */
 	Set<ModelEvent> getEvents();
@@ -118,7 +118,7 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 	/**
 	 * Get the active vendor events.
 	 * 
-	 * @return the vendor events, never {@literal null}
+	 * @return the vendor events, never {@code null}
 	 */
 	Set<ModelEvent> getVendorEvents();
 

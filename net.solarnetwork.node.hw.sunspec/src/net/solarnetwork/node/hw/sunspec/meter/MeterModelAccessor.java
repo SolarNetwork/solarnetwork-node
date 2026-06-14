@@ -159,7 +159,7 @@ public interface MeterModelAccessor extends ModelAccessor, AcEnergyDataAccessor 
 	/**
 	 * Get the active events.
 	 * 
-	 * @return the events (never {@literal null})
+	 * @return the events (never {@code null})
 	 */
 	Set<ModelEvent> getEvents();
 

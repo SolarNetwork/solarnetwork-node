@@ -202,7 +202,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * This does not check if the data has expired.
 	 * </p>
 	 *
-	 * @return the cached model data, or {@literal null}
+	 * @return the cached model data, or {@code null}
 	 */
 	public final ModelData getSample() {
 		return sample.get();
@@ -235,7 +235,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * {@link ModelData#getSnapshot()} so that a copy of the data is returned.
 	 * </p>
 	 *
-	 * @return the cached model data copy, or {@literal null}
+	 * @return the cached model data copy, or {@code null}
 	 */
 	public ModelData getSampleSnapshot() {
 		ModelData data = getSample();
@@ -267,7 +267,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @param data
 	 *        the current data
 	 * @return a map with general device information populated, or
-	 *         {@literal null} if no data available
+	 *         {@code null} if no data available
 	 * @throws IOException
 	 *         if any communication error occurs
 	 * @since 2.4
@@ -362,7 +362,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *
 	 * @param defaults
 	 *        the defaults to use
-	 * @return list of {@link SettingSpecifier}, never {@literal null}
+	 * @return list of {@link SettingSpecifier}, never {@code null}
 	 */
 	protected List<SettingSpecifier> getSettingSpecifiersWithDefaults(
 			SunSpecDeviceDatumDataSourceSupport defaults) {
@@ -565,7 +565,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	/**
 	 * Get the manual base address to use.
 	 *
-	 * @return the manual base address, or {@literal null} to automatically
+	 * @return the manual base address, or {@code null} to automatically
 	 *         discover the base address
 	 * @since 1.5
 	 */

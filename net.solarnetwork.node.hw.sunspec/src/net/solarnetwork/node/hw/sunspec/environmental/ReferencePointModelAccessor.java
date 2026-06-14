@@ -44,7 +44,7 @@ public interface ReferencePointModelAccessor extends ModelAccessor {
 	/**
 	 * Get the first available reference point element.
 	 * 
-	 * @return the first available reference point, or {@literal null}
+	 * @return the first available reference point, or {@code null}
 	 */
 	default ReferencePoint getReferencePoint() {
 		List<ReferencePoint> points = getReferencePoints();

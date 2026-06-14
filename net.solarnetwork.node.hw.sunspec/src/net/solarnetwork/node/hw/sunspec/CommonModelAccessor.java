@@ -1,32 +1,33 @@
 /* ==================================================================
  * CommonModelAccessor.java - 22/05/2018 9:13:28 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.hw.sunspec;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.DataAccessor;
 
 /**
  * API for accessing common model data.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -39,44 +40,50 @@ public interface CommonModelAccessor extends ModelAccessor, DataAccessor {
 
 	/**
 	 * Get the device manufacturer.
-	 * 
+	 *
 	 * @return the manufacturer
 	 */
+	@Nullable
 	String getManufacturer();
 
 	/**
 	 * Get the device model name.
-	 * 
+	 *
 	 * @return the device model
 	 */
+	@Nullable
 	String getModelName();
 
 	/**
 	 * Get the device options.
-	 * 
+	 *
 	 * @return the options
 	 */
+	@Nullable
 	String getOptions();
 
 	/**
 	 * Get the device version.
-	 * 
+	 *
 	 * @return the version
 	 */
+	@Nullable
 	String getVersion();
 
 	/**
 	 * Get the serial number.
-	 * 
+	 *
 	 * @return the serial number
 	 */
+	@Nullable
 	String getSerialNumber();
 
 	/**
 	 * Get the device ID (the Modbus unit ID).
-	 * 
+	 *
 	 * @return the device address
 	 */
+	@Nullable
 	Integer getDeviceAddress();
 
 }

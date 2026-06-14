@@ -813,7 +813,7 @@ public class ModbusData implements DataAccessor {
 		 * @param addr
 		 *        the starting address of the data
 		 */
-		public void saveDataArray(final short[] data, int addr);
+		public void saveDataArray(final short @Nullable [] data, int addr);
 
 		/**
 		 * Store an array of 16-bit integer register data values, starting at a
@@ -828,7 +828,7 @@ public class ModbusData implements DataAccessor {
 		 * @param addr
 		 *        the starting address of the data
 		 */
-		public void saveDataArray(final int[] data, int addr);
+		public void saveDataArray(final int @Nullable [] data, int addr);
 
 		/**
 		 * Store an array of 16-bit integer register data values, starting at a
@@ -843,7 +843,7 @@ public class ModbusData implements DataAccessor {
 		 * @param addr
 		 *        the starting address of the data
 		 */
-		public void saveDataArray(final Integer[] data, int addr);
+		public void saveDataArray(final Integer @Nullable [] data, int addr);
 
 		/**
 		 * Store an array of bytes into 16-bit register data values, starting at
@@ -865,7 +865,7 @@ public class ModbusData implements DataAccessor {
 		 * @param addr
 		 *        the starting address of the data
 		 */
-		public void saveBytes(final byte[] data, int addr);
+		public void saveBytes(final byte @Nullable [] data, int addr);
 	}
 
 	/**
@@ -932,7 +932,7 @@ public class ModbusData implements DataAccessor {
 		}
 
 		@Override
-		public final void saveDataArray(final short[] data, int addr) {
+		public final void saveDataArray(final short @Nullable [] data, int addr) {
 			if ( data == null || data.length < 1 ) {
 				return;
 			}
@@ -943,7 +943,7 @@ public class ModbusData implements DataAccessor {
 		}
 
 		@Override
-		public final void saveDataArray(final int[] data, int addr) {
+		public final void saveDataArray(final int @Nullable [] data, int addr) {
 			if ( data == null || data.length < 1 ) {
 				return;
 			}
@@ -954,7 +954,7 @@ public class ModbusData implements DataAccessor {
 		}
 
 		@Override
-		public final void saveDataArray(final Integer[] data, int addr) {
+		public final void saveDataArray(final Integer @Nullable [] data, int addr) {
 			if ( data == null || data.length < 1 ) {
 				return;
 			}
@@ -965,7 +965,7 @@ public class ModbusData implements DataAccessor {
 		}
 
 		@Override
-		public void saveBytes(final byte[] data, final int addr) {
+		public void saveBytes(final byte @Nullable [] data, final int addr) {
 			if ( data == null || data.length < 1 ) {
 				return;
 			}
@@ -1087,7 +1087,7 @@ public class ModbusData implements DataAccessor {
 	 *        the word order to use; {@code null} will be ignored
 	 * @since 1.3
 	 */
-	public final void setWordOrder(ModbusWordOrder wordOrder) {
+	public final void setWordOrder(@Nullable ModbusWordOrder wordOrder) {
 		if ( wordOrder == null ) {
 			return;
 		}

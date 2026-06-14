@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModelData.java - 22/05/2018 6:40:27 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.BasicDeviceInfo;
@@ -41,7 +42,7 @@ import net.solarnetwork.util.IntRange;
 
 /**
  * Base object for model data.
- * 
+ *
  * @author matt
  * @version 2.4
  */
@@ -99,11 +100,11 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	private int maxReadWordsCount;
 	private List<ModelAccessor> models;
 
-	private volatile ConcurrentMap<String, Object> metadata;
+	private volatile @Nullable ConcurrentMap<String, Object> metadata;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param baseAddress
 	 *        the base Modbus address
 	 */
@@ -118,7 +119,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Copy constructor.
-	 * 
+	 *
 	 * @param other
 	 *        the data to copy
 	 */
@@ -151,7 +152,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	}
 
 	@Override
-	public DeviceInfo deviceInfo() {
+	public @Nullable DeviceInfo deviceInfo() {
 		BasicDeviceInfo.Builder b = BasicDeviceInfo.builder();
 		ModelData data = getSnapshot();
 		b.withManufacturer(data.getManufacturer());
@@ -192,12 +193,12 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Get a snapshot copy of the model.
-	 * 
+	 *
 	 * <p>
 	 * This is essentially the same as {@link #copy()} but cast to
 	 * {@code ModelData}.
 	 * </p>
-	 * 
+	 *
 	 * @return the snapshot
 	 * @see #copy()
 	 */
@@ -207,23 +208,23 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Get the first-available model instance.
-	 * 
-	 * @return the first available model, or {@literal null}
+	 *
+	 * @return the first available model, or {@code null}
 	 */
-	public ModelAccessor getModel() {
+	public @Nullable ModelAccessor getModel() {
 		return (models != null && !models.isEmpty() ? models.get(0) : null);
 	}
 
 	/**
 	 * Get the first-available model as a specific type.
-	 * 
+	 *
 	 * @param <T>
 	 *        the model type
 	 * @return the model
 	 * @throws ClassCastException
 	 *         if the model is not of the requested type
 	 */
-	public <T extends ModelAccessor> T getTypedModel() {
+	public <T extends ModelAccessor> @Nullable T getTypedModel() {
 		@SuppressWarnings("unchecked")
 		T result = (T) getModel();
 		return result;
@@ -231,15 +232,15 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Find the first-available model of a specific type.
-	 * 
+	 *
 	 * @param <T>
 	 *        the model type
 	 * @param type
 	 *        the type of model to get
-	 * @return the found model, or {@literal null} if not found
+	 * @return the found model, or {@code null} if not found
 	 * @since 1.1
 	 */
-	public <T extends ModelAccessor> T findTypedModel(Class<T> type) {
+	public <T extends ModelAccessor> @Nullable T findTypedModel(Class<T> type) {
 		if ( CommonModelAccessor.class.isAssignableFrom(type) ) {
 			@SuppressWarnings("unchecked")
 			T result = (T) this;
@@ -260,7 +261,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Get the list of model instances.
-	 * 
+	 *
 	 * @return the model instances
 	 */
 	public List<ModelAccessor> getModels() {
@@ -269,7 +270,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Get the maximum number of Modbus registers to read in one request.
-	 * 
+	 *
 	 * @return the maximum read word count; defaults to
 	 *         {@link Integer#MAX_VALUE}
 	 */
@@ -279,7 +280,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Set the maximum number of Modbus registers to read in one request.
-	 * 
+	 *
 	 * @param maxReadWordsCount
 	 *        the maxReadWordsCount to set; anything less than {@literal 1} is
 	 *        ignored; set to {@link Integer#MAX_VALUE} for no limit
@@ -308,13 +309,14 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	@Override
 	public int getModelLength() {
-		return getNumber(ModelRegister.ModelLength, baseAddress).intValue();
+		Number n = getNumber(ModelRegister.ModelLength, baseAddress);
+		return (n != null ? n.intValue() : 0);
 	}
 
 	/**
 	 * Update a mutable data object with data read from a Modbus connection,
 	 * using the {@link ModbusReadFunction#ReadHoldingRegister} function.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param m
@@ -333,13 +335,13 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Update a mutable data object with data read from a Modbus connection.
-	 * 
+	 *
 	 * <p>
 	 * This method will read a set of Modbus registers, treating them as
 	 * unsigned short values and storing them on {@code m} via
 	 * {@link MutableModbusData#saveDataArray(int[], int)}.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param m
@@ -365,7 +367,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Read the common model properties from the device.
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @throws IOException
@@ -387,7 +389,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Add a model accessor to this model.
-	 * 
+	 *
 	 * @param modelLength
 	 *        the model length
 	 * @param accessor
@@ -414,13 +416,13 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Read the model properties from the device for all configured models.
-	 * 
+	 *
 	 * <p>
 	 * This method will iterate over all {@link ModelAccessor} instances that
 	 * have been added via {@link #addModel(int, ModelAccessor)}, and read the
 	 * data necessary for all their properties.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @throws IOException
@@ -432,12 +434,12 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Read the model properties from the device for specific models.
-	 * 
+	 *
 	 * <p>
 	 * This method will iterate over the provided {@link ModelAccessor}
 	 * instances and read the data necessary for each of their properties.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param accessors
@@ -446,7 +448,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	public void readModelData(final ModbusConnection conn, final List<ModelAccessor> accessors)
+	public void readModelData(final ModbusConnection conn, final @Nullable List<ModelAccessor> accessors)
 			throws IOException {
 		if ( accessors == null ) {
 			return;
@@ -465,12 +467,12 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Read the model properties from the device for specific models.
-	 * 
+	 *
 	 * <p>
 	 * This method will iterate over the provided {@link ModelAccessor}
 	 * instances and read the data necessary for each of their properties.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the connection
 	 * @param accessors
@@ -479,7 +481,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * @throws IOException
 	 *         if any communication error occurs
 	 */
-	public void readModelData(final ModbusConnection conn, final ModelAccessor... accessors)
+	public void readModelData(final ModbusConnection conn, final ModelAccessor @Nullable... accessors)
 			throws IOException {
 		if ( accessors == null ) {
 			return;
@@ -497,44 +499,45 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	}
 
 	@Override
-	public String getManufacturer() {
+	public @Nullable String getManufacturer() {
 		return getLatin1String(CommonModelRegister.Manufacturer, blockAddress, true);
 	}
 
 	@Override
-	public String getModelName() {
+	public @Nullable String getModelName() {
 		return getLatin1String(CommonModelRegister.Model, blockAddress, true);
 	}
 
 	@Override
-	public String getOptions() {
+	public @Nullable String getOptions() {
 		return getLatin1String(CommonModelRegister.Options, blockAddress, true);
 	}
 
 	@Override
-	public String getVersion() {
+	public @Nullable String getVersion() {
 		return getLatin1String(CommonModelRegister.Version, blockAddress, true);
 	}
 
 	@Override
-	public String getSerialNumber() {
+	public @Nullable String getSerialNumber() {
 		return getLatin1String(CommonModelRegister.SerialNumber, blockAddress, true);
 	}
 
 	@Override
-	public Integer getDeviceAddress() {
-		return getNumber(CommonModelRegister.DeviceAddress, blockAddress).intValue();
+	public @Nullable Integer getDeviceAddress() {
+		Number n = getNumber(CommonModelRegister.DeviceAddress, blockAddress);
+		return (n != null ? n.intValue() : null);
 	}
 
 	/**
 	 * Get a metadata value.
-	 * 
+	 *
 	 * @param key
 	 *        the key of the metadata to get
-	 * @return the metadata value, or {@literal null}
+	 * @return the metadata value, or {@code null}
 	 * @since 1.1
 	 */
-	public Object getMetadataValue(String key) {
+	public @Nullable Object getMetadataValue(String key) {
 		ConcurrentMap<String, Object> m = this.metadata;
 		Object result = null;
 		if ( m != null ) {
@@ -545,15 +548,15 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Set/remove a metadata value.
-	 * 
+	 *
 	 * @param key
 	 *        the key of the value to set/remove
 	 * @param value
-	 *        the value to set, or {@literal null} to remove the value
-	 *        associated with {@code key}
+	 *        the value to set, or {@code null} to remove the value associated
+	 *        with {@code key}
 	 * @since 1.1
 	 */
-	public void putMetadataValue(String key, Object value) {
+	public void putMetadataValue(String key, @Nullable Object value) {
 		ConcurrentMap<String, Object> m = this.metadata;
 		if ( value == null ) {
 			if ( m != null ) {

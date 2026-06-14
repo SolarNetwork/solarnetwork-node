@@ -108,7 +108,7 @@ public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
 		/**
 		 * Get the active events for the module.
 		 * 
-		 * @return the events, never {@literal null}
+		 * @return the events, never {@code null}
 		 */
 		Set<ModelEvent> getEvents();
 
@@ -124,7 +124,7 @@ public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
 	/**
 	 * Get the active events.
 	 * 
-	 * @return the events, never {@literal null}
+	 * @return the events, never {@code null}
 	 */
 	Set<ModelEvent> getEvents();
 

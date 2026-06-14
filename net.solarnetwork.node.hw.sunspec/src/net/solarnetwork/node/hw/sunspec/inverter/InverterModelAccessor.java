@@ -160,7 +160,7 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	/**
 	 * Get an optional vendor-specific operating state value.
 	 * 
-	 * @return the vendor operating state value, or {@literal null} if not
+	 * @return the vendor operating state value, or {@code null} if not
 	 *         supported or known
 	 * @since 2.2
 	 */
@@ -171,7 +171,7 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	/**
 	 * Get the active events.
 	 * 
-	 * @return the events, never {@literal null}
+	 * @return the events, never {@code null}
 	 */
 	Set<ModelEvent> getEvents();
 
@@ -186,7 +186,7 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	 * {@code 0} and {@code EvtVnd2}'s first bit would be index {@code 32}.
 	 * </p>
 	 * 
-	 * @return the vendor events, or {@literal null} if not supported or known
+	 * @return the vendor events, or {@code null} if not supported or known
 	 * @since 2.2
 	 */
 	default BitSet getVendorEvents() {

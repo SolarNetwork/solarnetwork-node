@@ -50,7 +50,7 @@ public interface ModelEvent {
 	 * Get a SunSpec "bitfield16" value from a set of events.
 	 * 
 	 * @param events
-	 *        the events to get the bit field value for; can be {@literal null}
+	 *        the events to get the bit field value for; can be {@code null}
 	 * @return the bit field value
 	 * @since 1.1
 	 */
@@ -62,7 +62,7 @@ public interface ModelEvent {
 	 * Get a SunSpec "bitfield32" value from a set of events.
 	 * 
 	 * @param events
-	 *        the events to get the bit field value for; can be {@literal null}
+	 *        the events to get the bit field value for; can be {@code null}
 	 * @return the bit field value
 	 * @since 1.1
 	 */

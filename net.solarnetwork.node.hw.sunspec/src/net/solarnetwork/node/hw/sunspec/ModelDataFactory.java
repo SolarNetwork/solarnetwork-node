@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -89,7 +90,7 @@ public class ModelDataFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(ModelDataFactory.class);
 
-	private Properties accessorProperties = null;
+	private @Nullable Properties accessorProperties;
 
 	/**
 	 * Get a factory instance.
@@ -414,7 +415,7 @@ public class ModelDataFactory {
 	 *
 	 * @return the model accessor properties
 	 */
-	protected Properties getModelAccessorProperties() {
+	protected @Nullable Properties getModelAccessorProperties() {
 		Properties props = null;
 
 		// try to load mapping with context class loader, if available
@@ -432,7 +433,7 @@ public class ModelDataFactory {
 		return props;
 	}
 
-	private Properties propertiesWithClassLoader(ClassLoader cl) {
+	private @Nullable Properties propertiesWithClassLoader(ClassLoader cl) {
 		for ( String rsrcName : new String[] { MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME,
 				DEFAULT_MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME } ) {
 			try (InputStream in = cl.getResourceAsStream(rsrcName)) {

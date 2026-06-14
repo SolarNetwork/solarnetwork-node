@@ -44,7 +44,7 @@ public interface BomTemperatureModelAccessor extends ModelAccessor {
 	/**
 	 * Get the first available back-of-module temperature.
 	 * 
-	 * @return the first available temperature, or {@literal null}
+	 * @return the first available temperature, or {@code null}
 	 */
 	default Float getBackOfModuleTemperature() {
 		List<Float> temps = getBackOfModuleTemperatures();

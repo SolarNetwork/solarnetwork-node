@@ -85,7 +85,7 @@ public enum InverterOperatingState implements OperatingState {
 	/**
 	 * Get a {@link DeviceOperatingState}.
 	 * 
-	 * @return the device operating state, never {@literal null}
+	 * @return the device operating state, never {@code null}
 	 * @since 1.2
 	 */
 	@Override
