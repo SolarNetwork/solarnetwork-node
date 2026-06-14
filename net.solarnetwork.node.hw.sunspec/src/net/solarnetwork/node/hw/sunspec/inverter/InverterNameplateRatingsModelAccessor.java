@@ -26,6 +26,7 @@ import static net.solarnetwork.util.NumberUtils.narrow;
 import static net.solarnetwork.util.NumberUtils.roundDown;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.DistributedEnergyResourceType;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.util.NullRemoveMap;
@@ -163,6 +164,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the type
 	 */
+	@Nullable
 	DistributedEnergyResourceType getDerType();
 
 	/**
@@ -170,6 +172,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the active power rating
 	 */
+	@Nullable
 	Integer getActivePowerRating();
 
 	/**
@@ -177,6 +180,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the apparent power rating
 	 */
+	@Nullable
 	Integer getApparentPowerRating();
 
 	/**
@@ -185,6 +189,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the reactive power rating
 	 */
+	@Nullable
 	Integer getReactivePowerQ1Rating();
 
 	/**
@@ -193,6 +198,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the reactive power rating
 	 */
+	@Nullable
 	Integer getReactivePowerQ2Rating();
 
 	/**
@@ -201,6 +207,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the reactive power rating
 	 */
+	@Nullable
 	Integer getReactivePowerQ3Rating();
 
 	/**
@@ -209,6 +216,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the reactive power rating
 	 */
+	@Nullable
 	Integer getReactivePowerQ4Rating();
 
 	/**
@@ -216,6 +224,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the current rating
 	 */
+	@Nullable
 	Float getCurrentRating();
 
 	/**
@@ -224,6 +233,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the power factor
 	 */
+	@Nullable
 	Float getPowerFactorQ1Rating();
 
 	/**
@@ -232,6 +242,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the power factor
 	 */
+	@Nullable
 	Float getPowerFactorQ2Rating();
 
 	/**
@@ -240,6 +251,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the power factor
 	 */
+	@Nullable
 	Float getPowerFactorQ3Rating();
 
 	/**
@@ -248,6 +260,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the power factor
 	 */
+	@Nullable
 	Float getPowerFactorQ4Rating();
 
 	/**
@@ -255,6 +268,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the maximum rated energy of the battery storage
 	 */
+	@Nullable
 	Integer getStoredEnergyRating();
 
 	/**
@@ -262,6 +276,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the maximum rated charge of the battery storage
 	 */
+	@Nullable
 	Integer getStoredChargeCapacity();
 
 	/**
@@ -269,6 +284,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the maximum charge rate power
 	 */
+	@Nullable
 	Integer getStoredEnergyImportPowerRating();
 
 	/**
@@ -276,6 +292,7 @@ public interface InverterNameplateRatingsModelAccessor extends ModelAccessor {
 	 *
 	 * @return the minimum discharge rate power
 	 */
+	@Nullable
 	Integer getStoredEnergyExportPowerRating();
 
 	/**

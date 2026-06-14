@@ -1,21 +1,21 @@
 /* ==================================================================
  * FloatingPointInverterModelRegister.java - 11/10/2019 5:13:59 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,6 +28,7 @@ import static net.solarnetwork.node.hw.sunspec.DataClassification.Enumeration;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -36,22 +37,22 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 /**
  * Enumeration of Modbus register mappings for SunSpec compliant floating point
  * inverter models.
- * 
+ *
  * <p>
  * The floating point inverter models includes the following model IDs:
  * </p>
- * 
+ *
  * <ul>
  * <li>111</li>
  * <li>112</li>
  * <li>113</li>
  * </ul>
- * 
+ *
  * <p>
  * Note that all register addresses are encoded as an offset from the block
  * address of the model block.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 1.4
@@ -178,14 +179,14 @@ public enum FloatingPointInverterModelRegister implements SunspecModbusReference
 	private final int address;
 	private final ModbusDataType dataType;
 	private final int wordLength;
-	private final DataClassification classification;
+	private final @Nullable DataClassification classification;
 
 	private FloatingPointInverterModelRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
 	private FloatingPointInverterModelRegister(int address, ModbusDataType dataType,
-			DataClassification classification) {
+			@Nullable DataClassification classification) {
 		this(address, dataType, dataType.getWordLength(), classification);
 	}
 
@@ -194,7 +195,7 @@ public enum FloatingPointInverterModelRegister implements SunspecModbusReference
 	}
 
 	private FloatingPointInverterModelRegister(int address, ModbusDataType dataType, int wordLength,
-			DataClassification classification) {
+			@Nullable DataClassification classification) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
@@ -222,7 +223,7 @@ public enum FloatingPointInverterModelRegister implements SunspecModbusReference
 	}
 
 	@Override
-	public DataClassification getClassification() {
+	public @Nullable DataClassification getClassification() {
 		return classification;
 	}
 

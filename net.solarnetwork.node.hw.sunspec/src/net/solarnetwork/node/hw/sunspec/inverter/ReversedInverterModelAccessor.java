@@ -1,21 +1,21 @@
 /* ==================================================================
  * ReversedInverterModelAccessor.java - 15/09/2022 9:26:08 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.BitSet;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
@@ -33,8 +34,8 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
 
 /**
  * * A "reversed" inverter model accessor that swaps import/export values.
- * 
- * 
+ *
+ *
  * @author matt
  * @version 1.1
  * @since 3.1
@@ -45,7 +46,7 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param delegate
 	 *        the accessor to reverse
 	 */
@@ -70,84 +71,84 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	}
 
 	@Override
-	public Instant getDataTimestamp() {
+	public @Nullable Instant getDataTimestamp() {
 		return delegate.getDataTimestamp();
 	}
 
 	@Override
-	public Float getFrequency() {
+	public @Nullable Float getFrequency() {
 		return delegate.getFrequency();
 	}
 
 	@Override
-	public Float getCurrent() {
+	public @Nullable Float getCurrent() {
 		return delegate.getCurrent();
 	}
 
 	@Override
-	public Float getNeutralCurrent() {
+	public @Nullable Float getNeutralCurrent() {
 		return delegate.getNeutralCurrent();
 	}
 
 	@Override
-	public Float getVoltage() {
+	public @Nullable Float getVoltage() {
 		return delegate.getVoltage();
 	}
 
 	@Override
-	public Float getLineVoltage() {
+	public @Nullable Float getLineVoltage() {
 		return delegate.getLineVoltage();
 	}
 
 	@Override
-	public Float getPowerFactor() {
+	public @Nullable Float getPowerFactor() {
 		return delegate.getPowerFactor();
 	}
 
 	@Override
-	public Integer getActivePower() {
+	public @Nullable Integer getActivePower() {
 		Integer n = delegate.getActivePower();
 		return (n != null ? n * -1 : null);
 	}
 
 	@Override
-	public Integer getApparentPower() {
+	public @Nullable Integer getApparentPower() {
 		return delegate.getApparentPower();
 	}
 
 	@Override
-	public Integer getReactivePower() {
+	public @Nullable Integer getReactivePower() {
 		Integer n = delegate.getReactivePower();
 		return (n != null ? n * -1 : null);
 	}
 
 	@Override
-	public Long getActiveEnergyDelivered() {
+	public @Nullable Long getActiveEnergyDelivered() {
 		return delegate.getActiveEnergyReceived();
 	}
 
 	@Override
-	public Long getActiveEnergyReceived() {
+	public @Nullable Long getActiveEnergyReceived() {
 		return delegate.getActiveEnergyDelivered();
 	}
 
 	@Override
-	public Long getReactiveEnergyDelivered() {
+	public @Nullable Long getReactiveEnergyDelivered() {
 		return delegate.getReactiveEnergyReceived();
 	}
 
 	@Override
-	public Long getReactiveEnergyReceived() {
+	public @Nullable Long getReactiveEnergyReceived() {
 		return delegate.getReactiveEnergyDelivered();
 	}
 
 	@Override
-	public Long getApparentEnergyDelivered() {
+	public @Nullable Long getApparentEnergyDelivered() {
 		return delegate.getApparentEnergyReceived();
 	}
 
 	@Override
-	public Long getApparentEnergyReceived() {
+	public @Nullable Long getApparentEnergyReceived() {
 		return delegate.getApparentEnergyDelivered();
 	}
 
@@ -172,7 +173,7 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	}
 
 	@Override
-	public Long getActiveEnergyExported() {
+	public @Nullable Long getActiveEnergyExported() {
 		Long v = delegate.getActiveEnergyExported();
 		return (v != null ? -v : null);
 	}
@@ -183,49 +184,49 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	}
 
 	@Override
-	public Float getDcCurrent() {
+	public @Nullable Float getDcCurrent() {
 		Float v = delegate.getDcCurrent();
 		return (v != null ? -v : null);
 	}
 
 	@Override
-	public Float getDcVoltage() {
+	public @Nullable Float getDcVoltage() {
 		return delegate.getDcVoltage();
 	}
 
 	@Override
-	public Integer getDcPower() {
+	public @Nullable Integer getDcPower() {
 		Integer v = delegate.getDcPower();
 		return (v != null ? -v : null);
 	}
 
 	@Override
-	public Float getCabinetTemperature() {
+	public @Nullable Float getCabinetTemperature() {
 		return delegate.getCabinetTemperature();
 	}
 
 	@Override
-	public Float getHeatSinkTemperature() {
+	public @Nullable Float getHeatSinkTemperature() {
 		return delegate.getHeatSinkTemperature();
 	}
 
 	@Override
-	public Float getTransformerTemperature() {
+	public @Nullable Float getTransformerTemperature() {
 		return delegate.getTransformerTemperature();
 	}
 
 	@Override
-	public Float getOtherTemperature() {
+	public @Nullable Float getOtherTemperature() {
 		return delegate.getOtherTemperature();
 	}
 
 	@Override
-	public OperatingState getOperatingState() {
+	public @Nullable OperatingState getOperatingState() {
 		return delegate.getOperatingState();
 	}
 
 	@Override
-	public Integer getVendorOperatingState() {
+	public @Nullable Integer getVendorOperatingState() {
 		return delegate.getVendorOperatingState();
 	}
 
@@ -235,7 +236,7 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	}
 
 	@Override
-	public BitSet getVendorEvents() {
+	public @Nullable BitSet getVendorEvents() {
 		return delegate.getVendorEvents();
 	}
 

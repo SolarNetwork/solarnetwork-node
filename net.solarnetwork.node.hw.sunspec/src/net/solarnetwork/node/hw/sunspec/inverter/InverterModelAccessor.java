@@ -1,21 +1,21 @@
 /* ==================================================================
  * InverterModelAccessor.java - 5/10/2018 3:59:35 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.util.BitSet;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
@@ -32,7 +33,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
 
 /**
  * API for accessing inverter model data.
- * 
+ *
  * @author matt
  * @version 2.2
  */
@@ -40,144 +41,160 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 
 	/**
 	 * Get the current, in A.
-	 * 
+	 *
 	 * @return the current
 	 */
 	@Override
+	@Nullable
 	Float getCurrent();
 
 	/**
 	 * Get the voltage, in V.
-	 * 
+	 *
 	 * @return the voltage
 	 */
 	@Override
+	@Nullable
 	Float getVoltage();
 
 	/**
 	 * Get the active (real) power, in W.
-	 * 
+	 *
 	 * @return the active power
 	 */
 	@Override
+	@Nullable
 	Integer getActivePower();
 
 	/**
 	 * Get the AC frequency value, in Hz.
-	 * 
+	 *
 	 * @return the frequency
 	 */
 	@Override
+	@Nullable
 	Float getFrequency();
 
 	/**
 	 * Get the apparent power, in VA.
-	 * 
+	 *
 	 * @return the apparent power
 	 */
 	@Override
+	@Nullable
 	Integer getApparentPower();
 
 	/**
 	 * Get the reactive power, in VAR.
-	 * 
+	 *
 	 * @return the reactive power
 	 */
 	@Override
+	@Nullable
 	Integer getReactivePower();
 
 	/**
 	 * Get the power factor, as a decimal from -1.0 to 1.0.
-	 * 
+	 *
 	 * @return the power factor
 	 */
 	@Override
+	@Nullable
 	Float getPowerFactor();
 
 	/**
 	 * Get the active energy exported, in Wh.
-	 * 
+	 *
 	 * @return the exported active energy
 	 */
+	@Nullable
 	Long getActiveEnergyExported();
 
 	/**
 	 * Get the DC current, in A.
-	 * 
+	 *
 	 * @return the DC current
 	 */
+	@Nullable
 	Float getDcCurrent();
 
 	/**
 	 * Get the DC voltage, in V.
-	 * 
+	 *
 	 * @return the DC voltage
 	 */
+	@Nullable
 	Float getDcVoltage();
 
 	/**
 	 * Get the DC power, in W.
-	 * 
+	 *
 	 * @return the DC power
 	 */
+	@Nullable
 	Integer getDcPower();
 
 	/**
 	 * Get the cabinet temperature, in degrees Celsius.
-	 * 
+	 *
 	 * @return the cabinet temperature
 	 */
+	@Nullable
 	Float getCabinetTemperature();
 
 	/**
 	 * Get the heat sink temperature, in degrees Celsius.
-	 * 
+	 *
 	 * @return the heat sink temperature
 	 */
+	@Nullable
 	Float getHeatSinkTemperature();
 
 	/**
 	 * Get the transformer temperature, in degrees Celsius.
-	 * 
+	 *
 	 * @return the transformer temperature
 	 */
+	@Nullable
 	Float getTransformerTemperature();
 
 	/**
 	 * Get the vendor-specific "other" temperature, in degrees Celsius.
-	 * 
+	 *
 	 * @return the "other" temperature
 	 */
+	@Nullable
 	Float getOtherTemperature();
 
 	/**
 	 * Get the operating state.
-	 * 
+	 *
 	 * @return the state
 	 */
+	@Nullable
 	OperatingState getOperatingState();
 
 	/**
 	 * Get an optional vendor-specific operating state value.
-	 * 
+	 *
 	 * @return the vendor operating state value, or {@code null} if not
 	 *         supported or known
 	 * @since 2.2
 	 */
-	default Integer getVendorOperatingState() {
+	default @Nullable Integer getVendorOperatingState() {
 		return null;
 	}
 
 	/**
 	 * Get the active events.
-	 * 
+	 *
 	 * @return the events, never {@code null}
 	 */
 	Set<ModelEvent> getEvents();
 
 	/**
 	 * Get an optional vendor-specific bit set of event codes.
-	 * 
+	 *
 	 * <p>
 	 * Note that all SunSpec "vendor event" fields are presented as a single bit
 	 * set, with each 32-bit event group offset by 32. For example if a model
@@ -185,17 +202,17 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	 * 64 possible bits where {@code EvtVnd1}'s first bit would be index
 	 * {@code 0} and {@code EvtVnd2}'s first bit would be index {@code 32}.
 	 * </p>
-	 * 
+	 *
 	 * @return the vendor events, or {@code null} if not supported or known
 	 * @since 2.2
 	 */
-	default BitSet getVendorEvents() {
+	default @Nullable BitSet getVendorEvents() {
 		return null;
 	}
 
 	/**
 	 * Get an accessor for phase-specific measurements.
-	 * 
+	 *
 	 * @param phase
 	 *        the phase to get an accessor for
 	 * @return the accessor
@@ -206,7 +223,7 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	/**
 	 * Get a "reversed" model accessor, where import/export directions are
 	 * switched.
-	 * 
+	 *
 	 * @return the reversed accessor
 	 * @since 2.1
 	 */

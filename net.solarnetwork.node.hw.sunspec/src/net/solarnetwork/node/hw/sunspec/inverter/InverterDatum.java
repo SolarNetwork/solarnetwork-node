@@ -1,21 +1,21 @@
 /* ==================================================================
  * InverterDatum.java - 9/10/2018 10:15:56 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,6 +27,7 @@ import java.math.BigInteger;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
@@ -41,7 +42,7 @@ import net.solarnetwork.util.NumberUtils;
 
 /**
  * Datum for a SunSpec compatible inverter.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 4.2
@@ -70,7 +71,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Construct from a sample.
-	 * 
+	 *
 	 * @param data
 	 *        the sample data
 	 * @param sourceId
@@ -121,11 +122,11 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Populate DC module level properties extracted from a MPPT extension model
 	 * accessor.
-	 * 
+	 *
 	 * @param mppt
 	 *        the MPPT accessor
 	 */
-	public void populateDcModulesProperties(InverterMpptExtensionModelAccessor mppt) {
+	public void populateDcModulesProperties(@Nullable InverterMpptExtensionModelAccessor mppt) {
 		List<DcModule> modules = (mppt != null ? mppt.getDcModules() : null);
 		if ( modules == null || modules.isEmpty() ) {
 			return;
@@ -157,7 +158,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Get the raw data used to populate this datum.
-	 * 
+	 *
 	 * @return the data
 	 */
 	public InverterModelAccessor getData() {
@@ -166,12 +167,12 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Get the operating state.
-	 * 
+	 *
 	 * @return the operating state, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
-	public OperatingState getOperatingState() {
+	public @Nullable OperatingState getOperatingState() {
 		Integer code = getSamples().getStatusSampleInteger(OPERATING_STATE_KEY);
 		OperatingState result = null;
 		if ( code != null ) {
@@ -186,23 +187,23 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Set the operating state.
-	 * 
+	 *
 	 * @param state
 	 *        the state to set, or {@code null}
 	 */
-	public void setOperatingState(OperatingState state) {
+	public void setOperatingState(@Nullable OperatingState state) {
 		Integer code = (state != null ? state.getCode() : null);
 		getSamples().putStatusSampleValue(OPERATING_STATE_KEY, code);
 	}
 
 	/**
 	 * Get the device operating state.
-	 * 
+	 *
 	 * @return the device operating state, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
-	public DeviceOperatingState getDeviceOperatingState() {
+	public @Nullable DeviceOperatingState getDeviceOperatingState() {
 		DeviceOperatingState result = null;
 		Integer code = getSamples().getStatusSampleInteger(Datum.OP_STATE);
 		if ( code != null ) {
@@ -222,23 +223,23 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Set the operating state.
-	 * 
+	 *
 	 * @param state
 	 *        the state to set, or {@code null}
 	 */
-	public void setDeviceOperatingState(DeviceOperatingState state) {
+	public void setDeviceOperatingState(@Nullable DeviceOperatingState state) {
 		Integer code = (state != null ? state.getCode() : null);
 		getSamples().putStatusSampleValue(Datum.OP_STATE, code);
 	}
 
 	/**
 	 * Get the events.
-	 * 
+	 *
 	 * @return the events, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
-	public Set<ModelEvent> getEvents() {
+	public @Nullable Set<ModelEvent> getEvents() {
 		Long bitmask = getSamples().getStatusSampleLong(EVENTS_KEY);
 		Set<ModelEvent> result = null;
 		if ( bitmask != null ) {
@@ -253,23 +254,23 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Set the events.
-	 * 
+	 *
 	 * @param events
 	 *        the events to set, or {@code null}
 	 */
-	public void setEvents(Set<ModelEvent> events) {
+	public void setEvents(@Nullable Set<ModelEvent> events) {
 		long bitmask = ModelEvent.bitField32Value(events);
 		getSamples().putStatusSampleValue(EVENTS_KEY, bitmask);
 	}
 
 	/**
 	 * Get the vendor events.
-	 * 
+	 *
 	 * @return the events, or {@code null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
-	public BitSet getVendorEvents() {
+	public @Nullable BitSet getVendorEvents() {
 		String ve = getSamples().getStatusSampleString(VENDOR_EVENTS_KEY);
 		if ( ve != null ) {
 			BigInteger bi = new BigInteger(ve, 16);
@@ -280,11 +281,11 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Set the vendor events.
-	 * 
+	 *
 	 * @param events
 	 *        the vendor events
 	 */
-	public void setVendorEvents(BitSet events) {
+	public void setVendorEvents(@Nullable BitSet events) {
 		if ( events != null && events.length() > 0 ) {
 			BigInteger v = NumberUtils.bigIntegerForBitSet(events);
 			if ( v != null ) {

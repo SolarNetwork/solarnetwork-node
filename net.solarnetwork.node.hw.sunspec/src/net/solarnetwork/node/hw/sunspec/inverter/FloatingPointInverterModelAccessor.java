@@ -1,31 +1,33 @@
 /* ==================================================================
  * FloatingPointInverterModelAccessor.java - 11/10/2019 5:11:44 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -38,7 +40,7 @@ import net.solarnetwork.util.NumberUtils;
 
 /**
  * Data access object for an floating point inverter models.
- * 
+ *
  * @author matt
  * @version 3.2
  * @since 1.4
@@ -59,7 +61,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -73,12 +75,12 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * The {@link InverterModelId} class will be used as the {@code ModelId}
 	 * instance.
 	 * </p>
-	 * 
+	 *
 	 * @param data
 	 *        the overall data object
 	 * @param baseAddress
@@ -98,12 +100,12 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 
 	/**
 	 * Get a power factor value.
-	 * 
+	 *
 	 * @param ref
 	 *        the register reference to read
 	 * @return the register value, interpreted as a power factor value
 	 */
-	public Float getPowerFactorValue(ModbusReference ref) {
+	public @Nullable Float getPowerFactorValue(ModbusReference ref) {
 		Float n = getFloatValue(FloatingPointInverterModelRegister.PowerFactorAverage);
 		if ( n == null ) {
 			return null;
@@ -134,17 +136,17 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	}
 
 	@Override
-	public Float getFrequency() {
+	public @Nullable Float getFrequency() {
 		return getFloatValue(FloatingPointInverterModelRegister.Frequency);
 	}
 
 	@Override
-	public Float getCurrent() {
+	public @Nullable Float getCurrent() {
 		return getFloatValue(FloatingPointInverterModelRegister.CurrentTotal);
 	}
 
 	@Override
-	public Float getVoltage() {
+	public @Nullable Float getVoltage() {
 		final int modelId = (getModelId() != null ? getModelId().getId() : -1);
 		int count = 0;
 		float total = 0;
@@ -172,67 +174,67 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	}
 
 	@Override
-	public Float getPowerFactor() {
+	public @Nullable Float getPowerFactor() {
 		return getPowerFactorValue(FloatingPointInverterModelRegister.PowerFactorAverage);
 	}
 
 	@Override
-	public Integer getActivePower() {
+	public @Nullable Integer getActivePower() {
 		return getIntegerValue(FloatingPointInverterModelRegister.ActivePowerTotal);
 	}
 
 	@Override
-	public Integer getApparentPower() {
+	public @Nullable Integer getApparentPower() {
 		return getIntegerValue(FloatingPointInverterModelRegister.ApparentPowerTotal);
 	}
 
 	@Override
-	public Integer getReactivePower() {
+	public @Nullable Integer getReactivePower() {
 		return getIntegerValue(FloatingPointInverterModelRegister.ReactivePowerTotal);
 	}
 
 	@Override
-	public Long getActiveEnergyExported() {
+	public @Nullable Long getActiveEnergyExported() {
 		return getLongValue(FloatingPointInverterModelRegister.ActiveEnergyExportedTotal);
 	}
 
 	@Override
-	public Float getDcCurrent() {
+	public @Nullable Float getDcCurrent() {
 		return getFloatValue(FloatingPointInverterModelRegister.DcCurrentTotal);
 	}
 
 	@Override
-	public Float getDcVoltage() {
+	public @Nullable Float getDcVoltage() {
 		return getFloatValue(FloatingPointInverterModelRegister.DcVoltageTotal);
 	}
 
 	@Override
-	public Integer getDcPower() {
+	public @Nullable Integer getDcPower() {
 		return getIntegerValue(FloatingPointInverterModelRegister.DcPowerTotal);
 	}
 
 	@Override
-	public Float getCabinetTemperature() {
+	public @Nullable Float getCabinetTemperature() {
 		return getFloatValue(FloatingPointInverterModelRegister.TemperatureCabinet);
 	}
 
 	@Override
-	public Float getHeatSinkTemperature() {
+	public @Nullable Float getHeatSinkTemperature() {
 		return getFloatValue(FloatingPointInverterModelRegister.TemperatureHeatSink);
 	}
 
 	@Override
-	public Float getTransformerTemperature() {
+	public @Nullable Float getTransformerTemperature() {
 		return getFloatValue(FloatingPointInverterModelRegister.TemperatureTransformer);
 	}
 
 	@Override
-	public Float getOtherTemperature() {
+	public @Nullable Float getOtherTemperature() {
 		return getFloatValue(FloatingPointInverterModelRegister.TemperatureOther);
 	}
 
 	@Override
-	public OperatingState getOperatingState() {
+	public @Nullable OperatingState getOperatingState() {
 		Number n = getData().getNumber(FloatingPointInverterModelRegister.OperatingState,
 				getBlockAddress());
 		if ( n == null ) {
@@ -242,7 +244,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	}
 
 	@Override
-	public Integer getVendorOperatingState() {
+	public @Nullable Integer getVendorOperatingState() {
 		Number n = getData().getNumber(FloatingPointInverterModelRegister.OperatingStateVendor,
 				getBlockAddress());
 		return (n != null ? n.intValue() : null);
@@ -251,45 +253,46 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	@Override
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(FloatingPointInverterModelRegister.EventsBitmask);
-		return InverterModelEvent.forBitmask(n.longValue());
+		return InverterModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
-	public BitSet getVendorEvents() {
+	public @Nullable BitSet getVendorEvents() {
 		BitSet s = new BitSet(128);
-		Number n = getBitfield(FloatingPointInverterModelRegister.EventsVendorBitmask);
+		BigInteger n = NumberUtils.bigIntegerForNumber(
+				getBitfield(FloatingPointInverterModelRegister.EventsVendorBitmask));
 		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(NumberUtils.bigIntegerForNumber(n));
+			BitSet s1 = NumberUtils.bitSetForBigInteger(n);
 			s.or(s1);
 		}
-		n = getBitfield(FloatingPointInverterModelRegister.Events2VendorBitmask);
+		n = NumberUtils.bigIntegerForNumber(
+				getBitfield(FloatingPointInverterModelRegister.Events2VendorBitmask));
 		if ( n != null ) {
-			BitSet s1 = NumberUtils
-					.bitSetForBigInteger(NumberUtils.bigIntegerForNumber(n).shiftLeft(32));
+			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(32));
 			s.or(s1);
 		}
-		n = getBitfield(FloatingPointInverterModelRegister.Events3VendorBitmask);
+		n = NumberUtils.bigIntegerForNumber(
+				getBitfield(FloatingPointInverterModelRegister.Events3VendorBitmask));
 		if ( n != null ) {
-			BitSet s1 = NumberUtils
-					.bitSetForBigInteger(NumberUtils.bigIntegerForNumber(n).shiftLeft(64));
+			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(64));
 			s.or(s1);
 		}
-		n = getBitfield(FloatingPointInverterModelRegister.Events4VendorBitmask);
+		n = NumberUtils.bigIntegerForNumber(
+				getBitfield(FloatingPointInverterModelRegister.Events4VendorBitmask));
 		if ( n != null ) {
-			BitSet s1 = NumberUtils
-					.bitSetForBigInteger(NumberUtils.bigIntegerForNumber(n).shiftLeft(96));
+			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(96));
 			s.or(s1);
 		}
 		return (s.length() > 0 ? s : null);
 	}
 
 	@Override
-	public Float getNeutralCurrent() {
+	public @Nullable Float getNeutralCurrent() {
 		return null;
 	}
 
 	@Override
-	public Float getLineVoltage() {
+	public @Nullable Float getLineVoltage() {
 		final int modelId = (getModelId() != null ? getModelId().getId() : -1);
 		int count = 0;
 		float total = 0;
@@ -317,32 +320,32 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	}
 
 	@Override
-	public Long getActiveEnergyDelivered() {
+	public @Nullable Long getActiveEnergyDelivered() {
 		return getActiveEnergyExported();
 	}
 
 	@Override
-	public Long getActiveEnergyReceived() {
+	public @Nullable Long getActiveEnergyReceived() {
 		return null;
 	}
 
 	@Override
-	public Long getApparentEnergyDelivered() {
+	public @Nullable Long getApparentEnergyDelivered() {
 		return null;
 	}
 
 	@Override
-	public Long getApparentEnergyReceived() {
+	public @Nullable Long getApparentEnergyReceived() {
 		return null;
 	}
 
 	@Override
-	public Long getReactiveEnergyDelivered() {
+	public @Nullable Long getReactiveEnergyDelivered() {
 		return null;
 	}
 
 	@Override
-	public Long getReactiveEnergyReceived() {
+	public @Nullable Long getReactiveEnergyReceived() {
 		return null;
 	}
 
@@ -366,7 +369,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Instant getDataTimestamp() {
+		public @Nullable Instant getDataTimestamp() {
 			return FloatingPointInverterModelAccessor.this.getDataTimestamp();
 		}
 
@@ -411,12 +414,12 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getFrequency() {
+		public @Nullable Float getFrequency() {
 			return FloatingPointInverterModelAccessor.this.getFrequency();
 		}
 
 		@Override
-		public Float getCurrent() {
+		public @Nullable Float getCurrent() {
 			switch (phase) {
 				case PhaseA:
 					return getFloatValue(FloatingPointInverterModelRegister.CurrentPhaseA);
@@ -433,7 +436,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getVoltage() {
+		public @Nullable Float getVoltage() {
 			switch (phase) {
 				case PhaseA:
 					return getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseANeutral);
@@ -450,7 +453,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getPowerFactor() {
+		public @Nullable Float getPowerFactor() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -463,7 +466,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getActivePower() {
+		public @Nullable Integer getActivePower() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -476,7 +479,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getApparentPower() {
+		public @Nullable Integer getApparentPower() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -489,7 +492,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getReactivePower() {
+		public @Nullable Integer getReactivePower() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -502,7 +505,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getActiveEnergyExported() {
+		public @Nullable Long getActiveEnergyExported() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -515,7 +518,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getDcCurrent() {
+		public @Nullable Float getDcCurrent() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -528,7 +531,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getDcVoltage() {
+		public @Nullable Float getDcVoltage() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -541,7 +544,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getDcPower() {
+		public @Nullable Integer getDcPower() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -554,32 +557,32 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getCabinetTemperature() {
+		public @Nullable Float getCabinetTemperature() {
 			return FloatingPointInverterModelAccessor.this.getCabinetTemperature();
 		}
 
 		@Override
-		public Float getHeatSinkTemperature() {
+		public @Nullable Float getHeatSinkTemperature() {
 			return FloatingPointInverterModelAccessor.this.getHeatSinkTemperature();
 		}
 
 		@Override
-		public Float getTransformerTemperature() {
+		public @Nullable Float getTransformerTemperature() {
 			return FloatingPointInverterModelAccessor.this.getTransformerTemperature();
 		}
 
 		@Override
-		public Float getOtherTemperature() {
+		public @Nullable Float getOtherTemperature() {
 			return FloatingPointInverterModelAccessor.this.getOtherTemperature();
 		}
 
 		@Override
-		public OperatingState getOperatingState() {
+		public @Nullable OperatingState getOperatingState() {
 			return FloatingPointInverterModelAccessor.this.getOperatingState();
 		}
 
 		@Override
-		public Integer getVendorOperatingState() {
+		public @Nullable Integer getVendorOperatingState() {
 			return FloatingPointInverterModelAccessor.this.getVendorOperatingState();
 		}
 
@@ -589,17 +592,17 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public BitSet getVendorEvents() {
+		public @Nullable BitSet getVendorEvents() {
 			return FloatingPointInverterModelAccessor.this.getVendorEvents();
 		}
 
 		@Override
-		public Float getNeutralCurrent() {
+		public @Nullable Float getNeutralCurrent() {
 			return FloatingPointInverterModelAccessor.this.getNeutralCurrent();
 		}
 
 		@Override
-		public Float getLineVoltage() {
+		public @Nullable Float getLineVoltage() {
 			switch (phase) {
 				case PhaseA:
 					return getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseAPhaseB);
@@ -616,7 +619,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getActiveEnergyDelivered() {
+		public @Nullable Long getActiveEnergyDelivered() {
 			switch (phase) {
 				case PhaseA:
 				case PhaseB:
@@ -629,27 +632,27 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getActiveEnergyReceived() {
+		public @Nullable Long getActiveEnergyReceived() {
 			return null;
 		}
 
 		@Override
-		public Long getApparentEnergyDelivered() {
+		public @Nullable Long getApparentEnergyDelivered() {
 			return null;
 		}
 
 		@Override
-		public Long getApparentEnergyReceived() {
+		public @Nullable Long getApparentEnergyReceived() {
 			return null;
 		}
 
 		@Override
-		public Long getReactiveEnergyDelivered() {
+		public @Nullable Long getReactiveEnergyDelivered() {
 			return null;
 		}
 
 		@Override
-		public Long getReactiveEnergyReceived() {
+		public @Nullable Long getReactiveEnergyReceived() {
 			return null;
 		}
 

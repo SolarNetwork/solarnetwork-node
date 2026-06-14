@@ -23,9 +23,9 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -96,7 +96,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		Integer n = getIntegerValue(InverterMpptExtensionModelRegister.ModuleCount);
 		final int count = (n != null ? n.intValue() : 0);
 		if ( count < 1 ) {
-			return Collections.emptyList();
+			return List.of();
 		}
 		List<DcModule> result = new ArrayList<>(count);
 		for ( int i = 0; i < count; i++ ) {
@@ -108,11 +108,11 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(InverterMpptExtensionModelRegister.EventsBitmask, getBlockAddress());
-		return InverterMpptExtensionModelEvent.forBitmask(n.longValue());
+		return InverterMpptExtensionModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
-	public Integer getTimestampPeriod() {
+	public @Nullable Integer getTimestampPeriod() {
 		return getIntegerValue(InverterMpptExtensionModelRegister.TimestampPeriod);
 	}
 
@@ -126,19 +126,19 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getInputId() {
+		public @Nullable Integer getInputId() {
 			return getIntegerValue(InverterMpptExtensionModelRegister.ModuleInputId,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
 		}
 
 		@Override
-		public String getInputName() {
+		public @Nullable String getInputName() {
 			return getData().getLatin1String(InverterMpptExtensionModelRegister.ModuleName,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH, true);
 		}
 
 		@Override
-		public Float getDCCurrent() {
+		public @Nullable Float getDCCurrent() {
 			Number n = getScaledValue(InverterMpptExtensionModelRegister.ModuleDcCurrent,
 					InverterMpptExtensionModelRegister.ScaleFactorDcCurrent,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH,
@@ -147,7 +147,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Float getDCVoltage() {
+		public @Nullable Float getDCVoltage() {
 			Number n = getScaledValue(InverterMpptExtensionModelRegister.ModuleDcVoltage,
 					InverterMpptExtensionModelRegister.ScaleFactorDcVoltage,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH,
@@ -156,7 +156,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Integer getDCPower() {
+		public @Nullable Integer getDCPower() {
 			Number n = getScaledValue(InverterMpptExtensionModelRegister.ModuleDcPower,
 					InverterMpptExtensionModelRegister.ScaleFactorDcVoltage,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH,
@@ -165,7 +165,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getDCEnergyDelivered() {
+		public @Nullable Long getDCEnergyDelivered() {
 			Number n = getScaledValue(InverterMpptExtensionModelRegister.ModuleLifetimeEnergy,
 					InverterMpptExtensionModelRegister.ScaleFactorDcEnergy,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH,
@@ -174,19 +174,19 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Long getDataTimestamp() {
+		public @Nullable Long getDataTimestamp() {
 			return getLongValue(InverterMpptExtensionModelRegister.ModuleTimestamp,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
 		}
 
 		@Override
-		public Float getTemperature() {
+		public @Nullable Float getTemperature() {
 			return getFloatValue(InverterMpptExtensionModelRegister.ModuleTemperature,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
 		}
 
 		@Override
-		public OperatingState getOperatingState() {
+		public @Nullable OperatingState getOperatingState() {
 			Integer n = getIntegerValue(InverterMpptExtensionModelRegister.ModuleOperatingState,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
 			if ( n == null ) {
@@ -199,7 +199,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		public Set<ModelEvent> getEvents() {
 			Number n = getBitfield(InverterMpptExtensionModelRegister.ModuleEventsBitmask,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
-			return InverterMpptExtensionModelEvent.forBitmask(n.longValue());
+			return InverterMpptExtensionModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 	}
