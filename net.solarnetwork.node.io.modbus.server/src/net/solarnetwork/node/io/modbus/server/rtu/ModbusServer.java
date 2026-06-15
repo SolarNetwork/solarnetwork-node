@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.modbus.server.rtu;
 
 import static net.solarnetwork.service.OptionalService.requiredService;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.io.modbus.ModbusMessage;
 import net.solarnetwork.io.modbus.ModbusValidationException;
@@ -71,7 +73,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 * @param connectionProvider
 	 *        the connection provider
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusServer(Executor executor,
 			OptionalService<SerialConnectionProvider> connectionProvider) {
@@ -88,7 +90,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 * @param registers
 	 *        the register data map to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusServer(Executor executor, OptionalService<SerialConnectionProvider> connectionProvider,
 			ConcurrentMap<Integer, ModbusRegisterData> registers) {
@@ -131,8 +133,10 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	@Override
 	protected NettyRtuModbusServer startServer() throws IOException {
 		final SerialConnectionProvider provider = provider();
-		NettyRtuModbusServer server = new NettyRtuModbusServer(provider.serialPortName(),
-				provider.serialParameters(), provider.serialPortProvider());
+		NettyRtuModbusServer server = new NettyRtuModbusServer(
+				nonnull(provider.serialPortName(), "Serial port name"),
+				nonnull(provider.serialParameters(), "Serial parameters"),
+				provider.serialPortProvider());
 		server.setMessageHandler(handler);
 		server.setWireLogging(isWireLogging());
 		server.start();
@@ -180,7 +184,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 *
 	 * @return the provider
 	 */
-	public OptionalService<SerialConnectionProvider> getConnectionProvider() {
+	public final OptionalService<SerialConnectionProvider> getConnectionProvider() {
 		return connectionProvider;
 	}
 
@@ -191,7 +195,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 *         {@code connectionProvider} also implements
 	 *         {@link FilterableService}
 	 */
-	public String getSerialConnectionProviderUid() {
+	public final @Nullable String getSerialConnectionProviderUid() {
 		String uid = FilterableService.filterPropValue(connectionProvider, "uid");
 		if ( uid != null && uid.trim().isEmpty() ) {
 			uid = null;
@@ -207,7 +211,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 *        {@code baconnectionProvidercnetNetwork} also implements
 	 *        {@link FilterableService}
 	 */
-	public void setSerialConnectionProviderUid(String uid) {
+	public final void setSerialConnectionProviderUid(@Nullable String uid) {
 		FilterableService.setFilterProp(connectionProvider, "uid", uid);
 	}
 
@@ -221,7 +225,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 *
 	 * @return the {@link SerialConnectionProvider} UID
 	 */
-	public String getBindAddress() {
+	public final @Nullable String getBindAddress() {
 		return getSerialConnectionProviderUid();
 	}
 
@@ -237,7 +241,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 *        the address to set, which will be treated as the
 	 *        {@link SerialConnectionProvider} UID
 	 */
-	public void setBindAddress(String bindAddress) {
+	public final void setBindAddress(@Nullable String bindAddress) {
 		setSerialConnectionProviderUid(bindAddress);
 	}
 
@@ -251,7 +255,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 *
 	 * @return {@code null}
 	 */
-	public Integer getPort() {
+	public final @Nullable Integer getPort() {
 		return null;
 	}
 
@@ -266,7 +270,7 @@ public class ModbusServer extends BaseModbusServer<NettyRtuModbusServer> {
 	 * @param port
 	 *        will be ignored
 	 */
-	public void setPort(Integer port) {
+	public final void setPort(@Nullable Integer port) {
 		// ignored
 	}
 

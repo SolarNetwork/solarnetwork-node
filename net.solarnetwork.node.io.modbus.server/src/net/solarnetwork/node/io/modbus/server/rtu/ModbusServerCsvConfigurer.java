@@ -43,7 +43,7 @@ public class ModbusServerCsvConfigurer extends BaseModbusServerCsvConfigurer {
 	 * @param identityService
 	 *        the identity service
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusServerCsvConfigurer(SettingsService settingsService,
 			OptionalService<IdentityService> identityService) {
