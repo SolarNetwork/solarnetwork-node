@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.modbus.nifty.tcp;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.nio.NioIoHandler;
@@ -102,7 +103,7 @@ public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork<NettyTcpMo
 	 *
 	 * @return the host
 	 */
-	public String getHost() {
+	public @Nullable String getHost() {
 		return config.getHost();
 	}
 
@@ -116,7 +117,10 @@ public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork<NettyTcpMo
 	 * @param host
 	 *        the host to connect to
 	 */
-	public void setHost(String host) {
+	public void setHost(@Nullable String host) {
+		if ( host == null ) {
+			return;
+		}
 		config.setHost(host);
 	}
 
