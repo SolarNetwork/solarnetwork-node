@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.nifty.pjc;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.io.modbus.rtu.netty.NettyRtuModbusClientConfig;
 import net.solarnetwork.io.modbus.serial.BasicSerialParameters;
 import net.solarnetwork.io.modbus.serial.SerialParity;
@@ -67,7 +68,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the name
 	 */
-	public String getPortName() {
+	public final @Nullable String getPortName() {
 		return config.getName();
 	}
 
@@ -81,7 +82,10 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param name
 	 *        the name to set, e.g. {@literal /dev/ttyUSB0}
 	 */
-	public void setPortName(String name) {
+	public final void setPortName(@Nullable String name) {
+		if ( name == null ) {
+			return;
+		}
 		config.setName(name);
 	}
 
@@ -94,7 +98,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the number of data bits; defaults to {@literal 8}
 	 */
-	public int getDatabits() {
+	public final int getDatabits() {
 		return getDataBits();
 	}
 
@@ -108,7 +112,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param dataBits
 	 *        the number of data bits to use
 	 */
-	public void setDatabits(int dataBits) {
+	public final void setDatabits(int dataBits) {
 		setDataBits(dataBits);
 	}
 
@@ -121,7 +125,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the stop bits; defaults to {@literal 1}
 	 */
-	public int getStopbits() {
+	public final int getStopbits() {
 		SerialStopBits s = getStopBits();
 		return (s != null ? s : SerialStopBits.One).getCode();
 	}
@@ -136,7 +140,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param stopBits
 	 *        the number of stop bits to use
 	 */
-	public void setStopbits(int stopBits) {
+	public final void setStopbits(int stopBits) {
 		SerialStopBits s;
 		try {
 			s = SerialStopBits.forCode(stopBits);
@@ -204,7 +208,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the input flow control
 	 */
-	public int getFlowControlIn() {
+	public final int getFlowControlIn() {
 		return flowControlIn;
 	}
 
@@ -214,7 +218,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param flowControlIn
 	 *        the flow control to set
 	 */
-	public void setFlowControlIn(int flowControlIn) {
+	public final void setFlowControlIn(int flowControlIn) {
 		this.flowControlIn = flowControlIn;
 	}
 
@@ -223,7 +227,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the input flow control
 	 */
-	public String getFlowControlInString() {
+	public final String getFlowControlInString() {
 		return toFlowControlName(getFlowControlIn());
 	}
 
@@ -233,7 +237,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param flowControlIn
 	 *        the flow control to set
 	 */
-	public void setFlowControlInString(String flowControlIn) {
+	public final void setFlowControlInString(String flowControlIn) {
 		setFlowControlIn(flowControlValue(flowControlIn));
 	}
 
@@ -242,7 +246,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the output flow control
 	 */
-	public int getFlowControlOut() {
+	public final int getFlowControlOut() {
 		return flowControlOut;
 	}
 
@@ -252,7 +256,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param flowControlOut
 	 *        the output flow control to set
 	 */
-	public void setFlowControlOut(int flowControlOut) {
+	public final void setFlowControlOut(int flowControlOut) {
 		this.flowControlOut = flowControlOut;
 	}
 
@@ -261,7 +265,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the output flow control
 	 */
-	public String getFlowControlOutString() {
+	public final String getFlowControlOutString() {
 		return toFlowControlName(getFlowControlOut());
 	}
 
@@ -271,7 +275,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param flowControlOut
 	 *        the output flow control to set
 	 */
-	public void setFlowControlOutString(String flowControlOut) {
+	public final void setFlowControlOutString(String flowControlOut) {
 		setFlowControlOut(flowControlValue(flowControlOut));
 	}
 
@@ -281,7 +285,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param flowControl
 	 *        the flow control
 	 */
-	public void setFlowControl(int flowControl) {
+	public final void setFlowControl(int flowControl) {
 		if ( (flowControl & SerialPort.FLOWCONTROL_XONXOFF_IN) == SerialPort.FLOWCONTROL_XONXOFF_IN ) {
 			flowControlIn = SerialPort.FLOWCONTROL_XONXOFF_IN;
 		} else if ( (flowControl
@@ -306,7 +310,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @return the parity, or {@literal null} if not supported
 	 * @see #setParityString(String)
 	 */
-	public String getParityString() {
+	public final @Nullable String getParityString() {
 		switch (getParity()) {
 			case None:
 				return "none";
@@ -338,7 +342,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param parity
 	 *        the parity value to set
 	 */
-	public void setParityString(String parity) {
+	public final void setParityString(String parity) {
 		parity = parity.toLowerCase();
 		if ( parity.equals("none") ) {
 			setParity(SerialParity.None);
@@ -358,7 +362,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 *
 	 * @return the receive timeout; defaults to {@literal -1}
 	 */
-	public int getReceiveTimeout() {
+	public final int getReceiveTimeout() {
 		return getReadTimeout();
 	}
 
@@ -376,7 +380,7 @@ public class NiftySerialParameters extends BasicSerialParameters {
 	 * @param receiveTimeout
 	 *        the receive timeout to use
 	 */
-	public void setReceiveTimeout(int receiveTimeout) {
+	public final void setReceiveTimeout(int receiveTimeout) {
 		setReadTimeout(receiveTimeout);
 	}
 
