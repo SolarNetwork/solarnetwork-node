@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.dao;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.BasicEntity;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
 import net.solarnetwork.util.ObjectUtils;
@@ -38,7 +39,7 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	private static final long serialVersionUID = 4674814596838327572L;
 
 	/** The modification date. */
-	private Instant modified;
+	private @Nullable Instant modified;
 
 	/** The register 16-bit value. */
 	private short value;
@@ -60,10 +61,10 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 *        the value
 	 * @return the new instance
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument except {@code timestamp} is {@code null}
 	 */
 	public static ModbusRegisterEntity newRegisterEntity(String serverId, int unitId,
-			ModbusRegisterBlockType blockType, int address, Instant timestamp, short value) {
+			ModbusRegisterBlockType blockType, int address, @Nullable Instant timestamp, short value) {
 		ModbusRegisterEntity result = new ModbusRegisterEntity(
 				new ModbusRegisterKey(serverId, unitId, blockType, address), timestamp);
 		result.setModified(timestamp);
@@ -79,9 +80,9 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 * @param created
 	 *        the creation date
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if {@code id} is {@code null}
 	 */
-	public ModbusRegisterEntity(ModbusRegisterKey id, Instant created) {
+	public ModbusRegisterEntity(ModbusRegisterKey id, @Nullable Instant created) {
 		super(ObjectUtils.requireNonNullArgument(id, "id"), created);
 	}
 
@@ -114,8 +115,8 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 *
 	 * @return the server identifier
 	 */
-	public String getServerId() {
-		return getId().getServerId();
+	public final @Nullable String getServerId() {
+		return id().getServerId();
 	}
 
 	/**
@@ -123,8 +124,8 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 *
 	 * @return the unit ID
 	 */
-	public int getUnitId() {
-		return getId().getUnitId();
+	public final int getUnitId() {
+		return id().getUnitId();
 	}
 
 	/**
@@ -132,8 +133,8 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 *
 	 * @return the block type
 	 */
-	public ModbusRegisterBlockType getBlockType() {
-		return getId().getBlockType();
+	public final ModbusRegisterBlockType getBlockType() {
+		return id().getBlockType();
 	}
 
 	/**
@@ -141,16 +142,16 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 *
 	 * @return the register address
 	 */
-	public int getAddress() {
-		return getId().getAddress();
+	public final int getAddress() {
+		return id().getAddress();
 	}
 
 	/**
 	 * Get the modification date.
 	 *
-	 * @return the modified date, or {@literal null}
+	 * @return the modified date, or {@code null}
 	 */
-	public Instant getModified() {
+	public final @Nullable Instant getModified() {
 		return modified;
 	}
 
@@ -160,7 +161,7 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 * @param modified
 	 *        the modified to set
 	 */
-	public void setModified(Instant modified) {
+	public final void setModified(@Nullable Instant modified) {
 		this.modified = modified;
 	}
 
@@ -169,7 +170,7 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 *
 	 * @return the value
 	 */
-	public short getValue() {
+	public final short getValue() {
 		return value;
 	}
 
@@ -179,7 +180,7 @@ public final class ModbusRegisterEntity extends BasicEntity<ModbusRegisterKey> i
 	 * @param value
 	 *        the value to set
 	 */
-	public void setValue(short value) {
+	public final void setValue(short value) {
 		this.value = value;
 	}
 

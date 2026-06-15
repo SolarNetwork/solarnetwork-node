@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.modbus.server.dao;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Basic implementation of {@link ModbusRegisterFilter}.
  *
@@ -30,7 +32,7 @@ package net.solarnetwork.node.io.modbus.server.dao;
  */
 public class BasicModbusRegisterFilter implements ModbusRegisterFilter {
 
-	private String serverId;
+	private @Nullable String serverId;
 
 	/**
 	 * Constructor.
@@ -46,14 +48,14 @@ public class BasicModbusRegisterFilter implements ModbusRegisterFilter {
 	 *        the server ID
 	 * @return the new filter instance
 	 */
-	public static BasicModbusRegisterFilter forServerId(String serverId) {
+	public static BasicModbusRegisterFilter forServerId(@Nullable String serverId) {
 		BasicModbusRegisterFilter f = new BasicModbusRegisterFilter();
 		f.setServerId(serverId);
 		return f;
 	}
 
 	@Override
-	public String getServerId() {
+	public @Nullable String getServerId() {
 		return serverId;
 	}
 
@@ -63,7 +65,7 @@ public class BasicModbusRegisterFilter implements ModbusRegisterFilter {
 	 * @param serverId
 	 *        the server ID to set
 	 */
-	public final void setServerId(String serverId) {
+	public final void setServerId(@Nullable String serverId) {
 		this.serverId = serverId;
 	}
 

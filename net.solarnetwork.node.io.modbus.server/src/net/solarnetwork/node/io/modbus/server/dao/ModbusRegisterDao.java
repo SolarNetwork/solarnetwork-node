@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.dao;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.FilterableDao;
 import net.solarnetwork.dao.GenericDao;
@@ -58,11 +59,12 @@ public interface ModbusRegisterDao extends GenericDao<ModbusRegisterEntity, Modb
 	 * @return the modification date, or {@code null} if no date available
 	 * @since 1.2
 	 */
-	default Instant getMostRecentModificationDate() {
+	default @Nullable Instant getMostRecentModificationDate() {
 		Instant result = null;
 		for ( ModbusRegisterEntity s : getAll(null) ) {
-			if ( result == null || s.getModified().isAfter(result) ) {
-				result = s.getModified();
+			final Instant mod = s.getModified();
+			if ( result == null || (mod != null && mod.isAfter(result)) ) {
+				result = mod;
 			}
 		}
 		return result;

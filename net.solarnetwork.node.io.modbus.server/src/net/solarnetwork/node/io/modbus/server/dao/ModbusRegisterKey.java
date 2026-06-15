@@ -61,7 +61,7 @@ public final class ModbusRegisterKey implements Comparable<ModbusRegisterKey>, S
 	 * @param address
 	 *        the register address
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusRegisterKey(String serverId, int unitId, ModbusRegisterBlockType blockType,
 			int address) {
