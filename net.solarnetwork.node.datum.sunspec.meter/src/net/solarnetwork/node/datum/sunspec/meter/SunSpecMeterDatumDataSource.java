@@ -1,21 +1,21 @@
 /* ==================================================================
  * SunSpecMeterDatumDataSource.java - 23/05/2018 6:45:54 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -43,7 +44,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible power meter.
- * 
+ *
  * @author matt
  * @version 2.1
  */
@@ -62,7 +63,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -86,7 +87,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 	}
 
 	@Override
-	public AcDcEnergyDatum readCurrentDatum() {
+	public @Nullable AcDcEnergyDatum readCurrentDatum() {
 		final String sourceId = resolvePlaceholders(getSourceId());
 		final ModelData currSample;
 		try {
@@ -100,6 +101,9 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 			return null;
 		}
 		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
+		if ( data == null ) {
+			return null;
+		}
 		MeterDatum d = new MeterDatum(data, sourceId, AcPhase.Total, this.backwards);
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(data);
@@ -161,7 +165,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 	}
 
 	@Override
-	protected String getSampleMessage(ModelData sample) {
+	protected String getSampleMessage(@Nullable ModelData sample) {
 		if ( sample == null || sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
@@ -180,7 +184,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 
 	/**
 	 * Get the "backwards" current direction flag.
-	 * 
+	 *
 	 * @return {@literal true} to swap energy delivered and received values in
 	 *         returned datum
 	 */
@@ -190,7 +194,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 
 	/**
 	 * Toggle the "backwards" current direction flag.
-	 * 
+	 *
 	 * @param backwards
 	 *        {@literal true} to swap energy delivered and received values
 	 */
@@ -200,7 +204,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 
 	/**
 	 * Toggle the inclusion of phase measurement properties in collected datum.
-	 * 
+	 *
 	 * @param includePhaseMeasurements
 	 *        {@literal true} to collect phase measurements
 	 * @since 1.2
