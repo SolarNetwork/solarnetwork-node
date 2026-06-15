@@ -35,6 +35,7 @@ import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeH
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.unsignedIntArray;
 import static net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork.PUBLISH_MODBUS_CLI_COMMANDS_TOPIC;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -463,7 +464,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count)
 			throws IOException {
 		short[] result = readWords(function, address, count);
-		return unsignedIntArray(result);
+		return nonnull(unsignedIntArray(result), "Data");
 	}
 
 	private static BigInteger toBooleanBits(short[] values) {
@@ -630,7 +631,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	@Override
 	public void writeWords(ModbusWriteFunction function, int address, int[] values) throws IOException {
-		writeWords(function, address, shortArray(values));
+		writeWords(function, address, nonnull(shortArray(values), "Values"));
 	}
 
 	@Override

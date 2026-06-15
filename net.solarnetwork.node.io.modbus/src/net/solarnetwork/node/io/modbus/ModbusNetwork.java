@@ -74,8 +74,10 @@ public interface ModbusNetwork extends Identifiable {
 	 *
 	 * @param unitId
 	 *        the Modbus unit ID to connect with
-	 * @return a new connection
+	 * @return a new connection, or {@code null} if the connection cannot be
+	 *         created
 	 */
+	@Nullable
 	ModbusConnection createConnection(int unitId);
 
 }
