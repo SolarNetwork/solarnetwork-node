@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
@@ -64,7 +65,7 @@ import net.solarnetwork.util.StringUtils;
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private Set<InverterOperatingState> ignoreStates = EnumSet.of(InverterOperatingState.Off,
+	private @Nullable Set<InverterOperatingState> ignoreStates = EnumSet.of(InverterOperatingState.Off,
 			InverterOperatingState.Sleeping, InverterOperatingState.Standby);
 	private boolean includePhaseMeasurements = false;
 
@@ -96,7 +97,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
+	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
 			throws IOException {
 		Map<String, Object> result = super.readDeviceInfo(connection, data);
 		if ( result == null ) {
@@ -123,7 +124,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	}
 
 	@Override
-	public AcDcEnergyDatum readCurrentDatum() {
+	public @Nullable AcDcEnergyDatum readCurrentDatum() {
 		final String sourceId = resolvePlaceholders(getSourceId());
 		final ModelData currSample;
 		try {
@@ -210,7 +211,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	}
 
 	@Override
-	protected String getStatusMessage(ModelData sample) {
+	protected String getStatusMessage(@Nullable ModelData sample) {
 		StringBuilder buf = new StringBuilder();
 		try {
 			InverterModelAccessor data = (sample != null
@@ -238,7 +239,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	}
 
 	@Override
-	protected String getSampleMessage(ModelData sample) {
+	protected String getSampleMessage(@Nullable ModelData sample) {
 		if ( sample == null || sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
@@ -287,7 +288,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	 * @param states
 	 *        the states to ignore
 	 */
-	public void setIgnoreStates(Set<InverterOperatingState> states) {
+	public void setIgnoreStates(@Nullable Set<InverterOperatingState> states) {
 		this.ignoreStates = states;
 	}
 
@@ -298,7 +299,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	 * @param states
 	 *        the state names to set
 	 */
-	public void setIgnoreStatesValue(String states) {
+	public void setIgnoreStatesValue(@Nullable String states) {
 		Set<String> names = StringUtils.commaDelimitedStringToSet(states);
 		Set<InverterOperatingState> result = new LinkedHashSet<>();
 		if ( names != null && !names.isEmpty() ) {
@@ -323,7 +324,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	 *
 	 * @return the state names list
 	 */
-	public String getIgnoreStatesValue() {
+	public @Nullable String getIgnoreStatesValue() {
 		return StringUtils.commaDelimitedStringFromCollection(ignoreStates);
 	}
 

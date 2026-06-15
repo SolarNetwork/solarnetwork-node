@@ -79,7 +79,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	 * @param phase
 	 *        the phase to associate with the data
 	 */
-	public InverterDatum(InverterModelAccessor data, String sourceId, AcPhase phase) {
+	public InverterDatum(InverterModelAccessor data, @Nullable String sourceId, AcPhase phase) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data, phase);
