@@ -40,6 +40,7 @@ public interface SerialConnectionProvider extends Identifiable {
 	 *
 	 * @return the port device name
 	 */
+	@Nullable
 	String serialPortName();
 
 	/**
