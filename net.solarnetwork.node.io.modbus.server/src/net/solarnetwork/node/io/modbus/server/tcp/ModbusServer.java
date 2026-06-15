@@ -77,7 +77,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 * @param executor
 	 *        the executor to handle client connections with
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusServer(Executor executor) {
 		this(executor, new ConcurrentHashMap<>(2, 0.9f, 2));
@@ -91,7 +91,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 * @param registers
 	 *        the register data map to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusServer(Executor executor, ConcurrentMap<Integer, ModbusRegisterData> registers) {
 		super(executor, registers);
@@ -141,7 +141,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 *
 	 * @return the address; defaults to {@link #DEFAULT_BIND_ADDRESS}
 	 */
-	public String getBindAddress() {
+	public final String getBindAddress() {
 		return bindAddress;
 	}
 
@@ -149,10 +149,12 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 * Set the address to bind to.
 	 *
 	 * @param bindAddress
-	 *        the address to set
+	 *        the address to set; if {@code null} or empty then
+	 *        {@link #DEFAULT_BIND_ADDRESS} will be used
 	 */
-	public void setBindAddress(String bindAddress) {
-		this.bindAddress = bindAddress;
+	public final void setBindAddress(String bindAddress) {
+		this.bindAddress = (bindAddress != null && !bindAddress.isEmpty() ? bindAddress
+				: DEFAULT_BIND_ADDRESS);
 	}
 
 	/**
@@ -162,7 +164,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 * @deprecated only returns 0 now
 	 */
 	@Deprecated
-	public int getBacklog() {
+	public final int getBacklog() {
 		return 0;
 	}
 
@@ -174,7 +176,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 * @deprecated does not do anything anymore
 	 */
 	@Deprecated
-	public void setBacklog(int backlog) {
+	public final void setBacklog(int backlog) {
 		// nothing
 	}
 
@@ -183,7 +185,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 *
 	 * @return the port; defaults to {@link #DEFAULT_PORT}
 	 */
-	public int getPort() {
+	public final int getPort() {
 		return port;
 	}
 
@@ -193,7 +195,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 * @param port
 	 *        the port to set
 	 */
-	public void setPort(int port) {
+	public final void setPort(int port) {
 		this.port = port;
 	}
 
@@ -204,7 +206,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 *         milliseconds; defaults to {@link #DEFAULT_PENDING_MESSAGE_TTL}
 	 * @since 4.0
 	 */
-	public long getPendingMessageTtl() {
+	public final long getPendingMessageTtl() {
 		return pendingMessageTtl;
 	}
 
@@ -221,7 +223,7 @@ public class ModbusServer extends BaseModbusServer<NettyTcpModbusServer> {
 	 *        the pending Modbus message time-to-live, in milliseconds
 	 * @since 4.0
 	 */
-	public void setPendingMessageTtl(long pendingMessageTtl) {
+	public final void setPendingMessageTtl(long pendingMessageTtl) {
 		this.pendingMessageTtl = pendingMessageTtl;
 	}
 
