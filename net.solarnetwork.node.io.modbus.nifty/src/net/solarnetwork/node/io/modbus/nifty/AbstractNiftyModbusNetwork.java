@@ -33,6 +33,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -106,21 +107,21 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	protected final C config;
 
 	/** The Modbus client. */
-	protected ModbusClient controller;
+	protected @Nullable ModbusClient controller;
 
-	private EventLoopGroup eventLoopGroup;
+	private @Nullable EventLoopGroup eventLoopGroup;
 	private int eventLoopGroupMaxThreadCount;
 	private int keepOpenSeconds = DEFAULT_KEEP_OPEN_SECONDS;
 	private long replyTimeout = DEFAULT_REPLY_TIMEOUT;
 	private boolean wireLogging = false;
 
-	private OptionalService<OperationalModesService> opModesService;
+	private @Nullable OptionalService<OperationalModesService> opModesService;
 	private boolean publishCliCommandsMode;
 	private boolean publishCliCommandMessages;
-	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
+	private @Nullable OptionalService<SimpMessageSendingOperations> messageSendingOps;
 
-	private UUID opModeRegistrationId;
-	private NiftyCachedModbusConnection cachedConnection;
+	private @Nullable UUID opModeRegistrationId;
+	private @Nullable NiftyCachedModbusConnection cachedConnection;
 
 	/**
 	 * Constructor.
@@ -171,7 +172,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	}
 
 	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
+	public synchronized void configurationChanged(@Nullable Map<String, Object> properties) {
 		try {
 			if ( eventLoopGroup != null ) {
 				eventLoopGroup.shutdownGracefully();
@@ -223,7 +224,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *
 	 * @return the event loop group, or {@literal null}
 	 */
-	protected EventLoopGroup eventLoopGroup() {
+	protected @Nullable EventLoopGroup eventLoopGroup() {
 		return eventLoopGroup;
 	}
 
@@ -270,7 +271,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	}
 
 	@Override
-	public synchronized ModbusConnection createConnection(int unitId) {
+	public synchronized @Nullable ModbusConnection createConnection(int unitId) {
 		if ( !isConfigured() || controller == null ) {
 			return null;
 		}
@@ -334,7 +335,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @return the number of seconds; defaults to
 	 *         {@link #DEFAULT_KEEP_OPEN_SECONDS}
 	 */
-	public int getKeepOpenSeconds() {
+	public final int getKeepOpenSeconds() {
 		return keepOpenSeconds;
 	}
 
@@ -346,7 +347,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *        the number of seconds, or anything less than {@literal 1} to not
 	 *        keep connections open
 	 */
-	public void setKeepOpenSeconds(int keepOpenSeconds) {
+	public final void setKeepOpenSeconds(int keepOpenSeconds) {
 		this.keepOpenSeconds = keepOpenSeconds;
 	}
 
@@ -355,7 +356,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *
 	 * @return {@literal true} if wire-level logging is supported
 	 */
-	public boolean isWireLogging() {
+	public final boolean isWireLogging() {
 		return wireLogging;
 	}
 
@@ -374,7 +375,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @param wireLogging
 	 *        {@literal true} if wire-level logging is supported
 	 */
-	public void setWireLogging(boolean wireLogging) {
+	public final void setWireLogging(boolean wireLogging) {
 		this.wireLogging = wireLogging;
 	}
 
@@ -384,7 +385,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @return the maximum thread count; defaults to
 	 *         {@link #DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT}
 	 */
-	public int getEventLoopGroupMaxThreadCount() {
+	public final int getEventLoopGroupMaxThreadCount() {
 		return eventLoopGroupMaxThreadCount;
 	}
 
@@ -394,7 +395,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @param eventLoopGroupMaxThreadCount
 	 *        the maximum thread count to set
 	 */
-	public void setEventLoopGroupMaxThreadCount(int eventLoopGroupMaxThreadCount) {
+	public final void setEventLoopGroupMaxThreadCount(int eventLoopGroupMaxThreadCount) {
 		this.eventLoopGroupMaxThreadCount = eventLoopGroupMaxThreadCount;
 	}
 
@@ -403,7 +404,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *
 	 * @return the reply timeout, in milliseconds; defaults to
 	 */
-	public long getReplyTimeout() {
+	public final long getReplyTimeout() {
 		return replyTimeout;
 	}
 
@@ -413,7 +414,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @param replyTimeout
 	 *        the reply timeout to set, in milliseconds
 	 */
-	public void setReplyTimeout(long replyTimeout) {
+	public final void setReplyTimeout(long replyTimeout) {
 		this.replyTimeout = replyTimeout;
 	}
 
@@ -422,7 +423,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *
 	 * @return the opModesService
 	 */
-	public OptionalService<OperationalModesService> getOpModesService() {
+	public final @Nullable OptionalService<OperationalModesService> getOpModesService() {
 		return opModesService;
 	}
 
@@ -432,7 +433,8 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @param opModesService
 	 *        the opModesService to set
 	 */
-	public void setOpModesService(OptionalService<OperationalModesService> opModesService) {
+	public final void setOpModesService(
+			@Nullable OptionalService<OperationalModesService> opModesService) {
 		this.opModesService = opModesService;
 	}
 
@@ -442,7 +444,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @return {@literal true} to publish CLI command messages
 	 * @since 1.1
 	 */
-	public boolean isPublishCliCommandMessages() {
+	public final boolean isPublishCliCommandMessages() {
 		return publishCliCommandMessages;
 	}
 
@@ -455,7 +457,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *        configured
 	 * @since 1.1
 	 */
-	public void setPublishCliCommandMessages(boolean publishCliCommandMessages) {
+	public final void setPublishCliCommandMessages(boolean publishCliCommandMessages) {
 		this.publishCliCommandMessages = publishCliCommandMessages;
 	}
 
@@ -465,7 +467,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 * @return the message sending operations
 	 * @since 1.1
 	 */
-	public OptionalService<SimpMessageSendingOperations> getMessageSendingOps() {
+	public final @Nullable OptionalService<SimpMessageSendingOperations> getMessageSendingOps() {
 		return messageSendingOps;
 	}
 
@@ -477,7 +479,8 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *        {@link #setPublishCliCommandMessages(boolean)} setting
 	 * @since 1.1
 	 */
-	public void setMessageSendingOps(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+	public final void setMessageSendingOps(
+			@Nullable OptionalService<SimpMessageSendingOperations> messageSendingOps) {
 		this.messageSendingOps = messageSendingOps;
 	}
 
@@ -488,7 +491,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *         {@literal 1} for no delay
 	 * @since 1.3
 	 */
-	public long getSendMinimumDelayMs() {
+	public final long getSendMinimumDelayMs() {
 		return config.getSendMinimumDelayMs();
 	}
 
@@ -500,7 +503,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConf
 	 *        {@literal 1} for no delay
 	 * @since 1.3
 	 */
-	public void setSendMinimumDelayMs(long sendMinimumDelayMs) {
+	public final void setSendMinimumDelayMs(long sendMinimumDelayMs) {
 		config.setSendMinimumDelayMs(sendMinimumDelayMs);
 	}
 

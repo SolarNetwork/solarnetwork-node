@@ -46,6 +46,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.MessagingException;
@@ -112,7 +113,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 * The optional message sending operations, for publishing CLI command
 	 * messages.
 	 */
-	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
+	private @Nullable OptionalService<SimpMessageSendingOperations> messageSendingOps;
 
 	/**
 	 * Constructor.
@@ -143,7 +144,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				throw new IOException(format("Timeout opening Modbus connection to %s unit %d: %s",
 						describer.get(), getUnitId(), e.toString()), e);
 			} catch ( ExecutionException e ) {
-				Throwable cause = e.getCause();
+				Throwable cause = (e.getCause() != null ? e.getCause() : e);
 				throw new IOException(format("Error opening Modbus connection to %s unit %d: %s",
 						describer.get(), getUnitId(), cause.toString()), cause);
 			}
@@ -174,13 +175,13 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 								res.getError(), count, address, describer.get()));
 			}
 			BitsModbusMessage r = res.unwrap(BitsModbusMessage.class);
+			BitSet result = null;
 			if ( r != null ) {
-				BitSet result = r.toBitSet();
+				result = r.toBitSet();
 				log.debug("Read {} Modbus coil values from {} @ {}: {}", count, address, describer.get(),
 						result);
-				return result;
 			}
-			return new BitSet();
+			return (result != null ? result : new BitSet());
 		} catch ( IOException e ) {
 			throw e;
 		} catch ( Exception e ) {
@@ -307,13 +308,13 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 						res.getError(), count, address, describer.get()));
 			}
 			BitsModbusMessage r = res.unwrap(BitsModbusMessage.class);
+			BitSet result = null;
 			if ( r != null ) {
-				BitSet result = r.toBitSet();
+				result = r.toBitSet();
 				log.debug("Read {} Modbus discrete input values from {} @ {}: {}", count, address,
 						describer.get(), result);
-				return result;
 			}
-			return new BitSet();
+			return (result != null ? result : new BitSet());
 		} catch ( IOException e ) {
 			throw e;
 		} catch ( Exception e ) {
@@ -431,17 +432,25 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			BitsModbusMessage bits = res.unwrap(BitsModbusMessage.class);
 			if ( bits != null ) {
 				BigInteger data = bits.getBits();
-				short[] result = new short[count];
-				for ( int i = 0; i < count; i++ ) {
-					result[i] = data.testBit(i) ? (short) 1 : (short) 0;
+				short[] result;
+				if ( data != null ) {
+					result = new short[count];
+					for ( int i = 0; i < count; i++ ) {
+						result[i] = data.testBit(i) ? (short) 1 : (short) 0;
+					}
+				} else {
+					result = new short[0];
 				}
 				return result;
 			}
 			RegistersModbusMessage regs = res.unwrap(RegistersModbusMessage.class);
 			if ( regs != null ) {
-				return regs.dataDecode();
+				short[] result = regs.dataDecode();
+				if ( result != null ) {
+					return result;
+				}
 			}
-			return null;
+			return new short[0];
 		} catch ( IOException e ) {
 			throw e;
 		} catch ( Exception e ) {
@@ -525,7 +534,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 * @return the command, or {@literal null} if one cannot be generated
 	 * @see <a href="https://github.com/epsilonrt/mbpoll">epsilonrt/mbpoll</a>
 	 */
-	private List<String> mbpollCommand(ModbusMessage req) {
+	private @Nullable List<String> mbpollCommand(ModbusMessage req) {
 		final AddressedModbusMessage addReq = req.unwrap(AddressedModbusMessage.class);
 		if ( addReq == null ) {
 			log.warn("Unable to generate Modbus CLI command for unsupported request {}", req);
@@ -540,14 +549,12 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		cmd.add("-q");
 		cmd.add("-0");
 		cmd.add("-1");
-		if ( config instanceof TcpModbusClientConfig ) {
-			TcpModbusClientConfig tcpConfig = (TcpModbusClientConfig) config;
-			if ( tcpConfig.getPort() != TcpModbusClientConfig.DEFAULT_PORT ) {
+		if ( config instanceof TcpModbusClientConfig tcp ) {
+			if ( tcp.getPort() != TcpModbusClientConfig.DEFAULT_PORT ) {
 				cmd.add("-p");
-				cmd.add(Integer.toString(tcpConfig.getPort()));
+				cmd.add(Integer.toString(tcp.getPort()));
 			}
-		} else if ( config instanceof RtuModbusClientConfig ) {
-			RtuModbusClientConfig rtu = (RtuModbusClientConfig) config;
+		} else if ( config instanceof RtuModbusClientConfig rtu && rtu.getSerialParameters() != null ) {
 			cmd.add("-m");
 			cmd.add("rtu");
 			cmd.add("-b");
@@ -645,10 +652,11 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 								res.getError(), count, function.blockType(), address, describer.get()));
 			}
 			RegistersModbusMessage r = res.unwrap(RegistersModbusMessage.class);
+			byte[] result = null;
 			if ( r != null ) {
-				return r.dataCopy();
+				result = r.dataCopy();
 			}
-			return null;
+			return (result != null ? result : new byte[0]);
 		} catch ( IOException e ) {
 			throw e;
 		} catch ( Exception e ) {
@@ -671,7 +679,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
+	public @Nullable String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			Charset charset) throws IOException {
 		final byte[] bytes = readBytes(function, address, count);
 		String result = null;
@@ -698,7 +706,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 *
 	 * @return the timeout, in milliseconds
 	 */
-	public long getConnectTimeout() {
+	public final long getConnectTimeout() {
 		return connectTimeout;
 	}
 
@@ -708,7 +716,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 * @param connectTimeout
 	 *        the timeout to set, in milliseconds
 	 */
-	public void setConnectTimeout(long connectTimeout) {
+	public final void setConnectTimeout(long connectTimeout) {
 		this.connectTimeout = connectTimeout;
 	}
 
@@ -718,7 +726,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 * @return {@literal true} to publish CLI command messages
 	 * @since 1.1
 	 */
-	public boolean isPublishCliCommandMessages() {
+	public final boolean isPublishCliCommandMessages() {
 		return publishCliCommandMessages;
 	}
 
@@ -731,7 +739,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 *        configured
 	 * @since 1.1
 	 */
-	public void setPublishCliCommandMessages(boolean publishCliCommandMessages) {
+	public final void setPublishCliCommandMessages(boolean publishCliCommandMessages) {
 		this.publishCliCommandMessages = publishCliCommandMessages;
 	}
 
@@ -741,7 +749,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 * @return the message sending operations
 	 * @since 1.1
 	 */
-	public OptionalService<SimpMessageSendingOperations> getMessageSendingOps() {
+	public final @Nullable OptionalService<SimpMessageSendingOperations> getMessageSendingOps() {
 		return messageSendingOps;
 	}
 
@@ -753,7 +761,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 *        {@link #setPublishCliCommandMessages(boolean)} setting
 	 * @since 1.1
 	 */
-	public void setMessageSendingOps(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+	public final void setMessageSendingOps(
+			@Nullable OptionalService<SimpMessageSendingOperations> messageSendingOps) {
 		this.messageSendingOps = messageSendingOps;
 	}
 

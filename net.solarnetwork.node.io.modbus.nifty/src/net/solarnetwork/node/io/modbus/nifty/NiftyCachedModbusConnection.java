@@ -29,6 +29,7 @@ import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.io.modbus.ModbusClient;
@@ -57,7 +58,7 @@ public class NiftyCachedModbusConnection implements Runnable, ModbusClientConnec
 	private final AtomicLong keepOpenExpiry;
 
 	private boolean openThrewException;
-	private Thread keepOpenTimeoutThread;
+	private @Nullable Thread keepOpenTimeoutThread;
 
 	/**
 	 * Constructor.
@@ -70,6 +71,8 @@ public class NiftyCachedModbusConnection implements Runnable, ModbusClientConnec
 	 *        a function that returns a description of the connection
 	 * @param keepOpenSeconds
 	 *        the number of seconds to keep the connection open
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public NiftyCachedModbusConnection(boolean headless, ModbusClient controller,
 			Supplier<String> describer, int keepOpenSeconds) {
@@ -108,8 +111,8 @@ public class NiftyCachedModbusConnection implements Runnable, ModbusClientConnec
 						openThrewException = true;
 						throw new RuntimeException(e);
 					}
-					if ( keepOpenSeconds > 0 && keepOpenTimeoutThread == null
-							|| !keepOpenTimeoutThread.isAlive() ) {
+					if ( keepOpenSeconds > 0
+							&& (keepOpenTimeoutThread == null || !keepOpenTimeoutThread.isAlive()) ) {
 						activity();
 						keepOpenTimeoutThread = new Thread(NiftyCachedModbusConnection.this,
 								format("Modbus Expiry %s", describer.get()));
@@ -244,8 +247,8 @@ public class NiftyCachedModbusConnection implements Runnable, ModbusClientConnec
 	}
 
 	@Override
-	public void connectionClosed(ModbusClient client, ModbusClientConfig config, Throwable exception,
-			boolean willReconnect) {
+	public void connectionClosed(ModbusClient client, ModbusClientConfig config,
+			@Nullable Throwable exception, boolean willReconnect) {
 		if ( controller.isStarted() ) {
 			// client closed connection, so close on our side as well
 			log.debug("Connection to {} closed by server", describer.get());
