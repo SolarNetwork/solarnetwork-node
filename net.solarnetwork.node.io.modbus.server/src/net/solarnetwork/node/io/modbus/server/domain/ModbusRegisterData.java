@@ -247,7 +247,7 @@ public class ModbusRegisterData {
 	 * @param set
 	 *        the set of coil values to write, starting from index {@literal 0}
 	 */
-	public void writeCoils(int address, int count, BitSet set) {
+	public void writeCoils(int address, int count, @Nullable BitSet set) {
 		writeBits(address, count, set, coils);
 	}
 
@@ -273,7 +273,7 @@ public class ModbusRegisterData {
 	 * @param set
 	 *        the set of coil values to write, starting from index {@literal 0}
 	 */
-	public void writeDiscretes(int address, int count, BitSet set) {
+	public void writeDiscretes(int address, int count, @Nullable BitSet set) {
 		writeBits(address, count, set, discretes);
 	}
 
@@ -283,7 +283,10 @@ public class ModbusRegisterData {
 		}
 	}
 
-	private void writeBits(int address, int count, BitSet values, BitSet set) {
+	private void writeBits(int address, int count, @Nullable BitSet values, BitSet set) {
+		if ( values == null ) {
+			return;
+		}
 		synchronized ( set ) {
 			for ( int i = 0; i < count; i++ ) {
 				set.set(address + i, values.get(i));
@@ -355,7 +358,10 @@ public class ModbusRegisterData {
 	 * @param values
 	 *        the values to save
 	 */
-	public void writeHoldings(int address, short[] values) {
+	public void writeHoldings(int address, short @Nullable [] values) {
+		if ( values == null ) {
+			return;
+		}
 		if ( log.isDebugEnabled() ) {
 			log.debug("Writing Holding registers {}-{} values: {}", address, address + values.length - 1,
 					Arrays.toString(hexValues(values)));
@@ -394,7 +400,10 @@ public class ModbusRegisterData {
 	 * @param values
 	 *        the values to save
 	 */
-	public void writeInputs(int address, short[] values) {
+	public void writeInputs(int address, short @Nullable [] values) {
+		if ( values == null ) {
+			return;
+		}
 		if ( log.isDebugEnabled() ) {
 			log.debug("Writing Input registers {}-{} values: {}", address, address + values.length - 1,
 					Arrays.toString(hexValues(values)));

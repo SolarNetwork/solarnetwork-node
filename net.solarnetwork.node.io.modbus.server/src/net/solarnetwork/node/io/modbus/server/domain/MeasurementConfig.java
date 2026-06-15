@@ -95,9 +95,9 @@ public class MeasurementConfig {
 	private @Nullable String sourceId;
 	private @Nullable String propertyName;
 	private ModbusDataType dataType = DEFAULT_DATA_TYPE;
-	private Integer wordLength = DEFAULT_WORD_LENGTH;
-	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
-	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
+	private @Nullable Integer wordLength = DEFAULT_WORD_LENGTH;
+	private @Nullable BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
+	private @Nullable Integer decimalScale = DEFAULT_DECIMAL_SCALE;
 	private @Nullable String controlId;
 
 	/**
@@ -279,7 +279,7 @@ public class MeasurementConfig {
 	 */
 	public @Nullable Object applyTransforms(@Nullable Object propVal) {
 		if ( propVal instanceof Number ) {
-			if ( decimalScale >= 0 ) {
+			if ( decimalScale != null && decimalScale >= 0 ) {
 				propVal = applyDecimalScale((Number) propVal, decimalScale);
 			}
 			if ( unitMultiplier != null ) {
@@ -530,7 +530,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the register count to read
 	 */
-	public final Integer getWordLength() {
+	public final @Nullable Integer getWordLength() {
 		return wordLength;
 	}
 
@@ -544,8 +544,8 @@ public class MeasurementConfig {
 	 * @param wordLength
 	 *        the register count to read
 	 */
-	public final void setWordLength(Integer wordLength) {
-		if ( wordLength == null || wordLength.intValue() < 1 ) {
+	public final void setWordLength(@Nullable Integer wordLength) {
+		if ( wordLength != null && wordLength.intValue() < 1 ) {
 			return;
 		}
 		this.wordLength = wordLength;
@@ -567,7 +567,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the multiplier
 	 */
-	public final BigDecimal getUnitMultiplier() {
+	public final @Nullable BigDecimal getUnitMultiplier() {
 		return unitMultiplier;
 	}
 
@@ -585,10 +585,7 @@ public class MeasurementConfig {
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
-	public final void setUnitMultiplier(BigDecimal unitMultiplier) {
-		if ( unitMultiplier == null ) {
-			unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
-		}
+	public final void setUnitMultiplier(@Nullable BigDecimal unitMultiplier) {
 		this.unitMultiplier = unitMultiplier;
 	}
 
@@ -614,10 +611,7 @@ public class MeasurementConfig {
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
-	public final void setDecimalScale(Integer decimalScale) {
-		if ( decimalScale == null ) {
-			decimalScale = DEFAULT_DECIMAL_SCALE;
-		}
+	public final void setDecimalScale(@Nullable Integer decimalScale) {
 		this.decimalScale = decimalScale;
 	}
 

@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.io.modbus.BitsModbusMessage;
@@ -74,8 +75,8 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	private final Clock clock;
 	private final Supplier<String> descriptor;
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
-	private final Supplier<String> serverIdProvider;
-	private final Supplier<ModbusRegisterDao> daoProvider;
+	private final @Nullable Supplier<String> serverIdProvider;
+	private final @Nullable Supplier<ModbusRegisterDao> daoProvider;
 	private final BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler;
 	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private boolean allowWrites;
@@ -94,7 +95,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @param exceptionHandler
 	 *        the exception handler
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
 			Supplier<String> descriptor,
@@ -118,12 +119,13 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        and optional provider of a register DAO to persist updates with;
 	 *        requires the {@code serverIdProvider} to be configured as well
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 * @since 2.1
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
 			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
-			Supplier<String> serverIdProvider, Supplier<ModbusRegisterDao> daoProvider) {
+			@Nullable Supplier<String> serverIdProvider,
+			@Nullable Supplier<ModbusRegisterDao> daoProvider) {
 		this(Clock.systemUTC(), registers, descriptor, exceptionHandler, serverIdProvider, daoProvider,
 				0, false);
 	}
@@ -141,7 +143,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
 	 * @throws IllegalArgumentException
-	 *         if any argument other than {@code closeable} is {@literal null}
+	 *         if any argument other than {@code closeable} is {@code null}
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
 			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
@@ -164,7 +166,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @param allowWrites
 	 *        {@code true} to allow Modbus write operations
 	 * @throws IllegalArgumentException
-	 *         if any argument other than {@code closeable} is {@literal null}
+	 *         if any argument other than {@code closeable} is {@code null}
 	 * @since 2.0
 	 */
 	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
@@ -197,13 +199,14 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @param allowWrites
 	 *        {@code true} to allow Modbus write operations
 	 * @throws IllegalArgumentException
-	 *         if any argument other than {@code closeable} is {@literal null}
+	 *         if any argument other than {@code closeable} is {@code null}
 	 * @since 2.1
 	 */
 	public ModbusConnectionHandler(Clock clock, ConcurrentMap<Integer, ModbusRegisterData> registers,
 			Supplier<String> descriptor, BiConsumer<Throwable, Optional<ModbusMessage>> exceptionHandler,
-			Supplier<String> serverIdProvider, Supplier<ModbusRegisterDao> daoProvider,
-			long requestThrottle, boolean allowWrites) {
+			@Nullable Supplier<String> serverIdProvider,
+			@Nullable Supplier<ModbusRegisterDao> daoProvider, long requestThrottle,
+			boolean allowWrites) {
 		super();
 		this.clock = requireNonNullArgument(clock, "clock");
 		this.registers = requireNonNullArgument(registers, "registers");
@@ -296,7 +299,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		}
 	}
 
-	private ModbusMessage handleBitsMessage(BitsModbusMessage req) {
+	private @Nullable ModbusMessage handleBitsMessage(BitsModbusMessage req) {
 		ModbusFunctionCode fn = req.getFunction().functionCode();
 		if ( fn == null ) {
 			return null;
@@ -327,7 +330,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		return null;
 	}
 
-	private ModbusMessage handleRegistersMessage(RegistersModbusMessage req) {
+	private @Nullable ModbusMessage handleRegistersMessage(RegistersModbusMessage req) {
 		ModbusFunctionCode fn = req.getFunction().functionCode();
 		if ( fn == null ) {
 			return null;
@@ -457,12 +460,13 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		return writeHoldingsResponse(req.getUnitId(), req.getAddress(), req.getCount());
 	}
 
-	private void persistCoilRegisterData(BitsModbusMessage req, BitSet data) {
+	private void persistCoilRegisterData(BitsModbusMessage req, @Nullable BitSet data) {
 		if ( data == null || data.isEmpty() ) {
 			return;
 		}
 		final ModbusRegisterDao dao = (daoProvider != null ? daoProvider.get() : null);
-		final String serverId = (dao != null ? serverIdProvider.get() : null);
+		final String serverId = (dao != null && serverIdProvider != null ? serverIdProvider.get()
+				: null);
 		if ( dao != null && serverId != null ) {
 			Instant now = clock.instant();
 			for ( int i = 0, len = data.size(); i < len; i++ ) {
@@ -472,12 +476,13 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 		}
 	}
 
-	private void persistHoldingRegisterData(RegistersModbusMessage req, short[] data) {
+	private void persistHoldingRegisterData(RegistersModbusMessage req, short @Nullable [] data) {
 		if ( data == null || data.length < 1 ) {
 			return;
 		}
 		final ModbusRegisterDao dao = (daoProvider != null ? daoProvider.get() : null);
-		final String serverId = (dao != null ? serverIdProvider.get() : null);
+		final String serverId = (dao != null && serverIdProvider != null ? serverIdProvider.get()
+				: null);
 		if ( dao != null && serverId != null ) {
 			Instant now = clock.instant();
 			for ( int i = 0, len = data.length; i < len; i++ ) {
@@ -493,7 +498,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @return the throttle time
 	 * @since 2.0
 	 */
-	public long getRequestThrottle() {
+	public final long getRequestThrottle() {
 		return requestThrottle;
 	}
 
@@ -504,7 +509,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the throttle, in milliseconds
 	 * @since 2.0
 	 */
-	public void setRequestThrottle(long requestThrottle) {
+	public final void setRequestThrottle(long requestThrottle) {
 		this.requestThrottle = requestThrottle;
 	}
 
@@ -514,7 +519,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 * @return {@code true} if writing is allowed
 	 * @since 2.0
 	 */
-	public boolean isAllowWrites() {
+	public final boolean isAllowWrites() {
 		return allowWrites;
 	}
 
@@ -525,7 +530,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        {@code true} if writing is allowed
 	 * @since 2.0
 	 */
-	public void setAllowWrites(boolean allowWrites) {
+	public final void setAllowWrites(boolean allowWrites) {
 		this.allowWrites = allowWrites;
 	}
 
@@ -536,7 +541,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *         the registers map
 	 * @since 2.2
 	 */
-	public boolean isRestrictUnitIds() {
+	public final boolean isRestrictUnitIds() {
 		return restrictUnitIds;
 	}
 
@@ -548,7 +553,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        the registers map
 	 * @since 2.2
 	 */
-	public void setRestrictUnitIds(boolean restrictUnitIds) {
+	public final void setRestrictUnitIds(boolean restrictUnitIds) {
 		this.restrictUnitIds = restrictUnitIds;
 	}
 
@@ -559,7 +564,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *         already exist in the register data
 	 * @since 2.2
 	 */
-	public boolean isRestrictAddresses() {
+	public final boolean isRestrictAddresses() {
 		return restrictAddresses;
 	}
 
@@ -576,7 +581,7 @@ public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consum
 	 *        already exist in the register data
 	 * @since 2.2
 	 */
-	public void setRestrictAddresses(boolean restrictAddresses) {
+	public final void setRestrictAddresses(boolean restrictAddresses) {
 		this.restrictAddresses = restrictAddresses;
 	}
 

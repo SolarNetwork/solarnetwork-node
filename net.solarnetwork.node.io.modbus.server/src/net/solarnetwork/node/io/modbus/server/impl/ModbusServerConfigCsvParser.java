@@ -35,6 +35,7 @@ import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColum
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.SOURCE_ID;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.THROTTLE;
 import static net.solarnetwork.node.io.modbus.server.domain.ModbusServerCsvColumn.UNIT_ID;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.UncheckedIOException;
 import java.math.BigDecimal;
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import de.siegmar.fastcsv.reader.CommentStrategy;
 import de.siegmar.fastcsv.reader.CsvReader;
@@ -170,8 +172,8 @@ public class ModbusServerConfigCsvParser {
 				}
 			}
 
-			Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitBlockMapping = instUnitBlockMapping
-					.get(config.getKey());
+			Map<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitBlockMapping = nonnull(
+					instUnitBlockMapping.get(config.getKey()), "Unit block mapping");
 			Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>> blockMapping = unitBlockMapping
 					.computeIfAbsent(unitId, k -> new LinkedHashMap<>());
 			SortedMap<Integer, MeasurementConfig> measurementConfigs = blockMapping
@@ -211,7 +213,7 @@ public class ModbusServerConfigCsvParser {
 			for ( Entry<Integer, Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>>> unitEntry : unitBlockMapping
 					.entrySet() ) {
 				unitId = unitEntry.getKey().intValue();
-				UnitConfig unitConfig = config.unitConfig(unitId);
+				UnitConfig unitConfig = nonnull(config.unitConfig(unitId), "UnitConfig");
 				Map<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>> blockMapping = unitEntry
 						.getValue();
 				for ( Entry<ModbusRegisterBlockType, SortedMap<Integer, MeasurementConfig>> bockEntry : blockMapping
@@ -229,22 +231,23 @@ public class ModbusServerConfigCsvParser {
 						if ( blockConfig == null || measCount < 1
 								|| blockType != blockConfig.getBlockType()
 								|| (addr != (registerAddress
-										+ blockConfig.getMeasurementConfigs()[measCount - 1]
-												.getSize())) ) {
+										+ nonnull(blockConfig.getMeasurementConfigs(),
+												"MeasurementConfigs")[measCount - 1].getSize())) ) {
 							// starting new block
 							blockConfig = new RegisterBlockConfig();
 							blockConfig.setBlockType(blockType);
 							blockConfig.setStartAddress(addr);
 							unitConfig.setRegisterBlockConfigsCount(
 									unitConfig.getRegisterBlockConfigsCount() + 1);
-							unitConfig
-									.getRegisterBlockConfigs()[unitConfig.getRegisterBlockConfigsCount()
+							nonnull(unitConfig.getRegisterBlockConfigs(),
+									"RegisterBlockConfigs")[unitConfig.getRegisterBlockConfigsCount()
 											- 1] = blockConfig;
 						}
 						blockConfig.setMeasurementConfigsCount(
 								blockConfig.getMeasurementConfigsCount() + 1);
-						blockConfig.getMeasurementConfigs()[blockConfig.getMeasurementConfigsCount()
-								- 1] = measConfig;
+						nonnull(blockConfig.getMeasurementConfigs(),
+								"MeasurementConfigs")[blockConfig.getMeasurementConfigsCount()
+										- 1] = measConfig;
 						registerAddress = addr;
 					}
 
@@ -253,7 +256,7 @@ public class ModbusServerConfigCsvParser {
 		}
 	}
 
-	private String rowKeyValue(CsvRecord row, ModbusServerConfig currentConfig) {
+	private @Nullable String rowKeyValue(CsvRecord row, @Nullable ModbusServerConfig currentConfig) {
 		String key = row.getField(0);
 		if ( key != null ) {
 			key = key.trim();
@@ -267,7 +270,7 @@ public class ModbusServerConfigCsvParser {
 		return (currentConfig != null ? currentConfig.getKey() : null);
 	}
 
-	private String parseStringValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable String parseStringValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		if ( colNum < rowLen ) {
 			String s = row.getField(colNum);
 			if ( s != null ) {
@@ -281,7 +284,7 @@ public class ModbusServerConfigCsvParser {
 		return null;
 	}
 
-	private Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable Integer parseIntegerValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -295,7 +298,7 @@ public class ModbusServerConfigCsvParser {
 		return null;
 	}
 
-	private Long parseLongValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable Long parseLongValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -309,7 +312,8 @@ public class ModbusServerConfigCsvParser {
 		return null;
 	}
 
-	private BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable BigDecimal parseBigDecimalValue(CsvRecord row, int rowLen, long rowNum,
+			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s != null ) {
 			try {
@@ -323,7 +327,8 @@ public class ModbusServerConfigCsvParser {
 		return null;
 	}
 
-	private ModbusDataType parseModbusDataTypeValue(CsvRecord row, int rowLen, long rowNum, int colNum) {
+	private @Nullable ModbusDataType parseModbusDataTypeValue(CsvRecord row, int rowLen, long rowNum,
+			int colNum) {
 		String s = parseStringValue(row, rowLen, rowNum, colNum);
 		if ( s == null ) {
 			return null;

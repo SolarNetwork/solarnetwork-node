@@ -26,6 +26,7 @@ import static java.util.Arrays.fill;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map.Entry;
+import org.jspecify.annotations.Nullable;
 import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -55,7 +56,7 @@ public class ModbusServerConfigCsvWriter {
 	 *        the writer; note the comment character should be set to something
 	 *        <b>other</b> than {@code #} so comments can be generated manually
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 * @throws UncheckedIOException
 	 *         if any IO error occurs
 	 */
@@ -93,6 +94,7 @@ public class ModbusServerConfigCsvWriter {
 		for ( Setting s : settings ) {
 			config.populateFromSetting(s);
 		}
+		@Nullable
 		String[] row = new String[rowLen];
 		row[ModbusServerCsvColumn.INSTANCE_ID.getCode()] = config.getKey();
 		row[ModbusServerCsvColumn.BIND_ADDRESS.getCode()] = config.getBindAddress();
@@ -148,7 +150,7 @@ public class ModbusServerConfigCsvWriter {
 		}
 	}
 
-	private String dataLengthValue(MeasurementConfig propConfig) {
+	private @Nullable String dataLengthValue(MeasurementConfig propConfig) {
 		if ( propConfig == null ) {
 			return null;
 		}
@@ -163,7 +165,7 @@ public class ModbusServerConfigCsvWriter {
 		return null;
 	}
 
-	private static String dataTypeValue(ModbusDataType type) {
+	private static @Nullable String dataTypeValue(ModbusDataType type) {
 		if ( type == null ) {
 			return null;
 		}

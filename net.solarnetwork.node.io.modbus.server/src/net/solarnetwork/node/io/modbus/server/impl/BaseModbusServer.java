@@ -30,10 +30,10 @@ import static net.solarnetwork.node.io.modbus.server.impl.DatumEventMode.Capture
 import static net.solarnetwork.node.service.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
 import static net.solarnetwork.node.service.DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
@@ -114,7 +115,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -140,18 +141,18 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	protected final ModbusConnectionHandler handler;
 
 	private int startupDelay = DEFAULT_STARTUP_DELAY_SECS;
-	private TaskScheduler taskScheduler;
-	private UnitConfig[] unitConfigs;
+	private @Nullable TaskScheduler taskScheduler;
+	private UnitConfig @Nullable [] unitConfigs;
 	private boolean wireLogging;
-	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalService<ModbusRegisterDao> registerDao;
-	private OptionalService<OperationalModesService> opModesService;
-	private String requiredOperationalMode;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
+	private @Nullable OptionalService<ModbusRegisterDao> registerDao;
+	private @Nullable OptionalService<OperationalModesService> opModesService;
+	private @Nullable String requiredOperationalMode;
 	private boolean daoRequired;
 	private DatumEventMode datumEventMode = DEFAULT_DATUM_EVENT_MODE;
 
-	private T server;
-	private ScheduledFuture<?> startupFuture;
+	private @Nullable T server;
+	private @Nullable ScheduledFuture<?> startupFuture;
 
 	/**
 	 * Constructor.
@@ -159,7 +160,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * @param executor
 	 *        the executor to handle client connections with
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public BaseModbusServer(Executor executor) {
 		this(executor, new ConcurrentHashMap<>(2, 0.9f, 2));
@@ -173,7 +174,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * @param registers
 	 *        the register data map to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public BaseModbusServer(Executor executor, ConcurrentMap<Integer, ModbusRegisterData> registers) {
 		super();
@@ -196,7 +197,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	protected abstract String description();
 
 	@Override
-	public final void configurationChanged(Map<String, Object> properties) {
+	public final void configurationChanged(@Nullable Map<String, Object> properties) {
 		if ( server != null ) {
 			log.info("Restarting Modbus server [{}] from configuration change", description());
 		}
@@ -350,7 +351,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		ModbusRegisterDao dao = service(registerDao);
 		if ( dao == null ) {
 			if ( daoRequired ) {
-				String msg = getMessageSource().getMessage("status.registerDaoMissing", null,
+				String msg = messageSource().getMessage("status.registerDaoMissing", null,
 						"ModbusRegisterDao missing.", Locale.getDefault());
 				throw new IllegalStateException(msg);
 			}
@@ -545,11 +546,11 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		private final UnitConfig unitConfig;
 		private final RegisterBlockConfig blockConfig;
 		private final MeasurementConfig measConfig;
-		private final Object propertyValue;
+		private final @Nullable Object propertyValue;
 		private final int address;
 
 		private MeasurementUpdate(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
-				MeasurementConfig measConfig, Object propertyValue, int address) {
+				MeasurementConfig measConfig, @Nullable Object propertyValue, int address) {
 			super();
 			this.unitConfig = unitConfig;
 			this.blockConfig = blockConfig;
@@ -558,7 +559,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			this.address = address;
 		}
 
-		private MeasurementUpdate withPropertyValue(Object value) {
+		private MeasurementUpdate withPropertyValue(@Nullable Object value) {
 			return new MeasurementUpdate(unitConfig, blockConfig, measConfig, value, address);
 		}
 
@@ -617,8 +618,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 					boolean bitVal = booleanPropertyValue(update.propertyValue);
 					regData.writeBit(blockType, update.address, bitVal);
 					if ( dao != null ) {
-						dao.save(newRegisterEntity(serverId, unitId, blockType, update.address, now,
-								bitVal ? (short) 1 : (short) 0));
+						dao.save(newRegisterEntity(nonnull(serverId, "Server ID"), unitId, blockType,
+								update.address, now, bitVal ? (short) 1 : (short) 0));
 					}
 					break;
 
@@ -626,15 +627,17 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 				case Input:
 					Object xVal = update.measConfig.applyTransforms(update.propertyValue);
 					short[] vals = encodeValue(dataType, update.measConfig.getSize(), xVal);
-					if ( blockType == ModbusRegisterBlockType.Holding ) {
-						regData.writeHoldings(update.address, vals);
-					} else {
-						regData.writeInputs(update.address, vals);
-					}
-					if ( dao != null ) {
-						for ( int i = 0, len = vals.length; i < len; i++ ) {
-							dao.save(newRegisterEntity(serverId, unitId, blockType, update.address + i,
-									now, vals[i]));
+					if ( vals != null ) {
+						if ( blockType == ModbusRegisterBlockType.Holding ) {
+							regData.writeHoldings(update.address, vals);
+						} else {
+							regData.writeInputs(update.address, vals);
+						}
+						if ( dao != null ) {
+							for ( int i = 0, len = vals.length; i < len; i++ ) {
+								dao.save(newRegisterEntity(nonnull(serverId, "Server ID"), unitId,
+										blockType, update.address + i, now, vals[i]));
+							}
 						}
 					}
 					break;
@@ -655,7 +658,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 
 	@Override
 	public String getPingTestName() {
-		return getDisplayName();
+		final String name = getDisplayName();
+		return (name != null ? name : "ModbusServer-%s".formatted(getUid()));
 	}
 
 	@Override
@@ -676,7 +680,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			ModbusRegisterDao dao = service(registerDao);
 			if ( dao == null ) {
 				success = false;
-				msg = getMessageSource().getMessage("status.registerDaoMissing", null,
+				msg = messageSource().getMessage("status.registerDaoMissing", null,
 						"ModbusRegisterDao missing.", Locale.getDefault());
 			}
 		}
@@ -691,10 +695,11 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 
 	@Override
 	public final List<SettingSpecifier> getSettingSpecifiers() {
+		final MessageSource msgSource = messageSource();
 		List<SettingSpecifier> result = new ArrayList<>(8);
 
 		result.add(new BasicTitleSettingSpecifier("info",
-				registerBlocksInfo(getMessageSource(), Locale.getDefault()), true, true));
+				registerBlocksInfo(msgSource, Locale.getDefault()), true, true));
 
 		result.addAll(baseIdentifiableSettings(null));
 		result.addAll(getExtendedSettingSpecifiers());
@@ -704,8 +709,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 				"datumEventMode", DEFAULT_DATUM_EVENT_MODE.toString());
 		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
 		for ( DatumEventMode e : DatumEventMode.values() ) {
-			propTypeTitles.put(e.name(), getMessageSource().getMessage("DatumEventMode." + e.name(),
-					null, e.name(), Locale.getDefault()));
+			propTypeTitles.put(e.name(), msgSource.getMessage("DatumEventMode." + e.name(), null,
+					e.name(), Locale.getDefault()));
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
 		result.add(propTypeSpec);
@@ -722,17 +727,19 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		result.add(new BasicToggleSettingSpecifier("wireLogging", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
-		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
-				: Collections.emptyList());
+		List<UnitConfig> blockConfsList = (blockConfs != null ? List.of(blockConfs) : List.of());
 		result.add(SettingUtils.dynamicListSettingSpecifier("unitConfigs", blockConfsList,
 				new SettingUtils.KeyedListCallback<UnitConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(UnitConfig value, int index,
-							String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(@Nullable UnitConfig value,
+							int index, String key) {
+						if ( value == null ) {
+							return List.of();
+						}
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								value.settings(key + ".", getMessageSource()));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+								value.settings(key + ".", msgSource));
+						return List.of(configGroup);
 					}
 				}));
 
@@ -839,12 +846,12 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -900,7 +907,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		return null;
 	}
 
-	private Object coerceInstructionValue(MeasurementConfig measConfig, String value) {
+	private @Nullable Object coerceInstructionValue(MeasurementConfig measConfig,
+			@Nullable String value) {
 		return switch (measConfig.getDataType()) {
 			case Boolean -> StringUtils.parseBoolean(value);
 			case Bytes, StringAscii, StringUtf8 -> value;
@@ -909,7 +917,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	}
 
 	@Override
-	public NodeControlInfo getCurrentControlInfo(final String controlId) {
+	public @Nullable NodeControlInfo getCurrentControlInfo(final String controlId) {
 		final UnitConfig[] unitConfigs = getUnitConfigs();
 		if ( unitConfigs != null && unitConfigs.length > 0 ) {
 			for ( UnitConfig unitConfig : unitConfigs ) {
@@ -946,7 +954,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		return null;
 	}
 
-	private Object currentRawValue(final MeasurementUpdate update) {
+	private @Nullable Object currentRawValue(final MeasurementUpdate update) {
 		final ModbusRegisterData data = registers.get(update.unitConfig.getUnitId());
 		if ( data == null ) {
 			return 0;
@@ -999,7 +1007,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	}
 
 	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
-		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+		final EventAdmin admin = OptionalService.service(eventAdmin);
 		if ( admin == null ) {
 			return;
 		}
@@ -1012,7 +1020,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *
 	 * @return the task scheduler
 	 */
-	public final TaskScheduler getTaskScheduler() {
+	public final @Nullable TaskScheduler getTaskScheduler() {
 		return taskScheduler;
 	}
 
@@ -1022,7 +1030,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 */
-	public final void setTaskScheduler(TaskScheduler taskScheduler) {
+	public final void setTaskScheduler(@Nullable TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}
 
@@ -1050,7 +1058,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *
 	 * @return the block configurations
 	 */
-	public final UnitConfig[] getUnitConfigs() {
+	public final UnitConfig @Nullable [] getUnitConfigs() {
 		return unitConfigs;
 	}
 
@@ -1060,7 +1068,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * @param unitConfigs
 	 *        the configurations to use
 	 */
-	public final void setUnitConfigs(UnitConfig[] unitConfigs) {
+	public final void setUnitConfigs(UnitConfig @Nullable [] unitConfigs) {
 		this.unitConfigs = unitConfigs;
 	}
 
@@ -1155,7 +1163,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *
 	 * @return the event admin
 	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
+	public final @Nullable OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
@@ -1165,7 +1173,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * @param eventAdmin
 	 *        the service to set
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public final void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
@@ -1174,7 +1182,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *
 	 * @return the DAO
 	 */
-	public final OptionalService<ModbusRegisterDao> getRegisterDao() {
+	public final @Nullable OptionalService<ModbusRegisterDao> getRegisterDao() {
 		return registerDao;
 	}
 
@@ -1184,7 +1192,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * @param registerDao
 	 *        the DAO to set
 	 */
-	public final void setRegisterDao(OptionalService<ModbusRegisterDao> registerDao) {
+	public final void setRegisterDao(@Nullable OptionalService<ModbusRegisterDao> registerDao) {
 		this.registerDao = registerDao;
 	}
 
@@ -1216,7 +1224,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *         the registers map
 	 * @since 1.1
 	 */
-	public boolean isRestrictUnitIds() {
+	public final boolean isRestrictUnitIds() {
 		return handler.isRestrictUnitIds();
 	}
 
@@ -1228,7 +1236,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *        the registers map
 	 * @since 1.1
 	 */
-	public void setRestrictUnitIds(boolean restrictUnitIds) {
+	public final void setRestrictUnitIds(boolean restrictUnitIds) {
 		handler.setRestrictUnitIds(restrictUnitIds);
 	}
 
@@ -1239,7 +1247,7 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *         already exist in the register data
 	 * @since 1.1
 	 */
-	public boolean isRestrictAddresses() {
+	public final boolean isRestrictAddresses() {
 		return handler.isRestrictAddresses();
 	}
 
@@ -1256,17 +1264,17 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *        already exist in the register data
 	 * @since 1.1
 	 */
-	public void setRestrictAddresses(boolean restrictAddresses) {
+	public final void setRestrictAddresses(boolean restrictAddresses) {
 		handler.setRestrictAddresses(restrictAddresses);
 	}
 
 	/**
 	 * Get the operational modes service to use.
 	 *
-	 * @return the service, or {@literal null}
+	 * @return the service, or {@code null}
 	 * @since 1.2
 	 */
-	public OptionalService<OperationalModesService> getOpModesService() {
+	public final @Nullable OptionalService<OperationalModesService> getOpModesService() {
 		return opModesService;
 	}
 
@@ -1277,17 +1285,18 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 *        the service to use
 	 * @since 1.2
 	 */
-	public void setOpModesService(OptionalService<OperationalModesService> opModesService) {
+	public final void setOpModesService(
+			@Nullable OptionalService<OperationalModesService> opModesService) {
 		this.opModesService = opModesService;
 	}
 
 	/**
 	 * Get an operational mode that is required by this service.
 	 *
-	 * @return the required operational mode, or {@literal null} for none
+	 * @return the required operational mode, or {@code null} for none
 	 * @since 1.2
 	 */
-	public String getRequiredOperationalMode() {
+	public final @Nullable String getRequiredOperationalMode() {
 		return requiredOperationalMode;
 	}
 
@@ -1295,11 +1304,11 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 	 * Set an operational mode that is required by this service.
 	 *
 	 * @param requiredOperationalMode
-	 *        the required operational mode, or {@literal null} or an empty
-	 *        string that will be treated as {@literal null}
+	 *        the required operational mode, or {@code null} or an empty string
+	 *        that will be treated as {@code null}
 	 * @since 1.2
 	 */
-	public void setRequiredOperationalMode(String requiredOperationalMode) {
+	public final void setRequiredOperationalMode(@Nullable String requiredOperationalMode) {
 		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
 			requiredOperationalMode = null;
 		}

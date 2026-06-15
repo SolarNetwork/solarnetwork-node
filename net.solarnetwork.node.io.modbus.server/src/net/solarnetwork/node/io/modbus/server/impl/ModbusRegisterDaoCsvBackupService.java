@@ -25,12 +25,14 @@ package net.solarnetwork.node.io.modbus.server.impl;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.parseBytes;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ByteUtils.encodeHexString;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import de.siegmar.fastcsv.reader.CsvReader;
@@ -48,7 +50,6 @@ import net.solarnetwork.node.service.support.CsvConfigurableBackupServiceSupport
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * CSV backup service for Modbus server data.
@@ -72,7 +73,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	public static final String BACKUP_FILENAME_PREFIX = BACKUP_IDENT + "_";
 
 	private final OptionalService<ModbusRegisterDao> modbusRegisterDao;
-	private OptionalService<PlatformTransactionManager> txManager;
+	private @Nullable OptionalService<PlatformTransactionManager> txManager;
 
 	private static enum CsvColumns {
 		ServerId,
@@ -95,8 +96,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	public ModbusRegisterDaoCsvBackupService(OptionalService<ModbusRegisterDao> modbusRegisterDao) {
 		super(BACKUP_IDENT, BACKUP_FILENAME_PREFIX);
 		setBackupDestinationPath(DEFAULT_BACKUP_DESTINATION_PATH);
-		this.modbusRegisterDao = ObjectUtils.requireNonNullArgument(modbusRegisterDao,
-				"modbusRegisterDao");
+		this.modbusRegisterDao = requireNonNullArgument(modbusRegisterDao, "modbusRegisterDao");
 	}
 
 	@Override
@@ -113,7 +113,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	}
 
 	@Override
-	public StringDateKey backupCsvConfiguration() {
+	public @Nullable StringDateKey backupCsvConfiguration() {
 		ModbusRegisterDao dao = service(modbusRegisterDao);
 		if ( dao == null ) {
 			return null;
@@ -124,7 +124,8 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	@Override
 	protected Instant mostRecentCsvConfigurationModificationDate() {
 		final ModbusRegisterDao dao = dao();
-		return dao.getMostRecentModificationDate();
+		final Instant mod = dao.getMostRecentModificationDate();
+		return (mod != null ? mod : Instant.now());
 	}
 
 	@Override
@@ -214,13 +215,18 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 
 			@Override
 			public BatchCallbackResult handle(ModbusRegisterEntity entity) {
+				@Nullable
 				String[] row = new String[CsvColumns.values().length];
 				row[CsvColumns.ServerId.ordinal()] = entity.getServerId();
 				row[CsvColumns.UnitId.ordinal()] = String.valueOf(entity.getUnitId());
 				row[CsvColumns.BlockType.ordinal()] = entity.getBlockType().name();
 				row[CsvColumns.Address.ordinal()] = String.valueOf(entity.getAddress());
-				row[CsvColumns.Created.ordinal()] = entity.getCreated().toString();
-				row[CsvColumns.Modified.ordinal()] = entity.getModified().toString();
+				row[CsvColumns.Created.ordinal()] = (entity.getCreated() != null
+						? entity.getCreated().toString()
+						: null);
+				row[CsvColumns.Modified.ordinal()] = (entity.getModified() != null
+						? entity.getModified().toString()
+						: null);
 				row[CsvColumns.Value.ordinal()] = encodeHexString(
 						parseBytes(new short[] { entity.getValue() }, 0), 0, 2, false);
 				csvWriter.writeRecord(row);
@@ -242,7 +248,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	 *
 	 * @return the transaction manager
 	 */
-	public OptionalService<PlatformTransactionManager> getTransactionManager() {
+	public @Nullable OptionalService<PlatformTransactionManager> getTransactionManager() {
 		return txManager;
 	}
 
@@ -252,7 +258,7 @@ public class ModbusRegisterDaoCsvBackupService extends CsvConfigurableBackupServ
 	 * @param txManager
 	 *        the manager to set
 	 */
-	public void setTransactionManager(OptionalService<PlatformTransactionManager> txManager) {
+	public void setTransactionManager(@Nullable OptionalService<PlatformTransactionManager> txManager) {
 		this.txManager = txManager;
 	}
 
