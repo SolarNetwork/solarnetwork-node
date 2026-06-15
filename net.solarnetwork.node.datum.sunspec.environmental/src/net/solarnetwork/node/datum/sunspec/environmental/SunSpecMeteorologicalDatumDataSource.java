@@ -1,21 +1,21 @@
 /* ==================================================================
  * SunSpecMeteorologicalDatumDataSource.java - 10/07/2023 2:39:45 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
@@ -45,7 +46,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible meteorological devices.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -61,7 +62,7 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 
 	/**
 	 * Construct with a specific sample data instance.
-	 * 
+	 *
 	 * @param sample
 	 *        the sample data to use
 	 */
@@ -91,7 +92,7 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 	}
 
 	@Override
-	public MeteorologicalDatum readCurrentDatum() {
+	public @Nullable MeteorologicalDatum readCurrentDatum() {
 		final String sourceId = resolvePlaceholders(getSourceId());
 		final ModelData currSample;
 		try {
@@ -134,12 +135,12 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 	}
 
 	@Override
-	protected String getStatusMessage(ModelData sample) {
+	protected String getStatusMessage(@Nullable ModelData sample) {
 		return "N/A";
 	}
 
 	@Override
-	protected String getSampleMessage(ModelData sample) {
+	protected String getSampleMessage(@Nullable ModelData sample) {
 		StringBuilder buf = new StringBuilder();
 		try {
 			MeteorologicalModelAccessor met = (sample != null
@@ -173,7 +174,7 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 			BomTemperatureModelAccessor bom = (sample != null
 					? sample.findTypedModel(BomTemperatureModelAccessor.class)
 					: null);
-			if ( irr != null ) {
+			if ( bom != null ) {
 				if ( buf.length() > 0 ) {
 					buf.append(", ");
 				}
