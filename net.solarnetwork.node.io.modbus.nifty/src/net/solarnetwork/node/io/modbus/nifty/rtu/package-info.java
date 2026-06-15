@@ -1,5 +1,5 @@
 /* ==================================================================
- * SerialConnectionProvider.java - 13/01/2026 6:52:22 am
+ * package-info.java - 11/06/2026 7:00:00 am
  *
  * Copyright 2026 SolarNetwork.net Dev Team
  *
@@ -20,41 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus.nifty.rtu;
-
-import org.jspecify.annotations.Nullable;
-import net.solarnetwork.io.modbus.serial.SerialParameters;
-import net.solarnetwork.io.modbus.serial.SerialPortProvider;
-import net.solarnetwork.service.Identifiable;
-
 /**
- * API for a service that provides serial parameters.
- *
- * @author matt
- * @version 1.0
+ * Package info.
  */
-public interface SerialConnectionProvider extends Identifiable {
 
-	/**
-	 * Get the serial port device name.
-	 *
-	 * @return the port device name
-	 */
-	String serialPortName();
-
-	/**
-	 * Get the serial parameters.
-	 *
-	 * @return the parameters
-	 */
-	@Nullable
-	SerialParameters serialParameters();
-
-	/**
-	 * Get the serial port provider.
-	 *
-	 * @return the serial port provider
-	 */
-	SerialPortProvider serialPortProvider();
-
-}
+@org.jspecify.annotations.NullMarked
+package net.solarnetwork.node.io.modbus.nifty.rtu;
