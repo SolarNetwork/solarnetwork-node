@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.modbus.nifty.jsc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.Nullable;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
 import net.solarnetwork.io.modbus.ModbusClient;
@@ -66,7 +67,7 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 	 *        an optional provider to use, if {@code null} a new default
 	 *        instance will be created
 	 */
-	public NiftyJscSerialModbusNetwork(JscSerialPortProvider serialPortProvider) {
+	public NiftyJscSerialModbusNetwork(@Nullable JscSerialPortProvider serialPortProvider) {
 		super(new NettyRtuModbusClientConfig());
 		config.setAutoReconnect(false);
 		config.setSerialParameters(new NiftySerialParameters(config));
@@ -76,12 +77,12 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 	}
 
 	@Override
-	public String serialPortName() {
+	public @Nullable String serialPortName() {
 		return config.getName();
 	}
 
 	@Override
-	public SerialParameters serialParameters() {
+	public @Nullable SerialParameters serialParameters() {
 		return config.getSerialParameters();
 	}
 
@@ -93,7 +94,10 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 	@Override
 	protected String getNetworkDescription() {
 		StringBuilder buf = new StringBuilder(config.getDescription());
-		buf.append(" readTimeout=").append(config.getSerialParameters().getReadTimeout());
+		final SerialParameters params = config.getSerialParameters();
+		if ( params != null ) {
+			buf.append(" readTimeout=").append(params.getReadTimeout());
+		}
 		return buf.toString();
 	}
 
@@ -196,7 +200,7 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 	 *
 	 * @return the parameters
 	 */
-	public NiftySerialParameters getSerialParams() {
-		return (NiftySerialParameters) config.getSerialParameters();
+	public @Nullable NiftySerialParameters getSerialParams() {
+		return (@Nullable NiftySerialParameters) config.getSerialParameters();
 	}
 }
