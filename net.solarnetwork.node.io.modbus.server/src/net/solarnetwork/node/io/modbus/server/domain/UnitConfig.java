@@ -26,10 +26,10 @@ import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingValueBean;
@@ -61,7 +61,7 @@ public class UnitConfig {
 			.compile(Pattern.quote("unitConfigs[").concat("(\\d+)\\]\\.(.*)"));
 
 	private int unitId;
-	private RegisterBlockConfig[] registerBlockConfigs;
+	private RegisterBlockConfig @Nullable [] registerBlockConfigs;
 
 	/**
 	 * Constructor.
@@ -75,7 +75,7 @@ public class UnitConfig {
 	 *
 	 * @param prefix
 	 *        a setting key prefix to use
-	 * @return the settings, never {@literal null}
+	 * @return the settings, never {@code null}
 	 */
 	public List<SettingSpecifier> settings(String prefix) {
 		return settings(prefix, null);
@@ -87,27 +87,30 @@ public class UnitConfig {
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @param messageSource
-	 *        the message source to use, or {@literal null}
-	 * @return the settings, never {@literal null}
+	 *        the message source to use, or {@code null}
+	 * @return the settings, never {@code null}
 	 * @since 2.1
 	 */
-	public List<SettingSpecifier> settings(String prefix, MessageSource messageSource) {
+	public List<SettingSpecifier> settings(String prefix, @Nullable MessageSource messageSource) {
 		List<SettingSpecifier> result = new ArrayList<>(6);
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "unitId", "0"));
 
 		RegisterBlockConfig[] blockConfs = getRegisterBlockConfigs();
-		List<RegisterBlockConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
-				: Collections.emptyList());
+		List<RegisterBlockConfig> blockConfsList = (blockConfs != null ? List.of(blockConfs)
+				: List.of());
 		result.add(SettingUtils.dynamicListSettingSpecifier(prefix + "registerBlockConfigs",
 				blockConfsList, new SettingUtils.KeyedListCallback<RegisterBlockConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(RegisterBlockConfig value,
-							int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(
+							@Nullable RegisterBlockConfig value, int index, String key) {
+						if ( value == null ) {
+							return List.of();
+						}
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								value.settings(key + ".", messageSource));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+						return List.of(configGroup);
 					}
 				}));
 
@@ -171,7 +174,8 @@ public class UnitConfig {
 	 * @return the settings
 	 * @since 2.2
 	 */
-	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx) {
+	public List<SettingValueBean> toSettingValues(String providerId, @Nullable String instanceId,
+			int unitIdx) {
 		List<SettingValueBean> settings = new ArrayList<>(2);
 		addSetting(settings, providerId, instanceId, unitIdx, "unitId", getUnitId());
 		addSetting(settings, providerId, instanceId, unitIdx, "registerBlockConfigsCount",
@@ -185,8 +189,8 @@ public class UnitConfig {
 		return settings;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			int i, String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, int i, String key, Object val) {
 		if ( val == null ) {
 			return;
 		}
@@ -213,7 +217,7 @@ public class UnitConfig {
 	 *
 	 * @return the unit ID
 	 */
-	public int getUnitId() {
+	public final int getUnitId() {
 		return unitId;
 	}
 
@@ -223,7 +227,7 @@ public class UnitConfig {
 	 * @param unitId
 	 *        the unit ID to set
 	 */
-	public void setUnitId(int unitId) {
+	public final void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}
 
@@ -232,7 +236,7 @@ public class UnitConfig {
 	 *
 	 * @return the register block configurations
 	 */
-	public RegisterBlockConfig[] getRegisterBlockConfigs() {
+	public final RegisterBlockConfig @Nullable [] getRegisterBlockConfigs() {
 		return registerBlockConfigs;
 	}
 
@@ -242,7 +246,7 @@ public class UnitConfig {
 	 * @param registerBlockConfigs
 	 *        the configurations to use
 	 */
-	public void setRegisterBlockConfigs(RegisterBlockConfig[] registerBlockConfigs) {
+	public final void setRegisterBlockConfigs(RegisterBlockConfig @Nullable [] registerBlockConfigs) {
 		this.registerBlockConfigs = registerBlockConfigs;
 	}
 
@@ -251,7 +255,7 @@ public class UnitConfig {
 	 *
 	 * @return the number of {@code registerBlockConfigs} elements
 	 */
-	public int getRegisterBlockConfigsCount() {
+	public final int getRegisterBlockConfigsCount() {
 		RegisterBlockConfig[] confs = this.registerBlockConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
@@ -267,7 +271,7 @@ public class UnitConfig {
 	 * @param count
 	 *        The desired number of {@code registerBlockConfigs} elements.
 	 */
-	public void setRegisterBlockConfigsCount(int count) {
+	public final void setRegisterBlockConfigsCount(int count) {
 		this.registerBlockConfigs = ArrayUtils.arrayWithLength(this.registerBlockConfigs, count,
 				RegisterBlockConfig.class, null);
 	}

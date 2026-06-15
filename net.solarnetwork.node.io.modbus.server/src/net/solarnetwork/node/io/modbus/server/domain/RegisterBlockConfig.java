@@ -23,16 +23,17 @@
 package net.solarnetwork.node.io.modbus.server.domain;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
@@ -84,7 +85,7 @@ public class RegisterBlockConfig {
 
 	private int startAddress;
 	private ModbusRegisterBlockType blockType = DEFAULT_BLOCK_TYPE;
-	private MeasurementConfig[] measurementConfigs;
+	private MeasurementConfig @Nullable [] measurementConfigs;
 
 	/**
 	 * Constructor.
@@ -114,7 +115,8 @@ public class RegisterBlockConfig {
 		if ( idx >= config.getRegisterBlockConfigsCount() ) {
 			config.setRegisterBlockConfigsCount(idx + 1);
 		}
-		RegisterBlockConfig blockConfig = config.getRegisterBlockConfigs()[idx];
+		RegisterBlockConfig blockConfig = nonnull(config.getRegisterBlockConfigs(),
+				"Register block configs")[idx];
 
 		if ( MeasurementConfig.populateFromSetting(blockConfig, setting) ) {
 			return true;
@@ -141,7 +143,7 @@ public class RegisterBlockConfig {
 	 *
 	 * @param prefix
 	 *        a setting key prefix to use
-	 * @return the settings, never {@literal null}
+	 * @return the settings, never {@code null}
 	 */
 	public List<SettingSpecifier> settings(String prefix) {
 		return settings(prefix, null);
@@ -153,11 +155,11 @@ public class RegisterBlockConfig {
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @param messageSource
-	 *        the message source to use, or {@literal null}
-	 * @return the settings, never {@literal null}
+	 *        the message source to use, or {@code null}
+	 * @return the settings, never {@code null}
 	 * @since 2.1
 	 */
-	public List<SettingSpecifier> settings(String prefix, MessageSource messageSource) {
+	public List<SettingSpecifier> settings(String prefix, @Nullable MessageSource messageSource) {
 		List<SettingSpecifier> result = new ArrayList<>(6);
 
 		String info = registerInfo(messageSource);
@@ -178,17 +180,16 @@ public class RegisterBlockConfig {
 		result.add(propTypeSpec);
 
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
-		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
-				: Collections.<MeasurementConfig> emptyList());
+		List<MeasurementConfig> measConfsList = (measConfs != null ? List.of(measConfs) : List.of());
 		result.add(SettingUtils.dynamicListSettingSpecifier(prefix + "measurementConfigs", measConfsList,
 				new SettingUtils.KeyedListCallback<MeasurementConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(MeasurementConfig value,
-							int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(
+							@Nullable MeasurementConfig value, int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								MeasurementConfig.settings(key + "."));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+						return List.of(configGroup);
 					}
 				}));
 
@@ -209,8 +210,8 @@ public class RegisterBlockConfig {
 	 * @return the settings
 	 * @since 2.2
 	 */
-	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx,
-			int blockIdx) {
+	public List<SettingValueBean> toSettingValues(String providerId, @Nullable String instanceId,
+			int unitIdx, int blockIdx) {
 		List<SettingValueBean> settings = new ArrayList<>(2);
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, "blockTypeKey",
 				getBlockTypeKey());
@@ -228,8 +229,8 @@ public class RegisterBlockConfig {
 		return settings;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			int unitIdx, int blockIdx, String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, int unitIdx, int blockIdx, String key, @Nullable Object val) {
 		if ( val == null ) {
 			return;
 		}
@@ -238,7 +239,7 @@ public class RegisterBlockConfig {
 				val.toString()));
 	}
 
-	private String registerInfo(MessageSource messageSource) {
+	private @Nullable String registerInfo(@Nullable MessageSource messageSource) {
 		MeasurementConfig[] configs = getMeasurementConfigs();
 		if ( configs == null || configs.length < 1 ) {
 			return null;
@@ -315,7 +316,7 @@ public class RegisterBlockConfig {
 	 *
 	 * @return the starting address
 	 */
-	public int getStartAddress() {
+	public final int getStartAddress() {
 		return startAddress;
 	}
 
@@ -326,7 +327,7 @@ public class RegisterBlockConfig {
 	 *        the address to set; if &lt; {@literal 0} will be forced to
 	 *        {@literal 0}
 	 */
-	public void setStartAddress(int startAddress) {
+	public final void setStartAddress(int startAddress) {
 		if ( startAddress < 0 ) {
 			startAddress = 0;
 		}
@@ -336,9 +337,9 @@ public class RegisterBlockConfig {
 	/**
 	 * Get the block type.
 	 *
-	 * @return the block type, never {@literal null}
+	 * @return the block type, never {@code null}
 	 */
-	public ModbusRegisterBlockType getBlockType() {
+	public final ModbusRegisterBlockType getBlockType() {
 		return blockType;
 	}
 
@@ -346,10 +347,10 @@ public class RegisterBlockConfig {
 	 * Set the block type.
 	 *
 	 * @param blockType
-	 *        the type to set; if {@literal null} then will be forced to
+	 *        the type to set; if {@code null} then will be forced to
 	 *        {@link #DEFAULT_BLOCK_TYPE}
 	 */
-	public void setBlockType(ModbusRegisterBlockType blockType) {
+	public final void setBlockType(ModbusRegisterBlockType blockType) {
 		if ( blockType == null ) {
 			blockType = DEFAULT_BLOCK_TYPE;
 		}
@@ -361,7 +362,7 @@ public class RegisterBlockConfig {
 	 *
 	 * @return the block type key
 	 */
-	public String getBlockTypeKey() {
+	public final String getBlockTypeKey() {
 		return String.valueOf(blockType.getCode());
 	}
 
@@ -371,7 +372,7 @@ public class RegisterBlockConfig {
 	 * @param key
 	 *        the block type to set
 	 */
-	public void setBlockTypeKey(String key) {
+	public final void setBlockTypeKey(String key) {
 		try {
 			setBlockType(ModbusRegisterBlockType.forCode(Integer.valueOf(key)));
 		} catch ( IllegalArgumentException | NullPointerException e ) {
@@ -384,7 +385,7 @@ public class RegisterBlockConfig {
 	 *
 	 * @return the measurement configurations
 	 */
-	public MeasurementConfig[] getMeasurementConfigs() {
+	public final MeasurementConfig @Nullable [] getMeasurementConfigs() {
 		return measurementConfigs;
 	}
 
@@ -394,7 +395,7 @@ public class RegisterBlockConfig {
 	 * @param measurementConfigs
 	 *        the configurations to use
 	 */
-	public void setMeasurementConfigs(MeasurementConfig[] measurementConfigs) {
+	public final void setMeasurementConfigs(MeasurementConfig @Nullable [] measurementConfigs) {
 		this.measurementConfigs = measurementConfigs;
 	}
 
@@ -403,7 +404,7 @@ public class RegisterBlockConfig {
 	 *
 	 * @return the number of {@code measurementConfigs} elements
 	 */
-	public int getMeasurementConfigsCount() {
+	public final int getMeasurementConfigsCount() {
 		MeasurementConfig[] confs = this.measurementConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
@@ -419,7 +420,7 @@ public class RegisterBlockConfig {
 	 * @param count
 	 *        The desired number of {@code measurementConfigs} elements.
 	 */
-	public void setMeasurementConfigsCount(int count) {
+	public final void setMeasurementConfigsCount(int count) {
 		this.measurementConfigs = ArrayUtils.arrayWithLength(this.measurementConfigs, count,
 				MeasurementConfig.class, null);
 	}

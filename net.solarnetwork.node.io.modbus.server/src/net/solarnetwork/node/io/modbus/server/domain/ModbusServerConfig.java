@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingValueBean;
 
@@ -39,10 +40,10 @@ import net.solarnetwork.node.settings.SettingValueBean;
  */
 public class ModbusServerConfig {
 
-	private String key;
-	private String bindAddress;
-	private Integer port;
-	private Long requestThrottle;
+	private @Nullable String key;
+	private @Nullable String bindAddress;
+	private @Nullable Integer port;
+	private @Nullable Long requestThrottle;
 	private final Map<String, String> meta = new LinkedHashMap<>(8);
 	private final List<UnitConfig> unitConfigs = new ArrayList<>(8);
 
@@ -58,10 +59,10 @@ public class ModbusServerConfig {
 	 *
 	 * @param unitId
 	 *        the ID to look for
-	 * @return the unit configuration, or {@literal null} if not found
+	 * @return the unit configuration, or {@code null} if not found
 	 * @since 2.2
 	 */
-	public UnitConfig unitConfig(int unitId) {
+	public @Nullable UnitConfig unitConfig(int unitId) {
 		return unitConfigs.stream().filter(c -> c.getUnitId() == unitId).findAny().orElse(null);
 	}
 
@@ -70,7 +71,7 @@ public class ModbusServerConfig {
 	 *
 	 * @param providerId
 	 *        the setting provider key to use
-	 * @return the list of setting values, never {@literal null}
+	 * @return the list of setting values, never {@code null}
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId) {
 		List<SettingValueBean> settings = new ArrayList<>(16);
@@ -123,13 +124,12 @@ public class ModbusServerConfig {
 		return true;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, String key, @Nullable Object val) {
 		if ( val == null ) {
 			return;
 		}
-		settings.add(
-				new SettingValueBean(providerId, instanceId, key, val != null ? val.toString() : ""));
+		settings.add(new SettingValueBean(providerId, instanceId, key, val.toString()));
 	}
 
 	@Override
@@ -174,7 +174,7 @@ public class ModbusServerConfig {
 	 *
 	 * @return the key
 	 */
-	public String getKey() {
+	public final @Nullable String getKey() {
 		return key;
 	}
 
@@ -184,7 +184,7 @@ public class ModbusServerConfig {
 	 * @param key
 	 *        the key to set
 	 */
-	public void setKey(String key) {
+	public final void setKey(@Nullable String key) {
 		this.key = key;
 	}
 
@@ -193,7 +193,7 @@ public class ModbusServerConfig {
 	 *
 	 * @return the bind address
 	 */
-	public String getBindAddress() {
+	public final @Nullable String getBindAddress() {
 		return bindAddress;
 	}
 
@@ -203,7 +203,7 @@ public class ModbusServerConfig {
 	 * @param bindAddress
 	 *        the bind address to set
 	 */
-	public void setBindAddress(String bindAddress) {
+	public final void setBindAddress(@Nullable String bindAddress) {
 		this.bindAddress = bindAddress;
 	}
 
@@ -212,7 +212,7 @@ public class ModbusServerConfig {
 	 *
 	 * @return the port
 	 */
-	public Integer getPort() {
+	public final @Nullable Integer getPort() {
 		return port;
 	}
 
@@ -222,7 +222,7 @@ public class ModbusServerConfig {
 	 * @param port
 	 *        the port to set
 	 */
-	public void setPort(Integer port) {
+	public final void setPort(@Nullable Integer port) {
 		this.port = port;
 	}
 
@@ -231,7 +231,7 @@ public class ModbusServerConfig {
 	 *
 	 * @return the throttle, in milliseconds
 	 */
-	public Long getRequestThrottle() {
+	public final @Nullable Long getRequestThrottle() {
 		return requestThrottle;
 	}
 
@@ -241,7 +241,7 @@ public class ModbusServerConfig {
 	 * @param requestThrottle
 	 *        the throttle to set, in milliseconds
 	 */
-	public void setRequestThrottle(Long requestThrottle) {
+	public final void setRequestThrottle(@Nullable Long requestThrottle) {
 		this.requestThrottle = requestThrottle;
 	}
 
@@ -251,7 +251,7 @@ public class ModbusServerConfig {
 	 * @return the metadata; never {@code null}
 	 * @since 1.3
 	 */
-	public Map<String, String> getMeta() {
+	public final Map<String, String> getMeta() {
 		return meta;
 	}
 
@@ -260,7 +260,7 @@ public class ModbusServerConfig {
 	 *
 	 * @return the configurations, never {@code null}
 	 */
-	public List<UnitConfig> getUnitConfigs() {
+	public final List<UnitConfig> getUnitConfigs() {
 		return unitConfigs;
 	}
 
@@ -269,7 +269,7 @@ public class ModbusServerConfig {
 	 *
 	 * @return the number of {@code unitConfigs} elements
 	 */
-	public int getUnitConfigsCount() {
+	public final int getUnitConfigsCount() {
 		return unitConfigs.size();
 	}
 }

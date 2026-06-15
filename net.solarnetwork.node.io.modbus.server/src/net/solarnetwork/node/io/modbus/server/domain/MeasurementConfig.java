@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.server.domain;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.StringUtils.nonEmptyString;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.settings.SettingValueBean;
@@ -90,13 +92,13 @@ public class MeasurementConfig {
 	public static final Pattern MEASUREMENT_SETTING_PATTERN = Pattern
 			.compile(".+".concat(Pattern.quote(".measurementConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
-	private String sourceId;
-	private String propertyName;
+	private @Nullable String sourceId;
+	private @Nullable String propertyName;
 	private ModbusDataType dataType = DEFAULT_DATA_TYPE;
 	private Integer wordLength = DEFAULT_WORD_LENGTH;
 	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
 	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
-	private String controlId;
+	private @Nullable String controlId;
 
 	/**
 	 * Constructor.
@@ -126,7 +128,8 @@ public class MeasurementConfig {
 		if ( idx >= config.getMeasurementConfigsCount() ) {
 			config.setMeasurementConfigsCount(idx + 1);
 		}
-		MeasurementConfig measConfig = config.getMeasurementConfigs()[idx];
+		MeasurementConfig measConfig = nonnull(config.getMeasurementConfigs(),
+				"Measurement configs")[idx];
 
 		String val = setting.getValue();
 		if ( val != null && !val.isEmpty() ) {
@@ -163,7 +166,7 @@ public class MeasurementConfig {
 	 *
 	 * @param prefix
 	 *        a setting key prefix to use
-	 * @return the settings, never {@literal null}
+	 * @return the settings, never {@code null}
 	 */
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(6);
@@ -208,8 +211,8 @@ public class MeasurementConfig {
 	 * @return the settings
 	 * @since 2.2
 	 */
-	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx,
-			int blockIdx, int measIdx) {
+	public List<SettingValueBean> toSettingValues(String providerId, @Nullable String instanceId,
+			int unitIdx, int blockIdx, int measIdx) {
 		List<SettingValueBean> settings = new ArrayList<>(8);
 		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "sourceId",
 				getSourceId());
@@ -229,8 +232,9 @@ public class MeasurementConfig {
 		return settings;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			int unitIdx, int blockIdx, int measIdx, String key, Object val) {
+	private static void addSetting(List<SettingValueBean> settings, String providerId,
+			@Nullable String instanceId, int unitIdx, int blockIdx, int measIdx, String key,
+			@Nullable Object val) {
 		if ( val == null ) {
 			return;
 		}
@@ -273,7 +277,7 @@ public class MeasurementConfig {
 	 *        be transformed
 	 * @return the transformed property value to use
 	 */
-	public Object applyTransforms(Object propVal) {
+	public @Nullable Object applyTransforms(@Nullable Object propVal) {
 		if ( propVal instanceof Number ) {
 			if ( decimalScale >= 0 ) {
 				propVal = applyDecimalScale((Number) propVal, decimalScale);
@@ -285,7 +289,7 @@ public class MeasurementConfig {
 		return propVal;
 	}
 
-	private static Number applyDecimalScale(Number value, int decimalScale) {
+	private static @Nullable Number applyDecimalScale(@Nullable Number value, int decimalScale) {
 		if ( decimalScale < 0 ) {
 			return value;
 		}
@@ -295,18 +299,19 @@ public class MeasurementConfig {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		if ( v.scale() > decimalScale ) {
+		if ( v != null && v.scale() > decimalScale ) {
 			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
 		}
 		return v;
 	}
 
-	private static Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
+	private static @Nullable Number applyUnitMultiplier(@Nullable Number value,
+			@Nullable BigDecimal multiplier) {
 		if ( multiplier == null || BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.multiply(multiplier);
+		return (v != null ? v.multiply(multiplier) : null);
 	}
 
 	/**
@@ -319,7 +324,7 @@ public class MeasurementConfig {
 	 * @return the transformed property value to use
 	 * @since 2.4
 	 */
-	public Object applyReverseTransforms(Object propVal) {
+	public @Nullable Object applyReverseTransforms(@Nullable Object propVal) {
 		if ( propVal instanceof Number ) {
 			if ( unitMultiplier != null ) {
 				propVal = applyReverseUnitMultiplier((Number) propVal, unitMultiplier);
@@ -328,12 +333,16 @@ public class MeasurementConfig {
 		return propVal;
 	}
 
-	private static Number applyReverseUnitMultiplier(Number value, BigDecimal divisor) {
+	private static @Nullable Number applyReverseUnitMultiplier(@Nullable Number value,
+			@Nullable BigDecimal divisor) {
 		if ( divisor == null || BigDecimal.ONE.compareTo(divisor) == 0
 				|| BigDecimal.ZERO.compareTo(divisor) == 0 ) {
 			return value;
 		}
 		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		if ( v == null ) {
+			return null;
+		}
 		int scale = v.scale();
 		scale += divisor.abs().divide(BigDecimal.TEN, RoundingMode.UP).intValue();
 		return v.divide(divisor, scale, RoundingMode.HALF_UP);
@@ -360,7 +369,7 @@ public class MeasurementConfig {
 	 * @return the effective control ID
 	 * @since 2.4
 	 */
-	public String controlId() {
+	public @Nullable String controlId() {
 		final String controlId = getControlId();
 		// @formatter:off
 		return nonEmptyString(
@@ -430,7 +439,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the source ID
 	 */
-	public String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -440,7 +449,7 @@ public class MeasurementConfig {
 	 * @param sourceId
 	 *        the source ID to set
 	 */
-	public void setSourceId(String sourceId) {
+	public final void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -453,7 +462,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the sample property name
 	 */
-	public String getPropertyName() {
+	public final @Nullable String getPropertyName() {
 		return propertyName;
 	}
 
@@ -467,7 +476,7 @@ public class MeasurementConfig {
 	 * @param name
 	 *        the sample property name
 	 */
-	public void setPropertyName(String name) {
+	public final void setPropertyName(@Nullable String name) {
 		this.propertyName = name;
 	}
 
@@ -476,7 +485,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the type
 	 */
-	public ModbusDataType getDataType() {
+	public final ModbusDataType getDataType() {
 		return dataType;
 	}
 
@@ -486,7 +495,7 @@ public class MeasurementConfig {
 	 * @param dataType
 	 *        the type to set
 	 */
-	public void setDataType(ModbusDataType dataType) {
+	public final void setDataType(@Nullable ModbusDataType dataType) {
 		if ( dataType == null ) {
 			return;
 		}
@@ -498,9 +507,8 @@ public class MeasurementConfig {
 	 *
 	 * @return the type as a key
 	 */
-	public String getDataTypeKey() {
-		ModbusDataType type = getDataType();
-		return (type != null ? type.getKey() : null);
+	public final String getDataTypeKey() {
+		return dataType.getKey();
 	}
 
 	/**
@@ -509,7 +517,7 @@ public class MeasurementConfig {
 	 * @param key
 	 *        the type key to set
 	 */
-	public void setDataTypeKey(String key) {
+	public final void setDataTypeKey(@Nullable String key) {
 		setDataType(ModbusDataType.forKey(key));
 	}
 
@@ -522,7 +530,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the register count to read
 	 */
-	public Integer getWordLength() {
+	public final Integer getWordLength() {
 		return wordLength;
 	}
 
@@ -536,8 +544,8 @@ public class MeasurementConfig {
 	 * @param wordLength
 	 *        the register count to read
 	 */
-	public void setWordLength(Integer wordLength) {
-		if ( wordLength != null && wordLength.intValue() < 1 ) {
+	public final void setWordLength(Integer wordLength) {
+		if ( wordLength == null || wordLength.intValue() < 1 ) {
 			return;
 		}
 		this.wordLength = wordLength;
@@ -549,7 +557,7 @@ public class MeasurementConfig {
 	 * @return {@code true} if a unit multiplier other than {@code 1} is
 	 *         configured
 	 */
-	public boolean hasUnitMultiplier() {
+	public final boolean hasUnitMultiplier() {
 		final BigDecimal m = getUnitMultiplier();
 		return (m != null && m.compareTo(BigDecimal.ONE) != 0);
 	}
@@ -559,7 +567,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the multiplier
 	 */
-	public BigDecimal getUnitMultiplier() {
+	public final BigDecimal getUnitMultiplier() {
 		return unitMultiplier;
 	}
 
@@ -577,7 +585,10 @@ public class MeasurementConfig {
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
-	public void setUnitMultiplier(BigDecimal unitMultiplier) {
+	public final void setUnitMultiplier(BigDecimal unitMultiplier) {
+		if ( unitMultiplier == null ) {
+			unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
+		}
 		this.unitMultiplier = unitMultiplier;
 	}
 
@@ -586,7 +597,7 @@ public class MeasurementConfig {
 	 *
 	 * @return the decimal scale
 	 */
-	public Integer getDecimalScale() {
+	public final @Nullable Integer getDecimalScale() {
 		return decimalScale;
 	}
 
@@ -603,7 +614,10 @@ public class MeasurementConfig {
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
-	public void setDecimalScale(Integer decimalScale) {
+	public final void setDecimalScale(Integer decimalScale) {
+		if ( decimalScale == null ) {
+			decimalScale = DEFAULT_DECIMAL_SCALE;
+		}
 		this.decimalScale = decimalScale;
 	}
 
@@ -613,7 +627,7 @@ public class MeasurementConfig {
 	 * @return the control ID
 	 * @since 2.4
 	 */
-	public String getControlId() {
+	public final @Nullable String getControlId() {
 		return controlId;
 	}
 
@@ -624,7 +638,7 @@ public class MeasurementConfig {
 	 *        the control ID to set
 	 * @since 2.4
 	 */
-	public void setControlId(String controlId) {
+	public final void setControlId(@Nullable String controlId) {
 		this.controlId = controlId;
 	}
 

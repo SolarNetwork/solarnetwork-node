@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.BitSet;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -61,8 +62,8 @@ public class ModbusRegisterData {
 	 * Constructor.
 	 *
 	 * <p>
-	 * If any argument is {@literal null} a new instance will be created and
-	 * used for that value.
+	 * If any argument is {@code null} a new instance will be created and used
+	 * for that value.
 	 * </p>
 	 *
 	 * @param coils
@@ -161,7 +162,8 @@ public class ModbusRegisterData {
 	 * @return the register data values
 	 * @since 2.1
 	 */
-	public static short[] encodeValue(ModbusDataType dataType, int count, Object value) {
+	public static short @Nullable [] encodeValue(ModbusDataType dataType, int count,
+			@Nullable Object value) {
 		if ( value == null ) {
 			return null;
 		}
@@ -196,7 +198,7 @@ public class ModbusRegisterData {
 		return result;
 	}
 
-	private static short[] limitLength(short[] array, int max) {
+	private static short @Nullable [] limitLength(short @Nullable [] array, int max) {
 		if ( array == null || array.length <= max ) {
 			return array;
 		}
@@ -361,7 +363,7 @@ public class ModbusRegisterData {
 		writeRegisters(address, values, holdings);
 	}
 
-	private static String[] hexValues(short[] values) {
+	private static String @Nullable [] hexValues(short @Nullable [] values) {
 		if ( values == null ) {
 			return null;
 		}
@@ -400,7 +402,10 @@ public class ModbusRegisterData {
 		writeRegisters(address, values, inputs);
 	}
 
-	private void writeRegisters(int address, short[] values, ModbusData data) {
+	private void writeRegisters(int address, short @Nullable [] values, ModbusData data) {
+		if ( values == null || values.length < 1 ) {
+			return;
+		}
 		try {
 			data.performUpdates(new ModbusDataUpdateAction() {
 
@@ -449,36 +454,36 @@ public class ModbusRegisterData {
 	/**
 	 * Get the coil register data.
 	 *
-	 * @return the coil registers, never {@literal null}
+	 * @return the coil registers, never {@code null}
 	 */
-	public BitSet getCoils() {
+	public final BitSet getCoils() {
 		return coils;
 	}
 
 	/**
 	 * Get the discrete register data.
 	 *
-	 * @return the discrete registers, never {@literal null}
+	 * @return the discrete registers, never {@code null}
 	 */
-	public BitSet getDiscretes() {
+	public final BitSet getDiscretes() {
 		return discretes;
 	}
 
 	/**
 	 * Get the input register data.
 	 *
-	 * @return the input registers, never {@literal null}
+	 * @return the input registers, never {@code null}
 	 */
-	public ModbusData getInputs() {
+	public final ModbusData getInputs() {
 		return inputs;
 	}
 
 	/**
 	 * Get the holding register data.
 	 *
-	 * @return the holding registers, never {@literal null}
+	 * @return the holding registers, never {@code null}
 	 */
-	public ModbusData getHoldings() {
+	public final ModbusData getHoldings() {
 		return holdings;
 	}
 
