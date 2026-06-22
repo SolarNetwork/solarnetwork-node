@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Mobile Network Setup
+Bundle-Description: System mobile (cellular/4G) network setup support.
+Bundle-SymbolicName: net.solarnetwork.node.setup.mobile
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.setup.mobile
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: net.solarnetwork.domain;version="[3.0,4.0)",
+ net.solarnetwork.node;version="[2.0,3.0)",
+ net.solarnetwork.node.reactor;version="[2.0,3.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[3.0,4.0)",
+ net.solarnetwork.util;version="[2.0,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)"

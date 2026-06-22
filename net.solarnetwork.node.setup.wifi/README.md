@@ -62,4 +62,4 @@ parameter is not provided, it will remain unchanged from its current value.
 | `ssid`     | The name of the WiFi network to connect to. |
 | `password` | The WiFi password to use. |
 
-[sn-wifi]: https://github.com/SolarNetworkFoundation/solarnetwork-ops/tree/master/packages/wifi/debian
+[sn-wifi]: https://github.com/SolarNetwork/solarnode-os-packages/tree/master/wifi/debian
