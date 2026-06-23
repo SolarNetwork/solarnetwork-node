@@ -56,7 +56,7 @@ import net.solarnetwork.settings.SettingSpecifier;
  * {@link InstructionHandler#handlesTopic(String)} and if that returns
  * {@literal true} the handler will be given the opportunity to handle the
  * instruction via {@link InstructionHandler#processInstruction(Instruction)}.
- * If the handler returns {@literal null} or {@link InstructionState#Received}
+ * If the handler returns {@code null} or {@link InstructionState#Received}
  * (because it does not support the given Instruction) this job will move on to
  * the next configured handler and try it.
  * </p>
