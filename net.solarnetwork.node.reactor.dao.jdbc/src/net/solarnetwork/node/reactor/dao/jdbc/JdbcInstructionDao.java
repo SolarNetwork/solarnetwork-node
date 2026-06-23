@@ -201,7 +201,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 					}
 					for ( String paramValue : paramValues ) {
 						int col = 1;
-						ps.setLong(col++, nonnull(instruction.getId(), "Instruction ID"));
+						ps.setLong(col++, instruction.getId());
 						ps.setString(col++, instruction.getInstructorId());
 						ps.setLong(col++, pos);
 						ps.setString(col++, paramName);
