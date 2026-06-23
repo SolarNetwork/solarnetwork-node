@@ -56,7 +56,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the value
 	 * @since 1.2
 	 */
-	public SettingValueBean(String key, @Nullable String value) {
+	public SettingValueBean(@Nullable String key, @Nullable String value) {
 		this(null, null, key, value);
 	}
 
@@ -73,8 +73,8 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the value
 	 * @since 1.3
 	 */
-	public SettingValueBean(@Nullable String providerKey, @Nullable String instanceKey, String key,
-			@Nullable String value) {
+	public SettingValueBean(@Nullable String providerKey, @Nullable String instanceKey,
+			@Nullable String key, @Nullable String value) {
 		this(providerKey, instanceKey, key, value, null);
 	}
 
@@ -87,7 +87,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the remove flag
 	 * @since 1.2
 	 */
-	public SettingValueBean(String key, boolean remove) {
+	public SettingValueBean(@Nullable String key, boolean remove) {
 		this.key = key;
 		this.remove = remove;
 	}
@@ -107,8 +107,8 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        the note
 	 * @since 1.4
 	 */
-	public SettingValueBean(@Nullable String providerKey, @Nullable String instanceKey, String key,
-			@Nullable String value, @Nullable String note) {
+	public SettingValueBean(@Nullable String providerKey, @Nullable String instanceKey,
+			@Nullable String key, @Nullable String value, @Nullable String note) {
 		super();
 		this.providerKey = providerKey;
 		this.instanceKey = instanceKey;
