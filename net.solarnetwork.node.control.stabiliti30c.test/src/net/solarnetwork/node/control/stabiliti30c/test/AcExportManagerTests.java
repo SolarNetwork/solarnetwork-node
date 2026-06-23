@@ -1,21 +1,21 @@
 /* ==================================================================
  * AcExportManagerTests.java - 3/09/2019 10:02:59 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.time.Instant;
-import java.util.UUID;
+import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -53,15 +53,16 @@ import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cRegister;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.reactor.BasicInstruction;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.test.DataUtils;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link AcExportManager} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -307,9 +308,9 @@ public class AcExportManagerTests {
 		replayAll();
 
 		Instant now = Instant.now();
-		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD, now,
-				UUID.randomUUID().toString(), null);
-		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(shedPowerAmount));
+		Instruction shedLoad = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SHED_LOAD, now,
+				Map.of(TEST_CONTROL_ID, String.valueOf(shedPowerAmount)));
 		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
@@ -339,9 +340,8 @@ public class AcExportManagerTests {
 		replayAll();
 
 		Instant now = Instant.now();
-		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD, now,
-				UUID.randomUUID().toString(), null);
-		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(0));
+		Instruction shedLoad = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SHED_LOAD, now, Map.of(TEST_CONTROL_ID, String.valueOf(0)));
 		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
@@ -376,9 +376,9 @@ public class AcExportManagerTests {
 		replayAll();
 
 		Instant now = Instant.now();
-		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				now, UUID.randomUUID().toString(), null);
-		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(shedPowerAmount));
+		Instruction shedLoad = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, now,
+				Map.of(TEST_CONTROL_ID, String.valueOf(shedPowerAmount)));
 		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
@@ -408,9 +408,9 @@ public class AcExportManagerTests {
 		replayAll();
 
 		Instant now = Instant.now();
-		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				now, UUID.randomUUID().toString(), null);
-		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(0));
+		Instruction shedLoad = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, now,
+				Map.of(TEST_CONTROL_ID, String.valueOf(0)));
 		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
