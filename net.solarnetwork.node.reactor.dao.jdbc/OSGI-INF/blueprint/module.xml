@@ -35,7 +35,7 @@
 	
 	<!-- Supporting Services -->
 	
-	<bean id="jdbcInstructionDao" class="net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao"
+	<bean id="jdbcInstructionDao" class="net.solarnetwork.node.reactor.dao.jdbc.JdbcInstructionDao"
 		init-method="init">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.dao.jdbc.reactor.test;
+package net.solarnetwork.node.reactor.dao.jdbc.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
@@ -57,11 +57,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
-import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.reactor.dao.jdbc.JdbcInstructionDao;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**

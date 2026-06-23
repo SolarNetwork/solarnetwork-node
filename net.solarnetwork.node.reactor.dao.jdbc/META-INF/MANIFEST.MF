@@ -4,7 +4,7 @@ Bundle-Name: Reactor Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.reactor.dao.jdbc
 Automatic-Module-Name: net.solarnetwork.node.reactor.dao.jdbc
 Bundle-Description: Database storage cache for SolarNet instruction requests.
-Bundle-Version: 4.0.0
+Bundle-Version: 4.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-17
 Import-Package: 
@@ -14,13 +14,15 @@ Import-Package:
  com.fasterxml.jackson.databind.annotation;version="[2.19,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.19,3.0)",
  javax.sql,
- net.solarnetwork.codec;version="[2.0,3.0)",
+ net.solarnetwork.codec;version="[2.12,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[3.0,4.0)",
- net.solarnetwork.node.dao;version="[3.0,4.0)",
- net.solarnetwork.node.dao.jdbc;version="[3.0,4.0)",
- net.solarnetwork.node.reactor;version="[2.2,3.0)",
- net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[3.7,4.0)",
+ net.solarnetwork.node.dao;version="[3.2,4.0)",
+ net.solarnetwork.node.dao.jdbc;version="[3.3,4.0)",
+ net.solarnetwork.node.reactor;version="[2.6,3.0)",
+ net.solarnetwork.service;version="[1.7,2.0)",
+ net.solarnetwork.util;version="[2.28,3.0)",
+ org.jspecify.annotations;version="[1.0,2.0)",
  org.aopalliance.aop;version="[1.0,2.0)",
  org.osgi.framework;version="[1.7,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",

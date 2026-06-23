@@ -20,10 +20,11 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.dao.jdbc.reactor;
+package net.solarnetwork.node.reactor.dao.jdbc;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
 import static net.solarnetwork.node.dao.jdbc.JdbcUtils.setUtcTimestampStatementValue;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,6 +37,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCallback;
@@ -178,7 +180,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 		storeDomainObject(instruction, getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION));
 
 		// now store all the Instruction's parameters
-		getJdbcTemplate().execute(new PreparedStatementCreator() {
+		jdbcTemplate().execute(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -186,10 +188,10 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 						.prepareStatement(getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION_PARAM));
 				return ps;
 			}
-		}, new PreparedStatementCallback<Object>() {
+		}, new PreparedStatementCallback<Void>() {
 
 			@Override
-			public Object doInPreparedStatement(PreparedStatement ps)
+			public Void doInPreparedStatement(PreparedStatement ps)
 					throws SQLException, DataAccessException {
 				int pos = 0;
 				for ( String paramName : instruction.getParameterNames() ) {
@@ -199,7 +201,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 					}
 					for ( String paramValue : paramValues ) {
 						int col = 1;
-						ps.setLong(col++, instruction.getId());
+						ps.setLong(col++, nonnull(instruction.getId(), "Instruction ID"));
 						ps.setString(col++, instruction.getInstructorId());
 						ps.setLong(col++, pos);
 						ps.setString(col++, paramName);
@@ -219,7 +221,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 
 		// finally create a status row
 		InstructionState state = instruction.getInstructionState();
-		getJdbcTemplate().update(getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION_STATUS),
+		jdbcTemplate().update(getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION_STATUS),
 				instruction.getId(), instruction.getInstructorId(), Timestamp.from(Instant.now()),
 				(state != null ? state : InstructionState.Received).toString());
 	}
@@ -239,12 +241,12 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
-	public Instruction getInstruction(Long instructionId, String instructorId) {
-		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ID),
-				new ResultSetExtractor<Instruction>() {
+	public @Nullable Instruction getInstruction(Long instructionId, String instructorId) {
+		return jdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ID),
+				new ResultSetExtractor<@Nullable Instruction>() {
 
 					@Override
-					public Instruction extractData(ResultSet rs)
+					public @Nullable Instruction extractData(ResultSet rs)
 							throws SQLException, DataAccessException {
 						List<Instruction> results = extractInstructions(rs);
 						if ( results.size() > 0 ) {
@@ -261,14 +263,16 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 		while ( rs.next() ) {
 			Long currId = rs.getLong(1);
 			String currInstructorId = rs.getString(2);
-			if ( bi == null || currInstructorId == null || !bi.getId().equals(currId)
+			if ( bi == null || currInstructorId == null || bi.getId() == null
+					|| bi.getInstructorId() == null || !bi.getId().equals(currId)
 					|| !bi.getInstructorId().equals(currInstructorId) ) {
 				InstructionStatus status = new BasicInstructionStatus(currId,
-						InstructionState.valueOf(rs.getString(5)), JdbcUtils.getUtcTimestampColumnValue(rs, 6),
+						InstructionState.valueOf(rs.getString(5)),
+						JdbcUtils.getUtcTimestampColumnValue(rs, 6),
 						(rs.getString(8) == null ? null : InstructionState.valueOf(rs.getString(8))),
 						JsonUtils.getStringMap(rs.getString(7)));
-				bi = new BasicInstruction(currId, rs.getString(3), JdbcUtils.getUtcTimestampColumnValue(rs, 4),
-						currInstructorId, status);
+				bi = new BasicInstruction(currId, rs.getString(3),
+						JdbcUtils.getUtcTimestampColumnValue(rs, 4), currInstructorId, status);
 				results.add(bi);
 			}
 			String pName = rs.getString(9);
@@ -285,7 +289,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	public void storeInstructionStatus(Long instructionId, String instructorId,
 			InstructionStatus status) {
 		String jparams = encodeInstructionParameters(status);
-		getJdbcTemplate().update(getSqlResource(RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS),
+		jdbcTemplate().update(getSqlResource(RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS),
 				status.getInstructionState().toString(), jparams,
 				(status.getAcknowledgedInstructionState() == null ? null
 						: status.getAcknowledgedInstructionState().toString()),
@@ -301,7 +305,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	 *         encode
 	 * @since 1.2
 	 */
-	private String encodeInstructionParameters(InstructionStatus status) {
+	private @Nullable String encodeInstructionParameters(@Nullable InstructionStatus status) {
 		String jparams = null;
 		final Map<String, ?> resultParameters = (status != null ? status.getResultParameters() : null);
 		if ( resultParameters != null && !resultParameters.isEmpty() ) {
@@ -330,7 +334,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	public boolean compareAndStoreInstructionStatus(Long instructionId, String instructorId,
 			InstructionState expectedState, InstructionStatus status) {
 		String jparams = encodeInstructionParameters(status);
-		int count = getJdbcTemplate().update(
+		int count = jdbcTemplate().update(
 				getSqlResource(RESOURCE_SQL_COMPARE_AND_SET_INSTRUCTION_STATUS),
 				status.getInstructionState().toString(), jparams,
 				(status.getAcknowledgedInstructionState() == null ? null
@@ -342,17 +346,18 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<Instruction> findInstructionsForState(InstructionState state) {
-		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE), ps -> {
-			ps.setString(1, state.toString());
-			JdbcUtils.setUtcTimestampStatementValue(ps, 2, Instant.now());
-		}, (ResultSetExtractor<List<Instruction>>) rs -> extractInstructions(rs));
+		return nonnull(
+				jdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE), ps -> {
+					ps.setString(1, state.toString());
+					JdbcUtils.setUtcTimestampStatementValue(ps, 2, Instant.now());
+				}, (ResultSetExtractor<List<Instruction>>) rs -> extractInstructions(rs)), "Result");
 	}
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<Instruction> findInstructionsForStateAndParent(InstructionState state,
 			String parentInstructorId, Long parentInstructionId) {
-		return getJdbcTemplate().query(
+		return nonnull(jdbcTemplate().query(
 				getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE_AND_2_PARAMS),
 				new ResultSetExtractor<List<Instruction>>() {
 
@@ -363,35 +368,37 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 					}
 				}, Instruction.PARAM_PARENT_INSTRUCTOR_ID, parentInstructorId,
 				Instruction.PARAM_PARENT_INSTRUCTION_ID, parentInstructionId.toString(),
-				state.toString());
+				state.toString()), "Result");
 	}
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<Instruction> findInstructionsForAcknowledgement() {
-		return getJdbcTemplate().query(
-				getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ACKNOWEDGEMENT),
-				new ResultSetExtractor<List<Instruction>>() {
+		return nonnull(
+				jdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ACKNOWEDGEMENT),
+						new ResultSetExtractor<List<Instruction>>() {
 
-					@Override
-					public List<Instruction> extractData(ResultSet rs)
-							throws SQLException, DataAccessException {
-						return extractInstructions(rs);
-					}
-				}, Instruction.LOCAL_INSTRUCTION_ID);
+							@Override
+							public List<Instruction> extractData(ResultSet rs)
+									throws SQLException, DataAccessException {
+								return extractInstructions(rs);
+							}
+						}, Instruction.LOCAL_INSTRUCTION_ID),
+				"Result");
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteHandledInstructionsOlderThan(final int hours) {
-		return getJdbcTemplate().update(new PreparedStatementCreator() {
+		return jdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 				final String sql = getSqlResource(RESOURCE_SQL_DELETE_OLD);
 				log.debug("Preparing SQL to delete old instructions [{}] with hours [{}]", sql, hours);
 				PreparedStatement ps = con.prepareStatement(sql);
-				JdbcUtils.setUtcTimestampStatementValue(ps, 1, Instant.now().minus(hours, ChronoUnit.HOURS));
+				JdbcUtils.setUtcTimestampStatementValue(ps, 1,
+						Instant.now().minus(hours, ChronoUnit.HOURS));
 				ps.setString(2, Instruction.LOCAL_INSTRUCTION_ID);
 				return ps;
 			}
