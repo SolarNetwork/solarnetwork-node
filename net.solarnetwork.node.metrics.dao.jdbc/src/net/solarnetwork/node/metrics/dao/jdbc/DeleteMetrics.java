@@ -23,6 +23,7 @@
 package net.solarnetwork.node.metrics.dao.jdbc;
 
 import static java.time.ZoneOffset.UTC;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,13 +32,12 @@ import java.sql.Types;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.SqlProvider;
 import net.solarnetwork.node.metrics.dao.MetricFilter;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Generate {@code DELETE} SQL for metric values based on a filter.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DeleteMetrics implements PreparedStatementCreator, SqlProvider {
 
@@ -53,7 +53,7 @@ public class DeleteMetrics implements PreparedStatementCreator, SqlProvider {
 	 */
 	public DeleteMetrics(MetricFilter filter) {
 		super();
-		this.filter = ObjectUtils.requireNonNullArgument(filter, "filter");
+		this.filter = requireNonNullArgument(filter, "filter");
 	}
 
 	@Override
@@ -94,18 +94,18 @@ public class DeleteMetrics implements PreparedStatementCreator, SqlProvider {
 
 	private int prepareWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.hasStartDate() ) {
-			stmt.setObject(++p, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+			stmt.setObject(++p, filter.startDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasEndDate() ) {
-			stmt.setObject(++p, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+			stmt.setObject(++p, filter.endDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasTypeCriteria() ) {
-			Array a = con.createArrayOf("VARCHAR", filter.getTypes());
+			Array a = con.createArrayOf("VARCHAR", filter.types());
 			stmt.setArray(++p, a);
 			a.free();
 		}
 		if ( filter.hasNameCriteria() ) {
-			Array a = con.createArrayOf("VARCHAR", filter.getNames());
+			Array a = con.createArrayOf("VARCHAR", filter.names());
 			stmt.setArray(++p, a);
 			a.free();
 		}

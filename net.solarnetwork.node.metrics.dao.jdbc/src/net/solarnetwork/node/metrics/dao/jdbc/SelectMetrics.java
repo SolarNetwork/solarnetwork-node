@@ -133,7 +133,7 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 		buf.append("WITH m AS (\n");
 		buf.append("\tSELECT mname\n");
 		int idx = 0;
-		for ( MetricAggregate agg : filter.getAggregates() ) {
+		for ( MetricAggregate agg : filter.aggregates() ) {
 			buf.append("\t\t, ");
 			switch (agg.getType()) {
 				case MetricAggregate.METRIC_TYPE_AVERAGE:
@@ -166,7 +166,7 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 		buf.append(")\n");
 		buf.append(", d AS (");
 		idx = 0;
-		for ( MetricAggregate agg : filter.getAggregates() ) {
+		for ( MetricAggregate agg : filter.aggregates() ) {
 			if ( idx > 0 ) {
 				buf.append("\tUNION ALL\n");
 			}
@@ -267,25 +267,25 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 
 	private int prepareWhere(PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.hasAggregateCriteria() ) {
-			for ( MetricAggregate agg : filter.getAggregates() ) {
+			for ( MetricAggregate agg : filter.aggregates() ) {
 				if ( MetricAggregate.METRIC_TYPE_QUANTILE.equals(agg.getType()) ) {
 					stmt.setObject(++p, agg.numberParameter(0));
 				}
 			}
 		}
 		if ( filter.hasStartDate() ) {
-			stmt.setObject(++p, filter.getStartDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+			stmt.setObject(++p, filter.startDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasEndDate() ) {
-			stmt.setObject(++p, filter.getEndDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+			stmt.setObject(++p, filter.endDate().atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		}
 		if ( filter.hasTypeCriteria() ) {
-			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.getTypes());
+			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.types());
 			stmt.setArray(++p, a);
 			a.free();
 		}
 		if ( filter.hasNameCriteria() ) {
-			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.getNames());
+			Array a = stmt.getConnection().createArrayOf("VARCHAR", filter.names());
 			stmt.setArray(++p, a);
 			a.free();
 		}
@@ -294,10 +294,10 @@ public class SelectMetrics implements PreparedStatementCreator, PreparedStatemen
 
 	private int preparePagination(PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.getOffset() != null ) {
-			stmt.setLong(++p, filter.getOffset());
+			stmt.setLong(++p, filter.offset());
 		}
 		if ( filter.getMax() != null ) {
-			stmt.setInt(++p, filter.getMax());
+			stmt.setInt(++p, filter.max());
 		}
 		return p;
 	}

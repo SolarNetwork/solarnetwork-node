@@ -34,7 +34,7 @@ import net.solarnetwork.node.metrics.domain.MetricAggregate;
  * entities.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface MetricFilter
 		extends DateRangeCriteria, PaginationCriteria, OptimizedQueryCriteria, RecentCriteria {
@@ -71,6 +71,23 @@ public interface MetricFilter
 	}
 
 	/**
+	 * Get the metric types.
+	 *
+	 * <p>
+	 * This method is designed to be used after a call to
+	 * {@link #hasTypeCriteria()} returns {@code true}, to avoid nullness
+	 * warnings.
+	 * </p>
+	 *
+	 * @return the metric types (presumed non-null)
+	 * @since 1.1
+	 */
+	@SuppressWarnings("NullAway")
+	default String[] types() {
+		return getTypes();
+	}
+
+	/**
 	 * Get the first metric name.
 	 *
 	 * <p>
@@ -102,6 +119,23 @@ public interface MetricFilter
 	}
 
 	/**
+	 * Get the metric names.
+	 *
+	 * <p>
+	 * This method is designed to be used after a call to
+	 * {@link #hasNameCriteria()} returns {@code true}, to avoid nullness
+	 * warnings.
+	 * </p>
+	 *
+	 * @return the metric names (presumed non-null)
+	 * @since 1.1
+	 */
+	@SuppressWarnings("NullAway")
+	default String[] names() {
+		return getNames();
+	}
+
+	/**
 	 * Get an array of desired output metric aggregates.
 	 *
 	 * @return the desired aggregates (may be {@code null})
@@ -116,6 +150,23 @@ public interface MetricFilter
 	 */
 	default boolean hasAggregateCriteria() {
 		return getAggregates() != null && getAggregates().length > 0;
+	}
+
+	/**
+	 * Get the metric names.
+	 *
+	 * <p>
+	 * This method is designed to be used after a call to
+	 * {@link #hasAggregateCriteria()} returns {@code true}, to avoid nullness
+	 * warnings.
+	 * </p>
+	 *
+	 * @return the metric aggregates (presumed non-null)
+	 * @since 1.1
+	 */
+	@SuppressWarnings("NullAway")
+	default MetricAggregate[] aggregates() {
+		return getAggregates();
 	}
 
 }

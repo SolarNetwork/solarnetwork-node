@@ -25,6 +25,7 @@ package net.solarnetwork.node.metrics.dao.jdbc;
 import static java.lang.String.format;
 import static java.time.ZoneOffset.UTC;
 import static net.solarnetwork.node.metrics.dao.jdbc.Constants.TABLE_NAME_TEMPALTE;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementSetter;
@@ -133,23 +136,24 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 	public MetricKey save(Metric entity) {
 		insertDomainObject(entity, getSqlResource(SQL_INSERT));
 		stats.increment(MetricDaoStat.MetricsStored);
-		postEntityEvent(entity.getId(), entity, EntityEventType.STORED);
-		return entity.getId();
+		postEntityEvent(entity.id(), entity, EntityEventType.STORED);
+		return entity.id();
 	}
 
 	@Override
-	public FilterResults<Metric, MetricKey> findFiltered(MetricFilter filter, List<SortDescriptor> sorts,
-			Long offset, Integer max) {
+	public FilterResults<Metric, MetricKey> findFiltered(MetricFilter filter,
+			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max) {
 		SelectMetrics sql = new SelectMetrics(filter);
-		List<Metric> results = getJdbcTemplate().query(sql, getRowMapper());
+		List<Metric> results = jdbcTemplate().query(sql, getRowMapper());
 
 		Long totalResultCount = null;
 		if ( !filter.isWithoutTotalResultsCount() ) {
-			totalResultCount = getJdbcTemplate().query(sql.countPreparedStatementCreator(),
+			totalResultCount = jdbcTemplate().query(sql.countPreparedStatementCreator(),
 					new ResultSetExtractor<Long>() {
 
 						@Override
-						public Long extractData(ResultSet rs) throws SQLException, DataAccessException {
+						public @Nullable Long extractData(ResultSet rs)
+								throws SQLException, DataAccessException {
 							return rs.next() ? rs.getLong(1) : null;
 						}
 					});
@@ -194,7 +198,7 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 	@Override
 	protected Metric getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
 			throws SQLException {
-		return getRowMapper().mapRow(resultSet, rowCount);
+		return nonnull(getRowMapper().mapRow(resultSet, rowCount), "Row");
 	}
 
 	@Override
@@ -226,7 +230,7 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 	@Override
 	public int deleteFiltered(MetricFilter filter) {
 		DeleteMetrics sql = new DeleteMetrics(filter);
-		int result = getJdbcTemplate().update(sql);
+		int result = jdbcTemplate().update(sql);
 		if ( result > 0 ) {
 			stats.increment(MetricDaoStat.MetricsDeleted, result);
 		}
@@ -266,6 +270,10 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 	}
 
 	private String getStatusMessage() {
+		final MessageSource msgSource = getMessageSource();
+		if ( msgSource == null ) {
+			return "";
+		}
 		// @formatter:off
 		long rowCount = 0;
 		try {
@@ -273,7 +281,7 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 		} catch ( Exception e ) {
 			log.warn("Error finding metric row count.", e);
 		}
-		return getMessageSource().getMessage("status.msg",
+		return msgSource.getMessage("status.msg",
 				new Object[] {
 						rowCount,
 						stats.get(MetricDaoStat.MetricsStored),
@@ -283,7 +291,7 @@ public class JdbcMetricDao extends BaseJdbcBatchableDao<Metric, MetricKey>
 	}
 
 	private long rowCount() {
-		final Number rowCountNum = getJdbcTemplate()
+		final Number rowCountNum = jdbcTemplate()
 				.queryForObject(getSqlResource(SqlResource.Count.getResource()), Number.class);
 		return (rowCountNum == null ? 0 : rowCountNum.longValue());
 	}
