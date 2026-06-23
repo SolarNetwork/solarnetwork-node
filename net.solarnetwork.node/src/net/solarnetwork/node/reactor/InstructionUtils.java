@@ -27,7 +27,6 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 
@@ -35,39 +34,13 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
  * Utilities for dealing with common Instruction patterns.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public final class InstructionUtils {
 
 	private InstructionUtils() {
 		// can't create me
-	}
-
-	// inner class to lazy-init LOCAL_ID with system time seed
-	private static class LocalId {
-
-		private static final AtomicLong LOCAL_ID = initLocalId();
-
-		private static AtomicLong initLocalId() {
-			return new AtomicLong(System.currentTimeMillis());
-		}
-	}
-
-	/**
-	 * Generate a new local ID.
-	 *
-	 * <p>
-	 * Local IDs are sequentially generated, but seeded by the current date when
-	 * this method is first invoked. This is to help reduce the risk of
-	 * generating duplicate IDs across JVM restarts, but is dependent on the
-	 * system clock to achieve that.
-	 * </p>
-	 *
-	 * @return a new local ID
-	 */
-	private static Long localId() {
-		return LocalId.LOCAL_ID.getAndIncrement();
 	}
 
 	/**
@@ -130,13 +103,18 @@ public final class InstructionUtils {
 	 *
 	 * @param topic
 	 *        the instruction topic
+	 * @param instructionDate
+	 *        the instruction date; if {@code null} then the current instant
+	 *        will be used
 	 * @param params
 	 *        an optional map of parameters
 	 * @return the new instruction, never {@code null}
+	 * @since 1.3
 	 */
-	public static Instruction createLocalInstruction(String topic,
+	public static Instruction createLocalInstruction(String topic, @Nullable Instant instructionDate,
 			@Nullable Map<String, String> params) {
-		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
+		BasicInstruction instr = new BasicInstruction(net.solarnetwork.domain.Instruction.localId(),
+				topic, (instructionDate != null ? instructionDate : Instant.now()),
 				Instruction.LOCAL_INSTRUCTION_ID, null);
 		if ( params != null ) {
 			for ( Entry<String, String> me : params.entrySet() ) {
@@ -144,6 +122,25 @@ public final class InstructionUtils {
 			}
 		}
 		return instr;
+	}
+
+	/**
+	 * Create a new local instruction with an optional parameter.
+	 *
+	 * <p>
+	 * The returned {@link Instruction#getInstructorId()} value will be
+	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
+	 * </p>
+	 *
+	 * @param topic
+	 *        the instruction topic
+	 * @param params
+	 *        an optional map of parameters
+	 * @return the new instruction, never {@code null}
+	 */
+	public static Instruction createLocalInstruction(String topic,
+			@Nullable Map<String, String> params) {
+		return createLocalInstruction(topic, null, params);
 	}
 
 	/**
@@ -165,12 +162,10 @@ public final class InstructionUtils {
 	 */
 	public static Instruction createLocalInstruction(String topic, @Nullable String paramName,
 			@Nullable String paramValue) {
-		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
-				Instruction.LOCAL_INSTRUCTION_ID, null);
-		if ( paramName != null && paramValue != null ) {
-			instr.addParameter(paramName, paramValue);
-		}
-		return instr;
+		Map<String, String> params = (paramName != null && paramValue != null
+				? Map.of(paramName, paramValue)
+				: null);
+		return createLocalInstruction(topic, params);
 	}
 
 	/**
@@ -226,7 +221,7 @@ public final class InstructionUtils {
 	public static Instruction localInstructionFrom(net.solarnetwork.domain.Instruction instr) {
 		return new BasicInstruction(
 				nonnull(BasicInstruction.from(instr, Instruction.LOCAL_INSTRUCTION_ID), "Instruction"),
-				localId(), null);
+				net.solarnetwork.domain.Instruction.localId(), null);
 	}
 
 }
