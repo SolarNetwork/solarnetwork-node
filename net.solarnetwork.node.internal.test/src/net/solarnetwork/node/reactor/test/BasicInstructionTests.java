@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.reactor.test;
 
+import static net.solarnetwork.test.CommonTestUtils.randomLong;
+import static net.solarnetwork.test.CommonTestUtils.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
@@ -30,7 +32,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 import org.junit.Test;
 import net.solarnetwork.node.reactor.BasicInstruction;
 
@@ -45,8 +46,8 @@ public class BasicInstructionTests {
 	@Test
 	public void params_none() {
 		// GIVEN
-		BasicInstruction instr = new BasicInstruction(UUID.randomUUID().toString(), Instant.now(),
-				UUID.randomUUID().toString(), null);
+		BasicInstruction instr = new BasicInstruction(randomLong(), randomString(), Instant.now(),
+				randomString(), null);
 
 		// WHEN
 		Map<String, String> params = instr.params();
@@ -59,8 +60,8 @@ public class BasicInstructionTests {
 	@Test
 	public void params_singleValues() {
 		// GIVEN
-		BasicInstruction instr = new BasicInstruction(UUID.randomUUID().toString(), Instant.now(),
-				UUID.randomUUID().toString(), null);
+		BasicInstruction instr = new BasicInstruction(randomLong(), randomString(), Instant.now(),
+				randomString(), null);
 		instr.addParameter("foo", "bar");
 		instr.addParameter("bim", "bam");
 
@@ -77,8 +78,8 @@ public class BasicInstructionTests {
 	@Test
 	public void params_mergedValues() {
 		// GIVEN
-		BasicInstruction instr = new BasicInstruction(UUID.randomUUID().toString(), Instant.now(),
-				UUID.randomUUID().toString(), null);
+		BasicInstruction instr = new BasicInstruction(randomLong(), randomString(), Instant.now(),
+				randomString(), null);
 		instr.addParameter("foo", "bar");
 		instr.addParameter("bim", "bam");
 		instr.addParameter("foo", "hop");
