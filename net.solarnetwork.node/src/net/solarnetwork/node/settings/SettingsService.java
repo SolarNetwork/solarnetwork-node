@@ -321,7 +321,7 @@ public interface SettingsService {
 	 * @since 1.4
 	 */
 	@Nullable
-	SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey);
+	SettingResourceHandler getSettingResourceHandler(String handlerKey, @Nullable String instanceKey);
 
 	/**
 	 * Get current setting resources.
