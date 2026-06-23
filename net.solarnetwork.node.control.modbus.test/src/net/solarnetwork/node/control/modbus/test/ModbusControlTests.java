@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.BitSet;
+import java.util.concurrent.atomic.AtomicLong;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -65,6 +66,7 @@ public class ModbusControlTests {
 	private static final String TEST_CONTROL_ID = "/test/control/1";
 
 	private final int UNIT_ID = 1;
+	private final AtomicLong ID_GEN = new AtomicLong(0L);
 
 	private ModbusNetwork modbus;
 	private ModbusConnection conn;
@@ -101,8 +103,9 @@ public class ModbusControlTests {
 				NodeControlPropertyType.Boolean, ModbusDataType.Boolean, 123);
 		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
 
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
+		BasicInstruction instr = new BasicInstruction(ID_GEN.incrementAndGet(),
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, Instant.now(),
+				Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "true");
 
 		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
@@ -136,8 +139,9 @@ public class ModbusControlTests {
 				NodeControlPropertyType.Boolean, ModbusDataType.Boolean, 123);
 		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
 
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
+		BasicInstruction instr = new BasicInstruction(ID_GEN.incrementAndGet(),
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, Instant.now(),
+				Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "false");
 
 		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
@@ -231,8 +235,9 @@ public class ModbusControlTests {
 		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
 		control.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
+		BasicInstruction instr = new BasicInstruction(ID_GEN.incrementAndGet(),
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, Instant.now(),
+				Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "45000.0");
 
 		expect(modbus.performAction(eq(UNIT_ID), anyAction(Boolean.class)))
@@ -266,8 +271,9 @@ public class ModbusControlTests {
 		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
 		control.setWordOrder(ModbusWordOrder.MostToLeastSignificant);
 
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
+		BasicInstruction instr = new BasicInstruction(ID_GEN.incrementAndGet(),
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, Instant.now(),
+				Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "45000.0");
 
 		expect(modbus.performAction(eq(UNIT_ID), anyAction(Boolean.class)))
