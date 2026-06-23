@@ -31,9 +31,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,10 +46,10 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
-import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
@@ -91,9 +91,8 @@ public class ModbusPCMControllerTest {
 
 	@Test
 	public void handleDemandBalance50Percent() throws IOException {
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
-				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(TEST_CONTROL_ID, "50");
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_DEMAND_BALANCE, Map.of(TEST_CONTROL_ID, "50"));
 
 		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
@@ -239,9 +238,8 @@ public class ModbusPCMControllerTest {
 
 		replay(modbus, conn);
 
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
-				Instant.now(), null, null);
-		instr.addParameter(TEST_CONTROL_ID, "50"); // request 50%
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_DEMAND_BALANCE, Map.of(TEST_CONTROL_ID, "50")); // request 50%
 
 		InstructionStatus result = service.processInstruction(instr);
 
