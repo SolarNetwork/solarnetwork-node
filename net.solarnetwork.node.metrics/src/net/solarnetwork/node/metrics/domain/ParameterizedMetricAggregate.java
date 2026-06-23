@@ -23,6 +23,7 @@
 package net.solarnetwork.node.metrics.domain;
 
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -72,7 +73,7 @@ public class ParameterizedMetricAggregate implements MetricAggregate {
 	 * @param keyProvider
 	 *        function to provide the key value
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public ParameterizedMetricAggregate(String type, Object[] parameters,
 			Function<MetricAggregate, String> keyProvider) {
@@ -88,7 +89,7 @@ public class ParameterizedMetricAggregate implements MetricAggregate {
 	}
 
 	@Override
-	public Object[] getParameters() {
+	public Object @Nullable [] getParameters() {
 		return parameters;
 	}
 

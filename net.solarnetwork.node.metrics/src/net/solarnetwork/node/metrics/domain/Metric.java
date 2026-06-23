@@ -24,6 +24,7 @@ package net.solarnetwork.node.metrics.domain;
 
 import java.time.Instant;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.BasicEntity;
 import net.solarnetwork.domain.Differentiable;
 import net.solarnetwork.util.ObjectUtils;
@@ -59,7 +60,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 *        the value
 	 * @return the new instance
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public static Metric sampleValue(Instant ts, String name, double value) {
 		return metricValue(ts, METRIC_TYPE_SAMPLE, name, value);
@@ -78,7 +79,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 *        the value
 	 * @return the new instance
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public static Metric metricValue(Instant ts, String type, String name, double value) {
 		return new Metric(new MetricKey(ts, type, name), value);
@@ -92,7 +93,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 * @param value
 	 *        the value
 	 * @throws IllegalArgumentException
-	 *         if the {@code id} argument is {@literal null}
+	 *         if the {@code id} argument is {@code null}
 	 */
 	public Metric(MetricKey id, double value) {
 		super(ObjectUtils.requireNonNullArgument(id, "id"), null);
@@ -106,7 +107,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 *        the other charge point to copy
 	 */
 	public Metric(Metric other) {
-		this(other.getId(), other.value);
+		this(other.id(), other.value);
 	}
 
 	@Override
@@ -138,7 +139,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 * @return {@literal true} if the properties of this instance are equal to
 	 *         the other
 	 */
-	public boolean isSameAs(Metric other) {
+	public boolean isSameAs(@Nullable Metric other) {
 		if ( other == null ) {
 			return false;
 		}
@@ -146,7 +147,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	}
 
 	@Override
-	public boolean differsFrom(Metric other) {
+	public boolean differsFrom(@Nullable Metric other) {
 		return !isSameAs(other);
 	}
 
@@ -156,7 +157,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 * @return the timestamp
 	 */
 	public Instant getTimestamp() {
-		return getId().getTimestamp();
+		return id().getTimestamp();
 	}
 
 	/**
@@ -165,7 +166,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 * @return the type
 	 */
 	public String getType() {
-		return getId().getType();
+		return id().getType();
 	}
 
 	/**
@@ -174,7 +175,7 @@ public class Metric extends BasicEntity<MetricKey> implements Differentiable<Met
 	 * @return the name
 	 */
 	public String getName() {
-		return getId().getName();
+		return id().getName();
 	}
 
 	/**

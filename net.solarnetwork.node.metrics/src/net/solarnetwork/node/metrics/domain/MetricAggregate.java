@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.metrics.domain;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -70,13 +71,13 @@ public interface MetricAggregate {
 	 *
 	 * @return an optional list of parameters
 	 */
-	Object[] getParameters();
+	Object @Nullable [] getParameters();
 
 	/**
 	 * Test if the aggregate provides any parameters.
 	 *
-	 * @return {@literal true} if {@link #getParameters()} is not
-	 *         {@literal null} or empty
+	 * @return {@literal true} if {@link #getParameters()} is not {@code null}
+	 *         or empty
 	 */
 	default boolean hasParameter() {
 		final Object[] p = getParameters();
@@ -88,10 +89,10 @@ public interface MetricAggregate {
 	 *
 	 * @param idx
 	 *        the index of the parameter to get as a number
-	 * @return the number, or {@literal null} if the parameter does not exist or
+	 * @return the number, or {@code null} if the parameter does not exist or
 	 *         cannot be converted to a number
 	 */
-	default Number numberParameter(int idx) {
+	default @Nullable Number numberParameter(int idx) {
 		final Object[] p = getParameters();
 		if ( p == null || idx >= p.length ) {
 			return null;

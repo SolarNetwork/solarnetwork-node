@@ -55,7 +55,7 @@ public class CsvExportBatchCallback implements BatchCallback<Metric>, Closeable 
 	 * @param out
 	 *        the output writer
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public CsvExportBatchCallback(Writer out) {
 		super();

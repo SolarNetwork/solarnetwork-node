@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.metrics.domain;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Basic metric aggregates, that have no parameters.
  *
@@ -67,7 +69,7 @@ public enum BasicMetricAggregate implements MetricAggregate {
 	}
 
 	@Override
-	public Object[] getParameters() {
+	public Object @Nullable [] getParameters() {
 		return null;
 	}
 

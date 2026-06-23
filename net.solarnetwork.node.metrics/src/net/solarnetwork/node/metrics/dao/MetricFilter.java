@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.metrics.dao;
 
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.dao.DateRangeCriteria;
 import net.solarnetwork.dao.OptimizedQueryCriteria;
 import net.solarnetwork.dao.PaginationCriteria;
@@ -43,12 +44,12 @@ public interface MetricFilter
 	 *
 	 * <p>
 	 * This returns the first available type from the {@link #getTypes()} array,
-	 * or {@literal null} if not available.
+	 * or {@code null} if not available.
 	 * </p>
 	 *
-	 * @return the first type, or {@literal null} if not available
+	 * @return the first type, or {@code null} if not available
 	 */
-	default String getType() {
+	default @Nullable String getType() {
 		final String[] types = getTypes();
 		return (types != null && types.length > 0 ? types[0] : null);
 	}
@@ -56,9 +57,9 @@ public interface MetricFilter
 	/**
 	 * Get an array of metric types.
 	 *
-	 * @return array of types (may be {@literal null})
+	 * @return array of types (may be {@code null})
 	 */
-	String[] getTypes();
+	String @Nullable [] getTypes();
 
 	/**
 	 * Test if the filter has a type criteria specified.
@@ -74,12 +75,12 @@ public interface MetricFilter
 	 *
 	 * <p>
 	 * This returns the first available name from the {@link #getNames()} array,
-	 * or {@literal null} if not available.
+	 * or {@code null} if not available.
 	 * </p>
 	 *
-	 * @return the first name, or {@literal null} if not available
+	 * @return the first name, or {@code null} if not available
 	 */
-	default String getName() {
+	default @Nullable String getName() {
 		final String[] names = getNames();
 		return (names != null && names.length > 0 ? names[0] : null);
 	}
@@ -87,9 +88,9 @@ public interface MetricFilter
 	/**
 	 * Get an array of metric names.
 	 *
-	 * @return array of names (may be {@literal null})
+	 * @return array of names (may be {@code null})
 	 */
-	String[] getNames();
+	String @Nullable [] getNames();
 
 	/**
 	 * Test if the filter has a name criteria specified.
@@ -103,9 +104,9 @@ public interface MetricFilter
 	/**
 	 * Get an array of desired output metric aggregates.
 	 *
-	 * @return the desired aggregates (may be {@literal null})
+	 * @return the desired aggregates (may be {@code null})
 	 */
-	MetricAggregate[] getAggregates();
+	MetricAggregate @Nullable [] getAggregates();
 
 	/**
 	 * Test if the filter has an aggregate criteria specified.

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.metrics.dao;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.SimplePagination;
 import net.solarnetwork.node.metrics.domain.MetricAggregate;
 
@@ -34,11 +35,11 @@ import net.solarnetwork.node.metrics.domain.MetricAggregate;
  */
 public class BasicMetricFilter extends SimplePagination implements MetricFilter {
 
-	private Instant startDate;
-	private Instant endDate;
-	private String[] types;
-	private String[] names;
-	private MetricAggregate[] aggregates;
+	private @Nullable Instant startDate;
+	private @Nullable Instant endDate;
+	private String @Nullable [] types;
+	private String @Nullable [] names;
+	private MetricAggregate @Nullable [] aggregates;
 	private boolean withoutTotalResultsCount = true;
 	private boolean mostRecent;
 
@@ -50,7 +51,7 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	}
 
 	@Override
-	public final Instant getStartDate() {
+	public final @Nullable Instant getStartDate() {
 		return startDate;
 	}
 
@@ -60,12 +61,12 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param startDate
 	 *        the date to set
 	 */
-	public final void setStartDate(Instant startDate) {
+	public final void setStartDate(@Nullable Instant startDate) {
 		this.startDate = startDate;
 	}
 
 	@Override
-	public final Instant getEndDate() {
+	public final @Nullable Instant getEndDate() {
 		return endDate;
 	}
 
@@ -75,12 +76,12 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param endDate
 	 *        the date to set
 	 */
-	public final void setEndDate(Instant endDate) {
+	public final void setEndDate(@Nullable Instant endDate) {
 		this.endDate = endDate;
 	}
 
 	@Override
-	public final String[] getTypes() {
+	public final String @Nullable [] getTypes() {
 		return types;
 	}
 
@@ -90,7 +91,7 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param types
 	 *        the types to set
 	 */
-	public final void setTypes(String[] types) {
+	public final void setTypes(String @Nullable [] types) {
 		this.types = types;
 	}
 
@@ -104,12 +105,12 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param type
 	 *        the type to set
 	 */
-	public void setType(String type) {
+	public void setType(@Nullable String type) {
 		setTypes(type != null && !type.isEmpty() ? new String[] { type } : null);
 	}
 
 	@Override
-	public final String[] getNames() {
+	public final String @Nullable [] getNames() {
 		return names;
 	}
 
@@ -119,7 +120,7 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param names
 	 *        the names to set
 	 */
-	public final void setNames(String[] names) {
+	public final void setNames(String @Nullable [] names) {
 		this.names = names;
 	}
 
@@ -133,12 +134,12 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param name
 	 *        the name to set
 	 */
-	public void setName(String name) {
+	public void setName(@Nullable String name) {
 		setNames(name != null && !name.isEmpty() ? new String[] { name } : null);
 	}
 
 	@Override
-	public final MetricAggregate[] getAggregates() {
+	public final MetricAggregate @Nullable [] getAggregates() {
 		return aggregates;
 	}
 
@@ -148,7 +149,7 @@ public class BasicMetricFilter extends SimplePagination implements MetricFilter 
 	 * @param aggregates
 	 *        the aggregates to set
 	 */
-	public final void setAggregates(MetricAggregate[] aggregates) {
+	public final void setAggregates(MetricAggregate @Nullable [] aggregates) {
 		this.aggregates = aggregates;
 	}
 

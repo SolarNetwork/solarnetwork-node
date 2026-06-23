@@ -56,7 +56,7 @@ public class MetricKey implements Serializable, Cloneable, Comparable<MetricKey>
 	 * @param name
 	 *        the name
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public MetricKey(Instant timestamp, String type, String name) {
 		super();

@@ -25,6 +25,7 @@ package net.solarnetwork.node.metrics.service;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import net.solarnetwork.dao.GenericDao;
 import net.solarnetwork.node.metrics.domain.Metric;
@@ -35,7 +36,8 @@ import net.solarnetwork.node.metrics.domain.Metric;
  * @author matt
  * @version 1.0
  */
-public final class MetricEventDataExtractor implements Function<Event, Map<String, ?>> {
+public final class MetricEventDataExtractor
+		implements Function<@Nullable Event, @Nullable Map<String, ?>> {
 
 	/**
 	 * Constructor.
@@ -45,7 +47,7 @@ public final class MetricEventDataExtractor implements Function<Event, Map<Strin
 	}
 
 	@Override
-	public Map<String, ?> apply(Event event) {
+	public @Nullable Map<String, ?> apply(@Nullable Event event) {
 		if ( event == null ) {
 			return null;
 		}
