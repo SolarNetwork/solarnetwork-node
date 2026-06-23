@@ -94,23 +94,6 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	/**
 	 * Constructor.
 	 *
-	 * @param topic
-	 *        the instruction topic
-	 * @param instructionDate
-	 *        the instruction date
-	 * @param instructorId
-	 *        the instructor ID
-	 * @param status
-	 *        the status, or {@code null}
-	 */
-	public BasicInstruction(@Nullable String topic, @Nullable Instant instructionDate,
-			String instructorId, @Nullable InstructionStatus status) {
-		this(null, topic, instructionDate, instructorId, status);
-	}
-
-	/**
-	 * Constructor.
-	 *
 	 * @param id
 	 *        the local instruction ID
 	 * @param topic
@@ -122,7 +105,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 * @param status
 	 *        the status, or {@code null}
 	 */
-	public BasicInstruction(@Nullable Long id, @Nullable String topic, @Nullable Instant instructionDate,
+	public BasicInstruction(Long id, @Nullable String topic, @Nullable Instant instructionDate,
 			String instructorId, @Nullable InstructionStatus status) {
 		super(id, topic, instructionDate, status);
 		this.instructorId = instructorId;
