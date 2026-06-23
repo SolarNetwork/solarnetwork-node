@@ -1,21 +1,21 @@
 /* ==================================================================
  * OperationalModeSwitch.java - 15/05/2019 3:39:20 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
@@ -59,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Control that acts like a binary switch for toggling an operational mode
  * on/off.
- * 
+ *
  * <p>
  * This control works by configuring an operational mode
  * ({@link #setMode(String)} and control ID ({@link #setControlId(String)}. When
@@ -68,29 +69,29 @@ import net.solarnetwork.util.StringUtils;
  * mode will be enabled or disabled based on the boolean value of the received
  * instruction parameter.
  * </p>
- * 
+ *
  * <p>
  * The state of the control is tied to the state of the configured operational
  * mode. If the operational mode is enabled/disabled the control state will be
  * updated to match.
  * </p>
- * 
+ *
  * @author matt
  * @version 2.0
  */
 public class OperationalModeSwitch extends BaseIdentifiable
 		implements EventHandler, InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
 
-	private String mode;
-	private String controlId;
-	private OptionalService<EventAdmin> eventAdmin;
-
 	private final OptionalService<OperationalModesService> opModesService;
 	private final AtomicBoolean active = new AtomicBoolean(false);
 
+	private @Nullable String mode;
+	private @Nullable String controlId;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
+
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the operational modes service to use
 	 */
@@ -102,12 +103,12 @@ public class OperationalModeSwitch extends BaseIdentifiable
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return TOPIC_SET_CONTROL_PARAMETER.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		String mode = getMode();
 		String controlId = getControlId();
 		if ( instruction == null || !TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic())
@@ -144,7 +145,7 @@ public class OperationalModeSwitch extends BaseIdentifiable
 	}
 
 	@Override
-	public NodeControlInfo getCurrentControlInfo(String controlId) {
+	public @Nullable NodeControlInfo getCurrentControlInfo(String controlId) {
 		if ( this.controlId == null || !this.controlId.equals(controlId) ) {
 			return null;
 		}
@@ -166,7 +167,7 @@ public class OperationalModeSwitch extends BaseIdentifiable
 	}
 
 	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
-		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+		final EventAdmin admin = OptionalService.service(eventAdmin);
 		if ( admin == null ) {
 			return;
 		}
@@ -184,7 +185,7 @@ public class OperationalModeSwitch extends BaseIdentifiable
 			return;
 		}
 		String mode = getMode();
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({ "unchecked", "null", "NullAway" })
 		Set<String> enabledModes = (Set<String>) event.getProperty(EVENT_PARAM_ACTIVE_OPERATIONAL_MODES);
 		boolean enabled = enabledModes != null && enabledModes.contains(mode);
 		if ( enabled != active.getAndSet(enabled) ) {
@@ -222,17 +223,17 @@ public class OperationalModeSwitch extends BaseIdentifiable
 
 	// Accessors
 
-	private OperationalModesService opModesService() {
-		return (opModesService != null ? opModesService.service() : null);
+	private @Nullable OperationalModesService opModesService() {
+		return OptionalService.service(opModesService);
 	}
 
 	/**
 	 * Get the active state.
-	 * 
+	 *
 	 * @return {@literal true} if the configured mode is considered as enabled,
 	 *         {@literal false} otherwise
 	 */
-	public boolean isModeActive() {
+	public final boolean isModeActive() {
 		String mode = getMode();
 		if ( mode == null ) {
 			return false;
@@ -243,58 +244,58 @@ public class OperationalModeSwitch extends BaseIdentifiable
 
 	/**
 	 * Get the operational mode to listen for.
-	 * 
+	 *
 	 * @return the operational mode
 	 */
-	public String getMode() {
+	public final @Nullable String getMode() {
 		return mode;
 	}
 
 	/**
 	 * Set the operational mode to listen for.
-	 * 
+	 *
 	 * @param mode
 	 *        the operational mode
 	 */
-	public void setMode(String mode) {
+	public final void setMode(@Nullable String mode) {
 		this.mode = mode;
 	}
 
 	/**
 	 * Get the control ID to use.
-	 * 
+	 *
 	 * @return the control ID
 	 */
-	public String getControlId() {
+	public final @Nullable String getControlId() {
 		return controlId;
 	}
 
 	/**
 	 * Set the control ID to use.
-	 * 
+	 *
 	 * @param controlId
 	 *        the control ID
 	 */
-	public void setControlId(String controlId) {
+	public final void setControlId(@Nullable String controlId) {
 		this.controlId = controlId;
 	}
 
 	/**
 	 * Get the event admin.
-	 * 
+	 *
 	 * @return the event admin
 	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
+	public final @Nullable OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
 	/**
 	 * Set the event admin.
-	 * 
+	 *
 	 * @param eventAdmin
 	 *        the event admin to use
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public final void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 

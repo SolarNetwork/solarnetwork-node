@@ -1,21 +1,21 @@
 /* ==================================================================
  * OperationalStateManager.java - 15/05/2019 6:48:01 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
@@ -50,9 +51,10 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.BasicInstruction;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
@@ -66,7 +68,7 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Service that listens for operational mode changes and can respond by setting
  * the operational state on a set of devices.
- * 
+ *
  * <p>
  * For example, one idea with this service is to be able to respond to an
  * operational state <code>inverters-off</code> by setting the state of a set of
@@ -74,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * <code>inverters-off</code> mode is disabled, the state of the inverters is
  * set to <code>Normal</code> (to turn them back on again).
  * </p>
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -87,13 +89,13 @@ public class OperationalStateManager extends BaseIdentifiable
 	/** The default value for the {@code retryCount} property. */
 	public static final int DEFAULT_RETRY_COUNT = 3;
 
-	private String mode;
-	private DeviceOperatingState enabledState;
-	private DeviceOperatingState disabledState;
+	private @Nullable String mode;
+	private @Nullable DeviceOperatingState enabledState;
+	private @Nullable DeviceOperatingState disabledState;
 	private long taskTimeoutSecs = DEFAULT_TASK_TIMEOUT_SECS;
-	private Set<String> controlIds;
+	private @Nullable Set<String> controlIds;
 	private int retryCount = DEFAULT_RETRY_COUNT;
-	private AsyncTaskExecutor taskExecutor;
+	private @Nullable AsyncTaskExecutor taskExecutor;
 
 	private final OptionalService<OperationalModesService> opModesService;
 	private final OptionalService<InstructionExecutionService> instructionService;
@@ -103,7 +105,7 @@ public class OperationalStateManager extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the operational modes service to use
 	 * @param instructionService
@@ -120,9 +122,9 @@ public class OperationalStateManager extends BaseIdentifiable
 
 		private final String controlId;
 		private final boolean result;
-		private final Throwable t;
+		private final @Nullable Throwable t;
 
-		public StateChangeResult(String controlId, boolean result, Throwable t) {
+		public StateChangeResult(String controlId, boolean result, @Nullable Throwable t) {
 			super();
 			this.controlId = controlId;
 			this.result = result;
@@ -149,9 +151,8 @@ public class OperationalStateManager extends BaseIdentifiable
 		@Override
 		public StateChangeResult call() throws Exception {
 			try {
-				BasicInstruction instr = new BasicInstruction(TOPIC_SET_OPERATING_STATE, date, null,
-						null);
-				instr.addParameter(controlId, String.valueOf(state.getCode()));
+				Instruction instr = InstructionUtils.createLocalInstruction(TOPIC_SET_OPERATING_STATE,
+						date, Map.of(controlId, String.valueOf(state.getCode())));
 				InstructionExecutionService instrService = getInstructionExecutionService();
 				if ( instrService == null ) {
 					throw new RuntimeException("No InstructionExecutionService available.");
@@ -184,7 +185,7 @@ public class OperationalStateManager extends BaseIdentifiable
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param mode
 		 *        the operational mode that initiated this change
 		 * @param state
@@ -217,7 +218,7 @@ public class OperationalStateManager extends BaseIdentifiable
 		@Override
 		public void run() {
 			// we only want one state change in flight at a time, so control execution with a lock
-			final TaskExecutor executor = getTaskExecutor();
+			final AsyncTaskExecutor executor = getTaskExecutor();
 			if ( executor != null ) {
 				oneAtATimeLock.lock();
 			}
@@ -230,7 +231,7 @@ public class OperationalStateManager extends BaseIdentifiable
 				for ( String controlId : controlIds ) {
 					StateChanger task = new StateChanger(latch, controlId, state, start);
 					if ( executor != null ) {
-						results.add(taskExecutor.submit(task));
+						results.add(executor.submit(task));
 					} else {
 						CompletableFuture<StateChangeResult> f = new CompletableFuture<>();
 						try {
@@ -322,17 +323,17 @@ public class OperationalStateManager extends BaseIdentifiable
 		}
 	}
 
-	private InstructionExecutionService getInstructionExecutionService() {
-		return (instructionService != null ? instructionService.service() : null);
+	private @Nullable InstructionExecutionService getInstructionExecutionService() {
+		return OptionalService.service(instructionService);
 	}
 
-	private OperationalModesService getOpModesService() {
-		return (opModesService != null ? opModesService.service() : null);
+	private @Nullable OperationalModesService getOpModesService() {
+		return OptionalService.service(opModesService);
 	}
 
 	/**
 	 * Get an immutable, never {@literal null}, set of control IDs to manage.
-	 * 
+	 *
 	 * @return the control IDs, never {@literal null}
 	 */
 	private Set<String> immutableControlIds() {
@@ -345,10 +346,10 @@ public class OperationalStateManager extends BaseIdentifiable
 		final String topic = (event != null ? event.getTopic() : null);
 		final String mode = getMode();
 		if ( EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) && mode != null ) {
-			@SuppressWarnings("unchecked")
+			@SuppressWarnings({ "unchecked", "null", "NullAway" })
 			Set<String> activeModes = (Set<String>) event
 					.getProperty(EVENT_PARAM_ACTIVE_OPERATIONAL_MODES);
-			boolean isActive = activeModes.contains(mode);
+			boolean isActive = (activeModes != null && activeModes.contains(mode));
 			Set<String> controlIds = immutableControlIds();
 			DeviceOperatingState desiredState = null;
 			boolean enabling = true;
@@ -430,78 +431,78 @@ public class OperationalStateManager extends BaseIdentifiable
 
 	/**
 	 * Get the active state.
-	 * 
+	 *
 	 * @return {@literal true} if the configured mode is considered as enabled,
 	 *         {@literal false} otherwise
 	 */
-	public boolean isModeActive() {
+	public final boolean isModeActive() {
 		return active.get();
 	}
 
 	/**
 	 * Set the task executor.
-	 * 
+	 *
 	 * @return the task executor
 	 */
-	public AsyncTaskExecutor getTaskExecutor() {
+	public final @Nullable AsyncTaskExecutor getTaskExecutor() {
 		return taskExecutor;
 	}
 
 	/**
 	 * Get the task executor.
-	 * 
+	 *
 	 * @param taskExecutor
 	 *        the task executor
 	 */
-	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
+	public final void setTaskExecutor(@Nullable AsyncTaskExecutor taskExecutor) {
 		this.taskExecutor = taskExecutor;
 	}
 
 	/**
 	 * Get the operational mode to listen for.
-	 * 
+	 *
 	 * @return the operational mode
 	 */
-	public String getMode() {
+	public final @Nullable String getMode() {
 		return mode;
 	}
 
 	/**
 	 * Set the operational mode to listen for.
-	 * 
+	 *
 	 * @param mode
 	 *        the operational mode
 	 */
-	public void setMode(String mode) {
+	public final void setMode(@Nullable String mode) {
 		this.mode = mode;
 	}
 
 	/**
 	 * Get the operating state to apply when the operational mode is enabled.
-	 * 
+	 *
 	 * @return the state to apply
 	 */
-	public DeviceOperatingState getEnabledState() {
+	public final @Nullable DeviceOperatingState getEnabledState() {
 		return enabledState;
 	}
 
 	/**
 	 * Set the operating state to apply when the operational mode is enabled.
-	 * 
+	 *
 	 * @param enabledState
 	 *        the state to apply
 	 */
-	public void setEnabledState(DeviceOperatingState enabledState) {
+	public final void setEnabledState(@Nullable DeviceOperatingState enabledState) {
 		this.enabledState = enabledState;
 	}
 
 	/**
 	 * Get the operating state to apply when the operational mode is enabled,
 	 * via its code value.
-	 * 
+	 *
 	 * @return the state to apply, as a code
 	 */
-	public Integer getEnabledStateCode() {
+	public final @Nullable Integer getEnabledStateCode() {
 		DeviceOperatingState state = getEnabledState();
 		return state != null ? state.getCode() : null;
 	}
@@ -509,11 +510,11 @@ public class OperationalStateManager extends BaseIdentifiable
 	/**
 	 * Set the operating state to apply when the operational mode is enabled,
 	 * via its code value.
-	 * 
+	 *
 	 * @param code
 	 *        the state to apply, as a code
 	 */
-	public void setEnabledStateCode(Integer code) {
+	public final void setEnabledStateCode(@Nullable Integer code) {
 		DeviceOperatingState state = null;
 		if ( code != null ) {
 			try {
@@ -528,30 +529,30 @@ public class OperationalStateManager extends BaseIdentifiable
 
 	/**
 	 * Get the operating state to apply when the operational mode is disabled.
-	 * 
+	 *
 	 * @return the state to apply
 	 */
-	public DeviceOperatingState getDisabledState() {
+	public final @Nullable DeviceOperatingState getDisabledState() {
 		return disabledState;
 	}
 
 	/**
 	 * Set the operating state to apply when the operational mode is disabled.
-	 * 
+	 *
 	 * @param disabledState
 	 *        the state to apply
 	 */
-	public void setDisabledState(DeviceOperatingState disabledState) {
+	public final void setDisabledState(@Nullable DeviceOperatingState disabledState) {
 		this.disabledState = disabledState;
 	}
 
 	/**
 	 * Get the operating state to apply when the operational mode is disabled,
 	 * via its code value.
-	 * 
+	 *
 	 * @return the state to apply, as a code
 	 */
-	public Integer getDisabledStateCode() {
+	public final @Nullable Integer getDisabledStateCode() {
 		DeviceOperatingState state = getDisabledState();
 		return state != null ? state.getCode() : null;
 	}
@@ -559,11 +560,11 @@ public class OperationalStateManager extends BaseIdentifiable
 	/**
 	 * Set the operating state to apply when the operational mode is disabled,
 	 * via its code value.
-	 * 
+	 *
 	 * @param code
 	 *        the state to apply, as a code
 	 */
-	public void setDisabledStateCode(Integer code) {
+	public final void setDisabledStateCode(@Nullable Integer code) {
 		DeviceOperatingState state = null;
 		if ( code != null ) {
 			try {
@@ -579,25 +580,25 @@ public class OperationalStateManager extends BaseIdentifiable
 	/**
 	 * Get the maximum number of seconds to wait for all configured devices to
 	 * handle an operational state change.
-	 * 
+	 *
 	 * @return the maximum seconds
 	 */
-	public long getTaskTimeoutSecs() {
+	public final long getTaskTimeoutSecs() {
 		return taskTimeoutSecs;
 	}
 
 	/**
 	 * Set the maximum number of seconds to wait for all configured devices to
 	 * handle an operational state change.
-	 * 
+	 *
 	 * <p>
 	 * This method forces any value less than {@literal 1} to {@literal 1}.
 	 * </p>
-	 * 
+	 *
 	 * @param taskTimeoutSecs
 	 *        the maximum seconds
 	 */
-	public void setTaskTimeoutSecs(long taskTimeoutSecs) {
+	public final void setTaskTimeoutSecs(long taskTimeoutSecs) {
 		if ( taskTimeoutSecs < 1 ) {
 			taskTimeoutSecs = 1;
 		}
@@ -606,55 +607,55 @@ public class OperationalStateManager extends BaseIdentifiable
 
 	/**
 	 * Get the control IDs to manage.
-	 * 
+	 *
 	 * @return the control IDs
 	 */
-	public Set<String> getControlIds() {
+	public final @Nullable Set<String> getControlIds() {
 		return controlIds;
 	}
 
 	/**
 	 * Set the control IDs to manage.
-	 * 
+	 *
 	 * @param controlIds
 	 *        the control IDs to manage
 	 */
-	public void setControlIds(Set<String> controlIds) {
+	public final void setControlIds(@Nullable Set<String> controlIds) {
 		this.controlIds = controlIds;
 	}
 
 	/**
 	 * Get the control IDs to manage, as a comma-delimited list.
-	 * 
+	 *
 	 * @return the control IDs, as a comma-delimited list
 	 */
-	public String getControlIdsValue() {
+	public final @Nullable String getControlIdsValue() {
 		return StringUtils.commaDelimitedStringFromCollection(getControlIds());
 	}
 
 	/**
 	 * Set the control IDs to manage, as a comma-delimited list.
-	 * 
+	 *
 	 * @param controlIds
 	 *        the control IDs to manage, as a comma-delimited list
 	 */
-	public void setControlIdsValue(String controlIds) {
+	public final void setControlIdsValue(@Nullable String controlIds) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(controlIds);
 		setControlIds(set);
 	}
 
 	/**
 	 * Get the retry count.
-	 * 
+	 *
 	 * @return the retry count
 	 */
-	public int getRetryCount() {
+	public final int getRetryCount() {
 		return retryCount;
 	}
 
 	/**
 	 * Set the retry count.
-	 * 
+	 *
 	 * <p>
 	 * This count determines how many times the service will re-try applying
 	 * state changes if an error occurs. If the retry count is {@literal 0} then
@@ -662,11 +663,11 @@ public class OperationalStateManager extends BaseIdentifiable
 	 * {@literal 0}, then the code will attempt an <b>unlimited</b> number of
 	 * times. Otherwise up to {@code retryCount} attempts will be performed.
 	 * </p>
-	 * 
+	 *
 	 * @param retryCount
 	 *        the retry count to set
 	 */
-	public void setRetryCount(int retryCount) {
+	public final void setRetryCount(int retryCount) {
 		this.retryCount = retryCount;
 	}
 
