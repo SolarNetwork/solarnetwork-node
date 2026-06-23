@@ -413,7 +413,7 @@ public interface SettingsService {
 	 *         if any IO error occurs
 	 * @since 2.4
 	 */
-	default void exportSettingsCSV(SettingsFilter filter, Writer out) throws IOException {
+	default void exportSettingsCSV(@Nullable SettingsFilter filter, Writer out) throws IOException {
 		exportSettingsCSV(out);
 	}
 
