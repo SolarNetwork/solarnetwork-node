@@ -47,16 +47,16 @@
 	</service>
 	
 	<bean id="settingsService" class="net.solarnetwork.node.settings.ca.CASettingsService">
-		<property name="configurationAdmin" ref="ca"/>
-		<property name="settingDao" ref="settingDao"/>
-		<property name="taskExecutor" ref="taskExecutor"/>
-		<property name="backupDestinationPath" value="${settingsBackup.destinationPath}"/>
-		<property name="backupMaxCount" value="${settingsBackup.backupMaxCount}"/>
-		<property name="transactionTemplate">
+		<argument ref="ca"/>
+		<argument ref="settingDao"/>
+		<argument>
 			<bean class="org.springframework.transaction.support.TransactionTemplate">
 				<argument ref="txManager"/>
 			</bean>
-		</property>
+		</argument>
+		<property name="taskExecutor" ref="taskExecutor"/>
+		<property name="backupDestinationPath" value="${settingsBackup.destinationPath}"/>
+		<property name="backupMaxCount" value="${settingsBackup.backupMaxCount}"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.settings.ca.CASettingsService"/>

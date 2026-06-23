@@ -27,6 +27,8 @@ import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -76,6 +78,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
@@ -183,13 +186,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private static final Pattern SETTING_FACTORY_INSTANCE_PATTERN = Pattern
 			.compile("^([a-zA-Z0-9.]+)\\.(\\d+)$");
 
-	private ConfigurationAdmin configurationAdmin;
-	private SettingDao settingDao;
-	private TransactionTemplate transactionTemplate;
-	private String backupDestinationPath;
+	private final ConfigurationAdmin configurationAdmin;
+	private final SettingDao settingDao;
+	private final TransactionTemplate transactionTemplate;
+	private @Nullable String backupDestinationPath;
 	private int backupMaxCount = DEFAULT_BACKUP_MAX_COUNT;
-	private MessageSource messageSource;
-	private TaskExecutor taskExecutor;
+	private @Nullable MessageSource messageSource;
+	private @Nullable TaskExecutor taskExecutor;
 
 	private final Map<String, FactoryHelper> factories = new ConcurrentSkipListMap<>();
 	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<>();
@@ -200,16 +203,27 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Constructor.
+	 *
+	 * @param configurationAdmin
+	 *        the ConfigurationAdmin service
+	 * @param settingDao
+	 *        the setting DAO
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
-	public CASettingsService() {
+	public CASettingsService(ConfigurationAdmin configurationAdmin, SettingDao settingDao,
+			TransactionTemplate transactionTemplate) {
 		super();
+		this.configurationAdmin = requireNonNullArgument(configurationAdmin, "configurationAdmin");
+		this.settingDao = requireNonNullArgument(settingDao, "settingDao");
+		this.transactionTemplate = requireNonNullArgument(transactionTemplate, "transactionTemplate");
 	}
 
 	private String getFactorySettingKey(String factoryPid) {
 		return factoryPid + FACTORY_SETTING_KEY_SUFFIX;
 	}
 
-	private String getFactoryInstanceSettingKey(String factoryPid, String instanceKey) {
+	private String getFactoryInstanceSettingKey(String factoryPid, @Nullable String instanceKey) {
 		return factoryPid + (instanceKey == null ? "" : "." + instanceKey);
 	}
 
@@ -319,7 +333,6 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			return;
 		}
 
-		boolean factoryFound = false;
 		String factoryInstanceKey = null;
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
@@ -336,17 +349,18 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					conf = configurationAdmin.getConfiguration(instancePid, null);
 					Dictionary<String, ?> props = conf.getProperties();
 					if ( props != null ) {
-						factoryInstanceKey = (String) props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY);
+						factoryInstanceKey = nonnull(
+								(String) props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY),
+								"Factory instance ID property");
 						log.debug("Got factory {} instance key {}", pid, factoryInstanceKey);
 
 						helper.addProvider(factoryInstanceKey, provider);
-						factoryFound = true;
 					}
-				} catch ( IOException e ) {
+				} catch ( Exception e ) {
 					log.error("Error getting factory instance configuration {}", instancePid, e);
 				}
 			}
-			if ( !factoryFound ) {
+			if ( factoryInstanceKey == null ) {
 				providers.put(pid, new ProviderHelper(provider, properties));
 			}
 
@@ -360,7 +374,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private SettingsCommand getSettingsForService(String pid, String instanceKey) {
+	private @Nullable SettingsCommand getSettingsForService(String pid, @Nullable String instanceKey) {
 		final String settingKey = getFactoryInstanceSettingKey(pid, instanceKey);
 		List<KeyValuePair> settings = settingDao.getSettingValues(settingKey);
 		if ( settings.size() < 1 ) {
@@ -427,7 +441,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public SettingSpecifierProviderFactory getProviderFactory(String factoryUid) {
+	public @Nullable SettingSpecifierProviderFactory getProviderFactory(String factoryUid) {
 		return factories.get(factoryUid);
 	}
 
@@ -446,7 +460,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public Object getSettingValue(SettingSpecifierProvider provider, SettingSpecifier setting) {
+	public @Nullable Object getSettingValue(SettingSpecifierProvider provider,
+			SettingSpecifier setting) {
 		if ( setting instanceof KeyedSettingSpecifier<?> ) {
 			KeyedSettingSpecifier<?> keyedSetting = (KeyedSettingSpecifier<?>) setting;
 			if ( keyedSetting.isTransient() ) {
@@ -487,7 +502,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 		// group all updates by provider+instance, to reduce the number of CA updates
 		// when multiple settings are changed
-		List<SettingsCommand> groupedUpdates = orderedUpdateGroups(command, command.getProviderKey(),
+		List<SettingsCommand> groupedUpdates = orderedUpdateGroups(command, null,
 				command.getInstanceKey());
 		for ( SettingsCommand cmd : groupedUpdates ) {
 			if ( log.isInfoEnabled() && cmd.getValues() != null && !cmd.getValues().isEmpty() ) {
@@ -526,8 +541,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 *        changes
 	 * @return the grouped updates
 	 */
-	private List<SettingsCommand> orderedUpdateGroups(SettingsUpdates updates, String defaultProviderKey,
-			String defaultInstanceKey) {
+	private List<SettingsCommand> orderedUpdateGroups(@Nullable SettingsUpdates updates,
+			@Nullable String defaultProviderKey, @Nullable String defaultInstanceKey) {
 		Map<String, SettingsCommand> groups = new LinkedHashMap<>(8);
 		if ( updates != null ) {
 			for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
@@ -535,6 +550,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						: defaultProviderKey;
 				final String instanceKey = change.getInstanceKey() != null ? change.getInstanceKey()
 						: defaultInstanceKey;
+				if ( providerKey == null ) {
+					continue;
+				}
 				String groupKey = providerKey + (instanceKey != null ? instanceKey : "");
 				SettingsCommand cmd = null;
 				cmd = groups.get(groupKey);
@@ -569,7 +587,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 *        the provider key
 	 * @param instanceKey
 	 *        if {@code providerKey} is a factory, the factory instance key,
-	 *        otherwise {@literal null}
+	 *        otherwise {@code null}
 	 * @param configurationOnly
 	 *        {@literal true} to only update the associated Configuration Admin
 	 *        {@link Configuration}, {@literal false} to also persist the
@@ -577,8 +595,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 * @param audit
 	 *        {@literal true} if the change should be audited
 	 */
-	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
-			final String instanceKey, final boolean configurationOnly, boolean audit) {
+	private void applySettingsUpdates(final @Nullable SettingsUpdates updates,
+			final @Nullable String providerKey, final @Nullable String instanceKey,
+			final boolean configurationOnly, boolean audit) {
 		if ( updates == null || providerKey == null || providerKey.isEmpty()
 				|| !(updates.hasSettingKeyPatternsToClean() || updates.hasSettingValueUpdates()) ) {
 			return;
@@ -591,9 +610,12 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
-			final String instanceKey, final boolean configurationOnly, Configuration conf,
+	private void applySettingsUpdates(final @Nullable SettingsUpdates updates, final String providerKey,
+			final @Nullable String instanceKey, final boolean configurationOnly, Configuration conf,
 			final boolean audit) throws IOException {
+		if ( updates == null ) {
+			return;
+		}
 		if ( audit && AUDIT_LOG.isInfoEnabled() ) {
 			StringBuilder buf = new StringBuilder();
 			buf.append("Updating settings for factory [").append(providerKey).append(']');
@@ -676,6 +698,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				}
 			}
 			for ( SettingsUpdates.Change bean : updates.getSettingValueUpdates() ) {
+				if ( bean.getKey() == null ) {
+					continue;
+				}
 				if ( bean.isRemove() ) {
 					propUpdates.remove(bean.getKey());
 				} else {
@@ -686,7 +711,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					if ( bean.isRemove() ) {
 						settingDao.deleteSetting(settingKey, bean.getKey());
 					} else {
-						settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
+						settingDao.storeSetting(settingKey, bean.getKey(),
+								bean.getValue() != null ? bean.getValue() : "");
 					}
 				}
 			}
@@ -715,7 +741,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return format("  %s = %s", key, value);
 	}
 
-	private static String settingsUpdateMessage(SettingsCommand cmd) {
+	private static String settingsUpdateMessage(@Nullable SettingsCommand cmd) {
 		return cmd == null || cmd.getValues() == null || cmd.getValues().isEmpty() ? "Defaults"
 				: format("{\n%s\n}", cmd.getValues().stream().map(CASettingsService::toSettingLogEntry)
 						.collect(joining("\n")));
@@ -727,7 +753,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public String addProviderFactoryInstance(final String factoryUid, final String instanceUid) {
+	public String addProviderFactoryInstance(final String factoryUid,
+			final @Nullable String instanceUid) {
 		synchronized ( factories ) {
 			String newInstanceKey = instanceUid;
 			if ( newInstanceKey == null || newInstanceKey.trim().isEmpty() ) {
@@ -739,6 +766,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				while ( !done ) {
 					done = true;
 					for ( KeyValuePair instanceKey : instanceKeys ) {
+						if ( instanceKey.getKey() == null ) {
+							continue;
+						}
 						if ( instanceKey.getKey().equals(String.valueOf(next)) ) {
 							done = false;
 							next++;
@@ -871,20 +901,18 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public void exportSettingsCSV(SettingsFilter filter, Writer out) throws IOException {
+	public void exportSettingsCSV(@Nullable SettingsFilter filter, Writer out) throws IOException {
 		AUDIT_LOG.info("Export settings CSV; filter [{}]", filter != null ? filter : "");
 		final List<IOException> errors = new ArrayList<>(1);
-		final String providerFilter = (filter != null && filter.getProviderKey() != null
-				? filter.getProviderKey() + "."
-				: null);
-		final String instanceFilter = (providerFilter != null && filter.getInstanceKey() != null
-				? providerFilter + filter.getInstanceKey()
-				: null);
+		final String providerKey = (filter != null ? filter.getProviderKey() : null);
+		final String providerFilter = (providerKey != null ? providerKey + "." : null);
+		final String instanceFilter = (filter != null && providerFilter != null
+				&& filter.getInstanceKey() != null ? providerFilter + filter.getInstanceKey() : null);
 		final String instanceFactoryFilter = (instanceFilter != null ? providerFilter + "FACTORY"
 				: null);
 		final SortedMap<String, SortedMap<String, Setting>> instanceSettings = new TreeMap<>();
 		final List<Setting> instanceFactorySettings = new ArrayList<>();
-		final String[] row = new String[CSV_HEADERS.length];
+		final @Nullable String[] row = new String[CSV_HEADERS.length];
 		try (final CsvWriter writer = CsvWriter.builder().commentCharacter('!').build(out)) {
 			writer.writeRecord(CSV_HEADERS);
 			settingDao.batchProcess(new BatchCallback<Setting>() {
@@ -893,7 +921,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				public BatchCallbackResult handle(Setting domainObject) {
 					// check for instance filter, then provider filter
 					if ( instanceFilter != null && !(domainObject.getKey().equals(instanceFilter)
-							|| (domainObject.getKey().equals(instanceFactoryFilter))
+							|| (filter != null && domainObject.getKey().equals(instanceFactoryFilter))
 									&& domainObject.getType().equals(filter.getInstanceKey())) ) {
 						return BatchCallbackResult.CONTINUE;
 					} else if ( providerFilter != null
@@ -929,9 +957,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			}, new BasicBatchOptions("Export Settings"));
 			// if we stashed instance settings, augment them now with default setting values if we can
 			if ( !instanceSettings.isEmpty() ) {
-				final Map<String, FactorySettingSpecifierProvider> factorySettingProviders = (providerFilter != null
-						? getProvidersForFactory(filter.getProviderKey())
-						: Collections.emptyMap());
+				final Map<String, FactorySettingSpecifierProvider> factorySettingProviders = (providerKey != null
+						? getProvidersForFactory(providerKey)
+						: Map.of());
 				for ( Entry<String, SortedMap<String, Setting>> e : instanceSettings.entrySet() ) {
 					SortedMap<String, Setting> settingMap = e.getValue();
 					FactorySettingSpecifierProvider provider = factorySettingProviders.get(e.getKey());
@@ -943,8 +971,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 									// augment with default setting value (commented key)
 									Object defaultValue = ks.getDefaultValue();
 									Setting defaultSetting = new Setting(
-											'#' + getFactoryInstanceSettingKey(filter.getProviderKey(),
-													e.getKey()),
+											'#' + getFactoryInstanceSettingKey(
+													nonnull(providerKey, "Provider key"), e.getKey()),
 											ks.getKey(),
 											defaultValue != null ? defaultValue.toString() : null,
 											emptySet());
@@ -972,7 +1000,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private static void populateCsvRow(Setting s, String[] row) {
+	private static void populateCsvRow(Setting s, @Nullable String[] row) {
 		row[0] = s.getKey();
 		row[1] = s.getType();
 		row[2] = s.getValue();
@@ -986,7 +1014,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public List<Setting> getSettings(String factoryUid, String instanceUid) {
+	public List<Setting> getSettings(@Nullable String factoryUid, String instanceUid) {
 		if ( factoryUid == null && instanceUid == null ) {
 			throw new IllegalArgumentException("One of factoryUid or instanceUid must be provided.");
 		}
@@ -996,7 +1024,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		if ( data == null || data.isEmpty() ) {
 			return Collections.emptyList();
 		}
-		return data.stream().map(e -> new Setting(key, e.getKey(), e.getValue(), null))
+		return data.stream().map(
+				e -> new Setting(key, nonnull(e.getKey(), "Key"), nonnull(e.getValue(), "Value"), null))
 				.collect(Collectors.toList());
 	}
 
@@ -1041,7 +1070,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					if ( s.getKey() == null || allowed.matcher(s.getKey()).matches() == false ) {
 						return false;
 					}
-					if ( options.isAddOnly() ) {
+					if ( nonnull(options, "Options").isAddOnly() ) {
 						// only allow if value is provided and setting does not already exist
 						if ( s.getValue() == null
 								|| settingDao.getSetting(s.getKey(), s.getType()) != null ) {
@@ -1055,7 +1084,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private static Setting parseCsvRow(CsvRecord row) {
+	private static @Nullable Setting parseCsvRow(CsvRecord row) {
 		final String key = row.getField(0);
 		if ( key == null || key.isEmpty() ) {
 			return null;
@@ -1093,6 +1122,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			if ( d != null && !d.isEmpty() ) {
 				note = d;
 			}
+		}
+
+		if ( type == null ) {
+			type = "";
 		}
 
 		Setting s = new Setting(key, type, value, note, flags);
@@ -1281,7 +1314,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey) {
+	public @Nullable SettingResourceHandler getSettingResourceHandler(String handlerKey,
+			@Nullable String instanceKey) {
 		SettingResourceHandler handler = null;
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
 			FactoryHelper helper = factories.get(handlerKey);
@@ -1295,8 +1329,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public Iterable<Resource> getSettingResources(final String handlerKey, final String instanceKey,
-			final String settingKey) throws IOException {
+	public Iterable<Resource> getSettingResources(final String handlerKey,
+			final @Nullable String instanceKey, final String settingKey) throws IOException {
 		if ( handlerKey == null || handlerKey.isEmpty() ) {
 			return Collections.emptyList();
 		}
@@ -1310,7 +1344,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public void importSettingResources(final String handlerKey, final String instanceKey,
+	public void importSettingResources(final String handlerKey, final @Nullable String instanceKey,
 			final String settingKey, final Iterable<Resource> resources) throws IOException {
 		if ( resources == null ) {
 			return;
@@ -1371,8 +1405,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public void removeSettingResources(String handlerKey, String instanceKey, String settingKey,
-			Iterable<Resource> resources) throws IOException {
+	public void removeSettingResources(String handlerKey, @Nullable String instanceKey,
+			String settingKey, Iterable<Resource> resources) throws IOException {
 		if ( resources == null ) {
 			return;
 		}
@@ -1403,8 +1437,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private Path getSettingResourcePersistencePath(final String handlerKey, final String instanceKey,
-			final String settingKey) {
+	private Path getSettingResourcePersistencePath(final String handlerKey,
+			final @Nullable String instanceKey, final String settingKey) {
 		Path rsrcDir = SettingsService.settingResourceDirectory().resolve(handlerKey);
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
 			rsrcDir = rsrcDir.resolve(instanceKey);
@@ -1415,7 +1449,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@SuppressWarnings("deprecation")
 	@Override
-	public SettingsBackup backupSettings() {
+	public @Nullable SettingsBackup backupSettings() {
+		final String backupDestinationPath = this.backupDestinationPath;
+		if ( backupDestinationPath == null ) {
+			return null;
+		}
 		final Date mrd = settingDao.getMostRecentModificationDate();
 		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_DATE_FORMAT);
 		final String lastBackupDateStr = settingDao.getSetting(SETTING_LAST_BACKUP_DATE);
@@ -1438,21 +1476,12 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		final File f = new File(dir, BACKUP_FILENAME_PREFIX + backupDateKey + '.' + BACKUP_FILENAME_EXT);
 		log.info("Backing up settings to {}", f.getPath());
 		AUDIT_LOG.info("Backup settings to {}", f);
-		Writer writer = null;
-		try {
-			writer = new BufferedWriter(new FileWriter(f));
+		try (Writer writer = new BufferedWriter(new FileWriter(f))) {
 			exportSettingsCSV(writer);
-			settingDao.storeSetting(new Setting(SETTING_LAST_BACKUP_DATE, null, backupDateKey,
+			settingDao.storeSetting(new Setting(SETTING_LAST_BACKUP_DATE, "", backupDateKey,
 					EnumSet.of(SettingFlag.IgnoreModificationDate)));
 		} catch ( IOException e ) {
 			log.error("Unable to create settings backup {}: {}", f.getPath(), e.getMessage());
-		} finally {
-			try {
-				writer.flush();
-				writer.close();
-			} catch ( IOException e ) {
-				// ignore
-			}
 		}
 
 		// clean out older backups
@@ -1472,6 +1501,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	@SuppressWarnings("deprecation")
 	@Override
 	public Collection<SettingsBackup> getAvailableBackups() {
+		final String backupDestinationPath = this.backupDestinationPath;
+		if ( backupDestinationPath == null ) {
+			return List.of();
+		}
 		final File dir = new File(backupDestinationPath);
 		File[] files = dir.listFiles(new RegexFileFilter(BACKUP_FILENAME_PATTERN));
 		if ( files == null || files.length == 0 ) {
@@ -1497,7 +1530,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@SuppressWarnings("deprecation")
 	@Override
-	public Reader getReaderForBackup(SettingsBackup backup) {
+	public @Nullable Reader getReaderForBackup(SettingsBackup backup) {
+		final String backupDestinationPath = this.backupDestinationPath;
+		if ( backupDestinationPath == null ) {
+			return null;
+		}
 		final File dir = new File(backupDestinationPath);
 		try {
 			final String fname = BACKUP_FILENAME_PREFIX + backup.getBackupKey() + '.'
@@ -1601,19 +1638,19 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public BackupResourceProviderInfo providerInfo(Locale locale) {
+	public BackupResourceProviderInfo providerInfo(@Nullable Locale locale) {
 		String name = "Settings Backup Provider";
 		String desc = "Backs up system settings.";
 		MessageSource ms = messageSource;
 		if ( ms != null ) {
-			name = ms.getMessage("title", null, name, locale);
-			desc = ms.getMessage("desc", null, desc, locale);
+			name = nonnull(ms.getMessage("title", null, name, locale), "Name");
+			desc = nonnull(ms.getMessage("desc", null, desc, locale), "Description");
 		}
 		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
 	}
 
 	@Override
-	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+	public BackupResourceInfo resourceInfo(BackupResource resource, @Nullable Locale locale) {
 		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
@@ -1642,7 +1679,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private Configuration getConfiguration(String pid, String instanceKey)
+	private Configuration getConfiguration(String pid, @Nullable String instanceKey)
 			throws IOException, InvalidSyntaxException {
 		Configuration conf = null;
 		if ( instanceKey == null || instanceKey.isEmpty() ) {
@@ -1656,7 +1693,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return conf;
 	}
 
-	private Configuration findExistingConfiguration(String pid, String instanceKey)
+	private @Nullable Configuration findExistingConfiguration(String pid, String instanceKey)
 			throws IOException, InvalidSyntaxException {
 		String filter = "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + pid + ")("
 				+ OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY + "=" + instanceKey + "))";
@@ -1669,14 +1706,14 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return TOPIC_UPDATE_SETTING.equals(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
-		if ( TOPIC_UPDATE_SETTING.equals(topic) ) {
+		if ( instruction != null && TOPIC_UPDATE_SETTING.equals(topic) ) {
 			// support passing any number of settings, which must be defined in parameter order
 			final String[] keys = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_KEY);
 			final String[] types = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_TYPE);
@@ -1729,42 +1766,12 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	/**
-	 * Set the configuration admin service.
-	 *
-	 * @param configurationAdmin
-	 *        the service to set
-	 */
-	public void setConfigurationAdmin(ConfigurationAdmin configurationAdmin) {
-		this.configurationAdmin = configurationAdmin;
-	}
-
-	/**
-	 * Set the setting DAO.
-	 *
-	 * @param settingDao
-	 *        the DAO to set
-	 */
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
-	}
-
-	/**
-	 * Set the transaction template.
-	 *
-	 * @param transactionTemplate
-	 *        the template to set
-	 */
-	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
-		this.transactionTemplate = transactionTemplate;
-	}
-
-	/**
 	 * Set the backup destination path.
 	 *
 	 * @param backupDestinationPath
 	 *        the path to set
 	 */
-	public void setBackupDestinationPath(String backupDestinationPath) {
+	public final void setBackupDestinationPath(@Nullable String backupDestinationPath) {
 		this.backupDestinationPath = backupDestinationPath;
 	}
 
@@ -1774,7 +1781,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 * @param backupMaxCount
 	 *        the count
 	 */
-	public void setBackupMaxCount(int backupMaxCount) {
+	public final void setBackupMaxCount(int backupMaxCount) {
 		this.backupMaxCount = backupMaxCount;
 	}
 
@@ -1784,16 +1791,16 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 * @param messageSource
 	 *        the message source
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public final void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
 	/**
 	 * Get an executor to handle asynchronous tasks with.
 	 *
-	 * @return the executor, or {@literal null}
+	 * @return the executor, or {@code null}
 	 */
-	public TaskExecutor getTaskExecutor() {
+	public final @Nullable TaskExecutor getTaskExecutor() {
 		return this.taskExecutor;
 	}
 
@@ -1804,7 +1811,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 *        the executor to use
 	 * @since 1.9
 	 */
-	public void setTaskExecutor(TaskExecutor taskExecutor) {
+	public final void setTaskExecutor(@Nullable TaskExecutor taskExecutor) {
 		this.taskExecutor = taskExecutor;
 	}
 

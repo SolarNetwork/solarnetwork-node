@@ -130,7 +130,7 @@ public class CASettingsServiceTests {
 		ca = EasyMock.createMock(ConfigurationAdmin.class);
 		dao = EasyMock.createMock(SettingDao.class);
 		txManager = EasyMock.createMock(PlatformTransactionManager.class);
-		service = new CASettingsService();
+		service = new CASettingsService(ca, dao, new TransactionTemplate(txManager));
 		mocks = new ArrayList<>(8);
 		mocks.add(ca);
 		mocks.add(dao);
@@ -140,9 +140,6 @@ public class CASettingsServiceTests {
 		System.setProperty(Constants.SYSTEM_PROP_NODE_HOME, tmpDir.toString());
 
 		service.setBackupDestinationPath(tmpDir.resolve("backups").toString());
-		service.setConfigurationAdmin(ca);
-		service.setSettingDao(dao);
-		service.setTransactionTemplate(new TransactionTemplate(txManager));
 	}
 
 	@After

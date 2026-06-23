@@ -1,21 +1,21 @@
 /* ==================================================================
  * FactoryHelper.java - Mar 23, 2012 3:13:48 PM
- * 
+ *
  * Copyright 2007 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.StringNaturalSortComparator;
 
 /**
  * Helper class for managing factory providers.
- * 
+ *
  * @author matt
  * @version 2.1
  */
@@ -60,13 +61,13 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param factory
 	 *        the factory to provide help to
 	 * @param properties
 	 *        the properties
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public FactoryHelper(SettingSpecifierProviderFactory factory, Map<String, ?> properties) {
 		this(factory, properties, new TreeMap<>(), new TreeMap<>());
@@ -74,7 +75,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param factory
 	 *        the factory to provide help to
 	 * @param properties
@@ -84,7 +85,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 	 * @param handlerMap
 	 *        a map to use for tracking instance handlers
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public FactoryHelper(SettingSpecifierProviderFactory factory, Map<String, ?> properties,
 			Map<String, SettingSpecifierProvider> instanceMap,
@@ -98,10 +99,10 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Get the factory.
-	 * 
+	 *
 	 * @return the factory
 	 */
-	public SettingSpecifierProviderFactory getFactory() {
+	public final SettingSpecifierProviderFactory getFactory() {
 		return factory;
 	}
 
@@ -111,12 +112,12 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 	}
 
 	@Override
-	public String getDisplayName() {
+	public @Nullable String getDisplayName() {
 		return factory.getDisplayName();
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		return factory.getMessageSource();
 	}
 
@@ -135,17 +136,17 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Get the properties.
-	 * 
+	 *
 	 * @return the properties
 	 * @since 1.2
 	 */
-	public Map<String, ?> getProperties() {
+	public final Map<String, ?> getProperties() {
 		return properties;
 	}
 
 	/**
 	 * Test if a filter matches the provider service properties.
-	 * 
+	 *
 	 * @param filter
 	 *        the filter
 	 * @return {@literal true} if the filter matches
@@ -160,7 +161,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Add a provider for a given instance ID.
-	 * 
+	 *
 	 * @param instanceUid
 	 *        the ID of the instance to add the provider to
 	 * @param provider
@@ -180,7 +181,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Add a handler for a given instance ID.
-	 * 
+	 *
 	 * @param instanceUid
 	 *        the ID of the instance to add the handler to
 	 * @param handler
@@ -200,7 +201,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Get the complete set setting providers.
-	 * 
+	 *
 	 * @return set of instance IDs with associated providers
 	 */
 	public Iterable<Map.Entry<String, SettingSpecifierProvider>> instanceEntrySet() {
@@ -211,13 +212,13 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Get the complete set setting resource handlers.
-	 * 
+	 *
 	 * @param instanceUid
 	 *        the handler key to get
-	 * @return the handler, or {@literal null} if none available
+	 * @return the handler, or {@code null} if none available
 	 * @since 1.1
 	 */
-	public SettingResourceHandler getHandler(String instanceUid) {
+	public @Nullable SettingResourceHandler getHandler(String instanceUid) {
 		synchronized ( handlerMap ) {
 			return handlerMap.get(instanceUid);
 		}
@@ -225,7 +226,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Remove a provider.
-	 * 
+	 *
 	 * @param provider
 	 *        the provider
 	 */
@@ -245,7 +246,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 
 	/**
 	 * Remove a handler.
-	 * 
+	 *
 	 * @param handler
 	 *        the handler
 	 * @since 1.1
