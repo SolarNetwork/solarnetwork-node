@@ -25,6 +25,7 @@ package net.solarnetwork.node.reactor.simple;
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Propagation;
@@ -62,13 +63,13 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return TOPIC_CANCEL_INSTRUCTION.equals(topic);
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( TOPIC_CANCEL_INSTRUCTION.equals(instruction.getTopic()) ) {
 			return handleCancelInstruction(instruction);
 		}
@@ -81,7 +82,7 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 			instructionDao.storeInstruction(instruction);
 			instr = instructionDao.getInstruction(instruction.getId(), instruction.getInstructorId());
 		}
-		return instr.getStatus();
+		return (instr != null ? instr.getStatus() : null);
 	}
 
 	@Override

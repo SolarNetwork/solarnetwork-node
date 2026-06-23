@@ -1,27 +1,28 @@
 /* ==================================================================
  * InstructionExecutionJob.java - Oct 1, 2011 8:11:50 PM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.reactor.simple;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -42,14 +43,14 @@ import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to look for received instructions and pass to handlers for execution.
- * 
+ *
  * <p>
  * This job uses the {@link InstructionDao} to query for all {@link Instruction}
  * entities with a state of {@link InstructionState#Received}. For each
  * {@link Instruction} found, it will attempt to find an
  * {@link InstructionHandler} that can execute the instruction.
  * </p>
- * 
+ *
  * <p>
  * This job will pass {@link Instruction#getTopic()} to every configured
  * {@link InstructionHandler#handlesTopic(String)} and if that returns
@@ -59,13 +60,13 @@ import net.solarnetwork.settings.SettingSpecifier;
  * (because it does not support the given Instruction) this job will move on to
  * the next configured handler and try it.
  * </p>
- * 
+ *
  * <p>
  * The first handler to return an {@link InstructionState} other than
  * {@link InstructionState#Received} will cause this job to persist the updated
  * Instruction state and not pass the instruction to any other handlers.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.1
  * @since 2.0
@@ -75,14 +76,14 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 	/**
 	 * An instruction result error code when an instruction is declined from
 	 * expiring due to the {@code maximumIncompleteHours} setting.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String ERROR_CODE_INSTRUCTION_EXPIRED = "IEXJ.001";
 
 	/**
 	 * The {@code maximumIncompleteHours} property default value.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final int DEFAULT_MAXIMUM_INCOMPLETE_HOURS = 168;
@@ -93,7 +94,7 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionDao
 	 *        the instruction DAO
 	 * @param service
@@ -121,22 +122,23 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 				.findInstructionsForState(InstructionState.Received);
 		log.debug("Found {} instructions in Received state", instructions.size());
 		for ( Instruction instruction : instructions ) {
-			InstructionStatus receivedStatus = instruction.getStatus();
+			final Long id = nonnull(instruction.getId(), "ID");
+			final InstructionStatus receivedStatus = nonnull(instruction.getStatus(), "Status");
 
 			final InstructionStatus execStatus = receivedStatus
-					.newCopyWithState(InstructionStatus.InstructionState.Executing);
+					.newCopyWithState(InstructionState.Executing);
 			InstructionStatus status = null;
 			boolean canExecute = false;
 			try {
 				// update state to Executing
-				canExecute = instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
+				canExecute = instructionDao.compareAndStoreInstructionStatus(id,
 						instruction.getInstructorId(), InstructionState.Received, execStatus);
 				if ( canExecute ) {
 					status = service.executeInstruction(instruction);
 				}
 			} catch ( Exception e ) {
-				log.error("Execution of instruction {} {} threw exception", instruction.getId(),
-						instruction.getTopic(), e);
+				log.error("Execution of instruction {} {} threw exception", id, instruction.getTopic(),
+						e);
 			} finally {
 				if ( status == null ) {
 					// roll back to received status to try again later
@@ -145,8 +147,8 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 				if ( isExpired(instruction, status) ) {
 					status = expiredStatus(instruction);
 				}
-				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
-						instruction.getInstructorId(), InstructionState.Executing, status) ) {
+				if ( instructionDao.compareAndStoreInstructionStatus(id, instruction.getInstructorId(),
+						InstructionState.Executing, status) ) {
 					if ( log.isInfoEnabled()
 							&& status.getInstructionState() != InstructionState.Received ) {
 						log.info("Instruction {} {} status changed to {}", instruction.getId(),
@@ -186,12 +188,14 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 				.findInstructionsForState(InstructionState.Executing);
 		log.debug("Found {} instructions in Executing state", instructions.size());
 		for ( Instruction instruction : instructions ) {
-			if ( isExpired(instruction, instruction.getStatus()) ) {
+			final Long id = nonnull(instruction.getId(), "ID");
+			final InstructionStatus status = nonnull(instruction.getStatus(), "Status");
+			if ( isExpired(instruction, status) ) {
 				InstructionStatus declined = expiredStatus(instruction);
-				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
-						instruction.getInstructorId(), InstructionState.Executing, declined) ) {
+				if ( instructionDao.compareAndStoreInstructionStatus(id, instruction.getInstructorId(),
+						InstructionState.Executing, declined) ) {
 					if ( log.isInfoEnabled() ) {
-						log.info("Instruction {} {} expired after {} hours to {}", instruction.getId(),
+						log.info("Instruction {} {} expired after {} hours to {}", id,
 								instruction.getTopic(), maximumIncompleteHours,
 								declined.getInstructionState());
 					}
@@ -203,7 +207,7 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 	/**
 	 * Get the maximum number of hours before incomplete instructions can be
 	 * declined.
-	 * 
+	 *
 	 * @return the maximum hours; defaults to
 	 *         {@link #DEFAULT_MAXIMUM_INCOMPLETE_HOURS}
 	 */
@@ -214,7 +218,7 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 	/**
 	 * Set the maximum number of hours before incomplete instructions can be
 	 * declined.
-	 * 
+	 *
 	 * @param maximumIncompleteHours
 	 *        the hours to set; if less than {@literal 1} then instructions will
 	 *        not expire
