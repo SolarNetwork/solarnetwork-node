@@ -22,22 +22,17 @@
 
 package net.solarnetwork.node.runtime;
 
-import static java.util.stream.Collectors.joining;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
-import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Delayed;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -69,6 +64,10 @@ import net.solarnetwork.util.StatCounter;
  * Default implementation of {@link DatumQueue}.
  *
  * <p>
+ * Datum added to the queue are processed in FIFO order.
+ * </p>
+ *
+ * <p>
  * Datum passed to {@link #offer(NodeDatum)} will be persisted via one of the
  * configured {@link DatumDao} services, while Datum received via
  * {@link #offer(NodeDatum, boolean)} with {@code persist} set to
@@ -88,14 +87,11 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  *
  * @author matt
- * @version 3.1
+ * @version 3.2
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
 		implements DatumQueue, SettingSpecifierProvider, UncaughtExceptionHandler {
-
-	/** The default value for the {@code queueDelayMs} property. */
-	public static final long DEFAULT_QUEUE_DELAY_MS = 200;
 
 	/** The default value for the {@code startupDelayMs} property. */
 	public static final long DEFAULT_STARTUP_DELAY_MS = 20_000;
@@ -103,9 +99,21 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	/** The default {@code statisticLogFrequency} property. */
 	public static final int DEFAULT_STAT_LOG_FREQUENCY = 250;
 
-	// a queue of datum events ordered by datum creation date using a configurable delay
-	// so that concurrent producer events can be processed in datum creation time order
-	private final BlockingQueue<DelayedDatum> datumQueue = new DelayQueue<>();
+	/**
+	 * The default queue size, before blocking occurs.
+	 *
+	 * @since 3.2
+	 */
+	public static final int DEFAULT_QUEUE_SIZE = 50;
+
+	/**
+	 * The {@code queueMaxWaitMs} property default value.
+	 *
+	 * @since 3.2
+	 */
+	public static final long DEFAULT_QUEUE_MAX_WAIT_MS = 60_000L;
+
+	private final BlockingQueue<QueuedDatum> datumQueue;
 	private final List<ConsumerThread> consumers = new CopyOnWriteArrayList<>();
 	private final StatCounter stats = new StatCounter("DatumQueue", "", log, DEFAULT_STAT_LOG_FREQUENCY,
 			QueueStats.values());
@@ -114,13 +122,13 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final OptionalService<EventAdmin> eventAdmin;
 	private final OptionalService<DatumQueueProcessObserver> processObserver;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
-	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private @Nullable OptionalFilterableService<DatumFilterService> datumFilterService;
 	private @Nullable UncaughtExceptionHandler datumProcessorExceptionHandler;
 
 	private long processorStartupDelayMs;
 	private @Nullable ProcessorThread datumProcessor;
 	private boolean discardDatumOnFilterException;
+	private long queueMaxWaitMs = DEFAULT_QUEUE_MAX_WAIT_MS;
 
 	/**
 	 * Constructor.
@@ -152,11 +160,33 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin,
 			OptionalService<DatumQueueProcessObserver> processObserver) {
+		this(nodeDatumDao, eventAdmin, processObserver, DEFAULT_QUEUE_SIZE);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param nodeDatumDao
+	 *        the node datum DAO to use
+	 * @param eventAdmin
+	 *        the event admin
+	 * @param processObserver
+	 *        the direct consumer, which is invoked directly on the queue
+	 *        processor thread
+	 * @param queueSize
+	 *        the internal queue size to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 3.2
+	 */
+	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin,
+			OptionalService<DatumQueueProcessObserver> processObserver, int queueSize) {
 		super();
 		this.nodeDatumDao = requireNonNullArgument(nodeDatumDao, "nodeDatumDao");
 		this.eventAdmin = requireNonNullArgument(eventAdmin, "eventAdmin");
 		this.processObserver = requireNonNullArgument(processObserver, "processObserver");
 		this.processorStartupDelayMs = -1;
+		this.datumQueue = new ArrayBlockingQueue<>(queueSize);
 	}
 
 	/**
@@ -214,7 +244,12 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		/** Processed. */
 		Processed("processed"),
 
-		/** Duplicates. */
+		/**
+		 * Duplicates.
+		 *
+		 * @deprecated no longer used
+		 */
+		@Deprecated(since = "3.2")
 		Duplicates("duplicates"),
 
 		/** Filtered. */
@@ -231,6 +266,13 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 		/** Milliseconds spent persisting datum. */
 		PersistingTimeTotal("persisting ms"),
+
+		/**
+		 * Discarded from over capacity.
+		 *
+		 * @since 3.2
+		 */
+		Discarded("discarded"),
 
 		;
 
@@ -252,47 +294,12 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	}
 
-	private static final class DelayedDatum implements Delayed {
-
-		private final NodeDatum datum;
-		private final long ts;
-		private final boolean persist;
-
-		private DelayedDatum(NodeDatum datum, long delayMs, boolean persist) {
-			super();
-			this.datum = datum;
-			Instant date = datum.getTimestamp();
-			// we really don't expect date to be null here, but just to be pragmatic we test;
-			// future dates are forced to the current time, so they are not delayed
-			long now = System.currentTimeMillis();
-			this.ts = (date != null && date.toEpochMilli() <= now ? date.toEpochMilli() : now) + delayMs;
-			this.persist = persist;
-		}
-
-		@Override
-		public int compareTo(Delayed o) {
-			DelayedDatum other = (DelayedDatum) o;
-			int result = Long.compare(ts, other.ts);
-			if ( result == 0 ) {
-				// fall back to sort by source ID when ts are equal
-				result = nonnull(datum.getSourceId(), "Source ID")
-						.compareTo(nonnull(other.datum.getSourceId(), "Source ID"));
-				if ( result == 0 ) {
-					result = Boolean.compare(other.persist, persist);
-				}
-			}
-			return result;
-		}
-
-		@Override
-		public long getDelay(TimeUnit unit) {
-			long ms = ts - System.currentTimeMillis();
-			return unit.convert(ms, TimeUnit.MILLISECONDS);
-		}
+	private static final record QueuedDatum(NodeDatum datum, boolean persist) {
 
 		@Override
 		public String toString() {
-			return "DelayedDatum{" + ts + "," + datum.getSourceId() + "," + persist + "}";
+			return "QueuedDatum{" + datum.getTimestamp() + "," + datum.getSourceId() + "," + persist
+					+ "}";
 		}
 
 	}
@@ -365,139 +372,73 @@ public class DefaultDatumQueue extends BaseIdentifiable
 					processorStartupDelayMs = -1;
 				}
 				log.info("Starting DatumQueue processor {}", Integer.toHexString(hashCode()));
-
-				/*-
-				 We are assuming there will be many pairs of identical datum received by the queue,
-				 because most DatumDataSource services, when polled for a Datum, will both return
-				 the Datum which is passed to offer() and ALSO emit a DATUM_CAPTURED event which
-				 gets passed to handleEvent(). Datum passed to offer() have persist == true and
-				 Datum passed to handleEvent() have persist == false; hence we are expecting pairs
-				 of events where one should be persisted and the other not (just passed to consumers).
-				 Since all events are passed to consumers, we can discard (persist == false) events
-				 from a matching pair event with (persist == true).
-				
-				 The approach taken relies on the ordering of our queue, which is ordered by
-				 date, source ID, persist. Potential pairs will differ only by the persist flag,
-				 and will have identical datum objects. The algorithm thus does:
-				
-				 1. Poll for the next available event.
-				 2. Peek/take all next available events with a matching date.
-				 3. Sort the collected events (by date, source, persist)
-				 4. For each collected event where persist == false, search previous collected
-				    events for an identical datum with persist == true. If found, discard.
-				
-				 The approach holds up in highly-concurrent environments where even a single
-				 source ID has events at the same date (i.e. >1 event within 1ms on a JVM with
-				 millisecond precision dates).
-				 */
-
-				DelayedDatum event = null;
-				List<DelayedDatum> events = new ArrayList<>(16);
 				do {
+					final QueuedDatum event;
 					try {
 						event = datumQueue.poll(60, TimeUnit.SECONDS);
 						if ( event == null ) {
 							continue;
 						}
-						// pull out all events with same date so we can find duplicates
-						final long ts = event.ts;
-						events.add(event);
-						while ( true ) {
-							event = datumQueue.peek();
-							if ( event == null || event.ts != ts ) {
-								break;
-							}
-							events.add(datumQueue.take());
-						}
-						if ( events.size() > 1 ) {
-							Collections.sort(events);
-							if ( log.isTraceEnabled() ) {
-								log.trace("Datum taken: [\n  {}\n]",
-										events.stream().map(Object::toString).collect(joining(",\n  ")));
-							}
-						}
+						log.trace("Datum taken: {}", event.toString());
 					} catch ( InterruptedException e ) {
-						// keep going
+						continue;
 					}
 					final DatumQueueProcessObserver procObserver = service(processObserver);
 					final long start = System.currentTimeMillis();
-					DelayedDatum p;
-					EVENT: for ( int i = 0, len = events.size(); i < len; i++ ) {
-						event = events.get(i);
-						if ( !event.persist ) {
-							for ( int j = i - 1; j >= 0; j-- ) {
-								p = events.get(j);
-								if ( p.datum == event.datum && p.persist ) {
-									// optimization to skip duplicate of persisted+unpersisted pair;
-									// this can happen when DatumDataSource services are polled for datum
-									// which is then received via both offer() and handleEvent(DATUM_CAPTURED)
-									stats.incrementAndGet(QueueStats.Duplicates);
-									continue EVENT;
-								} else if ( !nonnull(p.datum.getSourceId(), "Source ID")
-										.equals(nonnull(event.datum.getSourceId(), "Source ID")) ) {
-									// as events sorted by time,source,persist then we can stop looking now
-									break;
-								}
-							}
-						}
-						stats.incrementAndGet(QueueStats.Processed);
-						if ( procObserver != null ) {
-							try {
-								procObserver.datumQueueWillProcess(DefaultDatumQueue.this, event.datum,
-										Stage.PreFilter, event.persist);
-							} catch ( Throwable t ) {
-								stats.incrementAndGet(QueueStats.Errors);
-								log.error("Direct consumer {} error on PreFilter datum {}; ignoring.",
-										procObserver, event.datum, t);
-							}
-						}
-						postEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, event.datum);
-						NodeDatum result;
+					stats.incrementAndGet(QueueStats.Processed);
+					if ( procObserver != null ) {
 						try {
-							result = applyTransform(event);
+							procObserver.datumQueueWillProcess(DefaultDatumQueue.this, event.datum,
+									Stage.PreFilter, event.persist);
 						} catch ( Throwable t ) {
 							stats.incrementAndGet(QueueStats.Errors);
-							log.error("Error processing datum {}; {}.", event.datum,
-									(discardDatumOnFilterException ? "discarding" : "continuing anyway"),
-									t);
-							if ( discardDatumOnFilterException ) {
+							log.error("Direct consumer {} error on PreFilter datum {}; ignoring.",
+									procObserver, event.datum, t);
+						}
+					}
+					postEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, event.datum);
+					NodeDatum result;
+					try {
+						result = applyTransform(event);
+					} catch ( Throwable t ) {
+						stats.incrementAndGet(QueueStats.Errors);
+						log.error("Error processing datum {}; {}.", event.datum,
+								(discardDatumOnFilterException ? "discarding" : "continuing anyway"), t);
+						if ( discardDatumOnFilterException ) {
+							uncaughtException(Thread.currentThread(), t);
+							result = null;
+						} else {
+							result = event.datum;
+						}
+					}
+					if ( result != null ) {
+						if ( procObserver != null ) {
+							try {
+								procObserver.datumQueueWillProcess(DefaultDatumQueue.this, result,
+										Stage.PostFilter, event.persist);
+							} catch ( Throwable t ) {
+								stats.incrementAndGet(QueueStats.Errors);
+								log.error("Direct consumer {} error on PostFilter datum {}; ignoring.",
+										procObserver, result, t);
+							}
+						}
+						postEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, result);
+						if ( event.persist ) {
+							try {
+								persistDatum(result);
+							} catch ( Throwable t ) {
+								stats.incrementAndGet(QueueStats.Errors);
+								log.error("Error persisting datum {}; discarding.", event.datum, t);
 								uncaughtException(Thread.currentThread(), t);
 								result = null;
-							} else {
-								result = event.datum;
 							}
 						}
 						if ( result != null ) {
-							if ( procObserver != null ) {
-								try {
-									procObserver.datumQueueWillProcess(DefaultDatumQueue.this, result,
-											Stage.PostFilter, event.persist);
-								} catch ( Throwable t ) {
-									stats.incrementAndGet(QueueStats.Errors);
-									log.error(
-											"Direct consumer {} error on PostFilter datum {}; ignoring.",
-											procObserver, result, t);
-								}
-							}
-							postEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, result);
-							if ( event.persist ) {
-								try {
-									persistDatum(result);
-								} catch ( Throwable t ) {
-									stats.incrementAndGet(QueueStats.Errors);
-									log.error("Error persisting datum {}; discarding.", event.datum, t);
-									uncaughtException(Thread.currentThread(), t);
-									result = null;
-								}
-							}
-							if ( result != null ) {
-								for ( Consumer<NodeDatum> consumer : consumers ) {
-									consumer.accept(result);
-								}
+							for ( Consumer<NodeDatum> consumer : consumers ) {
+								consumer.accept(result);
 							}
 						}
 					}
-					events.clear();
 					stats.addAndGet(QueueStats.ProcessingTimeTotal, System.currentTimeMillis() - start,
 							true);
 				} while ( processing );
@@ -529,7 +470,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *         {@code NodeDatum} instance; a new datum with the result of the
 	 *         transform service
 	 */
-	private @Nullable NodeDatum applyTransform(DelayedDatum event) {
+	private @Nullable NodeDatum applyTransform(QueuedDatum event) {
 		DatumFilterService xform = service(datumFilterService);
 		if ( xform == null ) {
 			return event.datum;
@@ -571,7 +512,16 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		} else {
 			stats.incrementAndGet(QueueStats.Captured);
 		}
-		return datumQueue.offer(new DelayedDatum(datum, queueDelayMs, persist));
+		try {
+			final boolean result = datumQueue.offer(new QueuedDatum(datum, persist), queueMaxWaitMs,
+					TimeUnit.MILLISECONDS);
+			if ( !result ) {
+				stats.incrementAndGet(QueueStats.Discarded);
+			}
+			return result;
+		} catch ( InterruptedException e ) {
+			return false;
+		}
 	}
 
 	@Override
@@ -627,11 +577,11 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(4);
 		result.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
-		result.add(new BasicTextFieldSettingSpecifier("queueDelayMs",
-				String.valueOf(DEFAULT_QUEUE_DELAY_MS)));
 		result.add(new BasicTextFieldSettingSpecifier("transformServiceUid", null, false,
 				"(&(objectClass=net.solarnetwork.service.DatumFilterService)(role=user))"));
 		result.add(new BasicToggleSettingSpecifier("discardDatumOnFilterException", Boolean.FALSE));
+		result.add(new BasicTextFieldSettingSpecifier("queueMaxWaitMs",
+				String.valueOf(DEFAULT_QUEUE_MAX_WAIT_MS)));
 		return result;
 	}
 
@@ -686,21 +636,24 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	/**
 	 * Get the queue delay, in milliseconds.
 	 *
-	 * @return the delay; defaults to {@link #DEFAULT_QUEUE_DELAY_MS}
+	 * @return the delay
+	 * @deprecated always returns {@code 0}
 	 */
+	@Deprecated(since = "3.2")
 	public final long getQueueDelayMs() {
-		return queueDelayMs;
+		return 0L;
 	}
 
 	/**
 	 * Set the queue delay, in milliseconds.
 	 *
 	 * @param queueDelayMs
-	 *        the delay to set; setting to anything less than {@code 1}
-	 *        essentially disables the delay
+	 *        the delay to set
+	 * @deprecated no longer used
 	 */
+	@Deprecated(since = "3.2")
 	public final void setQueueDelayMs(long queueDelayMs) {
-		this.queueDelayMs = queueDelayMs;
+		// no-op for backwards compatibility
 	}
 
 	/**
@@ -826,6 +779,31 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public final void setDiscardDatumOnFilterException(boolean discardDatumOnFilterException) {
 		this.discardDatumOnFilterException = discardDatumOnFilterException;
+	}
+
+	/**
+	 * The maximum length of time, in milliseconds, to wait for to add a datum
+	 * to the internal queue when {@link #offer(NodeDatum)} is called.
+	 *
+	 * @return the queueMaxWaitMs the maximum wait time, in milliseconds;
+	 *         defaults to {@link #DEFAULT_QUEUE_MAX_WAIT_MS}
+	 * @since 3.2
+	 */
+	public final long getQueueMaxWaitMs() {
+		return queueMaxWaitMs;
+	}
+
+	/**
+	 * Set the maximum length of time, in milliseconds, to wait for to add a
+	 * datum to the internal queue when {@link #offer(NodeDatum)} is called.
+	 *
+	 * @param queueMaxWaitMs
+	 *        the the maximum wait time to set; if less than {@code 0} then
+	 *        {@link #DEFAULT_QUEUE_MAX_WAIT_MS} will be set instead
+	 * @since 3.2
+	 */
+	public final void setQueueMaxWaitMs(long queueMaxWaitMs) {
+		this.queueMaxWaitMs = (queueMaxWaitMs < 0 ? DEFAULT_QUEUE_MAX_WAIT_MS : queueMaxWaitMs);
 	}
 
 }

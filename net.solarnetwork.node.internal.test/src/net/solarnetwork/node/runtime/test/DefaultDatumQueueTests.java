@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.easymock.Capture;
@@ -103,8 +104,15 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		consumer = EasyMock.createMock(Consumer.class);
 		directConsumer = EasyMock.createMock(DatumQueueProcessObserver.class);
 		filter = EasyMock.createMock(DatumFilterService.class);
+		setupQueue(DefaultDatumQueue.DEFAULT_QUEUE_SIZE);
+	}
+
+	public void setupQueue(int capacity) {
+		if ( queue != null ) {
+			queue.shutdown();
+		}
 		queue = new DefaultDatumQueue(datumDao, new StaticOptionalService<>(eventAdmin),
-				new StaticOptionalService<>(directConsumer));
+				new StaticOptionalService<>(directConsumer), capacity);
 		queue.setStartupDelayMs(0);
 		queue.setDatumProcessorExceptionHandler(this);
 		queue.addConsumer(consumer);
@@ -171,7 +179,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -202,7 +210,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -233,7 +241,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -262,7 +270,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum, false);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -292,7 +300,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum, false);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -304,48 +312,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	}
 
 	@Test
-	public void capture_datum_duplicate() throws InterruptedException {
-		// GIVEN
-		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
-		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
-
-		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
-		directConsumer.datumQueueWillProcess(queue, datum, Stage.PostFilter, true);
-		datumDao.storeDatum(datum);
-		consumer.accept(datum);
-
-		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
-		eventAdmin.postEvent(capture(eventCaptor));
-		expectLastCall().times(2);
-
-		// WHEN
-		replayAll();
-
-		// 2 different threads providing the same datum at close to the same time;
-		// one should be discarded
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				queue.offer(datum, false);
-			}
-
-		}).start();
-		queue.offer(datum);
-
-		sleep(queue.getQueueDelayMs() + 300L);
-
-		// THEN
-		assertThat("One datum recorded as duplicate",
-				queue.getStats().get(DefaultDatumQueue.QueueStats.Duplicates), is(1L));
-
-		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
-	}
-
-	@Test
 	public void capture_datum_concurrently() throws InterruptedException {
 		// GIVEN
-		ExecutorService executor = Executors.newCachedThreadPool();
+		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		final int count = 20;
 		final int sources = 2;
@@ -353,20 +322,20 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		Capture<NodeDatum> preDatumCaptor = Capture.newInstance(CaptureType.ALL);
 		directConsumer.datumQueueWillProcess(same(queue), capture(preDatumCaptor), eq(Stage.PreFilter),
 				eq(true));
-		expectLastCall().anyTimes();//.times(count);
+		expectLastCall().times(count);
 
 		Capture<NodeDatum> directDatumCaptor = Capture.newInstance(CaptureType.ALL);
 		directConsumer.datumQueueWillProcess(same(queue), capture(directDatumCaptor),
 				eq(Stage.PostFilter), eq(true));
-		expectLastCall().anyTimes();//.times(count);
+		expectLastCall().times(count);
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
 		datumDao.storeDatum(capture(datumCaptor));
-		expectLastCall().anyTimes();//.times(count);
+		expectLastCall().times(count);
 
 		Capture<NodeDatum> generalDatumCaptor = Capture.newInstance(CaptureType.ALL);
 		consumer.accept(capture(generalDatumCaptor));
-		expectLastCall().anyTimes();//.times(count);
+		expectLastCall().times(count);
 
 		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -392,26 +361,23 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 				@Override
 				public void run() {
-					queue.offer(datum, false);
+					queue.offer(datum);
 				}
 
 			});
-			queue.offer(datum);
 		}
 
 		executor.shutdown();
 		executor.awaitTermination(5, TimeUnit.SECONDS);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
-		assertThat("No duplicates PreFilter consumed", preDatumCaptor.getValues(), hasSize(count));
-		assertThat("No duplicates PostFilter consumed", directDatumCaptor.getValues(), hasSize(count));
-		assertThat("No duplicates persisted", datumCaptor.getValues(), hasSize(count));
-		assertThat("No duplicates consumed", generalDatumCaptor.getValues(), hasSize(count));
-		assertThat("Half of all datum recorded as duplicate",
-				queue.getStats().get(DefaultDatumQueue.QueueStats.Duplicates), is((long) count));
-		assertThat("Half of all datum recorded persisted",
+		assertThat("PreFilter consumed", preDatumCaptor.getValues(), hasSize(count));
+		assertThat("PostFilter consumed", directDatumCaptor.getValues(), hasSize(count));
+		assertThat("Persisted", datumCaptor.getValues(), hasSize(count));
+		assertThat("Consumed", generalDatumCaptor.getValues(), hasSize(count));
+		assertThat("All datum recorded persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is((long) count));
 	}
 
@@ -446,7 +412,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -503,7 +469,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -568,7 +534,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		queue.offer(datum);
 		queue.offer(datum2);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("Two datum recorded as processed",
@@ -615,7 +581,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -694,7 +660,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		queue.offer(datum);
 		queue.offer(datum2);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("Two datum recorded as processed",
@@ -752,7 +718,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		queue.offer(datum);
 		queue.offer(datum2);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("Two datum recorded as processed",
@@ -805,7 +771,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		queue.offer(datum);
 		queue.offer(datum2);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("Two datum recorded as processed",
@@ -851,7 +817,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -903,7 +869,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -949,7 +915,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		replayAll();
 		queue.offer(datum);
 
-		sleep(queue.getQueueDelayMs() + 300L);
+		sleep(300L);
 
 		// THEN
 		assertThat("One datum recorded as processed",
@@ -973,6 +939,85 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		// capture offered event, persist filtered event
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, filteredDatum);
+	}
+
+	@Test
+	public void capture_datum_overCapacity() throws InterruptedException {
+		// GIVEN
+		setupQueue(1);
+		queue.setQueueMaxWaitMs(0);
+
+		ExecutorService executor = Executors.newFixedThreadPool(4);
+
+		final int count = 20;
+		final int sources = 2;
+
+		Capture<NodeDatum> preDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(preDatumCaptor), eq(Stage.PreFilter),
+				eq(true));
+		expectLastCall().anyTimes();
+
+		Capture<NodeDatum> directDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		directConsumer.datumQueueWillProcess(same(queue), capture(directDatumCaptor),
+				eq(Stage.PostFilter), eq(true));
+		expectLastCall().anyTimes();
+
+		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
+		datumDao.storeDatum(capture(datumCaptor));
+		expectLastCall().anyTimes();
+
+		Capture<NodeDatum> generalDatumCaptor = Capture.newInstance(CaptureType.ALL);
+		consumer.accept(capture(generalDatumCaptor));
+		expectLastCall().anyTimes();
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().anyTimes();
+
+		// WHEN
+		replayAll();
+
+		final List<NodeDatum> datumList = new ArrayList<>();
+
+		// different threads providing the same datum for different sources at close to the same time
+		// this test depends on no more than 'sources' number of datum getting generated with the same
+		// date: the faster the machines running the test is, the more datum will be generated at the
+		// same date so the queue needs to deal with potentially many datum from same date even for
+		// same source ID
+		final AtomicInteger rejected = new AtomicInteger(0);
+		for ( int i = 0; i < count; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.valueOf(i % sources), Instant.now(),
+					new DatumSamples());
+			datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+			datumList.add(datum);
+
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					if ( !queue.offer(datum) ) {
+						rejected.incrementAndGet();
+					}
+				}
+
+			});
+		}
+
+		executor.shutdown();
+		executor.awaitTermination(5, TimeUnit.SECONDS);
+
+		sleep(300L);
+
+		// THEN
+		final int processed = count - rejected.intValue();
+		assertThat("PreFilter consumed", directDatumCaptor.getValues(), hasSize(processed));
+		assertThat("PostFilter consumed", directDatumCaptor.getValues(), hasSize(processed));
+		assertThat("Persisted", datumCaptor.getValues(), hasSize(processed));
+		assertThat("Consumed", generalDatumCaptor.getValues(), hasSize(processed));
+		assertThat("Datum recorded persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is((long) processed));
+		assertThat("Datum recorded discarded",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Discarded), is(rejected.longValue()));
 	}
 
 }

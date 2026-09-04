@@ -21,6 +21,7 @@
 		<beans:prop key="jobScheduler.poolSize">10</beans:prop>
 		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
 		<beans:prop key="placeholders.dir">conf/placeholders.d</beans:prop>
+		<beans:prop key="datum.queue.size">50</beans:prop>
 	</osgix:cm-properties>
 
 	<ctx:property-placeholder properties-ref="core.cfg"/>
@@ -550,6 +551,7 @@
 				<argument ref="datumService"/>
 			</bean>
 		</argument>
+		<argument value="${datum.queue.size:50}"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames">
