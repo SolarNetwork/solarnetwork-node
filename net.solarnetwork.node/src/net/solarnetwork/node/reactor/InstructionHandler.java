@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
  * API to be implemented by a service that can handle instructions.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public interface InstructionHandler {
 
@@ -236,6 +236,20 @@ public interface InstructionHandler {
 	 * @since 2.3
 	 */
 	String PARAM_IGNORE_ERRORS = "ignoreErrors";
+
+	/**
+	 * An instruction parameter for a boolean indication if "force" should be
+	 * applied.
+	 *
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to signal that an action should continue even if an
+	 * error or other state would mean that action would normally be skipped.
+	 * </p>
+	 *
+	 * @since 2.4
+	 */
+	String PARAM_FORCE = "force";
 
 	/**
 	 * Test if a topic is handled by this handler.
