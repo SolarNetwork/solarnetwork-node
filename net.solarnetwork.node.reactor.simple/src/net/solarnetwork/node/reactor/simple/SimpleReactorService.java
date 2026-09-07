@@ -111,6 +111,7 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 	private InstructionStatus handleCancelInstruction(Instruction instruction) {
 		final boolean ignoreErrors = StringUtils
 				.parseBoolean(instruction.getParameterValue(PARAM_IGNORE_ERRORS));
+		final boolean force = StringUtils.parseBoolean(instruction.getParameterValue(PARAM_FORCE));
 		final String instructionIdVal = instruction.getParameterValue(PARAM_ID);
 		if ( instructionIdVal == null ) {
 			return createStatus(instruction, errorResultState(ignoreErrors),
@@ -123,15 +124,16 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 			return createStatus(instruction, errorResultState(ignoreErrors),
 					createErrorResultParameters("Invalid 'id' parameter (not a number).", "SRS.0002"));
 		}
+		boolean updated = false;
 		try {
-			Instruction instr = instructionDao.getInstruction(instructionId,
+			final Instruction instr = instructionDao.getInstruction(instructionId,
 					instruction.getInstructorId());
 			if ( instr == null ) {
 				return createStatus(instruction, errorResultState(ignoreErrors),
 						createErrorResultParameters("Instruction with given 'id' not found.",
 								"SRS.0003"));
 			}
-			boolean updated = instructionDao
+			updated = instructionDao
 					.compareAndStoreInstructionStatus(instructionId, instruction.getInstructorId(),
 							Received,
 							createStatus(instruction, errorResultState(ignoreErrors),
@@ -146,8 +148,10 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 			log.info("Cancelled instruction {} because of {} instruction {}", instructionId,
 					instruction.getTopic(), instruction.getId());
 		} finally {
-			// also cancel any available children
-			cancelChildInstructions(instruction, instructionId);
+			if ( updated || force ) {
+				// also cancel any available children
+				cancelChildInstructions(instruction, instructionId);
+			}
 		}
 		return createStatus(instruction, Completed);
 	}
