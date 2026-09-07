@@ -26,6 +26,7 @@ package net.solarnetwork.node.datum.pvlib;
  * Enumeration of command options with associated metadata keys.
  *
  * @author matt
+ * @author elijah
  * @version 1.2
  */
 public enum CommandOptions {
@@ -70,7 +71,7 @@ public enum CommandOptions {
 	TranspositionModel("--transpose", "transpositionModel"),
 
 	/**
-	 * A single-axis tracker mode flag, as {@literal true} or {@literal false}.
+	 * A single-axis tracker mode flag, as {@code true} or {@code false}.
 	 *
 	 * @since 1.2
 	 */
@@ -98,7 +99,7 @@ public enum CommandOptions {
 	MaxAngle("--max-angle", "maxAngle"),
 
 	/**
-	 * A tracker backtracking flag, as {@literal true} or {@literal false}.
+	 * A tracker backtracking flag, as {@code true} or {@code false}.
 	 *
 	 * @since 1.2
 	 */

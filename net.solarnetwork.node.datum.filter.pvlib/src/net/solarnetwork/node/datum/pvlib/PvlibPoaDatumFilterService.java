@@ -87,6 +87,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
+ * @author elijah
  * @version 1.3
  */
 public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
@@ -345,7 +346,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * @param opt
 	 *        the command option
 	 * @param val
-	 *        the proposed option value; {@literal null} is ignored
+	 *        the proposed option value; {@code null} is ignored
 	 * @since 1.3
 	 */
 	private void putCommandArgument(Map<String, String> cmdArguments, CommandOptions opt, Object val) {
@@ -374,7 +375,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *        the command option
 	 * @param val
 	 *        the proposed option value
-	 * @return the normalized argument value, or {@literal null} if the value
+	 * @return the normalized argument value, or {@code null} if the value
 	 *         is not valid for the given option
 	 * @since 1.3
 	 */
@@ -940,7 +941,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the transposition model.
 	 *
-	 * @return the model, never {@literal null}
+	 * @return the model, never {@code null}
 	 * @since 1.1
 	 */
 	public final TranspositionModel getTranspositionModel() {
@@ -963,7 +964,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the transposition model as a key name.
 	 *
-	 * @return the model, never {@literal null}
+	 * @return the model, never {@code null}
 	 * @since 1.1
 	 */
 	public final String getTranspositionModelName() {
@@ -991,7 +992,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the single-axis tracker mode.
 	 *
-	 * @return {@literal true} to model a single-axis tracker, in which case
+	 * @return {@code true} to model a single-axis tracker, in which case
 	 *         the array tilt and azimuth are ignored
 	 * @since 1.3
 	 */
@@ -1003,7 +1004,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Set the single-axis tracker mode.
 	 *
 	 * @param tracking
-	 *        {@literal true} to model a single-axis tracker, in which case the
+	 *        {@code true} to model a single-axis tracker, in which case the
 	 *        array tilt and azimuth are ignored
 	 * @since 1.3
 	 */
@@ -1015,7 +1016,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Get the tracker axis tilt.
 	 *
 	 * @return the tilt of the tracker axis in degrees from horizontal, or
-	 *         {@literal null} for the command default
+	 *         {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final BigDecimal getAxisTilt() {
@@ -1027,7 +1028,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @param axisTilt
 	 *        the tilt of the tracker axis in degrees from horizontal to set,
-	 *        or {@literal null} for the command default
+	 *        or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final void setAxisTilt(BigDecimal axisTilt) {
@@ -1038,7 +1039,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Get the tracker axis azimuth.
 	 *
 	 * @return the angle of the tracker axis in degrees clockwise from north,
-	 *         or {@literal null} for the command default
+	 *         or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final BigDecimal getAxisAzimuth() {
@@ -1050,7 +1051,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @param axisAzimuth
 	 *        the angle of the tracker axis in degrees clockwise from north to
-	 *        set, or {@literal null} for the command default
+	 *        set, or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final void setAxisAzimuth(BigDecimal axisAzimuth) {
@@ -1061,7 +1062,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Get the maximum tracker rotation angle.
 	 *
 	 * @return the maximum rotation angle in degrees from horizontal, or
-	 *         {@literal null} for the command default
+	 *         {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final BigDecimal getMaxAngle() {
@@ -1073,7 +1074,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @param maxAngle
 	 *        the maximum rotation angle in degrees from horizontal to set, or
-	 *        {@literal null} for the command default
+	 *        {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final void setMaxAngle(BigDecimal maxAngle) {
@@ -1083,7 +1084,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the tracker backtracking mode.
 	 *
-	 * @return {@literal true} to apply backtracking to avoid row-to-row
+	 * @return {@code true} to apply backtracking to avoid row-to-row
 	 *         shading, using the ground coverage ratio
 	 * @since 1.3
 	 */
@@ -1095,7 +1096,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Set the tracker backtracking mode.
 	 *
 	 * @param backtrack
-	 *        {@literal true} to apply backtracking to avoid row-to-row
+	 *        {@code true} to apply backtracking to avoid row-to-row
 	 *        shading, using the ground coverage ratio
 	 * @since 1.3
 	 */
@@ -1107,7 +1108,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Get the ground coverage ratio.
 	 *
 	 * @return the ratio of PV row width to row spacing, used for backtracking,
-	 *         or {@literal null} for the command default
+	 *         or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final BigDecimal getGcr() {
@@ -1119,7 +1120,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @param gcr
 	 *        the ratio of PV row width to row spacing, used for backtracking,
-	 *        to set, or {@literal null} for the command default
+	 *        to set, or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final void setGcr(BigDecimal gcr) {
