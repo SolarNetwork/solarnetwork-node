@@ -12,11 +12,11 @@ filters.
 
 The general idea on how to use this filter can be used can be outlined like this:
 
- 1. You have a GHI irradiance measurement property collected by some source ID
- 2. You configure this filter to process that same source ID, telling it which property is the GHI
+1.  You have a GHI irradiance measurement property collected by some source ID
+2.  You configure this filter to process that same source ID, telling it which property is the GHI
     measurement and configuring all the PV characteristics necessary for deriving a POA irradiance
     values from the GHI values.
- 3. Instead of configuring the PV characteristics on this filter itself, you can alternatively
+3.  Instead of configuring the PV characteristics on this filter itself, you can alternatively
     configure them in datum, node, or user metadata. See the
     [Metadata Parameters](#metadata-parameters) section for more details.
 
@@ -26,31 +26,37 @@ The general idea on how to use this filter can be used can be outlined like this
 
 Each filter configuration contains the following overall settings:
 
-| Setting            | Description                                                       |
-|:-------------------|:------------------------------------------------------------------|
-| Service Name       | A unique ID for the filter, to be referenced by other components. |
-| Service Group      | An optional service group name to assign. |
-| Source ID          | The source ID(s) to filter. |
-| Required Mode      | If configured, an [operational mode][opmodes] that must be active for this filter to be applied. |
-| Required Tag       | Only apply the filter on datum with the given tag. A tag may be prefixed with `!` to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
-| Metadata Service   | The **Service Name** of the Metadata Service to obtain the PV parameters from. See [Metadata Parameters](#metadata-parameters) for more information. |
-| Metadata Path      | The [metadata path][meta-path] that will resolve the PV parameters from the configured **Metadata Service**. See [Metadata Parameters](#metadata-parameters) for more information. |
-| Alternate Metadata Path | An alternate [metadata path][meta-path] to resolve the PV parameters from the configured **Metadata Service**. See [Metadata Parameters](#metadata-parameters) for more information. |
-| Use Node Location  | If enabled, then the location configured for this node in SolarNetwork will be used in preference to the **Latitude**, **Longitude**, and **Altitude** settings configured on this filter. |
-| GHI Property       | The name of the datum property to obtain the GHI irradiance value from, to use in the **POA Property** calculation. |
-| POA Property       | The name of the datum property to populate with the calculated POA irradiance values. |
-| Latitude           | The decimal latitude of the PV system. |
-| Longitude          | The decimal longitude of the PV system. |
-| Altitude           | The altitude of the PV system, in meters above sea level. |
-| Time Zone          | The identifier of the time zone of the PV system, for example `Pacific/Auckland`. If not specified then the system default zone will be used. |
-| Azimuth            | The angle of the PV array in degrees clockwise from true north that the PV system is facing. |
-| Tilt               | The angle of the PV array in degrees from horizontal, from `0` (facing directly upwards) to `90` (facing the horizon). |
-| Minimum cos(zenith) | The minimum value of `cos(zenith)` to allow when calculating the global clearness index. |
-| Maximum Zenith      | The maximum zenith value to allow in DNI calculation. |
-| Transposition Model | The transposition model name to use. See [pvlib][pvlib-transpose] for more info. |
-| Command             | The external command to run, where the parameters and GHI irradiance will be passed as arguments and the calculated POA irradiance is returned. See [Command](#command) below. |
-| POA Result Key      | The command result key to extract for the calculated POA irradiance value. |
-| Expressions         |  A list of expression configurations that are evaluated to derive datum property values from the **Command** output. See [Expressions](#expressions) below. |
+| Setting                 | Description                                                                                                                                                                                                                                                                                                         |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Service Name            | A unique ID for the filter, to be referenced by other components.                                                                                                                                                                                                                                                   |
+| Service Group           | An optional service group name to assign.                                                                                                                                                                                                                                                                           |
+| Source ID               | The source ID(s) to filter.                                                                                                                                                                                                                                                                                         |
+| Required Mode           | If configured, an [operational mode][opmodes] that must be active for this filter to be applied.                                                                                                                                                                                                                    |
+| Required Tag            | Only apply the filter on datum with the given tag. A tag may be prefixed with `!` to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
+| Metadata Service        | The **Service Name** of the Metadata Service to obtain the PV parameters from. See [Metadata Parameters](#metadata-parameters) for more information.                                                                                                                                                                |
+| Metadata Path           | The [metadata path][meta-path] that will resolve the PV parameters from the configured **Metadata Service**. See [Metadata Parameters](#metadata-parameters) for more information.                                                                                                                                  |
+| Alternate Metadata Path | An alternate [metadata path][meta-path] to resolve the PV parameters from the configured **Metadata Service**. See [Metadata Parameters](#metadata-parameters) for more information.                                                                                                                                |
+| Use Node Location       | If enabled, then the location configured for this node in SolarNetwork will be used in preference to the **Latitude**, **Longitude**, and **Altitude** settings configured on this filter.                                                                                                                          |
+| GHI Property            | The name of the datum property to obtain the GHI irradiance value from, to use in the **POA Property** calculation.                                                                                                                                                                                                 |
+| POA Property            | The name of the datum property to populate with the calculated POA irradiance values.                                                                                                                                                                                                                               |
+| Latitude                | The decimal latitude of the PV system.                                                                                                                                                                                                                                                                              |
+| Longitude               | The decimal longitude of the PV system.                                                                                                                                                                                                                                                                             |
+| Altitude                | The altitude of the PV system, in meters above sea level.                                                                                                                                                                                                                                                           |
+| Time Zone               | The identifier of the time zone of the PV system, for example `Pacific/Auckland`. If not specified then the system default zone will be used.                                                                                                                                                                       |
+| Azimuth                 | The angle of the PV array in degrees clockwise from true north that the PV system is facing.                                                                                                                                                                                                                        |
+| Tilt                    | The angle of the PV array in degrees from horizontal, from `0` (facing directly upwards) to `90` (facing the horizon).                                                                                                                                                                                              |
+| Minimum cos(zenith)     | The minimum value of `cos(zenith)` to allow when calculating the global clearness index.                                                                                                                                                                                                                            |
+| Maximum Zenith          | The maximum zenith value to allow in DNI calculation.                                                                                                                                                                                                                                                               |
+| Tracking                | If enabled, model a single-axis tracker: the **Tilt** and **Azimuth** settings are ignored and the panel orientation is calculated from the sun position and the tracker axis settings.                                                                                                                             |
+| Axis Tilt               | The tilt of the tracker axis in degrees from horizontal. Defaults to `0`.                                                                                                                                                                                                                                           |
+| Axis Azimuth            | The angle of the tracker axis in degrees clockwise from true north, for example `0` for a north-south axis. Defaults to `0`.                                                                                                                                                                                        |
+| Maximum Angle           | The maximum tracker rotation angle in degrees from horizontal. Defaults to `90`.                                                                                                                                                                                                                                    |
+| Backtrack               | If enabled, apply backtracking to avoid row-to-row shading, using the **Ground Coverage Ratio**.                                                                                                                                                                                                                    |
+| Ground Coverage Ratio   | The ratio of PV row width to row spacing, used when **Backtrack** is enabled. Defaults to `0.2857`.                                                                                                                                                                                                                 |
+| Transposition Model     | The transposition model name to use. See [pvlib][pvlib-transpose] for more info.                                                                                                                                                                                                                                    |
+| Command                 | The external command to run, where the parameters and GHI irradiance will be passed as arguments and the calculated POA irradiance is returned. See [Command](#command) below.                                                                                                                                      |
+| POA Result Key          | The command result key to extract for the calculated POA irradiance value.                                                                                                                                                                                                                                          |
+| Expressions             | A list of expression configurations that are evaluated to derive datum property values from the **Command** output. See [Expressions](#expressions) below.                                                                                                                                                          |
 
 # Metadata Parameters
 
@@ -64,44 +70,55 @@ this:
 
 ```json
 {
-  "pm": {
-    "pv-characteristics": {
-      "lat":            41.18015,
-      "lon":            -73.8328,
-      "alt":            10,
-      "zone":           "America/New_York",
-      "pvArrayTilt":    7,
-      "pvArrayAzimuth": 205,
-      "minCosZenith":   3,
-      "maxZenith":      83
-    }
-  }
+	"pm": {
+		"pv-characteristics": {
+			"lat": 41.18015,
+			"lon": -73.8328,
+			"alt": 10,
+			"zone": "America/New_York",
+			"pvArrayTilt": 7,
+			"pvArrayAzimuth": 205,
+			"minCosZenith": 3,
+			"maxZenith": 83,
+			"tracking": true,
+			"pvAxisTilt": 0,
+			"pvAxisAzimuth": 0,
+			"maxAngle": 60,
+			"backtrack": true,
+			"gcr": 0.35
+		}
+	}
 }
 ```
 
 The filter merges all possible PV characteristics from the settings on the filter itself and
 metadata, in the following order, with **later sources overriding** earlier sources:
 
- 1. Filter settings
- 2. Metdata from the configured **Metadata Service**
- 3. Datum metadata associated with the source ID of the datum being filtered
- 4. **Latitude, longitude, and altitude** from the location configured for the node in SolarNetwork,
+1.  Filter settings
+2.  Metdata from the configured **Metadata Service**
+3.  Datum metadata associated with the source ID of the datum being filtered
+4.  **Latitude, longitude, and altitude** from the location configured for the node in SolarNetwork,
     if **Use Node Location** is enabled
 
 The supported metadata parameters are:
 
-| Metadata Key | Description |
-|:-------------|:------------|
-| `lat`        | Decimal latitude of the PV system |
-| `lon`        | Decimal longitude of the PV system |
-| `alt`        | Altitude of the PV system, in meters above sea level |
-| `zone`       | Time zone identifier of the PV system, for example `Pacific/Auckland` |
-| `pvArrayTilt`    | PV array tilt angle value, in degrees from horizontal |
-| `pvArrayAzimuth` | PV array angle value, in degrees clockwise from north |
-| `minCosZenith`   | Minimum value of `cos(zenith)` to allow when calculating global clearness index |
-| `maxZenith`      | Maximum zenith value to allow in DNI calculation |
-| `transpositionModel` | The transposition model name to use, one of `haydavies` or `perez-driesse`; defaults to `haydavies` |
-
+| Metadata Key         | Description                                                                                                                  |
+| :------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| `lat`                | Decimal latitude of the PV system                                                                                            |
+| `lon`                | Decimal longitude of the PV system                                                                                           |
+| `alt`                | Altitude of the PV system, in meters above sea level                                                                         |
+| `zone`               | Time zone identifier of the PV system, for example `Pacific/Auckland`                                                        |
+| `pvArrayTilt`        | PV array tilt angle value, in degrees from horizontal                                                                        |
+| `pvArrayAzimuth`     | PV array angle value, in degrees clockwise from north                                                                        |
+| `minCosZenith`       | Minimum value of `cos(zenith)` to allow when calculating global clearness index                                              |
+| `maxZenith`          | Maximum zenith value to allow in DNI calculation                                                                             |
+| `transpositionModel` | The transposition model name to use, one of `haydavies` or `perez-driesse`; defaults to `haydavies`                          |
+| `tracking`           | `true` to model a single-axis tracker, in which case `pvArrayTilt` and `pvArrayAzimuth` are ignored; defaults to `false`     |
+| `pvAxisTilt`         | Tracker axis tilt angle value, in degrees from horizontal, between `0` and `90`; defaults to `0`                             |
+| `pvAxisAzimuth`      | Tracker axis angle value, in degrees clockwise from north, between `0` and `360`; defaults to `0`                            |
+| `maxAngle`           | Maximum tracker rotation angle value, in degrees from horizontal, greater than `0` up to `180`; defaults to `90`             |
+| `backtrack`          | `true` to apply backtracking to avoid row-to-row shading, using `gcr`; defaults to `false`                                   |
+| `gcr`                | Ground coverage ratio (PV row width to row spacing), used for backtracking, greater than `0` up to `1`; defaults to `0.2857` |
 
 # Expressions
 
@@ -112,22 +129,25 @@ many properties, like these:
 
 ```json
 {
-  "date": "2024-11-18T10:24:47",
-  "zone": "Pacific/Auckland",
-  "ghi": 805.0,
-  "dni": 844.5952562517782,
-  "dhi": 151.71952235515488,
-  "zenith": 39.3322587975266,
-  "azimuth": 74.67509718383894,
-  "min_cos_zenith": 0.065,
-  "max_zenith": 87,
-  "poa_global": 799.951169881113,
-  "poa_direct": 648.6170024103126,
-  "poa_diffuse": 151.3341674708004,
-  "poa_sky_diffuse": 150.9512589662823,
-  "poa_ground_diffuse": 0.38290850451810454
+	"date": "2024-11-18T10:24:47",
+	"zone": "Pacific/Auckland",
+	"ghi": 805.0,
+	"dni": 844.5952562517782,
+	"dhi": 151.71952235515488,
+	"zenith": 39.3322587975266,
+	"azimuth": 74.67509718383894,
+	"min_cos_zenith": 0.065,
+	"max_zenith": 87,
+	"poa_global": 799.951169881113,
+	"poa_direct": 648.6170024103126,
+	"poa_diffuse": 151.3341674708004,
+	"poa_sky_diffuse": 150.9512589662823,
+	"poa_ground_diffuse": 0.38290850451810454
 }
 ```
+
+When **Tracking** is enabled the result also includes the calculated tracker orientation
+properties `tracker_theta`, `aoi`, `surface_tilt`, and `surface_azimuth`.
 
 Properties like `poa_global`, `poa_direct`, and so on can be used in expressions, for example you
 could round the `poa_global` value to at most 3 digits with:
@@ -136,27 +156,31 @@ could round the `poa_global` value to at most 3 digits with:
 roundDown(poa_global, 3)
 ```
 
-
 # Command
 
 The **Command** setting is the system-specific path to the command to run, where the parameters and GHI irradiance will be passed as arguments and the calculated POA irradiance is returned. The
 command must accept the options shown below, and is expected to output a JSON object. The
 [def/ghi-to-poa.py](./def/ghi-to-poa.py) script is an example of such a command.
 
-| Command Option | Description |
-|:---------------|:------------|
-| `--latitude`       | The decimal latitude |
-| `--longitude`      | The decimal longitude |
-| `--altitude`       | The altitude in meters above sea level |
-| `--zone`           | Time zone identifier, for example `Pacific/Auckland` |
-| `--array-tilt`     | PV tilt angle value, in degrees from horizontal |
-| `--array-azimuth`  | PV array angle value, in degrees clockwise from north |
-| `--min-cos-zenith` | Minimum value of `cos(zenith)` to allow when calculating global clearness index |
-| `--max-zenith`     | Maximum zenith value to allow in DNI calculation |
-| `--date`           | Local timestamp, in `YYYY-MM-DDTHH:mm:ss` format |
-| `--irradiance`     | The GHI irradiance to calculate the POA irradiance value for |
-| `--transpose`      | The optional transposition model name to use, for example `haydavies` |
-
+| Command Option     | Description                                                                                                                  |
+| :----------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| `--latitude`       | The decimal latitude                                                                                                         |
+| `--longitude`      | The decimal longitude                                                                                                        |
+| `--altitude`       | The altitude in meters above sea level                                                                                       |
+| `--zone`           | Time zone identifier, for example `Pacific/Auckland`                                                                         |
+| `--array-tilt`     | PV tilt angle value, in degrees from horizontal                                                                              |
+| `--array-azimuth`  | PV array angle value, in degrees clockwise from north                                                                        |
+| `--min-cos-zenith` | Minimum value of `cos(zenith)` to allow when calculating global clearness index                                              |
+| `--max-zenith`     | Maximum zenith value to allow in DNI calculation                                                                             |
+| `--date`           | Local timestamp, in `YYYY-MM-DDTHH:mm:ss` format                                                                             |
+| `--irradiance`     | The GHI irradiance to calculate the POA irradiance value for                                                                 |
+| `--transpose`      | The optional transposition model name to use, for example `haydavies`                                                        |
+| `--tracking`       | `true` to model a single-axis tracker, in which case `--array-tilt` and `--array-azimuth` are ignored; defaults to `false`   |
+| `--axis-tilt`      | Tracker axis tilt angle value, in degrees from horizontal, between `0` and `90`; defaults to `0`                             |
+| `--axis-azimuth`   | Tracker axis angle value, in degrees clockwise from north, between `0` and `360`; defaults to `0`                            |
+| `--max-angle`      | Maximum tracker rotation angle value, in degrees from horizontal, greater than `0` up to `180`; defaults to `90`             |
+| `--backtrack`      | `true` to apply backtracking to avoid row-to-row shading, using `--gcr`; defaults to `false`                                 |
+| `--gcr`            | Ground coverage ratio (PV row width to row spacing), used for backtracking, greater than `0` up to `1`; defaults to `0.2857` |
 
 # Developer Setup
 
@@ -185,6 +209,15 @@ You can execute the [ghi-to-poa.py](./def/ghi-to-poa.py) script like:
 ```sh
 python def/ghi-to-poa.py --latitude -36.8509 --longitude 174.7645 \
   --zone Pacific/Auckland --array-tilt 2.5 --array-azimuth 170 \
+  --date 2024-11-16T10:00 --irradiance 1000
+```
+
+Or with single-axis tracking enabled:
+
+```sh
+python def/ghi-to-poa.py --latitude -36.8509 --longitude 174.7645 \
+  --zone Pacific/Auckland --tracking true --axis-azimuth 0 \
+  --backtrack true --gcr 0.35 \
   --date 2024-11-16T10:00 --irradiance 1000
 ```
 
