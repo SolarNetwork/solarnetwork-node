@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Linux Serial Peripheral Interface
+Bundle-SymbolicName: net.solarnetwork.node.hw.linux-spi
+Bundle-Description: Linux SPI (Serial Peripheral Interface) API using JNA (Java Native Access).
+Bundle-Version: 1.0.0
+Bundle-Activator: net.solarnetwork.node.hw.linux.spi.internal.Activator
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Automatic-Module-Name: net.solarnetwork.node.hw.linux.spi
+Export-Package: 
+ net.solarnetwork.node.hw.linux.spi;version="1.0.0"
+Import-Package: 
+ com.sun.jna;version="[5.5,6.0)",
+ com.sun.jna.ptr;version="[5.6,6.0)",
+ org.jspecify.annotations;version="[1.0,2.0)",
+ org.osgi.framework;version="[1.5,2.0)"
