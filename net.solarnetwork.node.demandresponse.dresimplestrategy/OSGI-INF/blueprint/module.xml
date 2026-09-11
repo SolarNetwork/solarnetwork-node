@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<reference-list id="feedbackInstructionHandlers"
+		availability="optional"
+		interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler" />
+
+	<!-- provides access to local database storage for our datum -->
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao" />
+		<property name="serviceFilter"
+			value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)" />
+	</bean>
+
+	<!-- support localized strings for the settings in the GUI -->
+	<bean id="messageSource"
+		class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames"
+			value="net.solarnetwork.node.demandresponse.dresimplestrategy.DRESimpleStrategyDatumDataSource" />
+	</bean>
+
+	<!-- support localized strings for the periodic job settings in the GUI -->
+	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource." />
+		<property name="delegate" ref="messageSource" />
+	</bean>
+
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin" />
+	</bean>
+
+	<!-- publish a "component factory" so our Foobar Inverter appears in the 
+		settings GUI -->
+	<service
+		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean
+			class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Min DR Engine" />
+			<property name="factoryUID"
+				value="net.solarnetwork.node.demandresponse.dresimplestrategy" />
+			<property name="messageSource" ref="messageSource" />
+		</bean>
+	</service>
+
+	<!-- publish a "service factory" that each Foobar Inverter component instance 
+		can be configured in the GUI, along with a periodic job to collect datum 
+		from it -->
+	<osgix:managed-service-factory
+		factory-pid="net.solarnetwork.node.demandresponse.dresimplestrategy"
+		autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid"
+				value="net.solarnetwork.node.demandresponse.dresimplestrategy" />
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+
+			<!-- the trigger defines when the periodic job runs; in this case we define 
+				a cron style trigger, that by default runs once/minute -->
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+					<property name="name" value="dPowerDatumLoggerTrigger" />
+					<property name="cronExpression" value="5 * * * * ?" />
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
+					<property name="randomSecond" value="true" />
+				</bean>
+			</property>
+
+			<!-- we can also publish the FoobarDatumDataSource instance itself as 
+				a service by configuring serviceProviderConfigurations here... this is optional 
+				but generally a good idea -->
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumDataSource">
+						<bean
+							class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.DatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.EnergyDatum" />
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+
+			<!-- the jobDetail defines what job should be executed periodically by 
+				the trigger; here we define a net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob 
+				job which will invoke the readCurrentDatum() method on a DatumDataSource, 
+				which is what FoobarDatumDataSource is! -->
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+					<property name="name" value="drbatteryPowerDatumLoggerJob" />
+					<property name="jobClass"
+						value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob" />
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalNodeDatumDao" />
+							<entry key="datumDataSource">
+								<bean
+									class="net.solarnetwork.node.demandresponse.dresimplestrategy.DRESimpleStrategyDatumDataSource">
+									<property name="linkedInstance">
+										<bean
+											class="net.solarnetwork.node.demandresponse.dresimplestrategy.DRESimpleStrategy">
+											<property name="feedbackInstructionHandlers" ref="feedbackInstructionHandlers" />
+										</bean>
+									</property>
+									<property name="messageSource" ref="messageSource" />
+								</bean>
+							</entry>
+
+
+
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>
