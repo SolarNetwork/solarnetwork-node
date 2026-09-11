@@ -23,7 +23,6 @@
 package net.solarnetwork.node.datum.fixed;
 
 import static java.time.ZoneOffset.UTC;
-import static java.time.format.TextStyle.SHORT;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
@@ -34,30 +33,19 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesType;
-import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
-import net.solarnetwork.domain.tariff.CompositeTariff;
 import net.solarnetwork.domain.tariff.Tariff;
-import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.domain.tariff.TariffUtils;
-import net.solarnetwork.domain.tariff.TemporalTariffEvaluator;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumDataSource;
@@ -79,7 +67,7 @@ import net.solarnetwork.util.NumberUtils;
  * Generate datum based on static configuration.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FixedDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -252,7 +240,8 @@ public class FixedDatumDataSource extends DatumDataSourceSupport
 	private List<SettingSpecifier> settings(final boolean template) {
 		final List<SettingSpecifier> result = new ArrayList<>(8);
 
-		result.add(new BasicTitleSettingSpecifier("datumStatus", datumStatusMessage(), true, true));
+		result.add(new BasicTitleSettingSpecifier("datumStatus",
+				datumPropertiesHtmlMessage(lastDatum.get(), Locale.getDefault()), true, true));
 		if ( touSchedule() != null ) {
 			result.add(new BasicTitleSettingSpecifier("touStatus", touStatusMessage(), true, true));
 		}
@@ -286,148 +275,9 @@ public class FixedDatumDataSource extends DatumDataSourceSupport
 		return result;
 	}
 
-	private String datumStatusMessage() {
-		final MessageSource messageSource = messageSource();
-		final NodeDatum datum = lastDatum.get();
-		final Locale locale = Locale.getDefault();
-		if ( datum == null ) {
-			return messageSource.getMessage("datum.none", null, locale);
-		}
-		final StringBuilder buf = new StringBuilder();
-		buf.append("""
-				<table class="table counts">
-					<thead>
-						<tr><th>%s</th><th>%s</th></tr>
-					</thead>
-					<tbody>
-				""".formatted(messageSource.getMessage("datum.status.propertyName", null, locale),
-				messageSource.getMessage("datum.status.propertyValue", null, locale)));
-
-		buf.append("<tr><td>%s</td><td>%s</td></tr>\n".formatted(
-				messageSource.getMessage("datum.status.timestamp", null, locale), datum.getTimestamp()));
-
-		final Map<String, ?> data = datum.getSampleData();
-		if ( data != null ) {
-			for ( Entry<String, ?> entry : data.entrySet() ) {
-				String key = entry.getKey();
-				Object val = entry.getValue();
-				if ( key == null || val == null ) {
-					continue;
-				}
-				if ( !(val instanceof Number) ) {
-					val = val.toString().replace("<", "&lt;");
-				}
-				buf.append("<tr><td>%s</td><td>%s</td></tr>\n".formatted(key, val));
-			}
-		}
-		buf.append("""
-					</tbody>
-				</table>
-				""");
-		return buf.toString();
-	}
-
 	private String touStatusMessage() {
-		final StringBuilder buf = new StringBuilder();
-		final TariffSchedule schedule = touSchedule();
-		final CachedResult<TariffSchedule> cached = this.touSchedule.get();
-		final MessageSource messageSource = messageSource();
-		final Locale locale = Locale.getDefault();
-		if ( schedule != null ) {
-			Collection<? extends Tariff> rules = schedule.rules();
-			if ( rules.isEmpty() ) {
-				buf.append("<p>").append(messageSource.getMessage("rules.empty", null, locale))
-						.append("</p>");
-			} else {
-				final LocalDateTime now = LocalDateTime.now();
-				Map<Integer, Tariff> active = renderRulesTable(schedule, now, buf);
-				if ( !active.isEmpty() ) {
-					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
-					DateTimeFormatter dateFormat = DateTimeFormatter
-							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
-					buf.append("<p>").append(messageSource.getMessage("rates.active",
-							new Object[] { dateFormat.format(now) }, locale)).append("</p><ol>");
-					for ( Map.Entry<Integer, Tariff> me : active.entrySet() ) {
-						buf.append("<li value=\"").append(me.getKey() + 1).append("\">");
-						int rateCount = 0;
-						for ( Rate rate : me.getValue().getRates().values() ) {
-							if ( rate == activeRates.get(rate.getId()) ) {
-								// this rate active for this rule
-								if ( rateCount++ > 0 ) {
-									buf.append("; ");
-								}
-								buf.append("<b>").append(rate.getDescription()).append("</b>: ")
-										.append(rate.getAmount().toPlainString());
-							}
-							buf.append("</li>");
-						}
-					}
-					buf.append("</ol>");
-				}
-			}
-		} else {
-			buf.append("<p>").append(messageSource.getMessage("schedule.none", null, locale))
-					.append("</p>");
-		}
-		if ( cached != null ) {
-			buf.append("<p>");
-			buf.append(messageSource.getMessage(cached.isValid() ? "cached.valid" : "cached.invalid",
-					new Object[] { new Date(cached.getCreated()), new Date(cached.getExpires()) },
-					locale));
-			buf.append("</p>");
-		}
-		return buf.toString();
-	}
-
-	private Map<Integer, Tariff> renderRulesTable(TariffSchedule schedule, LocalDateTime date,
-			StringBuilder buf) {
-		final Collection<? extends Tariff> tariffs = schedule.rules();
-		final Map<Integer, Tariff> active = new TreeMap<>();
-		final TemporalTariffEvaluator e = DEFAULT_EVALUATOR;
-		final boolean firstOnly = true;
-		final CompositeTariff ct = new CompositeTariff(tariffs);
-		final Map<String, Rate> rates = ct.getRates();
-		buf.append(
-				"<table class=\"table counts\"><thead><tr><th>Rule</th><th>Month</th><th>Day</th><th>Weekday</th><th>Time</th>");
-		for ( Rate r : rates.values() ) {
-			buf.append("<th>").append(r.getDescription()).append("</th>");
-		}
-		buf.append("</tr></thead><tbody>");
-
-		int i = 0;
-		for ( Tariff tariff : tariffs ) {
-			if ( !(tariff instanceof ChronoFieldsTariff) ) {
-				continue;
-			}
-			ChronoFieldsTariff t = (ChronoFieldsTariff) tariff;
-			if ( (active.isEmpty() || !firstOnly) && e.applies(t, date, null) ) {
-				active.put(i, tariff);
-			}
-			buf.append("<tr>");
-			buf.append("<th>").append(++i).append("</th>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, t)).append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, t)).append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, t)).append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, t)).append("</td>");
-			Map<String, Rate> tariffRates = tariff.getRates();
-			// iterate over global rates, to keep order consistent in case rows vary
-			for ( String id : rates.keySet() ) {
-				Rate r = tariffRates.get(id);
-				buf.append("<td>");
-				if ( r != null ) {
-					buf.append(r.getAmount().toPlainString());
-				}
-				buf.append("</td>");
-			}
-			buf.append("</tr>");
-		}
-		buf.append("</tbody></table>");
-		return active;
-	}
-
-	private String rangeDisplayString(ChronoField field, ChronoFieldsTariff tariff) {
-		String r = tariff.formatChronoField(field, touLocale, SHORT);
-		return (r != null ? r : "*");
+		touSchedule(); // load
+		return touStatusHtmlMessage(this.touSchedule.get(), Locale.getDefault(), touLocale, true);
 	}
 
 	/**

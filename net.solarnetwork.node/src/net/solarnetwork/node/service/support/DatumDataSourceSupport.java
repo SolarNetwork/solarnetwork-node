@@ -22,23 +22,40 @@
 
 package net.solarnetwork.node.service.support;
 
+import static java.time.format.TextStyle.SHORT;
 import static java.util.Collections.singletonMap;
+import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
+import net.solarnetwork.domain.tariff.CompositeTariff;
+import net.solarnetwork.domain.tariff.Tariff;
+import net.solarnetwork.domain.tariff.Tariff.Rate;
+import net.solarnetwork.domain.tariff.TariffSchedule;
+import net.solarnetwork.domain.tariff.TemporalTariffEvaluator;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.MutableNodeDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -55,6 +72,7 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.CachedResult;
 
 /**
  * Helper class for {@link net.solarnetwork.node.service.DatumDataSource} and
@@ -62,7 +80,7 @@ import net.solarnetwork.util.ArrayUtils;
  * extend.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -405,6 +423,251 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 			log.warn("Error saving metadata values {} for source [{}]: {}", meta,
 					resolvePlaceholders(sourceId), e);
 		}
+	}
+
+	/**
+	 * Generate an HTML formatted status message from a datum's properties.
+	 *
+	 * <p>
+	 * The configured {@link #getMessageSource()} will be used to resolve the
+	 * following messages:
+	 * </p>
+	 *
+	 * <ul>
+	 * <li><code>datum.none</code> - when {@code datum} is {@code null}
+	 * <li><code>datum.status.propertyName</code> - the property table header
+	 * row "name" cell value</li>
+	 * <li><code>datum.status.propertyValue</code> - the property table header
+	 * row "value" cell value</li>
+	 * <li><code>datum.status.timestamp</code> - a property table "name" cell
+	 * value for the datum timestamp</li>
+	 * </ul>
+	 *
+	 * @param datum
+	 *        the datum
+	 * @param locale
+	 *        the locale
+	 * @return the HTML string, never {@code null}
+	 * @throws IllegalStateException
+	 *         if {@code #getMessageSource()} is {@code null}
+	 */
+	public String datumPropertiesHtmlMessage(final @Nullable NodeDatum datum, final Locale locale) {
+		final MessageSource messageSource = messageSource();
+		if ( datum == null ) {
+			return "<p>%s</p>".formatted(messageSource.getMessage("datum.none", null, locale));
+		}
+		final StringBuilder buf = new StringBuilder(512);
+		buf.append("""
+				<table class="table counts">
+					<thead>
+						<tr><th>%s</th><th>%s</th></tr>
+					</thead>
+					<tbody>
+				""".formatted(messageSource.getMessage("datum.status.propertyName", null, locale),
+				messageSource.getMessage("datum.status.propertyValue", null, locale)));
+
+		buf.append("<tr><td>%s</td><td>%s</td></tr>\n".formatted(
+				messageSource.getMessage("datum.status.timestamp", null, locale), datum.getTimestamp()));
+
+		final Map<String, ?> data = datum.getSampleData();
+		if ( data != null ) {
+			for ( Entry<String, ?> entry : data.entrySet() ) {
+				String key = entry.getKey();
+				Object val = entry.getValue();
+				if ( key == null || val == null ) {
+					continue;
+				}
+				if ( !(val instanceof Number) ) {
+					val = val.toString().replace("<", "&lt;");
+				}
+				buf.append("<tr><td>%s</td><td>%s</td></tr>\n".formatted(key, val));
+			}
+		}
+		buf.append("""
+					</tbody>
+				</table>
+				""");
+		return buf.toString();
+	}
+
+	/**
+	 * Render an HTML status message for a cached {@link TariffSchedule}.
+	 *
+	 * <p>
+	 * In addition to the messages resolved in {@link #getMessageSource()} by
+	 * the
+	 * {@link #touStatusHtmlMessage(TariffSchedule, Locale, Locale, boolean)}
+	 * method, this method requires the following additional messages:
+	 * </p>
+	 *
+	 * <ul>
+	 * <li><code>tou.cached.valid</code> - a "cache valid" label</li>
+	 * <li><code>tou.cached.invalid</code> - a "cache expired" label</li>
+	 * </ul>
+	 *
+	 * @param cached
+	 *        the cached schedule
+	 * @param locale
+	 *        the locale
+	 * @param touLocale
+	 *        the locale of the tariff schedule
+	 * @param firstRateOnly
+	 *        {@code true} to render only the first available rate, instead of
+	 *        all rates
+	 * @return the HTML
+	 * @see #touStatusHtmlMessage(TariffSchedule, Locale, Locale, boolean)
+	 */
+	public String touStatusHtmlMessage(final @Nullable CachedResult<TariffSchedule> cached,
+			Locale locale, Locale touLocale, boolean firstRateOnly) {
+		final StringBuilder buf = new StringBuilder(512);
+		final TariffSchedule schedule = (cached != null ? cached.getResult() : null);
+		final MessageSource messageSource = messageSource();
+		buf.append(touStatusHtmlMessage(schedule, locale, touLocale, firstRateOnly));
+		if ( cached != null ) {
+			buf.append("<p>");
+			buf.append(messageSource.getMessage(
+					cached.isValid() ? "tou.cached.valid" : "tou.cached.invalid",
+					new Object[] { new Date(cached.getCreated()), new Date(cached.getExpires()) },
+					locale));
+			buf.append("</p>");
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * Render an HTML status message for a {@link TariffSchedule}.
+	 *
+	 * <p>
+	 * This method resolves the following messages in the
+	 * {@link #getMessageSource()}:
+	 * </p>
+	 *
+	 * <ul>
+	 * <li><code>tou.rules.empty</code> - when there are no rules</li>
+	 * <li><code>tou.schedule.none</code> - when {@code schedule} is
+	 * {@code null}</li>
+	 * <li><code>tou.rates.active</code> - label for the active rates list
+	 * <li><code>tou.rule.label</code> - label for a rule number</li>
+	 * <li><code>tou.month.label</code> - label for a rule month value</li>
+	 * <li><code>tou.day.label</code> - label for a rule day value</li>
+	 * <li><code>tou.weekday.label</code> - label for a rule weekday value</li>
+	 * <li><code>tou.time.label</code> - label for a rule time value</li>
+	 * </ul>
+	 *
+	 * @param schedule
+	 *        the schedule
+	 * @param locale
+	 *        the locale
+	 * @param touLocale
+	 *        the locale of the tariff schedule
+	 * @param firstRateOnly
+	 *        {@code true} to render only the first available rate, instead of
+	 *        all rates
+	 * @return the HTML
+	 * @see #touStatusHtmlMessage(TariffSchedule, Locale, Locale, boolean)
+	 */
+	public String touStatusHtmlMessage(final @Nullable TariffSchedule schedule, Locale locale,
+			Locale touLocale, boolean firstRateOnly) {
+		final StringBuilder buf = new StringBuilder(512);
+		final MessageSource messageSource = messageSource();
+		if ( schedule != null ) {
+			Collection<? extends Tariff> rules = schedule.rules();
+			if ( rules.isEmpty() ) {
+				buf.append("<p>").append(messageSource.getMessage("tou.rules.empty", null, locale))
+						.append("</p>");
+			} else {
+				final LocalDateTime now = LocalDateTime.now();
+				Map<Integer, Tariff> active = renderRulesTable(schedule, now, messageSource, locale,
+						touLocale, firstRateOnly, buf);
+				if ( !active.isEmpty() ) {
+					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
+					DateTimeFormatter dateFormat = DateTimeFormatter
+							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
+					buf.append("<p>").append(messageSource.getMessage("tou.rates.active",
+							new Object[] { dateFormat.format(now) }, locale)).append("</p><ol>");
+					for ( Map.Entry<Integer, Tariff> me : active.entrySet() ) {
+						buf.append("<li value=\"").append(me.getKey() + 1).append("\">");
+						int rateCount = 0;
+						for ( Rate rate : me.getValue().getRates().values() ) {
+							if ( rate == activeRates.get(rate.getId()) ) {
+								// this rate active for this rule
+								if ( rateCount++ > 0 ) {
+									buf.append("; ");
+								}
+								buf.append("<b>").append(rate.getDescription()).append("</b>: ")
+										.append(rate.getAmount().toPlainString());
+							}
+							buf.append("</li>");
+						}
+					}
+					buf.append("</ol>");
+				}
+			}
+		} else {
+			buf.append("<p>").append(messageSource.getMessage("tou.schedule.none", null, locale))
+					.append("</p>");
+		}
+		return buf.toString();
+	}
+
+	private Map<Integer, Tariff> renderRulesTable(final TariffSchedule schedule,
+			final LocalDateTime date, final MessageSource messageSource, final Locale locale,
+			final Locale touLocale, final boolean firstRateOnly, final StringBuilder buf) {
+		final Collection<? extends Tariff> tariffs = schedule.rules();
+		final Map<Integer, Tariff> active = new TreeMap<>();
+		final TemporalTariffEvaluator e = DEFAULT_EVALUATOR;
+		final CompositeTariff ct = new CompositeTariff(tariffs);
+		final Map<String, Rate> rates = ct.getRates();
+		buf.append(
+				"<table class=\"table counts\"><thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th>"
+						.formatted(messageSource.getMessage("tou.rule.label", null, locale),
+								messageSource.getMessage("tou.month.label", null, locale),
+								messageSource.getMessage("tou.day.label", null, locale),
+								messageSource.getMessage("tou.weekday.label", null, locale),
+								messageSource.getMessage("tou.time.label", null, locale)));
+		for ( Rate r : rates.values() ) {
+			buf.append("<th>").append(r.getDescription()).append("</th>");
+		}
+		buf.append("</tr></thead><tbody>");
+
+		int i = 0;
+		for ( Tariff tariff : tariffs ) {
+			if ( !(tariff instanceof ChronoFieldsTariff) ) {
+				continue;
+			}
+			ChronoFieldsTariff t = (ChronoFieldsTariff) tariff;
+			if ( (active.isEmpty() || !firstRateOnly) && e.applies(t, date, null) ) {
+				active.put(i, tariff);
+			}
+			buf.append("<tr>");
+			buf.append("<th>").append(++i).append("</th>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, t, touLocale))
+					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, t, touLocale))
+					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, t, touLocale))
+					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, t, touLocale))
+					.append("</td>");
+			Map<String, Rate> tariffRates = tariff.getRates();
+			// iterate over global rates, to keep order consistent in case rows vary
+			for ( String id : rates.keySet() ) {
+				Rate r = tariffRates.get(id);
+				buf.append("<td>");
+				if ( r != null ) {
+					buf.append(r.getAmount().toPlainString());
+				}
+				buf.append("</td>");
+			}
+			buf.append("</tr>");
+		}
+		buf.append("</tbody></table>");
+		return active;
+	}
+
+	private String rangeDisplayString(ChronoField field, ChronoFieldsTariff tariff, Locale locale) {
+		String r = tariff.formatChronoField(field, locale, SHORT);
+		return (r != null ? r : "*");
 	}
 
 	/**

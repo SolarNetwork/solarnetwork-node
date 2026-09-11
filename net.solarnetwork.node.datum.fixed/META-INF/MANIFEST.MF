@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Fixed Datum Data Source
 Bundle-Description: Generate arbitrary datum based on static configuration or TOU schedules.
 Bundle-SymbolicName: net.solarnetwork.node.datum.fixed
-Bundle-Version: 1.0.1
+Bundle-Version: 1.0.2
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.fixed
 Bundle-RequiredExecutionEnvironment: JavaSE-17
@@ -16,7 +16,7 @@ Import-Package:
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
  net.solarnetwork.node.service;version="[1.10,2.0)",
- net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.17,2.0)",
  net.solarnetwork.service;version="[1.7,2.0)",
  net.solarnetwork.service.support;version="[1.4,2.0)",
  net.solarnetwork.settings;version="[2.3,3.0)",
