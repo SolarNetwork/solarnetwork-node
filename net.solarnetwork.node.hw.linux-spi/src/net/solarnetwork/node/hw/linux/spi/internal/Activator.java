@@ -3,7 +3,7 @@ package net.solarnetwork.node.hw.linux.spi.internal;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import net.solarnetwork.node.hw.linux.spi.LinuxSpiDevice;
+import net.solarnetwork.node.hw.linux.spi.jna.JnaSpiDevice;
 
 /**
  * Manage bundle JNA resources.
@@ -27,7 +27,7 @@ public class Activator implements BundleActivator {
 
 	@Override
 	public void stop(BundleContext bundleContext) throws Exception {
-		LinuxSpiDevice.unregisterNativeMethods();
+		JnaSpiDevice.unregisterNativeMethods();
 	}
 
 }

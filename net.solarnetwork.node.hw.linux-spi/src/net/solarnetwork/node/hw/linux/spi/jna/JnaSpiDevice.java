@@ -1,5 +1,5 @@
 /* ==================================================================
- * LinuxSpiDevice.java - 10 Sept 2026 8:14:50 pm
+ * JnaSpiDevice.java - 10 Sept 2026 8:14:50 pm
  *
  * Copyright 2026 SolarNetwork.net Dev Team
  *
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.linux.spi;
+package net.solarnetwork.node.hw.linux.spi.jna;
 
 import java.lang.ref.Reference;
 import com.sun.jna.LastErrorException;
@@ -29,6 +29,8 @@ import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
+import net.solarnetwork.node.hw.linux.spi.SpiDevice;
+import net.solarnetwork.node.hw.linux.spi.SpiException;
 
 /**
  * A {@link SpiDevice} implementation that talks to the Linux {@code spidev}
@@ -43,7 +45,7 @@ import com.sun.jna.Pointer;
  * @author matt
  * @version 1.0
  */
-public class LinuxSpiDevice implements SpiDevice {
+public class JnaSpiDevice implements SpiDevice {
 
 	// --- open(2) flags (asm-generic, valid on arm/arm64) ---------------------
 	private static final int O_RDWR = 0x0002;
@@ -167,7 +169,7 @@ public class LinuxSpiDevice implements SpiDevice {
 	 * @param chipSelect
 	 *        the chip-select number (the {@code Y} in {@code /dev/spidevX.Y})
 	 */
-	public LinuxSpiDevice(int busNumber, int chipSelect) {
+	public JnaSpiDevice(int busNumber, int chipSelect) {
 		this("/dev/spidev" + busNumber + "." + chipSelect);
 	}
 
@@ -177,7 +179,7 @@ public class LinuxSpiDevice implements SpiDevice {
 	 * @param path
 	 *        the device path, for example {@code /dev/spidev0.0}
 	 */
-	public LinuxSpiDevice(String path) {
+	public JnaSpiDevice(String path) {
 		super();
 		this.path = path;
 	}
@@ -218,7 +220,7 @@ public class LinuxSpiDevice implements SpiDevice {
 	 *
 	 * <p>
 	 * A no-op if the binding was never used, and safe to call more than once.
-	 * Do not call it while a {@link LinuxSpiDevice} is still in use: the libc
+	 * Do not call it while a {@link JnaSpiDevice} is still in use: the libc
 	 * methods become unlinked, and only a fresh class load (the next bundle
 	 * start) rebinds them.
 	 * </p>
@@ -368,7 +370,7 @@ public class LinuxSpiDevice implements SpiDevice {
 
 		@Override
 		public byte[][] transfer() {
-			synchronized ( LinuxSpiDevice.this ) {
+			synchronized ( JnaSpiDevice.this ) {
 				if ( closed ) {
 					throw new SpiException("SPI batch on " + path + " is closed");
 				}
@@ -402,7 +404,7 @@ public class LinuxSpiDevice implements SpiDevice {
 
 		@Override
 		public void close() {
-			synchronized ( LinuxSpiDevice.this ) {
+			synchronized ( JnaSpiDevice.this ) {
 				if ( closed ) {
 					return;
 				}
