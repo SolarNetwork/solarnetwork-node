@@ -319,7 +319,7 @@ public class SimpleReactorServiceTests {
 		children.add(InstructionUtils.createSetControlValueLocalInstruction("foo", "bar"));
 		children.add(InstructionUtils.createSetControlValueLocalInstruction("bim", "bam"));
 		expect(instructionDao.findInstructionsForStateAndParent(InstructionState.Received,
-				TEST_INSTRUCTOR_ID, oldInstrId)).andReturn(children);
+				instr.getInstructorId(), oldInstrId)).andReturn(children);
 
 		// cancel the 2 children
 		Capture<InstructionStatus> declineChildInstructionStatusCaptor = Capture

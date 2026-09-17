@@ -108,66 +108,69 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 		return (ignoreErrors ? Completed : Declined);
 	}
 
-	private InstructionStatus handleCancelInstruction(Instruction instruction) {
+	private InstructionStatus handleCancelInstruction(Instruction cancelInstruction) {
 		final boolean ignoreErrors = StringUtils
-				.parseBoolean(instruction.getParameterValue(PARAM_IGNORE_ERRORS));
-		final boolean force = StringUtils.parseBoolean(instruction.getParameterValue(PARAM_FORCE));
-		final String instructionIdVal = instruction.getParameterValue(PARAM_ID);
-		if ( instructionIdVal == null ) {
-			return createStatus(instruction, errorResultState(ignoreErrors),
+				.parseBoolean(cancelInstruction.getParameterValue(PARAM_IGNORE_ERRORS));
+		final boolean force = StringUtils.parseBoolean(cancelInstruction.getParameterValue(PARAM_FORCE));
+		final String instructionIdToCancelVal = cancelInstruction.getParameterValue(PARAM_ID);
+		if ( instructionIdToCancelVal == null ) {
+			return createStatus(cancelInstruction, errorResultState(ignoreErrors),
 					createErrorResultParameters("Missing 'id' parameter.", "SRS.0001"));
 		}
-		final Long instructionId;
+		final Long instructionIdToCancel;
 		try {
-			instructionId = Long.valueOf(instructionIdVal);
+			instructionIdToCancel = Long.valueOf(instructionIdToCancelVal);
 		} catch ( NumberFormatException e ) {
-			return createStatus(instruction, errorResultState(ignoreErrors),
+			return createStatus(cancelInstruction, errorResultState(ignoreErrors),
 					createErrorResultParameters("Invalid 'id' parameter (not a number).", "SRS.0002"));
 		}
 		boolean updated = false;
 		try {
-			final Instruction instr = instructionDao.getInstruction(instructionId,
-					instruction.getInstructorId());
-			if ( instr == null ) {
-				return createStatus(instruction, errorResultState(ignoreErrors),
+			final Instruction instructionToCancel = instructionDao.getInstruction(instructionIdToCancel,
+					cancelInstruction.getInstructorId());
+			if ( instructionToCancel == null ) {
+				return createStatus(cancelInstruction, errorResultState(ignoreErrors),
 						createErrorResultParameters("Instruction with given 'id' not found.",
 								"SRS.0003"));
 			}
-			updated = instructionDao
-					.compareAndStoreInstructionStatus(instructionId, instruction.getInstructorId(),
-							Received,
-							createStatus(instruction, errorResultState(ignoreErrors),
-									createErrorResultParameters(
-											String.format("Instruction cancelled by %s Instruction %d",
-													instruction.getTopic(), instruction.getId()),
-											null)));
+			updated = instructionDao.compareAndStoreInstructionStatus(instructionIdToCancel,
+					cancelInstruction.getInstructorId(), Received,
+					createStatus(cancelInstruction, errorResultState(ignoreErrors),
+							createErrorResultParameters(
+									String.format("Instruction cancelled by %s Instruction %d",
+											cancelInstruction.getTopic(), cancelInstruction.getId()),
+									null)));
 			if ( !updated ) {
-				return createStatus(instruction, errorResultState(ignoreErrors),
+				return createStatus(cancelInstruction, errorResultState(ignoreErrors),
 						createErrorResultParameters("Instruction failed to update state.", "SRS.0004"));
 			}
-			log.info("Cancelled instruction {} because of {} instruction {}", instructionId,
-					instruction.getTopic(), instruction.getId());
+			log.info("Cancelled instruction {} because of {} instruction {}", instructionIdToCancel,
+					cancelInstruction.getTopic(), cancelInstruction.getId());
 		} finally {
 			if ( updated || force ) {
 				// also cancel any available children
-				cancelChildInstructions(instruction, instructionId);
+				cancelChildInstructions(cancelInstruction, instructionIdToCancel);
 			}
 		}
-		return createStatus(instruction, Completed);
+		return createStatus(cancelInstruction, Completed);
 	}
 
-	private void cancelChildInstructions(final Instruction instruction, final Long parentInstructionId) {
+	private void cancelChildInstructions(final Instruction cancelInstruction,
+			final Long parentInstructionId) {
 		List<Instruction> children = instructionDao.findInstructionsForStateAndParent(Received,
-				instruction.getInstructorId(), parentInstructionId);
+				cancelInstruction.getInstructorId(), parentInstructionId);
 		for ( Instruction child : children ) {
 			boolean updated = instructionDao.compareAndStoreInstructionStatus(child.getId(),
 					child.getInstructorId(), Received,
 					createStatus(child, Declined, createErrorResultParameters(String.format(
-							"Instruction cancelled by %s instruction %d on parent instruction %d",
-							instruction.getTopic(), instruction.getId(), parentInstructionId), null)));
+							"Cancelled instruction because of %s instruction %d that cancelled parent instruction %d",
+							cancelInstruction.getTopic(), cancelInstruction.getId(),
+							parentInstructionId), null)));
 			if ( updated ) {
-				log.info("Cancelled instruction {} because of {} on parent instruction {}",
-						child.getId(), instruction.getTopic(), parentInstructionId);
+				log.info(
+						"Cancelled instruction {} because of {} instruction {} that cancelled parent instruction {}",
+						child.getId(), cancelInstruction.getTopic(), cancelInstruction.getId(),
+						parentInstructionId);
 			}
 		}
 	}
