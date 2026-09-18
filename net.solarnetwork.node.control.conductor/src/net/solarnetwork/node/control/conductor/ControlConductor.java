@@ -27,8 +27,11 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultPa
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,6 +40,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.domain.ExpressionRoot;
+import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -59,7 +63,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Control that orchestrates a set of control tasks.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ControlConductor extends BaseIdentifiable
 		implements SettingSpecifierProvider, InstructionHandler {
@@ -77,6 +81,7 @@ public class ControlConductor extends BaseIdentifiable
 	 */
 	public static final String PARAM_ORCHESTRATE_DATE = "date";
 
+	private final InstantSource clock;
 	private final OptionalService<ReactorService> reactorService;
 	private final OptionalService<InstructionExecutionService> instructionService;
 	private @Nullable OptionalService<DatumService> datumService;
@@ -95,7 +100,26 @@ public class ControlConductor extends BaseIdentifiable
 	 */
 	public ControlConductor(OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionService) {
+		this(Clock.systemUTC(), reactorService, instructionService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param reactorService
+	 *        the reactor service
+	 * @param instructionService
+	 *        the instruction execution service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 1.2
+	 */
+	public ControlConductor(InstantSource clock, OptionalService<ReactorService> reactorService,
+			OptionalService<InstructionExecutionService> instructionService) {
 		super();
+		this.clock = requireNonNullArgument(clock, "clock");
 		this.reactorService = requireNonNullArgument(reactorService, "reactorService");
 		this.instructionService = requireNonNullArgument(instructionService, "instructionService");
 	}
@@ -142,6 +166,7 @@ public class ControlConductor extends BaseIdentifiable
 
 		final List<Instruction> taskInstructions = new ArrayList<>(taskConfigs.length);
 		final Instant start = orchestrateDate(instruction);
+		final Instant now = clock.instant();
 		final PlaceholderService placeholderService = service(getPlaceholderService());
 		final Map<String, String> instructionParams = instruction.getParameterMap();
 
@@ -184,10 +209,20 @@ public class ControlConductor extends BaseIdentifiable
 		taskIndex = 0;
 		for ( Instruction taskInstruction : taskInstructions ) {
 			taskIndex += 1;
-			rs.storeInstruction(taskInstruction);
-			log.info("Scheduled {} instruction {} on behalf of {} instruction [{}] task [{}.{}] @ {}",
-					TOPIC_SIGNAL, taskInstruction.getId(), instruction.getTopic(),
-					instruction.getIdentifier(), uid, taskIndex, taskInstruction.getExecutionDate());
+			final Instant taskExecDate = nonnull(taskInstruction.getExecutionDate(), "Execution date");
+			if ( taskExecDate.isAfter(now) ) {
+				rs.storeInstruction(taskInstruction);
+				log.info(
+						"Scheduled {} instruction {} on behalf of {} instruction [{}] task [{}.{}] @ {}",
+						TOPIC_SIGNAL, taskInstruction.getId(), instruction.getTopic(),
+						instruction.getIdentifier(), uid, taskIndex, taskInstruction.getExecutionDate());
+			} else {
+				// execute task immediately
+				InstructionStatus status = handleSignalInstruction(taskInstruction);
+				if ( status != null ) {
+					rs.storeInstruction(new BasicInstruction(taskInstruction, status));
+				}
+			}
 		}
 
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed,
@@ -279,9 +314,12 @@ public class ControlConductor extends BaseIdentifiable
 	private Instant orchestrateDate(Instruction instruction) {
 		Instant start = instruction.timestampParameterValue(PARAM_ORCHESTRATE_DATE);
 		if ( start == null ) {
-			start = instruction.getInstructionDate();
+			start = instruction.getExecutionDate();
 			if ( start == null ) {
-				start = Instant.now();
+				start = instruction.getInstructionDate();
+				if ( start == null ) {
+					start = clock.instant();
+				}
 			}
 		}
 		return start;

@@ -1,21 +1,21 @@
 /* ==================================================================
  * ControlConductorTests.java - 4/04/2023 2:05:53 pm
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,6 +39,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -72,12 +73,13 @@ import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the {@link ControlConductor} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
 public class ControlConductorTests {
 
+	private InstantSource clock;
 	private ReactorService reactorService;
 	private InstructionExecutionService instructionService;
 	private DatumService datumService;
@@ -86,6 +88,7 @@ public class ControlConductorTests {
 
 	@Before
 	public void setup() {
+		clock = EasyMock.createMock(InstantSource.class);
 		reactorService = EasyMock.createMock(ReactorService.class);
 		instructionService = EasyMock.createMock(InstructionExecutionService.class);
 		datumService = EasyMock.createMock(DatumService.class);
@@ -100,12 +103,12 @@ public class ControlConductorTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(reactorService, instructionService, datumService, placeholderService);
+		EasyMock.replay(clock, reactorService, instructionService, datumService, placeholderService);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(reactorService, instructionService, datumService, placeholderService);
+		EasyMock.verify(clock, reactorService, instructionService, datumService, placeholderService);
 	}
 
 	private static OptionalServiceCollection<ExpressionService> spelExpressionServices() {
@@ -120,10 +123,10 @@ public class ControlConductorTests {
 		ControlTaskConfig[] tasks = new ControlTaskConfig[] {
 				// task 1: use expression to set mode using negative ISO offset
 				taskConfig("/control/1", "-PT2H", "mode == 'a' ? 1 : 2", SpelExpressionService.class.getName()),
-				
+
 				// task 2: set parameter mode using ms offset
 				taskConfig("/control/1", "0", "{mode}"),
-				
+
 				// task 3: set hard-coded mode using parameter offset
 				taskConfig("/control/1/", "{duration}", "0"),
 		};
@@ -270,6 +273,76 @@ public class ControlConductorTests {
 				is(equalTo(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER)));
 		assertThat("Task execution instruction control ID param",
 				execInstr.getParameterValue(resolvedControlId), is(equalTo(expectedControlValue)));
+	}
+
+	@Test
+	public void scheduleTasks_futureExecutionDate() {
+		// GIVEN
+		// @formatter:off
+		ControlTaskConfig[] tasks = new ControlTaskConfig[] {
+				// task 1: set parameter mode using ms offset
+				taskConfig("/control/1", "0", "1"),
+
+				// task 2: set hard-coded 1h later
+				taskConfig("/control/1", "PT1H", "0"),
+		};
+		// @formatter:on
+		conductor.setTaskConfigs(tasks);
+
+		final Instant execDate = Instant.now().truncatedTo(ChronoUnit.HOURS).plus(4, ChronoUnit.HOURS);
+		final String execDateIso = DateTimeFormatter.ISO_INSTANT.format(execDate);
+		final Map<String, String> orchestrateParams = new HashMap<>(4);
+		orchestrateParams.put(InstructionHandler.PARAM_SERVICE, conductor.getUid());
+
+		// use the executionDate value as the orchestration date
+		orchestrateParams.put(Instruction.PARAM_EXECUTION_DATE, execDateIso);
+
+		final Instruction orchestrate = createLocalInstruction(TOPIC_ORCHESTRATE_CONTROLS,
+				orchestrateParams);
+
+		// resolve placeholders in task offset settings
+		expect(placeholderService.resolvePlaceholders(eq("0"), anyObject())).andReturn("0");
+		expect(placeholderService.resolvePlaceholders(eq("PT1H"), anyObject())).andReturn("PT1H");
+
+		// save task instructions
+		Capture<Instruction> savedInstructionsCaptor = Capture.newInstance(CaptureType.ALL);
+		reactorService.storeInstruction(capture(savedInstructionsCaptor));
+		expectLastCall().times(tasks.length);
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = conductor.processInstruction(orchestrate);
+
+		// THEN
+		assertThat("Instruction result returned", result, is(notNullValue()));
+		assertThat("Instruction state is OK", result.getInstructionState(), is(equalTo(Completed)));
+
+		List<Instruction> savedInstructions = savedInstructionsCaptor.getValues();
+		assertThat("Instructions saved for each task", savedInstructions, hasSize(tasks.length));
+
+		int i = 0;
+		for ( Instruction instr : savedInstructions ) {
+			i += 1;
+			assertThat(format("Task %d instruction is Signal", i), instr.getTopic(),
+					is(equalTo(InstructionHandler.TOPIC_SIGNAL)));
+			assertThat(format("Task %d instruction param parent instructor ID", i),
+					instr.getParameterValue(Instruction.PARAM_PARENT_INSTRUCTOR_ID),
+					is(equalTo(Instruction.LOCAL_INSTRUCTION_ID)));
+			assertThat(format("Task %d instruction param parent instruction ID", i),
+					instr.getParameterValue(Instruction.PARAM_PARENT_INSTRUCTION_ID),
+					is(equalTo(orchestrate.getId().toString())));
+		}
+
+		Instruction signal = savedInstructions.get(0);
+		assertThat("Task 1 execution date", signal.getExecutionDate(), is(equalTo(execDate)));
+		assertThat("Task 1 execution Signal target", signal.getParameterValue(conductor.getUid()),
+				is(equalTo("1")));
+
+		signal = savedInstructions.get(1);
+		assertThat("Task 2 execution date", signal.getExecutionDate(),
+				is(equalTo(execDate.plus(1, ChronoUnit.HOURS))));
+		assertThat("Task 2 execution Signal target", signal.getParameterValue(conductor.getUid()),
+				is(equalTo("2")));
 	}
 
 }
