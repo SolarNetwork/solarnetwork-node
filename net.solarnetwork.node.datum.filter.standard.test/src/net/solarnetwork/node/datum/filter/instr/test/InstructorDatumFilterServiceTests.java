@@ -22,23 +22,33 @@
 
 package net.solarnetwork.node.datum.filter.instr.test;
 
+import static java.time.temporal.ChronoUnit.HOURS;
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static net.solarnetwork.domain.InstructionStatus.InstructionState.Completed;
+import static net.solarnetwork.domain.InstructionStatus.InstructionState.Received;
 import static net.solarnetwork.test.CommonTestUtils.randomString;
 import static org.assertj.core.api.BDDAssertions.from;
 import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import java.time.Instant;
+import java.time.InstantSource;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
-import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.InstructionStatus;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
@@ -52,6 +62,7 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.StaticOptionalService;
@@ -71,6 +82,8 @@ public class InstructorDatumFilterServiceTests {
 	private static final String INSTRUCTION_STATUS_RESULT_PARAM_NAME = "result";
 	private static final String RESULT_PROP_NAME = "instructionResult";
 
+	private InstantSource clock;
+	private ReactorService reactorService;
 	private InstructionExecutionService instructionExecutionService;
 	private LocalStateDao localStateDao;
 	private ExpressionService exprService;
@@ -78,9 +91,11 @@ public class InstructorDatumFilterServiceTests {
 
 	@Before
 	public void setup() {
+		clock = EasyMock.createMock(InstantSource.class);
+		reactorService = EasyMock.createMock(ReactorService.class);
 		instructionExecutionService = EasyMock.createMock(InstructionExecutionService.class);
 		localStateDao = EasyMock.createMock(LocalStateDao.class);
-		xform = new InstructorDatumFilterService(
+		xform = new InstructorDatumFilterService(clock, new StaticOptionalService<>(reactorService),
 				new StaticOptionalService<>(instructionExecutionService));
 		xform.setUid("Test");
 		exprService = new SpelExpressionService();
@@ -90,11 +105,11 @@ public class InstructorDatumFilterServiceTests {
 
 	@After
 	public void teardown() {
-		EasyMock.verify(instructionExecutionService, localStateDao);
+		EasyMock.verify(clock, reactorService, instructionExecutionService, localStateDao);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(instructionExecutionService, localStateDao);
+		EasyMock.replay(clock, reactorService, instructionExecutionService, localStateDao);
 	}
 
 	private SimpleDatum createTestSimpleDatum(String sourceId, String prop, Number val) {
@@ -104,7 +119,7 @@ public class InstructorDatumFilterServiceTests {
 	}
 
 	@Test
-	public void generateDeferredInstruction_saveInstructionIdToLocalState() {
+	public void generateInstruction_saveInstructionIdToLocalState() {
 		// GIVEN
 		final InstructorConfig config = new InstructorConfig();
 		config.getPredicate().setExpression("""
@@ -139,12 +154,22 @@ public class InstructorDatumFilterServiceTests {
 
 		xform.setInstructorConfigs(new InstructorConfig[] { config });
 
-		final Capture<Instruction> instructionCaptor = Capture.newInstance();
+		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		expect(clock.instant()).andReturn(now);
+
+		final Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
+		// persist instruction
+		reactorService.storeInstruction(capture(instructionCaptor));
+
+		// execute instruction
 		expect(instructionExecutionService.executeInstruction(capture(instructionCaptor)))
 				.andAnswer(() -> {
 					final Instruction instr = (Instruction) EasyMock.getCurrentArguments()[0];
-					return InstructionUtils.createStatus(instr, InstructionState.Completed);
+					return InstructionUtils.createStatus(instr, Completed);
 				});
+
+		// persist state
+		reactorService.storeInstruction(capture(instructionCaptor));
 
 		final Capture<LocalState> localStateCaptor = Capture.newInstance();
 		expect(localStateDao.compareAndChange(capture(localStateCaptor))).andAnswer(() -> {
@@ -164,17 +189,47 @@ public class InstructorDatumFilterServiceTests {
 			.isNotNull()
 			;
 
-		final Instruction instruction = instructionCaptor.getValue();
-		then(instruction)
-			.as("Instruction generated")
-			.isNotNull()
-			.as("Instruction topic from config")
-			.returns(instrConfig.getTopic(), from(Instruction::getTopic))
-			.extracting(Instruction::getParameterMap, map(String.class, String.class))
-			.containsExactlyInAnyOrderEntriesOf(Map.of(
-				InstructionHandler.PARAM_SERVICE, SIGNAL_SERVICE_UID,
-				InstructionHandler.PARAM_SERVICE_ARGUMENT, "1"
-			))
+		final List<Instruction> instructions = instructionCaptor.getValues();
+		then(instructions)
+			.as("Instruction persisted, executed, and updated")
+			.hasSize(3)
+			.allSatisfy(instruction -> {
+				then(instruction)
+					.as("Instruction topic from config")
+					.returns(instrConfig.getTopic(), from(Instruction::getTopic))
+					.extracting(Instruction::getParameterMap, map(String.class, String.class))
+					.containsExactlyInAnyOrderEntriesOf(Map.of(
+						InstructionHandler.PARAM_SERVICE, SIGNAL_SERVICE_UID,
+						InstructionHandler.PARAM_SERVICE_ARGUMENT, "1"
+					))
+					;
+			})
+			.satisfies(list -> {
+				final Instruction firstInstruction = list.get(0);
+				then(list)
+					.asInstanceOf(list(Instruction.class))
+					.as("The same instruction is persisted/executed/updated")
+					.allSatisfy(instruction -> {
+						then(instruction)
+							.as("Instructor ID same as first instruction")
+							.returns(firstInstruction.getInstructorId(), from(Instruction::getInstructorId))
+							.as("Instruction ID same as first instruction")
+							.returns(firstInstruction.getId(), from(Instruction::getId))
+							;
+					})
+					;
+
+				then(list).element(0)
+					.as("Persisted instruction has no status")
+					.returns(null, from(Instruction::getStatus))
+					;
+				then(list).element(2)
+					.extracting(Instruction::getStatus)
+					.as("Updated instruction has status")
+					.isNotNull()
+					.returns(Completed, from(InstructionStatus::getInstructionState))
+					;
+			})
 			;
 
 		then(localStateCaptor.getValue())
@@ -183,13 +238,13 @@ public class InstructorDatumFilterServiceTests {
 			.as("LocalState key from expression")
 			.returns(PRESENT_SIGNAL_INSTRUCTION_ID_LOCAL_STATE_KEY, from(LocalState::getKey))
 			.as("LocalState value is instruction ID")
-			.returns(instruction.getId(), from(LocalState::getValue))
+			.returns(instructions.get(0).getId(), from(LocalState::getValue))
 			;
 		// @formatter:on
 	}
 
 	@Test
-	public void generateDeferredInstruction_saveResultAsDatumProp() {
+	public void generateInstruction_saveResultAsDatumProp() {
 		// GIVEN
 		final InstructorConfig config = new InstructorConfig();
 		config.getPredicate().setExpression("""
@@ -221,14 +276,24 @@ public class InstructorDatumFilterServiceTests {
 
 		xform.setInstructorConfigs(new InstructorConfig[] { config });
 
+		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		expect(clock.instant()).andReturn(now);
+
 		final String instructionStatusResult = randomString();
-		final Capture<Instruction> instructionCaptor = Capture.newInstance();
+		final Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
+		// persist instruction
+		reactorService.storeInstruction(capture(instructionCaptor));
+
+		// execute instruction
 		expect(instructionExecutionService.executeInstruction(capture(instructionCaptor)))
 				.andAnswer(() -> {
 					final Instruction instr = (Instruction) EasyMock.getCurrentArguments()[0];
-					return InstructionUtils.createStatus(instr, InstructionState.Completed,
+					return InstructionUtils.createStatus(instr, Completed,
 							Map.of(INSTRUCTION_STATUS_RESULT_PARAM_NAME, instructionStatusResult));
 				});
+
+		// persist state
+		reactorService.storeInstruction(capture(instructionCaptor));
 
 		// WHEN
 		replayAll();
@@ -260,16 +325,225 @@ public class InstructorDatumFilterServiceTests {
 			})
 			;
 
-		final Instruction instruction = instructionCaptor.getValue();
-		then(instruction)
-			.as("Instruction generated")
+		final List<Instruction> instructions = instructionCaptor.getValues();
+		then(instructions)
+		.as("Instruction persisted, executed, and updated")
+		.hasSize(3)
+		.allSatisfy(instruction -> {
+			then(instruction)
+				.as("Instruction topic from config")
+				.returns(instrConfig.getTopic(), from(Instruction::getTopic))
+				.extracting(Instruction::getParameterMap, map(String.class, String.class))
+				.containsExactlyInAnyOrderEntriesOf(Map.of(
+					InstructionHandler.PARAM_SERVICE, SIGNAL_SERVICE_UID
+				))
+				;
+		})
+		.satisfies(list -> {
+			final Instruction firstInstruction = list.get(0);
+			then(list)
+				.asInstanceOf(list(Instruction.class))
+				.as("The same instruction is persisted/executed/updated")
+				.allSatisfy(instruction -> {
+					then(instruction)
+						.as("Instructor ID same as first instruction")
+						.returns(firstInstruction.getInstructorId(), from(Instruction::getInstructorId))
+						.as("Instruction ID same as first instruction")
+						.returns(firstInstruction.getId(), from(Instruction::getId))
+						;
+				})
+				;
+
+			then(list).element(0)
+				.as("Persisted instruction has no status")
+				.returns(null, from(Instruction::getStatus))
+				;
+			then(list).element(2)
+				.extracting(Instruction::getStatus)
+				.as("Updated instruction has status")
+				.isNotNull()
+				.returns(Completed, from(InstructionStatus::getInstructionState))
+				;
+		})
+		;
+		// @formatter:on
+	}
+
+	@Test
+	public void generateDeferredInstruction() {
+		// GIVEN
+		final InstructorConfig config = new InstructorConfig();
+		config.getPredicate().setExpression("""
+				%s == 1
+				""".formatted(INPUT_SIGNAL_PROP_NAME));
+		config.getPredicate().setExpressionServiceId(exprService.getUid());
+
+		final Instant execAt = Instant.now().truncatedTo(SECONDS).plus(1, HOURS);
+
+		final InstructionConfig instrConfig = new InstructionConfig();
+		instrConfig.setTopic(InstructionHandler.TOPIC_SIGNAL);
+
+		final ExpressionConfig signalParamConfig = new ExpressionConfig();
+		signalParamConfig.setName(InstructionHandler.PARAM_SERVICE);
+		signalParamConfig.setExpression(SIGNAL_SERVICE_UID);
+
+		// add executeDate parameter
+		final ExpressionConfig execAtParamConfig = new ExpressionConfig();
+		execAtParamConfig.setName(Instruction.PARAM_EXECUTION_DATE);
+		execAtParamConfig.setExpression(execAt.toString());
+
+		instrConfig.setParameters(new ExpressionConfig[] { signalParamConfig, execAtParamConfig });
+
+		config.setInstructions(new InstructionConfig[] { instrConfig });
+
+		xform.setInstructorConfigs(new InstructorConfig[] { config });
+
+		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		expect(clock.instant()).andReturn(now);
+
+		final Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
+		// persist deferred instruction
+		expect(reactorService.processInstruction(capture(instructionCaptor))).andAnswer(() -> {
+			Instruction instr = instructionCaptor.getValue();
+			return InstructionUtils.createStatus(instr, Received);
+		});
+
+		// WHEN
+		replayAll();
+		final SimpleDatum d = createTestSimpleDatum(randomString(), INPUT_SIGNAL_PROP_NAME, 1);
+		final Map<String, Object> parameters = new LinkedHashMap<>();
+		final DatumSamplesOperations result = xform.filter(d, d.getSamples(), parameters);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Result provided")
 			.isNotNull()
+			.as("Same samples instance returned")
+			.isSameAs(d.getSamples())
+			;
+
+		final List<Instruction> instructions = instructionCaptor.getValues();
+		then(instructions)
+			.as("Instruction persisted (as Received with deferred date)")
+			.hasSize(1)
+			.element(0)
 			.as("Instruction topic from config")
 			.returns(instrConfig.getTopic(), from(Instruction::getTopic))
-			.extracting(Instruction::getParameterMap, map(String.class, String.class))
-			.containsExactlyInAnyOrderEntriesOf(Map.of(
-				InstructionHandler.PARAM_SERVICE, SIGNAL_SERVICE_UID
-			))
+			.satisfies(instr -> {
+				then(instr.getParameterMap())
+					.containsExactlyInAnyOrderEntriesOf(Map.of(
+						InstructionHandler.PARAM_SERVICE, SIGNAL_SERVICE_UID,
+						Instruction.PARAM_EXECUTION_DATE, execAt.toString()
+					))
+					;
+			})
+			.extracting(Instruction::getStatus)
+			.as("Persisted instruction had no status")
+			.isNull()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void generateDeferredInstruction_saveInstructionIdAsDatumProperty() {
+		// GIVEN
+		final InstructorConfig config = new InstructorConfig();
+		config.getPredicate().setExpression("""
+				%s == 1
+				""".formatted(INPUT_SIGNAL_PROP_NAME));
+		config.getPredicate().setExpressionServiceId(exprService.getUid());
+
+		final Instant execAt = Instant.now().truncatedTo(SECONDS).plus(1, HOURS);
+
+		final InstructionConfig instrConfig = new InstructionConfig();
+		instrConfig.setTopic(InstructionHandler.TOPIC_SIGNAL);
+
+		final ExpressionConfig signalParamConfig = new ExpressionConfig();
+		signalParamConfig.setName(InstructionHandler.PARAM_SERVICE);
+		signalParamConfig.setExpression(SIGNAL_SERVICE_UID);
+
+		// add executeDate parameter
+		final ExpressionConfig execAtParamConfig = new ExpressionConfig();
+		execAtParamConfig.setName(Instruction.PARAM_EXECUTION_DATE);
+		execAtParamConfig.setExpression(execAt.toString());
+
+		instrConfig.setParameters(new ExpressionConfig[] { signalParamConfig, execAtParamConfig });
+
+		final ExpressionConfig resultResponseConfig = new ExpressionConfig();
+		resultResponseConfig.setPropertyKey(RESULT_PROP_NAME);
+		resultResponseConfig.setPropertyType(DatumSamplesType.Status);
+		resultResponseConfig.setExpression("instruction.id");
+		resultResponseConfig.setExpressionServiceId(exprService.getUid());
+		instrConfig.setResponses(new ExpressionConfig[] { resultResponseConfig });
+
+		config.setInstructions(new InstructionConfig[] { instrConfig });
+
+		xform.setInstructorConfigs(new InstructorConfig[] { config });
+
+		final Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		expect(clock.instant()).andReturn(now);
+
+		final AtomicReference<net.solarnetwork.node.reactor.InstructionStatus> statusRef = new AtomicReference<>();
+		final Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
+		// persist deferred instruction
+		expect(reactorService.processInstruction(capture(instructionCaptor))).andAnswer(() -> {
+			Instruction instr = instructionCaptor.getValue();
+			var status = InstructionUtils.createStatus(instr, Received);
+			statusRef.set(status);
+			return status;
+		});
+
+		// WHEN
+		replayAll();
+		final SimpleDatum d = createTestSimpleDatum(randomString(), INPUT_SIGNAL_PROP_NAME, 1);
+		final Map<String, Object> parameters = new LinkedHashMap<>();
+		final DatumSamplesOperations result = xform.filter(d, d.getSamples(), parameters);
+
+		// THEN
+		// @formatter:off
+		final List<Instruction> instructions = instructionCaptor.getValues();
+		then(instructions)
+			.as("Instruction persisted (as Received with deferred date)")
+			.hasSize(1)
+			.element(0)
+			.as("Instruction topic from config")
+			.returns(instrConfig.getTopic(), from(Instruction::getTopic))
+			.satisfies(instr -> {
+				then(instr.getParameterMap())
+					.containsExactlyInAnyOrderEntriesOf(Map.of(
+						InstructionHandler.PARAM_SERVICE, SIGNAL_SERVICE_UID,
+						Instruction.PARAM_EXECUTION_DATE, execAt.toString()
+					))
+					;
+			})
+			.extracting(Instruction::getStatus)
+			.as("Persisted instruction had no status")
+			.isNull()
+			;
+
+		final net.solarnetwork.node.reactor.InstructionStatus deferredStatus = statusRef.get();
+
+		then(result)
+			.as("Result provided")
+			.isNotNull()
+			.as("New samples instance returned")
+			.isNotSameAs(d.getSamples())
+			.as("DatumSamples instance returned")
+			.isInstanceOf(DatumSamples.class)
+			.asInstanceOf(type(DatumSamples.class))
+			.satisfies(s -> {
+				then(s.getInstantaneous())
+					.as("Given instantaneous datum properties remain")
+					.containsExactlyInAnyOrderEntriesOf(d.getSamples().getInstantaneous())
+					;
+				then(s.getStatus())
+					.as("Response expression result saved to status datum property")
+					.containsExactlyInAnyOrderEntriesOf(Map.of(
+						RESULT_PROP_NAME, deferredStatus.getInstructionId()
+					))
+					;
+			})
 			;
 		// @formatter:on
 	}

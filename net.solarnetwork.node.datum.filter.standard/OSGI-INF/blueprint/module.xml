@@ -53,6 +53,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="reactorService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
@@ -1126,6 +1132,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.instr.InstructorDatumFilterService">
+			<argument ref="reactorService"/>
 			<argument ref="instructionExecutionService"/>
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="instructorMessageSource"/>

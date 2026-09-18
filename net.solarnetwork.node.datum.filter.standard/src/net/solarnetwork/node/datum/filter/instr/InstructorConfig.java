@@ -200,8 +200,8 @@ public class InstructorConfig {
 	 *        the instructor index
 	 * @return the settings
 	 */
-	public List<SettingValueBean> toSettingValues(final String providerId, final String instanceId,
-			final int instructorIdx) {
+	public List<SettingValueBean> toSettingValues(final String providerId,
+			final @Nullable String instanceId, final int instructorIdx) {
 		List<SettingValueBean> settings = new ArrayList<>(8);
 		addSetting(settings, providerId, instanceId, instructorIdx, "predicate.expression",
 				predicate.getExpression());

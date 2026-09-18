@@ -277,7 +277,8 @@ public class InstructionConfig {
 				// these instruction parameter expressions
 				List<SettingValueBean> paramSettings = paramConfig
 						.toSettingValues(providerId, instanceId, prefix).stream()
-						.filter(s -> !s.getKey().endsWith(".datumPropertyTypeKey")).toList();
+						.filter(s -> s.getKey() != null && !s.getKey().endsWith(".datumPropertyTypeKey"))
+						.toList();
 				settings.addAll(paramSettings);
 			}
 		}

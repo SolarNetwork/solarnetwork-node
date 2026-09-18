@@ -26,7 +26,9 @@ import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +44,13 @@ import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.service.support.ExpressionConfiguration;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -61,7 +65,7 @@ import net.solarnetwork.util.ArrayUtils;
  *
  * @author matt
  * @version 1.0
- * @since 4.5
+ * @since 4.6
  */
 public class InstructorDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -80,6 +84,8 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public static final String INSTRUCTION_RESULT_PARAM_NAME = "instructionResult";
 
+	private final InstantSource clock;
+	private final OptionalService<ReactorService> reactorService;
 	private final OptionalService<InstructionExecutionService> instructionExecutionService;
 	private InstructorConfig @Nullable [] instructorConfigs;
 
@@ -93,14 +99,51 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public InstructorDatumFilterService(
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
+		this(new StaticOptionalService<>(null), instructionExecutionService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param reactorService
+	 *        the reactor service
+	 * @param instructionExecutionService
+	 *        the instruction execution service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 4.6
+	 */
+	public InstructorDatumFilterService(OptionalService<ReactorService> reactorService,
+			OptionalService<InstructionExecutionService> instructionExecutionService) {
+		this(Clock.systemUTC(), reactorService, instructionExecutionService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param reactorService
+	 *        the reactor service
+	 * @param instructionExecutionService
+	 *        the instruction execution service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 4.6
+	 */
+	public InstructorDatumFilterService(InstantSource clock,
+			OptionalService<ReactorService> reactorService,
+			OptionalService<InstructionExecutionService> instructionExecutionService) {
 		super();
+		this.clock = requireNonNullArgument(clock, "clock");
+		this.reactorService = requireNonNullArgument(reactorService, "reactorService");
 		this.instructionExecutionService = requireNonNullArgument(instructionExecutionService,
 				"instructionExecutionService");
 	}
 
 	@Override
-	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
-			Map<String, Object> parameters) {
+	public @Nullable DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
+			@Nullable Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
@@ -109,10 +152,12 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 		DatumSamplesOperations s = samples;
 
 		// iterate over each valid configuration
+		final ReactorService reactor = service(reactorService);
 		final InstructionExecutionService execService = service(instructionExecutionService);
 		final InstructorConfig[] configs = getInstructorConfigs();
-		if ( execService != null && configs != null && configs.length > 0 ) {
-			final Iterable<ExpressionService> expressionServices = services(getExpressionServices());
+		final Iterable<ExpressionService> expressionServices = services(getExpressionServices());
+		if ( execService != null && configs != null && configs.length > 0
+				&& expressionServices != null ) {
 			final Map<String, Object> filterParams = smartPlaceholders(parameters);
 			final DatumSamples mutableSamples = new DatumSamples(samples);
 			final ExpressionRoot root = new ExpressionRoot(datum, mutableSamples, filterParams,
@@ -137,6 +182,9 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 				try {
 					final ExpressionServiceExpression predicate = predicateConfig
 							.expression(expressionServices);
+					if ( predicate == null ) {
+						continue;
+					}
 					final Boolean predicateResult = predicate.getService().evaluateExpression(
 							predicate.getExpression(), filterParams, root, null, Boolean.class);
 
@@ -172,7 +220,28 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 					final BasicInstruction instr = createInstruction(instructorDescription,
 							instructionConfig, root, filterParams, expressionServices);
 					if ( instr != null ) {
-						InstructionStatus instrResult = execService.executeInstruction(instr);
+						InstructionStatus instrResult = null;
+						if ( reactor != null ) {
+							final Instant executeAt = instr.getExecutionDate();
+							final boolean futureExecution = (executeAt != null
+									&& executeAt.isAfter(instr.getInstructionDate()));
+							if ( futureExecution ) {
+								instrResult = reactor.processInstruction(instr);
+								log.info(
+										"Deferred instruction {} {} saved as {} state for execution @ {}",
+										instr.getId(), instr.getTopic(),
+										instrResult.getInstructionState(), executeAt);
+							} else {
+								reactor.storeInstruction(instr);
+							}
+						}
+						if ( instrResult == null ) {
+							instrResult = execService.executeInstruction(instr);
+							if ( instrResult != null && reactor != null ) {
+								var instrWithStatus = new BasicInstruction(instr, instrResult);
+								reactor.storeInstruction(instrWithStatus);
+							}
+						}
 						if ( instrResult != null ) {
 							processInstructionResult(instructorDescription, instructionConfig, root,
 									filterParams, expressionServices, mutableSamples, instr,
@@ -188,14 +257,14 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 		}
 
 		incrementStats(start, samples, s);
-		return s;
+		return s != null && s.differsFrom(samples) ? s : samples;
 	}
 
 	private @Nullable BasicInstruction createInstruction(String instructorDescription,
 			InstructionConfig config, ExpressionRoot root, Map<String, Object> filterParams,
 			Iterable<ExpressionService> expressionServices) {
 		final String topic = nonnull(config.getTopic(), "Topic");
-		final Instant instructionDate = Instant.now();
+		final Instant instructionDate = clock.instant();
 		final BasicInstruction result = new BasicInstruction(
 				net.solarnetwork.domain.Instruction.localId(), topic, instructionDate,
 				Instruction.LOCAL_INSTRUCTION_ID, null);
@@ -289,7 +358,8 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 					// response value is plain string
 					responseValue = responseExpression;
 				}
-				if ( datumPropName != null && responseValue != null ) {
+				if ( responseConfig.getPropertyType() != null && datumPropName != null
+						&& responseValue != null ) {
 					samples.putSampleValue(responseConfig.getPropertyType(), datumPropName,
 							responseValue);
 				}
@@ -339,7 +409,7 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 							@Nullable InstructorConfig value, int index, String key) {
 						SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								nonnull(value, "InstructorConfig").settings(template, key + ".",
-										exprServices));
+										exprServices != null ? exprServices : List.of()));
 						return List.of(configGroup);
 					}
 				}));
