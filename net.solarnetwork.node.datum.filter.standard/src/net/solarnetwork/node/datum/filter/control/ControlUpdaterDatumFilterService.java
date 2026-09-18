@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.Datum;
@@ -65,7 +66,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
 	private final OptionalService<InstructionExecutionService> instructionExecutionService;
-	private ControlConfig[] controlConfigs;
+	private ControlConfig @Nullable [] controlConfigs;
 
 	/**
 	 * Constructor.
@@ -83,8 +84,8 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	@Override
-	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
-			Map<String, Object> parameters) {
+	public @Nullable DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
+			@Nullable Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
@@ -148,17 +149,20 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 			if ( exprResult != null ) {
 				final String controlId = resolvePlaceholders(config.getControlId(),
 						Collections.singletonMap("sourceId", root.getSourceId()));
+				if ( controlId == null || controlId.isEmpty() ) {
+					continue;
+				}
 				Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
 						exprResult);
 				InstructionStatus status = executor.executeInstruction(instr);
-				if ( status.getInstructionState() == InstructionState.Completed ) {
+				if ( status != null && status.getInstructionState() == InstructionState.Completed ) {
 					log.info("Service [{}] set control [{}] to [{}]", getUid(), controlId, exprResult);
-					if ( config.getName() != null ) {
+					if ( config.getDatumPropertyType() != null && config.getName() != null ) {
 						s.putSampleValue(config.getDatumPropertyType(), config.getName(), exprResult);
 					}
 				} else {
-					Object reason = status.getInstructionState();
-					Map<String, ?> resultParams = status.getResultParameters();
+					Object reason = (status != null ? status.getInstructionState() : null);
+					Map<String, ?> resultParams = (status != null ? status.getResultParameters() : null);
 					if ( resultParams != null
 							&& resultParams.containsKey(InstructionStatus.MESSAGE_RESULT_PARAM) ) {
 						if ( resultParams.containsKey(InstructionStatus.ERROR_CODE_RESULT_PARAM) ) {
@@ -180,7 +184,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		}
 	}
 
-	private ControlConfig[] validControlConfigs() {
+	private ControlConfig @Nullable [] validControlConfigs() {
 		final ControlConfig[] configs = getControlConfigs();
 		if ( configs == null || configs.length < 1 ) {
 			return null;
@@ -217,10 +221,10 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 				new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
-							int index, String key) {
-						SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								ControlConfig.settings(key + ".", exprServices));
+					public Collection<SettingSpecifier> mapListSettingKey(
+							@Nullable ExpressionConfig value, int index, String key) {
+						SettingSpecifier configGroup = new BasicGroupSettingSpecifier(ControlConfig
+								.settings(key + ".", exprServices != null ? exprServices : List.of()));
 						return singletonList(configGroup);
 					}
 				}));
@@ -233,7 +237,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the control configurations
 	 */
-	public ControlConfig[] getControlConfigs() {
+	public final ControlConfig @Nullable [] getControlConfigs() {
 		return controlConfigs;
 	}
 
@@ -243,7 +247,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	 * @param controlConfigs
 	 *        the configs to use
 	 */
-	public void setControlConfigs(ControlConfig[] controlConfigs) {
+	public final void setControlConfigs(ControlConfig @Nullable [] controlConfigs) {
 		this.controlConfigs = controlConfigs;
 	}
 
@@ -252,7 +256,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * @return the number of {@code controlConfigs} elements
 	 */
-	public int getControlConfigsCount() {
+	public final int getControlConfigsCount() {
 		ControlConfig[] confs = this.controlConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
@@ -268,7 +272,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	 * @param count
 	 *        The desired number of {@code controlConfigs} elements.
 	 */
-	public void setControlConfigsCount(int count) {
+	public final void setControlConfigsCount(int count) {
 		this.controlConfigs = ArrayUtils.arrayWithLength(this.controlConfigs, count, ControlConfig.class,
 				null);
 	}
