@@ -135,7 +135,7 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 			}
 			updated = instructionDao.compareAndStoreInstructionStatus(instructionIdToCancel,
 					cancelInstruction.getInstructorId(), Received,
-					createStatus(cancelInstruction, errorResultState(ignoreErrors),
+					createStatus(cancelInstruction, Declined,
 							createErrorResultParameters(
 									String.format("Instruction cancelled by %s Instruction %d",
 											cancelInstruction.getTopic(), cancelInstruction.getId()),

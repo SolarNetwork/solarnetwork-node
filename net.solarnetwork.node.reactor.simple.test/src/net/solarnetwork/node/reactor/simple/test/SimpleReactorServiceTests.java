@@ -289,6 +289,53 @@ public class SimpleReactorServiceTests {
 	}
 
 	@Test
+	public void cancel_ignoreErrors_noErrors() {
+		// GIVEN
+		Long oldInstrId = randomLong();
+		BasicInstructionStatus oldInstrStatus = new BasicInstructionStatus(oldInstrId,
+				InstructionState.Received, Instant.now());
+		BasicInstruction oldInstr = new BasicInstruction(oldInstrId,
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, Instant.now().minusSeconds(1),
+				TEST_INSTRUCTOR_ID, oldInstrStatus);
+
+		Long instrId = randomLong();
+		BasicInstructionStatus status = new BasicInstructionStatus(instrId, InstructionState.Executing,
+				Instant.now());
+		BasicInstruction instr = new BasicInstruction(instrId,
+				InstructionHandler.TOPIC_CANCEL_INSTRUCTION, Instant.now().minusSeconds(1),
+				TEST_INSTRUCTOR_ID, status);
+		instr.addParameter(InstructionHandler.PARAM_ID, oldInstrId.toString());
+		instr.addParameter(InstructionHandler.PARAM_IGNORE_ERRORS, Boolean.TRUE.toString());
+
+		// get instruction to cancel based on this instruction's "id" parameter
+		expect(instructionDao.getInstruction(oldInstrId, TEST_INSTRUCTOR_ID)).andReturn(oldInstr);
+
+		// update that instruction's state to Declined
+		Capture<InstructionStatus> declineInstructionStatusCaptor = Capture.newInstance();
+		expect(instructionDao.compareAndStoreInstructionStatus(eq(oldInstrId), eq(TEST_INSTRUCTOR_ID),
+				eq(Received), capture(declineInstructionStatusCaptor))).andReturn(true);
+
+		// search for child instructions to cancel
+		expect(instructionDao.findInstructionsForStateAndParent(InstructionState.Received,
+				TEST_INSTRUCTOR_ID, oldInstrId)).andReturn(List.of());
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
+		assertThat("State is Completed", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		InstructionStatus declineInstructionStatus = declineInstructionStatusCaptor.getValue();
+		assertThat("Old instruction state set to Declined",
+				declineInstructionStatus.getInstructionState(), is(equalTo(InstructionState.Declined)));
+		assertThat("Old instruction message provided", declineInstructionStatus.getResultParameters(),
+				hasEntry(equalTo(InstructionHandler.PARAM_MESSAGE), notNullValue()));
+	}
+
+	@Test
 	public void cancel_withChildren() {
 		// GIVEN
 		Long oldInstrId = randomLong();
