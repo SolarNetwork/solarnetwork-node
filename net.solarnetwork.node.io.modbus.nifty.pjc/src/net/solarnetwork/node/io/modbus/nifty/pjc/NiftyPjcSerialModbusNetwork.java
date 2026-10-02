@@ -24,10 +24,10 @@ package net.solarnetwork.node.io.modbus.nifty.pjc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.Nullable;
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.Future;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.local.LocalIoHandler;
 import net.solarnetwork.io.modbus.ModbusClient;
 import net.solarnetwork.io.modbus.rtu.netty.NettyRtuModbusClientConfig;
 import net.solarnetwork.io.modbus.rtu.netty.RtuNettyModbusClient;
@@ -37,6 +37,7 @@ import net.solarnetwork.io.modbus.serial.SerialPortProvider;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork;
 import net.solarnetwork.node.io.modbus.nifty.rtu.SerialConnectionProvider;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
@@ -45,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * connection.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<NettyRtuModbusClientConfig>
 		implements SerialConnectionProvider {
@@ -110,46 +111,14 @@ public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 	@Override
 	protected ModbusClient createController() {
 		EventLoopGroup g = getOrCreateEventLoopGroup(() -> {
-			return new InternalEventLoopGroup();
+			// a serial network has a single connection, so needs just one thread
+			return new MultiThreadIoEventLoopGroup(1, NiftyPjcSerialModbusNetwork.this,
+					LocalIoHandler.newFactory());
 		});
 		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, g, serialPortProvider);
 		controller.setWireLogging(isWireLogging());
 		controller.setReplyTimeout(getReplyTimeout());
 		return controller;
-	}
-
-	@SuppressWarnings("deprecation")
-	private class InternalEventLoopGroup extends io.netty.channel.oio.OioEventLoopGroup {
-
-		private volatile boolean shutDown;
-
-		private InternalEventLoopGroup() {
-			super(getEventLoopGroupMaxThreadCount(), NiftyPjcSerialModbusNetwork.this);
-		}
-
-		@Override
-		public Future<?> shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
-			shutDown = true;
-			return super.shutdownGracefully(quietPeriod, timeout, unit);
-		}
-
-		@Override
-		public void shutdown() {
-			shutDown = true;
-			super.shutdown();
-		}
-
-		@Override
-		public boolean isShuttingDown() {
-			return super.isShuttingDown() && shutDown;
-		}
-
-		@Override
-		public List<Runnable> shutdownNow() {
-			shutDown = true;
-			return super.shutdownNow();
-		}
-
 	}
 
 	// SettingSpecifierProvider
@@ -178,7 +147,11 @@ public class NiftyPjcSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlInString", "none"));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlOutString", "none"));
 
-		results.addAll(baseNiftyModbusNetworkSettings(DEFAULT_KEEP_OPEN_SECONDS));
+		// remove max thread setting as does not apply here
+		results.addAll(baseNiftyModbusNetworkSettings(DEFAULT_KEEP_OPEN_SECONDS).stream()
+				.filter(s -> !(s instanceof KeyedSettingSpecifier<?> k
+						&& k.getKey().equals("eventLoopGroupMaxThreadCount")))
+				.toList());
 
 		return results;
 	}
