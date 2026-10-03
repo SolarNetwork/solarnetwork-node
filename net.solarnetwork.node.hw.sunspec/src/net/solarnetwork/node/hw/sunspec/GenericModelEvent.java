@@ -85,7 +85,7 @@ public class GenericModelEvent implements ModelEvent, Comparable<GenericModelEve
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(index);
+		return Objects.hashCode(index);
 	}
 
 	@Override

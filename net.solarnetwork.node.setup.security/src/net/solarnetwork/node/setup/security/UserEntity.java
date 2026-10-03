@@ -99,7 +99,7 @@ public final class UserEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(username);
+		return Objects.hashCode(username);
 	}
 
 	@Override
