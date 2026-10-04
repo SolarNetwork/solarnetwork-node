@@ -32,6 +32,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.DataUtils;
 import net.solarnetwork.util.IntShortMap;
@@ -40,7 +41,7 @@ import net.solarnetwork.util.IntShortMap;
  * Helper utility methods for model data testing.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public final class ModelDataUtils {
 
@@ -159,6 +160,49 @@ public final class ModelDataUtils {
 		} else {
 			conn = new StaticDataMapReadonlyModbusConnection(parseTestData(clazz, resource));
 		}
+		try {
+			return ModelDataFactory.getInstance().getModelData(conn);
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Get a writable Modbus connection to a class-path resource of modbus test
+	 * data.
+	 *
+	 * <p>
+	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
+	 * text file, so the data starts at address {@literal 0}.
+	 * </p>
+	 *
+	 * @param clazz
+	 *        the class to load the resource from
+	 * @param resource
+	 *        the data resource to load
+	 * @return the connection
+	 * @since 2.3
+	 */
+	public static StaticDataMapModbusConnection getWritableModbusConnection(Class<?> clazz,
+			String resource) {
+		final int[] data = parseTestData(clazz, resource);
+		final IntShortMap map = new IntShortMap(data.length);
+		for ( int i = 0; i < data.length; i++ ) {
+			map.putValue(i, data[i]);
+		}
+		return new StaticDataMapModbusConnection(map);
+	}
+
+	/**
+	 * Get a model data instance by discovering the models available on a
+	 * Modbus connection.
+	 *
+	 * @param conn
+	 *        the connection
+	 * @return the model data
+	 * @since 2.3
+	 */
+	public static ModelData getModelDataInstance(ModbusConnection conn) {
 		try {
 			return ModelDataFactory.getInstance().getModelData(conn);
 		} catch ( IOException e ) {

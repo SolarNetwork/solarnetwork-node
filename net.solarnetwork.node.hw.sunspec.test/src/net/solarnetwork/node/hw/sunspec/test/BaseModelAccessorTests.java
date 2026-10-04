@@ -605,4 +605,90 @@ public class BaseModelAccessorTests {
 				is(equalTo(Set.of())));
 	}
 
+	@Test
+	public void booleanValue_false() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 0);
+
+		// THEN
+		assertThat("0 is false", accessor.getBooleanValue(TestRegister.Enum16Value), is(equalTo(false)));
+	}
+
+	@Test
+	public void booleanValue_true() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 1);
+
+		// THEN
+		assertThat("1 is true", accessor.getBooleanValue(TestRegister.Enum16Value), is(equalTo(true)));
+	}
+
+	@Test
+	public void booleanValue_unknownCode() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 2);
+
+		// THEN
+		assertThat("Unknown code is null", accessor.getBooleanValue(TestRegister.Enum16Value),
+				is(nullValue()));
+	}
+
+	@Test
+	public void booleanValue_notImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 0xFFFF);
+
+		// THEN
+		assertThat("Not implemented is null", accessor.getBooleanValue(TestRegister.Enum16Value),
+				is(nullValue()));
+	}
+
+	@Test
+	public void scaledFloatValue() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 1234);
+		saveRegisters(TestRegister.ScaleFactorValue, 0xFFFE); // -2
+
+		// THEN
+		assertThat("Value scaled",
+				accessor.getScaledFloatValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(equalTo(12.34f)));
+	}
+
+	@Test
+	public void scaledFloatValue_notImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 0xFFFF);
+		saveRegisters(TestRegister.ScaleFactorValue, 0xFFFE); // -2
+
+		// THEN
+		assertThat("Not implemented is null",
+				accessor.getScaledFloatValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+	}
+
+	@Test
+	public void scaledIntegerValue_fractionDiscarded() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwInt16Value, 0xFB29); // -1239
+		saveRegisters(TestRegister.ScaleFactorValue, 0xFFFF); // -1
+
+		// THEN
+		assertThat("Fraction discarded",
+				accessor.getScaledIntegerValue(TestRegister.RwInt16Value, TestRegister.ScaleFactorValue),
+				is(equalTo(-123)));
+	}
+
+	@Test
+	public void scaledLongValue() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt32Value, 0x0001, 0x0000);
+		saveRegisters(TestRegister.ScaleFactorValue, 3);
+
+		// THEN
+		assertThat("Value scaled",
+				accessor.getScaledLongValue(TestRegister.RwUInt32Value, TestRegister.ScaleFactorValue),
+				is(equalTo(65536000L)));
+	}
+
 }

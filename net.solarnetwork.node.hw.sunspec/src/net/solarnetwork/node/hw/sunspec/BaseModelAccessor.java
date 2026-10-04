@@ -444,6 +444,128 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	}
 
 	/**
+	 * Get a scaled data property value as a float.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @return the value, or {@code null} if not available
+	 * @see #getScaledValue(ModbusReference, ModbusReference)
+	 * @since 2.1
+	 */
+	public @Nullable Float getScaledFloatValue(ModbusReference dataRef, ModbusReference scaleRef) {
+		return getScaledFloatValue(dataRef, scaleRef, blockAddress, blockAddress);
+	}
+
+	/**
+	 * Get a scaled data property value as a float.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param scaleOffset
+	 *        the scale address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@code null} if not available
+	 * @see #getScaledValue(ModbusReference, ModbusReference, int, int)
+	 * @since 2.1
+	 */
+	public @Nullable Float getScaledFloatValue(ModbusReference dataRef, ModbusReference scaleRef,
+			int dataOffset, int scaleOffset) {
+		Number n = getScaledValue(dataRef, scaleRef, dataOffset, scaleOffset);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	/**
+	 * Get a scaled data property value as an integer.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @return the value, or {@code null} if not available
+	 * @see #getScaledValue(ModbusReference, ModbusReference)
+	 * @since 2.1
+	 */
+	public @Nullable Integer getScaledIntegerValue(ModbusReference dataRef, ModbusReference scaleRef) {
+		return getScaledIntegerValue(dataRef, scaleRef, blockAddress, blockAddress);
+	}
+
+	/**
+	 * Get a scaled data property value as an integer.
+	 *
+	 * <p>
+	 * Any fractional part of the scaled value is discarded.
+	 * </p>
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param scaleOffset
+	 *        the scale address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@code null} if not available
+	 * @see #getScaledValue(ModbusReference, ModbusReference, int, int)
+	 * @since 2.1
+	 */
+	public @Nullable Integer getScaledIntegerValue(ModbusReference dataRef, ModbusReference scaleRef,
+			int dataOffset, int scaleOffset) {
+		Number n = getScaledValue(dataRef, scaleRef, dataOffset, scaleOffset);
+		return (n != null ? n.intValue() : null);
+	}
+
+	/**
+	 * Get a scaled data property value as a long.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @return the value, or {@code null} if not available
+	 * @see #getScaledValue(ModbusReference, ModbusReference)
+	 * @since 2.1
+	 */
+	public @Nullable Long getScaledLongValue(ModbusReference dataRef, ModbusReference scaleRef) {
+		return getScaledLongValue(dataRef, scaleRef, blockAddress, blockAddress);
+	}
+
+	/**
+	 * Get a scaled data property value as a long.
+	 *
+	 * <p>
+	 * Any fractional part of the scaled value is discarded.
+	 * </p>
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param scaleOffset
+	 *        the scale address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@code null} if not available
+	 * @see #getScaledValue(ModbusReference, ModbusReference, int, int)
+	 * @since 2.1
+	 */
+	public @Nullable Long getScaledLongValue(ModbusReference dataRef, ModbusReference scaleRef,
+			int dataOffset, int scaleOffset) {
+		Number n = getScaledValue(dataRef, scaleRef, dataOffset, scaleOffset);
+		return (n != null ? n.longValue() : null);
+	}
+
+	/**
 	 * Get a string data property value.
 	 *
 	 * @param dataRef
@@ -470,6 +592,54 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public @Nullable String getStringValue(ModbusReference dataRef, int dataOffset) {
 		return data.getStringValue(dataRef, dataOffset);
+	}
+
+	/**
+	 * Get a boolean data property value.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the value, or {@code null} if not available
+	 * @see #getBooleanValue(ModbusReference, int)
+	 * @since 2.1
+	 */
+	public @Nullable Boolean getBooleanValue(ModbusReference dataRef) {
+		return getBooleanValue(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get a boolean data property value.
+	 *
+	 * <p>
+	 * This is for SunSpec enumerations with two values, such as
+	 * {@code DISABLED (0)} and {@code ENABLED (1)}: {@code 0} is returned as
+	 * {@code false}, {@code 1} as {@code true}, and any other value, including
+	 * the SunSpec "not implemented" value, as {@code null}.
+	 * </p>
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@code null} if not available
+	 * @since 2.1
+	 */
+	public @Nullable Boolean getBooleanValue(ModbusReference dataRef, int dataOffset) {
+		Number n = getValue(dataRef, dataOffset);
+		if ( n == null ) {
+			return null;
+		}
+		switch (n.intValue()) {
+			case 0:
+				return Boolean.FALSE;
+
+			case 1:
+				return Boolean.TRUE;
+
+			default:
+				return null;
+		}
 	}
 
 	/**

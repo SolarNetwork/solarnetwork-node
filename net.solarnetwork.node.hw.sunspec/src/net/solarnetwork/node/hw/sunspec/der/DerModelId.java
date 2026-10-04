@@ -38,10 +38,10 @@ public enum DerModelId implements ModelId {
 	AcMeasurement(701, "DER AC measurement", DerAcMeasurementModelAccessor.class),
 
 	/** DER capacity. */
-	Capacity(702, "DER capacity"),
+	Capacity(702, "DER capacity", DerCapacityModelAccessor.class),
 
 	/** DER enter service. */
-	EnterService(703, "DER enter service"),
+	EnterService(703, "DER enter service", DerEnterServiceModelAccessor.class),
 
 	/** DER AC controls. */
 	AcControls(704, "DER AC controls"),

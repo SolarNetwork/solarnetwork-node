@@ -85,24 +85,6 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 		return FIXED_BLOCK_LENGTH;
 	}
 
-	private @Nullable Float scaledFloat(DerAcMeasurementModelRegister ref,
-			DerAcMeasurementModelRegister scaleRef) {
-		Number n = getScaledValue(ref, scaleRef);
-		return (n != null ? n.floatValue() : null);
-	}
-
-	private @Nullable Integer scaledInteger(DerAcMeasurementModelRegister ref,
-			DerAcMeasurementModelRegister scaleRef) {
-		Number n = getScaledValue(ref, scaleRef);
-		return (n != null ? n.intValue() : null);
-	}
-
-	private @Nullable Long scaledLong(DerAcMeasurementModelRegister ref,
-			DerAcMeasurementModelRegister scaleRef) {
-		Number n = getScaledValue(ref, scaleRef);
-		return (n != null ? n.longValue() : null);
-	}
-
 	@Override
 	public InverterModelAccessor accessorForPhase(AcPhase phase) {
 		switch (phase) {
@@ -157,31 +139,31 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Integer getActivePower() {
-		return scaledInteger(DerAcMeasurementModelRegister.ActivePowerTotal,
+		return getScaledIntegerValue(DerAcMeasurementModelRegister.ActivePowerTotal,
 				DerAcMeasurementModelRegister.ScaleFactorActivePower);
 	}
 
 	@Override
 	public @Nullable Integer getApparentPower() {
-		return scaledInteger(DerAcMeasurementModelRegister.ApparentPowerTotal,
+		return getScaledIntegerValue(DerAcMeasurementModelRegister.ApparentPowerTotal,
 				DerAcMeasurementModelRegister.ScaleFactorApparentPower);
 	}
 
 	@Override
 	public @Nullable Integer getReactivePower() {
-		return scaledInteger(DerAcMeasurementModelRegister.ReactivePowerTotal,
+		return getScaledIntegerValue(DerAcMeasurementModelRegister.ReactivePowerTotal,
 				DerAcMeasurementModelRegister.ScaleFactorReactivePower);
 	}
 
 	@Override
 	public @Nullable Float getPowerFactor() {
-		return scaledFloat(DerAcMeasurementModelRegister.PowerFactorTotal,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.PowerFactorTotal,
 				DerAcMeasurementModelRegister.ScaleFactorPowerFactor);
 	}
 
 	@Override
 	public @Nullable Float getCurrent() {
-		return scaledFloat(DerAcMeasurementModelRegister.CurrentTotal,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.CurrentTotal,
 				DerAcMeasurementModelRegister.ScaleFactorCurrent);
 	}
 
@@ -192,19 +174,19 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Float getVoltage() {
-		return scaledFloat(DerAcMeasurementModelRegister.VoltageLineNeutralAverage,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.VoltageLineNeutralAverage,
 				DerAcMeasurementModelRegister.ScaleFactorVoltage);
 	}
 
 	@Override
 	public @Nullable Float getLineVoltage() {
-		return scaledFloat(DerAcMeasurementModelRegister.VoltageLineLineAverage,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.VoltageLineLineAverage,
 				DerAcMeasurementModelRegister.ScaleFactorVoltage);
 	}
 
 	@Override
 	public @Nullable Float getFrequency() {
-		return scaledFloat(DerAcMeasurementModelRegister.Frequency,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.Frequency,
 				DerAcMeasurementModelRegister.ScaleFactorFrequency);
 	}
 
@@ -215,13 +197,13 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Long getActiveEnergyDelivered() {
-		return scaledLong(DerAcMeasurementModelRegister.ActiveEnergyInjectedTotal,
+		return getScaledLongValue(DerAcMeasurementModelRegister.ActiveEnergyInjectedTotal,
 				DerAcMeasurementModelRegister.ScaleFactorActiveEnergy);
 	}
 
 	@Override
 	public @Nullable Long getActiveEnergyReceived() {
-		return scaledLong(DerAcMeasurementModelRegister.ActiveEnergyAbsorbedTotal,
+		return getScaledLongValue(DerAcMeasurementModelRegister.ActiveEnergyAbsorbedTotal,
 				DerAcMeasurementModelRegister.ScaleFactorActiveEnergy);
 	}
 
@@ -237,13 +219,13 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Long getReactiveEnergyDelivered() {
-		return scaledLong(DerAcMeasurementModelRegister.ReactiveEnergyInjectedTotal,
+		return getScaledLongValue(DerAcMeasurementModelRegister.ReactiveEnergyInjectedTotal,
 				DerAcMeasurementModelRegister.ScaleFactorReactiveEnergy);
 	}
 
 	@Override
 	public @Nullable Long getReactiveEnergyReceived() {
-		return scaledLong(DerAcMeasurementModelRegister.ReactiveEnergyAbsorbedTotal,
+		return getScaledLongValue(DerAcMeasurementModelRegister.ReactiveEnergyAbsorbedTotal,
 				DerAcMeasurementModelRegister.ScaleFactorReactiveEnergy);
 	}
 
@@ -264,37 +246,37 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Float getAmbientTemperature() {
-		return scaledFloat(DerAcMeasurementModelRegister.TemperatureAmbient,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.TemperatureAmbient,
 				DerAcMeasurementModelRegister.ScaleFactorTemperature);
 	}
 
 	@Override
 	public @Nullable Float getCabinetTemperature() {
-		return scaledFloat(DerAcMeasurementModelRegister.TemperatureCabinet,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.TemperatureCabinet,
 				DerAcMeasurementModelRegister.ScaleFactorTemperature);
 	}
 
 	@Override
 	public @Nullable Float getHeatSinkTemperature() {
-		return scaledFloat(DerAcMeasurementModelRegister.TemperatureHeatSink,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.TemperatureHeatSink,
 				DerAcMeasurementModelRegister.ScaleFactorTemperature);
 	}
 
 	@Override
 	public @Nullable Float getTransformerTemperature() {
-		return scaledFloat(DerAcMeasurementModelRegister.TemperatureTransformer,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.TemperatureTransformer,
 				DerAcMeasurementModelRegister.ScaleFactorTemperature);
 	}
 
 	@Override
 	public @Nullable Float getSwitchTemperature() {
-		return scaledFloat(DerAcMeasurementModelRegister.TemperatureSwitch,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.TemperatureSwitch,
 				DerAcMeasurementModelRegister.ScaleFactorTemperature);
 	}
 
 	@Override
 	public @Nullable Float getOtherTemperature() {
-		return scaledFloat(DerAcMeasurementModelRegister.TemperatureOther,
+		return getScaledFloatValue(DerAcMeasurementModelRegister.TemperatureOther,
 				DerAcMeasurementModelRegister.ScaleFactorTemperature);
 	}
 
@@ -425,27 +407,31 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public @Nullable Integer getActivePower() {
-			return scaledInteger(activePower, DerAcMeasurementModelRegister.ScaleFactorActivePower);
+			return getScaledIntegerValue(activePower,
+					DerAcMeasurementModelRegister.ScaleFactorActivePower);
 		}
 
 		@Override
 		public @Nullable Integer getApparentPower() {
-			return scaledInteger(apparentPower, DerAcMeasurementModelRegister.ScaleFactorApparentPower);
+			return getScaledIntegerValue(apparentPower,
+					DerAcMeasurementModelRegister.ScaleFactorApparentPower);
 		}
 
 		@Override
 		public @Nullable Integer getReactivePower() {
-			return scaledInteger(reactivePower, DerAcMeasurementModelRegister.ScaleFactorReactivePower);
+			return getScaledIntegerValue(reactivePower,
+					DerAcMeasurementModelRegister.ScaleFactorReactivePower);
 		}
 
 		@Override
 		public @Nullable Float getPowerFactor() {
-			return scaledFloat(powerFactor, DerAcMeasurementModelRegister.ScaleFactorPowerFactor);
+			return getScaledFloatValue(powerFactor,
+					DerAcMeasurementModelRegister.ScaleFactorPowerFactor);
 		}
 
 		@Override
 		public @Nullable Float getCurrent() {
-			return scaledFloat(current, DerAcMeasurementModelRegister.ScaleFactorCurrent);
+			return getScaledFloatValue(current, DerAcMeasurementModelRegister.ScaleFactorCurrent);
 		}
 
 		@Override
@@ -455,12 +441,12 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public @Nullable Float getVoltage() {
-			return scaledFloat(voltage, DerAcMeasurementModelRegister.ScaleFactorVoltage);
+			return getScaledFloatValue(voltage, DerAcMeasurementModelRegister.ScaleFactorVoltage);
 		}
 
 		@Override
 		public @Nullable Float getLineVoltage() {
-			return scaledFloat(lineVoltage, DerAcMeasurementModelRegister.ScaleFactorVoltage);
+			return getScaledFloatValue(lineVoltage, DerAcMeasurementModelRegister.ScaleFactorVoltage);
 		}
 
 		@Override
@@ -475,13 +461,13 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public @Nullable Long getActiveEnergyDelivered() {
-			return scaledLong(activeEnergyInjected,
+			return getScaledLongValue(activeEnergyInjected,
 					DerAcMeasurementModelRegister.ScaleFactorActiveEnergy);
 		}
 
 		@Override
 		public @Nullable Long getActiveEnergyReceived() {
-			return scaledLong(activeEnergyAbsorbed,
+			return getScaledLongValue(activeEnergyAbsorbed,
 					DerAcMeasurementModelRegister.ScaleFactorActiveEnergy);
 		}
 
@@ -497,13 +483,13 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public @Nullable Long getReactiveEnergyDelivered() {
-			return scaledLong(reactiveEnergyInjected,
+			return getScaledLongValue(reactiveEnergyInjected,
 					DerAcMeasurementModelRegister.ScaleFactorReactiveEnergy);
 		}
 
 		@Override
 		public @Nullable Long getReactiveEnergyReceived() {
-			return scaledLong(reactiveEnergyAbsorbed,
+			return getScaledLongValue(reactiveEnergyAbsorbed,
 					DerAcMeasurementModelRegister.ScaleFactorReactiveEnergy);
 		}
 
