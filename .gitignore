@@ -1,6 +1,7 @@
 .DS_Store
 .moquette_uuid
 /solarnetwork-osgi-target
+CLAUDE.md
 test.jpage
 build/
 target/
