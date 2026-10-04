@@ -48,7 +48,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerMeterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerMeterModelAccessor_203_02Tests {
 
@@ -70,7 +70,7 @@ public class IntegerMeterModelAccessor_203_02Tests {
 		CommonModelAccessor data = getTestDataInstance();
 		assertThat("Manufacturer", data.getManufacturer(), startsWith("Elkor"));
 		assertThat("Model name", data.getModelName(), equalTo("W2-M1-mA-DL"));
-		assertThat("Options", data.getOptions(), equalTo(""));
+		assertThat("Options", data.getOptions(), nullValue());
 		assertThat("Version", data.getVersion(), equalTo("11.12"));
 		assertThat("Serial number", data.getSerialNumber(), equalTo("14870"));
 		assertThat("Device address", data.getDeviceAddress(), equalTo(9));

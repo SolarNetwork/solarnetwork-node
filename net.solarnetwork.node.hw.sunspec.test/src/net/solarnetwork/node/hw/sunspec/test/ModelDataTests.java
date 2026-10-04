@@ -25,12 +25,17 @@ package net.solarnetwork.node.hw.sunspec.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.CommonModelId;
+import net.solarnetwork.node.hw.sunspec.CommonModelRegister;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelRegister;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -38,9 +43,9 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 
 /**
  * Test cases for the {@link ModelData} class.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModelDataTests {
 
@@ -171,6 +176,63 @@ public class ModelDataTests {
 		assertThat("Version", data.getVersion(), equalTo("2.103"));
 		assertThat("Serial number", data.getSerialNumber(), equalTo("4E390476"));
 		assertThat("Device address", data.getDeviceAddress(), equalTo(10));
+	}
+
+	private static ModelData stringData(byte[] bytes) {
+		final CommonModelRegister ref = CommonModelRegister.Options;
+		ModelData data = new ModelData(0);
+		try {
+			data.performUpdates(m -> {
+				m.saveBytes(Arrays.copyOf(bytes, ref.getWordLength() * 2), ref.getAddress());
+				return true;
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+		return data;
+	}
+
+	@Test
+	public void stringValue_utf8() {
+		ModelData data = stringData("Größe".getBytes(StandardCharsets.UTF_8));
+		assertThat("UTF-8 decoded", data.getStringValue(CommonModelRegister.Options, 0),
+				is(equalTo("Größe")));
+	}
+
+	@Test
+	public void stringValue_latin1() {
+		// a Latin-1 encoded e-acute is not valid UTF-8
+		ModelData data = stringData(new byte[] { 'C', 'a', 'f', (byte) 0xE9 });
+		assertThat("Invalid UTF-8 replaced", data.getStringValue(CommonModelRegister.Options, 0),
+				is(equalTo("Caf�")));
+	}
+
+	@Test
+	public void stringValue_nullTerminated() {
+		ModelData data = stringData(new byte[] { 'A', 'B', 'C', 0, 'x', 'y', 'z' });
+		assertThat("Bytes after NULL ignored", data.getStringValue(CommonModelRegister.Options, 0),
+				is(equalTo("ABC")));
+	}
+
+	@Test
+	public void stringValue_trimmed() {
+		ModelData data = stringData("  ABC ".getBytes(StandardCharsets.UTF_8));
+		assertThat("Whitespace removed", data.getStringValue(CommonModelRegister.Options, 0),
+				is(equalTo("ABC")));
+	}
+
+	@Test
+	public void stringValue_empty() {
+		// SunSpec recommends 0x0080 in the first register to represent an empty string
+		ModelData data = stringData(new byte[] { 0x00, (byte) 0x80 });
+		assertThat("Empty string", data.getStringValue(CommonModelRegister.Options, 0), is(nullValue()));
+	}
+
+	@Test
+	public void stringValue_notImplemented() {
+		ModelData data = stringData(new byte[0]);
+		assertThat("All NULL not implemented", data.getStringValue(CommonModelRegister.Options, 0),
+				is(nullValue()));
 	}
 
 }

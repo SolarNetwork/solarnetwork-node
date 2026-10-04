@@ -23,7 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.environmental;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
-import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
@@ -39,19 +39,19 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.2
  */
 public enum GpsModelRegister implements SunspecModbusReference {
 
 	/** UTC 24 hour time stamp to millisecond {@code hhmmss.sssZ} format. */
-	Time(0, StringAscii, 6),
+	Time(0, StringUtf8, 6),
 
 	/** UTC Date string YYYYMMDD format. */
-	Date(6, StringAscii, 4),
+	Date(6, StringUtf8, 4),
 
 	/** Location string (40 chars max). */
-	Location(10, StringAscii, 20),
+	Location(10, StringUtf8, 20),
 
 	/** Degrees latitude with seven degrees of precision. */
 	Latitude(30, Int32),

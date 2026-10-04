@@ -55,7 +55,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Test cases for the {@link IntegerInverterModelAccessor} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class IntegerInverterModelAccessor_103_02Tests {
 
@@ -76,7 +76,7 @@ public class IntegerInverterModelAccessor_103_02Tests {
 		CommonModelAccessor data = getTestDataInstance();
 		assertThat("Manufacturer", data.getManufacturer(), equalTo("SolarEdge"));
 		assertThat("Model name", data.getModelName(), equalTo("SE33.3K"));
-		assertThat("Options", data.getOptions(), equalTo(""));
+		assertThat("Options", data.getOptions(), nullValue());
 		assertThat("Version", data.getVersion(), equalTo("0003.2251"));
 		assertThat("Serial number", data.getSerialNumber(), equalTo("7E1240CC"));
 		assertThat("Device address", data.getDeviceAddress(), equalTo(11));

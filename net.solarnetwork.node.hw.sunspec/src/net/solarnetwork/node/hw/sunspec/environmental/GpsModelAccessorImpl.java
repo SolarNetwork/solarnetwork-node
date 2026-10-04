@@ -38,7 +38,7 @@ import net.solarnetwork.util.NumberUtils;
  * Implementation of {@link GpsModelAccessor}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.2
  */
 public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelAccessor {
@@ -93,8 +93,11 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 
 	@Override
 	public @Nullable Instant getGpsTimestamp() {
-		String time = getData().getLatin1String(GpsModelRegister.Time, getBlockAddress(), true);
-		String date = getData().getLatin1String(GpsModelRegister.Date, getBlockAddress(), true);
+		String time = getStringValue(GpsModelRegister.Time);
+		String date = getStringValue(GpsModelRegister.Date);
+		if ( time == null || date == null ) {
+			return null;
+		}
 		try {
 			return GPS_TIMESTAMP_FORMATTER.parse(date + time, Instant::from);
 		} catch ( DateTimeParseException e ) {
@@ -105,7 +108,7 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 
 	@Override
 	public @Nullable String getLocationName() {
-		return getData().getLatin1String(GpsModelRegister.Location, getBlockAddress(), true);
+		return getStringValue(GpsModelRegister.Location);
 	}
 
 	@Override

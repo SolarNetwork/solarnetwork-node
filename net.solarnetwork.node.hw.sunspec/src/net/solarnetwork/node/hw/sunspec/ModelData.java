@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +39,7 @@ import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.util.IntRange;
 
 /**
@@ -507,27 +509,54 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	@Override
 	public @Nullable String getManufacturer() {
-		return getLatin1String(CommonModelRegister.Manufacturer, blockAddress, true);
+		return getStringValue(CommonModelRegister.Manufacturer, blockAddress);
 	}
 
 	@Override
 	public @Nullable String getModelName() {
-		return getLatin1String(CommonModelRegister.Model, blockAddress, true);
+		return getStringValue(CommonModelRegister.Model, blockAddress);
 	}
 
 	@Override
 	public @Nullable String getOptions() {
-		return getLatin1String(CommonModelRegister.Options, blockAddress, true);
+		return getStringValue(CommonModelRegister.Options, blockAddress);
 	}
 
 	@Override
 	public @Nullable String getVersion() {
-		return getLatin1String(CommonModelRegister.Version, blockAddress, true);
+		return getStringValue(CommonModelRegister.Version, blockAddress);
 	}
 
 	@Override
 	public @Nullable String getSerialNumber() {
-		return getLatin1String(CommonModelRegister.SerialNumber, blockAddress, true);
+		return getStringValue(CommonModelRegister.SerialNumber, blockAddress);
+	}
+
+	/**
+	 * Get a SunSpec string point value.
+	 *
+	 * <p>
+	 * SunSpec strings are UTF-8 encoded, and terminated or padded with a NULL
+	 * byte. Bytes after the first NULL byte are ignored, and leading and
+	 * trailing whitespace is removed.
+	 * </p>
+	 *
+	 * @param ref
+	 *        the reference to the string point
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @return the string value, or {@code null} if the string is empty, which
+	 *         includes the SunSpec "not implemented" value
+	 * @since 2.5
+	 */
+	public @Nullable String getStringValue(ModbusReference ref, int offset) {
+		final byte[] bytes = getBytes(ref.getAddress() + offset, ref.getWordLength());
+		int len = 0;
+		while ( len < bytes.length && bytes[len] != 0 ) {
+			len++;
+		}
+		final String s = new String(bytes, 0, len, StandardCharsets.UTF_8).trim();
+		return (s.isEmpty() ? null : s);
 	}
 
 	@Override

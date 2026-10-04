@@ -133,8 +133,8 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public @Nullable String getInputName() {
-			return getData().getLatin1String(InverterMpptExtensionModelRegister.ModuleName,
-					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH, true);
+			return getStringValue(InverterMpptExtensionModelRegister.ModuleName,
+					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
 		}
 
 		@Override

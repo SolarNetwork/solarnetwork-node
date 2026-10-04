@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
-import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -37,24 +37,24 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum CommonModelRegister implements ModbusReference {
 
 	/** Manufacturer name, as NULL-terminated string. */
-	Manufacturer(0, StringAscii, 16),
+	Manufacturer(0, StringUtf8, 16),
 
 	/** Meter model, as NULL-terminated string. */
-	Model(16, StringAscii, 16),
+	Model(16, StringUtf8, 16),
 
 	/** Meter options, as NULL-terminated string. */
-	Options(32, StringAscii, 8),
+	Options(32, StringUtf8, 8),
 
 	/** Meter version, as NULL-terminated string. */
-	Version(40, StringAscii, 8),
+	Version(40, StringUtf8, 8),
 
 	/** Serial number, as NULL-terminated string. */
-	SerialNumber(48, StringAscii, 16),
+	SerialNumber(48, StringUtf8, 16),
 
 	/** The device address, which is the Modbus unit ID. */
 	DeviceAddress(64, UInt16);

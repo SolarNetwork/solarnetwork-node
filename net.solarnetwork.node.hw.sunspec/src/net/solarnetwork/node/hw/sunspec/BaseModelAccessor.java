@@ -440,6 +440,35 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	}
 
 	/**
+	 * Get a string data property value.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the value, or {@code null} if not available
+	 * @see ModelData#getStringValue(ModbusReference, int)
+	 * @since 2.1
+	 */
+	public @Nullable String getStringValue(ModbusReference dataRef) {
+		return getStringValue(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get a string data property value.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@code null} if not available
+	 * @see ModelData#getStringValue(ModbusReference, int)
+	 * @since 2.1
+	 */
+	public @Nullable String getStringValue(ModbusReference dataRef, int dataOffset) {
+		return data.getStringValue(dataRef, dataOffset);
+	}
+
+	/**
 	 * Write a point value to a device.
 	 *
 	 * @param conn

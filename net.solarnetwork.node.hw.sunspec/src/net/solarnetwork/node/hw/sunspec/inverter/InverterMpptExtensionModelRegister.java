@@ -26,7 +26,7 @@ import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Bitfield;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
-import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import org.jspecify.annotations.Nullable;
@@ -49,7 +49,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public enum InverterMpptExtensionModelRegister implements SunspecModbusReference {
@@ -79,7 +79,7 @@ public enum InverterMpptExtensionModelRegister implements SunspecModbusReference
 	ModuleInputId(0, UInt16),
 
 	/** Module name. */
-	ModuleName(1, StringAscii, 8),
+	ModuleName(1, StringUtf8, 8),
 
 	/** Module DC current, in amps. */
 	ModuleDcCurrent(9, UInt16),

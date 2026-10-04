@@ -47,7 +47,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerInverterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerInverterModelAccessor_103_04Tests {
 
@@ -68,7 +68,7 @@ public class IntegerInverterModelAccessor_103_04Tests {
 		CommonModelAccessor data = getTestDataInstance();
 		assertThat("Manufacturer", data.getManufacturer(), equalTo("SolarEdge"));
 		assertThat("Model name", data.getModelName(), equalTo("SE33.3K"));
-		assertThat("Options", data.getOptions(), equalTo(""));
+		assertThat("Options", data.getOptions(), nullValue());
 		assertThat("Version", data.getVersion(), equalTo("0003.2221"));
 		assertThat("Serial number", data.getSerialNumber(), equalTo("7E149EF5"));
 		assertThat("Device address", data.getDeviceAddress(), equalTo(12));
