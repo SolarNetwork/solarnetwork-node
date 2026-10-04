@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -35,17 +36,20 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.ModelData;
+import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor.DcModule;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelRegister;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 
 /**
  * Test cases for {@link InverterMpptExtensionModelAccessor}.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class InverterMpptExtensionModelAccessor_113_01Tests {
 
@@ -109,7 +113,28 @@ public class InverterMpptExtensionModelAccessor_113_01Tests {
 		Set<ModelEvent> noEvents = Collections.emptySet();
 		assertDcModule("1", modules.get(0), 1, "String 1", 623608619L, 0.15f, 11937020L, 65, 439.7f,
 				null, Mppt, noEvents);
-		assertDcModule("2", modules.get(1), 2, "Not supported", 4294967295L, null, null, null, null,
-				null, null, noEvents);
+		assertDcModule("2", modules.get(1), 2, "Not supported", null, null, null, null, null, null, null,
+				noEvents);
+	}
+
+	@Test
+	public void dcModules_powerScaleFactor() throws IOException {
+		// GIVEN
+		final int[] data = ModelDataUtils.parseTestData(getClass(), "test-data-113-01.txt");
+		final int blockAddress = getTestDataInstance()
+				.findTypedModel(InverterMpptExtensionModelAccessor.class).getBlockAddress();
+
+		// change the power scale factor from -2 to -1, so it differs from the voltage scale factor
+		data[blockAddress + InverterMpptExtensionModelRegister.ScaleFactorDcPower.getAddress()] = 0xFFFF;
+
+		// WHEN
+		InverterMpptExtensionModelAccessor model = ModelDataFactory.getInstance()
+				.getModelData(new StaticDataMapReadonlyModbusConnection(data))
+				.findTypedModel(InverterMpptExtensionModelAccessor.class);
+		DcModule module = model.getDcModules().get(0);
+
+		// THEN
+		assertThat("Module power uses power scale factor", module.getDCPower(), equalTo(659));
+		assertThat("Module voltage uses voltage scale factor", module.getDCVoltage(), equalTo(439.7f));
 	}
 }

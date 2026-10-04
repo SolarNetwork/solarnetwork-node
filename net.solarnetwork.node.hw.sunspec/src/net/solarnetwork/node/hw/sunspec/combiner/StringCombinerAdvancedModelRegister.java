@@ -35,12 +35,14 @@ import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
- * Enumeration of Modbus register mappings for the SunSpec compliant basic
+ * Enumeration of Modbus register mappings for the SunSpec compliant advanced
  * string combiner model.
  *
  * <p>
  * These mappings correspond to the SunSpec model numbers <b>402</b> and
- * <b>404</b>.
+ * <b>404</b>. Where model 404 defines a point with a different data type than
+ * model 402, the constant with a {@code V2} suffix provides the model 404
+ * mapping.
  * </p>
  *
  * <p>
@@ -49,7 +51,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public enum StringCombinerAdvancedModelRegister implements SunspecModbusReference {
@@ -84,23 +86,51 @@ public enum StringCombinerAdvancedModelRegister implements SunspecModbusReferenc
 	/** DC current, in amps. */
 	DcCurrent(11, Int16),
 
-	/** Total metered charge, in amp-hours. */
-	DcCharge(12, UInt32, Accumulator),
+	/** Total metered charge, in amp-hours (model 402). */
+	DcCharge(12, UInt32),
 
-	/** Output voltage, in volts. */
+	/**
+	 * Total metered charge, in amp-hours (model 404).
+	 *
+	 * @since 1.1
+	 */
+	DcChargeV2(12, UInt32, Accumulator),
+
+	/** Output voltage, in volts (model 402). */
 	DcVoltage(14, UInt16),
+
+	/**
+	 * Output voltage, in volts (model 404).
+	 *
+	 * @since 1.1
+	 */
+	DcVoltageV2(14, Int16),
 
 	/** Internal operating temperature, in degrees Celsius. */
 	Temperature(15, Int16),
 
 	/** Output power, in watts. */
-	DcPower(16, UInt16),
+	DcPower(16, Int16),
 
-	/** Performance ratio, as a percentage. */
+	/** Performance ratio, as a percentage (model 402). */
 	DcPerformanceRatio(17, UInt16),
 
-	/** Output energy, in watt-hours. */
-	DcEnergy(18, UInt32, Accumulator),
+	/**
+	 * Performance ratio, as a percentage (model 404).
+	 *
+	 * @since 1.1
+	 */
+	DcPerformanceRatioV2(17, Int16),
+
+	/** Output energy, in watt-hours (model 402). */
+	DcEnergy(18, UInt32),
+
+	/**
+	 * Output energy, in watt-hours (model 404).
+	 *
+	 * @since 1.1
+	 */
+	DcEnergyV2(18, UInt32, Accumulator),
 
 	/** Input current scale factor, as *10^X. */
 	ScaleFactorInputDcCurrent(20, Int16, ScaleFactor),
@@ -129,17 +159,38 @@ public enum StringCombinerAdvancedModelRegister implements SunspecModbusReferenc
 	/** DC current, in amps. */
 	InputDcCurrent(5, Int16),
 
-	/** Total metered charge, in amp-hours. */
-	InputDcCharge(6, UInt32, Accumulator),
+	/** Total metered charge, in amp-hours (model 402). */
+	InputDcCharge(6, UInt32),
 
-	/** String input voltage, in volts. */
+	/**
+	 * Total metered charge, in amp-hours (model 404).
+	 *
+	 * @since 1.1
+	 */
+	InputDcChargeV2(6, UInt32, Accumulator),
+
+	/** String input voltage, in volts (model 402). */
 	InputDcVoltage(8, UInt16),
 
-	/** String input power, in watts. */
-	InputDcPower(9, UInt16),
+	/**
+	 * String input voltage, in volts (model 404).
+	 *
+	 * @since 1.1
+	 */
+	InputDcVoltageV2(8, Int16),
 
-	/** String input energy, in watt-hours. */
-	InputDcEnergy(10, UInt32, Accumulator),
+	/** String input power, in watts. */
+	InputDcPower(9, Int16),
+
+	/** String input energy, in watt-hours (model 402). */
+	InputDcEnergy(10, UInt32),
+
+	/**
+	 * String input energy, in watt-hours (model 404).
+	 *
+	 * @since 1.1
+	 */
+	InputDcEnergyV2(10, UInt32, Accumulator),
 
 	/** String performance ratio, as a percentage. */
 	InputDcPerformanceRatio(12, UInt16),

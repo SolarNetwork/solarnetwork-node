@@ -36,7 +36,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * Data access object for an inverter MPPT extensions model.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.4
  */
 public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
@@ -158,7 +158,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		@Override
 		public @Nullable Integer getDCPower() {
 			Number n = getScaledValue(InverterMpptExtensionModelRegister.ModuleDcPower,
-					InverterMpptExtensionModelRegister.ScaleFactorDcVoltage,
+					InverterMpptExtensionModelRegister.ScaleFactorDcPower,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH,
 					getBlockAddress());
 			return (n != null ? n.intValue() : null);

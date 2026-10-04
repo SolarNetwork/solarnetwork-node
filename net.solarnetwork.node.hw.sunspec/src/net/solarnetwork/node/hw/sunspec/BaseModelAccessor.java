@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.sunspec;
 
 import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
+import static net.solarnetwork.util.NumberUtils.unsignedNumber;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,9 +36,12 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Base class for {@link ModelAccessor} implementations.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class BaseModelAccessor implements ModelAccessor {
+
+	/** Cached "not implemented" value for a SunSpec "uint64" data type. */
+	private static final Number NAN_UINT64 = nonnull(unsignedNumber(ModelData.NAN_UINT64), "NAN_UINT64");
 
 	private final ModelData data;
 	private final int baseAddress;
@@ -261,8 +266,9 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 		}
 
 		// check for NaN
-		if ( DataClassification.Accumulator == classification && v.intValue() == 0 ) {
-			return null;
+		if ( DataClassification.Accumulator == classification ) {
+			// only zero means "not accumulated"; all other values are valid
+			return (v.longValue() == 0 ? null : v);
 		} else if ( DataClassification.Bitfield == classification ) {
 			// for bit fields, if the most significant bit is set, it is NaN
 			if ( dataRef.getWordLength() == 1
@@ -305,8 +311,14 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 				}
 				break;
 
+			case UInt64:
+				if ( NAN_UINT64.equals(v) ) {
+					return null;
+				}
+				break;
+
 			case Float32:
-				if ( v.floatValue() == ModelData.NAN_FLOAT32 ) {
+				if ( Float.isNaN(v.floatValue()) ) {
 					return null;
 				}
 				break;

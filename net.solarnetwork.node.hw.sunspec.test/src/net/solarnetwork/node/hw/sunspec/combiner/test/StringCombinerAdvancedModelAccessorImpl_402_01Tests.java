@@ -22,11 +22,15 @@
 
 package net.solarnetwork.node.hw.sunspec.combiner.test;
 
+import static net.solarnetwork.node.hw.sunspec.combiner.test.StringCombinerTestUtils.assertAdvancedDcInput;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,17 +39,20 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerAdvancedModelAccessor;
 import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerAdvancedModelAccessor.AdvancedDcInput;
 import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerAdvancedModelAccessorImpl;
-import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerModelAccessorImpl;
 import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerModelId;
 import net.solarnetwork.node.hw.sunspec.inverter.IntegerInverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
- * Test cases for the {@link StringCombinerModelAccessorImpl} class.
- * 
+ * Test cases for the {@link StringCombinerAdvancedModelAccessorImpl} class.
+ *
+ * <p>
+ * This device uses the legacy 13 register input layout.
+ * </p>
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class StringCombinerAdvancedModelAccessorImpl_402_01Tests {
 
@@ -111,12 +118,35 @@ public class StringCombinerAdvancedModelAccessorImpl_402_01Tests {
 	}
 
 	@Test
+	public void values() {
+		StringCombinerAdvancedModelAccessor model = getTestDataInstance()
+				.findTypedModel(StringCombinerAdvancedModelAccessor.class);
+		assertThat("Current", model.getDCCurrent(), is(equalTo(0.0f)));
+		assertThat("Charge, a uint32 for model 402", model.getDCChargeDelivered(), is(equalTo(0L)));
+		assertThat("Temperature not implemented", model.getTemperature(), is(nullValue()));
+		assertThat("Power not implemented", model.getDCPower(), is(nullValue()));
+		assertThat("Energy, a uint32 for model 402", model.getDCEnergy(), is(equalTo(0L)));
+		assertThat("Performance ratio not implemented", model.getDCPerformanceRatio(), is(nullValue()));
+	}
+
+	@Test
+	public void events() {
+		StringCombinerAdvancedModelAccessor model = getTestDataInstance()
+				.findTypedModel(StringCombinerAdvancedModelAccessor.class);
+		assertThat("Events", model.getEvents(), is(equalTo(Set.of())));
+		assertThat("Vendor events", model.getVendorEvents(), is(equalTo(Set.of())));
+	}
+
+	@Test
 	public void inputs() {
 		StringCombinerAdvancedModelAccessor model = getTestDataInstance()
 				.findTypedModel(StringCombinerAdvancedModelAccessor.class);
 		List<AdvancedDcInput> inputs = model.getAdvancedDcInputs();
 		assertThat("Inputs count", inputs, hasSize(8));
-		// TODO: validate data
+		for ( int i = 0; i < 8; i++ ) {
+			assertAdvancedDcInput("Input " + (i + 1), inputs.get(i), i + 1, null, 0L, null, null, 0L,
+					null, null, Set.of(), Set.of());
+		}
 	}
 
 }

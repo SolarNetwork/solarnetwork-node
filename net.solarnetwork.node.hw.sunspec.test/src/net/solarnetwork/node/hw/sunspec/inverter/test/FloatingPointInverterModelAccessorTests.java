@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.BitSet;
 import java.util.Set;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
+import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.hw.sunspec.inverter.FloatingPointInverterModelAccessor;
@@ -49,12 +51,13 @@ import net.solarnetwork.node.hw.sunspec.inverter.FloatingPointInverterModelRegis
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 
 /**
  * Test cases for the {@link FloatingPointInverterModelAccessor} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FloatingPointInverterModelAccessorTests {
 
@@ -175,6 +178,28 @@ public class FloatingPointInverterModelAccessorTests {
 		assertThat("Phase B", model.accessorForPhase(PhaseB).getActiveEnergyExported(), nullValue());
 		assertThat("Phase C", model.accessorForPhase(PhaseC).getActiveEnergyExported(), nullValue());
 		assertThat("Total", model.getActiveEnergyExported(), equalTo(11937020L));
+	}
+
+	@Test
+	public void activeEnergyExport_zero() throws IOException {
+		// GIVEN
+		final int[] data = ModelDataUtils.parseTestData(getClass(), "test-data-113-01.txt");
+		final int blockAddress = getTestDataInstance().findTypedModel(InverterModelAccessor.class)
+				.getBlockAddress();
+
+		// change the energy to 0, which is a valid float32 value (it is not an accumulator type)
+		final int addr = blockAddress
+				+ FloatingPointInverterModelRegister.ActiveEnergyExportedTotal.getAddress();
+		data[addr] = 0;
+		data[addr + 1] = 0;
+
+		// WHEN
+		InverterModelAccessor model = ModelDataFactory.getInstance()
+				.getModelData(new StaticDataMapReadonlyModbusConnection(data))
+				.findTypedModel(InverterModelAccessor.class);
+
+		// THEN
+		assertThat("Total of 0 is a value", model.getActiveEnergyExported(), equalTo(0L));
 	}
 
 	@Test

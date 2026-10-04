@@ -44,7 +44,7 @@ import net.solarnetwork.util.IntRange;
  * Base object for model data.
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -67,16 +67,16 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	public static final int NAN_INT32 = 0x80000000;
 
 	/** The "not implemented" value for a SunSpec "uint32" data type. */
-	public static final long NAN_UINT32 = 0xFFFFFFFF;
+	public static final long NAN_UINT32 = 0xFFFFFFFFL;
 
 	/** The "not accumulated" value for a SunSpec "acc32" data type. */
 	public static final long NAN_ACC32 = 0x00000000;
 
 	/** The "not implemented" value for a SunSpec "enum32" data type. */
-	public static final long NAN_ENUM32 = 0xFFFFFFFF;
+	public static final long NAN_ENUM32 = 0xFFFFFFFFL;
 
 	/** The "not implemented" value for a SunSpec "bitfield32" data type. */
-	public static final long NAN_BITFIELD32 = 0xFFFFFFFF;
+	public static final long NAN_BITFIELD32 = 0xFFFFFFFFL;
 
 	/** The "not implemented" value for a SunSpec "int64" data type. */
 	public static final long NAN_INT64 = 0x8000000000000000L;
@@ -92,6 +92,13 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * type.
 	 */
 	public static final int NAN_SUNSSF16 = 0x8000;
+
+	/**
+	 * The "not implemented" value for a SunSpec "uint64" data type.
+	 * 
+	 * @since 2.5
+	 */
+	public static final long NAN_UINT64 = 0xFFFFFFFFFFFFFFFFL;
 
 	private static final Logger LOG = LoggerFactory.getLogger(ModelData.class);
 
