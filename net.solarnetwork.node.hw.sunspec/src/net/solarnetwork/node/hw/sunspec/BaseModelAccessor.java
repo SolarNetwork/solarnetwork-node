@@ -266,8 +266,9 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 		}
 
 		// check for NaN
-		if ( DataClassification.Accumulator == classification && v.intValue() == 0 ) {
-			return null;
+		if ( DataClassification.Accumulator == classification ) {
+			// only zero means "not accumulated"; all other values are valid
+			return (v.longValue() == 0 ? null : v);
 		} else if ( DataClassification.Bitfield == classification ) {
 			// for bit fields, if the most significant bit is set, it is NaN
 			if ( dataRef.getWordLength() == 1
@@ -317,7 +318,7 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 				break;
 
 			case Float32:
-				if ( v.floatValue() == ModelData.NAN_FLOAT32 ) {
+				if ( Float.isNaN(v.floatValue()) ) {
 					return null;
 				}
 				break;

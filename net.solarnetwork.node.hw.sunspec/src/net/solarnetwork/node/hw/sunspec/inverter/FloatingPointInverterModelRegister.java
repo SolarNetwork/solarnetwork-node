@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Bitfield;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Enumeration;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
@@ -54,7 +53,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public enum FloatingPointInverterModelRegister implements SunspecModbusReference {
@@ -121,7 +120,7 @@ public enum FloatingPointInverterModelRegister implements SunspecModbusReference
 	// Active energy
 
 	/** Total active (real) energy exported (received), in Wh. */
-	ActiveEnergyExportedTotal(30, Float32, Accumulator),
+	ActiveEnergyExportedTotal(30, Float32),
 
 	// DC current
 

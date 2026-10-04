@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sunspec.test;
 
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Enumeration;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,6 +63,10 @@ public class BaseModelAccessorTests {
 		Acc32Value(4, UInt32, Accumulator),
 
 		UInt64Value(6, UInt64, null),
+
+		Acc16Value(10, UInt16, Accumulator),
+
+		Acc64Value(11, UInt64, Accumulator),
 
 		;
 
@@ -168,7 +173,7 @@ public class BaseModelAccessorTests {
 	}
 
 	@Test
-	public void acc32_notImplemented() throws IOException {
+	public void acc32_maximum() throws IOException {
 		// GIVEN
 		saveRegisters(TestRegister.Acc32Value, 0xFFFF, 0xFFFF);
 
@@ -176,8 +181,57 @@ public class BaseModelAccessorTests {
 		Number result = accessor.getValue(TestRegister.Acc32Value);
 
 		// THEN
-		assertThat("acc32 0xFFFFFFFF is treated as not implemented, like uint32", result,
-				is(nullValue()));
+		assertThat("acc32 0xFFFFFFFF is a value", result, is(equalTo((Number) 0xFFFFFFFFL)));
+	}
+
+	@Test
+	public void acc16_maximum() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Acc16Value, 0xFFFF);
+
+		// WHEN
+		Number result = accessor.getValue(TestRegister.Acc16Value);
+
+		// THEN
+		assertThat("acc16 0xFFFF is a value", result, is(equalTo((Number) 0xFFFF)));
+	}
+
+	@Test
+	public void acc64_notAccumulated() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Acc64Value, 0x0000, 0x0000, 0x0000, 0x0000);
+
+		// WHEN
+		Number result = accessor.getValue(TestRegister.Acc64Value);
+
+		// THEN
+		assertThat("acc64 0 is not accumulated", result, is(nullValue()));
+	}
+
+	@Test
+	public void acc64_lowWordsZero() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Acc64Value, 0x0000, 0x0001, 0x0000, 0x0000);
+
+		// WHEN
+		Number result = accessor.getValue(TestRegister.Acc64Value);
+
+		// THEN
+		assertThat("acc64 0x100000000 is a value", result,
+				is(equalTo((Number) new BigInteger("100000000", 16))));
+	}
+
+	@Test
+	public void acc64_maximum() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Acc64Value, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
+
+		// WHEN
+		Number result = accessor.getValue(TestRegister.Acc64Value);
+
+		// THEN
+		assertThat("acc64 0xFFFFFFFFFFFFFFFF is a value", result,
+				is(equalTo((Number) new BigInteger("FFFFFFFFFFFFFFFF", 16))));
 	}
 
 	@Test
