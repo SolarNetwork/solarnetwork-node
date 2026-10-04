@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.is;
 import java.util.Set;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerAdvancedModelAccessor.AdvancedDcInput;
+import net.solarnetwork.node.hw.sunspec.combiner.StringCombinerModelAccessor.DcInput;
 
 /**
  * Helper methods for string combiner tests.
@@ -39,6 +40,33 @@ public final class StringCombinerTestUtils {
 
 	private StringCombinerTestUtils() {
 		// not available
+	}
+
+	/**
+	 * Assert the properties of a DC input.
+	 *
+	 * @param prefix
+	 *        the assertion message prefix
+	 * @param input
+	 *        the input to verify
+	 * @param id
+	 *        the expected input ID
+	 * @param current
+	 *        the expected current
+	 * @param charge
+	 *        the expected charge delivered
+	 * @param events
+	 *        the expected events
+	 * @param vendorEvents
+	 *        the expected vendor events
+	 */
+	public static void assertDcInput(String prefix, DcInput input, Integer id, Float current,
+			Long charge, Set<ModelEvent> events, Set<ModelEvent> vendorEvents) {
+		assertThat(prefix + " ID", input.getInputId(), is(equalTo(id)));
+		assertThat(prefix + " current", input.getDCCurrent(), is(equalTo(current)));
+		assertThat(prefix + " charge", input.getDCChargeDelivered(), is(equalTo(charge)));
+		assertThat(prefix + " events", input.getEvents(), is(equalTo(events)));
+		assertThat(prefix + " vendor events", input.getVendorEvents(), is(equalTo(vendorEvents)));
 	}
 
 	/**

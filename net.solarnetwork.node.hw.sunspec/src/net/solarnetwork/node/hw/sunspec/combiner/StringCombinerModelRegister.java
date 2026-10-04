@@ -40,7 +40,9 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  *
  * <p>
  * These mappings correspond to the SunSpec model numbers <b>401</b> and
- * <b>403</b>.
+ * <b>403</b>. Where model 403 defines a point with a different data type than
+ * model 401, the constant with a {@code V2} suffix provides the model 403
+ * mapping.
  * </p>
  *
  * <p>
@@ -49,7 +51,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public enum StringCombinerModelRegister implements SunspecModbusReference {
@@ -78,11 +80,25 @@ public enum StringCombinerModelRegister implements SunspecModbusReference {
 	/** DC current, in amps. */
 	DcCurrent(9, Int16),
 
-	/** Total metered charge, in amp-hours. */
-	DcCharge(10, UInt32, Accumulator),
+	/** Total metered charge, in amp-hours (model 401). */
+	DcCharge(10, UInt32),
 
-	/** Output voltage, in volts. */
+	/**
+	 * Total metered charge, in amp-hours (model 403).
+	 *
+	 * @since 1.1
+	 */
+	DcChargeV2(10, UInt32, Accumulator),
+
+	/** Output voltage, in volts (model 401). */
 	DcVoltage(12, UInt16),
+
+	/**
+	 * Output voltage, in volts (model 403).
+	 *
+	 * @since 1.1
+	 */
+	DcVoltageV2(12, Int16),
 
 	/** Internal operating temperature, in degrees Celsius. */
 	Temperature(13, Int16),
@@ -105,8 +121,17 @@ public enum StringCombinerModelRegister implements SunspecModbusReference {
 	/** DC current, in amps. */
 	InputDcCurrent(5, Int16),
 
-	/** Total metered charge, in amp-hours. */
-	InputDcCharge(6, UInt32, Accumulator);
+	/** Total metered charge, in amp-hours (model 401). */
+	InputDcCharge(6, UInt32),
+
+	/**
+	 * Total metered charge, in amp-hours (model 403).
+	 *
+	 * @since 1.1
+	 */
+	InputDcChargeV2(6, UInt32, Accumulator),
+
+	;
 
 	private final int address;
 	private final ModbusDataType dataType;
