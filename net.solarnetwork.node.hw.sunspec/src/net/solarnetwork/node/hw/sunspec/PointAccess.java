@@ -1,7 +1,7 @@
 /* ==================================================================
- * SunspecModbusReference.java - 8/10/2018 12:13:04 PM
+ * PointAccess.java - 5/10/2026 8:06:30 am
  *
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2026 SolarNetwork.net Dev Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -22,36 +22,21 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
-import org.jspecify.annotations.Nullable;
-import net.solarnetwork.node.io.modbus.ModbusReference;
-
 /**
- * Extension of {@link ModbusReference} to add additional SunSpec data type
- * support.
+ * The access level of a SunSpec model point.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 5.2
  */
-public interface SunspecModbusReference extends ModbusReference {
+public enum PointAccess {
 
-	/**
-	 * Return the classification of this modbus reference.
-	 *
-	 * @return the classification, or {@code null} if none
-	 */
-	default @Nullable DataClassification getClassification() {
-		return null;
-	}
+	/** The point can only be read. */
+	ReadOnly,
 
-	/**
-	 * Get the access level of this modbus reference.
-	 *
-	 * @return the access level, never {@code null}; this implementation
-	 *         returns {@link PointAccess#ReadOnly}
-	 * @since 1.1
-	 */
-	default PointAccess getAccess() {
-		return PointAccess.ReadOnly;
-	}
+	/** The point can be read and written. */
+	ReadWrite,
+
+	;
 
 }
