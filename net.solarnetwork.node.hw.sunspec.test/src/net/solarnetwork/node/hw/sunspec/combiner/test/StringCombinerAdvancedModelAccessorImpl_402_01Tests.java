@@ -122,10 +122,10 @@ public class StringCombinerAdvancedModelAccessorImpl_402_01Tests {
 		StringCombinerAdvancedModelAccessor model = getTestDataInstance()
 				.findTypedModel(StringCombinerAdvancedModelAccessor.class);
 		assertThat("Current", model.getDCCurrent(), is(equalTo(0.0f)));
-		assertThat("Charge, a uint32 for model 402", model.getDCChargeDelivered(), is(equalTo(0L)));
+		assertThat("Charge scale factor not implemented", model.getDCChargeDelivered(), is(nullValue()));
 		assertThat("Temperature not implemented", model.getTemperature(), is(nullValue()));
 		assertThat("Power not implemented", model.getDCPower(), is(nullValue()));
-		assertThat("Energy, a uint32 for model 402", model.getDCEnergy(), is(equalTo(0L)));
+		assertThat("Energy scale factor not implemented", model.getDCEnergy(), is(nullValue()));
 		assertThat("Performance ratio not implemented", model.getDCPerformanceRatio(), is(nullValue()));
 	}
 
@@ -144,7 +144,8 @@ public class StringCombinerAdvancedModelAccessorImpl_402_01Tests {
 		List<AdvancedDcInput> inputs = model.getAdvancedDcInputs();
 		assertThat("Inputs count", inputs, hasSize(8));
 		for ( int i = 0; i < 8; i++ ) {
-			assertAdvancedDcInput("Input " + (i + 1), inputs.get(i), i + 1, null, 0L, null, null, 0L,
+			// charge uses the DCAhr_SF scale factor, which is not implemented
+			assertAdvancedDcInput("Input " + (i + 1), inputs.get(i), i + 1, null, null, null, null, 0L,
 					null, null, Set.of(), Set.of());
 		}
 	}

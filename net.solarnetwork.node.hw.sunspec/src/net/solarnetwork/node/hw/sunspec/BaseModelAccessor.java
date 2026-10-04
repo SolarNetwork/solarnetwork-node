@@ -57,6 +57,12 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	/** The largest valid SunSpec "uint64" value. */
 	private static final BigInteger UINT64_MAX = new BigInteger("FFFFFFFFFFFFFFFE", 16);
 
+	/** The smallest valid SunSpec "sunssf" value. */
+	private static final int SCALE_FACTOR_MIN = -10;
+
+	/** The largest valid SunSpec "sunssf" value. */
+	private static final int SCALE_FACTOR_MAX = 10;
+
 	private final ModelData data;
 	private final int baseAddress;
 	private final int blockAddress;
@@ -127,9 +133,11 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * @param ref
 	 *        the block address relative reference to the scale factor register,
 	 *        which is expected to contain a signed integer from -10..10
-	 * @return the decimal multiplier to use, never {@code null}
+	 * @return the decimal multiplier to use, or {@code null} if the scale
+	 *         factor is not available or not implemented
+	 * @see #getScaleFactor(ModbusReference, int)
 	 */
-	protected BigDecimal getScaleFactor(ModbusReference ref) {
+	protected @Nullable BigDecimal getScaleFactor(ModbusReference ref) {
 		return getScaleFactor(ref, blockAddress);
 	}
 
@@ -137,24 +145,49 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * Get a decimal value suitable for multiplication against a data property
 	 * for a scale factor.
 	 *
+	 * <p>
+	 * SunSpec scale factors range from -10 to 10. Any other value, including
+	 * the SunSpec "not implemented" value {@code 0x8000}, means the scale
+	 * factor is not implemented.
+	 * </p>
+	 *
 	 * @param ref
 	 *        the block address relative reference to the scale factor register,
 	 *        which is expected to contain a signed integer from -10..10
 	 * @param offset
 	 *        the address offset to add to {@link ModbusReference#getAddress()}
-	 * @return the decimal multiplier to use, never {@code null}
+	 * @return the decimal multiplier to use, or {@code null} if the scale
+	 *         factor is not available or not implemented
 	 * @since 1.2
 	 */
-	protected BigDecimal getScaleFactor(ModbusReference ref, int offset) {
-		Number n = data.getNumber(ref, offset);
-		if ( n == null ) {
-			return BigDecimal.ONE;
+	protected @Nullable BigDecimal getScaleFactor(ModbusReference ref, int offset) {
+		final Integer factor = scaleFactorExponent(ref, offset);
+		if ( factor == null ) {
+			return null;
 		}
-		int factor = n.intValue();
-		if ( factor == 0 || factor == ModelData.NAN_SUNSSF16 ) {
+		if ( factor == 0 ) {
 			return BigDecimal.ONE;
 		}
 		return new BigDecimal(BigInteger.ONE, -factor);
+	}
+
+	/**
+	 * Get a scale factor's power of ten exponent.
+	 *
+	 * @param ref
+	 *        the block address relative reference to the scale factor register
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @return the exponent, or {@code null} if the scale factor is not
+	 *         available or not implemented
+	 */
+	private @Nullable Integer scaleFactorExponent(ModbusReference ref, int offset) {
+		final Number n = data.getNumber(ref, offset);
+		if ( n == null ) {
+			return null;
+		}
+		final int factor = n.intValue();
+		return (factor < SCALE_FACTOR_MIN || factor > SCALE_FACTOR_MAX ? null : factor);
 	}
 
 	/**
@@ -218,6 +251,11 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	/**
 	 * Get a scaled data property value.
 	 *
+	 * <p>
+	 * The value is not available if the scale factor is not implemented, as
+	 * described in {@link #getScaleFactor(ModbusReference, int)}.
+	 * </p>
+	 *
 	 * @param dataRef
 	 *        the block address relative reference to the data property
 	 * @param scaleRef
@@ -238,6 +276,9 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 		}
 
 		BigDecimal sf = getScaleFactor(scaleRef, scaleOffset);
+		if ( sf == null ) {
+			return null;
+		}
 		BigDecimal d = new BigDecimal(v.toString());
 		if ( sf.equals(BigDecimal.ONE) || d.compareTo(BigDecimal.ZERO) == 0 ) {
 			return d;
@@ -906,7 +947,8 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * <p>
 	 * The value is divided by the scale factor and then encoded with
 	 * {@link #encodeValue(SunspecModbusReference, Number)}. The scale factor
-	 * must have been read from the device, and be implemented.
+	 * must have been read from the device, and be implemented as described in
+	 * {@link #getScaleFactor(ModbusReference, int)}.
 	 * </p>
 	 *
 	 * @param ref
@@ -932,12 +974,12 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 			throw new IllegalStateException(String
 					.format("The %s scale factor for the %s point has not been read.", scaleRef, ref));
 		}
-		Number sf = data.getNumber(scaleRef, scaleOffset);
-		if ( sf == null || (sf.intValue() & 0xFFFF) == ModelData.NAN_SUNSSF16 ) {
+		final Integer sf = scaleFactorExponent(scaleRef, scaleOffset);
+		if ( sf == null ) {
 			throw new IllegalStateException(String
 					.format("The %s scale factor for the %s point is not implemented.", scaleRef, ref));
 		}
-		return encodeValue(ref, decimalValue(value, ref).movePointLeft(sf.intValue()));
+		return encodeValue(ref, decimalValue(value, ref).movePointLeft(sf));
 	}
 
 	/**

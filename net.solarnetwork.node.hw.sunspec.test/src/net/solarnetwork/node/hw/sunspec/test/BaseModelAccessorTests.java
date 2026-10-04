@@ -33,6 +33,7 @@ import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.comparesEqualTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -515,6 +516,17 @@ public class BaseModelAccessorTests {
 	}
 
 	@Test
+	public void writeScaled_scaleFactorOutOfRange() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.ScaleFactorValue, 11);
+
+		// THEN
+		assertWriteRejected("Out of range scale factor rejected", IllegalStateException.class,
+				() -> accessor.writeScaledValue(conn, TestRegister.RwUInt16Value,
+						TestRegister.ScaleFactorValue, 1));
+	}
+
+	@Test
 	public void codedValue() throws IOException {
 		// GIVEN
 		saveRegisters(TestRegister.Enum16Value, 1);
@@ -689,6 +701,75 @@ public class BaseModelAccessorTests {
 		assertThat("Value scaled",
 				accessor.getScaledLongValue(TestRegister.RwUInt32Value, TestRegister.ScaleFactorValue),
 				is(equalTo(65536000L)));
+	}
+
+	@Test
+	public void scaledValue_scaleFactorNotImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 1234);
+		saveRegisters(TestRegister.ScaleFactorValue, 0x8000);
+
+		// THEN
+		assertThat("Value with not implemented scale factor is not available",
+				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+		assertThat("Integer value with not implemented scale factor is not available", accessor
+				.getScaledIntegerValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+	}
+
+	@Test
+	public void scaledValue_zero_scaleFactorNotImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 0);
+		saveRegisters(TestRegister.ScaleFactorValue, 0x8000);
+
+		// THEN
+		assertThat("Zero value with not implemented scale factor is not available",
+				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+	}
+
+	@Test
+	public void scaledValue_scaleFactorAboveRange() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 1234);
+		saveRegisters(TestRegister.ScaleFactorValue, 11);
+
+		// THEN
+		assertThat("Value with scale factor above 10 is not available",
+				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+	}
+
+	@Test
+	public void scaledValue_scaleFactorBelowRange() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 1234);
+		saveRegisters(TestRegister.ScaleFactorValue, 0xFFF5); // -11
+
+		// THEN
+		assertThat("Value with scale factor below -10 is not available",
+				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+	}
+
+	@Test
+	public void scaledValue_scaleFactorRangeLimits() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt16Value, 1234);
+		saveRegisters(TestRegister.ScaleFactorValue, 10);
+
+		// THEN
+		assertThat("Scale factor 10 applied",
+				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(comparesEqualTo(new BigDecimal("1234E10"))));
+
+		// AND
+		saveRegisters(TestRegister.ScaleFactorValue, 0xFFF6); // -10
+		assertThat("Scale factor -10 applied",
+				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
+				is(comparesEqualTo(new BigDecimal("1234E-10"))));
 	}
 
 }
