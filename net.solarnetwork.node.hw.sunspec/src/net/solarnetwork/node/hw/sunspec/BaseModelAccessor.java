@@ -32,7 +32,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
+import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
@@ -466,6 +470,103 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public @Nullable String getStringValue(ModbusReference dataRef, int dataOffset) {
 		return data.getStringValue(dataRef, dataOffset);
+	}
+
+	/**
+	 * Get an enumerated data property value.
+	 *
+	 * @param <T>
+	 *        the enumeration type
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param type
+	 *        the enumeration type
+	 * @return the value, or {@code null} if not available
+	 * @see #getCodedValue(ModbusReference, int, Class)
+	 * @since 2.1
+	 */
+	public <T extends Enum<T> & CodedValue> @Nullable T getCodedValue(ModbusReference dataRef,
+			Class<T> type) {
+		return getCodedValue(dataRef, blockAddress, type);
+	}
+
+	/**
+	 * Get an enumerated data property value.
+	 *
+	 * <p>
+	 * A value that is not one of the codes of the enumeration, including the
+	 * SunSpec "not implemented" value, is returned as {@code null}.
+	 * </p>
+	 *
+	 * @param <T>
+	 *        the enumeration type
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param type
+	 *        the enumeration type
+	 * @return the value, or {@code null} if not available
+	 * @since 2.1
+	 */
+	public <T extends Enum<T> & CodedValue> @Nullable T getCodedValue(ModbusReference dataRef,
+			int dataOffset, Class<T> type) {
+		Number n = getValue(dataRef, dataOffset);
+		return (n != null ? CodedValue.forCodeValue(n.intValue(), type, null) : null);
+	}
+
+	/**
+	 * Get a bitfield data property value as a set of enumeration values.
+	 *
+	 * @param <T>
+	 *        the enumeration type
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param type
+	 *        the enumeration type
+	 * @return the values, never {@code null}
+	 * @see #getBitmaskableValues(ModbusReference, int, Class)
+	 * @since 2.1
+	 */
+	public <T extends Enum<T> & Bitmaskable> Set<T> getBitmaskableValues(ModbusReference dataRef,
+			Class<T> type) {
+		return getBitmaskableValues(dataRef, blockAddress, type);
+	}
+
+	/**
+	 * Get a bitfield data property value as a set of enumeration values.
+	 *
+	 * <p>
+	 * SunSpec bitfields never have their most significant bit set, so a value
+	 * with that bit set, including the SunSpec "not implemented" value, is
+	 * returned as an empty set. Bits without a corresponding enumeration value
+	 * are ignored.
+	 * </p>
+	 *
+	 * @param <T>
+	 *        the enumeration type
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param type
+	 *        the enumeration type
+	 * @return the values, never {@code null}
+	 * @since 2.1
+	 */
+	public <T extends Enum<T> & Bitmaskable> Set<T> getBitmaskableValues(ModbusReference dataRef,
+			int dataOffset, Class<T> type) {
+		Number n = data.getNumber(dataRef, dataOffset);
+		if ( n == null ) {
+			return Collections.emptySet();
+		}
+		final long v = n.longValue();
+		if ( (v & (1L << (dataRef.getWordLength() * 16 - 1))) != 0 ) {
+			return Collections.emptySet();
+		}
+		return Bitmaskable.setForBitmask((int) v, type);
 	}
 
 	/**

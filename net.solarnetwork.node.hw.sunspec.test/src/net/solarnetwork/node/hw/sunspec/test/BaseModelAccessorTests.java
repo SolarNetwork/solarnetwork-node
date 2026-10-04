@@ -41,6 +41,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,6 +52,8 @@ import net.solarnetwork.node.hw.sunspec.GenericModelId;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.PointAccess;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
+import net.solarnetwork.node.hw.sunspec.der.DerAcWiringType;
+import net.solarnetwork.node.hw.sunspec.der.DerOperationalCharacteristic;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapModbusConnection;
@@ -90,6 +93,12 @@ public class BaseModelAccessorTests {
 		RwInt32Value(20, Int32, null, ReadWrite),
 
 		RwBitfield16Value(22, UInt16, Bitfield, ReadWrite),
+
+		Enum16Value(23, UInt16, Enumeration),
+
+		Bitfield16Value(24, UInt16, Bitfield),
+
+		Bitfield32Value(25, UInt32, Bitfield),
 
 		;
 
@@ -503,6 +512,97 @@ public class BaseModelAccessorTests {
 		assertWriteRejected("Not implemented scale factor rejected", IllegalStateException.class,
 				() -> accessor.writeScaledValue(conn, TestRegister.RwUInt16Value,
 						TestRegister.ScaleFactorValue, 1));
+	}
+
+	@Test
+	public void codedValue() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 1);
+
+		// THEN
+		assertThat("Code resolved",
+				accessor.getCodedValue(TestRegister.Enum16Value, DerAcWiringType.class),
+				is(equalTo(DerAcWiringType.SplitPhase)));
+	}
+
+	@Test
+	public void codedValue_unknownCode() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 9);
+
+		// THEN
+		assertThat("Unknown code is null",
+				accessor.getCodedValue(TestRegister.Enum16Value, DerAcWiringType.class),
+				is(nullValue()));
+	}
+
+	@Test
+	public void codedValue_notImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Enum16Value, 0xFFFF);
+
+		// THEN
+		assertThat("Not implemented is null",
+				accessor.getCodedValue(TestRegister.Enum16Value, DerAcWiringType.class),
+				is(nullValue()));
+	}
+
+	@Test
+	public void bitmaskableValues() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x0003);
+
+		// THEN
+		assertThat("Bits resolved",
+				accessor.getBitmaskableValues(TestRegister.Bitfield16Value,
+						DerOperationalCharacteristic.class),
+				is(equalTo(Set.of(DerOperationalCharacteristic.GridFollowing,
+						DerOperationalCharacteristic.GridForming))));
+	}
+
+	@Test
+	public void bitmaskableValues_unknownBits() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x000C);
+
+		// THEN
+		assertThat("Unknown bit 3 ignored",
+				accessor.getBitmaskableValues(TestRegister.Bitfield16Value,
+						DerOperationalCharacteristic.class),
+				is(equalTo(Set.of(DerOperationalCharacteristic.PvClipped))));
+	}
+
+	@Test
+	public void bitmaskableValues_mostSignificantBit16() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x8001);
+
+		// THEN
+		assertThat("Bitfield16 with MSB set not implemented", accessor
+				.getBitmaskableValues(TestRegister.Bitfield16Value, DerOperationalCharacteristic.class),
+				is(equalTo(Set.of())));
+	}
+
+	@Test
+	public void bitmaskableValues_mostSignificantBit32() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield32Value, 0x8000, 0x0001);
+
+		// THEN
+		assertThat("Bitfield32 with MSB set not implemented", accessor
+				.getBitmaskableValues(TestRegister.Bitfield32Value, DerOperationalCharacteristic.class),
+				is(equalTo(Set.of())));
+	}
+
+	@Test
+	public void bitmaskableValues_notImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield32Value, 0xFFFF, 0xFFFF);
+
+		// THEN
+		assertThat("Bitfield32 not implemented", accessor
+				.getBitmaskableValues(TestRegister.Bitfield32Value, DerOperationalCharacteristic.class),
+				is(equalTo(Set.of())));
 	}
 
 }

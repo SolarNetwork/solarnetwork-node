@@ -54,3 +54,4 @@ Float currentPhaseC = model.accessorForPhase(PhaseC).getCurrent();
 | 308 | net.solarnetwork.node.hw.sunspec.environmental.MiniMeteorologicalModelAccessor |
 | 401, 403 | net.solarnetwork.node.hw.sunspec.combiner.StringCombinerModelAccessor |
 | 402, 404 | net.solarnetwork.node.hw.sunspec.combiner.StringCombinerAdvancedModelAccessor |
+| 701 | net.solarnetwork.node.hw.sunspec.der.DerAcMeasurementModelAccessor |
