@@ -37,27 +37,25 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  * Implementation of {@link StringCombinerAdvancedModelAccessor}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		implements StringCombinerAdvancedModelAccessor {
 
-	/** The string combiner model fixed block length. */
+	/** The advanced string combiner (402) model fixed block length. */
 	public static final int FIXED_BLOCK_LENGTH = 20;
 
-	/** The string combiner model fixed block length. */
+	/** The advanced string combiner v2 (404) model fixed block length. */
 	public static final int FIXED_BLOCK_LENGTH_2 = 25;
 
-	/** The inverter MPPT extension model module repeating block length. */
+	/** The advanced string combiner model input repeating block length. */
 	public static final int REPEATING_BLOCK_LENGTH = 14;
 
 	/**
-	 * The legacy inverter MPPT extension model module repeating block length.
+	 * The legacy advanced string combiner model input repeating block length.
 	 */
 	public static final int REPEATING_BLOCK_LENGTH_LEGACY = 13;
-
-	private final int repeatingBlockLength;
 
 	/**
 	 * Constructor.
@@ -71,7 +69,6 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 	 */
 	public StringCombinerAdvancedModelAccessorImpl(ModelData data, int baseAddress, ModelId modelId) {
 		super(data, baseAddress, modelId);
-		this.repeatingBlockLength = calculateRepeatingBlockInstanceLength();
 	}
 
 	/**
@@ -93,24 +90,31 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		this(data, baseAddress, StringCombinerModelId.forId(modelId));
 	}
 
+	private boolean isVersion2() {
+		return StringCombinerModelId.AdvancedStringCombiner2 == getModelId();
+	}
+
 	@Override
 	public int getFixedBlockLength() {
-		return StringCombinerModelId.BasicStringCombiner2 == getModelId() ? FIXED_BLOCK_LENGTH_2
-				: FIXED_BLOCK_LENGTH;
+		return isVersion2() ? FIXED_BLOCK_LENGTH_2 : FIXED_BLOCK_LENGTH;
 	}
 
-	private int calculateRepeatingBlockInstanceLength() {
-		final int fixedLen = getFixedBlockLength();
-		final int repeatingLen = getModelLength() - fixedLen;
-		if ( repeatingLen % REPEATING_BLOCK_LENGTH == 0 ) {
-			return REPEATING_BLOCK_LENGTH;
-		}
-		return REPEATING_BLOCK_LENGTH_LEGACY;
-	}
-
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * This returns {@link #REPEATING_BLOCK_LENGTH_LEGACY} if the model length
+	 * fits that length but not {@link #REPEATING_BLOCK_LENGTH}.
+	 * </p>
+	 */
 	@Override
 	public int getRepeatingBlockInstanceLength() {
-		return this.repeatingBlockLength;
+		final int repeatingLen = getModelLength() - getFixedBlockLength();
+		if ( repeatingLen % REPEATING_BLOCK_LENGTH != 0
+				&& repeatingLen % REPEATING_BLOCK_LENGTH_LEGACY == 0 ) {
+			return REPEATING_BLOCK_LENGTH_LEGACY;
+		}
+		return REPEATING_BLOCK_LENGTH;
 	}
 
 	@Override
@@ -122,14 +126,18 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Long getDCChargeDelivered() {
-		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcCharge,
+		Number n = getScaledValue(
+				isVersion2() ? StringCombinerAdvancedModelRegister.DcChargeV2
+						: StringCombinerAdvancedModelRegister.DcCharge,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcCharge);
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public @Nullable Float getDCVoltage() {
-		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcVoltage,
+		Number n = getScaledValue(
+				isVersion2() ? StringCombinerAdvancedModelRegister.DcVoltageV2
+						: StringCombinerAdvancedModelRegister.DcVoltage,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
@@ -148,14 +156,17 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Long getDCEnergy() {
-		Number n = getScaledValue(StringCombinerAdvancedModelRegister.DcEnergy,
+		Number n = getScaledValue(
+				isVersion2() ? StringCombinerAdvancedModelRegister.DcEnergyV2
+						: StringCombinerAdvancedModelRegister.DcEnergy,
 				StringCombinerAdvancedModelRegister.ScaleFactorDcEnergy);
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public @Nullable Float getDCPerformanceRatio() {
-		Float n = getFloatValue(StringCombinerAdvancedModelRegister.DcPerformanceRatio);
+		Float n = getFloatValue(isVersion2() ? StringCombinerAdvancedModelRegister.DcPerformanceRatioV2
+				: StringCombinerAdvancedModelRegister.DcPerformanceRatio);
 		return (n != null ? n.floatValue() / 100f : null);
 	}
 
@@ -167,15 +178,13 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public Set<ModelEvent> getEvents() {
-		Number n = getBitfield(StringCombinerAdvancedModelRegister.InputEventsBitmask,
-				getBlockAddress());
+		Number n = getBitfield(StringCombinerAdvancedModelRegister.EventsBitmask);
 		return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
 	@Override
 	public Set<ModelEvent> getVendorEvents() {
-		Number n = getBitfield(StringCombinerAdvancedModelRegister.InputVendorEventsBitmask,
-				getBlockAddress());
+		Number n = getBitfield(StringCombinerAdvancedModelRegister.VendorEventsBitmask);
 		return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
 
@@ -202,97 +211,97 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 			this.index = index;
 		}
 
+		private int inputAddress() {
+			return getBlockAddress() + getFixedBlockLength() + index * getRepeatingBlockInstanceLength();
+		}
+
 		@Override
 		public @Nullable Integer getInputId() {
-			Number n = getData().getNumber(StringCombinerAdvancedModelRegister.InputId,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
-			return (n != null ? n.intValue() : null);
+			return getIntegerValue(StringCombinerAdvancedModelRegister.InputId, inputAddress());
 		}
 
 		@Override
 		public @Nullable Float getDCCurrent() {
-			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
-					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCurrent
-					: StringCombinerAdvancedModelRegister.ScaleFactorDcCurrent);
-			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCurrent, scaleReg,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
-					getBlockAddress());
+			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCurrent,
+					isVersion2() ? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCurrent
+							: StringCombinerAdvancedModelRegister.ScaleFactorDcCurrent,
+					inputAddress(), getBlockAddress());
 			return (n != null ? n.floatValue() : null);
 		}
 
 		@Override
 		public @Nullable Long getDCChargeDelivered() {
-			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
-					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge
-					: StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge);
-			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCharge, scaleReg,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
-					getBlockAddress());
+			Number n = isVersion2()
+					? getScaledValue(StringCombinerAdvancedModelRegister.InputDcChargeV2,
+							StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge, inputAddress(),
+							getBlockAddress())
+					: getScaledValue(StringCombinerAdvancedModelRegister.InputDcCharge,
+							StringCombinerAdvancedModelRegister.ScaleFactorDcCharge, inputAddress(),
+							getBlockAddress());
 			return (n != null ? n.longValue() : null);
 		}
 
 		@Override
 		public Set<ModelEvent> getEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputEventsBitmask,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
+					inputAddress());
 			return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 		@Override
 		public Set<ModelEvent> getVendorEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputVendorEventsBitmask,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
+					inputAddress());
 			return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 		@Override
 		public @Nullable Float getDCVoltage() {
-			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
-					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcVoltage
-					: StringCombinerAdvancedModelRegister.ScaleFactorDcVoltage);
-			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCurrent, scaleReg,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
-					getBlockAddress());
+			Number n = isVersion2()
+					? getScaledValue(StringCombinerAdvancedModelRegister.InputDcVoltageV2,
+							StringCombinerAdvancedModelRegister.ScaleFactorInputDcVoltage,
+							inputAddress(), getBlockAddress())
+					: getScaledValue(StringCombinerAdvancedModelRegister.InputDcVoltage,
+							StringCombinerAdvancedModelRegister.ScaleFactorDcVoltage, inputAddress(),
+							getBlockAddress());
 			return (n != null ? n.floatValue() : null);
 		}
 
 		@Override
 		public @Nullable Integer getDCPower() {
-			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
-					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcPower
-					: StringCombinerAdvancedModelRegister.ScaleFactorDcPower);
-			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcPower, scaleReg,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
-					getBlockAddress());
+			// model 402 defines the input power scale factor as DCWh_SF
+			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcPower,
+					isVersion2() ? StringCombinerAdvancedModelRegister.ScaleFactorInputDcPower
+							: StringCombinerAdvancedModelRegister.ScaleFactorDcEnergy,
+					inputAddress(), getBlockAddress());
 			return (n != null ? n.intValue() : null);
 		}
 
 		@Override
 		public @Nullable Long getDCEnergy() {
-			final StringCombinerAdvancedModelRegister scaleReg = (StringCombinerModelId.AdvancedStringCombiner2 == getModelId()
-					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcEnergy
-					: StringCombinerAdvancedModelRegister.ScaleFactorDcEnergy);
-			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcEnergy, scaleReg,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
+			if ( !isVersion2() ) {
+				// model 402 does not define an input energy scale factor
+				return getLongValue(StringCombinerAdvancedModelRegister.InputDcEnergy, inputAddress());
+			}
+			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcEnergyV2,
+					StringCombinerAdvancedModelRegister.ScaleFactorInputDcEnergy, inputAddress(),
 					getBlockAddress());
 			return (n != null ? n.longValue() : null);
 		}
 
 		@Override
 		public @Nullable Float getDCPerformanceRatio() {
-			Float n = getFloatValue(StringCombinerAdvancedModelRegister.DcPerformanceRatio,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
+			Float n = getFloatValue(StringCombinerAdvancedModelRegister.InputDcPerformanceRatio,
+					inputAddress());
 			return (n != null ? n.floatValue() / 100f : null);
 		}
 
 		@Override
 		public @Nullable Integer getModuleCount() {
-			if ( repeatingBlockLength != REPEATING_BLOCK_LENGTH ) {
+			if ( getRepeatingBlockInstanceLength() != REPEATING_BLOCK_LENGTH ) {
 				return null;
 			}
-			Number n = getData().getNumber(StringCombinerAdvancedModelRegister.InputModuleCount,
-					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
-			return (n != null ? n.intValue() : null);
+			return getIntegerValue(StringCombinerAdvancedModelRegister.InputModuleCount, inputAddress());
 		}
 
 	}
