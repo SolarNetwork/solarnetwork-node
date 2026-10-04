@@ -92,7 +92,7 @@ public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
 		Long getDCEnergyDelivered();
 
 		/**
-		 * Gets the time stamp of the data, in milliseconds since the epoch.
+		 * Gets the time stamp of the data, in seconds since the epoch.
 		 *
 		 * @return the data time stamp
 		 */
