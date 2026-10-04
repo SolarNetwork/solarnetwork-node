@@ -704,6 +704,52 @@ public class BaseModelAccessorTests {
 	}
 
 	@Test
+	public void scaledIntegerValue_maximum() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt32Value, 0x7FFF, 0xFFFF);
+		saveRegisters(TestRegister.ScaleFactorValue, 0);
+
+		// THEN
+		assertThat("Largest integer value", accessor.getScaledIntegerValue(TestRegister.RwUInt32Value,
+				TestRegister.ScaleFactorValue), is(equalTo(Integer.MAX_VALUE)));
+	}
+
+	@Test
+	public void scaledIntegerValue_outOfRange() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.RwUInt32Value, 0x8000, 0x0000);
+		saveRegisters(TestRegister.ScaleFactorValue, 0);
+
+		// THEN
+		assertThat("Value larger than an integer is not available", accessor.getScaledIntegerValue(
+				TestRegister.RwUInt32Value, TestRegister.ScaleFactorValue), is(nullValue()));
+	}
+
+	@Test
+	public void scaledLongValue_maximum() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.UInt64Value, 0x7FFF, 0xFFFF, 0xFFFF, 0xFFFF);
+		saveRegisters(TestRegister.ScaleFactorValue, 0);
+
+		// THEN
+		assertThat("Largest long value",
+				accessor.getScaledLongValue(TestRegister.UInt64Value, TestRegister.ScaleFactorValue),
+				is(equalTo(Long.MAX_VALUE)));
+	}
+
+	@Test
+	public void scaledLongValue_outOfRange() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.UInt64Value, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFE);
+		saveRegisters(TestRegister.ScaleFactorValue, 0);
+
+		// THEN
+		assertThat("Value larger than a long is not available",
+				accessor.getScaledLongValue(TestRegister.UInt64Value, TestRegister.ScaleFactorValue),
+				is(nullValue()));
+	}
+
+	@Test
 	public void scaledValue_scaleFactorNotImplemented() throws IOException {
 		// GIVEN
 		saveRegisters(TestRegister.RwUInt16Value, 1234);

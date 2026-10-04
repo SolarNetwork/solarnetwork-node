@@ -71,13 +71,13 @@ public enum DerModelId implements ModelId {
 	WattVar(712, "DER watt-var"),
 
 	/** DER storage capacity. */
-	StorageCapacity(713, "DER storage capacity"),
+	StorageCapacity(713, "DER storage capacity", DerStorageCapacityModelAccessor.class),
 
 	/** DER DC measurement. */
-	DcMeasurement(714, "DER DC measurement"),
+	DcMeasurement(714, "DER DC measurement", DerDcMeasurementModelAccessor.class),
 
 	/** DER control. */
-	Control(715, "DER control"),
+	Control(715, "DER control", DerControlModelAccessor.class),
 
 	;
 

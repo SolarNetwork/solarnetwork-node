@@ -168,6 +168,33 @@ public final class ModelDataUtils {
 	}
 
 	/**
+	 * Get a static, read-only model data instance using a class-path resource
+	 * of modbus test data, with some register values replaced.
+	 *
+	 * <p>
+	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
+	 * text file, so the data starts at address {@literal 0}.
+	 * </p>
+	 *
+	 * @param clazz
+	 *        the class to load the resource from
+	 * @param resource
+	 *        the data resource to load
+	 * @param address
+	 *        the address of the first register to replace
+	 * @param words
+	 *        the register values to replace, starting at {@code address}
+	 * @return the model data
+	 * @since 2.3
+	 */
+	public static ModelData getModelDataInstanceWithRegisters(Class<?> clazz, String resource,
+			int address, int... words) {
+		final int[] data = parseTestData(clazz, resource);
+		System.arraycopy(words, 0, data, address, words.length);
+		return getModelDataInstance(new StaticDataMapReadonlyModbusConnection(data));
+	}
+
+	/**
 	 * Get a writable Modbus connection to a class-path resource of modbus test
 	 * data.
 	 *

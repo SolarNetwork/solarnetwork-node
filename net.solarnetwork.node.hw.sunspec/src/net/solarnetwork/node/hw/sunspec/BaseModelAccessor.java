@@ -541,7 +541,8 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * Get a scaled data property value as an integer.
 	 *
 	 * <p>
-	 * Any fractional part of the scaled value is discarded.
+	 * Any fractional part of the scaled value is discarded. The value is not
+	 * available if the result does not fit in an integer.
 	 * </p>
 	 *
 	 * @param dataRef
@@ -560,8 +561,8 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public @Nullable Integer getScaledIntegerValue(ModbusReference dataRef, ModbusReference scaleRef,
 			int dataOffset, int scaleOffset) {
-		Number n = getScaledValue(dataRef, scaleRef, dataOffset, scaleOffset);
-		return (n != null ? n.intValue() : null);
+		BigInteger n = scaledWholeValue(dataRef, scaleRef, dataOffset, scaleOffset);
+		return (n != null && n.bitLength() < Integer.SIZE ? n.intValue() : null);
 	}
 
 	/**
@@ -583,7 +584,9 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * Get a scaled data property value as a long.
 	 *
 	 * <p>
-	 * Any fractional part of the scaled value is discarded.
+	 * Any fractional part of the scaled value is discarded. The value is not
+	 * available if the result does not fit in a long, which is possible for
+	 * {@code uint64} points.
 	 * </p>
 	 *
 	 * @param dataRef
@@ -602,8 +605,29 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public @Nullable Long getScaledLongValue(ModbusReference dataRef, ModbusReference scaleRef,
 			int dataOffset, int scaleOffset) {
-		Number n = getScaledValue(dataRef, scaleRef, dataOffset, scaleOffset);
-		return (n != null ? n.longValue() : null);
+		BigInteger n = scaledWholeValue(dataRef, scaleRef, dataOffset, scaleOffset);
+		return (n != null && n.bitLength() < Long.SIZE ? n.longValue() : null);
+	}
+
+	/**
+	 * Get a scaled data property value with any fractional part discarded.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param scaleOffset
+	 *        the scale address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@code null} if not available
+	 */
+	private @Nullable BigInteger scaledWholeValue(ModbusReference dataRef, ModbusReference scaleRef,
+			int dataOffset, int scaleOffset) {
+		BigDecimal d = getScaledValue(dataRef, scaleRef, dataOffset, scaleOffset);
+		return (d != null ? d.toBigInteger() : null);
 	}
 
 	/**
