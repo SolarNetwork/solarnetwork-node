@@ -113,8 +113,8 @@ public class InverterMpptExtensionModelAccessor_113_01Tests {
 		Set<ModelEvent> noEvents = Collections.emptySet();
 		assertDcModule("1", modules.get(0), 1, "String 1", 623608619L, 0.15f, 11937020L, 65, 439.7f,
 				null, Mppt, noEvents);
-		assertDcModule("2", modules.get(1), 2, "Not supported", 4294967295L, null, null, null, null,
-				null, null, noEvents);
+		assertDcModule("2", modules.get(1), 2, "Not supported", null, null, null, null, null, null, null,
+				noEvents);
 	}
 
 	@Test
