@@ -65,7 +65,7 @@ public enum DerModelId implements ModelId {
 	TripHighFrequency(710, "DER trip high frequency", DerTripHighFrequencyModelAccessor.class),
 
 	/** DER frequency droop. */
-	FrequencyDroop(711, "DER frequency droop"),
+	FrequencyDroop(711, "DER frequency droop", DerFrequencyDroopModelAccessor.class),
 
 	/** DER watt-var. */
 	WattVar(712, "DER watt-var", DerWattVarModelAccessor.class),
@@ -84,10 +84,6 @@ public enum DerModelId implements ModelId {
 	private final int id;
 	private final String description;
 	private final Class<? extends ModelAccessor> accessorType;
-
-	private DerModelId(int id, String description) {
-		this(id, description, ModelAccessor.class);
-	}
 
 	private DerModelId(int id, String description, Class<? extends ModelAccessor> accessorType) {
 		this.id = id;
