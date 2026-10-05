@@ -32,7 +32,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Test;
-import net.solarnetwork.node.hw.sunspec.der.DerAdoptCurveResult;
+import net.solarnetwork.node.hw.sunspec.der.DerAdoptResult;
 import net.solarnetwork.node.hw.sunspec.der.DerFrequencyDroopModelAccessor;
 import net.solarnetwork.node.hw.sunspec.der.DerFrequencyDroopModelAccessor.FrequencyDroopControl;
 import net.solarnetwork.node.hw.sunspec.der.DerFrequencyDroopModelAccessorImpl;
@@ -94,7 +94,7 @@ public class DerFrequencyDroopModelAccessorImpl_711_01Tests {
 		assertThat("Control count", model.getControlCount(), is(equalTo(3)));
 		assertThat("Adopt control request", model.getAdoptControlRequest(), is(equalTo(0)));
 		assertThat("Adopt control result", model.getAdoptControlResult(),
-				is(equalTo(DerAdoptCurveResult.InProgress)));
+				is(equalTo(DerAdoptResult.InProgress)));
 		assertThat("Reversion time not implemented", model.getReversionTime(), is(nullValue()));
 		assertThat("Reversion time remaining not implemented", model.getReversionTimeRemaining(),
 				is(nullValue()));

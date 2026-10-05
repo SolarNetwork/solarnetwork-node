@@ -125,7 +125,7 @@ public interface DerCurveModelAccessor extends ModelAccessor {
 	 * @return the result, or {@code null} if not available
 	 */
 	@Nullable
-	DerAdoptCurveResult getAdoptCurveResult();
+	DerAdoptResult getAdoptCurveResult();
 
 	/**
 	 * Get the reversion timeout.

@@ -32,7 +32,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.List;
 import org.junit.Test;
-import net.solarnetwork.node.hw.sunspec.der.DerAdoptCurveResult;
+import net.solarnetwork.node.hw.sunspec.der.DerAdoptResult;
 import net.solarnetwork.node.hw.sunspec.der.DerCurvePoint;
 import net.solarnetwork.node.hw.sunspec.der.DerModelId;
 import net.solarnetwork.node.hw.sunspec.der.DerReactivePowerPriority;
@@ -104,7 +104,7 @@ public class DerVoltVarModelAccessorImpl_705_01Tests {
 		assertThat("Curve point count", model.getCurvePointCount(), is(equalTo(4)));
 		assertThat("Adopt curve request", model.getAdoptCurveRequest(), is(equalTo(0)));
 		assertThat("Adopt curve result", model.getAdoptCurveResult(),
-				is(equalTo(DerAdoptCurveResult.InProgress)));
+				is(equalTo(DerAdoptResult.InProgress)));
 		assertThat("Reversion time not implemented", model.getReversionTime(), is(nullValue()));
 		assertThat("Reversion time remaining not implemented", model.getReversionTimeRemaining(),
 				is(nullValue()));

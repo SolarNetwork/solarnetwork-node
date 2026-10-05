@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
-import net.solarnetwork.node.hw.sunspec.der.DerAdoptCurveResult;
+import net.solarnetwork.node.hw.sunspec.der.DerAdoptResult;
 import net.solarnetwork.node.hw.sunspec.der.DerCurve;
 import net.solarnetwork.node.hw.sunspec.der.DerCurvePoint;
 import net.solarnetwork.node.hw.sunspec.der.DerModelId;
@@ -124,7 +124,7 @@ public class DerTripLowVoltageModelAccessorImpl_707_01Tests {
 		assertThat("Curve point count", model.getCurvePointCount(), is(equalTo(7)));
 		assertThat("Adopt curve request", model.getAdoptCurveRequest(), is(equalTo(0)));
 		assertThat("Adopt curve result", model.getAdoptCurveResult(),
-				is(equalTo(DerAdoptCurveResult.InProgress)));
+				is(equalTo(DerAdoptResult.InProgress)));
 	}
 
 	@Test

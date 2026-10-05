@@ -1,5 +1,5 @@
 /* ==================================================================
- * DerAdoptCurveResult.java - 5/10/2026 4:58:20 pm
+ * DerAdoptResult.java - 5/10/2026 4:58:20 pm
  *
  * Copyright 2026 SolarNetwork.net Dev Team
  *
@@ -25,13 +25,13 @@ package net.solarnetwork.node.hw.sunspec.der;
 import net.solarnetwork.domain.CodedValue;
 
 /**
- * DER adopt curve request result.
+ * DER adopt request result, for curves, curve sets, and controls.
  *
  * @author matt
  * @version 1.0
  * @since 5.2
  */
-public enum DerAdoptCurveResult implements CodedValue {
+public enum DerAdoptResult implements CodedValue {
 
 	/** Update in progress. */
 	InProgress(0, "Update in progress"),
@@ -47,7 +47,7 @@ public enum DerAdoptCurveResult implements CodedValue {
 	private final int code;
 	private final String description;
 
-	private DerAdoptCurveResult(int code, String description) {
+	private DerAdoptResult(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}

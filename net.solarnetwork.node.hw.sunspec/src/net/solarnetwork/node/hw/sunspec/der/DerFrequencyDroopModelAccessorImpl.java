@@ -122,9 +122,8 @@ public class DerFrequencyDroopModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public @Nullable DerAdoptCurveResult getAdoptControlResult() {
-		return getCodedValue(DerFrequencyDroopModelRegister.AdoptControlResult,
-				DerAdoptCurveResult.class);
+	public @Nullable DerAdoptResult getAdoptControlResult() {
+		return getCodedValue(DerFrequencyDroopModelRegister.AdoptControlResult, DerAdoptResult.class);
 	}
 
 	@Override

@@ -280,7 +280,7 @@ public interface DerFrequencyDroopModelAccessor extends ModelAccessor {
 	 * @return the result, or {@code null} if not available
 	 */
 	@Nullable
-	DerAdoptCurveResult getAdoptControlResult();
+	DerAdoptResult getAdoptControlResult();
 
 	/**
 	 * Get the reversion timeout.

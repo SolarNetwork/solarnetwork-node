@@ -158,8 +158,8 @@ public abstract class BaseDerCurveModelAccessor extends BaseModelAccessor
 	}
 
 	@Override
-	public @Nullable DerAdoptCurveResult getAdoptCurveResult() {
-		return getCodedValue(DerCurveModelRegister.AdoptCurveResult, DerAdoptCurveResult.class);
+	public @Nullable DerAdoptResult getAdoptCurveResult() {
+		return getCodedValue(DerCurveModelRegister.AdoptCurveResult, DerAdoptResult.class);
 	}
 
 	@Override
