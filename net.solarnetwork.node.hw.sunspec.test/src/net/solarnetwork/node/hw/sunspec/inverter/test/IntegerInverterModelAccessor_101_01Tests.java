@@ -56,7 +56,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerInverterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerInverterModelAccessor_101_01Tests {
 
@@ -271,6 +271,19 @@ public class IntegerInverterModelAccessor_101_01Tests {
 
 		BigInteger expected = new BigInteger("00070008000500060003000400010002", 16);
 		assertThat("No vendor events", events, is(equalTo(bitSetForBigInteger(expected))));
+	}
+
+	@Test
+	public void vendorEvents_mostSignificantBit() {
+		// GIVEN
+		// the second vendor event field, with the most significant bit set
+		InverterModelAccessor model = ModelDataUtils.getModelDataInstanceWithRegisters(getClass(),
+				"test-data-101-01.txt", 115, 0x8003, 0x0004).findTypedModel(InverterModelAccessor.class);
+
+		// THEN
+		BigInteger expected = new BigInteger("00070008000500060000000000010002", 16);
+		assertThat("Second vendor event field not implemented", model.getVendorEvents(),
+				is(equalTo(bitSetForBigInteger(expected))));
 	}
 
 }

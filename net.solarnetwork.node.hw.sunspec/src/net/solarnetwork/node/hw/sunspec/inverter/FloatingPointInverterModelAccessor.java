@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.Map;
@@ -36,13 +35,12 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.util.IntRange;
-import net.solarnetwork.util.NumberUtils;
 
 /**
  * Data access object for an floating point inverter models.
  *
  * @author matt
- * @version 3.2
+ * @version 3.3
  * @since 1.4
  */
 public class FloatingPointInverterModelAccessor extends BaseModelAccessor
@@ -258,31 +256,10 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 
 	@Override
 	public @Nullable BitSet getVendorEvents() {
-		BitSet s = new BitSet(128);
-		BigInteger n = NumberUtils.bigIntegerForNumber(
-				getBitfield(FloatingPointInverterModelRegister.EventsVendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n);
-			s.or(s1);
-		}
-		n = NumberUtils.bigIntegerForNumber(
-				getBitfield(FloatingPointInverterModelRegister.Events2VendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(32));
-			s.or(s1);
-		}
-		n = NumberUtils.bigIntegerForNumber(
-				getBitfield(FloatingPointInverterModelRegister.Events3VendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(64));
-			s.or(s1);
-		}
-		n = NumberUtils.bigIntegerForNumber(
-				getBitfield(FloatingPointInverterModelRegister.Events4VendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(96));
-			s.or(s1);
-		}
+		BitSet s = getBitfieldBits(FloatingPointInverterModelRegister.EventsVendorBitmask,
+				FloatingPointInverterModelRegister.Events2VendorBitmask,
+				FloatingPointInverterModelRegister.Events3VendorBitmask,
+				FloatingPointInverterModelRegister.Events4VendorBitmask);
 		return (s.length() > 0 ? s : null);
 	}
 

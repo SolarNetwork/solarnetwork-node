@@ -31,7 +31,7 @@ import java.util.Set;
  * A basic immutable implementation of {@link ModelEvent}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.4
  */
 public class GenericModelEvent implements ModelEvent, Comparable<GenericModelEvent> {
@@ -103,16 +103,22 @@ public class GenericModelEvent implements ModelEvent, Comparable<GenericModelEve
 	/**
 	 * Get a set of events from a bitmask.
 	 *
+	 * <p>
+	 * SunSpec bitfields never have their most significant bit set, so a 32-bit
+	 * bitmask with that bit set, including the SunSpec "not implemented" value,
+	 * results in an empty set.
+	 * </p>
+	 *
 	 * @param bitmask
-	 *        the bitmask
+	 *        the 32-bit bitmask
 	 * @return the active events
 	 */
 	public static Set<ModelEvent> forBitmask(long bitmask) {
-		if ( bitmask == 0 || (bitmask & ModelData.NAN_BITFIELD32) == ModelData.NAN_BITFIELD32 ) {
+		if ( bitmask == 0 || (bitmask & 0x80000000L) != 0 ) {
 			return Collections.emptySet();
 		}
 		Set<ModelEvent> result = new LinkedHashSet<>(32);
-		for ( int i = 0; i < 32; i++ ) {
+		for ( int i = 0; i < 31; i++ ) {
 			if ( ((bitmask >> i) & 0x1) == 1 ) {
 				result.add(new GenericModelEvent(i));
 			}

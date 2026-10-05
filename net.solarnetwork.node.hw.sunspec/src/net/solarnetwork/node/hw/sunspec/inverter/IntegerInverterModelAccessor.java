@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import java.math.BigInteger;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.Map;
@@ -36,13 +35,12 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.util.IntRange;
-import net.solarnetwork.util.NumberUtils;
 
 /**
  * Data access object for an integer inverter model.
  *
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 public class IntegerInverterModelAccessor extends BaseModelAccessor implements InverterModelAccessor {
 
@@ -357,31 +355,10 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 
 	@Override
 	public @Nullable BitSet getVendorEvents() {
-		BitSet s = new BitSet(128);
-		BigInteger n = NumberUtils
-				.bigIntegerForNumber(getBitfield(IntegerInverterModelRegister.EventsVendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n);
-			s.or(s1);
-		}
-		n = NumberUtils
-				.bigIntegerForNumber(getBitfield(IntegerInverterModelRegister.Events2VendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(32));
-			s.or(s1);
-		}
-		n = NumberUtils
-				.bigIntegerForNumber(getBitfield(IntegerInverterModelRegister.Events3VendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(64));
-			s.or(s1);
-		}
-		n = NumberUtils
-				.bigIntegerForNumber(getBitfield(IntegerInverterModelRegister.Events4VendorBitmask));
-		if ( n != null ) {
-			BitSet s1 = NumberUtils.bitSetForBigInteger(n.shiftLeft(96));
-			s.or(s1);
-		}
+		BitSet s = getBitfieldBits(IntegerInverterModelRegister.EventsVendorBitmask,
+				IntegerInverterModelRegister.Events2VendorBitmask,
+				IntegerInverterModelRegister.Events3VendorBitmask,
+				IntegerInverterModelRegister.Events4VendorBitmask);
 		return (s.length() > 0 ? s : null);
 	}
 
