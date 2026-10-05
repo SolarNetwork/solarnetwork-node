@@ -41,13 +41,13 @@ public enum StorageModelId implements ModelId {
 	BatteryBase(802, "Battery base", BatteryBaseModelAccessor.class),
 
 	/** Lithium-ion battery bank. */
-	LithiumIonBank(803, "Lithium-ion battery bank"),
+	LithiumIonBank(803, "Lithium-ion battery bank", LithiumIonBankModelAccessor.class),
 
 	/** Lithium-ion string. */
-	LithiumIonString(804, "Lithium-ion string"),
+	LithiumIonString(804, "Lithium-ion string", LithiumIonStringModelAccessor.class),
 
 	/** Lithium-ion module. */
-	LithiumIonModule(805, "Lithium-ion module"),
+	LithiumIonModule(805, "Lithium-ion module", LithiumIonModuleModelAccessor.class),
 
 	/** Flow battery. */
 	FlowBattery(806, "Flow battery"),

@@ -240,37 +240,8 @@ public class BatteryBaseModelAccessorImpl extends BaseModelAccessor implements B
 
 	@Override
 	public BitSet getVendorEvents() {
-		final BitSet result = new BitSet(64);
-		addBitfield(result, getBitfield(BatteryBaseModelRegister.VendorEventsBitmask), 0);
-		addBitfield(result, getBitfield(BatteryBaseModelRegister.VendorEvents2Bitmask), 32);
-		return result;
-	}
-
-	/**
-	 * Add the bits of a SunSpec 32-bit bitfield to a bit set.
-	 *
-	 * <p>
-	 * If the most significant bit is set, the bitfield is not implemented and
-	 * no bits are added.
-	 * </p>
-	 *
-	 * @param set
-	 *        the set to add the bits to
-	 * @param bitfield
-	 *        the bitfield value
-	 * @param offset
-	 *        the index in {@code set} of the first bit of the bitfield
-	 */
-	private static void addBitfield(BitSet set, @Nullable Number bitfield, int offset) {
-		final long bits = (bitfield != null ? bitfield.longValue() : 0L);
-		if ( bits == 0 || (bits & 0x80000000L) != 0 ) {
-			return;
-		}
-		for ( int i = 0; i < 31; i++ ) {
-			if ( ((bits >> i) & 0x1) == 1 ) {
-				set.set(offset + i);
-			}
-		}
+		return getBitfieldBits(BatteryBaseModelRegister.VendorEventsBitmask,
+				BatteryBaseModelRegister.VendorEvents2Bitmask);
 	}
 
 	@Override

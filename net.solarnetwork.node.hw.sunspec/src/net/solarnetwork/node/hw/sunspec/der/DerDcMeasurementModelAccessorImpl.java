@@ -23,10 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.der;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -94,18 +92,7 @@ public class DerDcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public Set<Integer> getAlarmedPortIndexes() {
-		final Number n = getBitfield(DerDcMeasurementModelRegister.AlarmedPortsBitmask);
-		final long bitmask = (n != null ? n.longValue() : 0L);
-		if ( bitmask == 0 || (bitmask & 0x80000000L) != 0 ) {
-			return Collections.emptySet();
-		}
-		final Set<Integer> result = new TreeSet<>();
-		for ( int i = 0; i < 31; i++ ) {
-			if ( ((bitmask >> i) & 0x1) == 1 ) {
-				result.add(i);
-			}
-		}
-		return result;
+		return getBitfieldIndexes(DerDcMeasurementModelRegister.AlarmedPortsBitmask);
 	}
 
 	@Override

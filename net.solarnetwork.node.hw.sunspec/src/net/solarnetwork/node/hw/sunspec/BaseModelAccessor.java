@@ -32,8 +32,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Set;
+import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.CodedValue;
@@ -802,6 +804,103 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 			return Collections.emptySet();
 		}
 		return Bitmaskable.setForBitmask((int) v, type);
+	}
+
+	/**
+	 * Get the indexes of the bits set in a bitfield data property.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the bit indexes, in ascending order, never {@code null}
+	 * @see #getBitfieldIndexes(ModbusReference, int)
+	 * @since 2.1
+	 */
+	public Set<Integer> getBitfieldIndexes(ModbusReference dataRef) {
+		return getBitfieldIndexes(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get the indexes of the bits set in a bitfield data property.
+	 *
+	 * <p>
+	 * This is for bitfields whose bits are numbered things, such as ports or
+	 * contactors, rather than flags. SunSpec bitfields never have their most
+	 * significant bit set, so a bitfield with that bit set, including the
+	 * SunSpec "not implemented" value, results in an empty set.
+	 * </p>
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the bit indexes, in ascending order, never {@code null}
+	 * @since 2.1
+	 */
+	public Set<Integer> getBitfieldIndexes(ModbusReference dataRef, int dataOffset) {
+		Number n = data.getNumber(dataRef, dataOffset);
+		if ( n == null ) {
+			return Collections.emptySet();
+		}
+		final long v = n.longValue();
+		final int bitCount = dataRef.getWordLength() * 16;
+		if ( v == 0 || (v & (1L << (bitCount - 1))) != 0 ) {
+			return Collections.emptySet();
+		}
+		final Set<Integer> result = new TreeSet<>();
+		for ( int i = 0; i < bitCount - 1; i++ ) {
+			if ( ((v >> i) & 1L) == 1L ) {
+				result.add(i);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Get the bits set in a sequence of bitfield data properties, as a single
+	 * bit set.
+	 *
+	 * @param dataRefs
+	 *        the block address relative references to the data properties
+	 * @return the bit set, never {@code null}
+	 * @see #getBitfieldBits(int, ModbusReference...)
+	 * @since 2.1
+	 */
+	public BitSet getBitfieldBits(ModbusReference... dataRefs) {
+		return getBitfieldBits(blockAddress, dataRefs);
+	}
+
+	/**
+	 * Get the bits set in a sequence of bitfield data properties, as a single
+	 * bit set.
+	 *
+	 * <p>
+	 * The bits of each bitfield follow the bits of the bitfields before it, so
+	 * for a sequence of 32-bit bitfields, such as the SunSpec vendor event
+	 * fields, the first bit of the second bitfield is index {@literal 32}. Each
+	 * bitfield is read as with
+	 * {@link #getBitfieldIndexes(ModbusReference, int)}, so a bitfield with its
+	 * most significant bit set contributes no bits.
+	 * </p>
+	 *
+	 * @param dataOffset
+	 *        the data address offset to add to each
+	 *        {@link ModbusReference#getAddress()}
+	 * @param dataRefs
+	 *        the block address relative references to the data properties
+	 * @return the bit set, never {@code null}
+	 * @since 2.1
+	 */
+	public BitSet getBitfieldBits(int dataOffset, ModbusReference... dataRefs) {
+		final BitSet result = new BitSet();
+		int start = 0;
+		for ( ModbusReference ref : dataRefs ) {
+			for ( Integer i : getBitfieldIndexes(ref, dataOffset) ) {
+				result.set(start + i);
+			}
+			start += ref.getWordLength() * 16;
+		}
+		return result;
 	}
 
 	/**

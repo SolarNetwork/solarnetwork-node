@@ -42,6 +42,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.junit.Before;
@@ -100,6 +101,8 @@ public class BaseModelAccessorTests {
 		Bitfield16Value(24, UInt16, Bitfield),
 
 		Bitfield32Value(25, UInt32, Bitfield),
+
+		Bitfield32Value2(27, UInt32, Bitfield),
 
 		;
 
@@ -816,6 +819,85 @@ public class BaseModelAccessorTests {
 		assertThat("Scale factor -10 applied",
 				accessor.getScaledValue(TestRegister.RwUInt16Value, TestRegister.ScaleFactorValue),
 				is(comparesEqualTo(new BigDecimal("1234E-10"))));
+	}
+
+	@Test
+	public void bitfieldIndexes() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield32Value, 0x0000, 0x0105);
+
+		// THEN
+		assertThat("Indexes of the set bits", accessor.getBitfieldIndexes(TestRegister.Bitfield32Value),
+				is(equalTo(Set.of(0, 2, 8))));
+	}
+
+	@Test
+	public void bitfieldIndexes_bitfield16() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x4001);
+
+		// THEN
+		assertThat("Indexes of the set bits, up to the bit before the most significant bit",
+				accessor.getBitfieldIndexes(TestRegister.Bitfield16Value), is(equalTo(Set.of(0, 14))));
+	}
+
+	@Test
+	public void bitfieldIndexes_mostSignificantBit() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x8001);
+		saveRegisters(TestRegister.Bitfield32Value, 0x8000, 0x0001);
+
+		// THEN
+		assertThat("Bitfield16 with MSB set not implemented",
+				accessor.getBitfieldIndexes(TestRegister.Bitfield16Value), is(equalTo(Set.of())));
+		assertThat("Bitfield32 with MSB set not implemented",
+				accessor.getBitfieldIndexes(TestRegister.Bitfield32Value), is(equalTo(Set.of())));
+	}
+
+	@Test
+	public void bitfieldBits() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield32Value, 0x0000, 0x0005);
+		saveRegisters(TestRegister.Bitfield32Value2, 0x4000, 0x0001);
+
+		// THEN
+		BitSet expected = new BitSet();
+		expected.set(0);
+		expected.set(2);
+		expected.set(32);
+		expected.set(62);
+		assertThat("Second bitfield bits follow the first",
+				accessor.getBitfieldBits(TestRegister.Bitfield32Value, TestRegister.Bitfield32Value2),
+				is(equalTo(expected)));
+	}
+
+	@Test
+	public void bitfieldBits_mostSignificantBit() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield32Value, 0x8000, 0x0001);
+		saveRegisters(TestRegister.Bitfield32Value2, 0x0000, 0x0002);
+
+		// THEN
+		BitSet expected = new BitSet();
+		expected.set(33);
+		assertThat("Not implemented bitfield contributes no bits",
+				accessor.getBitfieldBits(TestRegister.Bitfield32Value, TestRegister.Bitfield32Value2),
+				is(equalTo(expected)));
+	}
+
+	@Test
+	public void bitfieldBits_mixedLengths() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x0001);
+		saveRegisters(TestRegister.Bitfield32Value, 0x0000, 0x0001);
+
+		// THEN
+		BitSet expected = new BitSet();
+		expected.set(0);
+		expected.set(16);
+		assertThat("Bitfield32 bits follow the 16 bitfield16 bits",
+				accessor.getBitfieldBits(TestRegister.Bitfield16Value, TestRegister.Bitfield32Value),
+				is(equalTo(expected)));
 	}
 
 }
