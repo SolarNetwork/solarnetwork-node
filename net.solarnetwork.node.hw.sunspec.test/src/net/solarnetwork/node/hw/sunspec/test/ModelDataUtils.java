@@ -32,7 +32,6 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.support.StaticDataMapModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.DataUtils;
 import net.solarnetwork.util.IntShortMap;
@@ -200,7 +199,8 @@ public final class ModelDataUtils {
 	 *
 	 * <p>
 	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
-	 * text file, so the data starts at address {@literal 0}.
+	 * text file, so the data starts at address {@literal 0}. The connection
+	 * records the write requests made to it.
 	 * </p>
 	 *
 	 * @param clazz
@@ -210,14 +210,14 @@ public final class ModelDataUtils {
 	 * @return the connection
 	 * @since 2.3
 	 */
-	public static StaticDataMapModbusConnection getWritableModbusConnection(Class<?> clazz,
+	public static RecordingModbusConnection getWritableModbusConnection(Class<?> clazz,
 			String resource) {
 		final int[] data = parseTestData(clazz, resource);
 		final IntShortMap map = new IntShortMap(data.length);
 		for ( int i = 0; i < data.length; i++ ) {
 			map.putValue(i, data[i]);
 		}
-		return new StaticDataMapModbusConnection(map);
+		return new RecordingModbusConnection(map);
 	}
 
 	/**

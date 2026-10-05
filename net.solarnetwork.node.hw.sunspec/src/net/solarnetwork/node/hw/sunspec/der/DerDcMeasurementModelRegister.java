@@ -62,7 +62,7 @@ public enum DerDcMeasurementModelRegister implements SunspecModbusReference {
 	AlarmedPortsBitmask(0, UInt32, Bitfield),
 
 	/** The number of DC ports. */
-	PortCount(2, UInt16),
+	NumberOfPorts(2, UInt16),
 
 	/** Total DC current for all ports, in A. */
 	DcCurrent(3, Int16),

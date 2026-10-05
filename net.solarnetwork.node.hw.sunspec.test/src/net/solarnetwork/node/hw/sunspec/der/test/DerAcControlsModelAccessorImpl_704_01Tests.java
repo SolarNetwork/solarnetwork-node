@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.fail;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 import net.solarnetwork.node.hw.sunspec.der.DerAcControlsModelAccessor;
@@ -41,10 +40,8 @@ import net.solarnetwork.node.hw.sunspec.der.DerRampRateReference;
 import net.solarnetwork.node.hw.sunspec.der.DerReactivePowerPriority;
 import net.solarnetwork.node.hw.sunspec.der.DerReactivePowerSetpointMode;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
+import net.solarnetwork.node.hw.sunspec.test.RecordingModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
-import net.solarnetwork.node.io.modbus.support.StaticDataMapModbusConnection;
-import net.solarnetwork.util.IntShortMap;
 
 /**
  * Test cases for the {@link DerAcControlsModelAccessorImpl} class.
@@ -59,35 +56,13 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 	/** The model block address. */
 	private static final int BLOCK_ADDRESS = 405;
 
-	/** A writable connection that records the address and length of writes. */
-	private static final class RecordingConnection extends StaticDataMapModbusConnection {
-
-		private final List<List<Integer>> writes = new ArrayList<>();
-
-		private RecordingConnection(IntShortMap data) {
-			super(data);
-		}
-
-		@Override
-		public void writeWords(ModbusWriteFunction function, int address, short[] values) {
-			writes.add(List.of(address, values.length));
-			super.writeWords(function, address, values);
-		}
-
-	}
-
 	private DerAcControlsModelAccessor getTestModel() {
 		return ModelDataUtils.getModelDataInstance(getClass(), TEST_DATA)
 				.findTypedModel(DerAcControlsModelAccessor.class);
 	}
 
-	private RecordingConnection writableConnection() {
-		final int[] data = ModelDataUtils.parseTestData(getClass(), TEST_DATA);
-		final IntShortMap map = new IntShortMap(data.length);
-		for ( int i = 0; i < data.length; i++ ) {
-			map.putValue(i, data[i]);
-		}
-		return new RecordingConnection(map);
+	private RecordingModbusConnection writableConnection() {
+		return ModelDataUtils.getWritableModbusConnection(getClass(), TEST_DATA);
 	}
 
 	private static DerAcControlsModelAccessor discoverModel(ModbusConnection conn) {
@@ -210,14 +185,14 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 	@Test
 	public void writePowerFactor_singleRequest() throws IOException {
 		// GIVEN
-		RecordingConnection conn = writableConnection();
+		RecordingModbusConnection conn = writableConnection();
 		DerAcControlsModelAccessor model = discoverModel(conn);
 
 		// WHEN
 		model.setPowerFactorWhenInjecting(conn, 0.95f, DerPowerFactorExcitation.OverExcited);
 
 		// THEN
-		assertThat("Power factor and excitation written together in one request", conn.writes,
+		assertThat("Power factor and excitation written together in one request", conn.getWrites(),
 				is(equalTo(List.of(List.of(BLOCK_ADDRESS + 57, 2)))));
 
 		DerAcControlsModelAccessor device = discoverModel(conn);
@@ -231,7 +206,7 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 	@Test
 	public void writeReversionPowerFactors() throws IOException {
 		// GIVEN
-		RecordingConnection conn = writableConnection();
+		RecordingModbusConnection conn = writableConnection();
 		DerAcControlsModelAccessor model = discoverModel(conn);
 
 		// WHEN
@@ -240,7 +215,7 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 		model.setReversionPowerFactorWhenAbsorbing(conn, 0.8f, DerPowerFactorExcitation.OverExcited);
 
 		// THEN
-		assertThat("Each pair written in one request", conn.writes,
+		assertThat("Each pair written in one request", conn.getWrites(),
 				is(equalTo(List.of(List.of(BLOCK_ADDRESS + 59, 2), List.of(BLOCK_ADDRESS + 61, 2),
 						List.of(BLOCK_ADDRESS + 63, 2)))));
 
@@ -263,7 +238,7 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 	@Test
 	public void writePowerFactor_outOfRange() throws IOException {
 		// GIVEN
-		RecordingConnection conn = writableConnection();
+		RecordingModbusConnection conn = writableConnection();
 		DerAcControlsModelAccessor model = discoverModel(conn);
 
 		// WHEN
@@ -275,13 +250,13 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 		}
 
 		// THEN
-		assertThat("Nothing written", conn.writes, is(equalTo(List.of())));
+		assertThat("Nothing written", conn.getWrites(), is(equalTo(List.of())));
 	}
 
 	@Test
 	public void writeSettings() throws IOException {
 		// GIVEN
-		RecordingConnection conn = writableConnection();
+		RecordingModbusConnection conn = writableConnection();
 		DerAcControlsModelAccessor model = discoverModel(conn);
 
 		// WHEN
@@ -374,7 +349,7 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 	@Test
 	public void writeReactivePowerSetpoint_scaleFactorNotImplemented() throws IOException {
 		// GIVEN
-		RecordingConnection conn = writableConnection();
+		RecordingModbusConnection conn = writableConnection();
 		DerAcControlsModelAccessor model = discoverModel(conn);
 
 		// WHEN
@@ -386,7 +361,7 @@ public class DerAcControlsModelAccessorImpl_704_01Tests {
 		}
 
 		// THEN
-		assertThat("Nothing written", conn.writes, is(equalTo(List.of())));
+		assertThat("Nothing written", conn.getWrites(), is(equalTo(List.of())));
 	}
 
 }

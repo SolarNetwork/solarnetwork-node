@@ -110,7 +110,7 @@ public class DerDcMeasurementModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable Integer getPortCount() {
-		return getIntegerValue(DerDcMeasurementModelRegister.PortCount);
+		return getIntegerValue(DerDcMeasurementModelRegister.NumberOfPorts);
 	}
 
 	@Override

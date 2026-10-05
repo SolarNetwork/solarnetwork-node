@@ -47,10 +47,10 @@ public enum DerModelId implements ModelId {
 	AcControls(704, "DER AC controls", DerAcControlsModelAccessor.class),
 
 	/** DER volt-var. */
-	VoltVar(705, "DER volt-var"),
+	VoltVar(705, "DER volt-var", DerVoltVarModelAccessor.class),
 
 	/** DER volt-watt. */
-	VoltWatt(706, "DER volt-watt"),
+	VoltWatt(706, "DER volt-watt", DerVoltWattModelAccessor.class),
 
 	/** DER trip low voltage. */
 	TripLowVoltage(707, "DER trip low voltage"),
@@ -68,7 +68,7 @@ public enum DerModelId implements ModelId {
 	FrequencyDroop(711, "DER frequency droop"),
 
 	/** DER watt-var. */
-	WattVar(712, "DER watt-var"),
+	WattVar(712, "DER watt-var", DerWattVarModelAccessor.class),
 
 	/** DER storage capacity. */
 	StorageCapacity(713, "DER storage capacity", DerStorageCapacityModelAccessor.class),
