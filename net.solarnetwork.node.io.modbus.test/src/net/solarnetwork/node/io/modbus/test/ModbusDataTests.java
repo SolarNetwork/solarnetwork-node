@@ -35,18 +35,20 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.util.ByteUtils;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * Test cases for the {@link ModbusData} class.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModbusDataTests {
 
@@ -480,5 +482,63 @@ public class ModbusDataTests {
 				allOf(hasEntry(0, 0xABCD), hasEntry(1, 0xFEDC), hasEntry(2, 0x1122), hasEntry(3, 0x3456),
 						hasEntry(9, 0x9999), hasEntry(1000, 0xFF01), hasEntry(1001, 0xFF02),
 						hasEntry(1002, 0xFF03), hasEntry(1003, 0xFF04), hasEntry(1004, 0xFF05)));
+	}
+
+	@Test
+	public void unsignedDataMap_concurrentWrites() throws InterruptedException {
+		// GIVEN
+		final ModbusData d = new ModbusData();
+		final IntShortMap regs = d.dataRegisters();
+		final int count = 64;
+		final AtomicBoolean writing = new AtomicBoolean(true);
+		final Thread writer = new Thread(() -> {
+			try {
+				for ( int round = 0; round < 5000; round++ ) {
+					// hold the register lock, as performUpdates() does; adding the registers in
+					// descending order shifts every register already added
+					synchronized ( regs ) {
+						regs.clear();
+						for ( int addr = count - 1; addr >= 0; addr-- ) {
+							regs.putValue(addr, addr);
+						}
+					}
+				}
+			} finally {
+				writing.set(false);
+			}
+		});
+
+		// WHEN
+		int failures = 0;
+		String firstFailure = null;
+		writer.start();
+		while ( writing.get() ) {
+			String failure = null;
+			try {
+				Map<Integer, Integer> copy = d.getUnsignedDataMap();
+				if ( !copy.isEmpty() ) {
+					boolean complete = (copy.size() == count);
+					for ( int addr = 0; complete && addr < count; addr++ ) {
+						complete = Integer.valueOf(addr).equals(copy.get(addr));
+					}
+					if ( !complete ) {
+						failure = "Incomplete copy: " + copy;
+					}
+				}
+			} catch ( RuntimeException e ) {
+				failure = e.toString();
+			}
+			if ( failure != null ) {
+				failures++;
+				if ( firstFailure == null ) {
+					firstFailure = failure;
+				}
+			}
+		}
+		writer.join();
+
+		// THEN
+		assertThat("Copies made during writes are complete; first failure: " + firstFailure, failures,
+				is(equalTo(0)));
 	}
 }

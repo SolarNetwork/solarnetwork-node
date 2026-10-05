@@ -53,7 +53,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  *
  * @author matt
- * @version 3.2
+ * @version 3.3
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -1194,14 +1194,20 @@ public class ModbusData implements DataAccessor {
 	}
 
 	/**
-	 * Get a read-only Map view of all modbus registers as unsigned integer
-	 * values.
+	 * Get a copy of all modbus registers as unsigned integer values.
+	 *
+	 * <p>
+	 * This method provides a thread-safe way to get a copy of the current data.
+	 * </p>
 	 *
 	 * @return the data map, never {@code null}
 	 * @since 1.7
 	 */
 	public final Map<Integer, Integer> getUnsignedDataMap() {
-		final IntShortMap data = (IntShortMap) this.dataRegisters.clone();
+		final IntShortMap data;
+		synchronized ( dataRegisters ) {
+			data = (IntShortMap) dataRegisters.clone();
+		}
 		return data.unsignedMap();
 	}
 
