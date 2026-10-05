@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.sunspec.der;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.function.IntFunction;
 import org.jspecify.annotations.Nullable;
@@ -33,6 +35,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Base implementation of {@link DerCurveModelAccessor}.
@@ -70,6 +73,14 @@ public abstract class BaseDerCurveModelAccessor extends BaseModelAccessor
 	 * @return the number of registers
 	 */
 	protected abstract int getCurveSettingsLength();
+
+	/**
+	 * Get the curve settings registers.
+	 *
+	 * @return the registers that precede the curve points, relative to the
+	 *         start of a curve
+	 */
+	protected abstract Collection<? extends ModbusReference> getCurveSettingsRegisters();
 
 	/**
 	 * Get the curve read-only register.
@@ -119,6 +130,47 @@ public abstract class BaseDerCurveModelAccessor extends BaseModelAccessor
 	public int getRepeatingBlockInstanceLength() {
 		final Integer pointCount = getCurvePointCount();
 		return (pointCount != null ? getCurveSettingsLength() + pointCount * pointLength() : 0);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The layout of the curves depends on the curve count and point count in
+	 * the fixed block. Until those have been read, or if they do not match the
+	 * model length, this implementation returns a single range for all the
+	 * curves, so the fixed block is read before them.
+	 * </p>
+	 */
+	@Override
+	public List<IntRange> getUnsplittableAddressRanges() {
+		final List<IntRange> result = new ArrayList<>(8);
+		addMultiRegisterAddressRanges(result, getBlockAddress(),
+				EnumSet.range(DerCurveModelRegister.Enabled, DerCurveModelRegister.ReversionCurve));
+		addMultiRegisterAddressRanges(result, getBlockAddress(), getFixedBlockRegisters());
+		final int curvesAddress = getBlockAddress() + getFixedBlockLength();
+		final int curvesLength = getModelLength() - getFixedBlockLength();
+		if ( curvesLength < 1 ) {
+			return result;
+		}
+		final Integer curveCount = getCurveCount();
+		final Integer pointCount = getCurvePointCount();
+		final int curveLength = getRepeatingBlockInstanceLength();
+		if ( curveCount == null || pointCount == null || curveCount < 1 || pointCount < 1
+				|| curveCount * curveLength != curvesLength ) {
+			result.add(new IntRange(curvesAddress, curvesAddress + curvesLength - 1));
+			return result;
+		}
+		final List<ModbusReference> pointRegisters = List.of(getPointXRegister(), getPointYRegister());
+		for ( int i = 0; i < curveCount; i++ ) {
+			final int curveAddress = curvesAddress + i * curveLength;
+			addMultiRegisterAddressRanges(result, curveAddress, getCurveSettingsRegisters());
+			for ( int j = 0; j < pointCount; j++ ) {
+				addMultiRegisterAddressRanges(result,
+						curveAddress + getCurveSettingsLength() + j * pointLength(), pointRegisters);
+			}
+		}
+		return result;
 	}
 
 	@Override

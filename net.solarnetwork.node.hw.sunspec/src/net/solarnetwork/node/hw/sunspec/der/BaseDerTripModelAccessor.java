@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.sunspec.der;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
@@ -32,6 +34,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Base implementation of {@link DerTripModelAccessor}.
@@ -99,6 +102,53 @@ public abstract class BaseDerTripModelAccessor extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return (getCurvePointCount() != null ? 1 + 3 * curveLength() : 0);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(DerTripModelRegister.Enabled, DerTripModelRegister.ScaleFactorTime);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The layout of the curve sets depends on the curve set count and point
+	 * count in the fixed block. Until those have been read, or if they do not
+	 * match the model length, this implementation returns a single range for
+	 * all the curve sets, so the fixed block is read before them.
+	 * </p>
+	 */
+	@Override
+	public List<IntRange> getUnsplittableAddressRanges() {
+		final List<IntRange> result = new ArrayList<>(8);
+		addMultiRegisterAddressRanges(result, getBlockAddress(), getFixedBlockRegisters());
+		final int setsAddress = getBlockAddress() + FIXED_BLOCK_LENGTH;
+		final int setsLength = getModelLength() - FIXED_BLOCK_LENGTH;
+		if ( setsLength < 1 ) {
+			return result;
+		}
+		final Integer setCount = getCurveSetCount();
+		final Integer pointCount = getCurvePointCount();
+		final int setLength = getRepeatingBlockInstanceLength();
+		if ( setCount == null || pointCount == null || setCount < 1 || pointCount < 1
+				|| setCount * setLength != setsLength ) {
+			result.add(new IntRange(setsAddress, setsAddress + setsLength - 1));
+			return result;
+		}
+		final List<ModbusReference> pointRegisters = List.of(pointXRegister, pointTimeRegister);
+		for ( int i = 0; i < setCount; i++ ) {
+			// each set has a read-only register, then its three curves
+			for ( int j = 0; j < 3; j++ ) {
+				// each curve has an active point count register, then its points
+				final int pointsAddress = setsAddress + i * setLength + 1 + j * curveLength() + 1;
+				for ( int k = 0; k < pointCount; k++ ) {
+					addMultiRegisterAddressRanges(result, pointsAddress + k * pointLength(),
+							pointRegisters);
+				}
+			}
+		}
+		return result;
 	}
 
 	@Override

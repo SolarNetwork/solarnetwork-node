@@ -22,10 +22,13 @@
 
 package net.solarnetwork.node.hw.sunspec.der;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link DerStorageCapacityModelAccessor}.
@@ -76,6 +79,11 @@ public class DerStorageCapacityModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getFixedBlockLength() {
 		return FIXED_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.allOf(DerStorageCapacityModelRegister.class);
 	}
 
 	@Override

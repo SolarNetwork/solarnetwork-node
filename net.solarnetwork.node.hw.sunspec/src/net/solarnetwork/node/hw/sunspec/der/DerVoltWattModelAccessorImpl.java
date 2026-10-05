@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.der;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -88,6 +90,18 @@ public class DerVoltWattModelAccessorImpl extends BaseDerCurveModelAccessor
 	@Override
 	protected int getCurveSettingsLength() {
 		return CURVE_SETTINGS_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getCurveSettingsRegisters() {
+		return EnumSet.range(DerVoltWattModelRegister.CurveDependentReference,
+				DerVoltWattModelRegister.CurveReadOnly);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(DerVoltWattModelRegister.ScaleFactorVoltage,
+				DerVoltWattModelRegister.ScaleFactorResponseTime);
 	}
 
 	@Override

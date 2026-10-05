@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.der;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -33,6 +35,7 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link DerAcMeasurementModelAccessor}.
@@ -83,6 +86,11 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getFixedBlockLength() {
 		return FIXED_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.allOf(DerAcMeasurementModelRegister.class);
 	}
 
 	@Override

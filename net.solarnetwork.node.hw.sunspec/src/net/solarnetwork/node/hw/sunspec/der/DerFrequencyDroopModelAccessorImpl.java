@@ -24,12 +24,15 @@ package net.solarnetwork.node.hw.sunspec.der;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link DerFrequencyDroopModelAccessor}.
@@ -88,6 +91,18 @@ public class DerFrequencyDroopModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return REPEATING_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(DerFrequencyDroopModelRegister.Enabled,
+				DerFrequencyDroopModelRegister.ScaleFactorResponseTime);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return EnumSet.range(DerFrequencyDroopModelRegister.ControlOverFrequencyDeadband,
+				DerFrequencyDroopModelRegister.ControlReadOnly);
 	}
 
 	@Override

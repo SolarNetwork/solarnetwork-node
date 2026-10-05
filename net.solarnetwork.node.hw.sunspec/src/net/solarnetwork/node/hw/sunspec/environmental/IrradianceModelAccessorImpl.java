@@ -22,16 +22,19 @@
 
 package net.solarnetwork.node.hw.sunspec.environmental;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link IrradianceModelAccessor}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.2
  */
 public class IrradianceModelAccessorImpl extends BaseModelAccessor implements IrradianceModelAccessor {
@@ -75,6 +78,11 @@ public class IrradianceModelAccessorImpl extends BaseModelAccessor implements Ir
 	@Override
 	public int getFixedBlockLength() {
 		return FIXED_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.allOf(IrradianceModelRegister.class);
 	}
 
 	@Override

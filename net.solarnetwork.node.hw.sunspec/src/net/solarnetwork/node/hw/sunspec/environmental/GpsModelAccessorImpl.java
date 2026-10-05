@@ -28,10 +28,13 @@ import java.time.ZoneOffset;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Collection;
+import java.util.EnumSet;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.util.NumberUtils;
 
 /**
@@ -89,6 +92,11 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 	@Override
 	public int getFixedBlockLength() {
 		return FIXED_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.allOf(GpsModelRegister.class);
 	}
 
 	@Override

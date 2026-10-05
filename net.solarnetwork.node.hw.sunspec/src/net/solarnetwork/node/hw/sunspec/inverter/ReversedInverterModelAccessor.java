@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.time.Instant;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -31,13 +32,14 @@ import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
+import net.solarnetwork.util.IntRange;
 
 /**
  * * A "reversed" inverter model accessor that swaps import/export values.
  *
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 3.1
  */
 public class ReversedInverterModelAccessor implements InverterModelAccessor {
@@ -170,6 +172,21 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	@Override
 	public int getFixedBlockLength() {
 		return delegate.getFixedBlockLength();
+	}
+
+	@Override
+	public IntRange[] getAddressRanges(int maxRangeLength) {
+		return delegate.getAddressRanges(maxRangeLength);
+	}
+
+	@Override
+	public IntRange getAddressRange(int address, int maxRangeLength) {
+		return delegate.getAddressRange(address, maxRangeLength);
+	}
+
+	@Override
+	public List<IntRange> getUnsplittableAddressRanges() {
+		return delegate.getUnsplittableAddressRanges();
 	}
 
 	@Override

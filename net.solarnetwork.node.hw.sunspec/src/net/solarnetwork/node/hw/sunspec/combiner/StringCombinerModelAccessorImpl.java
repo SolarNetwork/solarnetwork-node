@@ -23,7 +23,9 @@
 package net.solarnetwork.node.hw.sunspec.combiner;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -32,6 +34,7 @@ import net.solarnetwork.node.hw.sunspec.GenericModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Data access object for an string combiner model.
@@ -97,6 +100,18 @@ public class StringCombinerModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return REPEATING_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(StringCombinerModelRegister.ScaleFactorDcCurrent,
+				StringCombinerModelRegister.ScaleFactorInputDcCharge);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return EnumSet.range(StringCombinerModelRegister.InputId,
+				StringCombinerModelRegister.InputDcChargeV2);
 	}
 
 	@Override

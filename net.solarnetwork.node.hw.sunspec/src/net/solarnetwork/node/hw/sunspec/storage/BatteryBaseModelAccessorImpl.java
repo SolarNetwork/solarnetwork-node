@@ -25,6 +25,8 @@ package net.solarnetwork.node.hw.sunspec.storage;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
@@ -33,6 +35,7 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.der.DerLocalRemoteControl;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link BatteryBaseModelAccessor}.
@@ -85,6 +88,11 @@ public class BatteryBaseModelAccessorImpl extends BaseModelAccessor implements B
 	@Override
 	public int getFixedBlockLength() {
 		return FIXED_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.allOf(BatteryBaseModelRegister.class);
 	}
 
 	@Override

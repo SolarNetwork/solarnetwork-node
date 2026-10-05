@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.der;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -30,6 +32,7 @@ import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link DerDcMeasurementModelAccessor}.
@@ -88,6 +91,18 @@ public class DerDcMeasurementModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return REPEATING_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(DerDcMeasurementModelRegister.AlarmedPortsBitmask,
+				DerDcMeasurementModelRegister.ScaleFactorTemperature);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return EnumSet.range(DerDcMeasurementModelRegister.PortType,
+				DerDcMeasurementModelRegister.PortAlarmsBitmask);
 	}
 
 	@Override

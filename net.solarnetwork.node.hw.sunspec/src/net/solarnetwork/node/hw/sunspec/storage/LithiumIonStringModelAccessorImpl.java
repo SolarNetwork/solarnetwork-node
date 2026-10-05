@@ -25,6 +25,8 @@ package net.solarnetwork.node.hw.sunspec.storage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -33,6 +35,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link LithiumIonStringModelAccessor}.
@@ -91,6 +94,18 @@ public class LithiumIonStringModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return REPEATING_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(LithiumIonStringModelRegister.StringIndex,
+				LithiumIonStringModelRegister.ScaleFactorModuleTemperature);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return EnumSet.range(LithiumIonStringModelRegister.ModuleCellCount,
+				LithiumIonStringModelRegister.ModuleAverageCellTemperature);
 	}
 
 	@Override

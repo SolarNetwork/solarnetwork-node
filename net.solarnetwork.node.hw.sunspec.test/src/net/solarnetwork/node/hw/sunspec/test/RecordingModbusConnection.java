@@ -24,19 +24,21 @@ package net.solarnetwork.node.hw.sunspec.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapModbusConnection;
 import net.solarnetwork.util.IntShortMap;
 
 /**
- * A writable static data Modbus connection that records the write requests made
- * to it.
+ * A writable static data Modbus connection that records the read and write
+ * requests made to it.
  *
  * @author matt
  * @version 1.0
  */
 public class RecordingModbusConnection extends StaticDataMapModbusConnection {
 
+	private final List<List<Integer>> reads = new ArrayList<>();
 	private final List<List<Integer>> writes = new ArrayList<>();
 
 	/**
@@ -50,6 +52,18 @@ public class RecordingModbusConnection extends StaticDataMapModbusConnection {
 	}
 
 	@Override
+	public short[] readWords(ModbusReadFunction function, int address, int count) {
+		reads.add(List.of(address, count));
+		return super.readWords(function, address, count);
+	}
+
+	@Override
+	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
+		reads.add(List.of(address, count));
+		return super.readWordsUnsigned(function, address, count);
+	}
+
+	@Override
 	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
 		writes.add(List.of(address, values.length));
 		super.writeWords(function, address, values);
@@ -59,6 +73,16 @@ public class RecordingModbusConnection extends StaticDataMapModbusConnection {
 	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
 		writes.add(List.of(address, values.length));
 		super.writeWords(function, address, values);
+	}
+
+	/**
+	 * Get the read requests made to this connection.
+	 *
+	 * @return the address and register count of each read request, in the order
+	 *         they were made
+	 */
+	public List<List<Integer>> getReads() {
+		return reads;
 	}
 
 	/**

@@ -1,0 +1,99 @@
+# Generated from the SunSpec JSON model definitions, with the repeating group counts of each
+# capture: the address ranges of the points that span more than one register, for each model
+# with an accessor in each test capture, loaded from address 0. Points beyond the end of a
+# model, where a device implements a shorter model than the SunSpec definition, are left out.
+# <capture resource> <model ID> <model base address> <point ranges>
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-401-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-401-01.txt 401 70 77-78,79-80,82-83,87-88,89-90,92-93,95-96,97-98,100-101,103-104,105-106,108-109
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-402-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-402-01.txt 103 70 94-95,110-111,112-113,114-115,116-117,118-119,120-121
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-402-01.txt 402 122 131-132,133-134,136-137,142-143,145-146,147-148,150-151,154-155,158-159,160-161,163-164,167-168,171-172,173-174,176-177,180-181,184-185,186-187,189-190,193-194,197-198,199-200,202-203,206-207,210-211,212-213,215-216,219-220,223-224,225-226,228-229,232-233,236-237,238-239,241-242,245-246
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-402-02.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-402-02.txt 402 70 79-80,81-82,84-85,90-91,93-94,95-96,98-99,102-103,107-108,109-110,112-113,116-117,121-122,123-124,126-127,130-131
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-403-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-403-01.txt 403 70 77-78,79-80,82-83,89-90,91-92,94-95,97-98,99-100,102-103
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-404-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/combiner/test/test-data-404-01.txt 404 70 79-80,81-82,84-85,90-91,98-99,100-101,103-104,107-108,112-113,114-115,117-118,121-122
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 202 70 108-109,110-111,112-113,114-115,116-117,118-119,120-121,122-123,125-126,127-128,129-130,131-132,133-134,135-136,137-138,139-140,142-143,144-145,146-147,148-149,150-151,152-153,154-155,156-157,158-159,160-161,162-163,164-165,166-167,168-169,170-171,172-173,175-176
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 701 177 183-184,185-186,194-195,196-199,200-203,204-207,208-211,225-228,229-232,233-236,237-240,248-251,252-255,256-259,260-263,271-274,275-278,279-282,283-286,288-289,300-331
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 702 332 355-356
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 703 384 389-390,391-392,393-394,395-396,397-398,399-400
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 704 403 407-408,409-410,413-414,415-416,421-422,423-424,427-428,429-430,434-435,436-437,441-442,443-444,448-449,450-451
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 705 470 477-478,479-480,492-493,510-511,528-529
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 706 539 546-547,548-549,556-557,565-566,574-575
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 707 581 593-594,596-597,599-600,602-603,605-606,608-609,611-612,615-616,618-619,621-622,624-625,627-628,630-631,633-634,637-638,640-641,643-644,646-647,649-650,652-653,655-656,660-661,663-664,666-667,669-670,672-673,675-676,678-679,682-683,685-686,688-689,691-692,694-695,697-698,700-701,704-705,707-708,710-711,713-714,716-717,719-720,722-723
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 708 724 736-737,739-740,742-743,745-746,748-749,752-753,755-756,758-759,761-762,764-765,768-769,771-772,774-775,777-778,780-781,785-786,788-789,791-792,794-795,797-798,801-802,804-805,807-808,810-811,813-814,817-818,820-821,823-824,826-827,829-830
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 709 831 842-843,844-845,846-847,848-849,850-851,852-853,854-855,856-857,858-859,860-861,863-864,865-866,867-868,869-870,871-872,873-874,875-876,877-878,879-880,881-882,884-885,886-887,888-889,890-891,892-893,894-895,896-897,898-899,900-901,902-903,906-907,908-909,910-911,912-913,914-915,916-917,918-919,920-921,922-923,924-925,927-928,929-930,931-932,933-934,935-936,937-938,939-940,941-942,943-944,945-946,948-949,950-951,952-953,954-955,956-957,958-959,960-961,962-963,964-965,966-967
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 710 968 979-980,981-982,983-984,985-986,987-988,989-990,991-992,993-994,995-996,997-998,1000-1001,1002-1003,1004-1005,1006-1007,1008-1009,1010-1011,1012-1013,1014-1015,1016-1017,1018-1019,1021-1022,1023-1024,1025-1026,1027-1028,1029-1030,1031-1032,1033-1034,1035-1036,1037-1038,1039-1040,1043-1044,1045-1046,1047-1048,1049-1050,1051-1052,1053-1054,1055-1056,1057-1058,1059-1060,1061-1062,1064-1065,1066-1067,1068-1069,1070-1071,1072-1073,1074-1075,1076-1077,1078-1079,1080-1081,1082-1083,1085-1086,1087-1088,1089-1090,1091-1092,1093-1094,1095-1096,1097-1098,1099-1100,1101-1102,1103-1104
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 711 1105 1111-1112,1113-1114,1119-1120,1121-1122,1125-1126,1129-1130,1131-1132,1135-1136,1139-1140,1141-1142,1145-1146
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 712 1149 1156-1157,1158-1159
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 713 1211
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 714 1220 1222-1223,1227-1230,1231-1234,1242-1249,1253-1256,1257-1260,1263-1264
+/net/solarnetwork/node/hw/sunspec/der/test/test-data-der-01.txt 715 1265 1268-1269,1270-1271
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-304-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-304-01.txt 304 70 72-73,74-75,76-77,78-79,80-81,82-83
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-305-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-305-01.txt 305 70 72-77,78-81,82-101,102-103,104-105,106-107
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-306-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-307-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-307-01.txt 307 70
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-307-01.txt 302 83
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-307-01.txt 303 90
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-308-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/environmental/test/test-data-308-01.txt 308 70
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-01.txt 101 69 93-94,109-110,111-112,113-114,115-116,117-118,119-120
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-01.txt 120 121
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-01.txt 121 149
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-01.txt 122 181 186-189,190-193,194-197,198-201,202-205,206-209,214-215,216-217,218-221,222-223
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-01.txt 123 227
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-02.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-02.txt 101 69 93-94,109-110,111-112,113-114,115-116,117-118,119-120
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-02.txt 120 121
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-02.txt 121 149
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-02.txt 122 181 186-189,190-193,194-197,198-201,202-205,206-209,214-215,216-217,218-221,222-223
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-101-02.txt 123 227
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-01.txt 103 69 93-94,109-110,111-112,113-114,115-116,117-118,119-120
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-02.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-02.txt 103 69 93-94,109-110,111-112,113-114,115-116,117-118,119-120
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-03.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-03.txt 103 69 93-94,109-110,111-112,113-114,115-116,117-118,119-120
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-04.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-04.txt 103 69 93-94,109-110,111-112,113-114,115-116,117-118,119-120
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 103 185 209-210,225-226,227-228,229-230,231-232,233-234,235-236
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 120 237
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 121 265
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 122 297 302-305,306-309,310-313,314-317,318-321,322-325,330-331,332-333,334-337,338-339
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 123 343
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 124 369
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-103-05.txt 160 621 627-628,632-639,643-644,645-646,649-650,652-659,663-664,665-666,669-670,672-679,683-684,685-686,689-690,692-699,703-704,705-706,709-710,712-719,723-724,725-726,729-730,732-739,743-744,745-746,749-750
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 113 69 71-72,73-74,75-76,77-78,79-80,81-82,83-84,85-86,87-88,89-90,91-92,93-94,95-96,97-98,99-100,101-102,103-104,105-106,107-108,109-110,111-112,113-114,115-116,119-120,121-122,123-124,125-126,127-128,129-130
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 120 131
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 121 159
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 122 191 196-199,200-203,204-207,208-211,212-215,216-219,224-225,226-227,228-231,232-233
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 123 237
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-113-01.txt 160 263 269-270,274-281,285-286,287-288,291-292,294-301,305-306,307-308,311-312
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-125-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/inverter/test/test-data-125-01.txt 125 70
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-203-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-203-01.txt 203 69 107-108,109-110,111-112,113-114,115-116,117-118,119-120,121-122,124-125,126-127,128-129,130-131,132-133,134-135,136-137,138-139,141-142,143-144,145-146,147-148,149-150,151-152,153-154,155-156,157-158,159-160,161-162,163-164,165-166,167-168,169-170,171-172,174-175
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-203-02.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-203-02.txt 203 69 107-108,109-110,111-112,113-114,115-116,117-118,119-120,121-122,124-125,126-127,128-129,130-131,132-133,134-135,136-137,138-139,141-142,143-144,145-146,147-148,149-150,151-152,153-154,155-156,157-158,159-160,161-162,163-164,165-166,167-168,169-170,171-172,174-175
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-203-03.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-203-03.txt 203 69 107-108,109-110,111-112,113-114,115-116,117-118,119-120,121-122,124-125,126-127,128-129,130-131,132-133,134-135,136-137,138-139,141-142,143-144,145-146,147-148,149-150,151-152,153-154,155-156,157-158,159-160,161-162,163-164,165-166,167-168,169-170,171-172,174-175
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-204-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/meter/test/test-data-204-01.txt 204 69 107-108,109-110,111-112,113-114,115-116,117-118,119-120,121-122,124-125,126-127,128-129,130-131,132-133,134-135,136-137,138-139,141-142,143-144,145-146,147-148,149-150
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-802-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-802-01.txt 802 70 84-85,94-95,96-97,98-99,100-101,102-103
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-803-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-803-01.txt 803 70 99-100,116-117,118-119,120-121,122-123,124-125,131-132,148-149,150-151,152-153,154-155,156-157
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-804-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-804-01.txt 804 70 74-75,80-81,96-97,98-99,100-101,102-103,104-105
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-805-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/storage/test/test-data-805-01.txt 805 70 78-79,92-107,116-117,120-121,124-125,128-129
+/net/solarnetwork/node/hw/sunspec/test/test-data-01.txt 1 2 4-19,20-35,36-43,44-51,52-67
+/net/solarnetwork/node/hw/sunspec/test/test-data-01.txt 203 69 107-108,109-110,111-112,113-114,115-116,117-118,119-120,121-122,124-125,126-127,128-129,130-131,132-133,134-135,136-137,138-139,141-142,143-144,145-146,147-148,149-150,151-152,153-154,155-156,157-158,159-160,161-162,163-164,165-166,167-168,169-170,171-172,174-175

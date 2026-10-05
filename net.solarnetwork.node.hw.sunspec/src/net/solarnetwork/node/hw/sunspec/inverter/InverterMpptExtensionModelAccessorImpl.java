@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -31,6 +33,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Data access object for an inverter MPPT extensions model.
@@ -89,6 +92,18 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return REPEATING_BLOCK_LENGTH;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.range(InverterMpptExtensionModelRegister.ScaleFactorDcCurrent,
+				InverterMpptExtensionModelRegister.TimestampPeriod);
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return EnumSet.range(InverterMpptExtensionModelRegister.ModuleInputId,
+				InverterMpptExtensionModelRegister.ModuleEventsBitmask);
 	}
 
 	@Override

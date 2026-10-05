@@ -33,8 +33,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
@@ -45,6 +48,7 @@ import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Base class for {@link ModelAccessor} implementations.
@@ -118,6 +122,90 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	public int getModelLength() {
 		Number n = data.getNumber(ModelRegister.ModelLength, baseAddress);
 		return (n != null ? n.intValue() : 0);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * This implementation returns the ranges of the multi-register
+	 * {@link #getFixedBlockRegisters()} relative to the block address, and of
+	 * the multi-register {@link #getRepeatingBlockRegisters()} relative to each
+	 * repeating block instance.
+	 * </p>
+	 *
+	 * @since 2.1
+	 */
+	@Override
+	public List<IntRange> getUnsplittableAddressRanges() {
+		final List<IntRange> result = new ArrayList<>(8);
+		addMultiRegisterAddressRanges(result, blockAddress, getFixedBlockRegisters());
+		final Collection<? extends ModbusReference> instanceRegisters = getRepeatingBlockRegisters();
+		final int instanceLength = getRepeatingBlockInstanceLength();
+		if ( !instanceRegisters.isEmpty() && instanceLength > 0 ) {
+			final int count = getRepeatingBlockInstanceCount();
+			int address = blockAddress + getFixedBlockLength();
+			for ( int i = 0; i < count; i++, address += instanceLength ) {
+				addMultiRegisterAddressRanges(result, address, instanceRegisters);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Get the registers of the model fixed block.
+	 *
+	 * <p>
+	 * These are used by {@link #getUnsplittableAddressRanges()}.
+	 * </p>
+	 *
+	 * @return the registers, relative to the block address, never {@code null};
+	 *         this implementation returns an empty list
+	 * @since 2.1
+	 */
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Get the registers of each model repeating block instance.
+	 *
+	 * <p>
+	 * These are used by {@link #getUnsplittableAddressRanges()}, with the
+	 * {@link #getRepeatingBlockInstanceLength()} and
+	 * {@link #getRepeatingBlockInstanceCount()} values.
+	 * </p>
+	 *
+	 * @return the registers, relative to the start of a repeating block
+	 *         instance, never {@code null}; this implementation returns an
+	 *         empty list
+	 * @since 2.1
+	 */
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Add the address ranges of registers that span more than one register to a
+	 * list.
+	 *
+	 * @param ranges
+	 *        the list to add the ranges to
+	 * @param address
+	 *        the address the register addresses are relative to
+	 * @param refs
+	 *        the registers
+	 * @since 2.1
+	 */
+	protected static void addMultiRegisterAddressRanges(List<IntRange> ranges, int address,
+			Iterable<? extends ModbusReference> refs) {
+		for ( ModbusReference ref : refs ) {
+			final int len = ref.getWordLength();
+			if ( len > 1 ) {
+				final int start = address + ref.getAddress();
+				ranges.add(new IntRange(start, start + len - 1));
+			}
+		}
 	}
 
 	/**

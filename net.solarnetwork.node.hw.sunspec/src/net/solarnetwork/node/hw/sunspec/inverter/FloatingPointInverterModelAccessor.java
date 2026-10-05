@@ -24,6 +24,9 @@ package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.time.Instant;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -346,6 +349,16 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
+		public IntRange getAddressRange(int address, int maxRangeLength) {
+			return FloatingPointInverterModelAccessor.this.getAddressRange(address, maxRangeLength);
+		}
+
+		@Override
+		public List<IntRange> getUnsplittableAddressRanges() {
+			return FloatingPointInverterModelAccessor.this.getUnsplittableAddressRanges();
+		}
+
+		@Override
 		public @Nullable Instant getDataTimestamp() {
 			return FloatingPointInverterModelAccessor.this.getDataTimestamp();
 		}
@@ -638,6 +651,11 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 			return FloatingPointInverterModelAccessor.this.getDeviceInfo();
 		}
 
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
+		return EnumSet.allOf(FloatingPointInverterModelRegister.class);
 	}
 
 }

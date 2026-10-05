@@ -23,16 +23,19 @@
 package net.solarnetwork.node.hw.sunspec.environmental;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Implementation of {@link BomTemperatureModelAccessor}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.2
  */
 public class BomTemperatureModelAccessorImpl extends BaseModelAccessor
@@ -79,6 +82,11 @@ public class BomTemperatureModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public int getRepeatingBlockInstanceLength() {
 		return 1;
+	}
+
+	@Override
+	protected Collection<? extends ModbusReference> getRepeatingBlockRegisters() {
+		return EnumSet.allOf(BomTemperatureModelRegister.class);
 	}
 
 	@Override

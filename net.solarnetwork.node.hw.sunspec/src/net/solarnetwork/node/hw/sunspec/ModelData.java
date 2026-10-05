@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sunspec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -323,6 +324,23 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * This implementation returns the ranges of the common model strings.
+	 * </p>
+	 *
+	 * @since 2.5
+	 */
+	@Override
+	public List<IntRange> getUnsplittableAddressRanges() {
+		final List<IntRange> result = new ArrayList<>(5);
+		BaseModelAccessor.addMultiRegisterAddressRanges(result, blockAddress,
+				EnumSet.allOf(CommonModelRegister.class));
+		return result;
+	}
+
+	/**
 	 * Update a mutable data object with data read from a Modbus connection,
 	 * using the {@link ModbusReadFunction#ReadHoldingRegister} function.
 	 *
@@ -375,6 +393,37 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	}
 
 	/**
+	 * Update a mutable data object with the data of a model, read from a Modbus
+	 * connection one address range at a time.
+	 *
+	 * <p>
+	 * Each range is read before the next one is chosen with
+	 * {@link ModelAccessor#getAddressRange(int, int)}, so the ranges can be
+	 * based on data read from earlier ranges, such as the number of repeating
+	 * block instances or points, and avoid splitting multi-register values
+	 * across requests.
+	 * </p>
+	 *
+	 * @param conn
+	 *        the connection
+	 * @param m
+	 *        the mutable data
+	 * @param accessor
+	 *        the model to read
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
+	private void updateModelData(ModbusConnection conn, MutableModbusData m, ModelAccessor accessor)
+			throws IOException {
+		final int end = accessor.getBlockAddress() + accessor.getModelLength();
+		for ( int address = accessor.getBlockAddress(); address < end; ) {
+			final IntRange range = accessor.getAddressRange(address, maxReadWordsCount);
+			updateData(conn, m, new IntRange[] { range });
+			address = range.getMax() + 1;
+		}
+	}
+
+	/**
 	 * Read the common model properties from the device.
 	 *
 	 * @param conn
@@ -390,7 +439,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 				// load in our model header to find the common model length (65/66)
 				short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, baseAddress, 2);
 				m.saveDataArray(data, baseAddress);
-				updateData(conn, m, getAddressRanges(maxReadWordsCount));
+				updateModelData(conn, m, ModelData.this);
 				return true;
 			}
 		});
@@ -467,7 +516,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				for ( ModelAccessor accessor : accessors ) {
-					updateData(conn, m, accessor.getAddressRanges(maxReadWordsCount));
+					updateModelData(conn, m, accessor);
 				}
 				return true;
 			}
@@ -500,7 +549,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				for ( ModelAccessor accessor : accessors ) {
-					updateData(conn, m, accessor.getAddressRanges(maxReadWordsCount));
+					updateModelData(conn, m, accessor);
 				}
 				return true;
 			}

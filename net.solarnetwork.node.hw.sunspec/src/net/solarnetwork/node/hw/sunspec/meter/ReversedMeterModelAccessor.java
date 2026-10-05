@@ -23,18 +23,20 @@
 package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
+import net.solarnetwork.util.IntRange;
 
 /**
  * A "reversed" meter model accessor that swaps import/export values.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.3
  */
 public class ReversedMeterModelAccessor implements MeterModelAccessor {
@@ -172,6 +174,21 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	@Override
 	public int getFixedBlockLength() {
 		return delegate.getFixedBlockLength();
+	}
+
+	@Override
+	public IntRange[] getAddressRanges(int maxRangeLength) {
+		return delegate.getAddressRanges(maxRangeLength);
+	}
+
+	@Override
+	public IntRange getAddressRange(int address, int maxRangeLength) {
+		return delegate.getAddressRange(address, maxRangeLength);
+	}
+
+	@Override
+	public List<IntRange> getUnsplittableAddressRanges() {
+		return delegate.getUnsplittableAddressRanges();
 	}
 
 	@Override
