@@ -48,8 +48,6 @@ import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.ModelId;
-import net.solarnetwork.node.hw.sunspec.meter.IntegerMeterModelAccessor;
-import net.solarnetwork.node.hw.sunspec.meter.MeterModelId;
 import net.solarnetwork.util.IntRange;
 
 /**
@@ -366,30 +364,6 @@ public class ModelAddressRangeTests {
 			}
 		}
 		return result;
-	}
-
-	@Test
-	public void unsplittableAddressRanges_floatingPointMeter() throws IOException {
-		// GIVEN
-		final ModelData data = new ModelData(0);
-		data.performUpdates(m -> {
-			m.saveDataArray(new int[] { 213, 124 }, 70);
-			m.saveDataArray(new int[] { 203, 105 }, 196);
-			return true;
-		});
-		final ModelAccessor floatMeter = new IntegerMeterModelAccessor(data, 70,
-				MeterModelId.forId(213));
-		final ModelAccessor intMeter = new IntegerMeterModelAccessor(data, 196, MeterModelId.forId(203));
-
-		// THEN
-		final List<IntRange> floatRanges = sorted(floatMeter.getUnsplittableAddressRanges());
-		assertThat("Every pair of 213 registers is a 32-bit value", floatRanges, hasSize(62));
-		assertThat("First pair", floatRanges.get(0), is(equalTo(new IntRange(72, 73))));
-		assertThat("Last pair", floatRanges.get(61), is(equalTo(new IntRange(194, 195))));
-
-		final List<IntRange> intRanges = sorted(intMeter.getUnsplittableAddressRanges());
-		assertThat("203 ranges from the integer registers", intRanges.get(0),
-				is(equalTo(new IntRange(234, 235))));
 	}
 
 }

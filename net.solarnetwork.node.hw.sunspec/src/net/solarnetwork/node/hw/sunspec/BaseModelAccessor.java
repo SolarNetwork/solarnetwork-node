@@ -464,7 +464,8 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 				break;
 
 			case Float32:
-				if ( Float.isNaN(v.floatValue()) ) {
+				// NaN is the "not implemented" value; infinite values are not valid either
+				if ( !Float.isFinite(v.floatValue()) ) {
 					return null;
 				}
 				break;

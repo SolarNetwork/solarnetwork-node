@@ -23,7 +23,6 @@
 package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
@@ -720,30 +719,6 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	@Override
 	protected Collection<? extends ModbusReference> getFixedBlockRegisters() {
 		return EnumSet.allOf(IntegerMeterModelRegister.class);
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>
-	 * Every point of the floating point meter models (211 - 214) is a 32-bit
-	 * value, so for those models this implementation returns a range for each
-	 * pair of registers in the model.
-	 * </p>
-	 */
-	@Override
-	public List<IntRange> getUnsplittableAddressRanges() {
-		final int id = getModelId().getId();
-		if ( id < MeterModelId.SinglePhaseMeterFloat.getId()
-				|| id > MeterModelId.DeltaConnectThreePhaseMeterFloat.getId() ) {
-			return super.getUnsplittableAddressRanges();
-		}
-		final List<IntRange> result = new ArrayList<>(getModelLength() / 2);
-		for ( int address = getBlockAddress(),
-				end = address + getModelLength(); address + 1 < end; address += 2 ) {
-			result.add(new IntRange(address, address + 1));
-		}
-		return result;
 	}
 
 }
