@@ -794,9 +794,14 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 
 	private void bitsBlockInfo(MessageSource messageSource, Locale locale, StringBuilder buf,
 			String title, BitSet bits) {
+		// read from a copy, as Modbus clients can write the bits concurrently
+		final BitSet copy;
+		synchronized ( bits ) {
+			copy = (BitSet) bits.clone();
+		}
 		buf.append(messageSource.getMessage("serverUnitInfoBitBlock.start", new Object[] { title },
 				locale));
-		bits.stream().forEachOrdered(a -> {
+		copy.stream().forEachOrdered(a -> {
 			buf.append(messageSource.getMessage("serverUnitInfoBit.row", new Object[] { a }, locale));
 		});
 		buf.append(messageSource.getMessage("serverUnitInfoBitBlock.end", null, locale));
@@ -807,7 +812,8 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		buf.append(messageSource.getMessage("serverUnitInfoIntBlock.start", new Object[] { title },
 				locale));
 		buf.append(messageSource.getMessage("serverUnitInfoInt.start", null, locale));
-		IntShortMap regs = data.dataRegisters();
+		// read from a copy, as Modbus clients can write the registers concurrently
+		IntShortMap regs = data.copy().dataRegisters();
 		regs.forEachOrdered((a, v) -> {
 			buf.append(messageSource.getMessage("serverUnitInfoInt.row",
 					new Object[] { a, "0x" + Integer.toHexString(a), String.format("0x%04X", v) },
@@ -961,14 +967,15 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 		}
 		final ModbusRegisterBlockType blockType = update.blockConfig.getBlockType();
 		switch (blockType) {
+			// the bits read start at index 0, for update.address
 			case Coil: {
 				BitSet bits = data.readCoils(update.address, 1);
-				return bits.get(update.address);
+				return bits.get(0);
 			}
 
 			case Discrete: {
 				BitSet bits = data.readDiscretes(update.address, 1);
-				return bits.get(update.address);
+				return bits.get(0);
 			}
 
 			case Holding: {
