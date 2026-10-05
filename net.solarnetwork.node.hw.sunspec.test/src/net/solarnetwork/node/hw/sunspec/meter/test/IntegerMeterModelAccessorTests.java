@@ -50,7 +50,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Test cases for the {@link IntegerMeterModelAccessor} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class IntegerMeterModelAccessorTests {
 
@@ -241,7 +241,7 @@ public class IntegerMeterModelAccessorTests {
 	@Test
 	public void events() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		BitSet bitset = new BitSet();
 		events.stream().mapToInt(ModelEvent::getIndex).forEach(i -> bitset.set(i));
 		assertThat(bitset.cardinality(), equalTo(2));

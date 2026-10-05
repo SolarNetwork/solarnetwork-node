@@ -231,7 +231,7 @@ public class LithiumIonStringModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(LithiumIonStringModelRegister.EventsBitmask);
 		return LithiumIonStringEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}

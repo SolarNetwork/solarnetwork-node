@@ -32,7 +32,7 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  * API for accessing string combiner model data.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public interface StringCombinerModelAccessor extends ModelAccessor {
@@ -72,14 +72,14 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 		 * @return the events, never {@code null}
 		 * @see StringCombinerModelEvent
 		 */
-		Set<ModelEvent> getEvents();
+		Set<? extends ModelEvent> getEvents();
 
 		/**
 		 * Get the active vendor events.
 		 *
 		 * @return the vendor events, never {@code null}
 		 */
-		Set<ModelEvent> getVendorEvents();
+		Set<? extends ModelEvent> getVendorEvents();
 
 	}
 
@@ -121,14 +121,14 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 	 * @return the events, never {@code null}
 	 * @see StringCombinerModelEvent
 	 */
-	Set<ModelEvent> getEvents();
+	Set<? extends ModelEvent> getEvents();
 
 	/**
 	 * Get the active vendor events.
 	 *
 	 * @return the vendor events, never {@code null}
 	 */
-	Set<ModelEvent> getVendorEvents();
+	Set<? extends ModelEvent> getVendorEvents();
 
 	/**
 	 * Get the list of available DC inputs.

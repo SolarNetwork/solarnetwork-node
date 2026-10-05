@@ -241,7 +241,7 @@ public class BatteryBaseModelAccessorImpl extends BaseModelAccessor implements B
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(BatteryBaseModelRegister.EventsBitmask);
 		return BatteryEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}

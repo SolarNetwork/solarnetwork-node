@@ -351,7 +351,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(IntegerInverterModelRegister.EventsBitmask);
 		return InverterModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -676,7 +676,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			return IntegerInverterModelAccessor.this.getEvents();
 		}
 

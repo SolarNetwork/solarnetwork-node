@@ -121,7 +121,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(InverterMpptExtensionModelRegister.EventsBitmask, getBlockAddress());
 		return InverterMpptExtensionModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -211,7 +211,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			Number n = getBitfield(InverterMpptExtensionModelRegister.ModuleEventsBitmask,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH);
 			return InverterMpptExtensionModelEvent.forBitmask(n != null ? n.longValue() : 0L);

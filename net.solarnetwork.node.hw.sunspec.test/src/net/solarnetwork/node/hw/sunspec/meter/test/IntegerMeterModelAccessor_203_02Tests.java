@@ -100,7 +100,7 @@ public class IntegerMeterModelAccessor_203_02Tests {
 	@Test
 	public void events() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		BitSet bitset = new BitSet();
 		events.stream().mapToInt(ModelEvent::getIndex).forEach(i -> bitset.set(i));
 		assertThat(bitset.cardinality(), equalTo(1));

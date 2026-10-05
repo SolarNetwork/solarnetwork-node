@@ -252,7 +252,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(FloatingPointInverterModelRegister.EventsBitmask);
 		return InverterModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -577,7 +577,7 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			return FloatingPointInverterModelAccessor.this.getEvents();
 		}
 

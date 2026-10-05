@@ -248,7 +248,7 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		return delegate.getEvents();
 	}
 

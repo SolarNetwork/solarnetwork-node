@@ -22,10 +22,9 @@
 
 package net.solarnetwork.node.hw.sunspec.storage;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.node.hw.sunspec.SunSpecUtils;
 
 /**
  * Lithium-ion battery string events (alarms and warnings).
@@ -158,17 +157,8 @@ public enum LithiumIonStringEvent implements ModelEvent {
 	 *        the bitmask value
 	 * @return the alarms, never {@code null}
 	 */
-	public static Set<ModelEvent> forBitmask(long bitmask) {
-		if ( bitmask == 0 || (bitmask & 0x80000000L) != 0 ) {
-			return Collections.emptySet();
-		}
-		Set<ModelEvent> result = new LinkedHashSet<>(8);
-		for ( LithiumIonStringEvent e : LithiumIonStringEvent.values() ) {
-			if ( ((bitmask >> e.index) & 0x1) == 1 ) {
-				result.add(e);
-			}
-		}
-		return result;
+	public static Set<LithiumIonStringEvent> forBitmask(long bitmask) {
+		return SunSpecUtils.bitfieldValues(bitmask, 2, LithiumIonStringEvent.class);
 	}
 
 }

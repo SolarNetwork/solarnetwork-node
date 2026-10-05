@@ -179,7 +179,7 @@ public class FloatingPointMeterModelAccessor extends BaseModelAccessor implement
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(FloatingPointMeterModelRegister.EventsBitmask);
 		return MeterModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -449,7 +449,7 @@ public class FloatingPointMeterModelAccessor extends BaseModelAccessor implement
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			return FloatingPointMeterModelAccessor.this.getEvents();
 		}
 

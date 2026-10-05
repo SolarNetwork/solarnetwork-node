@@ -52,7 +52,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerInverterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerInverterModelAccessor_101_02Tests {
 
@@ -249,7 +249,7 @@ public class IntegerInverterModelAccessor_101_02Tests {
 	@Test
 	public void events() {
 		InverterModelAccessor model = getTestDataInstance().findTypedModel(InverterModelAccessor.class);
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		assertThat("No events", events, hasSize(0));
 	}
 

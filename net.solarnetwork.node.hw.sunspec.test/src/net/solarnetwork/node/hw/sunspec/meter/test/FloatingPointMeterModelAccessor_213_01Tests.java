@@ -151,6 +151,18 @@ public class FloatingPointMeterModelAccessor_213_01Tests {
 	}
 
 	@Test
+	public void events_mostSignificantBit() {
+		// GIVEN
+		// Evt with the most significant bit set, as well as the power failure and low PF bits
+		MeterModelAccessor model = ModelDataUtils.getModelDataInstanceWithRegisters(getClass(),
+				TEST_DATA, BLOCK_ADDRESS + 122, 0x8000, 0x0014).findTypedModel(MeterModelAccessor.class);
+
+		// THEN
+		assertThat("Events with the most significant bit set are not implemented", model.getEvents(),
+				is(equalTo(Set.of())));
+	}
+
+	@Test
 	public void infiniteValue() {
 		// GIVEN
 		// W is +Infinity

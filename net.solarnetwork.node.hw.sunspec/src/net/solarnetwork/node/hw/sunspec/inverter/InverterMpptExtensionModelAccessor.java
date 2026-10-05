@@ -33,7 +33,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * API for accessing inverter MPPT extension model data.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
@@ -120,7 +120,7 @@ public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
 		 *
 		 * @return the events, never {@code null}
 		 */
-		Set<ModelEvent> getEvents();
+		Set<? extends ModelEvent> getEvents();
 
 	}
 
@@ -136,7 +136,7 @@ public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
 	 *
 	 * @return the events, never {@code null}
 	 */
-	Set<ModelEvent> getEvents();
+	Set<? extends ModelEvent> getEvents();
 
 	/**
 	 * Get the timestamp period.

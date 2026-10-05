@@ -48,7 +48,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerMeterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerMeterModelAccessor_203_03Tests {
 
@@ -100,7 +100,7 @@ public class IntegerMeterModelAccessor_203_03Tests {
 	@Test
 	public void events() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		BitSet bitset = new BitSet();
 		events.stream().mapToInt(ModelEvent::getIndex).forEach(i -> bitset.set(i));
 		assertThat(bitset.cardinality(), equalTo(0));

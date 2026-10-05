@@ -60,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {

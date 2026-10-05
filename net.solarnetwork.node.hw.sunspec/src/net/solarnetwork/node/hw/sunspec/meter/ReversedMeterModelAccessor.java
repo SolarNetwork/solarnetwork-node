@@ -222,7 +222,7 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		return delegate.getEvents();
 	}
 

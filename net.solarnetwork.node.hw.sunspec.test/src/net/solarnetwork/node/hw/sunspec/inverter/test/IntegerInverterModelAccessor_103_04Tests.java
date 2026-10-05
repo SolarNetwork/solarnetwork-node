@@ -142,7 +142,7 @@ public class IntegerInverterModelAccessor_103_04Tests {
 	@Test
 	public void events() {
 		InverterModelAccessor model = getTestDataInstance().findTypedModel(InverterModelAccessor.class);
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		assertThat("No events", events, hasSize(0));
 	}
 

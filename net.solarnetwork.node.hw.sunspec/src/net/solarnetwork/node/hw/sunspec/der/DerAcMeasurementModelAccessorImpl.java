@@ -134,7 +134,7 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(DerAcMeasurementModelRegister.AlarmsBitmask);
 		return DerAlarm.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -542,7 +542,7 @@ public class DerAcMeasurementModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			return DerAcMeasurementModelAccessorImpl.this.getEvents();
 		}
 

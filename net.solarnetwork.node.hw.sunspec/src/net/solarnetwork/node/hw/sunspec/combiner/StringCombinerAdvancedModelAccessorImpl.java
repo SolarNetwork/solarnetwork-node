@@ -192,7 +192,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(StringCombinerAdvancedModelRegister.EventsBitmask);
 		return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -257,14 +257,14 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputEventsBitmask,
 					inputAddress());
 			return StringCombinerModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 		}
 
 		@Override
-		public Set<ModelEvent> getVendorEvents() {
+		public Set<? extends ModelEvent> getVendorEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputVendorEventsBitmask,
 					inputAddress());
 			return GenericModelEvent.forBitmask(n != null ? n.longValue() : 0L);

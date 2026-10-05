@@ -42,7 +42,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerMeterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerMeterModelAccessor_204_01Tests {
 
@@ -94,7 +94,7 @@ public class IntegerMeterModelAccessor_204_01Tests {
 	@Test
 	public void events() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		assertThat(events, hasSize(0));
 	}
 

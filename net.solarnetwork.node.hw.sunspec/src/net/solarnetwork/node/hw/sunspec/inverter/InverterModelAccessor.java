@@ -190,7 +190,7 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	 *
 	 * @return the events, never {@code null}
 	 */
-	Set<ModelEvent> getEvents();
+	Set<? extends ModelEvent> getEvents();
 
 	/**
 	 * Get an optional vendor-specific bit set of event codes.

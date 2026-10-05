@@ -887,15 +887,8 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public <T extends Enum<T> & Bitmaskable> Set<T> getBitmaskableValues(ModbusReference dataRef,
 			int dataOffset, Class<T> type) {
-		Number n = data.getNumber(dataRef, dataOffset);
-		if ( n == null ) {
-			return Collections.emptySet();
-		}
-		final long v = n.longValue();
-		if ( (v & (1L << (dataRef.getWordLength() * 16 - 1))) != 0 ) {
-			return Collections.emptySet();
-		}
-		return Bitmaskable.setForBitmask((int) v, type);
+		return SunSpecUtils.bitfieldValues(data.getNumber(dataRef, dataOffset), dataRef.getWordLength(),
+				type);
 	}
 
 	/**

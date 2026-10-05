@@ -47,7 +47,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link IntegerMeterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerMeterModelAccessor_203_01Tests {
 
@@ -99,11 +99,23 @@ public class IntegerMeterModelAccessor_203_01Tests {
 	@Test
 	public void events() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
-		Set<ModelEvent> events = model.getEvents();
+		Set<? extends ModelEvent> events = model.getEvents();
 		BitSet bitset = new BitSet();
 		events.stream().mapToInt(ModelEvent::getIndex).forEach(i -> bitset.set(i));
 		assertThat(bitset.cardinality(), equalTo(1));
 		assertThat(bitset.get(3), equalTo(true));
+	}
+
+	@Test
+	public void events_mostSignificantBit() {
+		// GIVEN
+		// Evt with the most significant bit set, as well as the under voltage bit
+		MeterModelAccessor model = ModelDataUtils.getModelDataInstanceWithRegisters(getClass(),
+				"test-data-203-01.txt", 174, 0x8000, 0x0008).findTypedModel(MeterModelAccessor.class);
+
+		// THEN
+		assertThat("Events with the most significant bit set are not implemented", model.getEvents(),
+				equalTo(Set.of()));
 	}
 
 	@Test

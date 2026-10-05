@@ -22,17 +22,15 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
-import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.node.hw.sunspec.SunSpecUtils;
 
 /**
  * Inverter type events.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum InverterModelEvent implements ModelEvent {
 
@@ -129,8 +127,7 @@ public enum InverterModelEvent implements ModelEvent {
 	/** OEM 15. */
 	OEM_15(30, "OEM 15"),
 
-	/** OEM 16. */
-	OEM_16(31, "OEM 16");
+	;
 
 	private final int index;
 	private final String description;
@@ -170,23 +167,19 @@ public enum InverterModelEvent implements ModelEvent {
 
 	/**
 	 * Get a set of events from a bitmask.
-	 * 
+	 *
+	 * <p>
+	 * SunSpec bitfields never have their most significant bit set, so a 32-bit
+	 * bitmask with that bit set, including the SunSpec "not implemented" value,
+	 * results in an empty set.
+	 * </p>
+	 *
 	 * @param bitmask
-	 *        the bitmask
+	 *        the 32-bit bitmask
 	 * @return the active events
 	 */
-	public static Set<ModelEvent> forBitmask(long bitmask) {
-		if ( bitmask == 0 || (bitmask & ModelData.NAN_BITFIELD32) == ModelData.NAN_BITFIELD32 ) {
-			return Collections.emptySet();
-		}
-		Set<ModelEvent> result = new LinkedHashSet<>(32);
-		for ( InverterModelEvent e : InverterModelEvent.values() ) {
-			int index = e.getIndex();
-			if ( ((bitmask >> index) & 0x1) == 1 ) {
-				result.add(e);
-			}
-		}
-		return result;
+	public static Set<InverterModelEvent> forBitmask(long bitmask) {
+		return SunSpecUtils.bitfieldValues(bitmask, 2, InverterModelEvent.class);
 	}
 
 }

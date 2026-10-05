@@ -310,7 +310,7 @@ public interface BatteryBaseModelAccessor extends ModelAccessor {
 	 *
 	 * @return the events, as {@link BatteryEvent} values, never {@code null}
 	 */
-	Set<ModelEvent> getEvents();
+	Set<? extends ModelEvent> getEvents();
 
 	/**
 	 * Get the active vendor events.

@@ -33,7 +33,7 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  * API for accessing meter model data.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface MeterModelAccessor extends ModelAccessor, AcEnergyDataAccessor {
 
@@ -175,6 +175,6 @@ public interface MeterModelAccessor extends ModelAccessor, AcEnergyDataAccessor 
 	 *
 	 * @return the events (never {@code null})
 	 */
-	Set<ModelEvent> getEvents();
+	Set<? extends ModelEvent> getEvents();
 
 }

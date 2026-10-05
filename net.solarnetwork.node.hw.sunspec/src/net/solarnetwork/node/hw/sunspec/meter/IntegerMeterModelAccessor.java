@@ -296,7 +296,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	}
 
 	@Override
-	public Set<ModelEvent> getEvents() {
+	public Set<? extends ModelEvent> getEvents() {
 		Number n = getBitfield(IntegerMeterModelRegister.EventsBitmask);
 		return MeterModelEvent.forBitmask(n != null ? n.longValue() : 0L);
 	}
@@ -675,7 +675,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			return IntegerMeterModelAccessor.this.getEvents();
 		}
 

@@ -24,14 +24,15 @@ package net.solarnetwork.node.hw.sunspec;
 
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
+import net.solarnetwork.domain.Bitmaskable;
 
 /**
  * API for a model event.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public interface ModelEvent {
+public interface ModelEvent extends Bitmaskable {
 
 	/**
 	 * Get the event bitmask index.
@@ -39,6 +40,20 @@ public interface ModelEvent {
 	 * @return the bitmask index
 	 */
 	int getIndex();
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * This implementation returns {@link #getIndex()}.
+	 * </p>
+	 *
+	 * @since 1.2
+	 */
+	@Override
+	default int bitmaskBitOffset() {
+		return getIndex();
+	}
 
 	/**
 	 * Get a description of the event.
@@ -55,7 +70,7 @@ public interface ModelEvent {
 	 * @return the bit field value
 	 * @since 1.1
 	 */
-	static int bitField16Value(@Nullable Set<ModelEvent> events) {
+	static int bitField16Value(@Nullable Set<? extends ModelEvent> events) {
 		return (int) (bitField32Value(events) & 0xFFFF);
 	}
 
@@ -67,7 +82,7 @@ public interface ModelEvent {
 	 * @return the bit field value
 	 * @since 1.1
 	 */
-	static long bitField32Value(@Nullable Set<ModelEvent> events) {
+	static long bitField32Value(@Nullable Set<? extends ModelEvent> events) {
 		long b = 0;
 		if ( events != null ) {
 			for ( ModelEvent event : events ) {

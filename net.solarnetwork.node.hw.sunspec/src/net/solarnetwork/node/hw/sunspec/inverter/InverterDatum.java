@@ -44,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Datum for a SunSpec compatible inverter.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.2
  */
 public class InverterDatum extends SimpleAcDcEnergyDatum {
@@ -239,9 +239,9 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	 */
 	@JsonIgnore
 	@SerializeIgnore
-	public @Nullable Set<ModelEvent> getEvents() {
+	public @Nullable Set<? extends ModelEvent> getEvents() {
 		Long bitmask = getSamples().getStatusSampleLong(EVENTS_KEY);
-		Set<ModelEvent> result = null;
+		Set<? extends ModelEvent> result = null;
 		if ( bitmask != null ) {
 			try {
 				result = InverterModelEvent.forBitmask(bitmask);
@@ -258,7 +258,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 	 * @param events
 	 *        the events to set, or {@code null}
 	 */
-	public void setEvents(@Nullable Set<ModelEvent> events) {
+	public void setEvents(@Nullable Set<? extends ModelEvent> events) {
 		long bitmask = ModelEvent.bitField32Value(events);
 		getSamples().putStatusSampleValue(EVENTS_KEY, bitmask);
 	}

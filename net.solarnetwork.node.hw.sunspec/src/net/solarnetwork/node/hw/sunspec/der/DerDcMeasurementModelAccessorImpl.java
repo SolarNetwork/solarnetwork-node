@@ -223,7 +223,7 @@ public class DerDcMeasurementModelAccessorImpl extends BaseModelAccessor
 		}
 
 		@Override
-		public Set<ModelEvent> getEvents() {
+		public Set<? extends ModelEvent> getEvents() {
 			Number n = getBitfield(DerDcMeasurementModelRegister.PortAlarmsBitmask, portAddress);
 			return DerDcPortAlarm.forBitmask(n != null ? n.longValue() : 0L);
 		}

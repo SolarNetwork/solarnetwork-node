@@ -359,7 +359,7 @@ public interface LithiumIonStringModelAccessor extends ModelAccessor {
 	 * @return the events, as {@link LithiumIonStringEvent} values, never
 	 *         {@code null}
 	 */
-	Set<ModelEvent> getEvents();
+	Set<? extends ModelEvent> getEvents();
 
 	/**
 	 * Get the active vendor events.

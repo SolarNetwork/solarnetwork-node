@@ -133,7 +133,7 @@ public interface DerDcMeasurementModelAccessor extends ModelAccessor {
 		 * @return the alarms, as {@link DerDcPortAlarm} values, never
 		 *         {@code null}
 		 */
-		Set<ModelEvent> getEvents();
+		Set<? extends ModelEvent> getEvents();
 
 	}
 
