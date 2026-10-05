@@ -44,7 +44,7 @@ public enum DerModelId implements ModelId {
 	EnterService(703, "DER enter service", DerEnterServiceModelAccessor.class),
 
 	/** DER AC controls. */
-	AcControls(704, "DER AC controls"),
+	AcControls(704, "DER AC controls", DerAcControlsModelAccessor.class),
 
 	/** DER volt-var. */
 	VoltVar(705, "DER volt-var"),

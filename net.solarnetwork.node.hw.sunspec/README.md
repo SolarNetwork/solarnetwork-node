@@ -57,6 +57,7 @@ Float currentPhaseC = model.accessorForPhase(PhaseC).getCurrent();
 | 701 | net.solarnetwork.node.hw.sunspec.der.DerAcMeasurementModelAccessor |
 | 702 | net.solarnetwork.node.hw.sunspec.der.DerCapacityModelAccessor |
 | 703 | net.solarnetwork.node.hw.sunspec.der.DerEnterServiceModelAccessor |
+| 704 | net.solarnetwork.node.hw.sunspec.der.DerAcControlsModelAccessor |
 | 713 | net.solarnetwork.node.hw.sunspec.der.DerStorageCapacityModelAccessor |
 | 714 | net.solarnetwork.node.hw.sunspec.der.DerDcMeasurementModelAccessor |
 | 715 | net.solarnetwork.node.hw.sunspec.der.DerControlModelAccessor |
