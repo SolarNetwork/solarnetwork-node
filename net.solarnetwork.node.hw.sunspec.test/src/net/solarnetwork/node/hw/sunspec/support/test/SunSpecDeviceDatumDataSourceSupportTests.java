@@ -38,7 +38,7 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link SunSpecDeviceDatumDataSourceSupport} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SunSpecDeviceDatumDataSourceSupportTests {
 
@@ -93,7 +93,9 @@ public class SunSpecDeviceDatumDataSourceSupportTests {
 
 		// THEN
 		assertThat("Message does not contain secondary models", msg, equalTo(
-				"120 (Inverter controls nameplate ratings), 121 (Inverter controls basic settings), 122, 123, 126, 131, 132"));
+				"120 (Inverter controls nameplate ratings), 121 (Inverter controls basic settings), "
+						+ "122 (Inverter controls extended measurements and status), "
+						+ "123 (Inverter immediate controls), 126, 131, 132"));
 	}
 
 	@Test

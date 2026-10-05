@@ -900,4 +900,76 @@ public class BaseModelAccessorTests {
 				is(equalTo(expected)));
 	}
 
+	@Test
+	public void bitfieldBit() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x0005);
+
+		// THEN
+		assertThat("Bit 0 set", accessor.getBitfieldBit(TestRegister.Bitfield16Value, 0),
+				is(equalTo(true)));
+		assertThat("Bit 1 not set", accessor.getBitfieldBit(TestRegister.Bitfield16Value, 1),
+				is(equalTo(false)));
+		assertThat("Bit 2 set", accessor.getBitfieldBit(TestRegister.Bitfield16Value, 2),
+				is(equalTo(true)));
+	}
+
+	@Test
+	public void bitfieldBit_bitfield32() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield32Value, 0x0001, 0x0000);
+
+		// THEN
+		assertThat("Bit 0 not set", accessor.getBitfieldBit(TestRegister.Bitfield32Value, 0),
+				is(equalTo(false)));
+		assertThat("Bit 16 set", accessor.getBitfieldBit(TestRegister.Bitfield32Value, 16),
+				is(equalTo(true)));
+	}
+
+	@Test
+	public void bitfieldBit_mostSignificantBit() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0x8001);
+		saveRegisters(TestRegister.Bitfield32Value, 0x8000, 0x0001);
+
+		// THEN
+		assertThat("Bitfield16 with MSB set not implemented",
+				accessor.getBitfieldBit(TestRegister.Bitfield16Value, 0), is(nullValue()));
+		assertThat("Bitfield32 with MSB set not implemented",
+				accessor.getBitfieldBit(TestRegister.Bitfield32Value, 0), is(nullValue()));
+	}
+
+	@Test
+	public void bitfieldBit_notImplemented() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.Bitfield16Value, 0xFFFF);
+		saveRegisters(TestRegister.Bitfield32Value, 0xFFFF, 0xFFFF);
+
+		// THEN
+		assertThat("Bitfield16 not implemented",
+				accessor.getBitfieldBit(TestRegister.Bitfield16Value, 0), is(nullValue()));
+		assertThat("Bitfield32 not implemented",
+				accessor.getBitfieldBit(TestRegister.Bitfield32Value, 0), is(nullValue()));
+	}
+
+	@Test
+	public void longValue_maximum() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.UInt64Value, 0x7FFF, 0xFFFF, 0xFFFF, 0xFFFF);
+
+		// THEN
+		assertThat("Largest long value", accessor.getLongValue(TestRegister.UInt64Value),
+				is(equalTo(Long.MAX_VALUE)));
+	}
+
+	@Test
+	public void longValue_outOfRange() throws IOException {
+		// GIVEN
+		saveRegisters(TestRegister.UInt64Value, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFE);
+
+		// THEN
+		assertThat("Value larger than a long is not available",
+				accessor.getLongValue(TestRegister.UInt64Value), is(nullValue()));
+	}
+
 }

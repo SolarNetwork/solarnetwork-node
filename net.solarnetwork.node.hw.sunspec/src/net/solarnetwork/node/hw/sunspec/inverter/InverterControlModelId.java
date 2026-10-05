@@ -29,7 +29,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  * Enumeration of SunSpec inverter control model IDs.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public enum InverterControlModelId implements ModelId {
 
@@ -43,16 +43,19 @@ public enum InverterControlModelId implements ModelId {
 	BasicSettings(121, "Inverter controls basic settings", InverterBasicSettingsModelAccessor.class),
 
 	/** Extended measurements. */
-	ExtendedMeasurements(122, "Inverter controls extended measurements and status"),
+	ExtendedMeasurements(
+			122,
+			"Inverter controls extended measurements and status",
+			InverterExtendedMeasurementsModelAccessor.class),
 
 	/** Immediate controls. */
-	ImmediateControls(123, "Inverter immediate controls"),
+	ImmediateControls(123, "Inverter immediate controls", InverterImmediateControlsModelAccessor.class),
 
 	/** Basic storage controls. */
-	BasicStorageControls(124, "Basic storage controls"),
+	BasicStorageControls(124, "Basic storage controls", InverterBasicStorageControlsModelAccessor.class),
 
 	/** Pricing signal. */
-	PricingSignal(125, "Pricing signal"),
+	PricingSignal(125, "Pricing signal", InverterPricingSignalModelAccessor.class),
 
 	/** Static volt-VAR arrays. */
 	StaticVoltVarArrays(126, "Static volt-VAR arrays"),

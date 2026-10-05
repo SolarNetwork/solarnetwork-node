@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec;
 
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
+import static net.solarnetwork.util.NumberUtils.bigIntegerForNumber;
 import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import static net.solarnetwork.util.NumberUtils.unsignedNumber;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
@@ -470,7 +471,9 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * Get a long data property value.
 	 *
 	 * <p>
-	 * The value will be rounded, if necessary.
+	 * The value will be rounded, if necessary. A value that does not fit in a
+	 * {@code long}, such as a {@code uint64} value larger than
+	 * {@link Long#MAX_VALUE}, is returned as {@code null}.
 	 * </p>
 	 *
 	 * @param dataRef
@@ -482,8 +485,8 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * @since 1.2
 	 */
 	public @Nullable Long getLongValue(ModbusReference dataRef, int dataOffset) {
-		Number n = maximumDecimalScale(getValue(dataRef, dataOffset), 0);
-		return (n != null ? n.longValue() : null);
+		BigInteger n = bigIntegerForNumber(maximumDecimalScale(getValue(dataRef, dataOffset), 0));
+		return (n != null && n.bitLength() < Long.SIZE ? n.longValue() : null);
 	}
 
 	/**
@@ -901,6 +904,57 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 			start += ref.getWordLength() * 16;
 		}
 		return result;
+	}
+
+	/**
+	 * Test if a bit is set in a bitfield data property.
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param index
+	 *        the index of the bit to test, where {@literal 0} is the least
+	 *        significant bit
+	 * @return {@literal true} if the bit is set, {@literal false} if it is not,
+	 *         or {@code null} if not available
+	 * @see #getBitfieldBit(ModbusReference, int, int)
+	 * @since 2.1
+	 */
+	public @Nullable Boolean getBitfieldBit(ModbusReference dataRef, int index) {
+		return getBitfieldBit(dataRef, blockAddress, index);
+	}
+
+	/**
+	 * Test if a bit is set in a bitfield data property.
+	 *
+	 * <p>
+	 * This is for bitfields that define a single flag, such as an enabled or
+	 * connected state. SunSpec bitfields never have their most significant bit
+	 * set, so a bitfield with that bit set, including the SunSpec "not
+	 * implemented" value, results in {@code null}.
+	 * </p>
+	 *
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param index
+	 *        the index of the bit to test, where {@literal 0} is the least
+	 *        significant bit
+	 * @return {@literal true} if the bit is set, {@literal false} if it is not,
+	 *         or {@code null} if not available
+	 * @since 2.1
+	 */
+	public @Nullable Boolean getBitfieldBit(ModbusReference dataRef, int dataOffset, int index) {
+		Number n = data.getNumber(dataRef, dataOffset);
+		if ( n == null ) {
+			return null;
+		}
+		final long v = n.longValue();
+		if ( (v & (1L << (dataRef.getWordLength() * 16 - 1))) != 0 ) {
+			return null;
+		}
+		return ((v >> index) & 1L) == 1L;
 	}
 
 	/**

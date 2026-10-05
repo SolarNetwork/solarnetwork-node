@@ -43,6 +43,10 @@ Float currentPhaseC = model.accessorForPhase(PhaseC).getCurrent();
 | 101, 102, 103, 111, 112, 113 | net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor |
 | 120 | net.solarnetwork.node.hw.sunspec.inverter.InverterNameplateRatingsModelAccessor |
 | 121 | net.solarnetwork.node.hw.sunspec.inverter.InverterBasicSettingsModelAccessor |
+| 122 | net.solarnetwork.node.hw.sunspec.inverter.InverterExtendedMeasurementsModelAccessor |
+| 123 | net.solarnetwork.node.hw.sunspec.inverter.InverterImmediateControlsModelAccessor |
+| 124 | net.solarnetwork.node.hw.sunspec.inverter.InverterBasicStorageControlsModelAccessor |
+| 125 | net.solarnetwork.node.hw.sunspec.inverter.InverterPricingSignalModelAccessor |
 | 160 | net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor |
 | 201, 202, 203, 204, 211, 212, 213, 214 | net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor |
 | 302 | net.solarnetwork.node.hw.sunspec.environmental.IrradianceModelAccessor |

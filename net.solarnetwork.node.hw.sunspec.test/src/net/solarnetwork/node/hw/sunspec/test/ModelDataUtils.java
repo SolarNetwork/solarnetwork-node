@@ -212,7 +212,39 @@ public final class ModelDataUtils {
 	 */
 	public static RecordingModbusConnection getWritableModbusConnection(Class<?> clazz,
 			String resource) {
+		return writableModbusConnection(parseTestData(clazz, resource));
+	}
+
+	/**
+	 * Get a writable Modbus connection to a class-path resource of modbus test
+	 * data, with some register values replaced.
+	 *
+	 * <p>
+	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
+	 * text file, so the data starts at address {@literal 0}. The connection
+	 * records the write requests made to it, which do not include the replaced
+	 * register values.
+	 * </p>
+	 *
+	 * @param clazz
+	 *        the class to load the resource from
+	 * @param resource
+	 *        the data resource to load
+	 * @param address
+	 *        the address of the first register to replace
+	 * @param words
+	 *        the register values to replace, starting at {@code address}
+	 * @return the connection
+	 * @since 2.3
+	 */
+	public static RecordingModbusConnection getWritableModbusConnectionWithRegisters(Class<?> clazz,
+			String resource, int address, int... words) {
 		final int[] data = parseTestData(clazz, resource);
+		System.arraycopy(words, 0, data, address, words.length);
+		return writableModbusConnection(data);
+	}
+
+	private static RecordingModbusConnection writableModbusConnection(int[] data) {
 		final IntShortMap map = new IntShortMap(data.length);
 		for ( int i = 0; i < data.length; i++ ) {
 			map.putValue(i, data[i]);
