@@ -249,7 +249,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private void populateDatumProperties(MutableNodeDatum d, GeneralDatumMetadata m,
 			ExpressionConfig @Nullable [] expressionConfs) {
-		ExpressionRoot root = new ExpressionRoot(d, data, service(getDatumService()));
+		ExpressionRoot root = new ExpressionRoot(d, data.copy(), service(getDatumService()));
 		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(
 				new MutableDatumSamplesWithMetadata(d.asMutableSampleOperations(), m), expressionConfs,

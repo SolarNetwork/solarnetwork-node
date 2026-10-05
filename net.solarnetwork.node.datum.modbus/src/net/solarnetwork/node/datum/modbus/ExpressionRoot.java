@@ -40,7 +40,7 @@ import net.solarnetwork.util.IntShortMap;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  *
  * @author matt
- * @version 3.2
+ * @version 3.3
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -110,10 +110,12 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 			} else if ( h.isEmpty() ) {
 				this.sampleUnsignedData = i.unsignedMap();
 			} else {
-				h.forEachOrdered((a, b) -> {
-					i.putValue(a, b);
+				// merge into copies, so neither register block is modified
+				final IntShortMap merged = data.getInputs().copy().dataRegisters();
+				data.getHoldings().copy().dataRegisters().forEachOrdered((a, b) -> {
+					merged.putValue(a, b);
 				});
-				this.sampleUnsignedData = i.unsignedMap();
+				this.sampleUnsignedData = merged.unsignedMap();
 			}
 		} else {
 			this.sampleUnsignedData = Collections.emptyMap();
@@ -225,9 +227,19 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	}
 
 	/**
-	 * Get the {@link #getSample()} as an unsigned integer map.
+	 * Get the register data as an unsigned integer map.
 	 *
-	 * @return the sample data as unsigned integer values, never {@literal null}
+	 * <p>
+	 * If both the {@code Input} and {@code Holding} blocks have data, this is a
+	 * copy of the {@code Input} registers with the {@code Holding} registers
+	 * merged over them, so a {@code Holding} register replaces an
+	 * {@code Input} register with the same address. Otherwise it is the block
+	 * that has data. Note that {@link #getSample()} returns only the
+	 * {@code Holding} block when it has data.
+	 * </p>
+	 *
+	 * @return the register data as unsigned integer values, never
+	 *         {@literal null}
 	 */
 	public Map<Integer, Integer> getRegs() {
 		return sampleUnsignedData;
@@ -241,7 +253,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * @since 3.1
 	 */
 	public Map<Integer, Integer> getHoldingRegs() {
-		return inputUnsignedData;
+		return holdingUnsignedData;
 	}
 
 	/**
@@ -252,7 +264,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * @since 3.1
 	 */
 	public Map<Integer, Integer> getInputRegs() {
-		return holdingUnsignedData;
+		return inputUnsignedData;
 	}
 
 	/**

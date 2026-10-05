@@ -24,18 +24,95 @@ package net.solarnetwork.node.datum.modbus.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import java.io.IOException;
+import java.util.BitSet;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
-import net.solarnetwork.node.datum.modbus.ExpressionConfig;
 import net.solarnetwork.node.datum.modbus.ExpressionRoot;
+import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.io.modbus.ModbusRegisterData;
 
 /**
- * Test cases for the {@link ExpressionConfig} class.
- * 
+ * Test cases for the {@link ExpressionRoot} class.
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ExpressionRootTests {
+
+	private static ModbusData registers(int... addressValuePairs) throws IOException {
+		ModbusData d = new ModbusData();
+		d.performUpdates(m -> {
+			for ( int i = 0; i < addressValuePairs.length; i += 2 ) {
+				m.saveDataArray(new int[] { addressValuePairs[i + 1] }, addressValuePairs[i]);
+			}
+			return true;
+		});
+		return d;
+	}
+
+	@Test
+	public void inputAndHoldingRegs() throws IOException {
+		// GIVEN
+		ModbusData inputs = registers(0, 1, 1, 2);
+		ModbusData holdings = registers(0, 100, 5, 500);
+		ModbusRegisterData data = new ModbusRegisterData(new BitSet(), new BitSet(), holdings, inputs);
+
+		// WHEN
+		ExpressionRoot root = new ExpressionRoot(null, data, null);
+
+		// THEN
+		assertThat("Input registers", root.getInputRegs(), is(equalTo(Map.of(0, 1, 1, 2))));
+		assertThat("Holding registers", root.getHoldingRegs(), is(equalTo(Map.of(0, 100, 5, 500))));
+	}
+
+	@Test
+	public void regs_holdingsMergedOverInputs() throws IOException {
+		// GIVEN
+		ModbusData inputs = registers(0, 1, 1, 2);
+		ModbusData holdings = registers(0, 100, 5, 500);
+		ModbusRegisterData data = new ModbusRegisterData(new BitSet(), new BitSet(), holdings, inputs);
+
+		// WHEN
+		ExpressionRoot root = new ExpressionRoot(null, data, null);
+
+		// THEN
+		assertThat("Holding registers merged over input registers", root.getRegs(),
+				is(equalTo(Map.of(0, 100, 1, 2, 5, 500))));
+		assertThat("Input registers not modified", inputs.getUnsignedDataMap(),
+				is(equalTo(Map.of(0, 1, 1, 2))));
+		assertThat("Input registers expression map not modified", root.getInputRegs(),
+				is(equalTo(Map.of(0, 1, 1, 2))));
+	}
+
+	@Test
+	public void regs_holdingsOnly() throws IOException {
+		// GIVEN
+		ModbusRegisterData data = new ModbusRegisterData(new BitSet(), new BitSet(), registers(0, 100),
+				new ModbusData());
+
+		// WHEN
+		ExpressionRoot root = new ExpressionRoot(null, data, null);
+
+		// THEN
+		assertThat("Holding registers", root.getRegs(), is(equalTo(Map.of(0, 100))));
+	}
+
+	@Test
+	public void regs_inputsOnly() throws IOException {
+		// GIVEN
+		ModbusRegisterData data = new ModbusRegisterData(new BitSet(), new BitSet(), new ModbusData(),
+				registers(0, 1));
+
+		// WHEN
+		ExpressionRoot root = new ExpressionRoot(null, data, null);
+
+		// THEN
+		assertThat("Input registers", root.getRegs(), is(equalTo(Map.of(0, 1))));
+	}
 
 	@Test
 	public void regRefSimple() {

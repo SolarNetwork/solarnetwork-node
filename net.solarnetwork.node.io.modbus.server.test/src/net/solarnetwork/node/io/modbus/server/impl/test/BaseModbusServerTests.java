@@ -43,13 +43,20 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
+import org.springframework.context.support.StaticMessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -68,14 +75,17 @@ import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.TitleSettingSpecifier;
 import net.solarnetwork.test.CallingThreadExecutorService;
+import net.solarnetwork.util.IntShortMap;
 import net.solarnetwork.util.NumberUtils;
 
 /**
  * Test cases for the {@link BaseModbusServer} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BaseModbusServerTests {
 
@@ -153,6 +163,56 @@ public class BaseModbusServerTests {
 		config.setUnitId(unitId);
 		config.setRegisterBlockConfigs(blockConfigs);
 		return config;
+	}
+
+	private void configureControl(int unitId, ModbusRegisterBlockType blockType, int address,
+			MeasurementConfig measConfig) {
+		// @formatter:off
+		server.setUnitConfigs(new UnitConfig[] {
+			unit(unitId, new RegisterBlockConfig[] {
+				block(blockType, address, new MeasurementConfig[] { measConfig })
+			})
+		});
+		// @formatter:on
+	}
+
+	/**
+	 * Get a message source that renders the register info in a compact form.
+	 *
+	 * <p>
+	 * Each block renders like {@code holding:(0x0=0x1234;0x1=0xABCD;)|} and
+	 * {@code coil:1;3;|}.
+	 * </p>
+	 *
+	 * @return the message source
+	 */
+	private static StaticMessageSource registerInfoMessageSource() {
+		final StaticMessageSource ms = new StaticMessageSource();
+		ms.setUseCodeAsDefaultMessage(true);
+		final Locale l = Locale.getDefault();
+		ms.addMessage("serverUnitInfo.title", l, "[unit {0}]");
+		ms.addMessage("serverUnitInfo.coil.label", l, "coil");
+		ms.addMessage("serverUnitInfo.discrete.label", l, "discrete");
+		ms.addMessage("serverUnitInfo.holding.label", l, "holding");
+		ms.addMessage("serverUnitInfo.input.label", l, "input");
+		ms.addMessage("serverUnitInfoBitBlock.start", l, "{0}:");
+		ms.addMessage("serverUnitInfoBit.row", l, "{0};");
+		ms.addMessage("serverUnitInfoBitBlock.end", l, "|");
+		ms.addMessage("serverUnitInfoIntBlock.start", l, "{0}:");
+		ms.addMessage("serverUnitInfoInt.start", l, "(");
+		ms.addMessage("serverUnitInfoInt.row", l, "{1}={2};");
+		ms.addMessage("serverUnitInfoInt.end", l, ")");
+		ms.addMessage("serverUnitInfoIntBlock.end", l, "|");
+		return ms;
+	}
+
+	private String registerInfo() {
+		for ( SettingSpecifier s : server.getSettingSpecifiers() ) {
+			if ( s instanceof TitleSettingSpecifier t && "info".equals(t.getKey()) ) {
+				return t.getDefaultValue();
+			}
+		}
+		return null;
 	}
 
 	@Test
@@ -282,6 +342,130 @@ public class BaseModbusServerTests {
 			.returns(propVal.toString(), from(NodeControlInfo::getValue))
 			;
 		// @formatter:on
+	}
+
+	@Test
+	public void readControl_Int32_input() {
+		// GIVEN
+		final String sourceId = randomString();
+		final Integer propVal = randomInt();
+		final int unitId = 1;
+		configureControl(unitId, ModbusRegisterBlockType.Input, 0,
+				meas(sourceId, randomString(), Int32, 0, "1", CONTROL_ID_AS_SOURCE_ID));
+
+		ModbusRegisterData data = new ModbusRegisterData();
+		data.writeInputs(0, encodeInt32(propVal));
+		registers.put(unitId, data);
+
+		// WHEN
+		NodeControlInfo result = server.getCurrentControlInfo(sourceId);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Control value returned")
+			.isNotNull()
+			.as("Input register value returned")
+			.returns(propVal.toString(), from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readControl_coil() {
+		// GIVEN
+		final String sourceId = randomString();
+		final int unitId = 1;
+		final int address = 3;
+		configureControl(unitId, ModbusRegisterBlockType.Coil, address, meas(sourceId, randomString(),
+				ModbusDataType.Boolean, null, null, CONTROL_ID_AS_SOURCE_ID));
+
+		ModbusRegisterData data = new ModbusRegisterData();
+		data.writeCoil(address, true);
+		registers.put(unitId, data);
+
+		// WHEN
+		NodeControlInfo result = server.getCurrentControlInfo(sourceId);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Control value returned")
+			.isNotNull()
+			.as("Coil value at non-zero address returned")
+			.returns("true", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readControl_discrete() {
+		// GIVEN
+		final String sourceId = randomString();
+		final int unitId = 1;
+		final int address = 5;
+		configureControl(unitId, ModbusRegisterBlockType.Discrete, address, meas(sourceId,
+				randomString(), ModbusDataType.Boolean, null, null, CONTROL_ID_AS_SOURCE_ID));
+
+		ModbusRegisterData data = new ModbusRegisterData();
+		data.writeDiscrete(address, true);
+		registers.put(unitId, data);
+
+		// WHEN
+		NodeControlInfo result = server.getCurrentControlInfo(sourceId);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Control value returned")
+			.isNotNull()
+			.as("Discrete value at non-zero address returned")
+			.returns("true", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readControl_Int32_concurrentWrites() throws InterruptedException {
+		// GIVEN
+		final String sourceId = randomString();
+		final int unitId = 1;
+		configureControl(unitId, ModbusRegisterBlockType.Holding, 0,
+				meas(sourceId, randomString(), Int32, 0, "1", CONTROL_ID_AS_SOURCE_ID));
+
+		// both 16-bit words differ between the values, so a read that mixes them is detectable
+		final int val1 = 0x00010001;
+		final int val2 = 0x00020002;
+		final ModbusRegisterData data = new ModbusRegisterData();
+		data.writeHoldings(0, encodeInt32(val1));
+		registers.put(unitId, data);
+
+		final AtomicBoolean reading = new AtomicBoolean(true);
+		final Thread writer = new Thread(() -> {
+			boolean first = false;
+			while ( reading.get() ) {
+				data.writeHoldings(0, encodeInt32(first ? val1 : val2));
+				first = !first;
+			}
+		});
+
+		// WHEN
+		final Set<String> unexpected = new LinkedHashSet<>();
+		writer.start();
+		try {
+			for ( int i = 0; i < 20_000; i++ ) {
+				final String value = server.getCurrentControlInfo(sourceId).getValue();
+				if ( !(String.valueOf(val1).equals(value) || String.valueOf(val2).equals(value)) ) {
+					unexpected.add(value);
+				}
+			}
+		} finally {
+			reading.set(false);
+		}
+		writer.join();
+
+		// THEN
+		then(unexpected).as("Only whole written values read while registers are written").isEmpty();
 	}
 
 	@Test
@@ -587,6 +771,109 @@ public class BaseModbusServerTests {
 		// @formatter:on
 
 		verify(opModesService);
+	}
+
+	@Test
+	public void settings_registerInfo() {
+		// GIVEN
+		server.setMessageSource(registerInfoMessageSource());
+
+		ModbusRegisterData data = new ModbusRegisterData();
+		data.writeCoil(1, true);
+		data.writeCoil(3, true);
+		data.writeDiscrete(2, true);
+		data.writeHoldings(0, new short[] { 0x1234 });
+		data.writeInputs(5, new short[] { (short) 0xABCD });
+		registers.put(1, data);
+
+		// WHEN
+		String info = registerInfo();
+
+		// THEN
+		then(info).as("Register info lists the data of every register block")
+				.isEqualTo("[unit 1]coil:1;3;|discrete:2;|holding:(0x0=0x1234;)|input:(0x5=0xABCD;)|");
+	}
+
+	@Test
+	public void settings_registerInfo_concurrentWrites() throws InterruptedException {
+		// GIVEN
+		server.setMessageSource(registerInfoMessageSource());
+
+		final ModbusRegisterData data = new ModbusRegisterData();
+		registers.put(1, data);
+
+		final int count = 200;
+		final IntShortMap regs = data.getHoldings().dataRegisters();
+		final AtomicBoolean reading = new AtomicBoolean(true);
+		final Thread writer = new Thread(() -> {
+			while ( reading.get() ) {
+				// hold the register lock, as ModbusData writers do; adding the registers in
+				// descending order shifts every register already added
+				synchronized ( regs ) {
+					regs.clear();
+					for ( int addr = count - 1; addr >= 0; addr-- ) {
+						regs.putValue(addr, addr);
+					}
+				}
+				// give the reader a chance to take the lock, as monitors are not fair
+				Thread.yield();
+			}
+		});
+
+		// WHEN
+		final List<String> failures = new ArrayList<>();
+		writer.start();
+		try {
+			for ( int i = 0; i < 200; i++ ) {
+				String failure;
+				try {
+					failure = holdingRegisterInfoFailure(registerInfo(), count);
+				} catch ( RuntimeException e ) {
+					failure = e.toString();
+				}
+				if ( failure != null ) {
+					failures.add(failure);
+				}
+			}
+		} finally {
+			reading.set(false);
+		}
+		writer.join();
+
+		// THEN
+		then(failures).as("Register info rendered while registers are written is complete").isEmpty();
+	}
+
+	/**
+	 * Verify the holding register info lists registers {@code 0 - count-1},
+	 * each with a value equal to its address.
+	 *
+	 * @param info
+	 *        the register info
+	 * @param count
+	 *        the expected register count
+	 * @return a description of the first problem found, or {@code null} if
+	 *         the holding block is complete, or not rendered at all
+	 */
+	private static String holdingRegisterInfoFailure(String info, int count) {
+		final String prefix = "holding:(";
+		final int start = info.indexOf(prefix);
+		if ( start < 0 ) {
+			return null;
+		}
+		final String[] rows = info.substring(start + prefix.length(), info.indexOf(')', start))
+				.split(";");
+		if ( rows.length != count ) {
+			return "Expected " + count + " holding registers but found " + rows.length;
+		}
+		for ( int addr = 0; addr < count; addr++ ) {
+			final String expected = "0x" + Integer.toHexString(addr) + "="
+					+ String.format("0x%04X", addr);
+			if ( !expected.equals(rows[addr]) ) {
+				return "Expected holding register " + expected + " but found " + rows[addr];
+			}
+		}
+		return null;
 	}
 
 }
