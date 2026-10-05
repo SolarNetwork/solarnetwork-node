@@ -59,8 +59,7 @@ public interface DerControlModelAccessor extends ModelAccessor {
 	 * Get the DER heartbeat.
 	 *
 	 * <p>
-	 * The DER increments this value every second, with periodic resets to
-	 * zero.
+	 * The DER increments this value every second, with periodic resets to zero.
 	 * </p>
 	 *
 	 * @return the heartbeat, or {@code null} if not available

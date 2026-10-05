@@ -247,7 +247,9 @@ public enum DerAcMeasurementModelRegister implements SunspecModbusReference {
 	/** Active power throttling, as a percentage of maximum active power. */
 	ThrottlePercent(108, UInt16),
 
-	/** Active power throttling sources bitmask, see {@link DerThrottleSource}. */
+	/**
+	 * Active power throttling sources bitmask, see {@link DerThrottleSource}.
+	 */
 	ThrottleSourcesBitmask(109, UInt32, Bitfield),
 
 	// Scale factors

@@ -46,8 +46,8 @@ public interface SunspecModbusReference extends ModbusReference {
 	/**
 	 * Get the access level of this modbus reference.
 	 *
-	 * @return the access level, never {@code null}; this implementation
-	 *         returns {@link PointAccess#ReadOnly}
+	 * @return the access level, never {@code null}; this implementation returns
+	 *         {@link PointAccess#ReadOnly}
 	 * @since 1.1
 	 */
 	default PointAccess getAccess() {

@@ -111,9 +111,9 @@ public enum DerAlarm implements ModelEvent {
 	 * Get a set of alarms from a bitmask.
 	 *
 	 * <p>
-	 * SunSpec bitfields never have their most significant bit set, so a
-	 * bitmask with that bit set, including the SunSpec "not implemented"
-	 * value, results in an empty set.
+	 * SunSpec bitfields never have their most significant bit set, so a bitmask
+	 * with that bit set, including the SunSpec "not implemented" value, results
+	 * in an empty set.
 	 * </p>
 	 *
 	 * @param bitmask

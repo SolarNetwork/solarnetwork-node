@@ -57,10 +57,14 @@ public enum DerEnterServiceModelRegister implements SunspecModbusReference {
 	/** Permit enter service, as disabled (0) or enabled (1). */
 	Permitted(0, UInt16, Enumeration, ReadWrite),
 
-	/** Enter service voltage high threshold, as a percentage of nominal voltage. */
+	/**
+	 * Enter service voltage high threshold, as a percentage of nominal voltage.
+	 */
 	VoltageHigh(1, UInt16, ReadWrite),
 
-	/** Enter service voltage low threshold, as a percentage of nominal voltage. */
+	/**
+	 * Enter service voltage low threshold, as a percentage of nominal voltage.
+	 */
 	VoltageLow(2, UInt16, ReadWrite),
 
 	/** Enter service frequency high threshold, in Hz. */

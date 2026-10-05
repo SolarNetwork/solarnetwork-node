@@ -1012,9 +1012,9 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * <p>
 	 * The values are written with a single "write multiple holding registers"
 	 * request, so the registers of a SunSpec synchronization group can be
-	 * written atomically. After a successful write the values are also saved
-	 * to the model data, as SunSpec requires a subsequent read of the
-	 * registers to return the written values.
+	 * written atomically. After a successful write the values are also saved to
+	 * the model data, as SunSpec requires a subsequent read of the registers to
+	 * return the written values.
 	 * </p>
 	 *
 	 * @param conn

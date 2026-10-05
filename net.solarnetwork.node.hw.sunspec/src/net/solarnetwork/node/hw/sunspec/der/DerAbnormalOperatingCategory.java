@@ -25,8 +25,7 @@ package net.solarnetwork.node.hw.sunspec.der;
 import net.solarnetwork.domain.CodedValue;
 
 /**
- * DER abnormal operating performance category, as specified in IEEE
- * 1547-2018.
+ * DER abnormal operating performance category, as specified in IEEE 1547-2018.
  *
  * @author matt
  * @version 1.0

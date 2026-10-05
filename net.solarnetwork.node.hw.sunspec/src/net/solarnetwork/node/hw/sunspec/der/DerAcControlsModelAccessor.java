@@ -34,9 +34,9 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
  * This API corresponds to the SunSpec model number <b>704</b>. It provides the
  * power factor when injecting active power, power factor when absorbing active
  * power, limit maximum active power, set active power, and set reactive power
- * functions. Each function has an enable setting, and a reversion timer: if
- * the timer is enabled and expires without the function settings being
- * updated, the function reverts to its reversion settings.
+ * functions. Each function has an enable setting, and a reversion timer: if the
+ * timer is enabled and expires without the function settings being updated, the
+ * function reverts to its reversion settings.
  * </p>
  *
  * <p>

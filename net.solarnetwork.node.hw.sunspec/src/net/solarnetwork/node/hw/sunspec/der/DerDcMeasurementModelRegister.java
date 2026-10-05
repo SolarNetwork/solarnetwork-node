@@ -46,8 +46,8 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  *
  * <p>
  * Note that all register addresses are encoded as an offset from the block
- * address of the model block, except for the {@code Port*} registers, which
- * are encoded as an offset from the start of each DC port block.
+ * address of the model block, except for the {@code Port*} registers, which are
+ * encoded as an offset from the start of each DC port block.
  * </p>
  *
  * @author matt
@@ -56,7 +56,9 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  */
 public enum DerDcMeasurementModelRegister implements SunspecModbusReference {
 
-	/** Bitmask of the ports with active alarms, where bit 0 is the first port. */
+	/**
+	 * Bitmask of the ports with active alarms, where bit 0 is the first port.
+	 */
 	AlarmedPortsBitmask(0, UInt32, Bitfield),
 
 	/** The number of DC ports. */

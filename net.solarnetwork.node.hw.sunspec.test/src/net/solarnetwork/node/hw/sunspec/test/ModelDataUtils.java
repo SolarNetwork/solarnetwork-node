@@ -221,8 +221,8 @@ public final class ModelDataUtils {
 	}
 
 	/**
-	 * Get a model data instance by discovering the models available on a
-	 * Modbus connection.
+	 * Get a model data instance by discovering the models available on a Modbus
+	 * connection.
 	 *
 	 * @param conn
 	 *        the connection
