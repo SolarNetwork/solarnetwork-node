@@ -72,8 +72,9 @@ public interface DerCurve {
 	 * @param conn
 	 *        the connection to write to
 	 * @param count
-	 *        the number of active points, from {@literal 1} to the model curve
-	 *        point count
+	 *        the number of active points, up to the model curve point count; at
+	 *        least {@literal 1} is required, except for trip curves, which can
+	 *        have none
 	 * @throws IllegalArgumentException
 	 *         if {@code count} is outside the allowed range
 	 * @throws IllegalStateException
@@ -104,7 +105,8 @@ public interface DerCurve {
 	 * @param conn
 	 *        the connection to write to
 	 * @param points
-	 *        the points, from {@literal 1} to the model curve point count
+	 *        the points, up to the model curve point count; at least one point
+	 *        is required, except for trip curves, which can have none
 	 * @throws IllegalArgumentException
 	 *         if the number of points is outside the allowed range, or a point
 	 *         value is not valid

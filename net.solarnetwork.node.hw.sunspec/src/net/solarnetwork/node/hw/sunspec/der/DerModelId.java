@@ -53,16 +53,16 @@ public enum DerModelId implements ModelId {
 	VoltWatt(706, "DER volt-watt", DerVoltWattModelAccessor.class),
 
 	/** DER trip low voltage. */
-	TripLowVoltage(707, "DER trip low voltage"),
+	TripLowVoltage(707, "DER trip low voltage", DerTripLowVoltageModelAccessor.class),
 
 	/** DER trip high voltage. */
-	TripHighVoltage(708, "DER trip high voltage"),
+	TripHighVoltage(708, "DER trip high voltage", DerTripHighVoltageModelAccessor.class),
 
 	/** DER trip low frequency. */
-	TripLowFrequency(709, "DER trip low frequency"),
+	TripLowFrequency(709, "DER trip low frequency", DerTripLowFrequencyModelAccessor.class),
 
 	/** DER trip high frequency. */
-	TripHighFrequency(710, "DER trip high frequency"),
+	TripHighFrequency(710, "DER trip high frequency", DerTripHighFrequencyModelAccessor.class),
 
 	/** DER frequency droop. */
 	FrequencyDroop(711, "DER frequency droop"),
