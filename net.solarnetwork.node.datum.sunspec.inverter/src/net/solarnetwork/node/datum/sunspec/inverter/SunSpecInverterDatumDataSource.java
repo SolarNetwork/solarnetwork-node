@@ -225,7 +225,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 				} else {
 					buf.append("N/A");
 				}
-				Set<ModelEvent> events = data.getEvents();
+				var events = data.getEvents();
 				if ( events != null && !events.isEmpty() ) {
 					for ( ModelEvent event : events ) {
 						buf.append("; ").append(event.getDescription());
