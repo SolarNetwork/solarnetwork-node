@@ -115,7 +115,7 @@ import net.solarnetwork.util.StringUtils;
  * @param <T>
  *        the server type
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 5.3
  */
 public abstract class BaseModbusServer<T> extends BaseIdentifiable
@@ -972,14 +972,12 @@ public abstract class BaseModbusServer<T> extends BaseIdentifiable
 			}
 
 			case Holding: {
-				ModbusData d = data.getHoldings();
-				return d.getValue(update.measConfig.getDataType(), update.address,
+				return data.readHoldingValue(update.measConfig.getDataType(), update.address,
 						update.measConfig.getSize());
 			}
 
 			case Input: {
-				ModbusData d = data.getInputs();
-				return d.getValue(update.measConfig.getDataType(), update.address,
+				return data.readInputValue(update.measConfig.getDataType(), update.address,
 						update.measConfig.getSize());
 			}
 		}

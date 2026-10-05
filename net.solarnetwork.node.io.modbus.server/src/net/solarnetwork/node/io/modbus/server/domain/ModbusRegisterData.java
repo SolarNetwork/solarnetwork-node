@@ -40,7 +40,7 @@ import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
  * Data for a Modbus register set.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModbusRegisterData {
 
@@ -326,6 +326,28 @@ public class ModbusRegisterData {
 	}
 
 	/**
+	 * Read a holding value.
+	 *
+	 * <p>
+	 * This method synchronizes access with
+	 * {@link ModbusData#performUpdates(ModbusDataUpdateAction)} so it adheres
+	 * to {@link ModbusData}'s thread safety model.
+	 * </p>
+	 *
+	 * @param dataType
+	 *        the data type
+	 * @param address
+	 *        the register address
+	 * @param count
+	 *        the word length, for variable-length data types only
+	 * @return the decoded value, or {@code null}
+	 * @since 2.2
+	 */
+	public @Nullable Object readHoldingValue(ModbusDataType dataType, int address, int count) {
+		return readDataValue(holdings, dataType, address, count);
+	}
+
+	/**
 	 * Read holding register data into a byte array.
 	 *
 	 * @param address
@@ -336,6 +358,28 @@ public class ModbusRegisterData {
 	 */
 	public short[] readInputs(int address, int count) {
 		return readShorts(address, count, inputs);
+	}
+
+	/**
+	 * Read an input value.
+	 *
+	 * <p>
+	 * This method synchronizes access with
+	 * {@link ModbusData#performUpdates(ModbusDataUpdateAction)} so it adheres
+	 * to {@link ModbusData}'s thread safety model.
+	 * </p>
+	 *
+	 * @param dataType
+	 *        the data type
+	 * @param address
+	 *        the register address
+	 * @param count
+	 *        the word length, for variable-length data types only
+	 * @return the decoded value, or {@code null}
+	 * @since 2.2
+	 */
+	public @Nullable Object readInputValue(ModbusDataType dataType, int address, int count) {
+		return readDataValue(inputs, dataType, address, count);
 	}
 
 	/**
@@ -458,6 +502,45 @@ public class ModbusRegisterData {
 			// should not get here
 		}
 		return result;
+	}
+
+	/**
+	 * Read a register data value.
+	 *
+	 * <p>
+	 * This method synchronizes access with
+	 * {@link ModbusData#performUpdates(ModbusDataUpdateAction)} so it adheres
+	 * to {@link ModbusData}'s thread safety model.
+	 * </p>
+	 *
+	 * @param data
+	 *        the modbus register data to read from
+	 * @param dataType
+	 *        the data type
+	 * @param address
+	 *        the register address
+	 * @param count
+	 *        the word length, for variable-length data types only
+	 * @return the decoded value, or {@code null}
+	 * @since 2.2
+	 */
+	private @Nullable Object readDataValue(ModbusData data, ModbusDataType dataType, int address,
+			int count) {
+		final @Nullable Object[] result = new Object[1];
+		try {
+			// use performUpdates for synchronization
+			data.performUpdates(new ModbusDataUpdateAction() {
+
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					result[0] = data.getValue(dataType, address, count);
+					return false;
+				}
+			});
+		} catch ( IOException e ) {
+			// should not get here
+		}
+		return result[0];
 	}
 
 	/**
