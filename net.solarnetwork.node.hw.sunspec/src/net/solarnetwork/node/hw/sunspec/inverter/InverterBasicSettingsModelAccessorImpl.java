@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.io.IOException;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
@@ -29,12 +30,13 @@ import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
  * Data access object for an inverter basic settings model.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.2
  */
 public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
@@ -89,10 +91,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setActivePowerMaximum(ModbusConnection conn, int watts) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ActivePowerMaximum,
+				InverterBasicSettingsRegister.ScaleFactorActivePowerMaximum, watts);
+	}
+
+	@Override
 	public @Nullable Float getPccVoltage() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.VoltagePcc,
 				InverterBasicSettingsRegister.ScaleFactorVoltagePcc);
 		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public void setPccVoltage(ModbusConnection conn, float volts) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.VoltagePcc,
+				InverterBasicSettingsRegister.ScaleFactorVoltagePcc, volts);
 	}
 
 	@Override
@@ -103,10 +117,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setPccVoltageOffset(ModbusConnection conn, float volts) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.VoltagePccOffset,
+				InverterBasicSettingsRegister.ScaleFactorVoltagePccOffset, volts);
+	}
+
+	@Override
 	public @Nullable Float getVoltageMaximum() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.VoltageMaximum,
 				InverterBasicSettingsRegister.ScaleFactorVoltageMinimumMaximum);
 		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public void setVoltageMaximum(ModbusConnection conn, float volts) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.VoltageMaximum,
+				InverterBasicSettingsRegister.ScaleFactorVoltageMinimumMaximum, volts);
 	}
 
 	@Override
@@ -117,10 +143,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setVoltageMinimum(ModbusConnection conn, float volts) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.VoltageMinimum,
+				InverterBasicSettingsRegister.ScaleFactorVoltageMinimumMaximum, volts);
+	}
+
+	@Override
 	public @Nullable Integer getApparentPowerMaximum() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.ApparentPowerMaximum,
 				InverterBasicSettingsRegister.ScaleFactorApparentPowerMaximum);
 		return (n != null ? n.intValue() : null);
+	}
+
+	@Override
+	public void setApparentPowerMaximum(ModbusConnection conn, int voltAmps) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ApparentPowerMaximum,
+				InverterBasicSettingsRegister.ScaleFactorApparentPowerMaximum, voltAmps);
 	}
 
 	@Override
@@ -131,10 +169,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setReactivePowerQ1Maximum(ModbusConnection conn, int vars) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ReactivePowerQ1Maximum,
+				InverterBasicSettingsRegister.ScaleFactorReactivePowerMaximum, vars);
+	}
+
+	@Override
 	public @Nullable Integer getReactivePowerQ2Maximum() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.ReactivePowerQ2Maximum,
 				InverterBasicSettingsRegister.ScaleFactorReactivePowerMaximum);
 		return (n != null ? n.intValue() : null);
+	}
+
+	@Override
+	public void setReactivePowerQ2Maximum(ModbusConnection conn, int vars) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ReactivePowerQ2Maximum,
+				InverterBasicSettingsRegister.ScaleFactorReactivePowerMaximum, vars);
 	}
 
 	@Override
@@ -145,10 +195,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setReactivePowerQ3Maximum(ModbusConnection conn, int vars) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ReactivePowerQ3Maximum,
+				InverterBasicSettingsRegister.ScaleFactorReactivePowerMaximum, vars);
+	}
+
+	@Override
 	public @Nullable Integer getReactivePowerQ4Maximum() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.ReactivePowerQ4Maximum,
 				InverterBasicSettingsRegister.ScaleFactorReactivePowerMaximum);
 		return (n != null ? n.intValue() : null);
+	}
+
+	@Override
+	public void setReactivePowerQ4Maximum(ModbusConnection conn, int vars) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ReactivePowerQ4Maximum,
+				InverterBasicSettingsRegister.ScaleFactorReactivePowerMaximum, vars);
 	}
 
 	@Override
@@ -159,10 +221,23 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setActivePowerRampRate(ModbusConnection conn, float percentPerSecond)
+			throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ActivePowerRampRate,
+				InverterBasicSettingsRegister.ScaleFactorActivePowerRampRate, percentPerSecond);
+	}
+
+	@Override
 	public @Nullable Float getPowerFactorQ1Minimum() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.PowerFactorQ1Minimum,
 				InverterBasicSettingsRegister.ScaleFactorPowerFactorMinimum);
 		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public void setPowerFactorQ1Minimum(ModbusConnection conn, float powerFactor) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.PowerFactorQ1Minimum,
+				InverterBasicSettingsRegister.ScaleFactorPowerFactorMinimum, powerFactor);
 	}
 
 	@Override
@@ -173,10 +248,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setPowerFactorQ2Minimum(ModbusConnection conn, float powerFactor) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.PowerFactorQ2Minimum,
+				InverterBasicSettingsRegister.ScaleFactorPowerFactorMinimum, powerFactor);
+	}
+
+	@Override
 	public @Nullable Float getPowerFactorQ3Minimum() {
 		Number n = getScaledValue(InverterBasicSettingsRegister.PowerFactorQ3Minimum,
 				InverterBasicSettingsRegister.ScaleFactorPowerFactorMinimum);
 		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public void setPowerFactorQ3Minimum(ModbusConnection conn, float powerFactor) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.PowerFactorQ3Minimum,
+				InverterBasicSettingsRegister.ScaleFactorPowerFactorMinimum, powerFactor);
 	}
 
 	@Override
@@ -187,23 +274,34 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setPowerFactorQ4Minimum(ModbusConnection conn, float powerFactor) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.PowerFactorQ4Minimum,
+				InverterBasicSettingsRegister.ScaleFactorPowerFactorMinimum, powerFactor);
+	}
+
+	@Override
 	public @Nullable ReactivePowerAction getImportExportChangeReactivePowerAction() {
-		Number n = getData().getNumber(
-				InverterBasicSettingsRegister.ImportExportChangeReactivePowerAction, getBlockAddress());
-		if ( n == null ) {
-			return null;
-		}
-		return InverterReactivePowerAction.forCode(n.intValue());
+		return getCodedValue(InverterBasicSettingsRegister.ImportExportChangeReactivePowerAction,
+				InverterReactivePowerAction.class);
+	}
+
+	@Override
+	public void setImportExportChangeReactivePowerAction(ModbusConnection conn,
+			ReactivePowerAction action) throws IOException {
+		writeValue(conn, InverterBasicSettingsRegister.ImportExportChangeReactivePowerAction,
+				action.getCode());
 	}
 
 	@Override
 	public @Nullable ApparentPowerCalculationMethod getApparentPowerCalculationMethod() {
-		Number n = getData().getNumber(InverterBasicSettingsRegister.ApparentPowerCalculationMethod,
-				getBlockAddress());
-		if ( n == null ) {
-			return null;
-		}
-		return InverterApparentPowerCalculationMethod.forCode(n.intValue());
+		return getCodedValue(InverterBasicSettingsRegister.ApparentPowerCalculationMethod,
+				InverterApparentPowerCalculationMethod.class);
+	}
+
+	@Override
+	public void setApparentPowerCalculationMethod(ModbusConnection conn,
+			ApparentPowerCalculationMethod method) throws IOException {
+		writeValue(conn, InverterBasicSettingsRegister.ApparentPowerCalculationMethod, method.getCode());
 	}
 
 	@Override
@@ -214,19 +312,30 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
+	public void setActivePowerRampRateMaximum(ModbusConnection conn, float percent) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.ActivePowerRampRateMaximum,
+				InverterBasicSettingsRegister.ScaleFactorActivePowerRampRateMaximum, percent);
+	}
+
+	@Override
 	public @Nullable Float getEcpFrequency() {
-		Number n = getScaledValue(InverterBasicSettingsRegister.FrequencyMaximum,
-				InverterBasicSettingsRegister.ScaleFactorFrequencyMaximum);
+		Number n = getScaledValue(InverterBasicSettingsRegister.EcpNominalFrequency,
+				InverterBasicSettingsRegister.ScaleFactorEcpNominalFrequency);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
+	public void setEcpFrequency(ModbusConnection conn, float hertz) throws IOException {
+		writeScaledValue(conn, InverterBasicSettingsRegister.EcpNominalFrequency,
+				InverterBasicSettingsRegister.ScaleFactorEcpNominalFrequency, hertz);
+	}
+
+	@Override
 	public @Nullable AcPhase getConnectedPhase() {
-		Number n = getData().getNumber(InverterBasicSettingsRegister.ConnectedPhase);
+		Integer n = getIntegerValue(InverterBasicSettingsRegister.ConnectedPhase);
 		AcPhase phase = null;
 		if ( n != null ) {
-			int v = n.intValue();
-			switch (v) {
+			switch (n) {
 				case 1:
 					phase = AcPhase.PhaseA;
 					break;
@@ -244,6 +353,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 			}
 		}
 		return phase;
+	}
+
+	@Override
+	public void setConnectedPhase(ModbusConnection conn, AcPhase phase) throws IOException {
+		switch (phase) {
+			case PhaseA:
+			case PhaseB:
+			case PhaseC:
+				// the SunSpec phase codes match the AcPhase numbers
+				writeValue(conn, InverterBasicSettingsRegister.ConnectedPhase, phase.getNumber());
+				break;
+
+			default:
+				throw new IllegalArgumentException(
+						String.format("The %s phase is not a connected phase.", phase));
+		}
 	}
 
 }

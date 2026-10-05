@@ -32,7 +32,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  * Data access object for an inverter nameplate ratings model.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class InverterNameplateRatingsModelAccessorImpl extends BaseModelAccessor
 		implements InverterNameplateRatingsModelAccessor {
@@ -80,11 +80,7 @@ public class InverterNameplateRatingsModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public @Nullable DistributedEnergyResourceType getDerType() {
-		Number n = getData().getNumber(InverterNameplateRatingsRegister.DerType, getBlockAddress());
-		if ( n == null ) {
-			return null;
-		}
-		return InverterDerType.forCode(n.intValue());
+		return getCodedValue(InverterNameplateRatingsRegister.DerType, InverterDerType.class);
 	}
 
 	@Override

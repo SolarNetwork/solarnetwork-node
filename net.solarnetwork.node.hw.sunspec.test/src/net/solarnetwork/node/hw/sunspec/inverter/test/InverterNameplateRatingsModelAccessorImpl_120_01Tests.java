@@ -26,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import java.util.Map;
 import org.junit.Test;
@@ -43,14 +44,24 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * Test cases for the {@link InverterNameplateRatingsModelAccessorImpl} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class InverterNameplateRatingsModelAccessorImpl_120_01Tests {
 
 	private static final Logger log = LoggerFactory.getLogger(IntegerMeterModelAccessorTests.class);
 
+	private static final String TEST_DATA = "test-data-101-01.txt";
+
+	/** The model block address in the test data. */
+	private static final int BLOCK_ADDRESS = 123;
+
 	private ModelData getTestDataInstance() {
-		return ModelDataUtils.getModelDataInstance(getClass(), "test-data-101-01.txt");
+		return ModelDataUtils.getModelDataInstance(getClass(), TEST_DATA);
+	}
+
+	private InverterNameplateRatingsModelAccessor getTestModel(int address, int... words) {
+		return ModelDataUtils.getModelDataInstanceWithRegisters(getClass(), TEST_DATA, address, words)
+				.findTypedModel(InverterNameplateRatingsModelAccessor.class);
 	}
 
 	@Test
@@ -193,6 +204,29 @@ public class InverterNameplateRatingsModelAccessorImpl_120_01Tests {
 				.findTypedModel(InverterNameplateRatingsModelAccessor.class);
 		assertThat("Stored energy export power rating", model.getStoredEnergyExportPowerRating(),
 				nullValue());
+	}
+
+	@Test
+	public void storedEnergyExportPowerRating_negativeScaleFactor() {
+		// GIVEN
+		// MaxDisChaRte and MaxDisChaRte_SF
+		InverterNameplateRatingsModelAccessor model = getTestModel(BLOCK_ADDRESS + 23, 0xC350, 0xFFFF);
+
+		// THEN
+		assertThat("Stored energy export power rating", model.getStoredEnergyExportPowerRating(),
+				is(equalTo(5000)));
+	}
+
+	@Test
+	public void derType_pvAndStorage() {
+		assertThat("DER type", getTestModel(BLOCK_ADDRESS, 82).getDerType(),
+				is(equalTo(InverterDerType.PVAndStorage)));
+	}
+
+	@Test
+	public void derType_undefinedCode() {
+		assertThat("Undefined DER type not available", getTestModel(BLOCK_ADDRESS, 5).getDerType(),
+				is(nullValue()));
 	}
 
 	@Test

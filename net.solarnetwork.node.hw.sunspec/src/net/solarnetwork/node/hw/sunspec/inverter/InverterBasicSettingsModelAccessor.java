@@ -22,17 +22,27 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.io.IOException;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
  * API for accessing inverter basic settings model data.
  *
+ * <p>
+ * This API corresponds to the SunSpec model number <b>121</b>. Setter methods
+ * write to the device immediately, and throw {@link IllegalArgumentException}
+ * if the value is not valid for the point, or {@link IllegalStateException} if
+ * the model scale factors have not been read from the device or are not
+ * implemented.
+ * </p>
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.2
  */
 public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
@@ -46,12 +56,38 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Integer getActivePowerMaximum();
 
 	/**
+	 * Set the maximum active power output.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param watts
+	 *        the maximum active power, in W
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setActivePowerMaximum(ModbusConnection conn, int watts) throws IOException;
+
+	/**
 	 * Get the voltage at the point of common coupling (PCC), in V.
 	 *
 	 * @return the PCC voltage
 	 */
 	@Nullable
 	Float getPccVoltage();
+
+	/**
+	 * Set the voltage at the point of common coupling (PCC).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param volts
+	 *        the voltage, in V
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setPccVoltage(ModbusConnection conn, float volts) throws IOException;
 
 	/**
 	 * Get the voltage offset from the PCC to the inverter, in V.
@@ -62,12 +98,38 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getPccVoltageOffset();
 
 	/**
+	 * Set the voltage offset from the PCC to the inverter.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param volts
+	 *        the voltage offset, in V
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setPccVoltageOffset(ModbusConnection conn, float volts) throws IOException;
+
+	/**
 	 * Get the maximum voltage, in V.
 	 *
 	 * @return the maximum voltage
 	 */
 	@Nullable
 	Float getVoltageMaximum();
+
+	/**
+	 * Set the maximum voltage.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param volts
+	 *        the maximum voltage, in V
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setVoltageMaximum(ModbusConnection conn, float volts) throws IOException;
 
 	/**
 	 * Get the minimum voltage, in V.
@@ -78,12 +140,38 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getVoltageMinimum();
 
 	/**
+	 * Set the minimum voltage.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param volts
+	 *        the minimum voltage, in V
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setVoltageMinimum(ModbusConnection conn, float volts) throws IOException;
+
+	/**
 	 * Get the maximum apparent power output, in VA.
 	 *
 	 * @return the apparent power maximum
 	 */
 	@Nullable
 	Integer getApparentPowerMaximum();
+
+	/**
+	 * Set the maximum apparent power output.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param voltAmps
+	 *        the maximum apparent power, in VA
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setApparentPowerMaximum(ModbusConnection conn, int voltAmps) throws IOException;
 
 	/**
 	 * Get the maximum reactive power for EEI quadrant 1 (lagging, inductive),
@@ -95,6 +183,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Integer getReactivePowerQ1Maximum();
 
 	/**
+	 * Set the maximum reactive power for EEI quadrant 1 (lagging, inductive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param vars
+	 *        the maximum reactive power, in VAR
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setReactivePowerQ1Maximum(ModbusConnection conn, int vars) throws IOException;
+
+	/**
 	 * Get the maximum reactive power for EEI quadrant 2 (leading, capacitive),
 	 * in VAR.
 	 *
@@ -102,6 +203,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	 */
 	@Nullable
 	Integer getReactivePowerQ2Maximum();
+
+	/**
+	 * Set the maximum reactive power for EEI quadrant 2 (leading, capacitive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param vars
+	 *        the maximum reactive power, in VAR
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setReactivePowerQ2Maximum(ModbusConnection conn, int vars) throws IOException;
 
 	/**
 	 * Get the maximum reactive power for EEI quadrant 3 (lagging, inductive),
@@ -113,6 +227,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Integer getReactivePowerQ3Maximum();
 
 	/**
+	 * Set the maximum reactive power for EEI quadrant 3 (lagging, inductive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param vars
+	 *        the maximum reactive power, in VAR
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setReactivePowerQ3Maximum(ModbusConnection conn, int vars) throws IOException;
+
+	/**
 	 * Get the maximum reactive power for EEI quadrant 4 (leading, capacitive),
 	 * in VAR.
 	 *
@@ -120,6 +247,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	 */
 	@Nullable
 	Integer getReactivePowerQ4Maximum();
+
+	/**
+	 * Set the maximum reactive power for EEI quadrant 4 (leading, capacitive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param vars
+	 *        the maximum reactive power, in VAR
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setReactivePowerQ4Maximum(ModbusConnection conn, int vars) throws IOException;
 
 	/**
 	 * Get the ramp rate of change of active power due to commands or internal
@@ -131,6 +271,20 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getActivePowerRampRate();
 
 	/**
+	 * Set the ramp rate of change of active power due to commands or internal
+	 * actions.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param percentPerSecond
+	 *        the ramp rate, in maximum active power percentage/sec
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setActivePowerRampRate(ModbusConnection conn, float percentPerSecond) throws IOException;
+
+	/**
 	 * Get the minimum power factor rating for EEI quadrant 1 (lagging,
 	 * inductive), as a decimal from -1.0 to 1.0.
 	 *
@@ -138,6 +292,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	 */
 	@Nullable
 	Float getPowerFactorQ1Minimum();
+
+	/**
+	 * Set the minimum power factor for EEI quadrant 1 (lagging, inductive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param powerFactor
+	 *        the power factor, as a decimal from -1.0 to 1.0
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setPowerFactorQ1Minimum(ModbusConnection conn, float powerFactor) throws IOException;
 
 	/**
 	 * Get the minimum power factor rating for EEI quadrant 2 (leading,
@@ -149,6 +316,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getPowerFactorQ2Minimum();
 
 	/**
+	 * Set the minimum power factor for EEI quadrant 2 (leading, capacitive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param powerFactor
+	 *        the power factor, as a decimal from -1.0 to 1.0
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setPowerFactorQ2Minimum(ModbusConnection conn, float powerFactor) throws IOException;
+
+	/**
 	 * Get the minimum power factor rating for EEI quadrant 3 (lagging,
 	 * inductive), as a decimal from -1.0 to 1.0.
 	 *
@@ -156,6 +336,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	 */
 	@Nullable
 	Float getPowerFactorQ3Minimum();
+
+	/**
+	 * Set the minimum power factor for EEI quadrant 3 (lagging, inductive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param powerFactor
+	 *        the power factor, as a decimal from -1.0 to 1.0
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setPowerFactorQ3Minimum(ModbusConnection conn, float powerFactor) throws IOException;
 
 	/**
 	 * Get the minimum power factor rating for EEI quadrant 4 (leading,
@@ -167,6 +360,19 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getPowerFactorQ4Minimum();
 
 	/**
+	 * Set the minimum power factor for EEI quadrant 4 (leading, capacitive).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param powerFactor
+	 *        the power factor, as a decimal from -1.0 to 1.0
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setPowerFactorQ4Minimum(ModbusConnection conn, float powerFactor) throws IOException;
+
+	/**
 	 * Get the action to take when changing between charging and discharging.
 	 *
 	 * @return the action
@@ -175,12 +381,40 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	ReactivePowerAction getImportExportChangeReactivePowerAction();
 
 	/**
+	 * Set the action to take when changing between charging and discharging.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param action
+	 *        the action
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setImportExportChangeReactivePowerAction(ModbusConnection conn, ReactivePowerAction action)
+			throws IOException;
+
+	/**
 	 * Get the apparent power calculation method used.
 	 *
 	 * @return the apparent power calculation method
 	 */
 	@Nullable
 	ApparentPowerCalculationMethod getApparentPowerCalculationMethod();
+
+	/**
+	 * Set the apparent power calculation method.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param method
+	 *        the method
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setApparentPowerCalculationMethod(ModbusConnection conn, ApparentPowerCalculationMethod method)
+			throws IOException;
 
 	/**
 	 * Get the ramp rate of change of active power due to intermittent PV
@@ -192,6 +426,21 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getActivePowerRampRateMaximum();
 
 	/**
+	 * Set the ramp rate of change of active power due to intermittent PV
+	 * generation.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param percent
+	 *        the ramp rate, as a percentage of
+	 *        {@link #getActivePowerRampRate()}
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setActivePowerRampRateMaximum(ModbusConnection conn, float percent) throws IOException;
+
+	/**
 	 * Get the nominal frequency at the electrical connection point (ECP), in
 	 * Hz.
 	 *
@@ -201,11 +450,40 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	Float getEcpFrequency();
 
 	/**
+	 * Set the nominal frequency at the electrical connection point (ECP).
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param hertz
+	 *        the frequency, in Hz
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setEcpFrequency(ModbusConnection conn, float hertz) throws IOException;
+
+	/**
 	 * Get the connected phase, for single phase inverters.
 	 *
 	 * @return the connected phase
 	 */
 	@Nullable
 	AcPhase getConnectedPhase();
+
+	/**
+	 * Set the connected phase, for single phase inverters.
+	 *
+	 * @param conn
+	 *        the connection to write to
+	 * @param phase
+	 *        the connected phase, one of {@link AcPhase#PhaseA},
+	 *        {@link AcPhase#PhaseB}, or {@link AcPhase#PhaseC}
+	 * @throws IllegalArgumentException
+	 *         if {@code phase} is not one of the supported phases
+	 * @throws IOException
+	 *         if any communication error occurs
+	 * @since 2.1
+	 */
+	void setConnectedPhase(ModbusConnection conn, AcPhase phase) throws IOException;
 
 }

@@ -42,7 +42,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.2
  */
 public enum InverterNameplateRatingsRegister implements SunspecModbusReference {
@@ -93,16 +93,16 @@ public enum InverterNameplateRatingsRegister implements SunspecModbusReference {
 
 	// Power factor
 
-	/** AC power factor rating Q1, reported a a decimal percentage -1..1. */
+	/** AC power factor rating Q1, reported as a decimal -1..1. */
 	PowerFactorQ1Rating(12, Int16),
 
-	/** AC power factor rating Q2, reported a a decimal percentage -1..1. */
+	/** AC power factor rating Q2, reported as a decimal -1..1. */
 	PowerFactorQ2Rating(13, Int16),
 
-	/** AC power factor rating Q3, reported a a decimal percentage -1..1. */
+	/** AC power factor rating Q3, reported as a decimal -1..1. */
 	PowerFactorQ3Rating(14, Int16),
 
-	/** AC power factor rating Q4, reported a a decimal percentage -1..1. */
+	/** AC power factor rating Q4, reported as a decimal -1..1. */
 	PowerFactorQ4Rating(15, Int16),
 
 	/** AC power factor rating scale factor, as *10^X. */
@@ -132,7 +132,7 @@ public enum InverterNameplateRatingsRegister implements SunspecModbusReference {
 	StoredEnergyExportPowerRating(23, UInt16),
 
 	/** Stored energy maximum discharge rating scale factor, as *10^X. */
-	ScaleFactorStoredEnergyExportPowerRating(24, UInt16, ScaleFactor);
+	ScaleFactorStoredEnergyExportPowerRating(24, Int16, ScaleFactor);
 
 	private final int address;
 	private final ModbusDataType dataType;

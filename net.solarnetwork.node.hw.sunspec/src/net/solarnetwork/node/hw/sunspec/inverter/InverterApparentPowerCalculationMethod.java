@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import org.jspecify.annotations.Nullable;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 
@@ -30,16 +31,19 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
  * Apparent power calculation method for inverters.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.2
  */
-public enum InverterApparentPowerCalculationMethod implements ApparentPowerCalculationMethod {
+public enum InverterApparentPowerCalculationMethod
+		implements
+		ApparentPowerCalculationMethod,
+		CodedValue {
 
 	/** Vector method. */
-	Vector(1, "Switch VAR characterization"),
+	Vector(1, "Vector"),
 
 	/** Arithmetic method. */
-	Arithmetic(2, "Maintain VAR characterization");
+	Arithmetic(2, "Arithmetic");
 
 	private final int code;
 	private final String description;

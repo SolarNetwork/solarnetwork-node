@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import org.jspecify.annotations.Nullable;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
 
@@ -30,10 +31,10 @@ import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
  * Reactive power action for inverters.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.2
  */
-public enum InverterReactivePowerAction implements ReactivePowerAction {
+public enum InverterReactivePowerAction implements ReactivePowerAction, CodedValue {
 
 	/** Switch VAR characterization. */
 	Switch(1, "Switch VAR characterization"),

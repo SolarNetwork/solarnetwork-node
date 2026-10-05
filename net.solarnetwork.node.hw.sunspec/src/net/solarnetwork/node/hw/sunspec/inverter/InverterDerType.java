@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import org.jspecify.annotations.Nullable;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.node.hw.sunspec.DistributedEnergyResourceType;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 
@@ -30,10 +31,10 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
  * Enumeration of inverter DER types.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.2
  */
-public enum InverterDerType implements DistributedEnergyResourceType {
+public enum InverterDerType implements DistributedEnergyResourceType, CodedValue {
 
 	/** Photovoltaic generation. */
 	PV(4, "Photovoltaic generation"),
