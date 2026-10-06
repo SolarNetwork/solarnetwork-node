@@ -66,7 +66,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver,
@@ -296,11 +296,6 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		}
 		try {
 			generateDatum(sampleClock.instant());
-			final Duration coalesceDuration = effectiveCoalesceTimeout();
-			if ( coalesceDuration == null ) {
-				return;
-			}
-			coalesceFuture = taskScheduler.schedule(this, now().plus(coalesceDuration));
 		} finally {
 			mergedSamplesLock.unlock();
 		}
