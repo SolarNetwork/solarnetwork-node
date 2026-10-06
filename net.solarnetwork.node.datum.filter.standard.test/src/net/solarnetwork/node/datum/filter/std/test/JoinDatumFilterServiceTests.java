@@ -386,7 +386,7 @@ public class JoinDatumFilterServiceTests {
 			.as("Output datum generated immediately after coalesce threshold met")
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
-			.as("Generated datum for configured output source and most recently collected sample")
+			.as("Generated datum for configured output source and timeout sample clock timestamp")
 			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, d2.getTimestamp()), from(SimpleDatum::getId))
 			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
 			.as("Properties from seen samples included")
@@ -407,19 +407,23 @@ public class JoinDatumFilterServiceTests {
 		xform.setPropertySourceMappings(
 				new PatternKeyValuePair[] { new PatternKeyValuePair("_(\\d+)$", "{p}_s{1}") });
 
+		// allow any number of calls so extra timeouts (that would run on the scheduler thread)
+		// are captured and can be asserted on the test thread
 		final Instant timestamp = Instant.now().minusSeconds(1L);
-		expect(sampleClock.instant()).andReturn(timestamp);
+		expect(sampleClock.instant()).andReturn(timestamp).anyTimes();
 
-		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
-		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true);
+		final Capture<NodeDatum> outputCaptor = Capture.newInstance(CaptureType.ALL);
+		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true).anyTimes();
 
 		// WHEN
 		replayAll();
 		xform.start();
 
-		List<@Nullable DatumSamplesOperations> results = new ArrayList<>(5);
+		// feed in datum more frequently than the coalesce timeout, for longer than the timeout,
+		// without ever meeting the coalesce threshold
+		List<@Nullable DatumSamplesOperations> results = new ArrayList<>(7);
 		try {
-			for ( int i = 0; i < 5; i++ ) {
+			for ( int i = 0; i < 7; i++ ) {
 				final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID_1, PROP_1, i);
 				results.add(xform.filter(d1, d1.getSamples(), null));
 				Thread.sleep(200);
@@ -428,6 +432,9 @@ public class JoinDatumFilterServiceTests {
 			xform.stop();
 		}
 
+		// wait past another timeout, to verify no timeout fires after stopped
+		Thread.sleep(xform.getCoalesceTimeout().plusMillis(200).toMillis());
+
 		// THEN
 		// @formatter:off
 		then(results)
@@ -435,11 +442,14 @@ public class JoinDatumFilterServiceTests {
 			.as("All results swallowed")
 			.isEmpty()
 			;
-		then(outputCaptor.getValue())
-			.as("Output datum generated immediately after coalesce threshold met")
+		then(outputCaptor.getValues())
+			.as("Exactly one output datum generated: from timeout while input datum arriving, none after stop")
+			.hasSize(1)
+			.element(0)
+			.as("Output datum generated from coalesce timeout")
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
-			.as("Generated datum for configured output source and most recently collected sample")
+			.as("Generated datum for configured output source and timeout sample clock timestamp")
 			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
 			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
 			.as("Properties from just one source included")

@@ -296,11 +296,6 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		}
 		try {
 			generateDatum(sampleClock.instant());
-			final Duration coalesceDuration = effectiveCoalesceTimeout();
-			if ( coalesceDuration == null ) {
-				return;
-			}
-			coalesceFuture = taskScheduler.schedule(this, now().plus(coalesceDuration));
 		} finally {
 			mergedSamplesLock.unlock();
 		}
