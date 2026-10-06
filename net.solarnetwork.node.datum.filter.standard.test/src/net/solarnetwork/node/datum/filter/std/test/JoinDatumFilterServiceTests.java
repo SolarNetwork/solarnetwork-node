@@ -48,6 +48,7 @@ import java.util.Map;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -393,6 +394,56 @@ public class JoinDatumFilterServiceTests {
 					  entry(format("%s_s1", PROP_1), 123)
 					, entry(format("%s_s2", PROP_2), 234)
 					)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void coalesce_withTimeout_repeatedlyNotMeetThreshold() throws Exception {
+		// GIVEN
+		xform.setSwallowInput(true);
+		xform.setCoalesceThreshold(2);
+		xform.setCoalesceTimeout(Duration.ofSeconds(1));
+		xform.setPropertySourceMappings(
+				new PatternKeyValuePair[] { new PatternKeyValuePair("_(\\d+)$", "{p}_s{1}") });
+
+		final Instant timestamp = Instant.now().minusSeconds(1L);
+		expect(sampleClock.instant()).andReturn(timestamp);
+
+		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true);
+
+		// WHEN
+		replayAll();
+		xform.start();
+
+		List<@Nullable DatumSamplesOperations> results = new ArrayList<>(5);
+		try {
+			for ( int i = 0; i < 5; i++ ) {
+				final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID_1, PROP_1, i);
+				results.add(xform.filter(d1, d1.getSamples(), null));
+				Thread.sleep(200);
+			}
+		} finally {
+			xform.stop();
+		}
+
+		// THEN
+		// @formatter:off
+		then(results)
+			.filteredOn(r -> r != null)
+			.as("All results swallowed")
+			.isEmpty()
+			;
+		then(outputCaptor.getValue())
+			.as("Output datum generated immediately after coalesce threshold met")
+			.isInstanceOf(SimpleDatum.class)
+			.asInstanceOf(type(SimpleDatum.class))
+			.as("Generated datum for configured output source and most recently collected sample")
+			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
+			.as("Properties from just one source included")
+			.containsOnlyKeys(format("%s_s1", PROP_1))
 			;
 		// @formatter:on
 	}

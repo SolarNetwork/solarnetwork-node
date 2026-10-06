@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -90,6 +92,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	private final DatumSamples mergedSamples = new DatumSamples();
 	private final Set<String> coalescedSourceIds = new HashSet<>(4, 0.9f);
+	private final Lock mergedSamplesLock = new ReentrantLock(true);
 
 	private final OptionalService<DatumQueue> datumQueue;
 	private final InstantSource sampleClock;
@@ -248,9 +251,9 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		resetCoalesceTimeout();
 		final String[] propSourceMapping = propertySourceMapping(datum);
-		synchronized ( mergedSamples ) {
+		mergedSamplesLock.lock();
+		try {
 			coalescedSourceIds.add(datum.getSourceId());
 			if ( propSourceMapping == null ) {
 				// simple case
@@ -272,6 +275,8 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 			if ( coalescedSourceIds.size() >= coalesceThreshold ) {
 				generateDatum(datum.getTimestamp());
 			}
+		} finally {
+			mergedSamplesLock.unlock();
 		}
 		DatumSamplesOperations result = (swallowInput ? null : samples);
 		incrementStats(start, samples, result);
@@ -283,16 +288,25 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	 */
 	@Override
 	public void run() {
-		synchronized ( mergedSamples ) {
-			generateDatum(sampleClock.instant());
-		}
-		final Duration coalesceDuration = effectiveCoalesceTimeout();
-		if ( coalesceDuration == null ) {
+		try {
+			mergedSamplesLock.lockInterruptibly();
+		} catch ( InterruptedException e ) {
+			// ignore and end
 			return;
 		}
-		coalesceFuture = taskScheduler.schedule(this, now().plus(coalesceDuration));
+		try {
+			generateDatum(sampleClock.instant());
+			final Duration coalesceDuration = effectiveCoalesceTimeout();
+			if ( coalesceDuration == null ) {
+				return;
+			}
+			coalesceFuture = taskScheduler.schedule(this, now().plus(coalesceDuration));
+		} finally {
+			mergedSamplesLock.unlock();
+		}
 	}
 
+	// the mergedSamplesLock should be acquired before calling this method
 	private void generateDatum(Instant timestamp) {
 		SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId, timestamp != null ? timestamp : now(),
 				new DatumSamples(mergedSamples));
@@ -305,6 +319,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		if ( coalesceThreshold > 1 ) {
 			mergedSamples.clear();
 		}
+		resetCoalesceTimeout();
 	}
 
 	/**
