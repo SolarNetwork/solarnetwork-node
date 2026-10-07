@@ -43,6 +43,7 @@ import org.junit.Test;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.filter.std.UnchangedDatumFilterService;
+import net.solarnetwork.node.datum.filter.std.UnchangedDatumFilterService.DebounceMode;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 
 /**
@@ -61,6 +62,9 @@ public class UnchangedDatumFilterServiceTests {
 	private static final String PROP_4 = "status";
 	private static final int UNCHANGED_SECS = 10;
 	private static final int DEBOUNCE_SECS = 5;
+
+	/** An intermittent presence signal, sampled every 2 seconds. */
+	private static final String PRESENCE_READS = "00001110010111011000001000";
 
 	private UnchangedDatumFilterService xform;
 
@@ -675,6 +679,168 @@ public class UnchangedDatumFilterServiceTests {
 
 		// THEN
 		assertResults("PP..P.P", data, results);
+	}
+
+	@Test
+	public void debounceModeName() {
+		assertThat("Default mode", xform.getDebounceMode(), is(equalTo(DebounceMode.Consecutive)));
+
+		// WHEN
+		xform.setDebounceModeName(DebounceMode.Integrator.name());
+
+		// THEN
+		assertThat("Mode set from name", xform.getDebounceMode(), is(equalTo(DebounceMode.Integrator)));
+		assertThat("Mode name", xform.getDebounceModeName(),
+				is(equalTo(DebounceMode.Integrator.name())));
+
+		// WHEN
+		xform.setDebounceModeName("foo");
+
+		// THEN
+		assertThat("Unsupported name uses default mode", xform.getDebounceMode(),
+				is(equalTo(DebounceMode.Consecutive)));
+
+		// WHEN
+		xform.setDebounceMode(DebounceMode.Integrator);
+		xform.setDebounceModeName(null);
+
+		// THEN
+		assertThat("Null name uses default mode", xform.getDebounceMode(),
+				is(equalTo(DebounceMode.Consecutive)));
+	}
+
+	private void configureIntegratorDebounce() {
+		configureDebounce();
+		xform.setDebounceMode(DebounceMode.Integrator);
+	}
+
+	@Test
+	public void integrator_interruptedChange() {
+		// GIVEN
+		configureIntegratorDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "B", "A", "B", "B", "B", "B", "B",
+				"B", "B", "B");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// B @ 1-2s adds 1s, A @ 3s subtracts 1s, B @ 4-8s adds 4s: net 5s reached @ 8s
+		assertResults("P.......P...", data, results);
+	}
+
+	@Test
+	public void integrator_glitchesDiscarded() {
+		// GIVEN
+		configureIntegratorDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "A", "B", "B", "A", "B", "B", "B",
+				"A");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		assertResults("P.........", data, results);
+	}
+
+	@Test
+	public void integrator_pendingAbandonedWhenNetTimeNegative() {
+		// GIVEN
+		configureIntegratorDebounce();
+		xform.setUnchangedPublishMaxSeconds(0);
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "B", "A", "A", "A", "B", "B", "B",
+				"B", "B", "B");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// B @ 1-2s adds 1s, A @ 3-4s subtracts 2s so B abandoned; B @ 6s restarts and published @ 11s
+		assertResults("P..........P", data, results);
+	}
+
+	@Test
+	public void integrator_newValueRestarts() {
+		// GIVEN
+		configureIntegratorDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "B", "A", "B", "C", "C", "C", "C",
+				"C", "C");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// C @ 5s replaces pending B, and published @ 10s
+		assertResults("P.........P", data, results);
+	}
+
+	@Test
+	public void integrator_unchangedMaxElapsedWhilePending() {
+		// GIVEN
+		configureIntegratorDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 2, "A", "B", "B", "A", "B", "B", "B");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// B @ 2-4s adds 2s, A @ 6s subtracts 2s, B @ 8-10s adds 4s but max seconds elapsed @ 10s
+		// so published with stable A value; B then published @ 12s with net 6s
+		assertResults("P....*P", data, results);
+		DatumSamplesOperations debounced = results.get(5);
+		assertThat("Debounced datum has last stable monitored property value",
+				debounced.getSampleString(DatumSamplesType.Status, PROP_3), is(equalTo("A")));
+		assertThat("Debounced datum has current non-monitored property value",
+				debounced.getSampleInteger(DatumSamplesType.Instantaneous, PROP_1), is(equalTo(10)));
+	}
+
+	private List<DatumSamplesOperations> filterPresenceReads(DebounceMode mode, int thresholdSecs,
+			List<SimpleDatum> data) {
+		setup();
+		configurePropertyPattern();
+		xform.setUnchangedPublishMaxSeconds(0);
+		xform.setDebounceMode(mode);
+		xform.setDebounceThreshold(Duration.ofSeconds(thresholdSecs));
+		return filterAll(data);
+	}
+
+	@Test
+	public void consecutive_presenceReads() {
+		// GIVEN
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 2, PRESENCE_READS.split(""));
+
+		// WHEN
+		List<DatumSamplesOperations> results4 = filterPresenceReads(DebounceMode.Consecutive, 4, data);
+		List<DatumSamplesOperations> results6 = filterPresenceReads(DebounceMode.Consecutive, 6, data);
+
+		// THEN
+		// reads:      00001110010111011000001000
+		assertResults("P.....P............P......", data, results4);
+		assertResults("P.........................", data, results6);
+	}
+
+	@Test
+	public void integrator_presenceReads() {
+		// GIVEN
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 2, PRESENCE_READS.split(""));
+
+		// WHEN
+		List<DatumSamplesOperations> results4 = filterPresenceReads(DebounceMode.Integrator, 4, data);
+		List<DatumSamplesOperations> results6 = filterPresenceReads(DebounceMode.Integrator, 6, data);
+		List<DatumSamplesOperations> results8 = filterPresenceReads(DebounceMode.Integrator, 8, data);
+
+		// THEN
+		// reads:      00001110010111011000001000
+		assertResults("P.....P............P......", data, results4);
+		assertResults("P............P......P.....", data, results6);
+		assertResults("P...............P....P....", data, results8);
 	}
 
 }

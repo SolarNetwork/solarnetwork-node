@@ -24,6 +24,7 @@ Each filter configuration contains the following overall settings:
 | Unchanged Max Seconds | When greater than `0` then the maximum number of seconds to refrain from publishing an unchanged datum within a single datum stream. |
 | Property Pattern | A property name [pattern][regex] that limits the properties monitored for changes. Only property names that match this expression will be considered when determining if a datum differs from the previous datum within the datum stream. |
 | Debounce Threshold | When greater than `0` then the minimum number of milliseconds a changed datum must remain unchanged before it is published. See [Debounce](#debounce) for more details. |
+| Debounce Mode | How time is counted towards the **Debounce Threshold**, either **Consecutive** or **Integrator**. See [Debounce modes](#debounce-modes) for more details. |
 
 ## Settings notes
 
@@ -53,7 +54,8 @@ output:    A  ·  ·  ·  ·  ·  ·  ·  ·  B  ·  ·
 ```
 
 The `B` values at 1–2s revert to `A` at 3s, so they are discarded. The `B` value seen at 4s is
-published at 9s, which is the first datum after it has remained unchanged for 5 seconds.
+published at 9s, which is the first datum after it has remained unchanged for 5 seconds. This
+example uses the default **Consecutive** [debounce mode](#debounce-modes).
 
 Some things to keep in mind when using a debounce threshold:
 
@@ -68,5 +70,37 @@ Some things to keep in mind when using a debounce threshold:
    debounce. Without a pattern all properties are monitored, so continuously changing values like
    power readings would never be stable. In that case only the last stable datum values are
    published, once per **Unchanged Max Seconds**.
+
+### Debounce modes
+
+The **Debounce Mode** setting determines how time is counted towards the **Debounce Threshold**:
+
+| Mode | Description |
+|:-----|:------------|
+| Consecutive | A changed value must be seen continuously for the entire threshold. Seeing the previously published value again abandons the change. This is the default mode. |
+| Integrator | Time at a changed value counts towards the threshold, and time back at the previously published value counts against it. The change is published once the net time reaches the threshold, and abandoned if the net time drops below zero. |
+
+Both modes publish a change that is not interrupted at the same time. They differ when a change
+is interrupted by the previously published value. Using the same example as before, the
+**Integrator** mode publishes `B` one second earlier, because the `B` values at 1–2s still count
+after the `A` value at 3s takes one second away:
+
+```
+time (s):     0  1  2  3  4  5  6  7  8  9  10 11
+status:       A  B  B  A  B  B  B  B  B  B  B  B
+Consecutive:  A  ·  ·  ·  ·  ·  ·  ·  ·  B  ·  ·
+Integrator:   A  ·  ·  ·  ·  ·  ·  ·  B  ·  ·  ·
+```
+
+The **Integrator** mode suits signals that are _mostly_, but not always, at their true value. An
+example is a presence sensor like an RFID reader detecting a parked vehicle, which occasionally
+misses a read. The **Consecutive** mode would need an unbroken run of reads lasting the entire
+threshold, which becomes very unlikely as the threshold grows. The **Integrator** mode only needs
+the signal to be at the changed value more than half the time. When using this mode:
+
+ * The weaker the signal (the closer it is to its true value only half the time) the longer the
+   threshold should be.
+ * Choose a threshold longer than the longest expected interruption, such as a burst of missed
+   reads while a vehicle is parked.
 
 [regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html

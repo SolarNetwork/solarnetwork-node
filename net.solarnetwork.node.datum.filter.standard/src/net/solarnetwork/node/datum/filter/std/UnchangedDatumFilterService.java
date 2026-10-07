@@ -26,7 +26,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -35,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -43,6 +46,7 @@ import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
@@ -53,7 +57,8 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * If a {@code debounceThreshold} is configured, then changed datum are only
  * published after the changed property values have remained stable for at least
  * that amount of time. Changes that revert before the threshold elapses are
- * discarded.
+ * discarded. The {@code debounceMode} determines how the time is counted: see
+ * {@link DebounceMode}.
  * </p>
  *
  * @author matt
@@ -66,11 +71,44 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 	/** The {@code unchangedPublishMaxSeconds} property default value. */
 	public static final int DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS = 3599;
 
+	/**
+	 * The {@code debounceMode} property default value.
+	 *
+	 * @since 1.2
+	 */
+	public static final DebounceMode DEFAULT_DEBOUNCE_MODE = DebounceMode.Consecutive;
+
+	/**
+	 * Modes for determining when a changed datum has become stable.
+	 *
+	 * @since 1.2
+	 */
+	public enum DebounceMode {
+
+		/**
+		 * A changed value must remain unchanged for the entire debounce
+		 * threshold, and is abandoned if the previously published value is seen
+		 * again.
+		 */
+		Consecutive,
+
+		/**
+		 * Time at a changed value counts towards the debounce threshold, while
+		 * time back at the previously published value counts against it. A
+		 * changed value is abandoned if its accumulated time drops below zero.
+		 */
+		Integrator,
+
+		;
+
+	}
+
 	private final ConcurrentMap<String, StreamState> streamStates = new ConcurrentHashMap<>(8, 0.9f, 2);
 
 	private int unchangedPublishMaxSeconds = DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS;
 	private Pattern propertyIncludePattern;
 	private Duration debounceThreshold;
+	private DebounceMode debounceMode = DEFAULT_DEBOUNCE_MODE;
 
 	/**
 	 * Constructor.
@@ -102,20 +140,6 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 		private boolean isPublishDue(Instant ts) {
 			return (unchangedPublishMaxSeconds > 0
 					&& !timestamp.plusSeconds(unchangedPublishMaxSeconds).isAfter(ts));
-		}
-
-		/**
-		 * Test if a debounce threshold has elapsed since this sample.
-		 *
-		 * @param ts
-		 *        the timestamp to test
-		 * @param threshold
-		 *        the debounce threshold
-		 * @return {@literal true} if {@code threshold} has elapsed between this
-		 *         sample and {@code ts}
-		 */
-		private boolean isStable(Instant ts, Duration threshold) {
-			return !timestamp.plus(threshold).isAfter(ts);
 		}
 
 		private boolean sampleEquals(DatumSamplesOperations samples) {
@@ -257,6 +281,12 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 		/** A changed sample that has not yet been stable for long enough. */
 		private SeenSample pending;
 
+		/** The time accumulated towards the pending sample becoming stable. */
+		private Duration pendingTime = Duration.ZERO;
+
+		/** The timestamp of the previous datum. */
+		private Instant previousTimestamp;
+
 		/**
 		 * Filter a datum within this stream.
 		 *
@@ -268,15 +298,30 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 		 */
 		private synchronized DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples) {
 			final Instant ts = (datum.getTimestamp() != null ? datum.getTimestamp() : Instant.now());
+			final Instant prevTs = previousTimestamp;
+			previousTimestamp = ts;
 			if ( published == null ) {
 				published = new SeenSample(ts, samples);
 				return samples;
 			}
 
+			// the time since the previous datum is attributed to this datum's values
+			final Duration dt = (prevTs.isBefore(ts) ? Duration.between(prevTs, ts) : Duration.ZERO);
+
 			final boolean publishDue = published.isPublishDue(ts);
 			if ( published.sampleEquals(samples) ) {
-				// any pending change reverted before becoming stable
-				pending = null;
+				if ( pending != null ) {
+					if ( getDebounceMode() == DebounceMode.Integrator ) {
+						// time at the published value counts against the pending change
+						pendingTime = pendingTime.minus(dt);
+						if ( pendingTime.isNegative() ) {
+							pending = null;
+						}
+					} else {
+						// pending change reverted before becoming stable
+						pending = null;
+					}
+				}
 				if ( !publishDue ) {
 					log.trace(
 							"Unchanged filter [{}] discarding source [{}] @ {} as not changed in the past {}s",
@@ -296,24 +341,28 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 
 			if ( pending == null || !pending.sampleEquals(samples) ) {
 				pending = new SeenSample(ts, samples);
-			} else if ( pending.isStable(ts, threshold) ) {
-				pending = null;
-				published = new SeenSample(ts, samples);
-				return samples;
+				pendingTime = Duration.ZERO;
+			} else {
+				pendingTime = pendingTime.plus(dt);
+				if ( pendingTime.compareTo(threshold) >= 0 ) {
+					pending = null;
+					published = new SeenSample(ts, samples);
+					return samples;
+				}
 			}
 
 			if ( !publishDue ) {
 				log.trace(
-						"Unchanged filter [{}] discarding source [{}] @ {} as change since {} not stable for {}",
-						getUid(), datum.getSourceId(), ts, pending.timestamp, threshold);
+						"Unchanged filter [{}] discarding source [{}] @ {} as change since {} only stable for {} of {}",
+						getUid(), datum.getSourceId(), ts, pending.timestamp, pendingTime, threshold);
 				return null;
 			}
 
 			// publish with the last stable property values, while the change remains pending
 			final DatumSamples result = published.debounced(samples);
 			log.trace(
-					"Unchanged filter [{}] publishing source [{}] @ {} with last stable values as change since {} not stable for {}",
-					getUid(), datum.getSourceId(), ts, pending.timestamp, threshold);
+					"Unchanged filter [{}] publishing source [{}] @ {} with last stable values as change since {} only stable for {} of {}",
+					getUid(), datum.getSourceId(), ts, pending.timestamp, pendingTime, threshold);
 			published = new SeenSample(ts, result);
 			return result;
 		}
@@ -350,6 +399,22 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 				String.valueOf(DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS)));
 		result.add(new BasicTextFieldSettingSpecifier("propertyIncludePatternValue", null));
 		result.add(new BasicTextFieldSettingSpecifier("debounceThresholdMillis", null));
+
+		// drop-down menu for debounceMode
+		final MessageSource messageSource = getMessageSource();
+		final BasicMultiValueSettingSpecifier debounceModeSpec = new BasicMultiValueSettingSpecifier(
+				"debounceModeName", DEFAULT_DEBOUNCE_MODE.name());
+		final Map<String, String> debounceModeTitles = new LinkedHashMap<>(2);
+		for ( DebounceMode e : DebounceMode.values() ) {
+			String title = e.name();
+			if ( messageSource != null ) {
+				title = messageSource.getMessage("debounceMode." + e.name(), null, title,
+						Locale.getDefault());
+			}
+			debounceModeTitles.put(e.name(), title);
+		}
+		debounceModeSpec.setValueTitles(debounceModeTitles);
+		result.add(debounceModeSpec);
 
 		return result;
 	}
@@ -452,8 +517,9 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * <p>
 	 * When configured, a changed datum is only published after the examined
-	 * properties have remained unchanged for at least this amount of time. A
-	 * change that reverts before the threshold elapses is discarded. If the
+	 * properties have remained unchanged for at least this amount of time, as
+	 * counted by the configured {@code debounceMode}. A change that reverts
+	 * before the threshold elapses is discarded. If the
 	 * {@code unchangedPublishMaxSeconds} elapses while a change is not yet
 	 * stable, the datum is published with the examined properties set to their
 	 * last published values.
@@ -491,6 +557,61 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public void setDebounceThresholdMillis(long millis) {
 		setDebounceThreshold(millis > 0 ? Duration.ofMillis(millis) : null);
+	}
+
+	/**
+	 * Get the debounce mode.
+	 *
+	 * @return the debounce mode, never {@literal null}; defaults to
+	 *         {@link #DEFAULT_DEBOUNCE_MODE}
+	 * @since 1.2
+	 */
+	public DebounceMode getDebounceMode() {
+		return debounceMode;
+	}
+
+	/**
+	 * Set the debounce mode.
+	 *
+	 * @param debounceMode
+	 *        the debounce mode to set; if {@literal null} then
+	 *        {@link #DEFAULT_DEBOUNCE_MODE} will be used
+	 * @since 1.2
+	 */
+	public void setDebounceMode(DebounceMode debounceMode) {
+		this.debounceMode = (debounceMode != null ? debounceMode : DEFAULT_DEBOUNCE_MODE);
+	}
+
+	/**
+	 * Get the debounce mode, as a name.
+	 *
+	 * @return the debounce mode name
+	 * @see #getDebounceMode()
+	 * @since 1.2
+	 */
+	public String getDebounceModeName() {
+		return getDebounceMode().name();
+	}
+
+	/**
+	 * Set the debounce mode, as a name.
+	 *
+	 * @param name
+	 *        the {@link DebounceMode} name to set; if {@literal null} or not
+	 *        supported then {@link #DEFAULT_DEBOUNCE_MODE} will be used
+	 * @see #setDebounceMode(DebounceMode)
+	 * @since 1.2
+	 */
+	public void setDebounceModeName(String name) {
+		DebounceMode mode = null;
+		if ( name != null && !name.isEmpty() ) {
+			try {
+				mode = DebounceMode.valueOf(name);
+			} catch ( IllegalArgumentException e ) {
+				log.warn("Unsupported debounce mode [{}], using {}", name, DEFAULT_DEBOUNCE_MODE);
+			}
+		}
+		setDebounceMode(mode);
 	}
 
 }
