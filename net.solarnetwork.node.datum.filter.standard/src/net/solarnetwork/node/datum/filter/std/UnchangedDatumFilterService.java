@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,9 +48,16 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * Datum filter service that can discard unchanged datum, within a maximum time
  * range.
- * 
+ *
+ * <p>
+ * If a {@code debounceThreshold} is configured, then changed datum are only
+ * published after the changed property values have remained stable for at least
+ * that amount of time. Changes that revert before the threshold elapses are
+ * discarded.
+ * </p>
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 3.1
  */
 public class UnchangedDatumFilterService extends BaseDatumFilterSupport
@@ -57,10 +66,11 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 	/** The {@code unchangedPublishMaxSeconds} property default value. */
 	public static final int DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS = 3599;
 
-	private final ConcurrentMap<String, SeenSample> seenSamples = new ConcurrentHashMap<>(8, 0.9f, 2);
+	private final ConcurrentMap<String, StreamState> streamStates = new ConcurrentHashMap<>(8, 0.9f, 2);
 
 	private int unchangedPublishMaxSeconds = DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS;
 	private Pattern propertyIncludePattern;
+	private Duration debounceThreshold;
 
 	/**
 	 * Constructor.
@@ -81,24 +91,31 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 		}
 
 		/**
-		 * Test if a datum samples should be discarded because it is unchanged
-		 * within the configured maximum seconds threshold.
-		 * 
-		 * @param datum
-		 *        the datum
-		 * @param samples
-		 *        the samples
-		 * @return {@literal true} if the samples should be discarded
+		 * Test if the configured maximum seconds threshold has elapsed since
+		 * this sample.
+		 *
+		 * @param ts
+		 *        the timestamp to test
+		 * @return {@literal true} if an unchanged datum at {@code ts} should be
+		 *         published
 		 */
-		private boolean shouldDiscard(Datum datum, DatumSamplesOperations samples) {
-			if ( datum == null || samples == null ) {
-				return false;
-			}
-			final Instant datumTimestamp = (datum.getTimestamp() != null ? datum.getTimestamp()
-					: Instant.now());
-			return ((unchangedPublishMaxSeconds < 1
-					|| timestamp.plusSeconds(unchangedPublishMaxSeconds).isAfter(datumTimestamp))
-					&& sampleEquals(samples));
+		private boolean isPublishDue(Instant ts) {
+			return (unchangedPublishMaxSeconds > 0
+					&& !timestamp.plusSeconds(unchangedPublishMaxSeconds).isAfter(ts));
+		}
+
+		/**
+		 * Test if a debounce threshold has elapsed since this sample.
+		 *
+		 * @param ts
+		 *        the timestamp to test
+		 * @param threshold
+		 *        the debounce threshold
+		 * @return {@literal true} if {@code threshold} has elapsed between this
+		 *         sample and {@code ts}
+		 */
+		private boolean isStable(Instant ts, Duration threshold) {
+			return !timestamp.plus(threshold).isAfter(ts);
 		}
 
 		private boolean sampleEquals(DatumSamplesOperations samples) {
@@ -176,32 +193,146 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 			}
 			return true;
 		}
+
+		/**
+		 * Copy a samples instance, replacing all monitored property values with
+		 * those from this sample.
+		 *
+		 * <p>
+		 * If no property include pattern is configured then all properties are
+		 * monitored, and a copy of this sample is returned.
+		 * </p>
+		 *
+		 * @param samples
+		 *        the samples to copy
+		 * @return the new samples instance
+		 */
+		private DatumSamples debounced(DatumSamplesOperations samples) {
+			final Pattern p = getPropertyIncludePattern();
+			if ( p == null ) {
+				return new DatumSamples(sample);
+			}
+			final DatumSamples result = new DatumSamples(samples);
+
+			// remove all monitored properties first, in case a property changed type
+			for ( DatumSamplesType type : DatumSamplesOperations.KEYED_TYPES ) {
+				final Map<String, ?> data = result.getSampleData(type);
+				if ( data == null ) {
+					continue;
+				}
+				for ( String k : new ArrayList<>(data.keySet()) ) {
+					if ( k != null && p.matcher(k).find() ) {
+						result.putSampleValue(type, k, null);
+					}
+				}
+			}
+
+			for ( DatumSamplesType type : DatumSamplesOperations.KEYED_TYPES ) {
+				final Map<String, ?> data = sample.getSampleData(type);
+				if ( data != null ) {
+					for ( Entry<String, ?> e : data.entrySet() ) {
+						final String k = e.getKey();
+						if ( k != null && p.matcher(k).find() ) {
+							result.putSampleValue(type, k, e.getValue());
+						}
+					}
+				}
+				final Map<String, ?> m = result.getSampleData(type);
+				if ( m != null && m.isEmpty() ) {
+					result.setSampleData(type, null);
+				}
+			}
+			return result;
+		}
+	}
+
+	/**
+	 * Filter state for a single datum stream.
+	 */
+	private final class StreamState {
+
+		/** The last published sample. */
+		private SeenSample published;
+
+		/** A changed sample that has not yet been stable for long enough. */
+		private SeenSample pending;
+
+		/**
+		 * Filter a datum within this stream.
+		 *
+		 * @param datum
+		 *        the datum
+		 * @param samples
+		 *        the samples
+		 * @return the samples to publish, or {@literal null} to discard
+		 */
+		private synchronized DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples) {
+			final Instant ts = (datum.getTimestamp() != null ? datum.getTimestamp() : Instant.now());
+			if ( published == null ) {
+				published = new SeenSample(ts, samples);
+				return samples;
+			}
+
+			final boolean publishDue = published.isPublishDue(ts);
+			if ( published.sampleEquals(samples) ) {
+				// any pending change reverted before becoming stable
+				pending = null;
+				if ( !publishDue ) {
+					log.trace(
+							"Unchanged filter [{}] discarding source [{}] @ {} as not changed in the past {}s",
+							getUid(), datum.getSourceId(), ts, unchangedPublishMaxSeconds);
+					return null;
+				}
+				published = new SeenSample(ts, samples);
+				return samples;
+			}
+
+			final Duration threshold = getDebounceThreshold();
+			if ( threshold == null || threshold.compareTo(Duration.ZERO) <= 0 ) {
+				pending = null;
+				published = new SeenSample(ts, samples);
+				return samples;
+			}
+
+			if ( pending == null || !pending.sampleEquals(samples) ) {
+				pending = new SeenSample(ts, samples);
+			} else if ( pending.isStable(ts, threshold) ) {
+				pending = null;
+				published = new SeenSample(ts, samples);
+				return samples;
+			}
+
+			if ( !publishDue ) {
+				log.trace(
+						"Unchanged filter [{}] discarding source [{}] @ {} as change since {} not stable for {}",
+						getUid(), datum.getSourceId(), ts, pending.timestamp, threshold);
+				return null;
+			}
+
+			// publish with the last stable property values, while the change remains pending
+			final DatumSamples result = published.debounced(samples);
+			log.trace(
+					"Unchanged filter [{}] publishing source [{}] @ {} with last stable values as change since {} not stable for {}",
+					getUid(), datum.getSourceId(), ts, pending.timestamp, threshold);
+			published = new SeenSample(ts, result);
+			return result;
+		}
 	}
 
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> params) {
 		final long start = incrementInputStats();
-		if ( !conditionsMatch(datum, samples, params) ) {
+		if ( samples == null || !conditionsMatch(datum, samples, params) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
 
-		final String sourceId = datum.getSourceId();
-		final SeenSample seen = seenSamples.get(sourceId);
-		if ( seen == null ) {
-			seenSamples.putIfAbsent(sourceId, new SeenSample(datum.getTimestamp(), samples));
-		} else if ( seen.shouldDiscard(datum, samples) ) {
-			log.trace("Unchanged filter [{}] discarding source [{}] @ {} as not changed in the past {}s",
-					getUid(), sourceId, datum.getTimestamp(), unchangedPublishMaxSeconds);
-			samples = null;
-		} else {
-			// not discarding and seen not null: replace seen with current copy
-			seenSamples.replace(sourceId, seen, new SeenSample(datum.getTimestamp(), samples));
-		}
+		final DatumSamplesOperations out = streamStates
+				.computeIfAbsent(datum.getSourceId(), k -> new StreamState()).filter(datum, samples);
 
-		incrementStats(start, samples, samples);
-		return samples;
+		incrementStats(start, samples, out);
+		return out;
 	}
 
 	@Override
@@ -218,6 +349,7 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 		result.add(new BasicTextFieldSettingSpecifier("unchangedPublishMaxSeconds",
 				String.valueOf(DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS)));
 		result.add(new BasicTextFieldSettingSpecifier("propertyIncludePatternValue", null));
+		result.add(new BasicTextFieldSettingSpecifier("debounceThresholdMillis", null));
 
 		return result;
 	}
@@ -301,6 +433,64 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 					e.getMessage());
 		}
 		setPropertyIncludePattern(p);
+	}
+
+	/**
+	 * Get the debounce threshold.
+	 *
+	 * @return the minimum amount of time a changed datum must remain unchanged
+	 *         before it is published, or {@literal null} to publish changes
+	 *         immediately
+	 * @since 1.2
+	 */
+	public Duration getDebounceThreshold() {
+		return debounceThreshold;
+	}
+
+	/**
+	 * Set the debounce threshold.
+	 *
+	 * <p>
+	 * When configured, a changed datum is only published after the examined
+	 * properties have remained unchanged for at least this amount of time. A
+	 * change that reverts before the threshold elapses is discarded. If the
+	 * {@code unchangedPublishMaxSeconds} elapses while a change is not yet
+	 * stable, the datum is published with the examined properties set to their
+	 * last published values.
+	 * </p>
+	 *
+	 * @param debounceThreshold
+	 *        the minimum amount of time a changed datum must remain unchanged
+	 *        before it is published, or {@literal null} to publish changes
+	 *        immediately
+	 * @since 1.2
+	 */
+	public void setDebounceThreshold(Duration debounceThreshold) {
+		this.debounceThreshold = debounceThreshold;
+	}
+
+	/**
+	 * Get the debounce threshold, in milliseconds.
+	 *
+	 * @return the debounce threshold, in milliseconds
+	 * @see #getDebounceThreshold()
+	 * @since 1.2
+	 */
+	public long getDebounceThresholdMillis() {
+		final Duration threshold = getDebounceThreshold();
+		return (threshold != null ? threshold.toMillis() : 0L);
+	}
+
+	/**
+	 * Set the debounce threshold, in milliseconds.
+	 *
+	 * @param millis
+	 *        the debounce threshold to set, in milliseconds
+	 * @see #setDebounceThreshold(Duration)
+	 * @since 1.2
+	 */
+	public void setDebounceThresholdMillis(long millis) {
+		setDebounceThreshold(millis > 0 ? Duration.ofMillis(millis) : null);
 	}
 
 }

@@ -22,13 +22,22 @@
 
 package net.solarnetwork.node.datum.filter.std.test;
 
+import static java.util.Arrays.asList;
 import static net.solarnetwork.domain.datum.DatumId.nodeId;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -40,7 +49,7 @@ import net.solarnetwork.node.domain.datum.SimpleDatum;
  * Test cases for the {@link UnchangedDatumFilterService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class UnchangedDatumFilterServiceTests {
 
@@ -51,6 +60,7 @@ public class UnchangedDatumFilterServiceTests {
 	private static final String PROP_3 = "state";
 	private static final String PROP_4 = "status";
 	private static final int UNCHANGED_SECS = 10;
+	private static final int DEBOUNCE_SECS = 5;
 
 	private UnchangedDatumFilterService xform;
 
@@ -427,6 +437,244 @@ public class UnchangedDatumFilterServiceTests {
 				result2, is(nullValue()));
 		assertThat("Third datum within 2nd time period with same property value filtered", result3,
 				is(nullValue()));
+	}
+
+	private void configureDebounce() {
+		configurePropertyPattern();
+		xform.setDebounceThreshold(Duration.ofSeconds(DEBOUNCE_SECS));
+	}
+
+	private SimpleDatum createStatusDatum(Instant ts, String sourceId, Number watts, String state) {
+		SimpleDatum datum = createTestDatum(ts, sourceId, PROP_1, watts);
+		datum.putSampleValue(DatumSamplesType.Status, PROP_3, state);
+		return datum;
+	}
+
+	private List<SimpleDatum> createStatusData(Instant start, int stepSecs, String... states) {
+		final List<SimpleDatum> result = new ArrayList<>(states.length);
+		for ( int i = 0; i < states.length; i++ ) {
+			final int secs = i * stepSecs;
+			result.add(createStatusDatum(start.plusSeconds(secs), SOURCE_ID_1, secs, states[i]));
+		}
+		return result;
+	}
+
+	private List<DatumSamplesOperations> filterAll(List<SimpleDatum> data) {
+		final List<DatumSamplesOperations> result = new ArrayList<>(data.size());
+		for ( SimpleDatum d : data ) {
+			result.add(xform.filter(d, d.getSamples(), null));
+		}
+		return result;
+	}
+
+	/**
+	 * Assert filter results.
+	 *
+	 * @param expected
+	 *        the expected result of each datum: {@code P} for passed through,
+	 *        {@code *} for published as a modified copy, or {@code .} for
+	 *        discarded
+	 * @param data
+	 *        the input datum
+	 * @param results
+	 *        the filter results
+	 */
+	private static void assertResults(String expected, List<SimpleDatum> data,
+			List<DatumSamplesOperations> results) {
+		assertThat("Result count", results, hasSize(expected.length()));
+		for ( int i = 0; i < expected.length(); i++ ) {
+			final DatumSamplesOperations input = data.get(i).getSamples();
+			final DatumSamplesOperations result = results.get(i);
+			switch (expected.charAt(i)) {
+				case 'P':
+					assertThat(String.format("Datum %d passed through", i), result,
+							is(sameInstance(input)));
+					break;
+
+				case '*':
+					assertThat(String.format("Datum %d published as copy", i), result,
+							is(allOf(notNullValue(), not(sameInstance(input)))));
+					break;
+
+				default:
+					assertThat(String.format("Datum %d discarded", i), result, is(nullValue()));
+			}
+		}
+	}
+
+	@Test
+	public void debounceThresholdMillis() {
+		// WHEN
+		xform.setDebounceThresholdMillis(1500);
+
+		// THEN
+		assertThat("Threshold set from millis", xform.getDebounceThreshold(),
+				is(equalTo(Duration.ofMillis(1500))));
+		assertThat("Threshold millis", xform.getDebounceThresholdMillis(), is(equalTo(1500L)));
+
+		// WHEN
+		xform.setDebounceThresholdMillis(0);
+
+		// THEN
+		assertThat("Threshold cleared from 0 millis", xform.getDebounceThreshold(), is(nullValue()));
+		assertThat("Threshold millis", xform.getDebounceThresholdMillis(), is(equalTo(0L)));
+	}
+
+	@Test
+	public void debounce_stableChange() {
+		// GIVEN
+		configureDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "B", "A", "B", "B", "B", "B", "B",
+				"B", "B", "B");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// B @ 1s reverts @ 3s; B @ 4s published @ 9s once stable
+		assertResults("P........P..", data, results);
+	}
+
+	@Test
+	public void debounce_glitchesDiscarded() {
+		// GIVEN
+		configureDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "A", "B", "B", "A", "B", "B", "B",
+				"A");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		assertResults("P.........", data, results);
+	}
+
+	@Test
+	public void debounce_pendingRestartsOnNewValue() {
+		// GIVEN
+		configureDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "C", "C", "C", "C", "C", "C");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// C @ 2s published @ 7s, not 6s from when B first changed
+		assertResults("P......P", data, results);
+	}
+
+	@Test
+	public void debounce_flapping_unchangedMaxElapsed() {
+		// GIVEN
+		configureDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 1, "A", "B", "A", "B", "A", "B", "A", "B", "A",
+				"B", "A", "B");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// A @ 10s is unchanged from stable value, so published after max seconds
+		assertResults("P.........P.", data, results);
+	}
+
+	@Test
+	public void debounce_unchangedMaxElapsedWhilePending() {
+		// GIVEN
+		configureDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		List<SimpleDatum> data = createStatusData(start, 2, "A", "B", "A", "A", "B", "B", "B", "B");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		// B @ 8s still pending @ 10s when max seconds elapses, so published with stable A value;
+		// B then published @ 14s, stable since 8s
+		assertResults("P....*.P", data, results);
+		DatumSamplesOperations debounced = results.get(5);
+		assertThat("Debounced datum has last stable monitored property value",
+				debounced.getSampleString(DatumSamplesType.Status, PROP_3), is(equalTo("A")));
+		assertThat("Debounced datum has current non-monitored property value",
+				debounced.getSampleInteger(DatumSamplesType.Instantaneous, PROP_1), is(equalTo(10)));
+		assertThat("Input datum not modified",
+				data.get(5).getSamples().getSampleString(DatumSamplesType.Status, PROP_3),
+				is(equalTo("B")));
+	}
+
+	@Test
+	public void debounce_unchangedMaxElapsedWhilePending_monitoredPropsAddedRemoved() {
+		// GIVEN
+		configurePropertyPattern();
+		xform.setDebounceThreshold(Duration.ofSeconds(UNCHANGED_SECS * 2));
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d1 = createStatusDatum(start, SOURCE_ID_1, 1, "A");
+
+		// monitored state property removed, monitored status property added
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 2);
+		d2.putSampleValue(DatumSamplesType.Instantaneous, PROP_4, 1);
+		SimpleDatum d3 = createTestDatum(start.plusSeconds(UNCHANGED_SECS), SOURCE_ID_1, PROP_1, 3);
+		d3.putSampleValue(DatumSamplesType.Instantaneous, PROP_4, 1);
+		d3.putSampleValue(DatumSamplesType.Accumulating, PROP_2, 3);
+		List<SimpleDatum> data = asList(d1, d2, d3);
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		assertResults("P.*", data, results);
+		DatumSamplesOperations debounced = results.get(2);
+		assertThat("Debounced datum has removed stable monitored property restored",
+				debounced.getSampleString(DatumSamplesType.Status, PROP_3), is(equalTo("A")));
+		assertThat("Debounced datum has added unstable monitored property removed",
+				debounced.getSampleValue(DatumSamplesType.Instantaneous, PROP_4), is(nullValue()));
+		assertThat("Debounced datum has current non-monitored property value",
+				debounced.getSampleInteger(DatumSamplesType.Instantaneous, PROP_1), is(equalTo(3)));
+		assertThat("Debounced datum has current non-monitored property value",
+				debounced.getSampleInteger(DatumSamplesType.Accumulating, PROP_2), is(equalTo(3)));
+	}
+
+	@Test
+	public void debounce_noPattern_unchangedMaxElapsedWhilePending() {
+		// GIVEN
+		xform.setDebounceThreshold(Duration.ofSeconds(DEBOUNCE_SECS));
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+
+		// all properties monitored, and watts changes in every datum so never stable
+		List<SimpleDatum> data = createStatusData(start, 2, "A", "A", "A", "A", "A", "A");
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		assertResults("P....*", data, results);
+		assertThat("Debounced datum is copy of last published datum",
+				results.get(5).differsFrom(data.get(0).getSamples()), is(false));
+	}
+
+	@Test
+	public void debounce_multiSourceIds() {
+		// GIVEN
+		configureDebounce();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum da1 = createStatusDatum(start, SOURCE_ID_1, 1, "A");
+		SimpleDatum db1 = createStatusDatum(start, SOURCE_ID_2, 1, "A");
+		SimpleDatum da2 = createStatusDatum(start.plusSeconds(1), SOURCE_ID_1, 1, "B");
+		SimpleDatum db2 = createStatusDatum(start.plusSeconds(2), SOURCE_ID_2, 1, "B");
+		SimpleDatum da3 = createStatusDatum(start.plusSeconds(6), SOURCE_ID_1, 1, "B");
+		SimpleDatum db3 = createStatusDatum(start.plusSeconds(6), SOURCE_ID_2, 1, "B");
+		SimpleDatum db4 = createStatusDatum(start.plusSeconds(7), SOURCE_ID_2, 1, "B");
+		List<SimpleDatum> data = asList(da1, db1, da2, db2, da3, db3, db4);
+
+		// WHEN
+		List<DatumSamplesOperations> results = filterAll(data);
+
+		// THEN
+		assertResults("PP..P.P", data, results);
 	}
 
 }
