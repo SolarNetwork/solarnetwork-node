@@ -59,7 +59,8 @@ public class RoundedTimestampDatumFilterServiceTests {
 	}
 
 	private SimpleDatum createTestSimpleDatum(String sourceId, String prop, Number val) {
-		SimpleDatum datum = SimpleDatum.nodeDatum(sourceId);
+		SimpleDatum datum = SimpleDatum.nodeDatum(sourceId,
+				Instant.now().truncatedTo(ChronoUnit.MILLIS));
 		datum.getSamples().putInstantaneousSampleValue(prop, val);
 		return datum;
 	}
