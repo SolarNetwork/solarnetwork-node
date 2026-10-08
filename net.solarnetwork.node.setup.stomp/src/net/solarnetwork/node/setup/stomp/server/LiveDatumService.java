@@ -180,8 +180,14 @@ public class LiveDatumService implements EventHandler {
 	 * </p>
 	 */
 	public void shutdown() {
-		shutdown = true;
-		for ( LiveDatumSubscription sub : new ArrayList<>(subscriptions.values()) ) {
+		final List<LiveDatumSubscription> subs;
+		synchronized ( registryLock ) {
+			// set the flag and take the snapshot together, so no subscription can be
+			// added after the snapshot (see subscribe())
+			shutdown = true;
+			subs = new ArrayList<>(subscriptions.values());
+		}
+		for ( LiveDatumSubscription sub : subs ) {
 			synchronized ( sub ) {
 				if ( sub.close() ) {
 					publishStatus(sub, SetupStatus.ServiceUnavailable, "Service shutting down.");
@@ -200,7 +206,9 @@ public class LiveDatumService implements EventHandler {
 	 *
 	 * <p>
 	 * If the subscription cannot be created, a status message is published to
-	 * the session for the given subscription ID and the status is returned.
+	 * the session for the given subscription ID and the status is returned. If
+	 * the session already has a live subscription with the same ID, that
+	 * subscription is ended as well, as the status is terminal for the ID.
 	 * </p>
 	 *
 	 * @param session
@@ -253,9 +261,15 @@ public class LiveDatumService implements EventHandler {
 		final String key = sub.getKey();
 		SetupStatus rejectStatus = null;
 		String rejectMessage = null;
+		LiveDatumSubscription duplicate = null;
 		synchronized ( registryLock ) {
 			final UUID sessionId = session.getSessionId();
-			if ( subscriptions.containsKey(key) ) {
+			duplicate = subscriptions.get(key);
+			if ( shutdown ) {
+				// checked again here, as shutdown() sets the flag while holding this lock
+				rejectStatus = SetupStatus.ServiceUnavailable;
+				rejectMessage = "Live datum not available.";
+			} else if ( duplicate != null ) {
 				rejectStatus = SetupStatus.Unprocessable;
 				rejectMessage = "Subscription ID already in use.";
 			} else if ( subscriptions.size() >= maxSubscriptions ) {
@@ -270,6 +284,17 @@ public class LiveDatumService implements EventHandler {
 				subscriptions.put(key, sub);
 				bySource.computeIfAbsent(src, k -> ConcurrentHashMap.newKeySet()).add(sub);
 			}
+		}
+		if ( duplicate != null && rejectStatus == SetupStatus.Unprocessable ) {
+			// a 422 is terminal for the subscription ID, so end the existing subscription
+			// too; close it before publishing, while holding its monitor, so no datum
+			// message can follow the 422
+			synchronized ( duplicate ) {
+				duplicate.close();
+				reject(session, subscriptionId, src, rejectStatus, rejectMessage);
+			}
+			deregister(duplicate);
+			return rejectStatus;
 		}
 		if ( rejectStatus != null ) {
 			// publish outside of the registry lock

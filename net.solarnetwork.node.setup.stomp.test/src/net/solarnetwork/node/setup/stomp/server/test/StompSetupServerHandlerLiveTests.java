@@ -26,6 +26,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -47,6 +48,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.util.AntPathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.DefaultChannelPromise;
@@ -55,6 +58,9 @@ import io.netty.handler.codec.stomp.DefaultStompFrame;
 import io.netty.handler.codec.stomp.StompCommand;
 import io.netty.handler.codec.stomp.StompFrame;
 import io.netty.handler.codec.stomp.StompHeaders;
+import io.netty.handler.codec.stomp.StompSubframeAggregator;
+import io.netty.handler.codec.stomp.StompSubframeDecoder;
+import io.netty.handler.codec.stomp.StompSubframeEncoder;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -67,6 +73,7 @@ import net.solarnetwork.node.setup.stomp.LiveHeader;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.SetupTopic;
+import net.solarnetwork.node.setup.stomp.StompUtils;
 import net.solarnetwork.node.setup.stomp.server.LiveDatumService;
 import net.solarnetwork.node.setup.stomp.server.SetupSession;
 import net.solarnetwork.node.setup.stomp.server.StompSetupServerHandler;
@@ -132,6 +139,10 @@ public class StompSetupServerHandlerLiveTests {
 	private EmbeddedChannel liveChannel;
 
 	private SetupSession givenLiveSupport() {
+		return givenLiveSupport(new EmbeddedChannel());
+	}
+
+	private SetupSession givenLiveSupport(EmbeddedChannel ch) {
 		MutableClock clock = new MutableClock(Instant.now());
 		opModes = new TestOperationalModesService(clock);
 		liveService = new LiveDatumService(new StaticOptionalService<>(opModes),
@@ -140,7 +151,7 @@ public class StompSetupServerHandlerLiveTests {
 		liveService.setTaskScheduler(new TestTaskScheduler());
 		serverService.setLiveDatumService(liveService);
 
-		liveChannel = new EmbeddedChannel();
+		liveChannel = ch;
 		String[] roles = new String[] { "ROLE_USER" };
 		UserDetails user = withUsername(TEST_LOGIN).password("pw").authorities(roles).build();
 		SetupSession session = new SetupSession(TEST_LOGIN, liveChannel);
@@ -412,6 +423,47 @@ public class StompSetupServerHandlerLiveTests {
 		// THEN
 		assertThat("Session removed", sessions.containsKey(session.getSessionId()), is(false));
 		assertThat("Live subscriptions removed", liveService.getSubscriptionCount(), is(0));
+	}
+
+	private void writeWire(EmbeddedChannel ch, String frame) {
+		ch.writeInbound(Unpooled.copiedBuffer(frame, StompUtils.UTF8));
+	}
+
+	private String readWire(EmbeddedChannel ch) {
+		StringBuilder buf = new StringBuilder();
+		Object o;
+		while ( (o = ch.readOutbound()) != null ) {
+			ByteBuf b = (ByteBuf) o;
+			buf.append(b.toString(StompUtils.UTF8));
+			b.release();
+		}
+		return buf.toString();
+	}
+
+	@Test
+	public void liveSubscriptionId_roundTripsThroughCodec() {
+		// GIVEN the same pipeline as the server, with the real STOMP codec
+		givenLiveSupport(new EmbeddedChannel(new StompSubframeDecoder(),
+				new StompSubframeAggregator(4096), new StompSubframeEncoder(), handler));
+		replayAll();
+
+		// WHEN a client subscribes with the ID a\nb (a, backslash, n, b), which STOMP
+		// escapes on the wire as a\\nb
+		writeWire(liveChannel, "SUBSCRIBE\nid:a\\\\nb\ndestination:/setup/datum/live\n"
+				+ "source-id:" + LIVE_SOURCE_ID + "\nproperties:watts\n\n\0");
+		publishLiveDatum();
+
+		// THEN the MESSAGE carries the same ID, escaped once, so the client decodes it
+		// back to a\nb
+		String wire = readWire(liveChannel);
+		assertThat("MESSAGE frame sent", wire, containsString("MESSAGE\n"));
+		assertThat("Subscription ID round trips", wire, containsString("\nsubscription:a\\\\nb\n"));
+
+		// WHEN the client unsubscribes with the same ID
+		writeWire(liveChannel, "UNSUBSCRIBE\nid:a\\\\nb\n\n\0");
+
+		// THEN
+		assertThat("Live subscription removed", liveService.getSubscriptionCount(), is(0));
 	}
 
 }

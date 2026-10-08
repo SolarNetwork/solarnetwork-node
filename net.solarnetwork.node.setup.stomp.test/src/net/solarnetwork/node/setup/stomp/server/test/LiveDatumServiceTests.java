@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -181,17 +182,64 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 	}
 
 	@Test
-	public void subscribe_duplicateId() {
+	public void subscribe_duplicateId_endsExisting() {
 		// GIVEN
 		subscribe("live-1", PROPS, null);
+		runScheduledTasks();
 
 		// WHEN
 		SetupStatus result = subscribe("live-1", PROPS, null);
 
 		// THEN
 		assertThat("Rejected", result, is(SetupStatus.Unprocessable));
-		assertStatus(nextFrame(), SetupStatus.Unprocessable);
-		assertThat("Still one subscription", service.getSubscriptionCount(), is(1));
+		StompFrame f = nextFrame();
+		assertStatus(f, SetupStatus.Unprocessable);
+		assertThat("For the reused ID", f.headers().getAsString(StompHeaders.SUBSCRIPTION),
+				is("live-1"));
+		assertThat("Existing subscription ended too", service.getSubscriptionCount(), is(0));
+
+		// WHEN a datum arrives for the source
+		publish(meterDatum(SOURCE_ID, clock.instant()));
+
+		// THEN nothing follows the terminal 422
+		assertNoFrame();
+
+		// WHEN linger passes
+		runScheduledTasks();
+		clock.advance(Duration.ofSeconds(LiveDatumModeManager.DEFAULT_MODE_LINGER_SECS));
+		runScheduledTasks();
+
+		// THEN
+		assertThat("Mode released", opModes.disableCalls, contains(MODE));
+	}
+
+	@Test
+	public void subscribe_duringShutdown_rejected() {
+		// GIVEN an operational modes service that triggers a shutdown when looked up by
+		// subscribe(), i.e. after its first shutdown check but before it registers
+		final AtomicBoolean triggered = new AtomicBoolean();
+		final StaticOptionalService<OperationalModesService> ops = new StaticOptionalService<OperationalModesService>(
+				opModes) {
+
+			@Override
+			public OperationalModesService service() {
+				if ( triggered.compareAndSet(false, true) ) {
+					LiveDatumServiceTests.this.service.shutdown();
+				}
+				return super.service();
+			}
+
+		};
+		service = newService(ops, new StaticOptionalService<>(null), objectMapper);
+
+		// WHEN
+		SetupStatus result = subscribe("live-1", PROPS, null);
+
+		// THEN
+		assertThat("Shutdown triggered during subscribe", triggered.get(), is(true));
+		assertThat("Rejected", result, is(SetupStatus.ServiceUnavailable));
+		assertStatus(nextFrame(), SetupStatus.ServiceUnavailable);
+		assertThat("Not registered", service.getSubscriptionCount(), is(0));
 	}
 
 	@Test

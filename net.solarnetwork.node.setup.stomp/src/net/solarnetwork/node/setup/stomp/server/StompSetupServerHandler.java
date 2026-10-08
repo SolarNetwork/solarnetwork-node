@@ -359,8 +359,9 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			sendError(ctx, "Not authorized.");
 			return;
 		}
-		String subId = decodeStompHeaderValue(frame.headers().getAsString(StompHeaders.ID));
-		if ( subId == null || subId.isEmpty() ) {
+		// note header values have already been unescaped by the Netty STOMP decoder
+		final String rawSubId = frame.headers().getAsString(StompHeaders.ID);
+		if ( rawSubId == null || rawSubId.isEmpty() ) {
 			sendError(ctx, "Missing id header.");
 			return;
 		}
@@ -371,11 +372,13 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		}
 		if ( SetupTopic.DatumLive.getValue().equals(dest) ) {
 			// live subscriptions are NOT added to the session subscriptions, so
-			// that wild card subscriptions like /setup/** never receive them
-			handleLiveSubscribe(frame, session, subId);
+			// that wild card subscriptions like /setup/** never receive them; live
+			// messages are not re-encoded, so use the ID exactly as decoded by Netty
+			handleLiveSubscribe(frame, session, rawSubId);
 		} else {
 			// TODO: support ack?
-			session.addSubscription(subId, dest);
+			// the extra decode here is undone by the encode in pubMessage()
+			session.addSubscription(decodeStompHeaderValue(rawSubId), dest);
 		}
 		sendReceiptIfRequested(ctx, frame);
 	}
@@ -401,14 +404,16 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			sendError(ctx, "Not authorized.");
 			return;
 		}
-		String subId = decodeStompHeaderValue(frame.headers().getAsString(StompHeaders.ID));
-		if ( subId == null || subId.isEmpty() ) {
+		// note header values have already been unescaped by the Netty STOMP decoder
+		final String rawSubId = frame.headers().getAsString(StompHeaders.ID);
+		if ( rawSubId == null || rawSubId.isEmpty() ) {
 			sendError(ctx, "Missing id header.");
 			return;
 		}
 		final LiveDatumService live = serverService.getLiveDatumService();
-		final boolean liveRemoved = (live != null && live.unsubscribe(session, subId));
-		session.removeSubscription(subId);
+		final boolean liveRemoved = (live != null && live.unsubscribe(session, rawSubId));
+		// session subscriptions are keyed by the extra-decoded ID, see handleSubscribe()
+		session.removeSubscription(decodeStompHeaderValue(rawSubId));
 		if ( liveRemoved ) {
 			// a live datum message may have been queued on the event loop by another
 			// thread just before the subscription closed; queue the receipt after it
