@@ -195,7 +195,7 @@ public class LiveDatumPublisher {
 		}
 		DefaultStompFrame f = new DefaultStompFrame(StompCommand.MESSAGE);
 		f.headers().set(StompHeaders.DESTINATION, SetupTopic.DatumLive.getValue());
-		// note header values are escaped by the Netty STOMP encoder
+		// Netty escapes header values
 		f.headers().set(StompHeaders.SUBSCRIPTION, subscriptionId);
 		f.headers().set(StompHeaders.MESSAGE_ID, String.valueOf(session.nextMessageId()));
 		if ( sourceId != null ) {

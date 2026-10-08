@@ -49,10 +49,9 @@ import net.solarnetwork.service.OptionalService;
  * </p>
  *
  * <p>
- * Changing an operational mode performs database I/O, so callers must only
- * call {@link #sync()} from a thread where blocking is acceptable, never from
- * the Netty event loop or event admin threads. All methods are serialized on
- * this instance's monitor.
+ * Changing an operational mode performs database I/O, so {@link #sync()} must
+ * not be called from the Netty event loop or event admin threads. The
+ * {@link #sync()} and {@link #shutdown()} methods are synchronized.
  * </p>
  *
  * @author elijah
@@ -97,8 +96,8 @@ public class LiveDatumModeManager {
 	 * @param opModesService
 	 *        the operational modes service
 	 * @param active
-	 *        a condition that is {@literal true} while the mode should be
-	 *        active, i.e. while live subscriptions exist
+	 *        a condition that is {@literal true} while live subscriptions
+	 *        exist
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
@@ -143,7 +142,7 @@ public class LiveDatumModeManager {
 			if ( ops != null ) {
 				try {
 					if ( enabledMode != null && !enabledMode.equals(opMode) ) {
-						// mode setting changed while active: release the old mode
+						// mode setting changed, so release the old mode
 						disableMode(ops);
 					}
 					enableOrRefreshMode(ops);
@@ -187,8 +186,7 @@ public class LiveDatumModeManager {
 
 	private synchronized void lingerExpired(long generation) {
 		if ( generation != lingerGeneration ) {
-			// a newer linger has been scheduled, or this one was cancelled while
-			// already running
+			// superseded or cancelled
 			return;
 		}
 		lingerFuture = null;
@@ -205,13 +203,9 @@ public class LiveDatumModeManager {
 	 * Enable the operational mode, or extend its expiration if needed.
 	 *
 	 * <p>
-	 * If the mode is active <b>without</b> an expiration, it has been enabled
-	 * by something else (e.g. an operator) and is left alone. Otherwise the mode
-	 * is enabled with an expiration of {@code modeExpireSecs} from now, unless
-	 * it already expires more than {@code modeRefreshSecs} from now. An
-	 * existing later expiration date is never shortened. Any active mode with
-	 * an expiration is considered owned by this manager, and will be disabled
-	 * once the {@code active} condition becomes false.
+	 * A mode active without an expiration is left alone. Otherwise the
+	 * expiration is extended to {@code modeExpireSecs} from now once less than
+	 * {@code modeRefreshSecs} remain.
 	 * </p>
 	 */
 	private void enableOrRefreshMode(OperationalModesService ops) {
@@ -219,7 +213,7 @@ public class LiveDatumModeManager {
 		final Map<String, Long> withExp = ops.activeOperationalModesWithExpirations();
 		final Long exp = (withExp != null ? withExp.get(mode) : null);
 		if ( exp == null && ops.isOperationalModeActive(mode) ) {
-			// active with no expiration: not ours to manage
+			// enabled elsewhere without expiration
 			if ( mode.equals(enabledMode) ) {
 				log.info("Live datum operational mode [{}] now has no expiration; releasing",
 						mode);
@@ -229,8 +223,7 @@ public class LiveDatumModeManager {
 		}
 		final long now = clock.millis();
 		if ( exp != null && (exp.longValue() - now) > (modeRefreshSecs * 1000L) ) {
-			// plenty of time left; an expiring mode is treated as ours (e.g. left over
-			// from before a restart) so it is disabled when subscriptions end
+			// no refresh needed; treat expiring mode as ours
 			enabledMode = mode;
 			return;
 		}
@@ -253,7 +246,7 @@ public class LiveDatumModeManager {
 			final Map<String, Long> withExp = ops.activeOperationalModesWithExpirations();
 			if ( ops.isOperationalModeActive(mode)
 					&& (withExp == null || !withExp.containsKey(mode)) ) {
-				// changed to no expiration by something else: leave it alone
+				// changed to no expiration elsewhere, so leave it alone
 				log.info("Not disabling live datum operational mode [{}]: it has no expiration",
 						mode);
 				return;

@@ -110,10 +110,9 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
  * A client can also send a {@literal SUBSCRIBE} frame with a
  * {@literal destination} of exactly {@literal /setup/datum/live} and a
  * {@literal source-id} header to receive a live stream of datum properties via
- * the {@link LiveDatumService}. Live messages are only ever delivered to that
- * subscription, never to other (wild card) subscriptions. The
- * {@literal UNSUBSCRIBE} frame removes a subscription, and the
- * {@literal DISCONNECT} frame closes the connection. A {@literal receipt}
+ * the {@link LiveDatumService}. Live messages are not delivered to wild card
+ * subscriptions. The {@literal UNSUBSCRIBE} frame removes a subscription, and
+ * the {@literal DISCONNECT} frame closes the connection. A {@literal receipt}
  * header on {@literal SUBSCRIBE}, {@literal UNSUBSCRIBE}, or
  * {@literal DISCONNECT} frames is acknowledged with a {@literal RECEIPT}
  * frame.
@@ -150,7 +149,6 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 	private static final Set<String> STOMP_HEADER_NAMES = createStompHeaderNames();
 	private static final Set<String> SETUP_HEADER_NAMES = createSetupHeaderNames();
-
 
 	private final StompSetupServerService serverService;
 	private final ObjectMapper objectMapper;
@@ -359,7 +357,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			sendError(ctx, "Not authorized.");
 			return;
 		}
-		// note header values have already been unescaped by the Netty STOMP decoder
+		// Netty has already unescaped header values
 		final String rawSubId = frame.headers().getAsString(StompHeaders.ID);
 		if ( rawSubId == null || rawSubId.isEmpty() ) {
 			sendError(ctx, "Missing id header.");
@@ -371,9 +369,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			return;
 		}
 		if ( SetupTopic.DatumLive.getValue().equals(dest) ) {
-			// live subscriptions are NOT added to the session subscriptions, so
-			// that wild card subscriptions like /setup/** never receive them; live
-			// messages are not re-encoded, so use the ID exactly as decoded by Netty
+			// not added to the session subscriptions, so /setup/** does not match
 			handleLiveSubscribe(frame, session, rawSubId);
 		} else {
 			// TODO: support ack?
@@ -392,7 +388,6 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 					"Live datum not available.");
 			return;
 		}
-		// note header values have already been unescaped by the Netty STOMP decoder
 		live.subscribe(session, subId, h.getAsString(LiveHeader.SourceId.getValue()),
 				h.getAsString(LiveHeader.Properties.getValue()),
 				h.getAsString(LiveHeader.Interval.getValue()));
@@ -404,7 +399,6 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			sendError(ctx, "Not authorized.");
 			return;
 		}
-		// note header values have already been unescaped by the Netty STOMP decoder
 		final String rawSubId = frame.headers().getAsString(StompHeaders.ID);
 		if ( rawSubId == null || rawSubId.isEmpty() ) {
 			sendError(ctx, "Missing id header.");
@@ -415,9 +409,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		// session subscriptions are keyed by the extra-decoded ID, see handleSubscribe()
 		session.removeSubscription(decodeStompHeaderValue(rawSubId));
 		if ( liveRemoved ) {
-			// a live datum message may have been queued on the event loop by another
-			// thread just before the subscription closed; queue the receipt after it
-			// so no message follows the receipt
+			// queue receipt after any pending live message
 			final String receipt = frame.headers().getAsString(StompHeaders.RECEIPT);
 			if ( receipt != null && !receipt.isEmpty() ) {
 				ctx.executor().execute(() -> sendReceipt(ctx, receipt));

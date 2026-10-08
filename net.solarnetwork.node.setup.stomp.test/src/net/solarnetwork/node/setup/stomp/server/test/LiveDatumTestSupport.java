@@ -48,12 +48,6 @@ import net.solarnetwork.node.setup.stomp.server.SetupSession;
 /**
  * Shared fixtures for live datum tests.
  *
- * <p>
- * Provides a settable clock, a manual task scheduler, an in-memory operational
- * modes service, and a session on an {@link EmbeddedChannel} whose written
- * frames can be read back with {@link #nextFrame()}.
- * </p>
- *
  * @author elijah
  * @version 1.0
  */

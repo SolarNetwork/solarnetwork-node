@@ -90,7 +90,7 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 		activate();
 		deactivate();
 
-		// THEN no exception, and nothing scheduled
+		// THEN
 		assertThat("No tasks", scheduler.getTasks(), hasSize(0));
 	}
 
@@ -175,22 +175,26 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 
 	@Test
 	public void staleLingerRun_doesNotDisableEarly() {
-		// GIVEN a linger scheduled
+		// GIVEN
+		// schedule linger
 		activate();
 		deactivate();
 		TestTaskScheduler.Task linger1 = scheduler.pendingOneShots().get(0);
 
-		// AND reactivation cancels it, then deactivation schedules a new linger
+		// AND
+		// re-schedule linger
 		activate();
 		deactivate();
 
-		// WHEN the first linger runs anyway (it had already started when cancelled)
+		// WHEN
+		// stale linger runs
 		linger1.forceRun();
 
 		// THEN
 		assertThat("Stale linger did not disable", opModes.disableCalls, hasSize(0));
 
-		// WHEN the current linger passes
+		// WHEN
+		// current linger passes
 		lingerPasses();
 
 		// THEN
@@ -220,7 +224,8 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 		// GIVEN
 		activate();
 
-		// WHEN an operator makes the mode permanent
+		// WHEN
+		// operator makes mode permanent
 		opModes.enableOperationalModes(singleton(MODE));
 		manager.sync();
 		deactivate();
@@ -237,14 +242,16 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 		activate();
 		opModes.enableCalls.clear();
 
-		// WHEN 60s later, plenty of time left
+		// WHEN
+		// 60s later
 		clock.advance(Duration.ofSeconds(60));
 		manager.sync();
 
 		// THEN
 		assertThat("Not refreshed", opModes.enableCalls, hasSize(0));
 
-		// WHEN less than the refresh threshold remains
+		// WHEN
+		// within refresh threshold
 		clock.advance(
 				Duration.ofSeconds(DEFAULT_MODE_EXPIRE_SECS - DEFAULT_MODE_REFRESH_SECS - 60 + 1));
 		manager.sync();
@@ -294,7 +301,8 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 
 	@Test
 	public void leftoverModeAfterRestart_disabledWhenInactive() {
-		// GIVEN a mode left over from before a restart, with lots of time left
+		// GIVEN
+		// mode left over from before restart
 		opModes.enableOperationalModes(singleton(MODE),
 				clock.instant().plusSeconds(DEFAULT_MODE_REFRESH_SECS + 60));
 		opModes.enableCalls.clear();

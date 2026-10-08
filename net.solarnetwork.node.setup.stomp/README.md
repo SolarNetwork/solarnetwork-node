@@ -207,15 +207,13 @@ destination:/setup/**
 ^@
 ```
 
-The `/setup/**` subscription receives replies to `SEND` commands. It does
-**not** receive [live datum](#live-datum-streaming) messages, which are only
-ever delivered to the specific `/setup/datum/live` subscription that requested
-them.
+[Live datum](#live-datum-streaming) messages are sent only to the
+`/setup/datum/live` subscription that requested them, not to `/setup/**`.
 
 ## Unsubscribing and disconnecting
 
-Send an `UNSUBSCRIBE` frame with the `id` of a previous subscription to remove
-it. Unknown IDs are ignored.
+Send an `UNSUBSCRIBE` frame with the `id` of a subscription to remove it.
+Unknown IDs are ignored.
 
 ```text
 UNSUBSCRIBE
@@ -224,18 +222,10 @@ id:0
 ^@
 ```
 
-Send a `DISCONNECT` frame to close the connection. If a `receipt` header is
-included, the server replies with a `RECEIPT` frame first.
+Send a `DISCONNECT` frame to close the connection.
 
-```text
-DISCONNECT
-receipt:bye
-
-^@
-```
-
-A `receipt` header on `SUBSCRIBE`, `UNSUBSCRIBE`, or `DISCONNECT` frames is
-acknowledged with a `RECEIPT` frame whose `receipt-id` header matches it.
+A `receipt` header on a `SUBSCRIBE`, `UNSUBSCRIBE`, or `DISCONNECT` frame is
+acknowledged with a `RECEIPT` frame with a matching `receipt-id` header.
 
 # Setup command processing
 
@@ -275,19 +265,19 @@ content-length:159
 
 # Live datum streaming
 
-A client can subscribe to a live stream of datum properties for a single source,
-for example to show a live chart of a meter's power, current, and voltage while
-commissioning. Subscribe to the `/setup/datum/live` destination (exactly;
-patterns are not supported) with these headers:
+A client can subscribe to the `/setup/datum/live` destination to receive the
+properties of a single source's datum as they are captured, for example to show
+a live chart of a meter's power while commissioning. Wild card destinations are
+not supported. The following frame headers are used:
 
-| Header        | Required | Description                                                                                                                                                                                                     |
-|:--------------|:---------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`          | yes      | The subscription ID. Must be unique within the session.                                                                                                                                                         |
-| `destination` | yes      | Must be `/setup/datum/live`.                                                                                                                                                                                    |
-| `source-id`   | yes      | The source ID to stream, e.g. `/GEN/1`. Source IDs are the ones data sources produce, **before** any datum filters are applied.                                                                                 |
-| `properties`  | no       | A comma-delimited list of datum property names to include, e.g. `watts,current,voltage,powerFactor`. If omitted, all instantaneous and accumulating properties are included. At most 32 properties are allowed. |
-| `interval`    | no       | The minimum number of milliseconds between messages. Clamped to between `1000` (the default) and `60000`.                                                                                                       |
-| `receipt`     | no       | If provided, a `RECEIPT` frame is sent once the frame is processed.                                                                                                                                             |
+| Header        | Description                                                                                                                                                                     |
+|:--------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id`          | The subscription ID, unique within the session.                                                                                                                                 |
+| `destination` | Must be `/setup/datum/live`.                                                                                                                                                    |
+| `source-id`   | Required. The source ID to stream, e.g. `/GEN/1`, as produced by the data source before any datum filters are applied.                                                          |
+| `properties`  | A comma-delimited list of up to 32 property names to include, e.g. `watts,current,voltage,powerFactor`. If omitted, all instantaneous and accumulating properties are included. |
+| `interval`    | The minimum number of milliseconds between messages, from `1000` (the default) to `60000`.                                                                                      |
+| `receipt`     | Request a `RECEIPT` frame once the frame is processed.                                                                                                                          |
 
 ```text
 SUBSCRIBE
@@ -300,15 +290,12 @@ interval:1000
 ^@
 ```
 
-The server then publishes `MESSAGE` frames to **that subscription only**. A
-message is published when a new datum for the source is captured, provided its
-timestamp is later than the last one sent and roughly `interval` milliseconds
-have passed (up to 20% early is tolerated, to allow for scheduling jitter).
-
-The body is a JSON object with a `t` property holding the datum timestamp, as
-milliseconds since the epoch, plus each requested property that is present in
-the datum. Missing properties are left out. The `t` name is reserved, so a datum
-property named `t` is never included.
+The server publishes a `MESSAGE` frame to that subscription each time a new
+datum for the source is captured, as long as its timestamp is later than the
+last one sent and at least 80% of `interval` has passed since then. The body is
+a JSON object with a `t` property holding the datum timestamp in milliseconds
+since the epoch, followed by each requested property the datum has. A datum
+property named `t` is not included.
 
 ```text
 MESSAGE
@@ -323,30 +310,20 @@ content-length:83
 {"t":1759900000123,"watts":-1520,"current":6.4,"voltage":239.8,"powerFactor":-0.97}^@
 ```
 
-If the latest datum for the source is already known when subscribing, it is
-published straight away. That datum only counts towards the 404 check below if
-it is less than 30 seconds old. Send an `UNSUBSCRIBE` frame with the same `id`
-to stop the stream. Closing the connection also stops it.
+If the latest datum for the source is available when subscribing, it is
+published right away. Send an `UNSUBSCRIBE` frame with the same `id`, or close
+the connection, to stop the stream.
 
 ## Common live datum properties
 
-The table below lists property names that SolarNode meter and inverter data
-sources commonly produce, as a guide to what can be requested in the
-`properties` header. It is **not** a guarantee: each data source only produces
-the properties its device supports and its settings enable, and any requested
-property the datum doesn't have is simply left out of the message.
-
-> [!NOTE]
-> To see what a particular source actually produces, use the
-> `/setup/datum/latest` command, which returns each source's latest datum with
-> all of its properties.
-
-When the `properties` header is omitted, the *instantaneous* and *accumulating*
-properties are included. *Status* properties are only included when requested by
-name.
+These property names are commonly produced by SolarNode meter and inverter data
+sources, and can be requested in the `properties` header. The properties a
+source produces depend on its device and settings. Use the `/setup/datum/latest`
+command to see all the properties of a source's latest datum. Status properties
+are only included when requested by name.
 
 | Property                                 | Type          | Unit    | Typically from         | Notes                                                                                                                 |
-| :--------------------------------------- | :------------ | :------ | :--------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+|:-----------------------------------------|:--------------|:--------|:-----------------------|:----------------------------------------------------------------------------------------------------------------------|
 | `watts`                                  | instantaneous | W       | meters, inverters      | Real power. Negative on a meter usually means export, or a CT installed backwards.                                    |
 | `current`                                | instantaneous | A       | meters, inverters      | Total or average current.                                                                                             |
 | `voltage`                                | instantaneous | V       | meters, inverters      | Phase-to-neutral voltage.                                                                                             |
@@ -356,54 +333,52 @@ name.
 | `apparentPower`                          | instantaneous | VA      | meters, some inverters |                                                                                                                       |
 | `lineVoltage`                            | instantaneous | V       | meters                 | Phase-to-phase voltage.                                                                                               |
 | `neutralCurrent`                         | instantaneous | A       | meters                 |                                                                                                                       |
-| `current_a`, `current_b`, `current_c`    | instantaneous | A       | meters, some inverters | Per-phase current, only when the data source's *Include phase measurements* setting is on.                            |
+| `current_a`, `current_b`, `current_c`    | instantaneous | A       | meters, some inverters | Per-phase current, when the data source's **Phase Measurements** setting is enabled.                                  |
 | `voltage_a`, `voltage_b`, `voltage_c`    | instantaneous | V       | meters, some inverters | Per-phase voltage, as above.                                                                                          |
 | `voltage_ab`, `voltage_bc`, `voltage_ca` | instantaneous | V       | meters, some inverters | Line-to-line voltage, as above.                                                                                       |
-| `dcVoltage`                              | instantaneous | V       | inverters              | Some inverters also give per-input values, e.g. `dcVoltage_1`.                                                        |
+| `dcVoltage`                              | instantaneous | V       | inverters              | Some inverters also provide per-input values, like `dcVoltage_1`.                                                     |
 | `dcCurrent`                              | instantaneous | A       | inverters              |                                                                                                                       |
 | `dcPower`                                | instantaneous | W       | inverters              |                                                                                                                       |
-| `temp`, `temp_heatSink`                  | instantaneous | °C      | inverters              | Names for other temperatures vary by device.                                                                          |
+| `temp`, `temp_heatSink`                  | instantaneous | °C      | inverters              | Other temperature names vary by device.                                                                               |
 | `wattHours`                              | accumulating  | Wh      | meters, inverters      | Energy delivered (import).                                                                                            |
 | `wattHoursReverse`                       | accumulating  | Wh      | meters                 | Energy received (export).                                                                                             |
 | `opState`                                | status        | code    | inverters              | Operating state: 0 Unknown, 1 Normal, 2 Starting, 3 Standby, 4 Shutdown, 5 Fault, 6 Disabled, 7 Recovery, 8 Override. |
-| `phase`                                  | status        |         | meters, inverters      | Which phase the datum covers, usually `Total`.                                                                        |
+| `phase`                                  | status        |         | meters, inverters      | The phase the datum covers, usually `Total`.                                                                          |
 
-Per-phase power (`watts`, `powerFactor`, etc. for each phase) is not available
-in a single datum. Some meters can instead publish a separate source for each
-phase, each with the full set of properties above.
+Per-phase power is not available in a single datum. Some meters can publish a
+separate source for each phase instead.
 
 ## Live datum status messages
 
-Problems are reported as `MESSAGE` frames on the live subscription with a
-`status` header and a `message` header describing the problem, never as an
-`ERROR` frame (which would close the connection). A *terminal* status means the
-subscription has ended (or was never created) and the client must subscribe
-again to resume.
+Problems are reported as `MESSAGE` frames on the live subscription, with
+`status` and `message` headers, rather than as `ERROR` frames, so the connection
+stays open. After a terminal status the subscription has ended and the client
+must subscribe again.
 
-| Status | Terminal                          | Description                                                                                                                                                                                                                                         |
-|:-------|:----------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `200`  | no                                | A datum message.                                                                                                                                                                                                                                    |
-| `404`  | yes                               | No datum was received for `source-id` within 15 seconds of subscribing.                                                                                                                                                                             |
-| `410`  | yes                               | The subscription reached its maximum duration (15 minutes by default).                                                                                                                                                                              |
-| `422`  | yes                               | The `source-id` header is missing, the `interval` header is not a number, too many properties were requested, or the `id` is already in use for a live subscription (which is then ended too).                                                      |
-| `429`  | yes                               | Too many live subscriptions: at most 2 per session and 4 in total.                                                                                                                                                                                  |
-| `503`  | at subscribe, yes; afterwards, no | At subscribe time, live datum is not available. While streaming, no datum has been received for 30 seconds (or three times the `interval`, if larger); this is advisory, and messages resume when datum does. Also sent when the server shuts down. |
+| Status | Terminal | Description                                                                                                                                                               |
+|:-------|:---------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `200`  | no       | A datum message.                                                                                                                                                          |
+| `404`  | yes      | No recent datum was received for the source within 15 seconds of subscribing.                                                                                             |
+| `410`  | yes      | The subscription reached its maximum duration, 15 minutes by default.                                                                                                     |
+| `422`  | yes      | A header is missing or invalid, too many properties were requested, or the `id` is already used by a live subscription. In the last case that subscription is also ended. |
+| `429`  | yes      | Too many live subscriptions. Up to 2 are allowed per session, and 4 in total.                                                                                             |
+| `503`  | yes      | Live datum is not available, or the server is shutting down.                                                                                                              |
+| `503`  | no       | No datum has been received for 30 seconds, or 3 times `interval` if longer. Messages resume when datum does.                                                              |
 
 ## How live datum is collected
 
-SolarNode data sources are usually only polled about once a minute. To get datum
-more often, while at least one live subscription exists the server enables an
-**operational mode**, `setup-live` by default (see the **Live Mode** setting).
-The mode is enabled with an expiration date that is extended while subscriptions
+Data sources are usually polled about once a minute. While at least one live
+subscription exists, the server enables an operational mode, `setup-live` by
+default (see the **Live Mode** setting), so they can be polled more often. The
+mode is enabled with an expiration date that is extended while subscriptions
 remain, and is disabled 10 seconds after the last subscription ends.
 
-The polling itself is done by an [Operational Mode Data Source
-Scheduler](https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.datum.opmode),
-which must be configured to poll data sources while the mode is active,
-**without** persisting the datum. The `solarnode-config-setup-live` package
-provides such a configuration: mode `setup-live`, every data source, every
-second, not persisted. Without a scheduler like this, live messages only arrive
-at each data source's normal schedule.
+The polling is done by an [Operational Mode Data Source
+Scheduler](https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.datum.opmode)
+configured for that mode, with persistence disabled. The
+`solarnode-config-setup-live` package provides one that polls every data source
+every second. Without it, live messages only arrive at each data source's normal
+schedule.
 
 # SolarNode setup command handling
 

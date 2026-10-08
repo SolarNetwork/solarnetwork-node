@@ -36,11 +36,6 @@ import org.springframework.scheduling.Trigger;
 /**
  * A {@link TaskScheduler} that records tasks so tests can run them manually.
  *
- * <p>
- * Nothing is ever run automatically, so tests can assert that work is
- * <b>not</b> performed on the calling thread.
- * </p>
- *
  * @author elijah
  * @version 1.0
  */

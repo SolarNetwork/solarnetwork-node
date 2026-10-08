@@ -38,10 +38,9 @@ import net.solarnetwork.node.service.OperationalModesService;
  * In-memory {@link OperationalModesService} that records calls.
  *
  * <p>
- * Mirrors the expiration semantics of the default implementation: a mode
- * enabled without an expiration is excluded from
- * {@link #activeOperationalModesWithExpirations()}, and enabling a mode
- * replaces any existing expiration.
+ * Modes enabled without an expiration are excluded from
+ * {@link #activeOperationalModesWithExpirations()}, and enabling a mode replaces
+ * any existing expiration, as in the default implementation.
  * </p>
  *
  * @author elijah

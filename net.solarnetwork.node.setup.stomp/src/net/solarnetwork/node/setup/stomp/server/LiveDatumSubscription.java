@@ -30,10 +30,8 @@ import java.util.UUID;
  * A single live datum subscription, for one source on one setup session.
  *
  * <p>
- * The mutable state of this class is guarded by the instance monitor, so
- * callers that need to make a compound decision (for example "should this
- * sample be sent, then send it, then record it") should synchronize on the
- * instance for the duration of that decision.
+ * The mutable state is guarded by the instance monitor. Synchronize on the
+ * instance for compound operations.
  * </p>
  *
  * @author elijah
@@ -42,7 +40,7 @@ import java.util.UUID;
  */
 public class LiveDatumSubscription {
 
-	/** A sentinel for "no sample sent yet". */
+	/** The {@code lastSampleTs} value before any sample is sent. */
 	private static final long NO_SAMPLE = Long.MIN_VALUE;
 
 	private final SetupSession session;
@@ -144,11 +142,9 @@ public class LiveDatumSubscription {
 	 * Test if a sample should be sent.
 	 *
 	 * <p>
-	 * A sample is sent only if this subscription is open, the sample is newer
-	 * than the last one sent, and at least (approximately) the configured
-	 * interval has passed since the last sample sent. Up to 20% of the
-	 * interval is tolerated as jitter so that a 1 second interval on a 1
-	 * second poll schedule does not skip every other sample.
+	 * A sample is sent if this subscription is open, the sample is newer than
+	 * the last one sent, and at least 80% of the interval has passed since the
+	 * last sample sent, to allow for poll jitter.
 	 * </p>
 	 *
 	 * @param sampleTs

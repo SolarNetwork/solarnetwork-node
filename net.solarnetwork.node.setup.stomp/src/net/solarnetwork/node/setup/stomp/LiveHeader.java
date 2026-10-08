@@ -26,10 +26,8 @@ package net.solarnetwork.node.setup.stomp;
  * Headers used by live datum subscriptions.
  *
  * <p>
- * These are kept separate from {@link SetupHeader} on purpose: all
- * {@link SetupHeader} names are stripped from {@literal SEND} frames before
- * they are converted into instruction parameters, and these names must still
- * be passed through to instruction handlers.
+ * These are not part of {@link SetupHeader} because those names are stripped
+ * from {@literal SEND} frame instruction parameters.
  * </p>
  *
  * @author elijah

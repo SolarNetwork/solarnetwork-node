@@ -184,7 +184,6 @@ public class StompSetupServerHandlerLiveTests {
 				.datumCapturedEvent(SimpleDatum.nodeDatum(LIVE_SOURCE_ID, Instant.now(), s)));
 	}
 
-
 	@Test
 	public void subscribeLive_ok() {
 		// GIVEN
@@ -203,7 +202,8 @@ public class StompSetupServerHandlerLiveTests {
 				is(empty()));
 		assertThat("No reply without receipt", liveChannel.readOutbound(), is(nullValue()));
 
-		// WHEN datum captured
+		// WHEN
+		// datum captured
 		publishLiveDatum();
 
 		// THEN
@@ -342,7 +342,7 @@ public class StompSetupServerHandlerLiveTests {
 		givenLiveSupport();
 		expect(ctx.channel()).andReturn(liveChannel).times(2);
 
-		// receipt is deferred to the event loop, after any queued live message
+		// receipt deferred to event loop, after any queued live message
 		expect(ctx.executor()).andReturn(ImmediateEventExecutor.INSTANCE);
 		Capture<Object> receiptCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(receiptCaptor)))
@@ -366,7 +366,8 @@ public class StompSetupServerHandlerLiveTests {
 
 	@Test
 	public void subscribeLive_sourceIdPassedAsDecodedByNetty() {
-		// GIVEN a source ID with characters STOMP escapes, as unescaped by Netty
+		// GIVEN
+		// source ID with STOMP escape characters
 		final String sourceId = "C:\\new";
 		givenLiveSupport();
 		expect(ctx.channel()).andReturn(liveChannel);
@@ -442,24 +443,25 @@ public class StompSetupServerHandlerLiveTests {
 
 	@Test
 	public void liveSubscriptionId_roundTripsThroughCodec() {
-		// GIVEN the same pipeline as the server, with the real STOMP codec
+		// GIVEN
+		// real STOMP codec pipeline
 		givenLiveSupport(new EmbeddedChannel(new StompSubframeDecoder(),
 				new StompSubframeAggregator(4096), new StompSubframeEncoder(), handler));
 		replayAll();
 
-		// WHEN a client subscribes with the ID a\nb (a, backslash, n, b), which STOMP
-		// escapes on the wire as a\\nb
+		// WHEN
+		// subscribe with ID a\nb, escaped on the wire
 		writeWire(liveChannel, "SUBSCRIBE\nid:a\\\\nb\ndestination:/setup/datum/live\n"
 				+ "source-id:" + LIVE_SOURCE_ID + "\nproperties:watts\n\n\0");
 		publishLiveDatum();
 
-		// THEN the MESSAGE carries the same ID, escaped once, so the client decodes it
-		// back to a\nb
+		// THEN
 		String wire = readWire(liveChannel);
 		assertThat("MESSAGE frame sent", wire, containsString("MESSAGE\n"));
 		assertThat("Subscription ID round trips", wire, containsString("\nsubscription:a\\\\nb\n"));
 
-		// WHEN the client unsubscribes with the same ID
+		// WHEN
+		// unsubscribe with same ID
 		writeWire(liveChannel, "UNSUBSCRIBE\nid:a\\\\nb\n\n\0");
 
 		// THEN

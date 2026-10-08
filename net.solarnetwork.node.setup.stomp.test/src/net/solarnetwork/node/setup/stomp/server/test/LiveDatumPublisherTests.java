@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -154,11 +155,13 @@ public class LiveDatumPublisherTests extends LiveDatumTestSupport {
 		final Instant ts = clock.instant();
 		final long tsMs = ts.toEpochMilli();
 
-		// WHEN requested by default
+		// WHEN
+		// requested by default
 		publisher.publishDatum(sub(session, "live-1", SOURCE_ID, Collections.emptyList()),
 				datum(SOURCE_ID, ts, Collections.singletonMap("t", 99)), tsMs);
 
-		// AND requested explicitly
+		// AND
+		// requested explicitly
 		publisher.publishDatum(sub(session, "live-2", SOURCE_ID, asList("t")),
 				datum(SOURCE_ID, ts, Collections.singletonMap("t", 99)), tsMs);
 
@@ -207,7 +210,7 @@ public class LiveDatumPublisherTests extends LiveDatumTestSupport {
 
 			@Override
 			public byte[] writeValueAsBytes(Object value) throws JsonProcessingException {
-				throw JsonMappingException.fromUnexpectedIOE(new java.io.IOException("boom"));
+				throw JsonMappingException.fromUnexpectedIOE(new IOException("boom"));
 			}
 
 		};
@@ -273,7 +276,8 @@ public class LiveDatumPublisherTests extends LiveDatumTestSupport {
 
 	@Test
 	public void headerValues_escapedOnceOnTheWire() {
-		// GIVEN a channel with the real STOMP encoder
+		// GIVEN
+		// channel with real STOMP encoder
 		EmbeddedChannel wire = new EmbeddedChannel(new StompSubframeEncoder());
 		SetupSession s = new SetupSession("setup", wire);
 		LiveDatumSubscription sub = sub(s, "live:1", "meter:1", asList("watts"));
@@ -291,7 +295,7 @@ public class LiveDatumPublisherTests extends LiveDatumTestSupport {
 			b.release();
 		}
 		String frame = buf.toString();
-		// STOMP 1.2 escapes ':' as the two characters '\' 'c'
+		// STOMP 1.2 escapes ':' as \c
 		assertThat("Source ID escaped once", frame, containsString("\nsource-id:meter\\c1\n"));
 		assertThat("Subscription escaped once", frame, containsString("\nsubscription:live\\c1\n"));
 		wire.finishAndReleaseAll();

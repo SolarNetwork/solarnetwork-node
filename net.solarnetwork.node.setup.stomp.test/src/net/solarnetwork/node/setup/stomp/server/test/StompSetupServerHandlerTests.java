@@ -28,8 +28,8 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.node.setup.stomp.SetupTopic.Authenticate;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
@@ -901,7 +901,7 @@ public class StompSetupServerHandlerTests {
 		f.headers().set(StompHeaders.ID, "nope");
 		handler.channelRead(ctx, f);
 
-		// THEN no ERROR frame (ctx.writeAndFlush not expected) and existing kept
+		// THEN
 		assertThat("Existing subscription kept", session.subscriptionIdsForTopic("/setup/foo",
 				serverService.getPathMatcher()), contains("0"));
 	}

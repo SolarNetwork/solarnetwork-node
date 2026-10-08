@@ -59,27 +59,20 @@ import net.solarnetwork.service.OptionalService;
  * <p>
  * Clients subscribe to the {@link SetupTopic#DatumLive} destination with a
  * {@link LiveHeader#SourceId} header. While at least one live subscription
- * exists, a {@link LiveDatumModeManager} keeps an operational mode active. A
- * separately configured operational mode datum data source scheduler is
- * expected to poll data sources at a high frequency while that mode is active,
- * without persisting the resulting datum. This service listens for the
- * resulting {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} events and
- * publishes the requested properties of each datum to every matching
- * subscription, via a {@link LiveDatumPublisher}.
+ * exists, a {@link LiveDatumModeManager} keeps an operational mode active. An
+ * operational mode data source scheduler should be configured to poll data
+ * sources (without persisting) while that mode is active. This service listens
+ * for {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} events and publishes
+ * the requested properties to each matching subscription, via a
+ * {@link LiveDatumPublisher}.
  * </p>
  *
  * <p>
- * Threading rules:
+ * Operational mode changes and housekeeping run on the configured
+ * {@link TaskScheduler}, as they perform database I/O.
+ * {@link #handleEvent(Event)} only takes each subscription's monitor, which is
+ * held while queuing a frame on a channel.
  * </p>
- *
- * <ul>
- * <li>Operational mode changes perform database I/O, so the mode manager and
- * housekeeping are only ever run on the configured {@link TaskScheduler},
- * never on the Netty event loop or event admin threads.</li>
- * <li>{@link #handleEvent(Event)} never takes a lock that is held while
- * performing I/O, other than each subscription's own monitor, which is only
- * held while enqueuing a frame on a channel.</li>
- * </ul>
  *
  * @author elijah
  * @version 1.0
@@ -125,7 +118,7 @@ public class LiveDatumService implements EventHandler {
 	private final ConcurrentMap<String, Set<LiveDatumSubscription>> bySource = new ConcurrentHashMap<>(
 			8, 0.9f, 2);
 
-	/** Guards registry compound operations; never held while doing I/O. */
+	/** Guards registry compound operations, not held during I/O. */
 	private final Object registryLock = new Object();
 
 	/** Guards {@code housekeepingFuture}. */
@@ -182,8 +175,7 @@ public class LiveDatumService implements EventHandler {
 	public void shutdown() {
 		final List<LiveDatumSubscription> subs;
 		synchronized ( registryLock ) {
-			// set the flag and take the snapshot together, so no subscription can be
-			// added after the snapshot (see subscribe())
+			// set flag with snapshot so subscribe() cannot add after it
 			shutdown = true;
 			subs = new ArrayList<>(subscriptions.values());
 		}
@@ -266,7 +258,7 @@ public class LiveDatumService implements EventHandler {
 			final UUID sessionId = session.getSessionId();
 			duplicate = subscriptions.get(key);
 			if ( shutdown ) {
-				// checked again here, as shutdown() sets the flag while holding this lock
+				// check again, as shutdown() sets the flag under this lock
 				rejectStatus = SetupStatus.ServiceUnavailable;
 				rejectMessage = "Live datum not available.";
 			} else if ( duplicate != null ) {
@@ -286,9 +278,7 @@ public class LiveDatumService implements EventHandler {
 			}
 		}
 		if ( duplicate != null && rejectStatus == SetupStatus.Unprocessable ) {
-			// a 422 is terminal for the subscription ID, so end the existing subscription
-			// too; close it before publishing, while holding its monitor, so no datum
-			// message can follow the 422
+			// a 422 is terminal for this ID, so close the existing subscription first
 			synchronized ( duplicate ) {
 				duplicate.close();
 				reject(session, subscriptionId, src, rejectStatus, rejectMessage);
@@ -302,8 +292,7 @@ public class LiveDatumService implements EventHandler {
 		}
 		log.info("Live datum subscription added: {}", sub);
 
-		// send the latest available datum straight away, if any, so the client
-		// does not have to wait for the next poll
+		// send latest datum now rather than wait for the next poll
 		final DatumService ds = service(datumService);
 		if ( ds != null ) {
 			try {
@@ -620,8 +609,7 @@ public class LiveDatumService implements EventHandler {
 			if ( sub.isClosed() ) {
 				return;
 			}
-			// close before publishing a terminal status, while holding the monitor, so
-			// no datum message can follow the terminal status
+			// close first so no datum follows a terminal status
 			if ( now >= sub.getExpires() ) {
 				remove = sub.close();
 				publishStatus(sub, SetupStatus.Gone, "Maximum subscription duration reached.");

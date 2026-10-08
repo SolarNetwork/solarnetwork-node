@@ -37,7 +37,7 @@ public enum SetupStatus {
 	NotFound(404),
 
 	/**
-	 * A resource is no longer available, e.g. a live subscription expired.
+	 * A resource is no longer available, such as an expired live subscription.
 	 *
 	 * @since 1.1
 	 */
@@ -46,7 +46,7 @@ public enum SetupStatus {
 	Unprocessable(422),
 
 	/**
-	 * Too many requests, e.g. too many live subscriptions.
+	 * Too many requests, such as too many live subscriptions.
 	 *
 	 * @since 1.1
 	 */

@@ -29,9 +29,12 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.easymock.EasyMock;
@@ -40,6 +43,9 @@ import org.junit.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.stomp.StompFrame;
 import io.netty.handler.codec.stomp.StompHeaders;
@@ -62,15 +68,8 @@ import net.solarnetwork.service.StaticOptionalService;
 /**
  * Test cases for the {@link LiveDatumService} class.
  *
- * <p>
- * Message encoding is covered by {@link LiveDatumPublisherTests} and
- * operational mode management by {@link LiveDatumModeManagerTests}; these tests
- * cover subscriptions, event handling, housekeeping, and how they drive the
- * mode manager.
- * </p>
- *
  * @author elijah
- * @version 1.1
+ * @version 1.0
  */
 public class LiveDatumServiceTests extends LiveDatumTestSupport {
 
@@ -97,10 +96,6 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 	private SetupStatus subscribe(String subId, String props, String interval) {
 		return service.subscribe(session, subId, SOURCE_ID, props, interval);
 	}
-
-	/*-------------------------------------------------------------------------
-	 * Subscribe
-	 *-----------------------------------------------------------------------*/
 
 	@Test
 	public void subscribe_ok_modeEnabledOnlyOnScheduler() {
@@ -198,13 +193,14 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 				is("live-1"));
 		assertThat("Existing subscription ended too", service.getSubscriptionCount(), is(0));
 
-		// WHEN a datum arrives for the source
+		// WHEN
 		publish(meterDatum(SOURCE_ID, clock.instant()));
 
-		// THEN nothing follows the terminal 422
+		// THEN
 		assertNoFrame();
 
-		// WHEN linger passes
+		// WHEN
+		// linger passes
 		runScheduledTasks();
 		clock.advance(Duration.ofSeconds(LiveDatumModeManager.DEFAULT_MODE_LINGER_SECS));
 		runScheduledTasks();
@@ -215,8 +211,8 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 
 	@Test
 	public void subscribe_duringShutdown_rejected() {
-		// GIVEN an operational modes service that triggers a shutdown when looked up by
-		// subscribe(), i.e. after its first shutdown check but before it registers
+		// GIVEN
+		// shutdown after subscribe() first checks for it, before it registers
 		final AtomicBoolean triggered = new AtomicBoolean();
 		final StaticOptionalService<OperationalModesService> ops = new StaticOptionalService<OperationalModesService>(
 				opModes) {
@@ -329,10 +325,12 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		// WHEN
 		subscribe("live-1", "watts", null);
 
-		// THEN the old datum is still sent
+		// THEN
+		// stale datum still sent
 		assertStatus(nextFrame(), SetupStatus.Ok);
 
-		// WHEN no fresh datum arrives within the grace period
+		// WHEN
+		// no new datum within grace period
 		clock.advance(Duration.ofSeconds(LiveDatumService.DEFAULT_SOURCE_GRACE_SECS));
 		service.housekeeping();
 
@@ -353,10 +351,6 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		// THEN
 		assertThat("Rejected", result, is(SetupStatus.ServiceUnavailable));
 	}
-
-	/*-------------------------------------------------------------------------
-	 * Events
-	 *-----------------------------------------------------------------------*/
 
 	@Test
 	public void event_requestedPropertiesPublished() throws Exception {
@@ -404,7 +398,7 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 
 			@Override
 			public byte[] writeValueAsBytes(Object value) throws JsonProcessingException {
-				throw JsonMappingException.fromUnexpectedIOE(new java.io.IOException("boom"));
+				throw JsonMappingException.fromUnexpectedIOE(new IOException("boom"));
 			}
 
 		};
@@ -464,7 +458,8 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		// THEN
 		assertNoFrame();
 
-		// WHEN (within 20% jitter tolerance of the interval)
+		// WHEN
+		// within jitter tolerance
 		publish(meterDatum(SOURCE_ID, ts.plusMillis(4000)));
 
 		// THEN
@@ -514,17 +509,14 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		// THEN
 		assertNoFrame();
 
-		// WHEN writable again, the next sample is sent
+		// WHEN
+		// writable again
 		channel.unsafe().outboundBuffer().setUserDefinedWritability(1, true);
 		publish(meterDatum(SOURCE_ID, ts.plusSeconds(1)));
 
 		// THEN
 		nextFrame();
 	}
-
-	/*-------------------------------------------------------------------------
-	 * Subscription lifecycle and operational mode
-	 *-----------------------------------------------------------------------*/
 
 	@Test
 	public void unsubscribe_lingerThenDisable() {
@@ -541,7 +533,8 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		assertThat("Not disabled during linger", opModes.disableCalls, hasSize(0));
 		assertThat("Housekeeping cancelled", scheduler.activePeriodic(), hasSize(0));
 
-		// WHEN linger passes
+		// WHEN
+		// linger passes
 		clock.advance(Duration.ofSeconds(LiveDatumModeManager.DEFAULT_MODE_LINGER_SECS));
 		runScheduledTasks();
 
@@ -597,7 +590,8 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		publish(meterDatum(SOURCE_ID, clock.instant()));
 		assertNoFrame();
 
-		// WHEN linger passes
+		// WHEN
+		// linger passes
 		runScheduledTasks();
 		clock.advance(Duration.ofSeconds(LiveDatumModeManager.DEFAULT_MODE_LINGER_SECS));
 		runScheduledTasks();
@@ -639,10 +633,6 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		assertThat("Housekeeping cancelled", scheduler.activePeriodic(), hasSize(0));
 	}
 
-	/*-------------------------------------------------------------------------
-	 * Housekeeping
-	 *-----------------------------------------------------------------------*/
-
 	@Test
 	public void housekeeping_maxDuration() {
 		// GIVEN
@@ -668,14 +658,16 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		subscribe("live-1", PROPS, null);
 		runScheduledTasks();
 
-		// WHEN within grace
+		// WHEN
+		// within grace period
 		clock.advance(Duration.ofSeconds(LiveDatumService.DEFAULT_SOURCE_GRACE_SECS - 1));
 		service.housekeeping();
 
 		// THEN
 		assertNoFrame();
 
-		// WHEN grace passes
+		// WHEN
+		// grace period passes
 		clock.advance(Duration.ofSeconds(1));
 		service.housekeeping();
 
@@ -697,23 +689,27 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		service.housekeeping();
 		service.housekeeping();
 
-		// THEN only one advisory
+		// THEN
+		// only one advisory
 		StompFrame f = nextFrame();
 		assertStatus(f, SetupStatus.ServiceUnavailable);
 		assertNoFrame();
 		assertThat("Still subscribed", service.getSubscriptionCount(), is(1));
 
-		// WHEN data resumes
+		// WHEN
+		// datum resumes
 		publish(meterDatum(SOURCE_ID, clock.instant()));
 
 		// THEN
 		assertStatus(nextFrame(), SetupStatus.Ok);
 
-		// WHEN stale again
+		// WHEN
+		// stale again
 		clock.advance(Duration.ofSeconds(LiveDatumService.DEFAULT_STALE_SECS));
 		service.housekeeping();
 
-		// THEN another advisory
+		// THEN
+		// another advisory
 		assertStatus(nextFrame(), SetupStatus.ServiceUnavailable);
 	}
 
@@ -751,15 +747,15 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 
 	@Test
 	public void terminalStatus_datumDuringStatusWrite_notSent() {
-		// GIVEN a channel that delivers a datum event while the terminal status is being
-		// written, simulating an event thread racing the housekeeping thread
+		// GIVEN
+		// publish datum while terminal status written
 		service.setMaxDurationSecs(60);
-		final java.util.List<StompFrame> written = new java.util.ArrayList<>();
-		EmbeddedChannel ch = new EmbeddedChannel(new io.netty.channel.ChannelOutboundHandlerAdapter() {
+		final List<StompFrame> written = new ArrayList<>();
+		EmbeddedChannel ch = new EmbeddedChannel(new ChannelOutboundHandlerAdapter() {
 
 			@Override
-			public void write(io.netty.channel.ChannelHandlerContext ctx, Object msg,
-					io.netty.channel.ChannelPromise promise) throws Exception {
+			public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
+					throws Exception {
 				StompFrame f = (StompFrame) msg;
 				written.add(f);
 				if ( String.valueOf(SetupStatus.Gone.getCode())
