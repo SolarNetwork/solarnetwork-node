@@ -328,6 +328,50 @@ published straight away. That datum only counts towards the 404 check below if
 it is less than 30 seconds old. Send an `UNSUBSCRIBE` frame with the same `id`
 to stop the stream. Closing the connection also stops it.
 
+## Common live datum properties
+
+The table below lists property names that SolarNode meter and inverter data
+sources commonly produce, as a guide to what can be requested in the
+`properties` header. It is **not** a guarantee: each data source only produces
+the properties its device supports and its settings enable, and any requested
+property the datum doesn't have is simply left out of the message.
+
+> [!NOTE]
+> To see what a particular source actually produces, use the
+> `/setup/datum/latest` command, which returns each source's latest datum with
+> all of its properties.
+
+When the `properties` header is omitted, the *instantaneous* and *accumulating*
+properties are included. *Status* properties are only included when requested by
+name.
+
+| Property                                 | Type          | Unit    | Typically from         | Notes                                                                                                                 |
+| :--------------------------------------- | :------------ | :------ | :--------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `watts`                                  | instantaneous | W       | meters, inverters      | Real power. Negative on a meter usually means export, or a CT installed backwards.                                    |
+| `current`                                | instantaneous | A       | meters, inverters      | Total or average current.                                                                                             |
+| `voltage`                                | instantaneous | V       | meters, inverters      | Phase-to-neutral voltage.                                                                                             |
+| `powerFactor`                            | instantaneous | -1 to 1 | meters, some inverters | How the sign is used depends on the device.                                                                           |
+| `frequency`                              | instantaneous | Hz      | meters, inverters      |                                                                                                                       |
+| `reactivePower`                          | instantaneous | var     | meters, some inverters |                                                                                                                       |
+| `apparentPower`                          | instantaneous | VA      | meters, some inverters |                                                                                                                       |
+| `lineVoltage`                            | instantaneous | V       | meters                 | Phase-to-phase voltage.                                                                                               |
+| `neutralCurrent`                         | instantaneous | A       | meters                 |                                                                                                                       |
+| `current_a`, `current_b`, `current_c`    | instantaneous | A       | meters, some inverters | Per-phase current, only when the data source's *Include phase measurements* setting is on.                            |
+| `voltage_a`, `voltage_b`, `voltage_c`    | instantaneous | V       | meters, some inverters | Per-phase voltage, as above.                                                                                          |
+| `voltage_ab`, `voltage_bc`, `voltage_ca` | instantaneous | V       | meters, some inverters | Line-to-line voltage, as above.                                                                                       |
+| `dcVoltage`                              | instantaneous | V       | inverters              | Some inverters also give per-input values, e.g. `dcVoltage_1`.                                                        |
+| `dcCurrent`                              | instantaneous | A       | inverters              |                                                                                                                       |
+| `dcPower`                                | instantaneous | W       | inverters              |                                                                                                                       |
+| `temp`, `temp_heatSink`                  | instantaneous | °C      | inverters              | Names for other temperatures vary by device.                                                                          |
+| `wattHours`                              | accumulating  | Wh      | meters, inverters      | Energy delivered (import).                                                                                            |
+| `wattHoursReverse`                       | accumulating  | Wh      | meters                 | Energy received (export).                                                                                             |
+| `opState`                                | status        | code    | inverters              | Operating state: 0 Unknown, 1 Normal, 2 Starting, 3 Standby, 4 Shutdown, 5 Fault, 6 Disabled, 7 Recovery, 8 Override. |
+| `phase`                                  | status        |         | meters, inverters      | Which phase the datum covers, usually `Total`.                                                                        |
+
+Per-phase power (`watts`, `powerFactor`, etc. for each phase) is not available
+in a single datum. Some meters can instead publish a separate source for each
+phase, each with the full set of properties above.
+
 ## Live datum status messages
 
 Problems are reported as `MESSAGE` frames on the live subscription with a
