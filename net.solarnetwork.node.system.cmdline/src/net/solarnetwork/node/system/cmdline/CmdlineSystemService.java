@@ -87,7 +87,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class CmdlineSystemService
 		implements SystemService, SettingSpecifierProvider, InstructionHandler {
@@ -468,6 +468,9 @@ public class CmdlineSystemService
 			String appOnly = (instruction != null ? instruction.getParameterValue("applicationOnly")
 					: null);
 			reset(StringUtils.parseBoolean(appOnly));
+		} else {
+			// a SystemConfigure instruction for some other service
+			return null;
 		}
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
