@@ -60,7 +60,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * A STOMP protocol server for SolarNode Setup, using Netty.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class StompSetupServer extends BaseIdentifiable
 		implements SettingsChangeObserver, SettingSpecifierProvider {
@@ -236,6 +236,12 @@ public class StompSetupServer extends BaseIdentifiable
 		result.addAll(baseIdentifiableSettings(null));
 		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
 		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
+		if ( serverService.getLiveDatumService() != null ) {
+			result.add(new BasicTextFieldSettingSpecifier("liveOpMode",
+					LiveDatumModeManager.DEFAULT_OP_MODE));
+			result.add(new BasicTextFieldSettingSpecifier("liveMaxDurationMins",
+					String.valueOf(LiveDatumService.DEFAULT_MAX_DURATION_SECS / 60)));
+		}
 
 		return result;
 	}
@@ -308,6 +314,59 @@ public class StompSetupServer extends BaseIdentifiable
 	 */
 	public void setBindAddress(String bindAddress) {
 		this.bindAddress = bindAddress;
+	}
+
+	/**
+	 * Get the operational mode enabled while live datum subscriptions exist.
+	 *
+	 * @return the operational mode, or {@literal null} if live datum is not
+	 *         supported
+	 * @since 2.3
+	 */
+	public String getLiveOpMode() {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		return (live != null ? live.getModeManager().getOpMode() : null);
+	}
+
+	/**
+	 * Set the operational mode enabled while live datum subscriptions exist.
+	 *
+	 * @param liveOpMode
+	 *        the operational mode to set
+	 * @since 2.3
+	 */
+	public void setLiveOpMode(String liveOpMode) {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		if ( live != null ) {
+			live.getModeManager().setOpMode(liveOpMode);
+		}
+	}
+
+	/**
+	 * Get the maximum live datum subscription duration, in minutes.
+	 *
+	 * @return the maximum duration, or {@literal 0} if live datum is not
+	 *         supported
+	 * @since 2.3
+	 */
+	public int getLiveMaxDurationMins() {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		return (live != null ? live.getMaxDurationSecs() / 60 : 0);
+	}
+
+	/**
+	 * Set the maximum live datum subscription duration, in minutes.
+	 *
+	 * @param liveMaxDurationMins
+	 *        the maximum duration to set; values less than {@literal 1} are
+	 *        ignored
+	 * @since 2.3
+	 */
+	public void setLiveMaxDurationMins(int liveMaxDurationMins) {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		if ( live != null && liveMaxDurationMins > 0 ) {
+			live.setMaxDurationSecs(liveMaxDurationMins * 60);
+		}
 	}
 
 }

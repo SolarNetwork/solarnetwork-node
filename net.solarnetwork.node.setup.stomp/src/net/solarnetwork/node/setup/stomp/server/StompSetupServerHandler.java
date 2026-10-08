@@ -25,7 +25,6 @@ package net.solarnetwork.node.setup.stomp.server;
 import static net.solarnetwork.node.setup.stomp.StompUtils.JSON_UTF8_CONTENT_TYPE;
 import static net.solarnetwork.node.setup.stomp.StompUtils.decodeStompHeaderValue;
 import static net.solarnetwork.node.setup.stomp.StompUtils.encodeStompHeaderValue;
-import static net.solarnetwork.util.NumberUtils.getAndIncrementWithWrap;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
@@ -41,7 +40,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +70,7 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
+import net.solarnetwork.node.setup.stomp.LiveHeader;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.SetupTopic;
@@ -108,6 +107,19 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
  * </ol>
  * 
  * <p>
+ * A client can also send a {@literal SUBSCRIBE} frame with a
+ * {@literal destination} of exactly {@literal /setup/datum/live} and a
+ * {@literal source-id} header to receive a live stream of datum properties via
+ * the {@link LiveDatumService}. Live messages are only ever delivered to that
+ * subscription, never to other (wild card) subscriptions. The
+ * {@literal UNSUBSCRIBE} frame removes a subscription, and the
+ * {@literal DISCONNECT} frame closes the connection. A {@literal receipt}
+ * header on {@literal SUBSCRIBE}, {@literal UNSUBSCRIBE}, or
+ * {@literal DISCONNECT} frames is acknowledged with a {@literal RECEIPT}
+ * frame.
+ * </p>
+ * 
+ * <p>
  * This service does not implement explicit support for the {@literal SEND}
  * destinations. Instead, it uses the {@link InstructionHandler} API to post
  * local instructions to any registered handlers that support the
@@ -126,7 +138,7 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -139,7 +151,6 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	private static final Set<String> STOMP_HEADER_NAMES = createStompHeaderNames();
 	private static final Set<String> SETUP_HEADER_NAMES = createSetupHeaderNames();
 
-	private final AtomicInteger messageIds = new AtomicInteger(0);
 
 	private final StompSetupServerService serverService;
 	private final ObjectMapper objectMapper;
@@ -264,6 +275,14 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 					handleSubscribe(ctx, frame, session);
 					break;
 
+				case UNSUBSCRIBE:
+					handleUnsubscribe(ctx, frame, session);
+					break;
+
+				case DISCONNECT:
+					handleDisconnect(ctx, frame);
+					break;
+
 				default:
 					sendError(ctx, "Unsupported STOMP command");
 					break;
@@ -308,6 +327,10 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			@Override
 			public void operationComplete(ChannelFuture future) {
 				sessions.remove(sessionId);
+				final LiveDatumService live = serverService.getLiveDatumService();
+				if ( live != null ) {
+					live.sessionClosed(sessionId);
+				}
 			}
 		});
 
@@ -346,8 +369,82 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			sendError(ctx, "Missing destination header.");
 			return;
 		}
-		// TODO: support ack?
-		session.addSubscription(subId, dest);
+		if ( SetupTopic.DatumLive.getValue().equals(dest) ) {
+			// live subscriptions are NOT added to the session subscriptions, so
+			// that wild card subscriptions like /setup/** never receive them
+			handleLiveSubscribe(frame, session, subId);
+		} else {
+			// TODO: support ack?
+			session.addSubscription(subId, dest);
+		}
+		sendReceiptIfRequested(ctx, frame);
+	}
+
+	private void handleLiveSubscribe(final StompFrame frame, final SetupSession session,
+			final String subId) {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		final StompHeaders h = frame.headers();
+		if ( live == null ) {
+			LiveDatumPublisher.publishStatus(session, subId, null, SetupStatus.ServiceUnavailable,
+					"Live datum not available.");
+			return;
+		}
+		// note header values have already been unescaped by the Netty STOMP decoder
+		live.subscribe(session, subId, h.getAsString(LiveHeader.SourceId.getValue()),
+				h.getAsString(LiveHeader.Properties.getValue()),
+				h.getAsString(LiveHeader.Interval.getValue()));
+	}
+
+	private void handleUnsubscribe(final ChannelHandlerContext ctx, final StompFrame frame,
+			final SetupSession session) {
+		if ( !session.isAuthenticated() ) {
+			sendError(ctx, "Not authorized.");
+			return;
+		}
+		String subId = decodeStompHeaderValue(frame.headers().getAsString(StompHeaders.ID));
+		if ( subId == null || subId.isEmpty() ) {
+			sendError(ctx, "Missing id header.");
+			return;
+		}
+		final LiveDatumService live = serverService.getLiveDatumService();
+		final boolean liveRemoved = (live != null && live.unsubscribe(session, subId));
+		session.removeSubscription(subId);
+		if ( liveRemoved ) {
+			// a live datum message may have been queued on the event loop by another
+			// thread just before the subscription closed; queue the receipt after it
+			// so no message follows the receipt
+			final String receipt = frame.headers().getAsString(StompHeaders.RECEIPT);
+			if ( receipt != null && !receipt.isEmpty() ) {
+				ctx.executor().execute(() -> sendReceipt(ctx, receipt));
+			}
+		} else {
+			sendReceiptIfRequested(ctx, frame);
+		}
+	}
+
+	private void handleDisconnect(final ChannelHandlerContext ctx, final StompFrame frame) {
+		String receipt = frame.headers().getAsString(StompHeaders.RECEIPT);
+		if ( receipt == null || receipt.isEmpty() ) {
+			ctx.close();
+			return;
+		}
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.RECEIPT);
+		f.headers().set(StompHeaders.RECEIPT_ID, receipt);
+		ctx.writeAndFlush(f).addListener(ChannelFutureListener.CLOSE);
+	}
+
+	private void sendReceiptIfRequested(final ChannelHandlerContext ctx, final StompFrame frame) {
+		String receipt = frame.headers().getAsString(StompHeaders.RECEIPT);
+		if ( receipt == null || receipt.isEmpty() ) {
+			return;
+		}
+		sendReceipt(ctx, receipt);
+	}
+
+	private void sendReceipt(final ChannelHandlerContext ctx, final String receipt) {
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.RECEIPT);
+		f.headers().set(StompHeaders.RECEIPT_ID, receipt);
+		ctx.writeAndFlush(f);
 	}
 
 	private void handleSend(final ChannelHandlerContext ctx, final StompFrame frame,
@@ -589,7 +686,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 				f.headers().set(StompHeaders.DESTINATION, topic);
 				f.headers().set(StompHeaders.SUBSCRIPTION, encodeStompHeaderValue(subId));
 				f.headers().set(StompHeaders.MESSAGE_ID,
-						String.valueOf(getAndIncrementWithWrap(messageIds, 0)));
+						String.valueOf(session.nextMessageId()));
 				if ( json != null && json.length > 0 ) {
 					f.headers().set(StompHeaders.CONTENT_TYPE, JSON_UTF8_CONTENT_TYPE);
 					f.headers().set(StompHeaders.CONTENT_LENGTH, String.valueOf(json.length));

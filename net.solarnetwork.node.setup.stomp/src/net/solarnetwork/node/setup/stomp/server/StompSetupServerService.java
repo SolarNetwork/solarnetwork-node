@@ -31,7 +31,7 @@ import net.solarnetwork.node.setup.UserService;
  * Main service implementation for STOMP setup.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class StompSetupServerService {
 
@@ -39,6 +39,7 @@ public class StompSetupServerService {
 	private final UserDetailsService userDetailsService;
 	private final PathMatcher pathMatcher;
 	private final InstructionExecutionService instructionService;
+	private LiveDatumService liveDatumService;
 
 	/**
 	 * Constructor.
@@ -109,6 +110,28 @@ public class StompSetupServerService {
 	 */
 	public InstructionExecutionService getInstructionService() {
 		return instructionService;
+	}
+
+	/**
+	 * Get the live datum service.
+	 * 
+	 * @return the live datum service, or {@literal null} if live datum is not
+	 *         supported
+	 * @since 2.1
+	 */
+	public LiveDatumService getLiveDatumService() {
+		return liveDatumService;
+	}
+
+	/**
+	 * Set the live datum service.
+	 * 
+	 * @param liveDatumService
+	 *        the live datum service to set
+	 * @since 2.1
+	 */
+	public void setLiveDatumService(LiveDatumService liveDatumService) {
+		this.liveDatumService = liveDatumService;
 	}
 
 }

@@ -31,6 +31,37 @@
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
 		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
 	
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<!-- Live datum streaming, driven by an operational mode -->
+	<bean id="liveDatumService" class="net.solarnetwork.node.setup.stomp.server.LiveDatumService"
+			destroy-method="shutdown">
+		<argument ref="opModesService"/>
+		<argument ref="datumService"/>
+		<argument ref="objectMapper"/>
+		<property name="taskScheduler" ref="taskScheduler"/>
+	</bean>
+
+	<service ref="liveDatumService" interface="org.osgi.service.event.EventHandler">
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.service.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+		</service-properties>
+	</service>
+
 	<bean id="serverService" class="net.solarnetwork.node.setup.stomp.server.StompSetupServerService">
 		<argument ref="userService"/>
 		<argument ref="userDetailsService"/>
@@ -40,6 +71,7 @@
 				<argument ref="instructionHandlers"/>
 			</bean>
 		</argument>
+		<property name="liveDatumService" ref="liveDatumService"/>
 	</bean>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">

@@ -26,7 +26,7 @@ package net.solarnetwork.node.setup.stomp;
  * Supported STOMP setup topics.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum SetupTopic {
 
@@ -35,6 +35,13 @@ public enum SetupTopic {
 
 	/** Get the latest datum. */
 	DatumLatest("/setup/datum/latest"),
+
+	/**
+	 * Subscribe to a live stream of datum properties for a single source.
+	 *
+	 * @since 1.1
+	 */
+	DatumLive("/setup/datum/live"),
 
 	;
 

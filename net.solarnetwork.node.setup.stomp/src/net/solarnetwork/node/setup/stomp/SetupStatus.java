@@ -26,7 +26,7 @@ package net.solarnetwork.node.setup.stomp;
  * Standard setup status codes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum SetupStatus {
 
@@ -36,9 +36,30 @@ public enum SetupStatus {
 
 	NotFound(404),
 
+	/**
+	 * A resource is no longer available, e.g. a live subscription expired.
+	 *
+	 * @since 1.1
+	 */
+	Gone(410),
+
 	Unprocessable(422),
 
+	/**
+	 * Too many requests, e.g. too many live subscriptions.
+	 *
+	 * @since 1.1
+	 */
+	TooManyRequests(429),
+
 	InternalError(500),
+
+	/**
+	 * A service is not available.
+	 *
+	 * @since 1.1
+	 */
+	ServiceUnavailable(503),
 
 	;
 
