@@ -85,7 +85,7 @@ import net.solarnetwork.util.ObjectUtils;
  *
  * @author robert
  * @author matt
- * @version 1.8
+ * @version 1.9
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -102,14 +102,23 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	/** The {@code current} property default value. */
 	public static final double DEFAULT_CURRENT = 10.0;
 
+	/**
+	 * The {@code powerFactor} property default value.
+	 *
+	 * @since 1.9
+	 */
+	public static final double DEFAULT_POWER_FACTOR = 1.0;
+
 	private String sourceId;
 	private double voltagerms = DEFAULT_VOLTAGE;
 	private double frequency = DEFAULT_FREQUENCY;
 	private double current = DEFAULT_CURRENT;
+	private double powerFactor = DEFAULT_POWER_FACTOR;
 	private boolean randomness;
 	private double freqDeviation;
 	private double voltDeviation;
 	private double currentDeviation;
+	private double powerFactorDeviation;
 	private String weatherSourceId;
 
 	private Duration touScheduleCacheTtl = DEFAULT_TOU_SCHEDULE_CACHE_TTL;
@@ -266,6 +275,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		return current + (randomness ? currentDeviation * Math.cos(Math.PI * rng.nextDouble()) : 0);
 	}
 
+	private double readPowerFactor() {
+		final double pf = powerFactor
+				+ (randomness ? powerFactorDeviation * Math.cos(Math.PI * rng.nextDouble()) : 0);
+		return Math.max(-1.0, Math.min(1.0, pf));
+	}
+
 	/**
 	 * Populate the meter values on the datum.
 	 *
@@ -278,6 +293,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		final double f = readFrequency();
 		datum.setFrequency((float) f);
+
+		final double pf = readPowerFactor();
+		datum.setPowerFactor((float) pf);
 
 		// check for TOU power schedule, if available use that
 		TariffSchedule schedule = touSchedule();
@@ -295,11 +313,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				}
 			}
 			datum.setWatts(watts.intValue());
-			datum.setCurrent((float) (watts.doubleValue() / vrms));
+			final double absPf = Math.abs(pf);
+			datum.setCurrent(
+					(float) (watts.doubleValue() / (absPf > 0 ? vrms * absPf : vrms)));
 		} else {
 			final double I = readCurrent();
 			datum.setCurrent((float) I);
-			datum.setWatts((int) (vrms * I));
+			datum.setWatts((int) (vrms * I * pf));
 		}
 	}
 
@@ -379,10 +399,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		result.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 		result.add(new BasicTextFieldSettingSpecifier("frequency", String.valueOf(DEFAULT_FREQUENCY)));
 		result.add(new BasicTextFieldSettingSpecifier("current", String.valueOf(DEFAULT_CURRENT)));
+		result.add(new BasicTextFieldSettingSpecifier("powerFactor",
+				String.valueOf(DEFAULT_POWER_FACTOR)));
 		result.add(new BasicToggleSettingSpecifier("randomness", Boolean.FALSE));
 		result.add(new BasicTextFieldSettingSpecifier("voltdev", String.valueOf(0)));
 		result.add(new BasicTextFieldSettingSpecifier("freqdev", String.valueOf(0)));
 		result.add(new BasicTextFieldSettingSpecifier("currentDeviation", String.valueOf(0)));
+		result.add(new BasicTextFieldSettingSpecifier("powerFactorDeviation", String.valueOf(0)));
 
 		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null, false,
 				"(objectClass=net.solarnetwork.node.service.MetadataService)"));
@@ -569,6 +592,32 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	/**
+	 * Get the power factor.
+	 *
+	 * @return the power factor
+	 * @since 1.9
+	 */
+	public final double getPowerFactor() {
+		return powerFactor;
+	}
+
+	/**
+	 * Set the power factor.
+	 *
+	 * <p>
+	 * Values outside the range -1 to 1 are clamped to that range when datum
+	 * are generated.
+	 * </p>
+	 *
+	 * @param powerFactor
+	 *        the power factor to set
+	 * @since 1.9
+	 */
+	public final void setPowerFactor(double powerFactor) {
+		this.powerFactor = powerFactor;
+	}
+
+	/**
 	 * Get the frequency.
 	 *
 	 * @return the frequency
@@ -662,6 +711,27 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 */
 	public final void setCurrentDeviation(double inductanceDeviation) {
 		this.currentDeviation = inductanceDeviation;
+	}
+
+	/**
+	 * Get the power factor randomness deviation.
+	 *
+	 * @return the deviation
+	 * @since 1.9
+	 */
+	public final double getPowerFactorDeviation() {
+		return powerFactorDeviation;
+	}
+
+	/**
+	 * Set the power factor randomness deviation.
+	 *
+	 * @param powerFactorDeviation
+	 *        the deviation to set
+	 * @since 1.9
+	 */
+	public final void setPowerFactorDeviation(double powerFactorDeviation) {
+		this.powerFactorDeviation = powerFactorDeviation;
 	}
 
 	/**

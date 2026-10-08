@@ -26,10 +26,12 @@ Each configuration contains the following overall settings:
 | RMS Voltage          | RMS of the power supply, in volts. |
 | Frequency            | Frequency of power supply, in Hz. |
 | Current              | Current of the power supply, in A. |
-| Toggle Randomness    | When enabled, apply random deviation to votage, frequency, and current values, limited by the various **Deviation** settings. |
+| Power Factor         | Power factor of the power supply, from -1 to 1. Power is calculated as voltage times current times power factor. |
+| Toggle Randomness    | When enabled, apply random deviation to votage, frequency, current, and power factor values, limited by the various **Deviation** settings. |
 | Voltage Deviation    | The +- maximum amount of randomness to apply to the voltage value. |
 | Frequency Deviation  | The +- maximum amount of randomness to apply to the frequency value. |
 | Current Deviation    | The +- maximum amount of randomness to apply to the current value. |
+| Power Factor Deviation | The +- maximum amount of randomness to apply to the power factor value. |
 | Inductance Deviation | The +- maximum amount of randomness to apply to the inductance value. |
 | Metadata Service     | The **Service Name** of the Metadata Service to obtain the tariff schedule from. See [Metadata Service](#metadata-service) for more information. |
 | TOU Metadata Path    | The metadata path that will resolve the tariff schedule from the configured **Metadata Service**. See [Tariff schedule format](#tariff-schedule-format) for more information. |
