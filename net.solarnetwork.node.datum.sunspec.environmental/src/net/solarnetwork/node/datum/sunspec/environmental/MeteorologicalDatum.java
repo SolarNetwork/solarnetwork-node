@@ -20,31 +20,39 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sunspec.environmental;
+package net.solarnetwork.node.datum.sunspec.environmental;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
-import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
+import net.solarnetwork.sunspec.api.CodedValue;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.BomTemperatureModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.IrradianceModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.IrradianceModelAccessor.Irradiance;
+import net.solarnetwork.sunspec.api.environmental.MeteorologicalModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.MiniMeteorologicalModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.PrecipitationType;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * Datum for a SunSpec compatible meteorolgical device.
  *
  * @author matt
  * @version 1.0
- * @since 4.2
+ * @since 3.0
  */
 public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 
-	private static final long serialVersionUID = -5570238095842311281L;
+	@Serial
+	private static final long serialVersionUID = 4418815327316125790L;
 
 	/**
 	 * An instantaneous sample key for {@link #getBackOfModuleTemperature()}
@@ -200,14 +208,15 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 *        the data
 	 */
 	public void populateMeasurements(@Nullable IrradianceModelAccessor data) {
-		if ( data == null ) {
+		Irradiance irr = (data != null ? data.getIrradiance() : null);
+		if ( irr == null ) {
 			return;
 		}
-		setIrradiance(bigDecimalForNumber(data.getGlobalHorizontalIrradiance()));
-		setPlaneOfArrayIrradiance(bigDecimalForNumber(data.getPlaneOfArrayIrradiance()));
-		setDiffuseIrradiance(bigDecimalForNumber(data.getDiffuseIrradiance()));
-		setDirectNormalIrradiance(bigDecimalForNumber(data.getDirectNormalIrradiance()));
-		setOtherIrradiance(bigDecimalForNumber(data.getOtherIrradiance()));
+		setIrradiance(bigDecimalForNumber(irr.getGlobalHorizontalIrradiance()));
+		setPlaneOfArrayIrradiance(bigDecimalForNumber(irr.getPlaneOfArrayIrradiance()));
+		setDiffuseIrradiance(bigDecimalForNumber(irr.getDiffuseIrradiance()));
+		setDirectNormalIrradiance(bigDecimalForNumber(irr.getDirectNormalIrradiance()));
+		setOtherIrradiance(bigDecimalForNumber(irr.getOtherIrradiance()));
 	}
 
 	/**

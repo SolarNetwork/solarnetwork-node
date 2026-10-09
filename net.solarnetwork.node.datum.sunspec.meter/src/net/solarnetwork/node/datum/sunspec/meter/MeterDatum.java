@@ -20,23 +20,26 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sunspec.meter;
+package net.solarnetwork.node.datum.sunspec.meter;
 
+import java.io.Serial;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
+import net.solarnetwork.sunspec.api.meter.MeterModelAccessor;
 
 /**
  * Datum for a SunSpec compatible meter.
  *
  * @author matt
  * @version 1.0
- * @since 4.2
+ * @since 6.0
  */
 public class MeterDatum extends SimpleAcDcEnergyDatum {
 
-	private static final long serialVersionUID = 7595473211731769270L;
+	@Serial
+	private static final long serialVersionUID = -2381370469722180593L;
 
 	/** The primary model source data. */
 	private final MeterModelAccessor data;
@@ -62,7 +65,8 @@ public class MeterDatum extends SimpleAcDcEnergyDatum {
 			boolean backwards) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
-		MeterModelAccessor phaseData = data.accessorForPhase(phase);
+		MeterModelAccessor phaseData = data
+				.accessorForPhase(net.solarnetwork.sunspec.api.AcPhase.forKey(phase.getKey()));
 		if ( backwards ) {
 			phaseData = phaseData.reversed();
 		}
@@ -75,13 +79,16 @@ public class MeterDatum extends SimpleAcDcEnergyDatum {
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
 		setCurrent(data.getCurrent());
-		setNeutralCurrent(data.getNeutralCurrent());
 		setPowerFactor(data.getPowerFactor());
-		setApparentPower(data.getApparentPower());
-		setReactivePower(data.getReactivePower());
-		setWatts(data.getActivePower());
-		setWattHourReading(data.getActiveEnergyImported());
-		setReverseWattHourReading(data.getActiveEnergyExported());
+		setApparentPower(data.getApparentPower() != null ? data.getApparentPower().intValue() : null);
+		setReactivePower(data.getReactivePower() != null ? data.getReactivePower().intValue() : null);
+		setWatts(data.getActivePower() != null ? data.getActivePower().intValue() : null);
+		setWattHourReading(
+				data.getActiveEnergyImported() != null ? data.getActiveEnergyImported().longValue()
+						: null);
+		setReverseWattHourReading(
+				data.getActiveEnergyExported() != null ? data.getActiveEnergyExported().longValue()
+						: null);
 	}
 
 	/**

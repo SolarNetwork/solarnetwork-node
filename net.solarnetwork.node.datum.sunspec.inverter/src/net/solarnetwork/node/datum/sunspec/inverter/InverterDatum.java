@@ -98,7 +98,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
 		setPowerFactor(data.getPowerFactor());
-		setApparentPower(data.getApparentPower() != null ? data.getActivePower().intValue() : null);
+		setApparentPower(data.getApparentPower() != null ? data.getApparentPower().intValue() : null);
 		setReactivePower(data.getReactivePower() != null ? data.getReactivePower().intValue() : null);
 
 		setDcCurrent(data.getDcCurrent());

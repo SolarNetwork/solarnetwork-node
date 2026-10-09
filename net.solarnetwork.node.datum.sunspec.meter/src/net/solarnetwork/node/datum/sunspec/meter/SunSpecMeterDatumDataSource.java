@@ -31,22 +31,21 @@ import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.meter.MeterDatum;
-import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.meter.MeterModelAccessor;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible power meter.
  *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -106,7 +105,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		}
 		MeterDatum d = new MeterDatum(data, sourceId, AcPhase.Total, this.backwards);
 		if ( this.includePhaseMeasurements ) {
-			d.populatePhaseMeasurementProperties(data);
+			d.populatePhaseMeasurementProperties(new MeterAcEnergyDataAccessor(data));
 		}
 		return d;
 	}
