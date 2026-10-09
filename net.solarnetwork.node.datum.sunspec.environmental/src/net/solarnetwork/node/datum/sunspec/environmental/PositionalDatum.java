@@ -20,10 +20,11 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sunspec.environmental;
+package net.solarnetwork.node.datum.sunspec.environmental;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -33,19 +34,24 @@ import net.solarnetwork.codec.BasicLocationField;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.EnvironmentalModelId;
+import net.solarnetwork.sunspec.api.environmental.GpsModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.Incline;
+import net.solarnetwork.sunspec.api.environmental.InclinometerModelAccessor;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * Datum for a SunSpec compatible GPS or inclination device.
  *
  * @author matt
  * @version 1.0
- * @since 4.2
+ * @since 3.0
  */
 public class PositionalDatum extends SimpleDatum {
 
-	private static final long serialVersionUID = -8632975478821479926L;
+	@Serial
+	private static final long serialVersionUID = 6170127395263904722L;
 
 	/** An instantaneous sample key for {@link #getInclineX()} values. */
 	public static final String INCLINATION_X_KEY = "inclineX";

@@ -1,5 +1,5 @@
 /* ==================================================================
- * InverterAcEnergyDataAccessor.java - 9 Oct 2026 6:40:30 pm
+ * MeterAcEnergyDataAccessor.java - 10 Oct 2026 4:12:18 pm
  *
  * Copyright 2026 SolarNetwork.net Dev Team
  *
@@ -20,27 +20,32 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.sunspec.inverter;
+package net.solarnetwork.node.datum.sunspec.meter;
 
 import java.time.Instant;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
-import net.solarnetwork.sunspec.api.inverter.InverterModelAccessor;
+import net.solarnetwork.sunspec.api.meter.MeterModelAccessor;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
- * Adapt a SunSpec {@link InverterModelAccessor} into an
+ * Adapt a SunSpec {@link MeterModelAccessor} into an
  * {@link AcEnergyDataAccessor}.
+ *
+ * <p>
+ * The meter <i>imported</i> energy values are treated as <i>delivered</i>, and
+ * <i>exported</i> as <i>received</i>.
+ * </p>
  *
  * @author matt
  * @version 1.0
  * @since 6.0
  */
-public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
+public class MeterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 
-	private final InverterModelAccessor delegate;
+	private final MeterModelAccessor delegate;
 
 	/**
 	 * Constructor.
@@ -50,7 +55,7 @@ public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@code null}
 	 */
-	public InverterAcEnergyDataAccessor(InverterModelAccessor delegate) {
+	public MeterAcEnergyDataAccessor(MeterModelAccessor delegate) {
 		super();
 		this.delegate = ObjectUtils.requireNonNullArgument(delegate, "delegate");
 	}
@@ -62,18 +67,19 @@ public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 
 	@Override
 	public Map<String, Object> getDeviceInfo() {
+		// device info is not available from the model accessor
 		return Map.of();
 	}
 
 	@Override
 	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
-		return new InverterAcEnergyDataAccessor(
+		return new MeterAcEnergyDataAccessor(
 				delegate.accessorForPhase(net.solarnetwork.sunspec.api.AcPhase.forKey(phase.getKey())));
 	}
 
 	@Override
 	public AcEnergyDataAccessor reversed() {
-		return new InverterAcEnergyDataAccessor(delegate.reversed());
+		return new MeterAcEnergyDataAccessor(delegate.reversed());
 	}
 
 	@Override
@@ -88,6 +94,7 @@ public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 
 	@Override
 	public @Nullable Float getNeutralCurrent() {
+		// not supported in SunSpec
 		return null;
 	}
 
@@ -114,13 +121,13 @@ public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 
 	@Override
 	public @Nullable Long getActiveEnergyDelivered() {
-		var n = delegate.getActiveEnergyExported();
+		var n = delegate.getActiveEnergyImported();
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public @Nullable Long getActiveEnergyReceived() {
-		var n = delegate.getActiveEnergyImported();
+		var n = delegate.getActiveEnergyExported();
 		return (n != null ? n.longValue() : null);
 	}
 
@@ -132,12 +139,14 @@ public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 
 	@Override
 	public @Nullable Long getApparentEnergyDelivered() {
-		return null;
+		var n = delegate.getApparentEnergyImported();
+		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public @Nullable Long getApparentEnergyReceived() {
-		return null;
+		var n = delegate.getApparentEnergyExported();
+		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
@@ -148,13 +157,13 @@ public class InverterAcEnergyDataAccessor implements AcEnergyDataAccessor {
 
 	@Override
 	public @Nullable Long getReactiveEnergyDelivered() {
-		var n = delegate.getReactiveEnergyExported();
+		var n = delegate.getReactiveEnergyImported();
 		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public @Nullable Long getReactiveEnergyReceived() {
-		var n = delegate.getReactiveEnergyImported();
+		var n = delegate.getReactiveEnergyExported();
 		return (n != null ? n.longValue() : null);
 	}
 
