@@ -18,6 +18,7 @@
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="4.4.0"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="6.2.0"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.17.0"/>
+		<dependency org="net.solarnetwork.common" name="nifty-sunspec-api" rev="0.1.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="2.0.17"/>
 	</dependencies>
 </ivy-module>

@@ -20,9 +20,11 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sunspec.inverter;
+package net.solarnetwork.node.datum.sunspec.inverter;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import java.io.Serial;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.BitSet;
 import java.util.List;
@@ -35,21 +37,26 @@ import net.solarnetwork.domain.SerializeIgnore;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
-import net.solarnetwork.node.hw.sunspec.ModelEvent;
-import net.solarnetwork.node.hw.sunspec.OperatingState;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor.DcModule;
+import net.solarnetwork.sunspec.api.ModelEvent;
+import net.solarnetwork.sunspec.api.OperatingState;
+import net.solarnetwork.sunspec.api.inverter.InverterModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterModelEvent;
+import net.solarnetwork.sunspec.api.inverter.InverterMpptExtensionModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterMpptExtensionModelAccessor.DcModule;
+import net.solarnetwork.sunspec.api.inverter.InverterOperatingState;
 import net.solarnetwork.util.NumberUtils;
 
 /**
  * Datum for a SunSpec compatible inverter.
  *
  * @author matt
- * @version 1.1
- * @since 4.2
+ * @version 1.0
+ * @since 6.0
  */
 public class InverterDatum extends SimpleAcDcEnergyDatum {
 
-	private static final long serialVersionUID = -7099916188917660111L;
+	@Serial
+	private static final long serialVersionUID = 2307520311615307449L;
 
 	/**
 	 * The status sample key for {@link #getOperatingState()} values.
@@ -91,19 +98,21 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
 		setPowerFactor(data.getPowerFactor());
-		setApparentPower(data.getApparentPower());
-		setReactivePower(data.getReactivePower());
+		setApparentPower(data.getApparentPower() != null ? data.getActivePower().intValue() : null);
+		setReactivePower(data.getReactivePower() != null ? data.getReactivePower().intValue() : null);
 
 		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
-		setDcPower(data.getDcPower());
+		setDcPower(data.getDcPower() != null ? data.getDcPower().intValue() : null);
 
-		setWatts(data.getActivePower());
-		setWattHourReading(data.getActiveEnergyExported());
+		setWatts(data.getActivePower() != null ? data.getActivePower().intValue() : null);
+		setWattHourReading(
+				data.getActiveEnergyExported() != null ? data.getActiveEnergyExported().longValue()
+						: null);
 
 		if ( data.getOperatingState() != null ) {
 			setOperatingState(data.getOperatingState());
-			setDeviceOperatingState(data.getOperatingState().asDeviceOperatingState());
+			setDeviceOperatingState(deviceOperatingState(data.getOperatingState()));
 		}
 
 		getSamples().putInstantaneousSampleValue("temp", data.getCabinetTemperature());
@@ -134,7 +143,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 		for ( DcModule module : modules ) {
 			Integer moduleId = module.getInputId();
 			Float moduleVoltage = module.getDCVoltage();
-			Integer modulePower = module.getDCPower();
+			BigDecimal modulePower = module.getDCPower();
 			if ( moduleId == null || moduleVoltage == null || modulePower == null ) {
 				continue;
 			}
@@ -177,7 +186,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 		OperatingState result = null;
 		if ( code != null ) {
 			try {
-				result = InverterOperatingState.forCode(code);
+				result = net.solarnetwork.sunspec.api.inverter.InverterOperatingState.forCode(code);
 			} catch ( IllegalArgumentException e ) {
 				// ignore
 			}
@@ -213,10 +222,7 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 				// ignore
 			}
 		} else {
-			OperatingState opState = getOperatingState();
-			if ( opState != null ) {
-				result = opState.asDeviceOperatingState();
-			}
+			result = deviceOperatingState(getOperatingState());
 		}
 		return result;
 	}
@@ -292,6 +298,49 @@ public class InverterDatum extends SimpleAcDcEnergyDatum {
 				asMutableSampleOperations().putSampleValue(Status, VENDOR_EVENTS_KEY,
 						"0x" + v.toString(16));
 			}
+		}
+	}
+
+	/**
+	 * Get a {@link DeviceOperatingState} for a SunSpec {@code  OperatingState}.
+	 *
+	 * @param opState
+	 *        the operating state to convert
+	 * @return the device operating state, never {@code null}
+	 * @since 2.0
+	 */
+	public static DeviceOperatingState deviceOperatingState(@Nullable OperatingState opState) {
+		if ( opState == null ) {
+			return DeviceOperatingState.Unknown;
+		}
+		final InverterOperatingState invOpState = (opState instanceof InverterOperatingState s ? s
+				: InverterOperatingState.forCode(opState.getCode()));
+		switch (invOpState) {
+			case Normal:
+			case Mppt:
+				return DeviceOperatingState.Normal;
+
+			case Off:
+			case ShuttingDown:
+				return DeviceOperatingState.Shutdown;
+
+			case Sleeping:
+			case Standby:
+				return DeviceOperatingState.Standby;
+
+			case Starting:
+			case Test:
+				return DeviceOperatingState.Starting;
+
+			case Throttled:
+				return DeviceOperatingState.Override;
+
+			case Fault:
+				return DeviceOperatingState.Fault;
+
+			default:
+				return DeviceOperatingState.Unknown;
+
 		}
 	}
 

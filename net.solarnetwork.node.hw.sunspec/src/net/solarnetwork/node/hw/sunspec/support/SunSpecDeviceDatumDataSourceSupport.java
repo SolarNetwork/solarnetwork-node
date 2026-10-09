@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,19 +37,17 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.domain.DataAccessor;
-import net.solarnetwork.node.hw.sunspec.GenericModelId;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.ModelDataProvider;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.sunspec.api.GenericModelId;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.core.ModelDataFactory;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -56,7 +55,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  *
  * @author matt
- * @version 2.4
+ * @version 3.0
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport
@@ -150,7 +149,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 						accessors.addAll(secondaryAccessors);
 					}
 					if ( result != null && accessors != null && !accessors.isEmpty() ) {
-						result.readModelData(connection, accessors);
+						result.readModelData(new SunSpecModbusConnectionAdapter(connection), accessors);
 					}
 					return result;
 				}
@@ -167,10 +166,11 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	private ModelData modelData(ModbusConnection conn) throws IOException {
 		Integer manualBaseAddress = getBaseAddress();
 		if ( manualBaseAddress != null && manualBaseAddress.intValue() >= 0 ) {
-			return ModelDataFactory.getInstance().getModelData(conn,
+			return ModelDataFactory.getInstance().getModelData(new SunSpecModbusConnectionAdapter(conn),
 					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress, false);
 		}
-		return ModelDataFactory.getInstance().getModelData(conn, false);
+		return ModelDataFactory.getInstance().getModelData(new SunSpecModbusConnectionAdapter(conn),
+				false);
 	}
 
 	private @Nullable List<ModelAccessor> getSecondaryModelAccessors(@Nullable ModelData data) {
@@ -217,6 +217,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		}
 	}
 
+	/*- TODO
 	@Override
 	public @Nullable ModbusConnection modelDataModbusConnection() {
 		ModbusNetwork network = OptionalService.service(getModbusNetwork());
@@ -225,6 +226,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		}
 		return network.createConnection(getUnitId());
 	}
+	*/
 
 	/**
 	 * Get a snapshot of the cached model data.
@@ -274,7 +276,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 */
 	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
 			throws IOException {
-		return (data != null ? data.getDeviceInfo() : null);
+		return (data != null ? deviceInfoMap(data) : null);
 	}
 
 	/**
@@ -290,6 +292,29 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	public @Nullable DeviceInfo deviceInfo() {
 		Map<String, ?> info = getDeviceInfo();
 		return (info != null ? DataAccessor.deviceInfoBuilderForInfo(info).build() : null);
+	}
+
+	private Map<String, Object> deviceInfoMap(ModelData data) {
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		String manufacturer = data.getManufacturer();
+		if ( manufacturer != null ) {
+			result.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+		}
+		String model = data.getModelName();
+		if ( model != null ) {
+			String version = data.getVersion();
+			if ( version != null ) {
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
+						String.format("%s (version %s)", model, version));
+			} else {
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model.toString());
+			}
+		}
+		String sn = data.getSerialNumber();
+		if ( sn != null ) {
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+		}
+		return result;
 	}
 
 	/**

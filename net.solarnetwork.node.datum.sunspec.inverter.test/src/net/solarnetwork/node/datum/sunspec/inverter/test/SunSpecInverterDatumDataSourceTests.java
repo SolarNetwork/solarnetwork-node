@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter.test;
 
+import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -31,6 +33,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,20 +49,20 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.sunspec.inverter.SunSpecInverterDatumDataSource;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterNameplateRatingsModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.TitleSettingSpecifier;
+import net.solarnetwork.sunspec.api.inverter.InverterNameplateRatingsModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterOperatingState;
 
 /**
  * Test cases for the {@link SunSpecInverterDatumDataSource} class.
  *
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class SunSpecInverterDatumDataSourceTests {
 
@@ -142,21 +145,29 @@ public class SunSpecInverterDatumDataSourceTests {
 		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_DER_TYPE, "PV");
 		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_DER_TYPE_CODE, 4);
 		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_ACTIVE_POWER_RATING,
-				3000);
-		expectedNameplateRatings
-				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_APPARENT_POWER_RATING, 3000);
-		expectedNameplateRatings
-				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q1_RATING, 2140);
-		expectedNameplateRatings
-				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q4_RATING, -2140);
+				new BigDecimal(3000));
+		expectedNameplateRatings.put(
+				InverterNameplateRatingsModelAccessor.INFO_KEY_APPARENT_POWER_RATING,
+				new BigDecimal(3000));
+		expectedNameplateRatings.put(
+				InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q1_RATING,
+				new BigDecimal(2140));
+		expectedNameplateRatings.put(
+				InverterNameplateRatingsModelAccessor.INFO_KEY_REACTIVE_POWER_Q4_RATING,
+				new BigDecimal(-2140));
 		expectedNameplateRatings.put(InverterNameplateRatingsModelAccessor.INFO_KEY_CURRENT_RATING,
 				4.2f);
 		expectedNameplateRatings
 				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_POWER_FACTOR_Q1_RATING, -0.85f);
 		expectedNameplateRatings
 				.put(InverterNameplateRatingsModelAccessor.INFO_KEY_POWER_FACTOR_Q4_RATING, 0.85f);
-		assertThat("Nameplate ratings resolved", info.getNameplateRatings(),
-				is(equalTo(expectedNameplateRatings)));
+		// @formatter:off
+		then(info.getNameplateRatings())
+			.asInstanceOf(map(String.class, Object.class))
+			.as("Nameplate ratings resolved")
+			.containsExactlyInAnyOrderEntriesOf(expectedNameplateRatings)
+			;
+		// @formatter:on
 	}
 
 	@Test

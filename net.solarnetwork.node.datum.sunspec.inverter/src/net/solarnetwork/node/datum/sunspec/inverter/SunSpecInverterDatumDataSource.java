@@ -36,17 +36,8 @@ import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.ModelEvent;
-import net.solarnetwork.node.hw.sunspec.OperatingState;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterDatum;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterNameplateRatingsModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.hw.sunspec.support.SunSpecModbusConnectionAdapter;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
@@ -54,13 +45,22 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.ModelEvent;
+import net.solarnetwork.sunspec.api.OperatingState;
+import net.solarnetwork.sunspec.api.inverter.InverterModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterModelId;
+import net.solarnetwork.sunspec.api.inverter.InverterMpptExtensionModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterNameplateRatingsModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterOperatingState;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  *
  * @author matt
- * @version 2.4
+ * @version 3.0
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -108,7 +108,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 		InverterNameplateRatingsModelAccessor nameplateRatings = data
 				.findTypedModel(InverterNameplateRatingsModelAccessor.class);
 		if ( nameplateRatings != null ) {
-			data.readModelData(connection, nameplateRatings);
+			data.readModelData(new SunSpecModbusConnectionAdapter(connection), nameplateRatings);
 			Map<String, Object> ratings = nameplateRatings.nameplateRatingsInfo();
 			if ( ratings != null ) {
 				result.put(DataAccessor.INFO_KEY_NAMEPLATE_RATINGS, ratings);
@@ -163,7 +163,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			d.populateDcModulesProperties(mppt);
 		}
 		if ( this.includePhaseMeasurements ) {
-			d.populatePhaseMeasurementProperties(data);
+			d.populatePhaseMeasurementProperties(new InverterAcEnergyDataAccessor(data));
 		}
 		return d;
 	}
