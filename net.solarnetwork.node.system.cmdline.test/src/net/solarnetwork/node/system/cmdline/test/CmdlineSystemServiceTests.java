@@ -22,7 +22,11 @@
 
 package net.solarnetwork.node.system.cmdline.test;
 
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,13 +40,18 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.system.cmdline.CmdlineSystemService;
 
 /**
  * Test cases for the {@link CmdlineSystemService} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CmdlineSystemServiceTests {
 
@@ -127,5 +136,37 @@ public class CmdlineSystemServiceTests {
 		log.debug("STDOUT: " + service.stdout);
 		log.debug("STDERR: " + service.stderr);
 		assertThat("Command exectued as expected", service.stdout, hasItems("ResetApp"));
+	}
+
+	@Test
+	public void systemConfigure_otherService() {
+		// GIVEN
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SYSTEM_CONFIGURE,
+				singletonMap(InstructionHandler.PARAM_SERVICE, "/setup/datum/latest"));
+
+		// WHEN
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Instruction for another service not handled", result, is(nullValue()));
+	}
+
+	@Test
+	public void systemConfigure_reset() throws Exception {
+		// GIVEN
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SYSTEM_CONFIGURE,
+				singletonMap(InstructionHandler.PARAM_SERVICE, CmdlineSystemService.RESET_SERVICE_NAME));
+
+		// WHEN
+		InstructionStatus result = service.processInstruction(instr);
+		Thread.sleep(1500);
+
+		// THEN
+		assertThat("Reset instruction handled", result, is(notNullValue()));
+		assertThat("Reset instruction completed", result.getInstructionState(),
+				is(InstructionState.Completed));
+		assertThat("Command exectued as expected", service.stdout, hasItems("Reset"));
 	}
 }
