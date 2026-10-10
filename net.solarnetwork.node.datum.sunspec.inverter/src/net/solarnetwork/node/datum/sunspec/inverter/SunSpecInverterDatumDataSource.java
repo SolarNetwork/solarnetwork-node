@@ -165,6 +165,11 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(new InverterAcEnergyDataAccessor(data));
 		}
+
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
 		return d;
 	}
 

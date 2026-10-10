@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
@@ -105,7 +106,14 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 		if ( currSample == null ) {
 			return null;
 		}
-		return new MeteorologicalDatum(currSample, sourceId);
+		final var d = new MeteorologicalDatum(currSample, sourceId);
+
+		final Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
+		return d;
 	}
 
 	@Override

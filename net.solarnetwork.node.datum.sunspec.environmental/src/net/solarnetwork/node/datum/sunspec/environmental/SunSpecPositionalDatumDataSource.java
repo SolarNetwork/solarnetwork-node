@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.sunspec.environmental;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -95,7 +96,14 @@ public class SunSpecPositionalDatumDataSource extends SunSpecDeviceDatumDataSour
 		if ( currSample == null ) {
 			return null;
 		}
-		return new PositionalDatum(currSample, sourceId);
+		final var d = new PositionalDatum(currSample, sourceId);
+
+		final Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
+		return d;
 	}
 
 	@Override

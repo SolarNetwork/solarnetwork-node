@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
@@ -99,14 +100,22 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		if ( currSample == null ) {
 			return null;
 		}
-		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
+
+		final MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
 		if ( data == null ) {
 			return null;
 		}
-		MeterDatum d = new MeterDatum(data, sourceId, AcPhase.Total, this.backwards);
+
+		final MeterDatum d = new MeterDatum(data, sourceId, AcPhase.Total, this.backwards);
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(new MeterAcEnergyDataAccessor(data));
 		}
+
+		final Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
 		return d;
 	}
 
