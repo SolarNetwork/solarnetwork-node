@@ -18,7 +18,6 @@ ones that open ports 80 and 8080:
 add rule ip filter INPUT udp dport 47808 accept
 ```
 
-
 # `BacnetNetwork`
 
 The [`BacnetNetwork`](src/net/solarnetwork/node/io/bacnet/BacnetNetwork.java) API is the main entry

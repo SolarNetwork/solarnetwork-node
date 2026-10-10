@@ -17,9 +17,9 @@ page on your SolarNode.
 
 ## Settings
 
-| Setting             | Description |
-|:--------------------|:---------------------------------------------------------------------------------------------|
-| Persist Seconds    | A minimum number of seconds between data source metadata updates to wait before persisting locally. This helps minimize disk writes. |
+| Setting         | Description                                                                                                                                      |
+|:----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| Persist Seconds | A minimum number of seconds between data source metadata updates to wait before persisting locally. This helps minimize disk writes.             |
 | Sync Seconds    | A minimum number of seconds between data source metadata updates to wait before persisting to SolarNetwork. This helps minimize network traffic. |
 
 ## Setting notes
@@ -29,7 +29,7 @@ to the local filesystem. SolarNode will wait _at least_ this number of seconds a
 update before saving the data to disk. If another update occurs for the same metadata, SolarNode
 will reset the timer and wait this number of seconds again. **Note** that it is possible for
 the metadata to _never_ persist to disk if metadata updates continually reset this timer. You
-can configure the **Sync Seconds** to a value larger than this value to ensure the changes 
+can configure the **Sync Seconds** to a value larger than this value to ensure the changes
 eventually do get saved to disk.
 
 The **Sync Seconds** setting affects how frequently SolarNode will persist and synchronize a
@@ -41,10 +41,11 @@ that timeout from occurring.
 
 # Metadata Service component
 
-The node-specific metadata service provided by this plugin also implements the generic 
+The node-specific metadata service provided by this plugin also implements the generic
 `net.solarnetwork.node.service.MetadataService` API, using the Service ID `Node Metadata Service`.
 That means other plugins that use that API can access node metadata by configuring that Service ID
 value in its settings.
 
 [datum-meta-view]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-view
 [datum-meta-post]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-add
+

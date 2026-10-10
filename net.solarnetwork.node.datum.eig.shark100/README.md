@@ -8,7 +8,7 @@ Industries/GaugeTech Shark 100 series power meters.
 # Install
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It
-appears under the **Datum** category as **Electro Industries/GaugeTech Shark 
+appears under the **Datum** category as **Electro Industries/GaugeTech Shark
 100 Meter Data Source**.
 
 # Use
@@ -22,17 +22,17 @@ for each Modbus device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Connection  | The service name of the Modbus port to use.                                      |
-| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.                  |
-| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
-| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
-| Backwards          | Toggle to treat energy delivered as `wattHoursReverse` instead of `wattHours`    |
-| Phase Measurements | Toggle to collect additional phase-specific measurement properties.              |
+|      Setting       |                                  Description                                  |
+|--------------------|-------------------------------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected.                       |
+| Service Name       | A unique name to identify this data source with.                              |
+| Service Group      | A group name to associate this data source with.                              |
+| Modbus Connection  | The service name of the Modbus port to use.                                   |
+| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.               |
+| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                |
+| Source ID          | The SolarNetwork source ID to assign to captured datum.                       |
+| Backwards          | Toggle to treat energy delivered as `wattHoursReverse` instead of `wattHours` |
+| Phase Measurements | Toggle to collect additional phase-specific measurement properties.           |
 
 ## Overall device settings notes
 
@@ -65,3 +65,4 @@ Each device configuration contains the following overall settings:
 	<li><code>voltage_ab</code>, <code>voltage_bc</code>, <code>voltage_ca</code></li>
 	</ol></ul>
 </dl>
+

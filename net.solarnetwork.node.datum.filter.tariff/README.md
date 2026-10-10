@@ -11,8 +11,8 @@ documentation:
 
 # Use
 
-Once installed, a new **Time-based Tariff Datum Filter** component will appear on the 
-**Settings > Datum Filter** page on your SolarNode. Click on the **Manage** button to configure 
+Once installed, a new **Time-based Tariff Datum Filter** component will appear on the
+**Settings > Datum Filter** page on your SolarNode. Click on the **Manage** button to configure
 filters.
 
 <img alt="Tariff filter settings" src="docs/solarnode-tariff-filter-settings.png" width="920">
@@ -21,20 +21,20 @@ filters.
 
 Each filter configuration contains the following overall settings:
 
-| Setting            | Description                                                       |
-|:-------------------|:------------------------------------------------------------------|
-| Service Name       | A unique ID for the filter, to be referenced by other components. |
-| Service Group      | An optional service group name to assign. |
-| Source ID          | The source ID(s) to filter. |
-| Required Mode      | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
-| Required Tag       | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
-| Metadata Service   | The **Service Name** of the Metadata Service to obtain the tariff schedule from. See [below](#metadata-service) for more information. |
-| Metadata Path      | The metadata path that will resolve the tariff schedule from the configured Metadata Service. |
-| Language           | A IETF BCP 47 language tag to parse the tariff data with. If not configured then the default system language will be assumed.
-| First Match        | If enabled, then apply only the **first** tariff that matches a given datum date. If disabled, then apply **all** tariffs that match. |
-| Preserve Case      | If enabled, then preserve the case in resolved datum property names. See [Rate columns](#rate-columns) below. |
-| Schedule Cache     | The amount of seconds to cache the tariff schedule obtained from the configured Metadata Service.
-| Tariff Evaluator   | The **Service Name** of a _Time-based Tariff Evaluator_ service to evaluate each tariff to determine if it should apply to a given datum. |
+| Setting          | Description                                                                                                                                                                                                                                                                                                                    |
+|:-----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name     | A unique ID for the filter, to be referenced by other components.                                                                                                                                                                                                                                                              |
+| Service Group    | An optional service group name to assign.                                                                                                                                                                                                                                                                                      |
+| Source ID        | The source ID(s) to filter.                                                                                                                                                                                                                                                                                                    |
+| Required Mode    | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied.                                                                                                                                                         |
+| Required Tag     | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
+| Metadata Service | The **Service Name** of the Metadata Service to obtain the tariff schedule from. See [below](#metadata-service) for more information.                                                                                                                                                                                          |
+| Metadata Path    | The metadata path that will resolve the tariff schedule from the configured Metadata Service.                                                                                                                                                                                                                                  |
+| Language         | A IETF BCP 47 language tag to parse the tariff data with. If not configured then the default system language will be assumed.                                                                                                                                                                                                  |
+| First Match      | If enabled, then apply only the **first** tariff that matches a given datum date. If disabled, then apply **all** tariffs that match.                                                                                                                                                                                          |
+| Preserve Case    | If enabled, then preserve the case in resolved datum property names. See [Rate columns](#rate-columns) below.                                                                                                                                                                                                                  |
+| Schedule Cache   | The amount of seconds to cache the tariff schedule obtained from the configured Metadata Service.                                                                                                                                                                                                                              |
+| Tariff Evaluator | The **Service Name** of a _Time-based Tariff Evaluator_ service to evaluate each tariff to determine if it should apply to a given datum.                                                                                                                                                                                      |
 
 ## Settings notes
 
@@ -73,8 +73,8 @@ metadata to your account. For example:
 The tariff schedule obtained from the configured Metadata Service uses a simple CSV-based format
 that can be easily exported from a spreadsheet. Each row represents a rule that includes:
 
- * a set of time constraints that must be satisfied for the rule to be applied
- * a list of tariff rates to be added to datum when the constraints are satisfied
+* a set of time constraints that must be satisfied for the rule to be applied
+* a list of tariff rates to be added to datum when the constraints are satisfied
 
 > :warning: **Note** a header row is **required** because the tariff rate names are defined there.
 > The first 4 column names are ignored.
@@ -85,12 +85,12 @@ adding a `,` between each range (see [Range sets](#range-sets) below). Whitespac
 `-` character. If the `start` and `end` are the same, the range may be shortened to just `start`. A
 range can be left empty to represent **all values**. The time constraint columns are:
 
-| Column | Constraint | Description |
-|:-------|:-----------|:------------|
-| 1      | Month range | An inclusive month range. Months can be specified as numbers (1-12) or abbreviations (Jan-Dec) or full names (January - December). When using text names case does not matter and they will be parsed using the **Lanauage** setting. |
-| 2      | Day range | An inclusive day-of-month range. Days are specified as numbers (1-31). |
+| Column | Constraint    | Description                                                                                                                                                                                                                                                                           |
+|:-------|:--------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1      | Month range   | An inclusive month range. Months can be specified as numbers (1-12) or abbreviations (Jan-Dec) or full names (January - December). When using text names case does not matter and they will be parsed using the **Lanauage** setting.                                                 |
+| 2      | Day range     | An inclusive day-of-month range. Days are specified as numbers (1-31).                                                                                                                                                                                                                |
 | 3      | Weekday range | An inclusive day-of-week range. Weekdays can be specified as numbers (1-7) with Monday being `1` and Sunday being `7`, or abbreviations (Mon-Sun) or full names (Monday - Sunday). When using text names case does not matter and they will be parsed using the **Lanauage** setting. |
-| 4      | Time range | An **inclusive - exclusive** time-of-day range. The time can be specified as whole hour numbers (0-24) or `HH:MM` style (`00:00` - `24:00`). |
+| 4      | Time range    | An **inclusive - exclusive** time-of-day range. The time can be specified as whole hour numbers (0-24) or `HH:MM` style (`00:00` - `24:00`).                                                                                                                                          |
 
 ## Range sets
 
@@ -100,21 +100,21 @@ including January, February, March, October, November, and December.
 
 ## Rate columns
 
-Starting on column 5 of the tariff schedule are arbitrary rate values to add to datum when the 
+Starting on column 5 of the tariff schedule are arbitrary rate values to add to datum when the
 corresponding constraints are satisfied. The name of the datum property is derived from the **header
 row** of the column, adapted according to the following rules:
 
- 1. change to lower case (if **Preserve Case** is disabled)
- 2. replacing any runs of non-alphanumeric or underscore with a single underscore
- 3. removing any leading/trailing underscores
- 
+1. change to lower case (if **Preserve Case** is disabled)
+2. replacing any runs of non-alphanumeric or underscore with a single underscore
+3. removing any leading/trailing underscores
+
 Here are some examples of the header name to the equivalent property name:
 
-| Rate Header Name         | Datum Property Name | Datum Property Name with Preserve Case |
-|:-------------------------|:--------------------|:---------------------------------------|
-| TOU                      | `tou`               | `TOU` |
-| Foo Bar                  | `foo_bar`           | `Foo_Bar` |
-| This Isn't A Great Name! | `this_isn_t_a_great_name` | `This_Isn_t_A_Great_Name` |
+| Rate Header Name         | Datum Property Name       | Datum Property Name with Preserve Case |
+|:-------------------------|:--------------------------|:---------------------------------------|
+| TOU                      | `tou`                     | `TOU`                                  |
+| Foo Bar                  | `foo_bar`                 | `Foo_Bar`                              |
+| This Isn't A Great Name! | `this_isn_t_a_great_name` | `This_Isn_t_A_Great_Name`              |
 
 ## Example schedule
 
@@ -126,7 +126,6 @@ Here's an example schedule with 4 rules and a single **TOU** rate (the `*` stand
 | **2** | Jan-Dec | *   | Mon-Fri | 8-24 | 11.00 |
 | **3** | Jan-Dec | *   | Sat-Sun | 0-8  |  9.19 |
 | **4** | Jan-Dec | *   | Sat-Sun | 8-24 | 11.21 |
-
 
 In CSV format the schedule would look like this:
 
@@ -152,3 +151,4 @@ at the `/pm/tariffs/schedule` path:
 ```
 
 [api-explorer]: https://go.solarnetwork.net/dev/api/
+

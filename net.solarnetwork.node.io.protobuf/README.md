@@ -1,6 +1,6 @@
 # SolarNode Protobuf I/O
 
-This project contains an OSGi bundle that provides support for working with the [Protobuf][protobuf] 
+This project contains an OSGi bundle that provides support for working with the [Protobuf][protobuf]
 data serialization framework.
 
 # Protobuf Datum Encoder/Decoder
@@ -27,24 +27,24 @@ properties and Protobuf message fields.
 
 Each component configuration contains the following overall settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Service Name       | A unique name to identify this service with. |
-| Service Group      | A group name to associate this data source with. |
-| Protobuf Compiler  | The <b>Service Name</b> of the <b>Protobuf Compiler</b> component to use. For example, a [protoc](#protoc-protobuf-compiler) one. |
-| Message Class      | The full Java class name of the Protobuf message type to use. |
-| Upload Files       | Allows you to upload any number of `.proto` Protobuf definition files. |
-| Proto File         | Shows the previously-uploaded `.proto` files. |
-| Property Configurations | A list of datum property configurations; see below. |
+| Setting                 | Description                                                                                                                       |
+|:------------------------|:----------------------------------------------------------------------------------------------------------------------------------|
+| Service Name            | A unique name to identify this service with.                                                                                      |
+| Service Group           | A group name to associate this data source with.                                                                                  |
+| Protobuf Compiler       | The <b>Service Name</b> of the <b>Protobuf Compiler</b> component to use. For example, a [protoc](#protoc-protobuf-compiler) one. |
+| Message Class           | The full Java class name of the Protobuf message type to use.                                                                     |
+| Upload Files            | Allows you to upload any number of `.proto` Protobuf definition files.                                                            |
+| Proto File              | Shows the previously-uploaded `.proto` files.                                                                                     |
+| Property Configurations | A list of datum property configurations; see below.                                                                               |
 
 ### Property Configuration
 
 Each datum property configuration contains the following settings:
 
-| Setting             | Description |
-|:--------------------|:------------|
-| Datum Property      | The name of the datum property to read/set. |
-| Datum Property Type | The type of the datum property to use. |
+| Setting             | Description                                  |
+|:--------------------|:---------------------------------------------|
+| Datum Property      | The name of the datum property to read/set.  |
+| Datum Property Type | The type of the datum property to use.       |
 | Field Property      | The Protobuf message field name to set/read. |
 
 > **Note** that the **Field Property** supports nested messages by using a `.` delimiter.
@@ -60,7 +60,7 @@ components need be configured, but you can configure multiple services that use 
 of `protoc` as needed.
 
 > :warning: **Note** that the `protoc` version used must be compatible with the Protobuf bundle
-> deployed in the SolarNode runtime, otherwise compilation errors can occur. 
+> deployed in the SolarNode runtime, otherwise compilation errors can occur.
 
 ![Protoc Compile settings form](docs/solarnode-protoc-settings.png)
 
@@ -68,11 +68,11 @@ of `protoc` as needed.
 
 Each component configuration contains the following overall settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Service Name       | A unique name to identify this service with. |
-| Service Group      | A group name to associate this data source with. |
-| Protoc Path        | The operating system path to the `protoc` tool to use. |
+| Setting       | Description                                            |
+|:--------------|:-------------------------------------------------------|
+| Service Name  | A unique name to identify this service with.           |
+| Service Group | A group name to associate this data source with.       |
+| Protoc Path   | The operating system path to the `protoc` tool to use. |
 
 # Tips
 
@@ -86,3 +86,4 @@ echo -n 090000004036486c4011dac69fa86c5a4040189fb5eb02 \
 
 [protobuf]: https://developers.google.com/protocol-buffers
 [solarflux-upload]: ../net.solarnetwork.node.upload.flux/
+

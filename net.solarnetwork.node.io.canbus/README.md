@@ -21,21 +21,20 @@ configuration for each `socketcand` server you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting             | Description |
-|:--------------------|:------------|
-| Service Name        | A unique name to identify this data source with. |
-| Service Group       | A group name to associate this data source with. |
-| Host                | The host name the `socketcand` server to connect to. |
-| Port                | The port number of the `socketcand` server to connect to. |
-| Socket Timeout      | A timeout for receiving data when reading from the socket, in **milliseconds**. |
-| Socket Linger       | Set to anything greater than `0` to configure the socket linger flag to this value, in **seconds**. |
-| Socket TCP No Delay | Toggle the TCP _no-delay_ option on the socket. |
-| Socket Reuse        | Toggle the _reuse_ flag on the socket. This is generally recommended. |
-| Socket Keep Alive   | Toggle the _keep-alive_ flag on the socket. |
-| Capture File        | File path where captured CAN messages should be written. Supports `{busName}` and `{date}` placeholders. See [Instruction support](#instruction-support) for more information about "capture mode". |
-| Capture Compress    | When enabled, compress the captured CAN messages with the gzip compressor. This can significantly reduce the size of the captured data file. |
+| Setting             | Description                                                                                                                                                                                                                                                             |
+|:--------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name        | A unique name to identify this data source with.                                                                                                                                                                                                                        |
+| Service Group       | A group name to associate this data source with.                                                                                                                                                                                                                        |
+| Host                | The host name the `socketcand` server to connect to.                                                                                                                                                                                                                    |
+| Port                | The port number of the `socketcand` server to connect to.                                                                                                                                                                                                               |
+| Socket Timeout      | A timeout for receiving data when reading from the socket, in **milliseconds**.                                                                                                                                                                                         |
+| Socket Linger       | Set to anything greater than `0` to configure the socket linger flag to this value, in **seconds**.                                                                                                                                                                     |
+| Socket TCP No Delay | Toggle the TCP _no-delay_ option on the socket.                                                                                                                                                                                                                         |
+| Socket Reuse        | Toggle the _reuse_ flag on the socket. This is generally recommended.                                                                                                                                                                                                   |
+| Socket Keep Alive   | Toggle the _keep-alive_ flag on the socket.                                                                                                                                                                                                                             |
+| Capture File        | File path where captured CAN messages should be written. Supports `{busName}` and `{date}` placeholders. See [Instruction support](#instruction-support) for more information about "capture mode".                                                                     |
+| Capture Compress    | When enabled, compress the captured CAN messages with the gzip compressor. This can significantly reduce the size of the captured data file.                                                                                                                            |
 | Capture Inline Date | When enabled, include a time stamp as the first field in each message line captured in Capture File. When disabled a time stamp will be written as a separate comment line before each CAN message, making the output compatible with the output of the `candump` tool. |
-
 
 # Instruction support
 
@@ -46,27 +45,26 @@ compatible with the output of the `candump` tool. The
 files and upload them, creating a datum stream that references the uploaded files. The following
 instruction parameters are supported:
 
-| Parameter | Description |
-|:----------|:------------|
-| `canbus-capture` | Provides the name of the CAN bus to capture the messages from, e.g. `can0`. |
-| `action`         | Must be `start` to start capturing messages or `stop` to stop. |
+| Parameter        | Description                                                                                                                                                                                                                                                                                                      |
+|:-----------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `canbus-capture` | Provides the name of the CAN bus to capture the messages from, e.g. `can0`.                                                                                                                                                                                                                                      |
+| `action`         | Must be `start` to start capturing messages or `stop` to stop.                                                                                                                                                                                                                                                   |
 | `duration`       | An **optional** duration used if the `action` is `start`, to signify how long until capturing should stop. If not provided capturing will continue until another `Signal` instruction with the `stop` action is received. The format must be in [ISO-8601 duration][duration] form, e.g. `PT15M` for 15 minutes. |
 
 For example, to request capturing to start on `can0` and automatically stop in 30 seconds, the following instruction parameters would be used:
 
-| Parameter | Value |
-|:----------|:------|
-| `canbus-capture` | `can0` |
-| `action` | `start` |
-| `duration` | `PT30S` |
+| Parameter        | Value   |
+|:-----------------|:--------|
+| `canbus-capture` | `can0`  |
+| `action`         | `start` |
+| `duration`       | `PT30S` |
 
 To request capturing to stop on `can0` the following instruction parameters would be used:
 
-| Parameter | Value |
-|:----------|:------|
+| Parameter        | Value  |
+|:-----------------|:-------|
 | `canbus-capture` | `can0` |
-| `action` | `stop` |
-
+| `action`         | `stop` |
 
 # SolarNetwork KCD Support
 
@@ -138,16 +136,16 @@ Here's an example snippet of the extended KCD XML format:
 
 The `<Node>` element supports the following additional attributes:
 
-| Attribute | Default | Description |
-|:----------|:--------|:------------|
+| Attribute                 | Default       | Description                                                                                              |
+|:--------------------------|:--------------|:---------------------------------------------------------------------------------------------------------|
 | `sn:network-service-name` | `Canbus Port` | The name of a CAN Bus Connection component that provides the connection to the physical CAN bus network. |
-| `sn:publish-interval` | 60000 | The frequency at which to publish datum for this node, in **milliseconds**. |
+| `sn:publish-interval`     | 60000         | The frequency at which to publish datum for this node, in **milliseconds**.                              |
 
 The `<Node>` element supports the following additional nested elements:
 
-| Element | Default | Description |
-|:----------|:--------|:------------|
-| `Expression` | | Zero or more property expression configurations. |
+| Element      | Default | Description                                      |
+|:-------------|:--------|:-------------------------------------------------|
+| `Expression` |         | Zero or more property expression configurations. |
 
 For example:
 
@@ -162,15 +160,15 @@ For example:
 
 #### `<Expression>` element
 
-The `<Expression>` element, which can appear in a `<Node>` element, defines a dynamic expression to 
+The `<Expression>` element, which can appear in a `<Node>` element, defines a dynamic expression to
 apply to the generated datum. The content of the element is the expression, and it supports the
 following attributes:
 
-| Attribute | Default | Description |
-|:----------|:--------|:------------|
-| `sn:datum-property` | | The datum property name to populate for this expression. |
-| `sn:datum-property-classification` | `i` | The [datum property classification][datum-samples] of the property to populate for this expression. |
-| `sn:expression-lang` | `net.solarnetwork.common.expr.spel.SpelExpressionService` | The UID of the [expression service][expr] to evaluate the expression with. |
+| Attribute                          | Default                                                   | Description                                                                                         |
+|:-----------------------------------|:----------------------------------------------------------|:----------------------------------------------------------------------------------------------------|
+| `sn:datum-property`                |                                                           | The datum property name to populate for this expression.                                            |
+| `sn:datum-property-classification` | `i`                                                       | The [datum property classification][datum-samples] of the property to populate for this expression. |
+| `sn:expression-lang`               | `net.solarnetwork.common.expr.spel.SpelExpressionService` | The UID of the [expression service][expr] to evaluate the expression with.                          |
 
 For example:
 
@@ -180,23 +178,21 @@ For example:
 </Expression>
 ```
 
-
 ### `<Signal>` element extensions
 
 The `<Signal>` element supports the following additional attributes:
 
-| Attribute | Default | Description |
-|:----------|:--------|:------------|
-| `sn:datum-property` | | The datum property name to populate for this signal. |
-| `sn:datum-property-classification` | `i` | The [datum property classification][datum-samples] of the property to populate for this signal. |
-| `sn:decimal-scale` | -1 | A maximum scale (number of digits after the decimal point) to round decimal values to. This is applied after all transforms. Set to 0 to round to whole numbers. Set to `-1` to disable rounding. |
+| Attribute                          | Default | Description                                                                                                                                                                                       |
+|:-----------------------------------|:--------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `sn:datum-property`                |         | The datum property name to populate for this signal.                                                                                                                                              |
+| `sn:datum-property-classification` | `i`     | The [datum property classification][datum-samples] of the property to populate for this signal.                                                                                                   |
+| `sn:decimal-scale`                 | -1      | A maximum scale (number of digits after the decimal point) to round decimal values to. This is applied after all transforms. Set to 0 to round to whole numbers. Set to `-1` to disable rounding. |
 
 The `<Signal>` element supports the following additional nested elements:
 
-| Element | Default | Description |
-|:----------|:--------|:------------|
-| `Name` | | Zero or more localized names to associate with this signal. The element content is a simple string and must include an `xml:lang` attribute that specifies the language tag of the content. |
-
+| Element | Default | Description                                                                                                                                                                                 |
+|:--------|:--------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Name`  |         | Zero or more localized names to associate with this signal. The element content is a simple string and must include an `xml:lang` attribute that specifies the language tag of the content. |
 
 For example:
 
@@ -212,16 +208,15 @@ For example:
 
 The `<Value>` element supports the following additional attributes:
 
-| Attribute | Default | Description |
-|:----------|:--------|:------------|
-| `sn:normalized-unit` | | If provided, the desired normalized unit to use. If not provided then standard normalization rules will apply. |
+| Attribute            | Default | Description                                                                                                    |
+|:---------------------|:--------|:---------------------------------------------------------------------------------------------------------------|
+| `sn:normalized-unit` |         | If provided, the desired normalized unit to use. If not provided then standard normalization rules will apply. |
 
 For example:
 
 ```xml
 <Value type="unsigned" slope="0.01" intercept="0" unit="kW.h" sn:normalized-unit="W.h"/>
 ```
-
 
 # Building KCD JAXB bindings
 
@@ -255,3 +250,4 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home xjc \
 [signal-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#signal
 [socketcand]: https://github.com/linux-can/socketcand
 [storge-service-upload]: ../net.solarnetwork.node.upload.resource/
+

@@ -16,21 +16,19 @@ the base platform (primarily the `app/boot` and `app/core` directories).
 In other words, this provides a basic managed "update" mechanism for a set of nodes with similar
 configuration needs.
 
-
 # Limitations
 
 This service is only designed to update the SolarNode platform. It will only install files within
 the platform's home directory (e.g. `/home/solar`).
 
-
 # Configuration
 
 The service supports the following settings:
 
-| Setting    | Key                      | Default            | Description                           |
-|------------|--------------------------|--------------------|---------------------------------------|
-| S3 Path    | `objectKeyPrefix`        | solarnode-backups/ | A prefix to add to all object keys.   |
-| TODO       | `performFirstTimeUpdate` | true               | Install latest backup on first start. |
+| Setting |           Key            |      Default       |              Description              |
+|---------|--------------------------|--------------------|---------------------------------------|
+| S3 Path | `objectKeyPrefix`        | solarnode-backups/ | A prefix to add to all object keys.   |
+| TODO    | `performFirstTimeUpdate` | true               | Install latest backup on first start. |
 
 The **S3 Path** value can be empty.
 
@@ -43,7 +41,6 @@ The **Key** values are Configuration Admin keys for the
 `net.solarnetwork.node.setup.s3.S3SetupManager` PID. That means you can configure these in a
 `conf/services/net.solarnetwork.node.setup.s3.S3SetupManager.cfg` file on the node if you don't want
 to manage them via the Setup GUI.
-
 
 # S3 Structure
 
@@ -106,20 +103,20 @@ Because the object key ends in `00001.json` the _version_ of the package is **00
 includes just one object: `setupdata/foobar.txz`. Let's assume the tar archive contains the
 following files:
 
- * `conf/auto-settings.csv`
- * `app/main/super-duper-plugin-1.0.0.jar`
+* `conf/auto-settings.csv`
+* `app/main/super-duper-plugin-1.0.0.jar`
 
 When the node is instructed to install this package, it will download the `foobar.txz` file from S3
 and then extract all the files from it, into the platform's home directory.
 
 Here are the available properties in the package metadata:
 
-| Key               | Type          | Description                                                       |
-|:------------------|:--------------|:------------------------------------------------------------------|
-| `cleanPaths`      | array<string> | Optional node paths to files or directories to delete.            |
-| `objects`         | array<string> | S3 object keys for setup resources to install.                    |
-| `restartRequired` | boolean       | If `true` then restart SolarNode when the setup task is complete. |
-| `syncPaths`       | array<string> | Optional node paths to directories to delete old files from.      |
+| Key               | Type          | Description                                                         |
+|:------------------|:--------------|:--------------------------------------------------------------------|
+| `cleanPaths`      | array<string> | Optional node paths to files or directories to delete.              |
+| `objects`         | array<string> | S3 object keys for setup resources to install.                      |
+| `restartRequired` | boolean       | If `true` then restart SolarNode when the setup task is complete.   |
+| `syncPaths`       | array<string> | Optional node paths to directories to delete old files from.        |
 | `packages`        | array<object> | Optional list of OS packages to install, see [below](#os-packages). |
 
 Here is a fuller example package metadata:
@@ -146,7 +143,6 @@ Here is a fuller example package metadata:
 }
 ```
 
-
 ## Node path variables
 
 Any node path in the package metadata may contain variables in the form `{variable}`. All SolarNode
@@ -168,10 +164,9 @@ archive or an OS package.
 
 The following special objects are recognized:
 
-| Object | Description |
-|:-------|:------------|
+| Object             | Description                                                                                                                                      |
+|:-------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
 | `_refreshPackages` | Ask the OS package cache to be refreshed. This can be useful if a subsequent object is itself an OS package that depends on updated OS packages. |
-
 
 ## Synchronized paths
 
@@ -204,11 +199,11 @@ Operating system packages from whatever repositories are configured on the node 
 the `packages` configuration array of package configuration objects. Each package configuration
 object contains the following keys:
 
-| Property    | Type          | Description |
-|:------------|:--------------|:------------|
-| `action`    | string        | One of `Install`, `Remove`, or `Upgrade`. |
-| `name`      | string        | The OS package name. |
-| `version`   | string        | The specific version to install, or omit to install the latest available or for the `Remove` and `Upgrade` actions. |
+| Property  | Type   | Description                                                                                                         |
+|:----------|:-------|:--------------------------------------------------------------------------------------------------------------------|
+| `action`  | string | One of `Install`, `Remove`, or `Upgrade`.                                                                           |
+| `name`    | string | The OS package name.                                                                                                |
+| `version` | string | The specific version to install, or omit to install the latest available or for the `Remove` and `Upgrade` actions. |
 
 ### Install action
 
@@ -224,15 +219,14 @@ The `Remove` action will remove the `name` package. The `version` property is no
 The `Upgrade` action will upgrade all installed OS packages to their highest-available versions. The
 `name` and `version` properties are not used.
 
-
 # UpdatePlatform Instruction
 
 The plugin responds to the `UpdatePlatform` instruction topic. The following
 instruction parameters are supported:
 
-| Parameter    | Description             |
-|--------------|-------------------------|
-| `Version`    | The version to install. |
+| Parameter |       Description       |
+|-----------|-------------------------|
+| `Version` | The version to install. |
 
 If `Version` is not specified, then the _latest_ package will be installed.
 
@@ -249,16 +243,14 @@ To install a specific version, you'd use a `POST` request like
 /solaruser/api/v1/sec/instr/add?topic=UpdatePlatform&nodeId=123&parameters%5B0%5D.name=Version&parameters%5B0%5D.value=000001
 ```
 
-
 # Node Metadata
 
 The plugin will maintain the following node property metadata under the `setup`
 key:
 
-| Key          | Type   | Description                                  |
+|     Key      |  Type  |                 Description                  |
 |--------------|--------|----------------------------------------------|
 | `s3-version` | number | The most recently installed package version. |
-
 
 # S3 Configuration
 
@@ -267,6 +259,6 @@ configuration defined in that plugin. You can create a custom node image that in
 `conf/services/net.solarnetwork.node.backup.s3.S3BackupService.cfg` configuration file to ensure
 this service works from the start.
 
+[s3-backup]: https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.backup.s3
+[queue-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
 
- [s3-backup]: https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.backup.s3
- [queue-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction

@@ -14,9 +14,9 @@ The plugin can be installed via the **Plugins** page on your SolarNode. It appea
 
 This datum generates a [datum stream][datum] with the following properties:
 
-| Property | Class | Units | Description |
-|:---------|:------|:------|:------------|
-| `price`  | `i` | - | the price; units depend on source data, for example `$/kWh` |
+| Property | Class | Units | Description                                                 |
+|:---------|:------|:------|:------------------------------------------------------------|
+| `price`  | `i`   | -     | the price; units depend on source data, for example `$/kWh` |
 
 Here is an example datum, expressed in simplified JSON form:
 
@@ -41,28 +41,27 @@ configuration for each price lookup you want to collect data from.
 
 Each configuration contains the following settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.  |
-| Price Location     | The SolarNetwork `price` location to associate the collected data with. |
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| URL                | The URL of the delimited resource to query. The following parameters are allowed: `{date}` the current date; `{stationId}` the station ID. |
-| Station ID         | The price "station" identifier; will be the `{stationId}` URL parameter value. |
-| Time Zone          | The time zone to use when parsing dates. |
-| URL Date Format    | The [date format][datepat] to format the date URL variable. |
-| Delimiter          | A [regular expression][regex] delimiter to split the lines of text with. |
-| Price column       | The result column index for the price (starting from `0`). This value is assumed to be decimal number. |
-| Date columns       | A list of column indices to use as the data's timestamp value (starting from `0`). This is provided as a comma-delimited list of indices in case the date and time of the price is split across multiple columns. If multiple columns are configured, they will be joined with a space character before parsing the result into a date. |
-| Date format        | The [date format][datepat] to use for parsing the price date value. |
-| Skip lines         | The number of lines of text to skip. This is useful for skipping a "header" row with column names. If negative, then return rows from the end of the data. For example `-1` would return the last row. |
+|     Setting     |                                                                                                                                                               Description                                                                                                                                                               |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Schedule        | A cron schedule that determines when data is collected.                                                                                                                                                                                                                                                                                 |
+| Price Location  | The SolarNetwork `price` location to associate the collected data with.                                                                                                                                                                                                                                                                 |
+| Service Name    | A unique name to identify this data source with.                                                                                                                                                                                                                                                                                        |
+| Service Group   | A group name to associate this data source with.                                                                                                                                                                                                                                                                                        |
+| URL             | The URL of the delimited resource to query. The following parameters are allowed: `{date}` the current date; `{stationId}` the station ID.                                                                                                                                                                                              |
+| Station ID      | The price "station" identifier; will be the `{stationId}` URL parameter value.                                                                                                                                                                                                                                                          |
+| Time Zone       | The time zone to use when parsing dates.                                                                                                                                                                                                                                                                                                |
+| URL Date Format | The [date format][datepat] to format the date URL variable.                                                                                                                                                                                                                                                                             |
+| Delimiter       | A [regular expression][regex] delimiter to split the lines of text with.                                                                                                                                                                                                                                                                |
+| Price column    | The result column index for the price (starting from `0`). This value is assumed to be decimal number.                                                                                                                                                                                                                                  |
+| Date columns    | A list of column indices to use as the data's timestamp value (starting from `0`). This is provided as a comma-delimited list of indices in case the date and time of the price is split across multiple columns. If multiple columns are configured, they will be joined with a space character before parsing the result into a date. |
+| Date format     | The [date format][datepat] to use for parsing the price date value.                                                                                                                                                                                                                                                                     |
+| Skip lines      | The number of lines of text to skip. This is useful for skipping a "header" row with column names. If negative, then return rows from the end of the data. For example `-1` would return the last row.                                                                                                                                  |
 
 # Price locations
 
 The **Price Location** setting is used to associate the data with a SolarNetwork `price` location
 datum stream. These locations must be created by SolarNetwork administrators. You can use the
 [Location Request API][loc-req] to request a new location if a suitable one does not exist already.
-
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [datepat]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html#patterns
@@ -75,3 +74,4 @@ datum stream. These locations must be created by SolarNetwork administrators. Yo
 [regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html#sum
 [sn-cron-syntax]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 [sn-expressions]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
+

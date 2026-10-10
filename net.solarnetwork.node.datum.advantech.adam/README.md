@@ -20,7 +20,7 @@ collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
+|      Setting       |                                   Description                                    |
 |--------------------|----------------------------------------------------------------------------------|
 | Schedule           | A cron schedule that determines when data is collected.                          |
 | Service Name       | A unique name to identify this data source with.                                 |
@@ -58,7 +58,7 @@ buttons to add/remove property configurations.
 
 Each property configuration contains the following settings:
 
-| Setting         | Description                                                                     |
+|     Setting     |                                   Description                                   |
 |-----------------|---------------------------------------------------------------------------------|
 | Name            | An arbitrary name used only for reference.                                      |
 | Property        | The name of the datum property to save the channel value as.                    |
@@ -98,3 +98,4 @@ Each property configuration contains the following settings:
 	to <code>0</code> rounds decimals to whole numbers. Setting to <code>-1</code> disables
 	rounding completely.</dd>
 </dl>
+

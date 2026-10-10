@@ -23,13 +23,13 @@ configuration for each type and location  you want to collect data from.
 
 Each configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Weather location   | The SolarNetwork weather location to associate the collected data with.          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Yr location        | The Yr location identifier to collect data from.                                 |
+|     Setting      |                               Description                               |
+|------------------|-------------------------------------------------------------------------|
+| Schedule         | A cron schedule that determines when data is collected.                 |
+| Weather location | The SolarNetwork weather location to associate the collected data with. |
+| Service Name     | A unique name to identify this data source with.                        |
+| Service Group    | A group name to associate this data source with.                        |
+| Yr location      | The Yr location identifier to collect data from.                        |
 
 ## Overall settings notes
 
@@ -42,3 +42,4 @@ Each configuration contains the following overall settings:
 	<a href="https://www.yr.no/place/New_Zealand/Wellington/Wellington/">https://www.yr.no/place/New_Zealand/Wellington/Wellington/</a>
 	the Yr location identifier is <code>New_Zealand/Wellington/Wellington</code>.</dd>
 </dl>
+

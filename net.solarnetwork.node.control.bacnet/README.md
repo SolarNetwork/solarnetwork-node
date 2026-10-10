@@ -6,7 +6,6 @@ knowledge of BACnet and the BACnet configuration of the components you want to c
 
 <img title="BACnet Control settings" src="docs/solarnode-bacnet-control-settings.png" width="518">
 
-
 # SolarNodeOS port considerations
 
 By default SolarNodeOS has a built-in firewall enabled that will not allow access to arbitrary IP
@@ -27,7 +26,6 @@ this:
 # Allow BACnet
 -A INPUT -p udp --dport 47808 -j ACCEPT
 ```
-
 
 # Use
 
@@ -59,8 +57,8 @@ character (i.e. the first cell value). The entire comment line will be ignored.
 
 Here's an example screen shot of a configuration in a spreadsheet application. It is for two components:
 
- 1. Component `Therm` with 3 controls: `term/setpoint/1`, `term/setpoint/1`, `term/away`
- 2. Component `Relay` with 1 control: `switch/1`
+1. Component `Therm` with 3 controls: `term/setpoint/1`, `term/setpoint/1`, `term/away`
+2. Component `Relay` with 1 control: `switch/1`
 
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
 then be loaded into SolarNode via the CSV Configurer.
@@ -89,23 +87,22 @@ these columns when defining more than one property for a given device.
 Columns **I - Q** define the mapping of BACnet registers to datum properties: each row defines an
 individual datum property.
 
-
-| Col | Name | Type | Default | Description |
-|:----|:-----|:-----|:--------|:------------|
-| `A` | **Instance ID** | string |  | The unique identifier for a single BACnet Control component. Can specify `-` to automatically assign a simple number value, which will start at `1`. |
-| `B` | **Service Name** | string |  | An optional service name to assign to the component. |
-| `C` | **Service Group** | string |  | An optional service group to assign to the component. |
-| `D` | **Connection** | string | `BACnet Port` | The **service name** of the BACnet connection to use. |
-| `E` | **Sample Cache** | integer | `5000` | A minimum time to cache captured BACnet data, in milliseconds. |
-| `F` | **Control ID** | string |  | The node-unique identifier for the control. |
-| `G` | **Property Type** | enum | `Boolean` |  The type of control property to use. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`, and can be shortened to just `b`, `f`, `i`, `p`, or `s`. |
-| `H` | **Device ID** | integer |  | The BACnet device ID to update. |
-| `I` | **Object Type** | string |  | The BACnet object type to update. Can be specified as a name, like `analog-value` or `AnalogValue`, or the associated integer code, like `2`. |
-| `J` | **Object Number** | integer |  | The BACnet object type instance number to update. |
-| `K` | **Property ID** | string | `present-value` |The BACnet object property identifier to update. Can be specified as a name, like `present-value` or `PresentValue`, or the associated integer code, like `85`. |
-| `L` | **Priority** | integer |  | The BACnet write operation priority. Can be any value between `1` and `16`, with `1` being the highest priority. If not specified `16` will be assumed. |
-| `M` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the BACnet value to normalize it into a standard unit. |
-| `N` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
+| Col | Name              | Type    | Default         | Description                                                                                                                                                         |
+|:----|:------------------|:--------|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `A` | **Instance ID**   | string  |                 | The unique identifier for a single BACnet Control component. Can specify `-` to automatically assign a simple number value, which will start at `1`.                |
+| `B` | **Service Name**  | string  |                 | An optional service name to assign to the component.                                                                                                                |
+| `C` | **Service Group** | string  |                 | An optional service group to assign to the component.                                                                                                               |
+| `D` | **Connection**    | string  | `BACnet Port`   | The **service name** of the BACnet connection to use.                                                                                                               |
+| `E` | **Sample Cache**  | integer | `5000`          | A minimum time to cache captured BACnet data, in milliseconds.                                                                                                      |
+| `F` | **Control ID**    | string  |                 | The node-unique identifier for the control.                                                                                                                         |
+| `G` | **Property Type** | enum    | `Boolean`       | The type of control property to use. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`, and can be shortened to just `b`, `f`, `i`, `p`, or `s`. |
+| `H` | **Device ID**     | integer |                 | The BACnet device ID to update.                                                                                                                                     |
+| `I` | **Object Type**   | string  |                 | The BACnet object type to update. Can be specified as a name, like `analog-value` or `AnalogValue`, or the associated integer code, like `2`.                       |
+| `J` | **Object Number** | integer |                 | The BACnet object type instance number to update.                                                                                                                   |
+| `K` | **Property ID**   | string  | `present-value` | The BACnet object property identifier to update. Can be specified as a name, like `present-value` or `PresentValue`, or the associated integer code, like `85`.     |
+| `L` | **Priority**      | integer |                 | The BACnet write operation priority. Can be any value between `1` and `16`, with `1` being the highest priority. If not specified `16` will be assumed.             |
+| `M` | **Multiplier**    | decimal | `1`             | For numeric data types, a multiplier to apply to the BACnet value to normalize it into a standard unit.                                                             |
+| `N` | **Decimal Scale** | integer | `0`             | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding.                                             |
 
 ## Example CSV
 
@@ -124,14 +121,13 @@ Relay,,,BACnet/IP,5000,switch/1,Boolean,112821,binary-value,0,present-value,,,
 
 Each component configuration contains the following settings:
 
-| Setting                 | Description |
-|:------------------------|:------------|
-| Service Name            | An optional unique name to identify this component with. |
-| Service Group           | An optional group name to associate this component with. |
-| BACnet Connection       | The **Service Name** of the **BACnet Connection** component to use. |
-| Sample Maximum Age      | A maximum time to cache captured BACnet data, in milliseconds. |
+| Setting                 | Description                                                                                                                                                      |
+|:------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name            | An optional unique name to identify this component with.                                                                                                         |
+| Service Group           | An optional group name to associate this component with.                                                                                                         |
+| BACnet Connection       | The **Service Name** of the **BACnet Connection** component to use.                                                                                              |
+| Sample Maximum Age      | A maximum time to cache captured BACnet data, in milliseconds.                                                                                                   |
 | Property Configurations | A list of BACnet object property-specific settings. Any number of property configurations can be added, to update any number of BACnet device object properties. |
-
 
 ## Overall settings notes
 
@@ -160,16 +156,16 @@ control. You can configure as many property settings as you like, using the <kbd
 
 Each property configuration contains the following settings:
 
-| Setting         | Default | Description |
-|:----------------|:--------|:------------|
-| Control ID      |  | A unique name to associate this control configuration with. |
-| Property Type   | `Boolean` | The SolarNode control property type. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`. |
-| Object Type     |  | The BACnet object type to update. Can be specified as a name, like `analog-value` or `AnalogValue`, or the associated integer code, like `2`. |
-| Object Number   |  | The BACnet object type instance number to update. |
-| Property ID     | `present-value` | The BACnet object property identifier to update. Can be specified as a name, like `present-value` or `PresentValue`, or the associated integer code, like `85`. |
-| Priority        | `priority` | The BACnet write operation priority. Can be any value between `1` and `16`, with `1` being the highest priority. If not specified `16` will be assumed. |
-| Multiplier      | `1` | For numeric data types, a multiplier to apply to the BACnet property value to normalize it into a standard unit. |
-| Decimal Scale   | `5` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
+| Setting       | Default         | Description                                                                                                                                                     |
+|:--------------|:----------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Control ID    |                 | A unique name to associate this control configuration with.                                                                                                     |
+| Property Type | `Boolean`       | The SolarNode control property type. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`.                                                      |
+| Object Type   |                 | The BACnet object type to update. Can be specified as a name, like `analog-value` or `AnalogValue`, or the associated integer code, like `2`.                   |
+| Object Number |                 | The BACnet object type instance number to update.                                                                                                               |
+| Property ID   | `present-value` | The BACnet object property identifier to update. Can be specified as a name, like `present-value` or `PresentValue`, or the associated integer code, like `85`. |
+| Priority      | `priority`      | The BACnet write operation priority. Can be any value between `1` and `16`, with `1` being the highest priority. If not specified `16` will be assumed.         |
+| Multiplier    | `1`             | For numeric data types, a multiplier to apply to the BACnet property value to normalize it into a standard unit.                                                |
+| Decimal Scale | `5`             | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding.                                         |
 
 ## Property settings notes
 
@@ -225,3 +221,4 @@ POST /solaruser/api/v1/sec/instr/add/SetControlParameter
 
 [instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
 [SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
+

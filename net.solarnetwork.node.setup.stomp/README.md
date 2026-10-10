@@ -22,7 +22,6 @@ command is followed by zero or more header key/value pairs, much like HTTP heade
 follows that, followed by zero or more characters  representing the message body, finished with a
 `NULL` byte, represented by `^@` for <kbd>Ctrl-@</kbd>.
 
-
 # Connecting
 
 To connect to the SolarNode STOMP Setup server open a TCP/IP socket connection to the host name or
@@ -34,11 +33,11 @@ You must then send a `CONNECT` or `STOMP` frame.
 The `CONNECT` frame is sent by the client and used to initiate a new _setup session_. It must be the
 first frame sent by the connected client. The following frame headers are required:
 
-| Header | Description |
-|:-------|:------------|
-| `accept-version` | Only `1.2` is allowed. |
-| `host` | The host name or IP address of SolarNode. |
-| `login` | The SolarNode login to use for the session. This login will be authenticated later. |
+| Header           | Description                                                                         |
+|:-----------------|:------------------------------------------------------------------------------------|
+| `accept-version` | Only `1.2` is allowed.                                                              |
+| `host`           | The host name or IP address of SolarNode.                                           |
+| `login`          | The SolarNode login to use for the session. This login will be authenticated later. |
 
 Upon successful receipt of a `CONNECT` frame the server will send a [`CONNECTED`](#connected-frame)
 frame to the client.
@@ -56,18 +55,18 @@ login:solar
 
 ## `CONNECTED` frame
 
-The `CONNECTED` frame is sent by the server and used to indicate a new _setup session_ has been 
+The `CONNECTED` frame is sent by the server and used to indicate a new _setup session_ has been
 successfully started. After receipt of this frame a client must [authenticate](#authenticating).
 The following frame headers will be returned:
 
-| Header | Description |
-|:-------|:------------|
-| `version` | The STOMP version accepted by the server. Will be `1.2`. |
-| `server` | The setup server name and version. |
-| `session` | The unique ID of the setup session. |
-| `message` | A request to authenticate. |
-| `authenticate` | The required authentication scheme. Will be `SNS`. |
-| `auth-hash` | The password digest algorithm to use. |
+| Header              | Description                                                |
+|:--------------------|:-----------------------------------------------------------|
+| `version`           | The STOMP version accepted by the server. Will be `1.2`.   |
+| `server`            | The setup server name and version.                         |
+| `session`           | The unique ID of the setup session.                        |
+| `message`           | A request to authenticate.                                 |
+| `authenticate`      | The required authentication scheme. Will be `SNS`.         |
+| `auth-hash`         | The password digest algorithm to use.                      |
 | `auth-hash-param-*` | Any number of password digest algorithm parameters to use. |
 
 The only value currently supported for `auth-hash` is `bcrypt`, and the only parameter returned
@@ -98,7 +97,7 @@ might require additional headers. The only supported scheme at this time is `SNS
 next section.
 
 After publishing the `SEND` authentication frame, if the authentication is successful nothing will
-happen and the client application can move on to 
+happen and the client application can move on to
 [subscribing to the setup topic](#subscribing-to-setup-topic) to start interacting with the Setup
 Server. If the authentication fails, the server will send an `ERROR` frame to the client and close
 the connection.
@@ -113,10 +112,10 @@ of a user's password, so that is why the hashed password is used for the signing
 
 The required `SEND` headers for SNS authentication are:
 
-| Header | Description |
-|:-------|:------------|
+| Header          | Description                                                                                               |
+|:----------------|:----------------------------------------------------------------------------------------------------------|
 | `authorization` | The SNS authorization value, e.g. `SNS Credential=me@example.com,SignedHeaders=date,Signature=168365...`. |
-| `date` | The request date, e.g. `Mon, 16 Aug 2021 02:27:39 GMT`. |
+| `date`          | The request date, e.g. `Mon, 16 Aug 2021 02:27:39 GMT`.                                                   |
 
 TODO: document SNS scheme
 
@@ -159,7 +158,7 @@ everything after the final `$` is the Base64 encoded salt used.
 ### BCrypt secret example
 
 The [SnsAuthorizationBuilder][SnsAuthorizationBuilder.java] class can be used to generate the
-required `authorization` header value. See [this example][sns-auth-builder-example-java] for 
+required `authorization` header value. See [this example][sns-auth-builder-example-java] for
 more details; here is that example distilled:
 
 ```java
@@ -190,7 +189,7 @@ destination:/setup/**
 
 The Setup STOMP server will handle commands via `SEND` frames posted by the client and send the
 result as a `MESSAGE` frame using the same `destination` header value as used in the original
-`SEND` frame. Commands are processed in an asynchronous fashion, so multiple commands can be 
+`SEND` frame. Commands are processed in an asynchronous fashion, so multiple commands can be
 active at once, and the order of their replies are undefined. Clients can keep track of `SEND` and
 `MESSAGE` pairs by including a unique `request-id` header value in each `SEND` frame. The server
 will include that same header in the associated `MESSAGE` response frame.
@@ -234,21 +233,21 @@ a UTF-8 string and will be set as the `arg` instruction parameter. **Note** this
 string value, it will not be parsed in any way. The `SEND` frame `content-type` header will be
 provided as an instruction parameter so the handler can see what the content can be interpreted as.
 
- A `MESSAGE` frame `status` header will be set according to the `InstructionState` returned by the
- handler:
- 
- | InstructionState | Status value | Description |
- |:-----------------|:-------------|:------------|
- | `Completed`      | `200`        | The command was executed successfully. |
- | `Executing`      | `202`        | The command is executing asynchronously. |
- | _null_           | `404`        | No handler accepted processing the command. |
- | `Declined`       | `422`        | The command was recognized but not executed because of a client problem. |
- | _exception_      | `500`        | The handler threw an exception. The `message` header will contain the exception  message. |
- 
- The instruction handler can override this default mapping by returning a `statusCode` result
- parameter with an integer value. Additional the handler can provide a `message` result parameter
- to pass back in the `MESSAGE` frame returned to the client.
- 
+A `MESSAGE` frame `status` header will be set according to the `InstructionState` returned by the
+handler:
+
+| InstructionState | Status value | Description                                                                               |
+|:-----------------|:-------------|:------------------------------------------------------------------------------------------|
+| `Completed`      | `200`        | The command was executed successfully.                                                    |
+| `Executing`      | `202`        | The command is executing asynchronously.                                                  |
+| _null_           | `404`        | No handler accepted processing the command.                                               |
+| `Declined`       | `422`        | The command was recognized but not executed because of a client problem.                  |
+| _exception_      | `500`        | The handler threw an exception. The `message` header will contain the exception  message. |
+
+The instruction handler can override this default mapping by returning a `statusCode` result
+parameter with an integer value. Additional the handler can provide a `message` result parameter
+to pass back in the `MESSAGE` frame returned to the client.
+
 ## Example SolarNode command handler
 
 Here is an example `FeedbackInstructionHandler` snippet, that responds to a `/setup/hello` command
@@ -297,7 +296,7 @@ content-length:11
 
 ```
 
-> :warning: **Note** how the response is a JSON string, enclosed in double-quotes. All messages 
+> :warning: **Note** how the response is a JSON string, enclosed in double-quotes. All messages
 > returned from the server will be encoded into JSON.
 
 [InstructionHandler.java]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/reactor/InstructionHandler.java
@@ -306,3 +305,4 @@ content-length:11
 [sns-auth-builder-example-java]: https://github.com/SolarNetwork/solarnetwork-node/blob/0d387a6ceb973c88c87e45ac7d0cd9a0bc95ba02/net.solarnetwork.node.setup.stomp.test/src/net/solarnetwork/node/setup/stomp/test/StompSetupServerHandlerTests.java#L260-L308
 [snws2]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-authentication-scheme-V2
 [stomp]: https://stomp.github.io/
+

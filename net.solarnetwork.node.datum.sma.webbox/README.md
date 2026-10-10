@@ -4,7 +4,6 @@ This project provides SolarNode plugin that can collect data from devices connec
 WebBox. It works using the Modbus protocol, which must be enabled on the WebBox you want to
 integrate SolarNode with.
 
-
 # Install
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
@@ -30,12 +29,12 @@ by [WebBox Device](#webbox-device) configurations.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Device             | A read-only label of a device connected to the WebBox. |
-| Service Name       | A unique name to identify this WebBox with. This value will be referenced by [WebBox Device](#webbox-device) configurations. |
-| Service Group      | An optional group name to associate this component with. |
-| Modbus Connection  | The **Service Name** of the Modbus connection to use. |
+| Setting           | Description                                                                                                                  |
+|:------------------|:-----------------------------------------------------------------------------------------------------------------------------|
+| Device            | A read-only label of a device connected to the WebBox.                                                                       |
+| Service Name      | A unique name to identify this WebBox with. This value will be referenced by [WebBox Device](#webbox-device) configurations. |
+| Service Group     | An optional group name to associate this component with.                                                                     |
+| Modbus Connection | The **Service Name** of the Modbus connection to use.                                                                        |
 
 ## WebBox settings notes
 
@@ -63,14 +62,14 @@ data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting              | Description |
-|:---------------------|:------------|
-| Service Name         | A unique name to identify this WebBox Device with.  |
-| Service Group        | An optional group name to associate this component with. |
-| WebBox               | The **Service Name** of the [WebBox](#webbox) component to use. |
-| Unit ID              | The Modbus Unit ID of the device to collect data from. |
+| Setting              | Description                                                                      |
+|:---------------------|:---------------------------------------------------------------------------------|
+| Service Name         | A unique name to identify this WebBox Device with.                               |
+| Service Group        | An optional group name to associate this component with.                         |
+| WebBox               | The **Service Name** of the [WebBox](#webbox) component to use.                  |
+| Unit ID              | The Modbus Unit ID of the device to collect data from.                           |
 | Source ID            | The SolarNetwork unique source ID to assign to datum collected from this device. |
-| Datum Filter Service | The **Service Name** of a filter service to apply. |
+| Datum Filter Service | The **Service Name** of a filter service to apply.                               |
 
 ## WebBox Device settings notes
 
@@ -88,3 +87,4 @@ Each device configuration contains the following overall settings:
 	 Meter Filter</a> could be used to derive an <code>irradianceHours</code> property from a Sunny
 	 Sensorbox's <code>irradiance</code> property.</dd>
 </dl>
+

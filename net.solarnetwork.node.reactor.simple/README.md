@@ -19,22 +19,22 @@ process instructions.
 
 This plugin manages three scheduled tasks for processing instructions:
 
- 1. **Execution**: looks for _Received_ instructions that have been persisted 
-    locally and executes them. Instructions can be received via the 
-    [Bulk JSON Web Uploader][bulkjsonwebpost], for example. After execution
-    the instruction's state is updated **locally** as either _Completed_ or
-    _Declined_.
- 2. **Acknowledgement**: posts the status of instructions whose status has
-    changed to SolarNet.
- 3. **Cleanup**: delete **locally** persisted instruction statuses that have
-    reached the _Completed_ or _Declined_ states.
-    
+1. **Execution**: looks for _Received_ instructions that have been persisted
+   locally and executes them. Instructions can be received via the
+   [Bulk JSON Web Uploader][bulkjsonwebpost], for example. After execution
+   the instruction's state is updated **locally** as either _Completed_ or
+   _Declined_.
+2. **Acknowledgement**: posts the status of instructions whose status has
+   changed to SolarNet.
+3. **Cleanup**: delete **locally** persisted instruction statuses that have
+   reached the _Completed_ or _Declined_ states.
+
 Based on these tasks, instructions are executed and their status gets posted
 to SolarNet as changes occur.
 
 ## Settings
 
-| Setting                              | Description                                                             |
+|               Setting                |                               Description                               |
 |--------------------------------------|-------------------------------------------------------------------------|
 | Instruction Execution Job            | A cron schedule that determines when queued instructions are executed.  |
 | Instruction Acknowledgement Uploader | A cron schedule that determines when instruction status is uploaded.    |
@@ -51,7 +51,7 @@ Also you must consider how instructions are received in the first place.
 The [Bulk JSON Web Uploader][bulkjsonwebpost] service can get instructions
 in the response from SolarIn each time it posts data. Instructions received
 that way are persisted in the _Received_ state. That means SolarNode can
-only get instructions as frequently has the Bulk JSON Web Uploader is 
+only get instructions as frequently has the Bulk JSON Web Uploader is
 configured to run, and by default that service does not run if there isn't
 any data to post (it can be configured to "always upload" to work around
 that, however).
@@ -59,10 +59,11 @@ that, however).
 Thus when considering how quickly you need SolarNode to handle instructions,
 consider the overall time as the sum total of:
 
- 1. time for instruction to get to SolarNode and show up in the _Received_ state
- 2. time for the **Execution** job to notice the received instruction and execute
-    it, saving the resulting status as _Completed_ or _Declined_
- 3. time for the **Acknowledgement** job to notice the _Completed_ and _Declined_
-    instructions and post their status to SolarNet
+1. time for instruction to get to SolarNode and show up in the _Received_ state
+2. time for the **Execution** job to notice the received instruction and execute
+   it, saving the resulting status as _Completed_ or _Declined_
+3. time for the **Acknowledgement** job to notice the _Completed_ and _Declined_
+   instructions and post their status to SolarNet
 
- [bulkjsonwebpost]: https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.upload.bulkjsonwebpost
+[bulkjsonwebpost]: https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.upload.bulkjsonwebpost
+

@@ -12,10 +12,10 @@ You'll need to add one configuration for each port you want to expose a Modbus s
 
 Each Modbus server configuration is divided into four parts:
 
- 1. Server configuration (e.g. TCP port)
- 2. Unit configuration (e.g. Modbus Unit ID)
- 3. Register block configuration (e.g. Modbus register starting address)
- 4. Measurement configuration (e.g. mapping data into Modbus registers)
+1. Server configuration (e.g. TCP port)
+2. Unit configuration (e.g. Modbus Unit ID)
+3. Register block configuration (e.g. Modbus register starting address)
+4. Measurement configuration (e.g. mapping data into Modbus registers)
 
 Each configuration part contains a list of the subsequent configuration part. That is, a server
 configuration can have multiple unit configurations, which can contain multiple register block
@@ -68,8 +68,8 @@ with a `#` character (i.e. the first cell value). The entire comment line will b
 Here's an example screen shot of a configuration in a spreadsheet application. It is for one server
 with one unit with two register blocks:
 
- 1. A **Holding** register block starting at register `0` with 3 datum properties: `watts`, `wattHours`, and `voltage`
- 2. An **Input** register block starting at register `100` with 2 datum properties: `frequency` and `current`
+1. A **Holding** register block starting at register `0` with 3 datum properties: `watts`, `wattHours`, and `voltage`
+2. An **Input** register block starting at register `100` with 2 datum properties: `frequency` and `current`
 
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can then
 be loaded into SolarNode via the CSV Configurer.
@@ -94,23 +94,22 @@ these columns when defining more than one register for a given server.
 Columns **E - N** define the mapping of datum properties to Modbus registers: each row defines an
 individual datum property which occupies one or more Modbus registers.
 
-
-| Col | Name | Type | Default | Description |
-|:----|:-----|:-----|:--------|:------------|
-| `A` | **Instance ID** | string |  | The unique identifier for a single Modbus Server component. Can specify `-` to automatically assign a simple number value, which will start at `1`. |
-| `B` | **Bind Address** | string | `0.0.0.0` | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses. |
-| `C` | **Port** | integer | `502` | The TCP port to listen on. See [port considerations](#solarnodeos-port-considerations) for more info. |
-| `D` | **Throttle** | integer | `100` | A number of **milliseconds** to throttle client requests by. |
-| `E` | **Unit ID** | integer | `1` | The Modbus unit ID from `0` - `255`. |
-| `F` | **Register Type** | enum |  | The Modbus register type. Must be one of `Coil`, `Discrete Input`, `Holding`, or `Input`. |
-| `G` | **Register** | integer |  | The starting register address for the property value (zero-based). For multi-register data types this is the _first_ register the property value will be available at. |
-| `H` | **Data Type** | enum | `u16` | The type of data to encode the datum property value into. Must be one of `Boolean` or `bit`, `16-bit float` or `f16`, `32-bit float` or `f32`, `16-bit signed int` or `i16`, `16-bit unsigned int` or `u16`, `32-bit signed int` or `i32`, `32-bit unsigned int` or `u32`, `64-bit signed int` or `i64`, `64-bit unsigned int` or `u16`, `Bytes` or `b`, `String UTF-8` or `s`, `String ASCII` or `a`. |
-| `I` | **Data Length** | integer |  | For variable-length data types such as strings, the number of Modbus registers to encode the datum property value into. For fixed-length data types this column is ignored. |
-| `J` | **Source ID** | string |  | The datum source ID that holds the property to expose. |
-| `K` | **Property** | string |  | The name of the datum property to to encode into Modbus registers. |
-| `L` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the datum property value to normalize it into a standard unit. |
-| `M` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
-| `N` | **Control ID** | string |  | A control ID to expose the property as. Can specify `-` to use the **Source ID** or `+` to use the pattern **_Source ID/Property_**. See [Controls](#controls) for more information. |
+| Col | Name              | Type    | Default   | Description                                                                                                                                                                                                                                                                                                                                                                                            |
+|:----|:------------------|:--------|:----------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `A` | **Instance ID**   | string  |           | The unique identifier for a single Modbus Server component. Can specify `-` to automatically assign a simple number value, which will start at `1`.                                                                                                                                                                                                                                                    |
+| `B` | **Bind Address**  | string  | `0.0.0.0` | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses.                                                                                                                                                                                                                                                                                                       |
+| `C` | **Port**          | integer | `502`     | The TCP port to listen on. See [port considerations](#solarnodeos-port-considerations) for more info.                                                                                                                                                                                                                                                                                                  |
+| `D` | **Throttle**      | integer | `100`     | A number of **milliseconds** to throttle client requests by.                                                                                                                                                                                                                                                                                                                                           |
+| `E` | **Unit ID**       | integer | `1`       | The Modbus unit ID from `0` - `255`.                                                                                                                                                                                                                                                                                                                                                                   |
+| `F` | **Register Type** | enum    |           | The Modbus register type. Must be one of `Coil`, `Discrete Input`, `Holding`, or `Input`.                                                                                                                                                                                                                                                                                                              |
+| `G` | **Register**      | integer |           | The starting register address for the property value (zero-based). For multi-register data types this is the _first_ register the property value will be available at.                                                                                                                                                                                                                                 |
+| `H` | **Data Type**     | enum    | `u16`     | The type of data to encode the datum property value into. Must be one of `Boolean` or `bit`, `16-bit float` or `f16`, `32-bit float` or `f32`, `16-bit signed int` or `i16`, `16-bit unsigned int` or `u16`, `32-bit signed int` or `i32`, `32-bit unsigned int` or `u32`, `64-bit signed int` or `i64`, `64-bit unsigned int` or `u16`, `Bytes` or `b`, `String UTF-8` or `s`, `String ASCII` or `a`. |
+| `I` | **Data Length**   | integer |           | For variable-length data types such as strings, the number of Modbus registers to encode the datum property value into. For fixed-length data types this column is ignored.                                                                                                                                                                                                                            |
+| `J` | **Source ID**     | string  |           | The datum source ID that holds the property to expose.                                                                                                                                                                                                                                                                                                                                                 |
+| `K` | **Property**      | string  |           | The name of the datum property to to encode into Modbus registers.                                                                                                                                                                                                                                                                                                                                     |
+| `L` | **Multiplier**    | decimal | `1`       | For numeric data types, a multiplier to apply to the datum property value to normalize it into a standard unit.                                                                                                                                                                                                                                                                                        |
+| `M` | **Decimal Scale** | integer | `0`       | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding.                                                                                                                                                                                                                                                                                |
+| `N` | **Control ID**    | string  |           | A control ID to expose the property as. Can specify `-` to use the **Source ID** or `+` to use the pattern **_Source ID/Property_**. See [Controls](#controls) for more information.                                                                                                                                                                                                                   |
 
 ## Example CSV
 
@@ -138,18 +137,18 @@ rows:
 The supported **setting key** values match the setting names generated when exporting SolarNode
 settings for the Modbus Service component:
 
-| Setting | Key | Description |
-|:--------|:----|:------------|
-| Allow Writes | `allowWrites` | Either `true` or `false` |
-| Datum Event Mode | `datumEventMode` | One of `Capture` (before filters), `Acquire` (after filters), or `Both` (both). |
-| Persistence Needed | `daoRequired` | Either `true` or `false` |
-| Required Mode | `requiredOperationalMode` | String mode name |
-| Startup Delay | `startupDelay` | Number (seconds) |
-| Service Group | `groupUid` | Arbitrary string |
-| Service Name | `uid` | Arbitrary string |
-| Strict Unit IDs | `restrictUnitIds` | Either `true` or `false` |
-| Strict Addresses | `restrictAddresses` | Either `true` or `false` |
-| Wire Logging | `wireLogging` | Either `true` or `false` |
+| Setting            | Key                       | Description                                                                     |
+|:-------------------|:--------------------------|:--------------------------------------------------------------------------------|
+| Allow Writes       | `allowWrites`             | Either `true` or `false`                                                        |
+| Datum Event Mode   | `datumEventMode`          | One of `Capture` (before filters), `Acquire` (after filters), or `Both` (both). |
+| Persistence Needed | `daoRequired`             | Either `true` or `false`                                                        |
+| Required Mode      | `requiredOperationalMode` | String mode name                                                                |
+| Startup Delay      | `startupDelay`            | Number (seconds)                                                                |
+| Service Group      | `groupUid`                | Arbitrary string                                                                |
+| Service Name       | `uid`                     | Arbitrary string                                                                |
+| Strict Unit IDs    | `restrictUnitIds`         | Either `true` or `false`                                                        |
+| Strict Addresses   | `restrictAddresses`       | Either `true` or `false`                                                        |
+| Wire Logging       | `wireLogging`             | Either `true` or `false`                                                        |
 
 Here is the CSV as shown in the example configuration screen shot above, with some additional
 settings:
@@ -167,7 +166,6 @@ Instance ID,Bind Address,Port,Throttle,Unit ID,Register Type,Register,Data Type,
 ,,,,,,,Float32,2,Mock Energy Meter,current,1,-1
 ```
 
-
 # Server configuration
 
 ## TCP settings
@@ -178,21 +176,21 @@ The TCP server configuration defines the port number and address to listen on.
 
 Each server configuration contains the following settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| Bind Address       | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses. |
-| Port               | The port number to listen on. The default Modbus port is `502`. See [port considerations](#solarnodeos-port-considerations) for more info. |
-| Required Mode      | Require an active [operational mode][op-modes] to apply datum updates. Does not apply to control updates. Can be prefixed with `!` to require the operational mode to **not** be active. |
-| Request Throttle   | A number of milliseconds to limit client requests by. |
-| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change. |
-| Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
-| Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
-| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
-| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
+| Setting            | Description                                                                                                                                                                                               |
+|:-------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name       | A unique name to identify this data source with.                                                                                                                                                          |
+| Service Group      | A group name to associate this data source with.                                                                                                                                                          |
+| Bind Address       | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses.                                                                                                          |
+| Port               | The port number to listen on. The default Modbus port is `502`. See [port considerations](#solarnodeos-port-considerations) for more info.                                                                |
+| Required Mode      | Require an active [operational mode][op-modes] to apply datum updates. Does not apply to control updates. Can be prefixed with `!` to require the operational mode to **not** be active.                  |
+| Request Throttle   | A number of milliseconds to limit client requests by.                                                                                                                                                     |
+| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change.                                                                                          |
+| Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers.                                                                                                                              |
+| Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case.                                                                       |
+| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured.                                                                                                                                  |
+| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error.                                                         |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the **Port** number of the server to log messages for. |
-| Units              | The list of [unit configurations](#unit-configuration). |
+| Units              | The list of [unit configurations](#unit-configuration).                                                                                                                                                   |
 
 ## SolarNodeOS port considerations
 
@@ -226,20 +224,20 @@ The RTU server configuration defines the serial port to use.
 
 Each server configuration contains the following settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| Serial Connection  | The **Service Name** of the Modbus Serial Connection component to use. |
-| Required Mode      | Require an active [operational mode][op-modes] to apply datum updates. Does not apply to control updates. Can be prefixed with `!` to require the operational mode to **not** be active. |
-| Request Throttle   | A number of **milliseconds** to limit client requests by. |
-| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change, or after any message validation failure. |
-| Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
-| Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case. |
-| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured. |
-| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error. |
+| Setting            | Description                                                                                                                                                                                                       |
+|:-------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name       | A unique name to identify this data source with.                                                                                                                                                                  |
+| Service Group      | A group name to associate this data source with.                                                                                                                                                                  |
+| Serial Connection  | The **Service Name** of the Modbus Serial Connection component to use.                                                                                                                                            |
+| Required Mode      | Require an active [operational mode][op-modes] to apply datum updates. Does not apply to control updates. Can be prefixed with `!` to require the operational mode to **not** be active.                          |
+| Request Throttle   | A number of **milliseconds** to limit client requests by.                                                                                                                                                         |
+| Startup Delay      | A number of **seconds** to delay starting up the server after the plugin starts, after any configuration change, or after any message validation failure.                                                         |
+| Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers.                                                                                                                                      |
+| Persistence Needed | If enabled, then only start the server if data persistence is available. The **Service Name** must also be configured in this case.                                                                               |
+| Strict Unit IDs    | If enabled, then ignore requests for any Unit ID that is not configured.                                                                                                                                          |
+| Strict Addresses   | If enabled, then respond to read Input or Holding requests for addresses that have no value available with a _Modbus Illegal Data Address_ error.                                                                 |
 | Wire Logging       | Toggle wire-level message logging. `TRACE` level logging must also be enabled for the `net.solarnetwork.io.modbus.server.X` log name, where `X` is the serial port device name of the server to log messages for. |
-| Units              | The list of [unit configurations](#unit-configuration). |
+| Units              | The list of [unit configurations](#unit-configuration).                                                                                                                                                           |
 
 ## Unit configuration
 
@@ -249,10 +247,10 @@ Each Modbus server can support up to 256 unit configurations, numbered from `0` 
 
 Each unit configuration contains the following settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Unit ID            | The Modbus Unit ID to use for the configured blocks, from `0` - `255`. |
-| Register Blocks    | The list of [register block configurations](#register-block-configuration). |
+| Setting         | Description                                                                 |
+|:----------------|:----------------------------------------------------------------------------|
+| Unit ID         | The Modbus Unit ID to use for the configured blocks, from `0` - `255`.      |
+| Register Blocks | The list of [register block configurations](#register-block-configuration). |
 
 ## Register block configuration
 
@@ -264,11 +262,11 @@ required by each measurement.
 
 Each register block configuration contains the following settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Start Address      | The starting Modbus address for this register block, from `0` - `65,535`. |
-| Register Type      | The Modbus register type for this block (e.g. _holding_). |
-| Measurements       | The list of [measurement configurations](#measurement-configuration). |
+| Setting       | Description                                                               |
+|:--------------|:--------------------------------------------------------------------------|
+| Start Address | The starting Modbus address for this register block, from `0` - `65,535`. |
+| Register Type | The Modbus register type for this block (e.g. _holding_).                 |
+| Measurements  | The list of [measurement configurations](#measurement-configuration).     |
 
 ## Measurement configuration
 
@@ -280,16 +278,15 @@ configure the datum source ID and property name of each value you want to publis
 
 Each measurement configuration contains the following settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Source ID          | The datum source ID that contains the **Property** value to publish via Modbus. |
-| Property           | The datum property to publish via Modbus. |
-| Data Type          | The type of data to expect from the read Modbus register(s).                                            |
-| Data Length        | For variable length data types such as strings, the number of Modbus registers to read.                 |
-| Unit Multiplier    | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
-| Decimal Scale      | For numeric data types, a maximum number of decimal places to round decimal numbers to.                 |
-| Control ID         | A control ID to expose the property as. Can specify `-` to use the **Source ID** or `+` to use the pattern **_Source ID/Property_**. See [Controls](#controls) for more information. |
-
+| Setting         | Description                                                                                                                                                                          |
+|:----------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Source ID       | The datum source ID that contains the **Property** value to publish via Modbus.                                                                                                      |
+| Property        | The datum property to publish via Modbus.                                                                                                                                            |
+| Data Type       | The type of data to expect from the read Modbus register(s).                                                                                                                         |
+| Data Length     | For variable length data types such as strings, the number of Modbus registers to read.                                                                                              |
+| Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit.                                                                              |
+| Decimal Scale   | For numeric data types, a maximum number of decimal places to round decimal numbers to.                                                                                              |
+| Control ID      | A control ID to expose the property as. Can specify `-` to use the **Source ID** or `+` to use the pattern **_Source ID/Property_**. See [Controls](#controls) for more information. |
 
 # Controls
 
@@ -317,13 +314,13 @@ POST /solaruser/api/v1/sec/instr/add/SetControlParameter
 You can configure an explicit control ID or use one of these shortcuts to derive the control ID from
 the source ID and/or property name:
 
-| Control ID | Description |
-|:-----------|:------------|
-| `-` | Use the **Source ID**. |
-| `+` | Use the pattern **_Source ID/Property_**. For example if the Source ID is `meter/1` and the Property is `watts` then the control ID would be `meter/1/watts`. |
-
+| Control ID | Description                                                                                                                                                   |
+|:-----------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-`        | Use the **Source ID**.                                                                                                                                        |
+| `+`        | Use the pattern **_Source ID/Property_**. For example if the Source ID is `meter/1` and the Property is `watts` then the control ID would be `meter/1/watts`. |
 
 [instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
 [node-controls-ui]: https://solarnetwork.github.io/solarnode-handbook/users/setup-app/tools/controls/
 [op-modes]: https://solarnetwork.github.io/solarnode-handbook/users/op-modes/
 [SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
+

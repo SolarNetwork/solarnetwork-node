@@ -16,16 +16,16 @@ the components outlined next in this document will become available.
 
 Each service configuration contains the following settings:
 
-| Setting         | Description  |
-|-----------------|--------------|
-| Service Name    | A unique name to identify this component with. |
-| Service Group   | A group name to associate this component with. |
-| AWS Token       | AWS access token for authentication. |
-| AWS Secret      | AWS access token secret. |
-| AWS Region      | AWS service region. |
-| S3 Bucket       | S3 bucket name to save backups to. |
-| S3 Path         | A prefix to add to all S3 object keys, for example a sub-folder path. |
-| Node ID Path    | Automatically add the node ID as a path prefix for all S3 object keys. |
+|    Setting    |                              Description                               |
+|---------------|------------------------------------------------------------------------|
+| Service Name  | A unique name to identify this component with.                         |
+| Service Group | A group name to associate this component with.                         |
+| AWS Token     | AWS access token for authentication.                                   |
+| AWS Secret    | AWS access token secret.                                               |
+| AWS Region    | AWS service region.                                                    |
+| S3 Bucket     | S3 bucket name to save backups to.                                     |
+| S3 Path       | A prefix to add to all S3 object keys, for example a sub-folder path.  |
+| Node ID Path  | Automatically add the node ID as a path prefix for all S3 object keys. |
 
 ## Settings notes
 
@@ -41,3 +41,4 @@ Each service configuration contains the following settings:
 	Using the example <code>my-folder/</code> S3 Path, a resulting path prefix for
 	node <b>123</b> would be <code>my-folder/123/</code>.</dd>
 </dl>
+

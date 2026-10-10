@@ -27,14 +27,14 @@ at whatever frequency you need. Be aware that GPSd can emit `TPV` reports about 
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description |
-|--------------------|-------------|
-| Schedule           | A cron schedule that determines when data is collected for posting to SolarNetwork. |
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| GPSd Connection    | The service name of the [GPSd Connection][gps-conn] component to use. |
-| Source ID          | The SolarNetwork source ID to assign to captured datum. |
-| Update Node Location | Toggle updating the node's own GPS coordinates in SolarNetwork. |
+|       Setting        |                                           Description                                            |
+|----------------------|--------------------------------------------------------------------------------------------------|
+| Schedule             | A cron schedule that determines when data is collected for posting to SolarNetwork.              |
+| Service Name         | A unique name to identify this data source with.                                                 |
+| Service Group        | A group name to associate this data source with.                                                 |
+| GPSd Connection      | The service name of the [GPSd Connection][gps-conn] component to use.                            |
+| Source ID            | The SolarNetwork source ID to assign to captured datum.                                          |
+| Update Node Location | Toggle updating the node's own GPS coordinates in SolarNetwork.                                  |
 | Update Max Error     | The maximum latitude/longitude error amount allowed for updating the node's own GPS coordinates. |
 
 ## Overall device settings notes
@@ -53,8 +53,9 @@ Each device configuration contains the following overall settings:
 
 # Events
 
-This plugin will listen for all GPSd "report" messages (`SKY` and `TPV` messages) and offer 
+This plugin will listen for all GPSd "report" messages (`SKY` and `TPV` messages) and offer
 transient datum events for each of them to the node's [datum queue][datum-queue].
 
 [gps-conn]: ../net.solarnetwork.node.io.gpsd/
 [datum-queue]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Datum-Queue
+

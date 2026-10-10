@@ -15,16 +15,15 @@ applications to use. This can be used by the [DNP3 Control Center](#dnp3-control
 
 Each TCP client configuration contains the following settings:
 
-| Setting         | Description                                      |
-|-----------------|--------------------------------------------------|
-| Service Name    | A unique name to identify this component with. |
-| Service Group   | A group name to associate this component with. |
-| Log Levels      | A bitmask combination of OpenDNP3 [log levels][log-levels]. |
+|     Setting     |                                        Description                                         |
+|-----------------|--------------------------------------------------------------------------------------------|
+| Service Name    | A unique name to identify this component with.                                             |
+| Service Group   | A group name to associate this component with.                                             |
+| Log Levels      | A bitmask combination of OpenDNP3 [log levels][log-levels].                                |
 | Retry min delay | The minimum length of time, in seconds, to delay between network operation retry attempts. |
 | Retry max delay | The maximum length of time, in seconds, to delay between network operation retry attempts. |
-| Host            | The hostname or IP address to connect to. |
-| Port            | The IP port to connect on. |
-
+| Host            | The hostname or IP address to connect to.                                                  |
+| Port            | The IP port to connect on.                                                                 |
 
 # DNP3 TCP server
 
@@ -37,16 +36,15 @@ applications to use. This can be used by the [DNP3 Outstation](#dnp3-outstation)
 
 Each TCP server configuration contains the following settings:
 
-| Setting         | Description                                      |
-|-----------------|--------------------------------------------------|
-| Service Name    | A unique name to identify this component with. |
-| Service Group   | A group name to associate this component with. |
-| Log Levels      | A bitmask combination of OpenDNP3 [log levels][log-levels]. |
-| Retry min delay | The minimum length of time, in seconds, to delay between network operation retry attempts. |
-| Retry max delay | The maximum length of time, in seconds, to delay between network operation retry attempts. |
+|     Setting     |                                              Description                                               |
+|-----------------|--------------------------------------------------------------------------------------------------------|
+| Service Name    | A unique name to identify this component with.                                                         |
+| Service Group   | A group name to associate this component with.                                                         |
+| Log Levels      | A bitmask combination of OpenDNP3 [log levels][log-levels].                                            |
+| Retry min delay | The minimum length of time, in seconds, to delay between network operation retry attempts.             |
+| Retry max delay | The maximum length of time, in seconds, to delay between network operation retry attempts.             |
 | Bind address    | The IP address to bind to, such as `127.0.0.1` for localhost or `0.0.0.0` for all available addresses. |
-| Port            | The port to listen on. |
-
+| Port            | The port to listen on.                                                                                 |
 
 # DNP3 Control Center
 
@@ -87,3 +85,4 @@ java.lang.UnsatisfiedLinkError: no opendnp3java in java.library.path
 that means the shared library was not found.
 
 [log-levels]: https://github.com/automatak/dnp3/blob/2efcf2e5f477869165f2cb40d731d41fb961b51b/java/bindings/src/main/java/com/automatak/dnp3/LogLevels.java#L23-L27
+

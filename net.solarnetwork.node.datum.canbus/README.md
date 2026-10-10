@@ -27,11 +27,11 @@ individual property values, and map those values into datum properties.
 
 The configuration for a given CAN Bus Device in SolarNode is broken into these parts:
 
-| Configuration | Description |
-|:--------------|:------------|
-| Device        | A SolarNetwork datum stream with a _source ID_. A device contains 1 or more message configurations. |
+| Configuration | Description                                                                                               |
+|:--------------|:----------------------------------------------------------------------------------------------------------|
+| Device        | A SolarNetwork datum stream with a _source ID_. A device contains 1 or more message configurations.       |
 | Message       | A CAN bus message for a specific _CAN bus address_. A message contains 1 or more property configurations. |
-| Property      | An individual datum property taken from a message. |
+| Property      | An individual datum property taken from a message.                                                        |
 
 You can visualize this structure like a tree. For example, here's a single Device with 2 messages
 and 5 properties:
@@ -87,19 +87,19 @@ Device components, without having to use the settings form.
 
 Each device configuration contains the following overall settings:
 
-| Setting                | Description                                             |
-|------------------------|---------------------------------------------------------|
-| Schedule               | A cron schedule that determines when data is collected. |
-| Service Name           | A unique name to identify this data source with. |
-| Service Group          | A group name to associate this data source with. |
-| CAN Bus Connection     | The **service name** of the CAN Bus Connection to use. |
-| Bus Name               | The CAN bus name to connect to. |
-| Source ID              | The source ID to assign to generated datum. |
-| Datum Filter Service   | The **service name** of the datum filter to apply to the data collected from the device, for example a [Virtual Meter Filter][vmf]. | 
-| Debug Mode             | When enabled, capture all CAN messages into the configured **Debug File**, and do **not** collect any datum. |
-| Debug File             | File path to write CAN messages to when **Debug Mode** is enabled. Accepts a single `%s` argument which will be replaced by the configured **Bus Name**. |
-| Message Configurations | A list of CAN bus message configurations that determine which datum properties are collected, from which CAN bus addresses. |
-| Expression Configurations | A list of [expression configurations](#expressions) for deriving properties from other properties. |
+|          Setting          |                                                                       Description                                                                        |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Schedule                  | A cron schedule that determines when data is collected.                                                                                                  |
+| Service Name              | A unique name to identify this data source with.                                                                                                         |
+| Service Group             | A group name to associate this data source with.                                                                                                         |
+| CAN Bus Connection        | The **service name** of the CAN Bus Connection to use.                                                                                                   |
+| Bus Name                  | The CAN bus name to connect to.                                                                                                                          |
+| Source ID                 | The source ID to assign to generated datum.                                                                                                              |
+| Datum Filter Service      | The **service name** of the datum filter to apply to the data collected from the device, for example a [Virtual Meter Filter][vmf].                      |
+| Debug Mode                | When enabled, capture all CAN messages into the configured **Debug File**, and do **not** collect any datum.                                             |
+| Debug File                | File path to write CAN messages to when **Debug Mode** is enabled. Accepts a single `%s` argument which will be replaced by the configured **Bus Name**. |
+| Message Configurations    | A list of CAN bus message configurations that determine which datum properties are collected, from which CAN bus addresses.                              |
+| Expression Configurations | A list of [expression configurations](#expressions) for deriving properties from other properties.                                                       |
 
 # Message settings
 
@@ -107,13 +107,13 @@ Each device configuration contains the following overall settings:
 
 Each message configuration contains the following overall settings:
 
-| Setting                 | Description                                             |
-|-------------------------|---------------------------------------------------------|
-| CAN bus Address         | The CAN bus address to read. Can be specified in base 16 (hex) with a `0x` prefix, e.g. `0x1A` is equivalent to `26`. |
-| Description             | An optional friendly description to give to this property. |
+|         Setting         |                                                                        Description                                                                        |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CAN bus Address         | The CAN bus address to read. Can be specified in base 16 (hex) with a `0x` prefix, e.g. `0x1A` is equivalent to `26`.                                     |
+| Description             | An optional friendly description to give to this property.                                                                                                |
 | Interval                | An minimum interval, in **milliseconds**, to limit message updates to. Use `0` for no limit so updates occur at whatever frequency they are broadcast at. |
-| Byte Ordering           | The byte ordering used by the message data. |
-| Property Configurations | A list of configurations that determine which CAN bus message data values are extracted into datum properties. |
+| Byte Ordering           | The byte ordering used by the message data.                                                                                                               |
+| Property Configurations | A list of configurations that determine which CAN bus message data values are extracted into datum properties.                                            |
 
 # Property settings
 
@@ -121,24 +121,24 @@ Each message configuration contains the following overall settings:
 
 Each property configuration contains the following overall settings:
 
-| Setting         | Description                          |
-|-----------------|--------------------------------------|
-| Property        | The datum property name to populate. |
-| Property Type   | The [datum property classification][datum-samples] to use. |
-| Data Type       | The data type to read from the message. |
-| Unit            | The physical unit of the value, as a valid [Unified Code for Units of Measure][ucum] unit representation. |
-| Normalized Unit | The unit to convert the value to, as a valid [Unified Code for Units of Measure][ucum] unit representation. If empty then apply standard normalization rules. |
-| Bit Offset      | The bit offset within the CAN bus message to read the property value from. |
-| Bit Length      | The number of bits to read. Only used for variable-length **Data Type** values. |
+|     Setting     |                                                                                                   Description                                                                                                    |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Property        | The datum property name to populate.                                                                                                                                                                             |
+| Property Type   | The [datum property classification][datum-samples] to use.                                                                                                                                                       |
+| Data Type       | The data type to read from the message.                                                                                                                                                                          |
+| Unit            | The physical unit of the value, as a valid [Unified Code for Units of Measure][ucum] unit representation.                                                                                                        |
+| Normalized Unit | The unit to convert the value to, as a valid [Unified Code for Units of Measure][ucum] unit representation. If empty then apply standard normalization rules.                                                    |
+| Bit Offset      | The bit offset within the CAN bus message to read the property value from.                                                                                                                                       |
+| Bit Length      | The number of bits to read. Only used for variable-length **Data Type** values.                                                                                                                                  |
 | Multiplier      | A multiplication factor to transform data values into normalized units. In CAN this is often referred to as the **slope**, represented by `m` in the linear equation `y = mx + b`. Set to `1` for no multiplier. |
-| Offset          | An offset to transform data values into normalized units. This is applied **after** the **Multiplier**, represented by `b` in the linear equation `y = mx + b`. Set to `0` for no offset. |
-| Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. This is applied after all transforms. Set to `0` to round to whole numbers. Set to `-1` to disable rounding. |
-| Value Labels    | An optional list of labels to associate with specific property values. |
-| Localized Names | An optional list of localized names to publish with the metadata for the device. |
+| Offset          | An offset to transform data values into normalized units. This is applied **after** the **Multiplier**, represented by `b` in the linear equation `y = mx + b`. Set to `0` for no offset.                        |
+| Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. This is applied after all transforms. Set to `0` to round to whole numbers. Set to `-1` to disable rounding.              |
+| Value Labels    | An optional list of labels to associate with specific property values.                                                                                                                                           |
+| Localized Names | An optional list of localized names to publish with the metadata for the device.                                                                                                                                 |
 
 ## Value labels
 
-Value labels allow you to configure descriptive labels with specific property values. When 
+Value labels allow you to configure descriptive labels with specific property values. When
 configured, SolarNode will generate an extra status datum property named like **Property** with
 `Label` appended. For example, here are two value labels configured for values `0` and `1`
 with labels `Normal` and `Broken`, respectively:
@@ -164,10 +164,10 @@ Each property will have the following metadata elements published:
 
 Each property configuration contains the following overall settings:
 
-| Metadata   | Description |
-|------------|------------ |
-| name       | The localized names, if provided, as an object with language tags for object keys. |
-| unit       | The normalized UCUM unit of the datum property. |
+|  Metadata  |                                         Description                                          |
+|------------|----------------------------------------------------------------------------------------------|
+| name       | The localized names, if provided, as an object with language tags for object keys.           |
+| unit       | The normalized UCUM unit of the datum property.                                              |
 | sourceUnit | The original UCUM unit of the property configuration, if different from the normalized unit. |
 
 ```json
@@ -233,29 +233,28 @@ signal values.
 
 Each expression configuration contains the following settings:
 
-| Setting              | Description |
-|:---------------------|:------------|
-| Property             | The datum property name to generate from the result of the expression. |
-| Property Type        | The [datum property classification][datum-samples] to use. |
-| Expression           | The expression. |
-| Expression Language  | The expression language the **Expression** is written in. |
+| Setting             | Description                                                            |
+|:--------------------|:-----------------------------------------------------------------------|
+| Property            | The datum property name to generate from the result of the expression. |
+| Property Type       | The [datum property classification][datum-samples] to use.             |
+| Expression          | The expression.                                                        |
+| Expression Language | The expression language the **Expression** is written in.              |
 
 ### Expression root object
 
 The root object is a [ExpressionRoot][ExpressionRoot] object, which has the following properties:
 
-| Property | Type | Description |
-|:---------|:-----|:------------|
-| `datum` | `GeneralNodeDatum` | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
-| `props` | `Map<String,Object>` | Simple Map based access to the data in `datum`, to simplify expressions. |
-| `sample` | `CanbusData` | A [`CanbusData`][CanbusData] object, populated with the raw CAN bus data read from the device. |
+| Property | Type                 | Description                                                                                                              |
+|:---------|:---------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| `datum`  | `GeneralNodeDatum`   | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
+| `props`  | `Map<String,Object>` | Simple Map based access to the data in `datum`, to simplify expressions.                                                 |
+| `sample` | `CanbusData`         | A [`CanbusData`][CanbusData] object, populated with the raw CAN bus data read from the device.                           |
 
 ### Expression examples
 
-| Expression  | Comment |
-|:------------|:--------|
+| Expression                            | Comment                                                                       |
+|:--------------------------------------|:------------------------------------------------------------------------------|
 | `props['current'] * props['voltage']` | Returns the product of datum property `current` and datum property `voltage`. |
-
 
 [can-conn]: ../net.solarnetwork.node.io.canbus
 [datum-samples]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum-samples
@@ -266,3 +265,4 @@ The root object is a [ExpressionRoot][ExpressionRoot] object, which has the foll
 [sn-kcd]: ../net.solarnetwork.node.io.canbus#solarnetwork-kcd-support
 [ucum]: http://unitsofmeasure.org/ucum.html
 [vmf]: ../net.solarnetwork.node.datum.samplefilter#virtual-meter-filter
+

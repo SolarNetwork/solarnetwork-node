@@ -19,13 +19,13 @@ configuration for each Modbus switch you want to control.
 
 Each device configuration contains the following overall settings:
 
-| Setting       | Description |
-|:--------------|:------------|
-| Control ID    | The ID to use for the SolarNode control. |
+| Setting       | Description                                      |
+|:--------------|:-------------------------------------------------|
+| Control ID    | The ID to use for the SolarNode control.         |
 | Service Group | A group name to associate this data source with. |
-| Serial Port   | The service name of the Serial port to use. |
-| Identity      | The identity of the Modbus device to control. |
-| Address       | The one-based address for relay to toggle. |
+| Serial Port   | The service name of the Serial port to use.      |
+| Identity      | The identity of the Modbus device to control.    |
+| Address       | The one-based address for relay to toggle.       |
 
 ## Overall device settings notes
 
@@ -62,3 +62,4 @@ the switch and `true` or `false` as the parameter value.
 
 [instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
 [set-control-param]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
+

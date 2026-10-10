@@ -16,28 +16,28 @@ for each mock battery you want to generate data from.
 
 Each configuration contains the following overall settings:
 
-| Setting                      | Description |
-|:-----------------------------|:------------|
-| Schedule                     | A cron schedule that determines when data is collected. |
-| Service Name                 | A unique name to identify this data source with. |
-| Service Group                | A group name to associate this data source with. |
-| Source ID                    | The SolarNetwork unique source ID to assign to datum collected from this component. |
+| Setting                      | Description                                                                                                                                                                                                                                                                                                  |
+|:-----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Schedule                     | A cron schedule that determines when data is collected.                                                                                                                                                                                                                                                      |
+| Service Name                 | A unique name to identify this data source with.                                                                                                                                                                                                                                                             |
+| Service Group                | A group name to associate this data source with.                                                                                                                                                                                                                                                             |
+| Source ID                    | The SolarNetwork unique source ID to assign to datum collected from this component.                                                                                                                                                                                                                          |
 | Target Power Rate Control ID | A control ID to expose for managing the target power rate. The `SetControlParameter` instruction can be used to update the control value, passing the desired power rate, in **watts**. A positive value represents a _charge_ (receive) rate while a negative value represents a _discharge_ (supply) rate. |
-| SOC Control ID               | A control ID to expose for manipulating the state of charge. The `SetControlParameter` instruction can be used to update the control value, passing the desired SOC as an integer percentage from `0 - 100`. |
-| Energy Capacity              | The total capacity of the battery, in **watt-hours**. |
-| Charge Max Power             | The maximum power rate allowed for charging, in **watts**. |
-| Discharge Max Power          | The maximum power rate allowed for discharging, in watts. |
-| Start SOC                    | The state of charge to use when the battery is first measured, from `0 - 100`. |
-
+| SOC Control ID               | A control ID to expose for manipulating the state of charge. The `SetControlParameter` instruction can be used to update the control value, passing the desired SOC as an integer percentage from `0 - 100`.                                                                                                 |
+| Energy Capacity              | The total capacity of the battery, in **watt-hours**.                                                                                                                                                                                                                                                        |
+| Charge Max Power             | The maximum power rate allowed for charging, in **watts**.                                                                                                                                                                                                                                                   |
+| Discharge Max Power          | The maximum power rate allowed for discharging, in watts.                                                                                                                                                                                                                                                    |
+| Start SOC                    | The state of charge to use when the battery is first measured, from `0 - 100`.                                                                                                                                                                                                                               |
 
 # Power rate control
 
 The **Target Power Rate Control ID** defines a writable control ID that accepts a decimal charge
 or discharge rate to configure the battery on. A rate of `0` make the battery neither charge nor
 discharge. A positive value represents a _charge_ (receive) rate while a negative value represents a
- _discharge_ (supply) rate. The battery only simulates a "perfect" system where the specified rate
- is maintained without variation, until the available energy is depleted or reaches the configured
- capacity.
+_discharge_ (supply) rate. The battery only simulates a "perfect" system where the specified rate
+is maintained without variation, until the available energy is depleted or reaches the configured
+capacity.
 
- > **Note** the available capacity of the battery is only updated according to the configured power
- > rate _when the battery information is measured_ according to the configured **Schedule**.
+> **Note** the available capacity of the battery is only updated according to the configured power
+> rate _when the battery information is measured_ according to the configured **Schedule**.
+

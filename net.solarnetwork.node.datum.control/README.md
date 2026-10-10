@@ -24,31 +24,32 @@ component will become available.
 
 Each service configuration contains the following settings:
 
-| Setting               | Description  |
-|:----------------------|:-------------|
-| Service Name          | A unique name to identify this data source with.                                 |
-| Service Group         | A group name to associate this data source with.                                 |
-| Control ID            | A regular expression to filter control ID values by, or left blank to generate datum for all control IDs. |
-| Event Mode            | The [Event Mode](#event-mode) to use. |
-| Persist Mode          | The [Persist Mode](#persist-mode) to use. |
+| Setting       | Description                                                                                               |
+|:--------------|:----------------------------------------------------------------------------------------------------------|
+| Service Name  | A unique name to identify this data source with.                                                          |
+| Service Group | A group name to associate this data source with.                                                          |
+| Control ID    | A regular expression to filter control ID values by, or left blank to generate datum for all control IDs. |
+| Event Mode    | The [Event Mode](#event-mode) to use.                                                                     |
+| Persist Mode  | The [Persist Mode](#persist-mode) to use.                                                                 |
 
 ## Event Mode
 
 The **Event Mode** setting allows you to configure which control events are turned into datum
 objects. This can be useful for controls that publish events outside of being polled explicitly.
 
-| Mode | Description |
-|:-----|:------------|
-| Polled Only | Datum are generated only via the **Schedule** setting on this component. |
-| Sampled     | Emitted when some plugin reads (samples) a control value. |
-| Changed     | Emitted when a plugin writes (changes) a control value.   |
-| Sampled and changed | Generate datum from both **Sampled** and **Changed** control events. |
+| Mode                | Description                                                              |
+|:--------------------|:-------------------------------------------------------------------------|
+| Polled Only         | Datum are generated only via the **Schedule** setting on this component. |
+| Sampled             | Emitted when some plugin reads (samples) a control value.                |
+| Changed             | Emitted when a plugin writes (changes) a control value.                  |
+| Sampled and changed | Generate datum from both **Sampled** and **Changed** control events.     |
 
 ## Persist Mode
 
 The **Persist Mode** settings configures which datum are persisted in SolarNetwork.
 
-| Mode | Description |
-|:-----|:------------|
+| Mode           | Description                                                                           |
+|:---------------|:--------------------------------------------------------------------------------------|
 | Poll           | Persist only polled control values. Datum generated via events will not be persisted. |
-| Poll and event | Persist polled and event-based datum. |
+| Poll and event | Persist polled and event-based datum.                                                 |
+

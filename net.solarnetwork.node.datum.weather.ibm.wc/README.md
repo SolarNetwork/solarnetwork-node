@@ -23,11 +23,12 @@ configuration for each type and location  you want to collect data from.
 
 Each configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Weather Location   | The SolarNetwork weather location to associate the collected data with.          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| API Key            | The IBM Weather Channel API key to authenticate with.                            |
-| Datum Period       | The forecast period to collect data for.                                         |
-| ICAO Code          | The [location](https://en.wikipedia.org/wiki/ICAO_airport_code) to collect for.  |
+|     Setting      |                                   Description                                   |
+|------------------|---------------------------------------------------------------------------------|
+| Schedule         | A cron schedule that determines when data is collected.                         |
+| Weather Location | The SolarNetwork weather location to associate the collected data with.         |
+| Service Name     | A unique name to identify this data source with.                                |
+| API Key          | The IBM Weather Channel API key to authenticate with.                           |
+| Datum Period     | The forecast period to collect data for.                                        |
+| ICAO Code        | The [location](https://en.wikipedia.org/wiki/ICAO_airport_code) to collect for. |
+

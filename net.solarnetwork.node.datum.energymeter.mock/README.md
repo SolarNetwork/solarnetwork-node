@@ -17,8 +17,8 @@ want to generate data from.
 
 Each configuration contains the following overall settings:
 
-| Setting                | Description                                                                                                                                                                   |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|        Setting         |                                                                                  Description                                                                                  |
+|------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Schedule               | A cron schedule that determines when data is collected.                                                                                                                       |
 | Service Name           | A unique name to identify this data source with.                                                                                                                              |
 | Service Group          | A group name to associate this data source with.                                                                                                                              |
@@ -86,7 +86,7 @@ A range can be left empty to represent **all values**. The time constraint
 columns are:
 
 | Column | Constraint    | Description                                                                                                                                                                                                                                                                               |
-| :----- | :------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|:-------|:--------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1      | Month range   | An inclusive month range. Months can be specified as numbers (1-12) or abbreviations (Jan-Dec) or full names (January - December). When using text names case does not matter and they will be parsed using the **TOU Lanauage** setting.                                                 |
 | 2      | Day range     | An inclusive day-of-month range. Days are specified as numbers (1-31).                                                                                                                                                                                                                    |
 | 3      | Weekday range | An inclusive day-of-week range. Weekdays can be specified as numbers (1-7) with Monday being `1` and Sunday being `7`, or abbreviations (Mon-Sun) or full names (Monday - Sunday). When using text names case does not matter and they will be parsed using the **TOU Lanauage** setting. |
@@ -106,11 +106,11 @@ Here's an example schedule with 4 rules and a single **TOU** rate (the `*`
 stands for **all values**):
 
 | Rule  | Month   | Day | Weekday | Time | Power |
-| :---- | :------ | :-- | :------ | :--- | ----: |
-| **1** | Jan-Dec | \*  | Mon-Fri | 0-8  | 9000  |
-| **2** | Jan-Dec | \*  | Mon-Fri | 8-24 | 5000  |
-| **3** | Jan-Dec | \*  | Sat-Sun | 0-8  | 2000  |
-| **4** | Jan-Dec | \*  | Sat-Sun | 8-24 | 500   |
+|:------|:--------|:----|:--------|:-----|------:|
+| **1** | Jan-Dec | \*  | Mon-Fri | 0-8  |  9000 |
+| **2** | Jan-Dec | \*  | Mon-Fri | 8-24 |  5000 |
+| **3** | Jan-Dec | \*  | Sat-Sun | 0-8  |  2000 |
+| **4** | Jan-Dec | \*  | Sat-Sun | 8-24 |   500 |
 
 In CSV format the schedule would look like this:
 
@@ -134,3 +134,4 @@ like this when saved at the `/pm/tariffs/schedule` path:
   }
 }
 ```
+

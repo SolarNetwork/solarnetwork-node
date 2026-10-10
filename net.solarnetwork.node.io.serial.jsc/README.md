@@ -20,23 +20,23 @@ for each serial port you want to communicate over.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| Serial port        | The OS device name. This varies by operating system. Some examples `/dev/ttyUSB0` and `COM1`. |
-| Port lock timeout  | The maximum amount of time to wait to acquire exclusive use of the configured port, in seconds. |
-| Response timeout   | The maximum amount of time to wait for a response before giving up, in milliseconds. |
-| Baud               | The maximum communication speed to use, in bits-per-second. |
-| Data bits          | The number of data bits per message. |
-| Stop bits          | The number of stop bits per message. |
-| Parity             | The serial port parity setting to use. |
-| Flow control       | The serial port flow control setting to use. |
-| Receive threshold  | The serial port receive threshold setting. |
-| Receive timeout    | The maximum amount of time to wait to receive data, in milliseconds. |
-| Receive framing    | The serial port receive framing setting to use, or `-1` to disable. |
-| DTR                | The DTR scheme to follow at the start of reading from the port. |
-| RTS                | The RTS scheme to follow at the start of writing to the port. |
+| Setting           | Description                                                                                     |
+|:------------------|:------------------------------------------------------------------------------------------------|
+| Service Name      | A unique name to identify this data source with.                                                |
+| Service Group     | A group name to associate this data source with.                                                |
+| Serial port       | The OS device name. This varies by operating system. Some examples `/dev/ttyUSB0` and `COM1`.   |
+| Port lock timeout | The maximum amount of time to wait to acquire exclusive use of the configured port, in seconds. |
+| Response timeout  | The maximum amount of time to wait for a response before giving up, in milliseconds.            |
+| Baud              | The maximum communication speed to use, in bits-per-second.                                     |
+| Data bits         | The number of data bits per message.                                                            |
+| Stop bits         | The number of stop bits per message.                                                            |
+| Parity            | The serial port parity setting to use.                                                          |
+| Flow control      | The serial port flow control setting to use.                                                    |
+| Receive threshold | The serial port receive threshold setting.                                                      |
+| Receive timeout   | The maximum amount of time to wait to receive data, in milliseconds.                            |
+| Receive framing   | The serial port receive framing setting to use, or `-1` to disable.                             |
+| DTR               | The DTR scheme to follow at the start of reading from the port.                                 |
+| RTS               | The RTS scheme to follow at the start of writing to the port.                                   |
 
 ## Overall device settings notes
 
@@ -93,5 +93,5 @@ The **Flow control** setting accepts the following values:
 | 4             | XON XOFF in  |
 | 8             | XON XOFF out |
 
-
 [jsc]: https://github.com/Fazecast/jSerialComm
+

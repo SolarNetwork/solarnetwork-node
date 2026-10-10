@@ -21,7 +21,7 @@ Modbus device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
+|      Setting       |                                   Description                                    |
 |--------------------|----------------------------------------------------------------------------------|
 | Schedule           | A cron schedule that determines when data is collected.                          |
 | Service Name       | A unique name to identify this data source with.                                 |
@@ -66,4 +66,5 @@ Each device configuration contains the following overall settings:
 	</ol></ul>
 </dl>
 
- [suns]: https://sunspec.org/
+[suns]: https://sunspec.org/
+

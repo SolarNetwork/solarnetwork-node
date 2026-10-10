@@ -24,11 +24,11 @@ The CSV **must** include a header row, which is skipped. All other rows will be 
 
 The columns required are:
 
- 1. `key` - the setting key
- 2. `type` - the setting type
- 3. `value` - the setting value
- 4. `flags`- should be set to `0`
- 5. `modified` - a date in `yyyy-MM-dd HH:mm:ss` format
+1. `key` - the setting key
+2. `type` - the setting type
+3. `value` - the setting value
+4. `flags`- should be set to `0`
+5. `modified` - a date in `yyyy-MM-dd HH:mm:ss` format
 
 Here's an example settings file that configures a single OBR Plugin Repository component:
 
@@ -37,3 +37,4 @@ key,type,value,flags,modified
 net.solarnetwork.node.setup.obr.repo.1,URL,http://data.solarnetwork.net/obr/solarnetwork/metadata.xml,0,2015-04-17 00:00:00
 net.solarnetwork.node.setup.obr.repo.FACTORY,1,1,0,2015-04-17 00:00:00
 ```
+

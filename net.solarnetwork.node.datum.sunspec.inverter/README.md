@@ -21,18 +21,18 @@ Modbus device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                             |
-|--------------------|---------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected. |
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| Modbus Connection  | The service name of the Modbus port to use. |
-| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255. |
-| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds. |
-| Source ID          | The SolarNetwork source ID to assign to captured datum. |
-| Secondary Models   | List of additional SunSpec model IDs to capture data from. |
+|      Setting       |                              Description                              |
+|--------------------|-----------------------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected.               |
+| Service Name       | A unique name to identify this data source with.                      |
+| Service Group      | A group name to associate this data source with.                      |
+| Modbus Connection  | The service name of the Modbus port to use.                           |
+| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.       |
+| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.        |
+| Source ID          | The SolarNetwork source ID to assign to captured datum.               |
+| Secondary Models   | List of additional SunSpec model IDs to capture data from.            |
 | Ignore States      | A list of inverter operating states to skip collecting data while in. |
-| Phase Measurements | Toggle to collect additional phase-specific measurement properties. |
+| Phase Measurements | Toggle to collect additional phase-specific measurement properties.   |
 
 ## Overall device settings notes
 
@@ -74,14 +74,14 @@ This model exposes individual DC-level inverter module information (i.e. strings
 then additional datum properties, with names all suffixed by `_ID` where `ID` is the module ID,
 will be collected for each available module (if supported by the inverter):
 
-| Property | Classification | Description |
-|:------------|:---------------|:------------|
-| `dcVoltage` | `i`            | PV DC input voltage, in volts. |
-| `dcPower`   | `i`            | PV DC input power, in watts. |
-| `wattHours` | `a`            | PV DC input energy, in watt-hours. |
+| Property    | Classification | Description                                |
+|:------------|:---------------|:-------------------------------------------|
+| `dcVoltage` | `i`            | PV DC input voltage, in volts.             |
+| `dcPower`   | `i`            | PV DC input power, in watts.               |
+| `wattHours` | `a`            | PV DC input energy, in watt-hours.         |
 | `temp`      | `i`            | PV module temperature, in degrees celsius. |
-| `opState`   | `s`            | PV module SunSpec operating state code. |
-| `events`    | `s`            | PV module SunSpec event bitmask. |
+| `opState`   | `s`            | PV module SunSpec operating state code.    |
+| `events`    | `s`            | PV module SunSpec event bitmask.           |
 
- [suns]: https://sunspec.org/
- 
+[suns]: https://sunspec.org/
+

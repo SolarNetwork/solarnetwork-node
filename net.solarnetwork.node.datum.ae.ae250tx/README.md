@@ -15,23 +15,23 @@ Data Source**.
 
 This datum generates a [datum stream][datum] with the following properties:
 
-| Property | Class | Units | Description |
-|:---------|:------|:------|:------------|
-| `current`        | `i` | A | Common mode current |
-| `dcCurrent`      | `i` | A | DC output current |
-| `dcPower`        | `i` | W | DC output power |
-| `dcVoltage`      | `i` | V | DC voltage |
-| `events`         | `s` | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
-| `faults`         | `s` | list | Comma-delimited set of [Fault codes](#fault-codes) |
-| `frequency`      | `i` | Hz | AC frequency |
-| `opState`        | `s` | enum | [Device Operating State][opstate] code |
-| `opStates`       | `s` | enum | Active [System Status code](#system-status-codes) |
-| `pvVoltage`      | `i` | V | The PV input voltage |
-| `vendorEvents`   | `s` | bit set | Base-16 bit set of all active [Fault codes](#fault-codes) (alias for `faults`) |
-| `voltage`        | `i` | W | Common mode voltage |
-| `warnings`       | `s` | list | Comma-delimited set of all active AE 250TX warning codes |
-| `wattHours`      | `a` | Wh | Lifetime energy |
-| `watts`          | `i` | W | Active power total |
+| Property       | Class | Units   | Description                                                                    |
+|:---------------|:------|:--------|:-------------------------------------------------------------------------------|
+| `current`      | `i`   | A       | Common mode current                                                            |
+| `dcCurrent`    | `i`   | A       | DC output current                                                              |
+| `dcPower`      | `i`   | W       | DC output power                                                                |
+| `dcVoltage`    | `i`   | V       | DC voltage                                                                     |
+| `events`       | `s`   | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes)      |
+| `faults`       | `s`   | list    | Comma-delimited set of [Fault codes](#fault-codes)                             |
+| `frequency`    | `i`   | Hz      | AC frequency                                                                   |
+| `opState`      | `s`   | enum    | [Device Operating State][opstate] code                                         |
+| `opStates`     | `s`   | enum    | Active [System Status code](#system-status-codes)                              |
+| `pvVoltage`    | `i`   | V       | The PV input voltage                                                           |
+| `vendorEvents` | `s`   | bit set | Base-16 bit set of all active [Fault codes](#fault-codes) (alias for `faults`) |
+| `voltage`      | `i`   | W       | Common mode voltage                                                            |
+| `warnings`     | `s`   | list    | Comma-delimited set of all active AE 250TX warning codes                       |
+| `wattHours`    | `a`   | Wh      | Lifetime energy                                                                |
+| `watts`        | `i`   | W       | Active power total                                                             |
 
 Here is an example datum, expressed in simplified JSON form:
 
@@ -66,7 +66,7 @@ for each device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
+|      Setting       |                                   Description                                    |
 |--------------------|----------------------------------------------------------------------------------|
 | Schedule           | A cron schedule that determines when data is collected.                          |
 | Service Name       | A unique name to identify this data source with.                                 |
@@ -115,7 +115,6 @@ The `opStates` property is an enumeration of the following possible values:
 | 12    | `LatchingFault`  | Latching fault |
 | 13    | `CoolDown`       | Cool down      |
 
-
 # Fault codes
 
 The `vendorEvents` property is a bit set of the following possible values:
@@ -126,8 +125,8 @@ The `vendorEvents` property is a bit set of the following possible values:
 | 1     | `Voltage`           | A general Voltage type fault has occurred               |
 | 2     | `Grid`              | A general Grid type fault has occurred                  |
 | 3     | `Temperature`       | A general Temperature type fault has occurred           |
-| 4     | `System`            |  A general System type fault has occurred               |
-| 15    | `Latching`          |  A general Latching type fault has occurred             |
+| 4     | `System`            | A general System type fault has occurred                |
+| 15    | `Latching`          | A general Latching type fault has occurred              |
 | 16    | `DriveALow`         | Drive protection fault, phase A low.                    |
 | 17    | `DriveAHigh`        | Drive protection fault, phase A high.                   |
 | 18    | `DriveBLow`         | Drive protection fault, phase B low.                    |
@@ -195,45 +194,45 @@ The `vendorEvents` property is a bit set of the following possible values:
 | 90    | `DisconnectOpen`    | Disconnect open.                                        |
 | 91    | `DcMiswire`         | DC mis-wired for configured grounding, check DC wiring. |
 
-
 # SunSpec event codes
 
 This plugin will map specific fault codes into the SunSpec `events` property:
 
-| Fault | Name | Event | Inverter Model Event |
-|:------|:-----|:------|:---------------------|
-| 28    | `DcOverVoltage`     | 1  | `DcOverVoltage` |
-| 37    | `DcVoltageHigh`     | 1  | `DcOverVoltage` |
-| 48    | `AcFastUnderVoltA`  | 11 | `AcUnderVoltage` |
-| 49    | `AcFastUnderVoltB`  | 11 | `AcUnderVoltage` |
-| 50    | `AcFastUnderVoltC`  | 11 | `AcUnderVoltage` |
-| 51    | `AcSlowUnderVoltA`  | 11 | `AcUnderVoltage` |
-| 52    | `AcSlowUnderVoltB`  | 11 | `AcUnderVoltage` |
-| 53    | `AcSlowUnderVoltC`  | 11 | `AcUnderVoltage` |
-| 54    | `AcFastOverVoltA`   | 11 | `AcOverVoltage` |
-| 55    | `AcFastOverVoltB`   | 11 | `AcOverVoltage` |
-| 56    | `AcFastOverVoltC`   | 11 | `AcOverVoltage` |
-| 57    | `AcSlowOverVoltA`   | 11 | `AcOverVoltage` |
-| 58    | `AcSlowOverVoltB`   | 11 | `AcOverVoltage` |
-| 59    | `AcSlowOverVoltC`   | 11 | `AcOverVoltage` |
-| 60    | `AcUnderFreq`       | 9  | `UnderFrequency` |
-| 61    | `AcOverFreq`        | 8  | `OverFrequency` |
-| 64    | `HeatsinkTempA1`    | 7  | `OverTemperature` |
-| 65    | `HeatsinkTempA2`    | 7  | `OverTemperature` |
-| 66    | `HeatsinkTempB1`    | 7  | `OverTemperature` |
-| 67    | `HeatsinkTempB2`    | 7  | `OverTemperature` |
-| 68    | `HeatsinkTempC1`    | 7  | `OverTemperature` |
-| 69    | `HeatsinkTempC2`    | 7  | `OverTemperature` |
-| 70    | `BoardTempHigh`     | 7  | `OverTemperature` |
-| 71    | `DriveTempLow`      | 13 | `UnderTemperature` |
-| 72    | `MagTempHigh`       | 7  | `OverTemperature` |
-| 73    | `AmbientTempLow`    | 13 | `UnderTemperature` |
-| 74    | `MagTempLow`        | 13 | `UnderTemperature` |
-| 75    | `IpmTempHigh`       | 7  | `OverTemperature` |
-| 76    | `InductorTempHigh`  | 7  | `OverTemperature` |
-| 80    | `Ground`            | 0  | `GroundFault` |
-| 81    | `AcContactor`       | 2  | `AcDisconnect` |
-| 82    | `DcContactor`       | 3  | `DcDisconnect` |
+| Fault | Name               | Event | Inverter Model Event |
+|:------|:-------------------|:------|:---------------------|
+| 28    | `DcOverVoltage`    | 1     | `DcOverVoltage`      |
+| 37    | `DcVoltageHigh`    | 1     | `DcOverVoltage`      |
+| 48    | `AcFastUnderVoltA` | 11    | `AcUnderVoltage`     |
+| 49    | `AcFastUnderVoltB` | 11    | `AcUnderVoltage`     |
+| 50    | `AcFastUnderVoltC` | 11    | `AcUnderVoltage`     |
+| 51    | `AcSlowUnderVoltA` | 11    | `AcUnderVoltage`     |
+| 52    | `AcSlowUnderVoltB` | 11    | `AcUnderVoltage`     |
+| 53    | `AcSlowUnderVoltC` | 11    | `AcUnderVoltage`     |
+| 54    | `AcFastOverVoltA`  | 11    | `AcOverVoltage`      |
+| 55    | `AcFastOverVoltB`  | 11    | `AcOverVoltage`      |
+| 56    | `AcFastOverVoltC`  | 11    | `AcOverVoltage`      |
+| 57    | `AcSlowOverVoltA`  | 11    | `AcOverVoltage`      |
+| 58    | `AcSlowOverVoltB`  | 11    | `AcOverVoltage`      |
+| 59    | `AcSlowOverVoltC`  | 11    | `AcOverVoltage`      |
+| 60    | `AcUnderFreq`      | 9     | `UnderFrequency`     |
+| 61    | `AcOverFreq`       | 8     | `OverFrequency`      |
+| 64    | `HeatsinkTempA1`   | 7     | `OverTemperature`    |
+| 65    | `HeatsinkTempA2`   | 7     | `OverTemperature`    |
+| 66    | `HeatsinkTempB1`   | 7     | `OverTemperature`    |
+| 67    | `HeatsinkTempB2`   | 7     | `OverTemperature`    |
+| 68    | `HeatsinkTempC1`   | 7     | `OverTemperature`    |
+| 69    | `HeatsinkTempC2`   | 7     | `OverTemperature`    |
+| 70    | `BoardTempHigh`    | 7     | `OverTemperature`    |
+| 71    | `DriveTempLow`     | 13    | `UnderTemperature`   |
+| 72    | `MagTempHigh`      | 7     | `OverTemperature`    |
+| 73    | `AmbientTempLow`   | 13    | `UnderTemperature`   |
+| 74    | `MagTempLow`       | 13    | `UnderTemperature`   |
+| 75    | `IpmTempHigh`      | 7     | `OverTemperature`    |
+| 76    | `InductorTempHigh` | 7     | `OverTemperature`    |
+| 80    | `Ground`           | 0     | `GroundFault`        |
+| 81    | `AcContactor`      | 2     | `AcDisconnect`       |
+| 82    | `DcContactor`      | 3     | `DcDisconnect`       |
 
 [datum]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum
 [opstate]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#standard-device-operating-states
+

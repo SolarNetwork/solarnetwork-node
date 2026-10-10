@@ -244,7 +244,7 @@ Thus when the **Yeah, nah!** button is pressed, an alert is shown, like this:
 
 ![String List setting](docs/solarnode-settings-playpen-string-list.png)
 
-This is a `GroupSettingSpecifier` group setting of a dynamically-sized list of 
+This is a `GroupSettingSpecifier` group setting of a dynamically-sized list of
 `TextFieldSettingSpecifier` settings. In the SolarNode Setup app, the UI for the setting is rendered
 with _add_ and _remove_ buttons that allows the user to add and remove settings from the group.
 
@@ -266,7 +266,7 @@ BasicGroupSettingSpecifier listStringGroup = SettingUtils.dynamicListSettingSpec
 
 ![Person List setting](docs/solarnode-settings-playpen-person-list.png)
 
-This is a `GroupSettingSpecifier` group setting of a dynamically-sized list of 
+This is a `GroupSettingSpecifier` group setting of a dynamically-sized list of
 `GroupSettingSpecifier` settings of a variety of other settings. In the SolarNode Setup app, the UI for the setting is rendered
 with _add_ and _remove_ buttons that allows the user to add and remove settings from the group. In
 the playpen, this is used to render a dynamic list of "person forms". Each person has settings for
@@ -286,3 +286,4 @@ BasicGroupSettingSpecifier listComplexGroup = SettingUtils.dynamicListSettingSpe
 			}
 		});
 ```
+

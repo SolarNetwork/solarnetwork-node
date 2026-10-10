@@ -20,16 +20,16 @@ configuration for each device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Schedule           | A [cron schedule][cron] that determines when data is collected. |
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| Serial Port        | The service name of the [Serial Port][rxtx] component to use. |
-| Sample Maximum Age | A minimum time to cache captured data, in milliseconds. |
-| Source ID          | The SolarNetwork source ID to assign to captured datum. |
-| Altitude           | The altitude the sensor is at, in meters above sea level. [Placeholders][placeholders] are supported. |
-| CO2 Calibration Schedule | A [cron schedule][cron] that determines when the CO2 sensor is calibrated to _fresh air_ level. |
+| Setting                  | Description                                                                                           |
+|:-------------------------|:------------------------------------------------------------------------------------------------------|
+| Schedule                 | A [cron schedule][cron] that determines when data is collected.                                       |
+| Service Name             | A unique name to identify this data source with.                                                      |
+| Service Group            | A group name to associate this data source with.                                                      |
+| Serial Port              | The service name of the [Serial Port][rxtx] component to use.                                         |
+| Sample Maximum Age       | A minimum time to cache captured data, in milliseconds.                                               |
+| Source ID                | The SolarNetwork source ID to assign to captured datum.                                               |
+| Altitude                 | The altitude the sensor is at, in meters above sea level. [Placeholders][placeholders] are supported. |
+| CO2 Calibration Schedule | A [cron schedule][cron] that determines when the CO2 sensor is calibrated to _fresh air_ level.       |
 
 ## Overall device settings notes
 
@@ -71,3 +71,4 @@ referenced by the **Serial Port** setting must match the settings configured on 
 [cron]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 [placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
 [rxtx]: ../net.solarnetwork.node.io.serial.rxtx/
+

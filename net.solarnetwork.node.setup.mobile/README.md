@@ -24,7 +24,7 @@ the connection. The `service` parameter must be `/setup/network/mobile`. The `ac
 selects the operation:
 
 | `action`              | Description                                           |
-| :-------------------- | :---------------------------------------------------- |
+|:----------------------|:------------------------------------------------------|
 | `status` (or omitted) | Return the current mobile connection status.          |
 | `reset`               | Reset (disconnect + reconnect) the mobile connection. |
 | `restart`             | Restart the mobile networking service.                |
@@ -34,7 +34,7 @@ selects the operation:
 For the `status` action the `result` parameter is an object:
 
 | Property  | Type           | Description                                                         |
-| :-------- | :------------- | :------------------------------------------------------------------ |
+|:----------|:---------------|:--------------------------------------------------------------------|
 | `present` | `boolean`      | `true` if a mobile modem is available (and so a reset is possible). |
 | `active`  | `boolean`      | `true` if the mobile connection is currently active.                |
 | `info`    | `List<String>` | Optional detail lines (operator, access technology, signal, state). |
@@ -83,3 +83,4 @@ action:reset
 
 [wifi]: ../net.solarnetwork.node.setup.wifi/
 [sn-mobile-mm]: https://github.com/SolarNetwork/solarnode-os-packages/tree/develop/mobile-mm/debian
+

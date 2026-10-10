@@ -14,43 +14,43 @@ The plugin can be installed via the **Plugins** page on your SolarNode. It appea
 
 This datum generates a [datum stream][datum] with the following properties:
 
-| Property | Class | Units | Description |
-|:---------|:------|:------|:------------|
-| `ambientTemp`      | `i` | C | Ambient temperature |
-| `apparentPower`    | `i` | VA | Apparent power |
-| `current_a`        | `i` | A | AC current, phase A |
-| `current_b`        | `i` | A | AC current, phase B |
-| `current_c`        | `i` | A | AC current, phase C |
-| `dcPower`          | `i` | W | DC output power |
-| `dcPower1`         | `i` | W | DC module 1 output power |
-| `dcPower2`         | `i` | W | DC module 2 output power |
-| `dcPower3`         | `i` | W | DC module 3 output power |
-| `dcVoltage`        | `i` | V | DC voltage |
-| `dcVoltage1`       | `i` | V | DC module 1 voltage |
-| `dcVoltage2`       | `i` | V | DC module 2 voltage |
-| `dcVoltage3`       | `i` | V | DC module 3 voltage |
-| `efficiency`       | `i` | % | Efficiency rating (0-1) |
-| `events`           | `s` | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
-| `fault0`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (0-15) |
-| `fault1`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (16-31, offset -15) |
-| `fault2`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (32-47, offset -32) |
-| `frequency`        | `i` | Hz | AC frequency |
-| `opState`          | `s` | enum | [Device Operating State][opstate] code |
-| `permFault`        | `s` | bit set | Base-10 bit set of [Permanent fault codes](#permanent-fault-codes) |
-| `reactivePower`    | `i` | VAR | Reactive power |
-| `temp`             | `i` | C | Internal temperature |
-| `temp_heatSink`    | `i` | C | Heatsink temperature |
-| `temp_transformer` | `i` | C | Transformer temperature |
-| `vendorEvents`     | `s` | bit set | Base-16 bit set of all active [Fault codes](#fault-codes) |
-| `voltage_a`        | `i` | V | AC voltage, phase A-N |
-| `voltage_b`        | `i` | V | AC voltage, phase B-N |
-| `voltage_c`        | `i` | V | AC voltage, phase C-N |
-| `voltage_ab`       | `i` | V | AC voltage, phase A-B |
-| `voltage_bc`       | `i` | V | AC voltage, phase B-C |
-| `voltage_ca`       | `i` | V | AC voltage, phase C-A |
-| `warn`             | `s` | bit set | Base-10 bit set of [Warning codes](#warning-codes) |
-| `wattHours`        | `a` | Wh | Lifetime energy |
-| `watts`            | `i` | W | Active power total |
+| Property           | Class | Units   | Description                                                               |
+|:-------------------|:------|:--------|:--------------------------------------------------------------------------|
+| `ambientTemp`      | `i`   | C       | Ambient temperature                                                       |
+| `apparentPower`    | `i`   | VA      | Apparent power                                                            |
+| `current_a`        | `i`   | A       | AC current, phase A                                                       |
+| `current_b`        | `i`   | A       | AC current, phase B                                                       |
+| `current_c`        | `i`   | A       | AC current, phase C                                                       |
+| `dcPower`          | `i`   | W       | DC output power                                                           |
+| `dcPower1`         | `i`   | W       | DC module 1 output power                                                  |
+| `dcPower2`         | `i`   | W       | DC module 2 output power                                                  |
+| `dcPower3`         | `i`   | W       | DC module 3 output power                                                  |
+| `dcVoltage`        | `i`   | V       | DC voltage                                                                |
+| `dcVoltage1`       | `i`   | V       | DC module 1 voltage                                                       |
+| `dcVoltage2`       | `i`   | V       | DC module 2 voltage                                                       |
+| `dcVoltage3`       | `i`   | V       | DC module 3 voltage                                                       |
+| `efficiency`       | `i`   | %       | Efficiency rating (0-1)                                                   |
+| `events`           | `s`   | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
+| `fault0`           | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (0-15)                     |
+| `fault1`           | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (16-31, offset -15)        |
+| `fault2`           | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (32-47, offset -32)        |
+| `frequency`        | `i`   | Hz      | AC frequency                                                              |
+| `opState`          | `s`   | enum    | [Device Operating State][opstate] code                                    |
+| `permFault`        | `s`   | bit set | Base-10 bit set of [Permanent fault codes](#permanent-fault-codes)        |
+| `reactivePower`    | `i`   | VAR     | Reactive power                                                            |
+| `temp`             | `i`   | C       | Internal temperature                                                      |
+| `temp_heatSink`    | `i`   | C       | Heatsink temperature                                                      |
+| `temp_transformer` | `i`   | C       | Transformer temperature                                                   |
+| `vendorEvents`     | `s`   | bit set | Base-16 bit set of all active [Fault codes](#fault-codes)                 |
+| `voltage_a`        | `i`   | V       | AC voltage, phase A-N                                                     |
+| `voltage_b`        | `i`   | V       | AC voltage, phase B-N                                                     |
+| `voltage_c`        | `i`   | V       | AC voltage, phase C-N                                                     |
+| `voltage_ab`       | `i`   | V       | AC voltage, phase A-B                                                     |
+| `voltage_bc`       | `i`   | V       | AC voltage, phase B-C                                                     |
+| `voltage_ca`       | `i`   | V       | AC voltage, phase C-A                                                     |
+| `warn`             | `s`   | bit set | Base-10 bit set of [Warning codes](#warning-codes)                        |
+| `wattHours`        | `a`   | Wh      | Lifetime energy                                                           |
+| `watts`            | `i`   | W       | Active power total                                                        |
 
 Here is an example datum, expressed in simplified JSON form:
 
@@ -99,15 +99,15 @@ need to add one configuration for each device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Connection  | The service name of the Modbus port to use.                                      |
-| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.                  |
-| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
-| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
+|      Setting       |                           Description                           |
+|--------------------|-----------------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected.         |
+| Service Name       | A unique name to identify this data source with.                |
+| Service Group      | A group name to associate this data source with.                |
+| Modbus Connection  | The service name of the Modbus port to use.                     |
+| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255. |
+| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.  |
+| Source ID          | The SolarNetwork source ID to assign to captured datum.         |
 
 ## Overall device settings notes
 
@@ -133,7 +133,6 @@ Each device configuration contains the following overall settings:
 
 The `warn` property is an enumeration of the following possible values:
 
-
 | Index | Name       | Description                            |
 |:------|:-----------|:---------------------------------------|
 | 0     | `Warn0010` | External fan alarm                     |
@@ -152,7 +151,6 @@ The `warn` property is an enumeration of the following possible values:
 | 13    | `Warn0130` | Warn0130                               |
 | 14    | `Warn0140` | Warn0140                               |
 | 15    | `Warn0150` | Warn0150                               |
-
 
 # Permanent fault codes
 
@@ -236,22 +234,23 @@ The `vendorEvents` property is a bit set of the following possible values:
 
 This plugin will map specific fault codes into the SunSpec `events` property:
 
-| Fault | Name | Event | Inverter Model Event |
-|:------|:-----|:------|:---------------------|
-| 5     | `PVVoltageOver`             | 1  | `DcOverVoltage` |
-| 7     | `GridVoltageOutsideLimit07` | 10 | `AcOverVoltage` |
-| 8     | `GridVoltageOutsideLimit08` | 10 | `AcOverVoltage` |
-| 25    | `GridVoltageOutsideLimit09` | 10 | `AcOverVoltage` |
-| 10    | `GridFrequencyOutsideLimit` | 8  | `OverFrequency` |
-| 11    | `GridVoltageOutsideLimit11` | 9  | `UnderFrequency` |
-| 13    | `Protect0020`               | 2  | `AcDisconnect` |
-| 14    | `TempOver`                  | 7  | `OverTemperature` |
-| 30    | `Protect0110`               | 1  | `DcOverVoltage` |
-| 33    | `Protect0210`               | 15 | `HwTestFailure` |
-| 37    | `PV2VoltageOver`            | 1  | `DcOverVoltage` |
-| 42    | `PV1VoltageOver`            | 1  | `DcOverVoltage` |
-| 44    | `PV3VoltageOver`            | 1  | `DcOverVoltage` |
-| 47    | `EmergencyStp`              | 6  | `ManualShutdown` |
+| Fault | Name                        | Event | Inverter Model Event |
+|:------|:----------------------------|:------|:---------------------|
+| 5     | `PVVoltageOver`             | 1     | `DcOverVoltage`      |
+| 7     | `GridVoltageOutsideLimit07` | 10    | `AcOverVoltage`      |
+| 8     | `GridVoltageOutsideLimit08` | 10    | `AcOverVoltage`      |
+| 25    | `GridVoltageOutsideLimit09` | 10    | `AcOverVoltage`      |
+| 10    | `GridFrequencyOutsideLimit` | 8     | `OverFrequency`      |
+| 11    | `GridVoltageOutsideLimit11` | 9     | `UnderFrequency`     |
+| 13    | `Protect0020`               | 2     | `AcDisconnect`       |
+| 14    | `TempOver`                  | 7     | `OverTemperature`    |
+| 30    | `Protect0110`               | 1     | `DcOverVoltage`      |
+| 33    | `Protect0210`               | 15    | `HwTestFailure`      |
+| 37    | `PV2VoltageOver`            | 1     | `DcOverVoltage`      |
+| 42    | `PV1VoltageOver`            | 1     | `DcOverVoltage`      |
+| 44    | `PV3VoltageOver`            | 1     | `DcOverVoltage`      |
+| 47    | `EmergencyStp`              | 6     | `ManualShutdown`     |
 
 [datum]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum
 [opstate]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#standard-device-operating-states
+

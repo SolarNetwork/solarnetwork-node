@@ -14,21 +14,20 @@ port), and `COM1` (Windows serial port).
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description |
-|:-------------------|:------------|
-| Service Name       | A unique name to identify this network. Other plugins will refer to this name. |
-| Serial port        | The operating system-specific serial device name to use, for example `/dev/ttyUSB0` `COM1`. |
-| Baud               | The maximum communication speed to use, in bits-per-second. |
-| Data bits          | The number of data bits per message. |
-| Stop bits          | The number of stop bits per message. |
-| Parity             | The serial port parity setting to use. |
-| Receive timeout    | The maximum amount of time to wait to receive data, in milliseconds. |
-| Flow control in    | The serial port input flow control setting to use. May be one of `none`, `xon/xoff in`, or `rts/cts in`. |
-| Flow control out   | The serial port output flow control setting to use. May be one of `none`, `xon/xoff out`, or `rts/cts out`. |
-| Keep open          | The number of seconds to keep the connection open for reuse by multiple Modbus transactions. Set to `0` to open and close the connection for each transaction. |
-| Max Ports          | The maximum number of serial ports that can be opened at once, or `0` for no limit. |
-| Wire Logging       | Enable to support wire-level Modbus message logging. See [below](#logging) for more information. |
-
+| Setting          | Description                                                                                                                                                    |
+|:-----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name     | A unique name to identify this network. Other plugins will refer to this name.                                                                                 |
+| Serial port      | The operating system-specific serial device name to use, for example `/dev/ttyUSB0` `COM1`.                                                                    |
+| Baud             | The maximum communication speed to use, in bits-per-second.                                                                                                    |
+| Data bits        | The number of data bits per message.                                                                                                                           |
+| Stop bits        | The number of stop bits per message.                                                                                                                           |
+| Parity           | The serial port parity setting to use.                                                                                                                         |
+| Receive timeout  | The maximum amount of time to wait to receive data, in milliseconds.                                                                                           |
+| Flow control in  | The serial port input flow control setting to use. May be one of `none`, `xon/xoff in`, or `rts/cts in`.                                                       |
+| Flow control out | The serial port output flow control setting to use. May be one of `none`, `xon/xoff out`, or `rts/cts out`.                                                    |
+| Keep open        | The number of seconds to keep the connection open for reuse by multiple Modbus transactions. Set to `0` to open and close the connection for each transaction. |
+| Max Ports        | The maximum number of serial ports that can be opened at once, or `0` for no limit.                                                                            |
+| Wire Logging     | Enable to support wire-level Modbus message logging. See [below](#logging) for more information.                                                               |
 
 ## Receive timeout
 

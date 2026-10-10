@@ -21,15 +21,15 @@ configuration for each GPSd server you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description |
-|--------------------|-------------|
-| Service Name       | A unique name to identify this data source with. |
-| Service Group      | A group name to associate this data source with. |
-| Host               | The host name the `gpsd` server to connect to. |
-| Port               | The port number of the `gpsd` server to connect to. |
-| Reconnect Delay    | A delay in seconds to wait before trying to reconnect to the `gpsd`  server after losing the connection or failing to establish the connection. |
-| Auto Watch         | If enabled, then issue a `?WATCH` command to the `gpsd` server as soon as the connection is established. This enables receiving of the GPS report messages from `gpsd`. |
-| Rollover Compensation | If enabled, compensate for GPS report timestamps far in the past, under the assumption the GPS hardware does not support GPS date rollovers. |
+|        Setting        |                                                                               Description                                                                               |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name          | A unique name to identify this data source with.                                                                                                                        |
+| Service Group         | A group name to associate this data source with.                                                                                                                        |
+| Host                  | The host name the `gpsd` server to connect to.                                                                                                                          |
+| Port                  | The port number of the `gpsd` server to connect to.                                                                                                                     |
+| Reconnect Delay       | A delay in seconds to wait before trying to reconnect to the `gpsd`  server after losing the connection or failing to establish the connection.                         |
+| Auto Watch            | If enabled, then issue a `?WATCH` command to the `gpsd` server as soon as the connection is established. This enables receiving of the GPS report messages from `gpsd`. |
+| Rollover Compensation | If enabled, compensate for GPS report timestamps far in the past, under the assumption the GPS hardware does not support GPS date rollovers.                            |
 
 ## Overall device settings notes
 
@@ -45,3 +45,4 @@ Each device configuration contains the following overall settings:
 </dl>
 
 [gpsd-data-source]: ../net.solarnetwork.node.datum.gps.gpsd
+

@@ -24,3 +24,4 @@ the host operating system to a wireless M-Bus transceiver. The configuration is 
 Serial M-Bus connection, but for the Wireless M-Bus protocol.
 
 <img alt="Wireless serial settings" src="docs/jmbus-wireless-serial-settings.png" width="956">
+

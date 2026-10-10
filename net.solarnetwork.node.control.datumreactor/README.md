@@ -19,24 +19,24 @@ non-`null` result, an instruction (defaulting to [`SetControlParameter`][SetCont
 will be generated for the configured control, with the corresponding value being the expression
 result.
 
-> :warning: **Note** that this component monitors datum streams _after_ any 
-  [Datum Queue][datum-queue] datum filter has been applied.
+> :warning: **Note** that this component monitors datum streams _after_ any
+> [Datum Queue][datum-queue] datum filter has been applied.
 
 # Configuration
 
 Each service configuration contains the following settings:
 
-| Setting             | Description  |
-|:--------------------|:-------------|
-| Service Name        | A unique name to identify this data source with. |
-| Service Group       | A group name to associate this data source with. |
+| Setting             | Description                                                                                                                                                                |
+|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name        | A unique name to identify this data source with.                                                                                                                           |
+| Service Group       | A group name to associate this data source with.                                                                                                                           |
 | Source ID           | A regular expression to match the source ID(s) of the datum stream(s) to monitor. Capture groups are supported and can be used as numbered placeholders in **Control ID**. |
-| Instruction Topic   | The instruction topic to generate. |
+| Instruction Topic   | The instruction topic to generate.                                                                                                                                         |
 | Control ID          | The control ID to manage. Placeholders are supported, and **Source ID** capture groups will be available as numbered placeholders, e.g. `{1}` for the first capture group. |
-| Minimum Value       | An optional minimum value to enforce, applied on number expression evaluation results. |
-| Maximum Value       | An optional maximum value to enforce, applied on number expression evaluation results. |
-| Expression          | The [expression][expr] to evaluate. See [below](#expressions) for more info. |
-| Expression Language | The expression language to write **Expression** in. |
+| Minimum Value       | An optional minimum value to enforce, applied on number expression evaluation results.                                                                                     |
+| Maximum Value       | An optional maximum value to enforce, applied on number expression evaluation results.                                                                                     |
+| Expression          | The [expression][expr] to evaluate. See [below](#expressions) for more info.                                                                                               |
+| Expression Language | The expression language to write **Expression** in.                                                                                                                        |
 
 # Expressions
 
@@ -44,8 +44,8 @@ The expression input is a `Datum`. See the [SolarNode Expression][expr] guide fo
 addition to the variables and functions documented there, the following additional variables will
 be available:
 
-| Variable | Type | Description |
-|:----------|:-----|:------------|
+| Variable   | Type   | Description                                         |
+|:-----------|:-------|:----------------------------------------------------|
 | `minValue` | Number | The **Minimum Value** configured on this component. |
 | `maxValue` | Number | The **Maximum Value** configured on this component. |
 
@@ -57,3 +57,4 @@ String instances.
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
 [SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
 [placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
+

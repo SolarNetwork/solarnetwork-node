@@ -24,16 +24,16 @@ configuration for each type and location  you want to collect data from.
 
 Each configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Weather Location   | The SolarNetwork weather location to associate the collected data with.          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| API Key            | The OpenWeatherMap API key to authenticate with.                                 |
-| Time zone          | A time zone to use for location-specific dates and times.                        |
-| OWM location       | The OpenWeatherMap ID of the location to collect data from.                      |
-| Collection Mode    | The type of data to collect: observation or forecast.                            |
+|     Setting      |                               Description                               |
+|------------------|-------------------------------------------------------------------------|
+| Schedule         | A cron schedule that determines when data is collected.                 |
+| Weather Location | The SolarNetwork weather location to associate the collected data with. |
+| Service Name     | A unique name to identify this data source with.                        |
+| Service Group    | A group name to associate this data source with.                        |
+| API Key          | The OpenWeatherMap API key to authenticate with.                        |
+| Time zone        | A time zone to use for location-specific dates and times.               |
+| OWM location     | The OpenWeatherMap ID of the location to collect data from.             |
+| Collection Mode  | The type of data to collect: observation or forecast.                   |
 
 ## Overall settings notes
 
@@ -51,3 +51,4 @@ Each configuration contains the following overall settings:
 	configuring two separate components and setting one to <code>Observation</code> and the other
 	to <code>Forecast</code>.</dd>
 </dl>
+

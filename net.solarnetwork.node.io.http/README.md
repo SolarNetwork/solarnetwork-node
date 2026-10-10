@@ -14,5 +14,6 @@ The HTTP Request Customizer service API provides a way to augment and change HTT
 by other plugins. For example the [Basic Authorization](README-Request-Customizer-Auth-Basic.md)
 service can add credentials to HTTP requests, using the HTTP Basic scheme.
 
- * [Basic Authorization](README-Request-Customizer-Auth-Basic.md) - adds HTTP Basic credentials
- * [Customizer Chain](README-Request-Customizer-Chain.md) - execute a list of customizers
+* [Basic Authorization](README-Request-Customizer-Auth-Basic.md) - adds HTTP Basic credentials
+* [Customizer Chain](README-Request-Customizer-Chain.md) - execute a list of customizers
+

@@ -33,3 +33,4 @@ See the [`LoggingSetLevel`][LoggingSetLevel] documentation for more information.
 
 [instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
 [LoggingSetLevel]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#loggingsetlevel
+

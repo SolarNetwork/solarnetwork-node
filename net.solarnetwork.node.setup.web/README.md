@@ -18,7 +18,6 @@ assign a unique ID and generate a identity certificate for the node. It will
 also generate a password that will be required to access this app again in the
 future.
 
-
 ## Settings
 
 SolarNode plugins can expose configurable settings that appear on the
@@ -39,6 +38,6 @@ on the **Controls** page.
 
 <img alt="SolarNode Controls" src="docs/solarnode-controls@2x.png" width="805">
 
-
 [handbook]: https://solarnetwork.github.io/solarnode-handbook/
 [solarnetwork-my-nodes]: https://data.solarnetwork.net/solaruser/u/sec/my-nodes
+

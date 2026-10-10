@@ -20,15 +20,15 @@ configuration for each device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Connection  | The service name of the Modbus port to use.                                      |
-| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.                  |
-| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
-| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
+|      Setting       |                           Description                           |
+|--------------------|-----------------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected.         |
+| Service Name       | A unique name to identify this data source with.                |
+| Service Group      | A group name to associate this data source with.                |
+| Modbus Connection  | The service name of the Modbus port to use.                     |
+| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255. |
+| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.  |
+| Source ID          | The SolarNetwork source ID to assign to captured datum.         |
 
 ## Overall device settings notes
 
@@ -49,3 +49,4 @@ Each device configuration contains the following overall settings:
 	dynamic configurations where other plugins request the current values from
 	the device frequently.</dd>
 </dl>
+

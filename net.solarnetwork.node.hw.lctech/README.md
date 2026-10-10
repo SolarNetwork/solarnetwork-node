@@ -11,7 +11,8 @@ typically:
 
 | Setting   | Value |
 |:----------|:------|
-| Baud      | 9600 |
-| Data bits | 8 |
-| Stop bits | 1 |
-| Parity    | None |
+| Baud      | 9600  |
+| Data bits | 8     |
+| Stop bits | 1     |
+| Parity    | None  |
+

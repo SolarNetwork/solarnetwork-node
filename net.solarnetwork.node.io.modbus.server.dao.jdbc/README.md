@@ -10,7 +10,7 @@ The plugin is meant for developers/integrators and can be manually installed and
 # Use
 
 This plugin requires a `javax.sql.DataSource` with an OSGi service filter matching `(db=modbus-server)`.
-That can be configured via a 
+That can be configured via a
 `${SOLARNODE_HOME}/conf/services/net.solarnetwork.jdbc.pool.hikari-solarnode-modbus-server.cfg` file, with
 contents similar to this:
 
@@ -28,3 +28,4 @@ dataSource.password =
 ```
 
 [modbus-server]: ../net.solarnetwork.node.io.modbus.server
+

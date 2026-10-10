@@ -24,14 +24,14 @@ display `true` (switch closed) or `false` (switch open).
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Control ID         | The ID to use for the SolarNode control.                                         |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Connection  | The service name of the Modbus port to use.                                      |
-| Modbus Unit ID     | The ID of the Modbus device to control, from 1 - 255.                            |
-| Address            | The zero-based Modbus address for coil or holding register to toggle.            |
-| Function           | The Modbus function to use when writing the control state.                       |
+|      Setting      |                              Description                              |
+|-------------------|-----------------------------------------------------------------------|
+| Control ID        | The ID to use for the SolarNode control.                              |
+| Service Group     | A group name to associate this data source with.                      |
+| Modbus Connection | The service name of the Modbus port to use.                           |
+| Modbus Unit ID    | The ID of the Modbus device to control, from 1 - 255.                 |
+| Address           | The zero-based Modbus address for coil or holding register to toggle. |
+| Function          | The Modbus function to use when writing the control state.            |
 
 ## Overall device settings notes
 

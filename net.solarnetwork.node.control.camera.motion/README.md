@@ -15,22 +15,22 @@ a **Camera Motion Detection Control** component will become available.
 
 Each service configuration contains the following settings:
 
-| Setting               | Description  |
-|:----------------------|:-------------|
-| Control ID            | The ID to use for the SolarNode control. |
-| Motion URL            | The base URL to the [motion web control API][motion-webcontrol] to integrate with. |
-| Connection Timeout    | A connection timeout to use for the motion web control API, in milliseconds. |
-| Media Path            | The path to the directory where motion is configured to save its captured images. |
+| Setting               | Description                                                                                                                                           |
+|:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Control ID            | The ID to use for the SolarNode control.                                                                                                              |
+| Motion URL            | The base URL to the [motion web control API][motion-webcontrol] to integrate with.                                                                    |
+| Connection Timeout    | A connection timeout to use for the motion web control API, in milliseconds.                                                                          |
+| Media Path            | The path to the directory where motion is configured to save its captured images.                                                                     |
 | Media Filter          | A regular expression to filter non-snapshot files in <b>Media Path</b>, so that only files matching the filter are considered as non-snapshot images. |
-| Snapshot Media Filter | A regular expression to filter snapshot files in <b>Media Path</b>, so that only files matching the filter are considered as snapshot images. |
-| Auto Snapshots        | A configurable list of camera snapshot schedules, to take periodic snapshots from cameras. |
+| Snapshot Media Filter | A regular expression to filter snapshot files in <b>Media Path</b>, so that only files matching the filter are considered as snapshot images.         |
+| Auto Snapshots        | A configurable list of camera snapshot schedules, to take periodic snapshots from cameras.                                                            |
 
 Each **Auto Snapshot** configuration contains the following settings:
 
-| Setting               | Description  |
-|:----------------------|:-------------|
-| Camera ID             | The motion camera ID to request the snapshot for. Camera IDs start at `1` for the first camera. |
-| Schedule              | Either the frequency in seconds to capture snapshots at, or a [cron expression][cron-exp]. |
+| Setting   | Description                                                                                     |
+|:----------|:------------------------------------------------------------------------------------------------|
+| Camera ID | The motion camera ID to request the snapshot for. Camera IDs start at `1` for the first camera. |
+| Schedule  | Either the frequency in seconds to capture snapshots at, or a [cron expression][cron-exp].      |
 
 ## Configuration notes
 
@@ -53,14 +53,15 @@ optional `cameraId` parameter can be included to request the snapshot from a spe
 For example, to request a snapshot from control `/camera/1` camera ID `2` the following instruction
 parameters would be used:
 
-| Parameter | Value |
-| :-- | :-- |
-| `parameters[0].name` | `/camera/1` |
-| `parameters[0].value` | `snapshot` |
-| `parameters[1].name` | `cameraId` |
-| `parameters[1].value` | `2` |
+| Parameter             | Value       |
+|:----------------------|:------------|
+| `parameters[0].name`  | `/camera/1` |
+| `parameters[0].value` | `snapshot`  |
+| `parameters[1].name`  | `cameraId`  |
+| `parameters[1].value` | `2`         |
 
 [cron-exp]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 [motion]: https://motion-project.github.io/
 [motion-webcontrol]: https://motion-project.github.io/motion_config.html#OptDetail_Webcontrol
 [signal-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#signal
+

@@ -15,17 +15,16 @@ instructions. This can be used, for example, to turn devices on/off.
 
 Each Operational State Manager component includes the following settings:
 
-| Setting          | Description |
-|:-----------------|:------------|
-| Service Name     | A name to associate this control configuration with. |
-| Service Group    | A group name to associate this control configuration with. |
-| Operational Mode | The [operational mode][op-modes] to listen for. |
-| Control IDs      | The control IDs to issue [`SetOperatingState`][set-op-state] instructions to when the configured mode changes. |
-| Active State     | The [operating state][op-states] to apply when the mode is **enabled**. |
-| Inactive State   | The [operating state][op-states] to apply when the mode is **disabled**. |
+| Setting          | Description                                                                                                                                                                                                                                                                                                                                   |
+|:-----------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Service Name     | A name to associate this control configuration with.                                                                                                                                                                                                                                                                                          |
+| Service Group    | A group name to associate this control configuration with.                                                                                                                                                                                                                                                                                    |
+| Operational Mode | The [operational mode][op-modes] to listen for.                                                                                                                                                                                                                                                                                               |
+| Control IDs      | The control IDs to issue [`SetOperatingState`][set-op-state] instructions to when the configured mode changes.                                                                                                                                                                                                                                |
+| Active State     | The [operating state][op-states] to apply when the mode is **enabled**.                                                                                                                                                                                                                                                                       |
+| Inactive State   | The [operating state][op-states] to apply when the mode is **disabled**.                                                                                                                                                                                                                                                                      |
 | Retry Count      | This count determines how many times the service will re-try applying state changes if an error occurs. If the retry count is `0` then no retries will be attempted. If the retry count is anything less than `0`, then the code will attempt an <b>unlimited</b> number of times. Otherwise up to this number of attempts will be performed. |
-| Max Wait         | The maximum number of seconds to wait for all controls' state change to be applied. |
-
+| Max Wait         | The maximum number of seconds to wait for all controls' state change to be applied.                                                                                                                                                                                                                                                           |
 
 # Operational Mode Switch
 
@@ -41,16 +40,15 @@ control API.
 
 Each Operational Mode Switch component includes the following settings:
 
-| Setting          | Description |
-|:-----------------|:------------|
-| Service Name     | A name to associate this control configuration with. |
-| Service Group    | A group name to associate this control configuration with. |
+| Setting          | Description                                                             |
+|:-----------------|:------------------------------------------------------------------------|
+| Service Name     | A name to associate this control configuration with.                    |
+| Service Group    | A group name to associate this control configuration with.              |
 | Operational Mode | The [operational mode][op-modes] to manage as a boolean switch control. |
-| Control ID       | The control ID to expose. |
-
-
+| Control ID       | The control ID to expose.                                               |
 
 [op-modes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes
 [op-states]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#standard-device-operating-states
 [set-control-param]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
 [set-op-state]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setoperatingstate
+

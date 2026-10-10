@@ -1,7 +1,7 @@
 # eGauge Datum Source
 
 This project provides SolarNode plugin that can collect data from eGauge devices that support the
-eGauge XML web service API. 
+eGauge XML web service API.
 
 ![settings](docs/solarnode-egauge-settings.png)
 
@@ -20,15 +20,15 @@ eGauge device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Sample Maximum Age | A minimum time to cache captured device data, in milliseconds.                   |
-| Base URL           | The base URL for the eGauge web service, for example `http://10.150.2.161`.      |
+|      Setting       |                                            Description                                             |
+|--------------------|----------------------------------------------------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected.                                            |
+| Service Name       | A unique name to identify this data source with.                                                   |
+| Service Group      | A group name to associate this data source with.                                                   |
+| Sample Maximum Age | A minimum time to cache captured device data, in milliseconds.                                     |
+| Base URL           | The base URL for the eGauge web service, for example `http://10.150.2.161`.                        |
 | Query Path         | The path for the eGauge web service, relative to **Base URL**, for example `/cgi-bin/egauge?inst`. |
-| Source ID          | The SolarNetwork unique source ID to assign to datum collected from this device. |
+| Source ID          | The SolarNetwork unique source ID to assign to datum collected from this device.                   |
 
 ## Overall device settings notes
 
@@ -53,13 +53,13 @@ buttons to add/remove property configurations.
 
 Each property configuration contains the following settings:
 
-| Setting             | Description |
-|---------------------|-------------|
-| Property            | The name of the datum property to save the eGauge value as. |
-| Property Type       | The type of datum property to use. |
+|       Setting       |                                      Description                                      |
+|---------------------|---------------------------------------------------------------------------------------|
+| Property            | The name of the datum property to save the eGauge value as.                           |
+| Property Type       | The type of datum property to use.                                                    |
 | Register            | The name of the eGauge register to read from, unless an **Expression** is configured. |
-| Expression          | An [expression](#expressions) to evaluate against all available registers. |
-| Expression Language | The expression language to write **Expression** in. |
+| Expression          | An [expression](#expressions) to evaluate against all available registers.            |
+| Expression Language | The expression language to write **Expression** in.                                   |
 
 ## Datum property settings notes
 
@@ -103,36 +103,34 @@ Given XML like the following:
 
 Then here are some example expressions:
 
-| Expression | Result |
-|:-----------|:-------|
-| `registers['Grid']?.instant` | `-59450` |
+| Expression                                                       | Result     |
+|:-----------------------------------------------------------------|:-----------|
+| `registers['Grid']?.instant`                                     | `-59450`   |
 | `(registers['Grid+']?.value - registers['Grid']?.value) / -3600` | `74548565` |
-
 
 ## Root object
 
 The root object is a [ExpressionRoot][ExpressionRoot] object, which has the following properties:
 
-| Property | Type | Description |
-|:---------|:-----|:------------|
-| `data` | `List<DataRegister>` | A list of [`DataRegister`](#dataregister-object) objects, one for each register captured from the eGauge device. |
-| `registers` | `Map<String,DataRegister>` | A mapping of register names to associated [`DataRegister`](#dataregister-object) objects. |
+| Property    | Type                       | Description                                                                                                      |
+|:------------|:---------------------------|:-----------------------------------------------------------------------------------------------------------------|
+| `data`      | `List<DataRegister>`       | A list of [`DataRegister`](#dataregister-object) objects, one for each register captured from the eGauge device. |
+| `registers` | `Map<String,DataRegister>` | A mapping of register names to associated [`DataRegister`](#dataregister-object) objects.                        |
 
 ## `DataRegister` object
 
 A [DataRegister][DataRegister] object represents the data captured from a single eGauge register,
 and has the following properties:
 
-| Property | Type | Description |
-|:---------|:-----|:------------|
-| `name` | `String` | The register name, for example `Grid`. |
-| `type` | `String` | The register type, for example `P`. |
-| `runtimeType` | `String` | The `@rt` attribute, e.g. `total`. |
-| `value` | `Number` | The `<v>` register value. |
-| `instant` | `Number` | The `<i>` register value. |
-
-
+| Property      | Type     | Description                            |
+|:--------------|:---------|:---------------------------------------|
+| `name`        | `String` | The register name, for example `Grid`. |
+| `type`        | `String` | The register type, for example `P`.    |
+| `runtimeType` | `String` | The `@rt` attribute, e.g. `total`.     |
+| `value`       | `Number` | The `<v>` register value.              |
+| `instant`     | `Number` | The `<i>` register value.              |
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [ExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.egauge.ws/src/net/solarnetwork/node/datum/egauge/ws/client/ExpressionRoot.java
 [DataRegister]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.egauge.ws/src/net/solarnetwork/node/datum/egauge/ws/client/DataRegister.java
+

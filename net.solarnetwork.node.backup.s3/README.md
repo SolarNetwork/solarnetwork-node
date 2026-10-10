@@ -9,7 +9,7 @@ This project provides a cloud-based backup service to SolarNode.
 The service supports the following settings:
 
 | Setting       | Key               | Default            | Description                               |
-|:--------------|:------------------|:-------------------|-------------------------------------------|
+|:--------------|:------------------|:-------------------|:------------------------------------------|
 | AWS Token     | `accessToken`     |                    | AWS access token for authentication.      |
 | AWS Secret    | `accessSecret`    |                    | AWS access token secret.                  |
 | AWS Region    | `regionName`      | us-west-2          | AWS service region.                       |
@@ -19,7 +19,7 @@ The service supports the following settings:
 
 All values are required. The `S3 Path` value can be empty. The **Key** values
 are Configuration Admin keys for the `net.solarnetwork.node.backup.s3.S3BackupService`
-PID. That means you can configure these in a 
+PID. That means you can configure these in a
 `conf/services/net.solarnetwork.node.backup.s3.S3BackupService.cfg` file on the
 node if you don't want to manage them via the Setup GUI. For example:
 
@@ -41,15 +41,15 @@ backup (for example a listing of the resources included in the backup) is then s
 named with the node ID and backup timestamp with a `backup-meta/` prefix added. The object names use
 this pattern:
 
-| Object Type | Path Template |
-|:------------|:--------------|
+| Object Type | Path Template                                  |
+|:------------|:-----------------------------------------------|
 | Metadata    | `backup-meta/node-{nodeId}-backup-{timestamp}` |
-| Resource    | `backup-data/{sha256Hex}` |
+| Resource    | `backup-data/{sha256Hex}`                      |
 
-| Placeholder | Description |
-|:------------|:------------|
-| `{nodeId}`    | The ID of the node that created the backup. |
-| `{timestamp}` | The backup date, using the `yyyyMMdd'T'HHmmss` pattern. |
+| Placeholder   | Description                                                   |
+|:--------------|:--------------------------------------------------------------|
+| `{nodeId}`    | The ID of the node that created the backup.                   |
+| `{timestamp}` | The backup date, using the `yyyyMMdd'T'HHmmss` pattern.       |
 | `{sha256Hex}` | The SHA256 digest of the associated resource, encoded in hex. |
 
 Here's a an example listing of the objects stored in S3 after a couple of backups have finished:
@@ -104,13 +104,13 @@ and an `objectKey` that points to the S3 object that contains the data for that 
 
 The metadata JSON object has the following properties:
 
-| Property           |  Type | Description |
-|:-------------------|:------|:------------|
-| `complete`         | boolean | `true` if the full backup was completed successfully. |
-| `date`             | number | The date the backup was completed. |
-| `key`              | string | The unique name of the backup, which is also used in the metadata object path. |
-| `nodeId`           | number | The ID of the node that created the backup. |
-| `resourceMetadata` | array  | List of resource metadata objects. |
+| Property           | Type    | Description                                                                    |
+|:-------------------|:--------|:-------------------------------------------------------------------------------|
+| `complete`         | boolean | `true` if the full backup was completed successfully.                          |
+| `date`             | number  | The date the backup was completed.                                             |
+| `key`              | string  | The unique name of the backup, which is also used in the metadata object path. |
+| `nodeId`           | number  | The ID of the node that created the backup.                                    |
+| `resourceMetadata` | array   | List of resource metadata objects.                                             |
 
 ## Resource metadata object
 
@@ -124,11 +124,12 @@ of the Backup Resource Provider that provided the resource, which is uniquely de
 
 Each JSON object has the following properties:
 
-| Property           |  Type | Description |
-|:-------------------|:------|:------------|
+| Property           | Type   | Description                                                                                                            |
+|:-------------------|:-------|:-----------------------------------------------------------------------------------------------------------------------|
 | `providerKey`      | string | The unique ID of the [Backup Resource Provider][BackupResourceProvider] services that contributed the backup resource. |
-| `objectKey`        | string | The absolute S3 object path that contains the backup resource data. |
-| `backupPath`       | string | A SolarNode resource-specific path. These take the form of `{providerKey}/{path}`. |
-| `modificationDate` | number | A millisecond epoch modification date associated with the resource. If less than `1` then the date is _unknown_. |
+| `objectKey`        | string | The absolute S3 object path that contains the backup resource data.                                                    |
+| `backupPath`       | string | A SolarNode resource-specific path. These take the form of `{providerKey}/{path}`.                                     |
+| `modificationDate` | number | A millisecond epoch modification date associated with the resource. If less than `1` then the date is _unknown_.       |
 
 [BackupResourceProvider]: ../net.solarnetwork.node/src/net/solarnetwork/node/backup/BackupResourceProvider.java
+

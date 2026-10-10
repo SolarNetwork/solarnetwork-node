@@ -19,13 +19,13 @@ your SolarNode. Click on the **Manage** button to configure sources.
 
 Each configuration contains the following overall settings:
 
-| Setting            | Description                                                       |
+|      Setting       |                            Description                            |
 |--------------------|-------------------------------------------------------------------|
 | Schedule           | A cron schedule that determines when data is collected.           |
 | Service Name       | A unique name to identify this data source with.                  |
 | Service Group      | A group name to associate this data source with.                  |
 | Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.    |
-| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
+| Source ID          | The SolarNetwork source ID to assign to captured datum.           |
 | Statistics         | A list of statistic types to collect.                             |
 | Filesystems        | A list of filesystem paths to collect statistics from.            |
 | Network Devices    | A list of network device names to collect statistics from.        |
@@ -51,7 +51,7 @@ Each configuration contains the following overall settings:
 This plugin will publish some OS information as node metadata, under the `os` property
 metadata key. The metadata is:
 
-| Key          | Description          |
+|     Key      |     Description      |
 |--------------|----------------------|
 | `os.arch`    | The OS architecture. |
 | `os.name`    | The OS name.         |
@@ -70,7 +70,6 @@ For example:
 	}
 }
 ```
-
 
 # Example datum
 
@@ -117,11 +116,11 @@ Extra columns are allowed; they will simply be ignored.
 Average CPU utilization information, inspired by `sysstat`. Any number of rows of data may
 be returned, but only the last row of data may be used.
 
-| Column | Property | Description |
-|--------|----------|-------------|
-| user | `cpu_user` | Percentage of CPU time in user programs, from 0-100. |
-| system | `cpu_system` | Percentage of CPU time in the kernel, from 0-100. |
-| idle | `cpu_idle` | Percentage of idle CPU time, from 0-100. |
+| Column |   Property   |                     Description                      |
+|--------|--------------|------------------------------------------------------|
+| user   | `cpu_user`   | Percentage of CPU time in user programs, from 0-100. |
+| system | `cpu_system` | Percentage of CPU time in the kernel, from 0-100.    |
+| idle   | `cpu_idle`   | Percentage of idle CPU time, from 0-100.             |
 
 An example output looks like:
 
@@ -136,12 +135,12 @@ Filesystem utilization information. Each row represents a single mount point. Ea
 property has the mount point appended to the end. For example the root mount point `/`
 would have a percentage used property named `fs_used_percent_/`.
 
-| Column | Property | Description |
-|--------|----------|-------------|
-| mount | | Used in other property names. |
-| size-kb | `fs_size_{mount}` | Size of filesystem, in kilobytes. Property stored as bytes. |
-| used-kb | `fs_used_{mount}` | Allocated use of filesystem, in kilobytes. Property stored as bytes. |
-| used-percent | `fs_used_percent_{mount}` | Percentage of filesystem used, from 0-100. |
+|    Column    |         Property          |                             Description                              |
+|--------------|---------------------------|----------------------------------------------------------------------|
+| mount        |                           | Used in other property names.                                        |
+| size-kb      | `fs_size_{mount}`         | Size of filesystem, in kilobytes. Property stored as bytes.          |
+| used-kb      | `fs_used_{mount}`         | Allocated use of filesystem, in kilobytes. Property stored as bytes. |
+| used-percent | `fs_used_percent_{mount}` | Percentage of filesystem used, from 0-100.                           |
 
 An example output looks like:
 
@@ -157,11 +156,11 @@ mount,size-kb,used-kb,used-percent
 
 RAM utilization information.
 
-| Column | Property | Description |
-|--------|----------|-------------|
-| total-kb | `ram_total` | Amount of RAM installed in the system, in kilobytes. Property stored as bytes. |
-| avail-kb | `ram_avail` | Amount of unused RAM avaialble, in kilobytes. Property stored as bytes. |
-| | `ram_used_percent` | Percentage of RAM used, from 0-100. Derived from `ram_total` and `ram_avail`. |
+|  Column  |      Property      |                                  Description                                   |
+|----------|--------------------|--------------------------------------------------------------------------------|
+| total-kb | `ram_total`        | Amount of RAM installed in the system, in kilobytes. Property stored as bytes. |
+| avail-kb | `ram_avail`        | Amount of unused RAM avaialble, in kilobytes. Property stored as bytes.        |
+|          | `ram_used_percent` | Percentage of RAM used, from 0-100. Derived from `ram_total` and `ram_avail`.  |
 
 An example output looks like:
 
@@ -176,13 +175,13 @@ Network use information. Each row represents a single network device. Each
 property has the device name appended to the end. For example the WiFi device
 `wlan0` would have a bytes out property named `net_bytes_out_wlan0`.
 
-| Column | Property | Description |
-|--------|----------|-------------|
-| name | | Used in other property names. |
-| bytes-in | `net_bytes_in_{name}` | Count of bytes receivied. |
-| bytes-out | `net_bytes_out_{name}` | Count of bytes sent. |
-| packets-in | `net_packets_out_{name}` | Count of packets received. |
-| packets-out | `net_packets_out_{name}` | Count of packets sent. |
+|   Column    |         Property         |          Description          |
+|-------------|--------------------------|-------------------------------|
+| name        |                          | Used in other property names. |
+| bytes-in    | `net_bytes_in_{name}`    | Count of bytes receivied.     |
+| bytes-out   | `net_bytes_out_{name}`   | Count of bytes sent.          |
+| packets-in  | `net_packets_out_{name}` | Count of packets received.    |
+| packets-out | `net_packets_out_{name}` | Count of packets sent.        |
 
 ```
 device,bytes-in,bytes-out,packets-in,packets-out
@@ -196,11 +195,11 @@ usb0,0,0,0,0
 
 System load information.
 
-| Column | Property | Description |
-|--------|----------|-------------|
-| 1min | `sys_load_1min` | Average load over past minute. |
-| 5min | `sys_load_5min` | Average load over past 5 minutes. |
-| 15min | `sys_load_15min` | Average load over past 15 minutes. |
+| Column |     Property     |            Description             |
+|--------|------------------|------------------------------------|
+| 1min   | `sys_load_1min`  | Average load over past minute.     |
+| 5min   | `sys_load_5min`  | Average load over past 5 minutes.  |
+| 15min  | `sys_load_15min` | Average load over past 15 minutes. |
 
 An example output looks like:
 
@@ -213,8 +212,8 @@ An example output looks like:
 
 System uptime information.
 
-| Column | Property | Description |
-|--------|----------|-------------|
+| Column | Property |                  Description                   |
+|--------|----------|------------------------------------------------|
 | up-sec | `sys_up` | Number of seconds the system has been running. |
 
 An example output looks like:
@@ -238,3 +237,4 @@ populate an instantaneous property `cpu_temp` the output should be formatted lik
 i/cpu_temp
 30.1
 ```
+

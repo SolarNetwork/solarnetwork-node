@@ -18,13 +18,13 @@ The current persistence method uses a simple [JSON][json] file to store the logi
 default is saved in a `conf/users.json` file. In SolarNodeOS the path is `/etc/solarnode/users.json`.
 The file format is a JSON array of _user_ objects. Each user object contains the following properties:
 
-| Property | Type | Description |
-|:---------|:-----|:------------|
-| `created` | number | The user object's creation date, as a millisecond Unix epoch value. |
-| `modified` | number | The user object's last modification date, as a millisecond Unix epoch value. |
-| `username` | string | The login username. |
-| `password` | string | The login password, hashed using the [`PasswordEncoder`](#password-encoder) service. |
-| `roles` | array\<string\> | The list of authorization roles (groups) assigned to the user. |
+| Property   | Type            | Description                                                                          |
+|:-----------|:----------------|:-------------------------------------------------------------------------------------|
+| `created`  | number          | The user object's creation date, as a millisecond Unix epoch value.                  |
+| `modified` | number          | The user object's last modification date, as a millisecond Unix epoch value.         |
+| `username` | string          | The login username.                                                                  |
+| `password` | string          | The login password, hashed using the [`PasswordEncoder`](#password-encoder) service. |
+| `roles`    | array\<string\> | The list of authorization roles (groups) assigned to the user.                       |
 
 #### Example `users.json` file
 
@@ -51,14 +51,13 @@ SolarNode used to store login credentials in the main database's `settings` tabl
 to hold all user-configured runtime settings, and has a generic structure not specific to persisting
 account information.
 
-| Column | Description |
-|:-------|:------------|
-| `key` | The login username. |
-| `type` | Either `solarnode.user` for a password record, or `solarnode.role` for a role record. |
-| `value` | Either the login password, hashed using the [`PasswordEncoder`](#password-encoder) service, or an authorization role assigned to the user. |
-| `flags` | Unused. |
-| `modified` | The record's last modification date. |
-
+| Column     | Description                                                                                                                                |
+|:-----------|:-------------------------------------------------------------------------------------------------------------------------------------------|
+| `key`      | The login username.                                                                                                                        |
+| `type`     | Either `solarnode.user` for a password record, or `solarnode.role` for a role record.                                                      |
+| `value`    | Either the login password, hashed using the [`PasswordEncoder`](#password-encoder) service, or an authorization role assigned to the user. |
+| `flags`    | Unused.                                                                                                                                    |
+| `modified` | The record's last modification date.                                                                                                       |
 
 #### Example settings records
 
@@ -76,8 +75,8 @@ example@example.com,solarnode.user,$2a$10$/UuHuIflOQv6RmuNyFfLYO47WsbdUQpgKX6Tc0
 Originally SolarNode did not support multiple login credentials; the username was fixed to the node's ID and
 the password was hard-coded as `solar`.
 
-
 [bcrypt]: https://en.wikipedia.org/wiki/Bcrypt
 [json]: https://www.json.org
 [PasswordEncoder]: https://docs.spring.io/spring-security/site/docs/4.2.x/reference/html/core-services.html#core-services-password-encoding
 [UserDetailsService]: https://docs.spring.io/spring-security/site/docs/4.2.x/reference/html/appendix-faq.html#appendix-faq-what-is-userdetailservice
+

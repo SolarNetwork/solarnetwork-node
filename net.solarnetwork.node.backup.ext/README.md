@@ -34,21 +34,21 @@ be specified. The `name` property is required at a minimum.
 # Localization
 
 Each backup service instance can provide localized details that SolarNode will use in its backup UI.
-Standard Java resource properties files are used, with a base name that matches the `name` 
+Standard Java resource properties files are used, with a base name that matches the `name`
 configured on the service instance, stored in the `resourceBundleDir` directory. For example, the
 "default" localization for the `network-devices` service shown in the earlier example configuration would
 be in `/usr/share/solarnode/backup.d/network-devices.properties`. Other localizations could be added, such
 as:
 
- * `/usr/share/solarnode/backup.d/network-devices.properties`
- * `/usr/share/solarnode/backup.d/network-devices_en.properties`
- * `/usr/share/solarnode/backup.d/network-devices_en_GB.properties`
- 
+* `/usr/share/solarnode/backup.d/network-devices.properties`
+* `/usr/share/solarnode/backup.d/network-devices_en.properties`
+* `/usr/share/solarnode/backup.d/network-devices_en_GB.properties`
+
 The supported message keys are:
 
-| Key     | Description |
-|:--------|:------------|
-| `title` | A title for this service, e.g. _Network Devices_. |
+| Key     | Description                                                            |
+|:--------|:-----------------------------------------------------------------------|
+| `title` | A title for this service, e.g. _Network Devices_.                      |
 | `desc`  | A description of the service, e.g. _Backs up network device settings._ |
 
 An example localized message properties file looks like this:
@@ -63,3 +63,4 @@ When restoring from a backup with this service registered, SolarNode will displa
 ![SolarNode restore external backup](docs/solarnode-backup-restore-ext.png)
 
 [sn-solarbackup]: https://github.com/SolarNetwork/solarnode-os-packages/tree/develop/solarbackup/debian
+

@@ -26,8 +26,8 @@ with any number of _tasks_.
 The `OrchestrateControls` instruction is used to execute the task schedule defined in a Control
 Conductor component. It requires the following parameters:
 
-| Parameter | Description |
-|:----------|:------------|
+| Parameter | Description                                               |
+|:----------|:----------------------------------------------------------|
 | `service` | The **Service Name** of the Control Conductor to execute. |
 | `date`    | The _orchestration date_ to execute the task schedule at. |
 
@@ -48,10 +48,10 @@ expression.
 
 Each component configuration contains the following settings:
 
-| Setting             | Description |
-|:--------------------|:------------|
-| Service Name        | A **required** unique name to identify this component with. |
-| Service Group       | An optional group name to associate this component with. |
+| Setting             | Description                                                                               |
+|:--------------------|:------------------------------------------------------------------------------------------|
+| Service Name        | A **required** unique name to identify this component with.                               |
+| Service Group       | An optional group name to associate this component with.                                  |
 | Task Configurations | A list of control task-specific settings. Any number of task configurations can be added. |
 
 # Task settings
@@ -64,20 +64,20 @@ instruction in handled. You can configure as many property settings as you like,
 
 Each property configuration contains the following settings:
 
-| Setting         | Description |
-|:----------------|:------------|
-| Control         | The ID of the control to change. Parameters provided by the `OrchestrateControls` instruction can be used as placeholders.|
-| Offset          | The [time offset](#task-settings-offset-syntax), relative to the _orchestration date_, to change the control value at. Negative values are supported and represent an offset _before_ the orchestration date. Parameters provided by the `OrchestrateControls` instruction can be used as placeholders. |
-| Value           | The control value to set. Parameters are supported. If **Expression Language** configured then treat as an [expression](#expressions) to evaluate. Parameters provided by the `OrchestrateControls` instruction can be used as placeholders, as normal placeholders or if an expression is used then in the expression directly. |
-| Expression Language | The expression language to write **Value** in. If not configured then **Value** will not be treated as an expression. |
+| Setting             | Description                                                                                                                                                                                                                                                                                                                      |
+|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Control             | The ID of the control to change. Parameters provided by the `OrchestrateControls` instruction can be used as placeholders.                                                                                                                                                                                                       |
+| Offset              | The [time offset](#task-settings-offset-syntax), relative to the _orchestration date_, to change the control value at. Negative values are supported and represent an offset _before_ the orchestration date. Parameters provided by the `OrchestrateControls` instruction can be used as placeholders.                          |
+| Value               | The control value to set. Parameters are supported. If **Expression Language** configured then treat as an [expression](#expressions) to evaluate. Parameters provided by the `OrchestrateControls` instruction can be used as placeholders, as normal placeholders or if an expression is used then in the expression directly. |
+| Expression Language | The expression language to write **Value** in. If not configured then **Value** will not be treated as an expression.                                                                                                                                                                                                            |
 
 ## Task settings Offset syntax
 
 The **Offset** setting accepts duration values that can be specified in a couple of different ways:
 
- * an integer millisecond value, for example `60000` for 1 minute after or `-10000` for 10 seconds before
- * an [ISO-8601 duration][duration] value in the form `PnDTnHnMn.nS`, where `n` is a number, for
-   example `PT1H30M` for 90 minutes after or `-PT0.5S` for 0.5 seconds before
+* an integer millisecond value, for example `60000` for 1 minute after or `-10000` for 10 seconds before
+* an [ISO-8601 duration][duration] value in the form `PnDTnHnMn.nS`, where `n` is a number, for
+  example `PT1H30M` for 90 minutes after or `-PT0.5S` for 0.5 seconds before
 
 # Expressions
 
@@ -87,8 +87,8 @@ treated as a [datum expression][datum-expr] and has access to all the parameters
 `OrchestrateControls` instruction as well as the [datum stream functions][datum-stream-fn] for
 accessing whatever datum streams are available on the node in general.
 
-
 [datum-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions#datum-expressions
 [datum-stream-fn]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions#datum-stream-functions
 [duration]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
+

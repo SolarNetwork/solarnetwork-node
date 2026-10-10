@@ -14,37 +14,36 @@ appears under the **Datum** category as **Solectria PVI-14-36TL Inverter Data So
 
 This datum generates a [datum stream][datum] with the following properties:
 
-| Property | Class | Units | Description |
-|:---------|:------|:------|:------------|
-| `apparentPower`    | `i` | VA | Apparent power |
-| `dcCurrent`        | `i` | A | DC current, sum of PV1, PV2 |
-| `dcCurrent1`       | `i` | A | DC current, PV1 |
-| `dcCurrent2`       | `i` | A | DC current, PV2 |
-| `dcPower`          | `i` | W | DC output power, sum of PV1, PV2 |
-| `dcPower1`         | `i` | W | DC module 1 output power |
-| `dcPower2`         | `i` | W | DC module 2 output power |
-| `dcVoltage`        | `i` | V | DC voltage, average of PV1, PV2 |
-| `dcVoltage1`       | `i` | V | DC module 1 voltage |
-| `dcVoltage2`       | `i` | V | DC module 2 voltage |
-| `current`          | `i` | A | AC current total, sum of phase A, B, C |
-| `events`           | `s` | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
-| `fault0`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (16-31, offset -16) |
-| `fault1`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (32-47, offset -32) |
-| `fault2`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (48-63, offset -48) |
-| `fault3`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (64-79, offset -64) |
-| `fault4`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (80-95, offset -80) |
-| `frequency`        | `i` | Hz | AC frequency |
-| `opState`          | `s` | enum | [Device Operating State][opstate] code |
-| `opStates`         | `s` | enum | [Inverter state](#inverter-state) code |
-| `permFault`        | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (0-15) |
-| `powerFactor`      | `i` | PF | Decimal 0 - 1 |
-| `temp`             | `i` | C | Internal temperature |
-| `temp_heatSink`    | `i` | C | Heatsink temperature |
-| `voltage`          | `i` | V | AC line voltage average, phase AB, BC, CA |
-| `warn`             | `s` | bit set | Base-10 bit set of [Warning codes](#warning-codes) |
-| `wattHours`        | `a` | Wh | Lifetime energy |
-| `watts`            | `i` | W | Active power total |
-
+| Property        | Class | Units   | Description                                                               |
+|:----------------|:------|:--------|:--------------------------------------------------------------------------|
+| `apparentPower` | `i`   | VA      | Apparent power                                                            |
+| `dcCurrent`     | `i`   | A       | DC current, sum of PV1, PV2                                               |
+| `dcCurrent1`    | `i`   | A       | DC current, PV1                                                           |
+| `dcCurrent2`    | `i`   | A       | DC current, PV2                                                           |
+| `dcPower`       | `i`   | W       | DC output power, sum of PV1, PV2                                          |
+| `dcPower1`      | `i`   | W       | DC module 1 output power                                                  |
+| `dcPower2`      | `i`   | W       | DC module 2 output power                                                  |
+| `dcVoltage`     | `i`   | V       | DC voltage, average of PV1, PV2                                           |
+| `dcVoltage1`    | `i`   | V       | DC module 1 voltage                                                       |
+| `dcVoltage2`    | `i`   | V       | DC module 2 voltage                                                       |
+| `current`       | `i`   | A       | AC current total, sum of phase A, B, C                                    |
+| `events`        | `s`   | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
+| `fault0`        | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (16-31, offset -16)        |
+| `fault1`        | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (32-47, offset -32)        |
+| `fault2`        | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (48-63, offset -48)        |
+| `fault3`        | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (64-79, offset -64)        |
+| `fault4`        | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (80-95, offset -80)        |
+| `frequency`     | `i`   | Hz      | AC frequency                                                              |
+| `opState`       | `s`   | enum    | [Device Operating State][opstate] code                                    |
+| `opStates`      | `s`   | enum    | [Inverter state](#inverter-state) code                                    |
+| `permFault`     | `s`   | bit set | Base-10 bit set of [Fault codes](#fault-codes) (0-15)                     |
+| `powerFactor`   | `i`   | PF      | Decimal 0 - 1                                                             |
+| `temp`          | `i`   | C       | Internal temperature                                                      |
+| `temp_heatSink` | `i`   | C       | Heatsink temperature                                                      |
+| `voltage`       | `i`   | V       | AC line voltage average, phase AB, BC, CA                                 |
+| `warn`          | `s`   | bit set | Base-10 bit set of [Warning codes](#warning-codes)                        |
+| `wattHours`     | `a`   | Wh      | Lifetime energy                                                           |
+| `watts`         | `i`   | W       | Active power total                                                        |
 
 ```json
 {
@@ -78,15 +77,15 @@ Modbus device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Port        | The service name of the Modbus Port to use.                                      |
-| Sample Maximum Age | A minimum time to cache captured data, in milliseconds.                          |
-| Unit ID            | The address of the inverter to collect datum from.                               |
-| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
+|      Setting       |                       Description                       |
+|--------------------|---------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected. |
+| Service Name       | A unique name to identify this data source with.        |
+| Service Group      | A group name to associate this data source with.        |
+| Modbus Port        | The service name of the Modbus Port to use.             |
+| Sample Maximum Age | A minimum time to cache captured data, in milliseconds. |
+| Unit ID            | The address of the inverter to collect datum from.      |
+| Source ID          | The SolarNetwork source ID to assign to captured datum. |
 
 ## Overall device settings notes
 
@@ -199,22 +198,23 @@ The `vendorEvents` property is a bit set of the following possible values:
 
 This plugin will map specific fault codes into the SunSpec `events` property:
 
-| Fault | Name | Event | Inverter Model Event |
-|:------|:-----|:------|:---------------------|
-| 0     | `PermanentBusOverVoltage`           | 1  | `DcOverVoltage` |
-| 3     | `PermanentGridRelay`                | 4  | `GridDisconnect` |
-| 16    | `BusOverVoltage`                    | 1  | `DcOverVoltage` |
-| 23    | `GridLineVoltage`                   | 10 | `AcOverVoltage` |
-| 24    | `GridPhaseVoltage`                  | 10 | `AcOverVoltage` |
-| 26    | `GridOverFrequency`                 | 8  | `OverFrequency` |
-| 27    | `GridUnderFrequency`                | 9  | `UnderFrequency` |
-| 28    | `LossOfMain`                        | 4  | `GridDisconnect` |
-| 30    | `OverTemperature`                   | 7  | `OverTemperature` |
-| 53    | `Pv2OverVoltage`                    | 1  | `DcOverVoltage` |
-| 58    | `Pv1OverVoltage`                    | 1  | `DcOverVoltage` |
-| 14    | `PermanentInverterOpenLoopSelfTest` | 15 | `HwTestFailure` |
-| 55    | `InverterOpenLoopSelfTest`          | 15 | `HwTestFailure` |
-| 82    | `ArcBoard`                          | 15 | `HwTestFailure` |
+| Fault | Name                                | Event | Inverter Model Event |
+|:------|:------------------------------------|:------|:---------------------|
+| 0     | `PermanentBusOverVoltage`           | 1     | `DcOverVoltage`      |
+| 3     | `PermanentGridRelay`                | 4     | `GridDisconnect`     |
+| 16    | `BusOverVoltage`                    | 1     | `DcOverVoltage`      |
+| 23    | `GridLineVoltage`                   | 10    | `AcOverVoltage`      |
+| 24    | `GridPhaseVoltage`                  | 10    | `AcOverVoltage`      |
+| 26    | `GridOverFrequency`                 | 8     | `OverFrequency`      |
+| 27    | `GridUnderFrequency`                | 9     | `UnderFrequency`     |
+| 28    | `LossOfMain`                        | 4     | `GridDisconnect`     |
+| 30    | `OverTemperature`                   | 7     | `OverTemperature`    |
+| 53    | `Pv2OverVoltage`                    | 1     | `DcOverVoltage`      |
+| 58    | `Pv1OverVoltage`                    | 1     | `DcOverVoltage`      |
+| 14    | `PermanentInverterOpenLoopSelfTest` | 15    | `HwTestFailure`      |
+| 55    | `InverterOpenLoopSelfTest`          | 15    | `HwTestFailure`      |
+| 82    | `ArcBoard`                          | 15    | `HwTestFailure`      |
 
 [datum]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum
 [opstate]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#standard-device-operating-states
+

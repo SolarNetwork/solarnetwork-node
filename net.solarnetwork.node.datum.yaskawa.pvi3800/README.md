@@ -14,37 +14,37 @@ The plugin can be installed via the **Plugins** page on your SolarNode. It appea
 
 This datum generates a [datum stream][datum] with the following properties:
 
-| Property | Class | Units | Description |
-|:---------|:------|:------|:------------|
-| `current`          | `i` | A | AC current, phase sum |
-| `dcCurrent_1`      | `i` | A | DC module 1 current |
-| `dcCurrent_2`      | `i` | A | DC module 2 current |
-| `dcCurrent_3`      | `i` | A | DC module 3 current |
-| `dcPower_1`        | `i` | W | DC module 1 power |
-| `dcPower_2`        | `i` | W | DC module 2 power |
-| `dcPower_3`        | `i` | W | DC module 3 power |
-| `dcVoltage_1`      | `i` | V | DC module 1 voltage |
-| `dcVoltage_2`      | `i` | V | DC module 2 voltage |
-| `dcVoltage_3`      | `i` | V | DC module 3 voltage |
-| `events`           | `s` | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
-| `frequency`        | `i` | Hz | AC frequency |
-| `powerFactor`      | `i` | - | Power factor |
-| `reactivePower`    | `i` | VAR | Reactive power |
-| `status_ac1`       | `s` | bit set | Base-10 bit set of AC phase 1 [status codes](#ac-status-codes) |
-| `status_ac2`       | `s` | bit set | Base-10 bit set of AC phase 2 [status codes](#ac-status-codes) |
-| `status_ac3`       | `s` | bit set | Base-10 bit set of AC phase 3 [status codes](#ac-status-codes) |
-| `status_pv1`       | `s` | bit set | Base-10 bit set of PV module 1 [status codes](#pv-status-codes) |
-| `status_pv2`       | `s` | bit set | Base-10 bit set of PV module 2 [status codes](#pv-status-codes) |
-| `status_pv3`       | `s` | bit set | Base-10 bit set of PV module 3 [status codes](#pv-status-codes) |
-| `status_pvIso1`    | `s` | bit set | Base-10 bit set of PV module 1 [ISO status codes](#pv-iso-status-codes) |
-| `status_pvIso2`    | `s` | bit set | Base-10 bit set of PV module 2 [ISO status codes](#pv-iso-status-codes) |
-| `status_pvIso3`    | `s` | bit set | Base-10 bit set of PV module 3 [ISO status codes](#pv-iso-status-codes) |
-| `temp`             | `i` | C | Ambient temperature |
-| `temp_heatSink`    | `i` | C | Heatsink temperature |
-| `vendorEvents`     | `s` | bit set | Base-16 bit set of all active [Fault codes](#fault-codes) |
-| `voltage`          | `i` | V | AC voltage, phase average |
-| `wattHours`        | `a` | Wh | Lifetime energy |
-| `watts`            | `i` | W | Active power total |
+| Property        | Class | Units   | Description                                                               |
+|:----------------|:------|:--------|:--------------------------------------------------------------------------|
+| `current`       | `i`   | A       | AC current, phase sum                                                     |
+| `dcCurrent_1`   | `i`   | A       | DC module 1 current                                                       |
+| `dcCurrent_2`   | `i`   | A       | DC module 2 current                                                       |
+| `dcCurrent_3`   | `i`   | A       | DC module 3 current                                                       |
+| `dcPower_1`     | `i`   | W       | DC module 1 power                                                         |
+| `dcPower_2`     | `i`   | W       | DC module 2 power                                                         |
+| `dcPower_3`     | `i`   | W       | DC module 3 power                                                         |
+| `dcVoltage_1`   | `i`   | V       | DC module 1 voltage                                                       |
+| `dcVoltage_2`   | `i`   | V       | DC module 2 voltage                                                       |
+| `dcVoltage_3`   | `i`   | V       | DC module 3 voltage                                                       |
+| `events`        | `s`   | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
+| `frequency`     | `i`   | Hz      | AC frequency                                                              |
+| `powerFactor`   | `i`   | -       | Power factor                                                              |
+| `reactivePower` | `i`   | VAR     | Reactive power                                                            |
+| `status_ac1`    | `s`   | bit set | Base-10 bit set of AC phase 1 [status codes](#ac-status-codes)            |
+| `status_ac2`    | `s`   | bit set | Base-10 bit set of AC phase 2 [status codes](#ac-status-codes)            |
+| `status_ac3`    | `s`   | bit set | Base-10 bit set of AC phase 3 [status codes](#ac-status-codes)            |
+| `status_pv1`    | `s`   | bit set | Base-10 bit set of PV module 1 [status codes](#pv-status-codes)           |
+| `status_pv2`    | `s`   | bit set | Base-10 bit set of PV module 2 [status codes](#pv-status-codes)           |
+| `status_pv3`    | `s`   | bit set | Base-10 bit set of PV module 3 [status codes](#pv-status-codes)           |
+| `status_pvIso1` | `s`   | bit set | Base-10 bit set of PV module 1 [ISO status codes](#pv-iso-status-codes)   |
+| `status_pvIso2` | `s`   | bit set | Base-10 bit set of PV module 2 [ISO status codes](#pv-iso-status-codes)   |
+| `status_pvIso3` | `s`   | bit set | Base-10 bit set of PV module 3 [ISO status codes](#pv-iso-status-codes)   |
+| `temp`          | `i`   | C       | Ambient temperature                                                       |
+| `temp_heatSink` | `i`   | C       | Heatsink temperature                                                      |
+| `vendorEvents`  | `s`   | bit set | Base-16 bit set of all active [Fault codes](#fault-codes)                 |
+| `voltage`       | `i`   | V       | AC voltage, phase average                                                 |
+| `wattHours`     | `a`   | Wh      | Lifetime energy                                                           |
+| `watts`         | `i`   | W       | Active power total                                                        |
 
 Here is an example datum, expressed in simplified JSON form:
 
@@ -86,15 +86,15 @@ need to add one configuration for each Modbus device you want to collect data fr
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Serial Port        | The service name of the Serial Port to use.                                      |
-| Sample Maximum Age | A minimum time to cache captured data, in milliseconds.                          |
-| Unit ID            | The address of the inverter to collect datum from.                               |
-| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
+|      Setting       |                       Description                       |
+|--------------------|---------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected. |
+| Service Name       | A unique name to identify this data source with.        |
+| Service Group      | A group name to associate this data source with.        |
+| Serial Port        | The service name of the Serial Port to use.             |
+| Sample Maximum Age | A minimum time to cache captured data, in milliseconds. |
+| Unit ID            | The address of the inverter to collect datum from.      |
+| Source ID          | The SolarNetwork source ID to assign to captured datum. |
 
 ## Overall device settings notes
 
@@ -208,19 +208,19 @@ The `vendorEvents` property is a bit set of the following possible values:
 
 This plugin will map specific fault codes into the SunSpec `events` property:
 
-| Fault | Name | Event | Inverter Model Event |
-|:------|:-----|:------|:---------------------|
-| 4     | `TemperatureDerating`        | 7  | `OverTemperature` |
-| 34    | `PVPositiveGroundingFailure` | 0  | `GroundFault` |
-| 35    | `PVNegativeGroundingWarning` | 0  | `GroundFault` |
-| 64    | `CriticalOverVoltage`        | 10 | `AcOverVoltage` |
-| 65    | `OverVoltage`                | 10 | `AcOverVoltage` |
-| 66    | `UnderVoltage`               | 11 | `AcUnderVoltage` |
-| 67    | `CriticalUnderVoltage`       | 11 | `AcUnderVoltage` |
-| 68    | `HighFrequency`              | 8  | `OverFrequency` |
-| 69    | `LowFrequency`               | 9  | `UnderFrequency` |
-| 72    | `IslandingDetected`          | 4  | `GridDisconnect` |
-| 80    | `GridSynchronisationError`   | 4  | `GridDisconnect` |
-
+| Fault | Name                         | Event | Inverter Model Event |
+|:------|:-----------------------------|:------|:---------------------|
+| 4     | `TemperatureDerating`        | 7     | `OverTemperature`    |
+| 34    | `PVPositiveGroundingFailure` | 0     | `GroundFault`        |
+| 35    | `PVNegativeGroundingWarning` | 0     | `GroundFault`        |
+| 64    | `CriticalOverVoltage`        | 10    | `AcOverVoltage`      |
+| 65    | `OverVoltage`                | 10    | `AcOverVoltage`      |
+| 66    | `UnderVoltage`               | 11    | `AcUnderVoltage`     |
+| 67    | `CriticalUnderVoltage`       | 11    | `AcUnderVoltage`     |
+| 68    | `HighFrequency`              | 8     | `OverFrequency`      |
+| 69    | `LowFrequency`               | 9     | `UnderFrequency`     |
+| 72    | `IslandingDetected`          | 4     | `GridDisconnect`     |
+| 80    | `GridSynchronisationError`   | 4     | `GridDisconnect`     |
 
 [datum]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum
+

@@ -12,13 +12,13 @@ filters.
 
 The general idea on how to use this filter can be used can be outlined like this:
 
-1.  You have a GHI irradiance measurement property collected by some source ID
-2.  You configure this filter to process that same source ID, telling it which property is the GHI
-    measurement and configuring all the PV characteristics necessary for deriving a POA irradiance
-    values from the GHI values.
-3.  Instead of configuring the PV characteristics on this filter itself, you can alternatively
-    configure them in datum, node, or user metadata. See the
-    [Metadata Parameters](#metadata-parameters) section for more details.
+1. You have a GHI irradiance measurement property collected by some source ID
+2. You configure this filter to process that same source ID, telling it which property is the GHI
+   measurement and configuring all the PV characteristics necessary for deriving a POA irradiance
+   values from the GHI values.
+3. Instead of configuring the PV characteristics on this filter itself, you can alternatively
+   configure them in datum, node, or user metadata. See the
+   [Metadata Parameters](#metadata-parameters) section for more details.
 
 <img alt="pvlib POA Irradiance Calculator filter settings" src="docs/solarnode-pvlib-poa-filter-settings@2x.png" width="950">
 
@@ -27,7 +27,7 @@ The general idea on how to use this filter can be used can be outlined like this
 Each filter configuration contains the following overall settings:
 
 | Setting                 | Description                                                                                                                                                                                                                                                                                                         |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|:------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Service Name            | A unique ID for the filter, to be referenced by other components.                                                                                                                                                                                                                                                   |
 | Service Group           | An optional service group name to assign.                                                                                                                                                                                                                                                                           |
 | Source ID               | The source ID(s) to filter.                                                                                                                                                                                                                                                                                         |
@@ -94,16 +94,16 @@ this:
 The filter merges all possible PV characteristics from the settings on the filter itself and
 metadata, in the following order, with **later sources overriding** earlier sources:
 
-1.  Filter settings
-2.  Metdata from the configured **Metadata Service**
-3.  Datum metadata associated with the source ID of the datum being filtered
-4.  **Latitude, longitude, and altitude** from the location configured for the node in SolarNetwork,
-    if **Use Node Location** is enabled
+1. Filter settings
+2. Metdata from the configured **Metadata Service**
+3. Datum metadata associated with the source ID of the datum being filtered
+4. **Latitude, longitude, and altitude** from the location configured for the node in SolarNetwork,
+   if **Use Node Location** is enabled
 
 The supported metadata parameters are:
 
 | Metadata Key         | Description                                                                                                                  |
-| :------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+|:---------------------|:-----------------------------------------------------------------------------------------------------------------------------|
 | `lat`                | Decimal latitude of the PV system                                                                                            |
 | `lon`                | Decimal longitude of the PV system                                                                                           |
 | `alt`                | Altitude of the PV system, in meters above sea level                                                                         |
@@ -163,7 +163,7 @@ command must accept the options shown below, and is expected to output a JSON ob
 [def/ghi-to-poa.py](./def/ghi-to-poa.py) script is an example of such a command.
 
 | Command Option     | Description                                                                                                                  |
-| :----------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+|:-------------------|:-----------------------------------------------------------------------------------------------------------------------------|
 | `--latitude`       | The decimal latitude                                                                                                         |
 | `--longitude`      | The decimal longitude                                                                                                        |
 | `--altitude`       | The altitude in meters above sea level                                                                                       |
@@ -227,3 +227,4 @@ python def/ghi-to-poa.py --latitude -36.8509 --longitude 174.7645 \
 [opmodes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes
 [pvlib]: https://pvlib-python.readthedocs.io/
 [pvlib-transpose]: https://pvlib-python.readthedocs.io/en/v0.10.4/reference/irradiance/transposition.html
+
