@@ -166,11 +166,11 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	private ModelData modelData(ModbusConnection conn) throws IOException {
 		Integer manualBaseAddress = getBaseAddress();
 		if ( manualBaseAddress != null && manualBaseAddress.intValue() >= 0 ) {
-			return ModelDataFactory.getInstance().getModelData(new SunSpecModbusConnectionAdapter(conn),
-					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress, false);
+			return ModelDataFactory.getInstance().discoverModels(
+					new SunSpecModbusConnectionAdapter(conn),
+					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress);
 		}
-		return ModelDataFactory.getInstance().getModelData(new SunSpecModbusConnectionAdapter(conn),
-				false);
+		return ModelDataFactory.getInstance().discoverModels(new SunSpecModbusConnectionAdapter(conn));
 	}
 
 	private @Nullable List<ModelAccessor> getSecondaryModelAccessors(@Nullable ModelData data) {
@@ -397,6 +397,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
 		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(sample), true));
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
+		results.add(new BasicTitleSettingSpecifier("primaryModel", getPrimaryTypeMessage(sample), true));
 		results.add(new BasicTitleSettingSpecifier("secondaryModels", getSecondaryTypesMessage(sample),
 				true));
 
@@ -466,6 +467,31 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	/**
+	 * Get the primary type message.
+	 *
+	 * <p>
+	 * The returned message is the model ID and description of the primary
+	 * model.
+	 * </p>
+	 *
+	 * @param sample
+	 *        the model data
+	 * @return the message, or {@literal N/A} if no primary type is available
+	 * @since 3.0
+	 */
+	protected String getPrimaryTypeMessage(@Nullable ModelData sample) {
+		ModelAccessor primary = sample.findTypedModel(getPrimaryModelAccessorType());
+		if ( primary == null ) {
+			return "N/A";
+		}
+		if ( primary.getModelId() instanceof GenericModelId ) {
+			return String.valueOf(primary.getModelId().getId());
+		}
+		return String.format("%d (%s)", primary.getModelId().getId(),
+				primary.getModelId().getDescription());
+	}
+
+	/**
 	 * Get the secondary types message.
 	 *
 	 * <p>
@@ -480,11 +506,14 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *         available
 	 */
 	protected String getSecondaryTypesMessage(@Nullable ModelData sample) {
+		ModelAccessor primary = sample.findTypedModel(getPrimaryModelAccessorType());
 		List<ModelAccessor> accessors = (sample != null ? sample.getModels() : null);
 		if ( accessors == null || accessors.size() < 2 ) {
 			return "N/A";
 		}
-		return accessors.subList(1, accessors.size()).stream().filter(a -> a.getModelId() != null)
+		return accessors.stream()
+				// filter out models without an ID or that matches the primary model
+				.filter(a -> (primary == null || primary.getModelId().getId() != a.getModelId().getId()))
 				.map(a -> {
 					if ( a.getModelId() instanceof GenericModelId ) {
 						return String.valueOf(a.getModelId().getId());
