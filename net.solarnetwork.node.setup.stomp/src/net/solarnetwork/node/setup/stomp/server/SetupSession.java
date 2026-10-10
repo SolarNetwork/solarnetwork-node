@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.SortedSet;
@@ -29,19 +30,22 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.PathMatcher;
 import io.netty.channel.Channel;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Details about a single setup session (i.e. connection).
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SetupSession {
 
 	private final ConcurrentNavigableMap<String, String> subscriptions = new ConcurrentSkipListMap<>();
+	private final AtomicInteger messageIds = new AtomicInteger(0);
 	private final UUID sessionId;
 	private final String login;
 	private final Channel channel;
@@ -66,14 +70,8 @@ public class SetupSession {
 	 */
 	public SetupSession(String login, Channel channel) {
 		super();
-		if ( login == null ) {
-			throw new IllegalArgumentException("The login argument must not be null.");
-		}
-		this.login = login;
-		if ( channel == null ) {
-			throw new IllegalArgumentException("The channel argument must not be null.");
-		}
-		this.channel = channel;
+		this.login = requireNonNullArgument(login, "login");
+		this.channel = requireNonNullArgument(channel, "channel");
 		this.sessionId = UUID.randomUUID();
 		this.created = System.currentTimeMillis();
 		this.lastActivity = this.created;
@@ -133,6 +131,17 @@ public class SetupSession {
 	 */
 	public void activity() {
 		this.lastActivity = System.currentTimeMillis();
+	}
+
+	/**
+	 * Get the next {@literal message-id} value to use for a {@literal MESSAGE}
+	 * frame sent to this session.
+	 * 
+	 * @return the next message ID
+	 * @since 1.1
+	 */
+	public int nextMessageId() {
+		return NumberUtils.getAndIncrementWithWrap(messageIds, 0);
 	}
 
 	/**

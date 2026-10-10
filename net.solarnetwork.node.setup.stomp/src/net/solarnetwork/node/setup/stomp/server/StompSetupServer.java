@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -60,10 +62,10 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * A STOMP protocol server for SolarNode Setup, using Netty.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class StompSetupServer extends BaseIdentifiable
-		implements SettingsChangeObserver, SettingSpecifierProvider {
+		implements SettingsChangeObserver, SettingSpecifierProvider, ServiceLifecycleObserver {
 
 	/** The default listen port. */
 	public static final int DEFAULT_PORT = 8780;
@@ -105,31 +107,22 @@ public class StompSetupServer extends BaseIdentifiable
 	public StompSetupServer(StompSetupServerService serverService, ObjectMapper objectMapper,
 			Executor executor) {
 		super();
-		if ( serverService == null ) {
-			throw new IllegalArgumentException("The serverService argument must not be null.");
-		}
-		this.serverService = serverService;
-		if ( objectMapper == null ) {
-			throw new IllegalArgumentException("The objectMapper argument must not be null.");
-		}
-		this.objectMapper = objectMapper;
-		if ( executor == null ) {
-			throw new IllegalArgumentException("The executor argument must not be null.");
-		}
-		this.executor = executor;
+		this.serverService = requireNonNullArgument(serverService, "serverService");
+		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
+		this.executor = requireNonNullArgument(executor, "executor");
 	}
 
-	/**
-	 * Startup the server.
-	 */
-	public void startup() {
+	@Override
+	public void serviceDidStartup() {
 		restartServer();
 	}
 
-	/**
-	 * Shut the server down.
-	 */
-	public synchronized void shutdown() {
+	@Override
+	public void serviceDidShutdown() {
+		stopServer();
+	}
+
+	private synchronized void stopServer() {
 		if ( startupFuture != null && !startupFuture.isDone() ) {
 			startupFuture.cancel(true);
 			startupFuture = null;
@@ -153,7 +146,7 @@ public class StompSetupServer extends BaseIdentifiable
 	}
 
 	private synchronized void restartServer() {
-		shutdown();
+		stopServer();
 		Runnable startupTask = new StartupTask();
 		if ( taskScheduler != null ) {
 			log.info("Will start STOMP setup server on port {} in {} seconds", port, startupDelay);
@@ -170,7 +163,7 @@ public class StompSetupServer extends BaseIdentifiable
 		public void run() {
 			synchronized ( StompSetupServer.this ) {
 				startupFuture = null;
-				shutdown();
+				stopServer();
 				final int port = StompSetupServer.this.port;
 				final String bindAddress = StompSetupServer.this.bindAddress;
 				final ThreadFactory tf = new DefaultThreadFactory("STOMP-Setup:" + port, true);
@@ -190,7 +183,7 @@ public class StompSetupServer extends BaseIdentifiable
 					StompSetupServer.this.channel = future.channel();
 					log.info("STOMP setup server listening on {}:{}", bindAddress, port);
 				} catch ( InterruptedException | RuntimeException e ) {
-					shutdown();
+					stopServer();
 					log.error("Error binding STOMP setup server {} to {}:{}: {}", StompSetupServer.this,
 							bindAddress, port, e.toString());
 					if ( taskScheduler != null ) {
@@ -236,6 +229,12 @@ public class StompSetupServer extends BaseIdentifiable
 		result.addAll(baseIdentifiableSettings(null));
 		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
 		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
+		if ( serverService.getLiveDatumService() != null ) {
+			result.add(new BasicTextFieldSettingSpecifier("liveOpMode",
+					LiveDatumModeManager.DEFAULT_OP_MODE));
+			result.add(new BasicTextFieldSettingSpecifier("liveMaxDurationMins",
+					String.valueOf(LiveDatumService.DEFAULT_MAX_DURATION_SECS / 60)));
+		}
 
 		return result;
 	}
@@ -308,6 +307,59 @@ public class StompSetupServer extends BaseIdentifiable
 	 */
 	public void setBindAddress(String bindAddress) {
 		this.bindAddress = bindAddress;
+	}
+
+	/**
+	 * Get the operational mode enabled while live datum subscriptions exist.
+	 *
+	 * @return the operational mode, or {@literal null} if live datum is not
+	 *         supported
+	 * @since 2.3
+	 */
+	public String getLiveOpMode() {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		return (live != null ? live.getModeManager().getOpMode() : null);
+	}
+
+	/**
+	 * Set the operational mode enabled while live datum subscriptions exist.
+	 *
+	 * @param liveOpMode
+	 *        the operational mode to set
+	 * @since 2.3
+	 */
+	public void setLiveOpMode(String liveOpMode) {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		if ( live != null ) {
+			live.getModeManager().setOpMode(liveOpMode);
+		}
+	}
+
+	/**
+	 * Get the maximum live datum subscription duration, in minutes.
+	 *
+	 * @return the maximum duration, or {@literal 0} if live datum is not
+	 *         supported
+	 * @since 2.3
+	 */
+	public int getLiveMaxDurationMins() {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		return (live != null ? live.getMaxDurationSecs() / 60 : 0);
+	}
+
+	/**
+	 * Set the maximum live datum subscription duration, in minutes.
+	 *
+	 * @param liveMaxDurationMins
+	 *        the maximum duration to set; values less than {@literal 1} are
+	 *        ignored
+	 * @since 2.3
+	 */
+	public void setLiveMaxDurationMins(int liveMaxDurationMins) {
+		final LiveDatumService live = serverService.getLiveDatumService();
+		if ( live != null && liveMaxDurationMins > 0 ) {
+			live.setMaxDurationSecs(liveMaxDurationMins * 60);
+		}
 	}
 
 }

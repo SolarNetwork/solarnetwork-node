@@ -28,8 +28,10 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.node.setup.stomp.SetupTopic.Authenticate;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -72,6 +74,7 @@ import io.netty.handler.codec.stomp.DefaultStompFrame;
 import io.netty.handler.codec.stomp.StompCommand;
 import io.netty.handler.codec.stomp.StompFrame;
 import io.netty.handler.codec.stomp.StompHeaders;
+import io.netty.util.concurrent.ImmediateEventExecutor;
 import net.solarnetwork.codec.BasicGeneralDatumSerializer;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatum;
@@ -82,6 +85,7 @@ import net.solarnetwork.node.reactor.SimpleInstructionExecutionService;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserService;
+import net.solarnetwork.node.setup.stomp.LiveHeader;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.server.SetupSession;
@@ -94,7 +98,7 @@ import net.solarnetwork.test.CallingThreadExecutorService;
  * Test cases for the {@link StompSetupServerHandler} class.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class StompSetupServerHandlerTests {
 
@@ -825,6 +829,120 @@ public class StompSetupServerHandlerTests {
 				is(String.valueOf(statusCode)));
 		assertThat("Response message header provided", msg.headers().getAsString(StompHeaders.MESSAGE),
 				is(message));
+	}
+
+	@Test
+	public void sendInstruction_liveHeaderNamesStillPassedAsParameters() {
+		// GIVEN
+		expect(ctx.channel()).andReturn(channel);
+		givenSessionAuthenticatedAndSubscribed();
+
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(true);
+		Capture<Instruction> instrCaptor = Capture.newInstance();
+		expect(instructionHandler.processInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return createStatus(instrCaptor.getValue(), InstructionState.Completed, null);
+					}
+
+				});
+		expect(ctx.writeAndFlush(EasyMock.anyObject())).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+		f.headers().set(LiveHeader.SourceId.getValue(), "/GEN/1");
+		f.headers().set(LiveHeader.Properties.getValue(), "watts");
+		f.headers().set(LiveHeader.Interval.getValue(), "1000");
+		handler.channelRead(ctx, f);
+
+		// THEN
+		Instruction instr = instrCaptor.getValue();
+		assertThat("source-id header passed as instruction parameter",
+				instr.getParameterValue(LiveHeader.SourceId.getValue()), is("/GEN/1"));
+		assertThat("properties header passed as instruction parameter",
+				instr.getParameterValue(LiveHeader.Properties.getValue()), is("watts"));
+		assertThat("interval header passed as instruction parameter",
+				instr.getParameterValue(LiveHeader.Interval.getValue()), is("1000"));
+	}
+
+	@Test
+	public void unsubscribe_normal() {
+		// GIVEN
+		expect(ctx.channel()).andReturn(channel);
+		final SetupSession session = givenSessionAuthenticatedAndSubscribed();
+
+		// WHEN
+		replayAll();
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.UNSUBSCRIBE);
+		f.headers().set(StompHeaders.ID, "0");
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("Subscription removed",
+				session.subscriptionIdsForTopic("/setup/foo", serverService.getPathMatcher()),
+				is(empty()));
+	}
+
+	@Test
+	public void unsubscribe_unknown_ignored() {
+		// GIVEN
+		expect(ctx.channel()).andReturn(channel);
+		final SetupSession session = givenSessionAuthenticatedAndSubscribed();
+
+		// WHEN
+		replayAll();
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.UNSUBSCRIBE);
+		f.headers().set(StompHeaders.ID, "nope");
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("Existing subscription kept",
+				session.subscriptionIdsForTopic("/setup/foo", serverService.getPathMatcher()),
+				contains("0"));
+	}
+
+	@Test
+	public void disconnect_noReceipt_closes() {
+		// GIVEN
+		expect(ctx.channel()).andReturn(channel);
+		givenSessionAuthenticated();
+		expect(ctx.close()).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+		handler.channelRead(ctx, new DefaultStompFrame(StompCommand.DISCONNECT));
+	}
+
+	@Test
+	public void disconnect_receipt_thenClose() {
+		// GIVEN
+		expect(ctx.channel()).andReturn(channel);
+		givenSessionAuthenticated();
+		Capture<Object> receiptCaptor = Capture.newInstance();
+		DefaultChannelPromise writeFuture = new DefaultChannelPromise(channel,
+				ImmediateEventExecutor.INSTANCE);
+		expect(ctx.writeAndFlush(capture(receiptCaptor))).andReturn(writeFuture);
+
+		// close channel once RECEIPT written
+		expect(channel.close()).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.DISCONNECT);
+		f.headers().set(StompHeaders.RECEIPT, "bye");
+		handler.channelRead(ctx, f);
+		writeFuture.setSuccess();
+
+		// THEN
+		StompFrame receipt = (StompFrame) receiptCaptor.getValue();
+		assertThat("RECEIPT frame", receipt.command(), is(StompCommand.RECEIPT));
+		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID), is("bye"));
 	}
 
 }

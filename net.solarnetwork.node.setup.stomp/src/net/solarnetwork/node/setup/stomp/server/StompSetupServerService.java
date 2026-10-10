@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.PathMatcher;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -31,7 +32,7 @@ import net.solarnetwork.node.setup.UserService;
  * Main service implementation for STOMP setup.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class StompSetupServerService {
 
@@ -39,6 +40,7 @@ public class StompSetupServerService {
 	private final UserDetailsService userDetailsService;
 	private final PathMatcher pathMatcher;
 	private final InstructionExecutionService instructionService;
+	private LiveDatumService liveDatumService;
 
 	/**
 	 * Constructor.
@@ -57,22 +59,10 @@ public class StompSetupServerService {
 	public StompSetupServerService(UserService userService, UserDetailsService userDetailsService,
 			PathMatcher pathMatcher, InstructionExecutionService instructionService) {
 		super();
-		if ( userService == null ) {
-			throw new IllegalArgumentException("The userService argument must not be null.");
-		}
-		this.userService = userService;
-		if ( userDetailsService == null ) {
-			throw new IllegalArgumentException("The userDetailsService argument must not be null.");
-		}
-		this.userDetailsService = userDetailsService;
-		if ( pathMatcher == null ) {
-			throw new IllegalArgumentException("The pathMatcher argument must not be null.");
-		}
-		this.pathMatcher = pathMatcher;
-		if ( instructionService == null ) {
-			throw new IllegalArgumentException("The instructionService argument must not be null.");
-		}
-		this.instructionService = instructionService;
+		this.userService = requireNonNullArgument(userService, "userService");
+		this.userDetailsService = requireNonNullArgument(userDetailsService, "userDetailsService");
+		this.pathMatcher = requireNonNullArgument(pathMatcher, "pathMatcher");
+		this.instructionService = requireNonNullArgument(instructionService, "instructionService");
 	}
 
 	/**
@@ -109,6 +99,28 @@ public class StompSetupServerService {
 	 */
 	public InstructionExecutionService getInstructionService() {
 		return instructionService;
+	}
+
+	/**
+	 * Get the live datum service.
+	 * 
+	 * @return the live datum service, or {@literal null} if live datum is not
+	 *         supported
+	 * @since 2.1
+	 */
+	public LiveDatumService getLiveDatumService() {
+		return liveDatumService;
+	}
+
+	/**
+	 * Set the live datum service.
+	 * 
+	 * @param liveDatumService
+	 *        the live datum service to set
+	 * @since 2.1
+	 */
+	public void setLiveDatumService(LiveDatumService liveDatumService) {
+		this.liveDatumService = liveDatumService;
 	}
 
 }
