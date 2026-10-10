@@ -168,8 +168,7 @@ public class TestTaskScheduler implements TaskScheduler {
 	 * @return the pending tasks
 	 */
 	public synchronized List<Task> pendingOneShots() {
-		return tasks.stream().filter(t -> !t.isPeriodic() && !t.isDone())
-				.collect(Collectors.toList());
+		return tasks.stream().filter(t -> !t.isPeriodic() && !t.isDone()).collect(Collectors.toList());
 	}
 
 	/**
@@ -229,8 +228,7 @@ public class TestTaskScheduler implements TaskScheduler {
 	}
 
 	@Override
-	public ScheduledFuture<?> scheduleAtFixedRate(Runnable task, Instant startTime,
-			Duration period) {
+	public ScheduledFuture<?> scheduleAtFixedRate(Runnable task, Instant startTime, Duration period) {
 		return add(task, startTime, period);
 	}
 
@@ -240,8 +238,7 @@ public class TestTaskScheduler implements TaskScheduler {
 	}
 
 	@Override
-	public ScheduledFuture<?> scheduleWithFixedDelay(Runnable task, Instant startTime,
-			Duration delay) {
+	public ScheduledFuture<?> scheduleWithFixedDelay(Runnable task, Instant startTime, Duration delay) {
 		return add(task, startTime, delay);
 	}
 

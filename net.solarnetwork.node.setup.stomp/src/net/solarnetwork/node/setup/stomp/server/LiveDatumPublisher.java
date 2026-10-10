@@ -108,8 +108,8 @@ public class LiveDatumPublisher {
 		if ( body == null ) {
 			return false;
 		}
-		writeFrame(sub.getSession(), sub.getSubscriptionId(), sub.getSourceId(), SetupStatus.Ok,
-				null, body);
+		writeFrame(sub.getSession(), sub.getSubscriptionId(), sub.getSourceId(), SetupStatus.Ok, null,
+				body);
 		return true;
 	}
 
@@ -123,10 +123,8 @@ public class LiveDatumPublisher {
 	 * @param message
 	 *        the message, or {@literal null}
 	 */
-	public static void publishStatus(LiveDatumSubscription sub, SetupStatus status,
-			String message) {
-		publishStatus(sub.getSession(), sub.getSubscriptionId(), sub.getSourceId(), status,
-				message);
+	public static void publishStatus(LiveDatumSubscription sub, SetupStatus status, String message) {
+		publishStatus(sub.getSession(), sub.getSubscriptionId(), sub.getSourceId(), status, message);
 	}
 
 	/**
@@ -143,8 +141,8 @@ public class LiveDatumPublisher {
 	 * @param message
 	 *        the message, or {@literal null}
 	 */
-	public static void publishStatus(SetupSession session, String subscriptionId,
-			String sourceId, SetupStatus status, String message) {
+	public static void publishStatus(SetupSession session, String subscriptionId, String sourceId,
+			SetupStatus status, String message) {
 		writeFrame(session, subscriptionId, sourceId, status, message, null);
 	}
 

@@ -180,8 +180,8 @@ public class StompSetupServerHandlerLiveTests {
 		DatumSamples s = new DatumSamples();
 		s.putInstantaneousSampleValue("watts", 1234);
 		s.putInstantaneousSampleValue("current", 5.6f);
-		liveService.handleEvent(DatumEvents
-				.datumCapturedEvent(SimpleDatum.nodeDatum(LIVE_SOURCE_ID, Instant.now(), s)));
+		liveService.handleEvent(
+				DatumEvents.datumCapturedEvent(SimpleDatum.nodeDatum(LIVE_SOURCE_ID, Instant.now(), s)));
 	}
 
 	@Test
@@ -209,8 +209,7 @@ public class StompSetupServerHandlerLiveTests {
 		// THEN
 		StompFrame msg = nextLiveFrame();
 		assertThat("Live MESSAGE", msg.command(), is(StompCommand.MESSAGE));
-		assertThat("Subscription", msg.headers().getAsString(StompHeaders.SUBSCRIPTION),
-				is("live-1"));
+		assertThat("Subscription", msg.headers().getAsString(StompHeaders.SUBSCRIPTION), is("live-1"));
 		assertThat("Status OK", msg.headers().getAsString(SetupHeader.Status.getValue()),
 				is(String.valueOf(SetupStatus.Ok.getCode())));
 	}
@@ -252,8 +251,8 @@ public class StompSetupServerHandlerLiveTests {
 		StompFrame msg = nextLiveFrame();
 		assertThat("Status 429", msg.headers().getAsString(SetupHeader.Status.getValue()),
 				is(String.valueOf(SetupStatus.TooManyRequests.getCode())));
-		assertThat("Rejected subscription ID",
-				msg.headers().getAsString(StompHeaders.SUBSCRIPTION), is("live-2"));
+		assertThat("Rejected subscription ID", msg.headers().getAsString(StompHeaders.SUBSCRIPTION),
+				is("live-2"));
 		assertThat("One registered", liveService.getSubscriptionCount(), is(1));
 	}
 
@@ -272,8 +271,7 @@ public class StompSetupServerHandlerLiveTests {
 		StompFrame msg = nextLiveFrame();
 		assertThat("Status 503", msg.headers().getAsString(SetupHeader.Status.getValue()),
 				is(String.valueOf(SetupStatus.ServiceUnavailable.getCode())));
-		assertThat("Subscription", msg.headers().getAsString(StompHeaders.SUBSCRIPTION),
-				is("live-1"));
+		assertThat("Subscription", msg.headers().getAsString(StompHeaders.SUBSCRIPTION), is("live-1"));
 	}
 
 	@Test
@@ -282,8 +280,7 @@ public class StompSetupServerHandlerLiveTests {
 		givenLiveSupport();
 		expect(ctx.channel()).andReturn(liveChannel);
 		Capture<Object> receiptCaptor = Capture.newInstance();
-		expect(ctx.writeAndFlush(capture(receiptCaptor)))
-				.andReturn(new DefaultChannelPromise(channel));
+		expect(ctx.writeAndFlush(capture(receiptCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
 		replayAll();
@@ -294,8 +291,7 @@ public class StompSetupServerHandlerLiveTests {
 		// THEN
 		StompFrame receipt = (StompFrame) receiptCaptor.getValue();
 		assertThat("RECEIPT frame", receipt.command(), is(StompCommand.RECEIPT));
-		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID),
-				is("r-1"));
+		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID), is("r-1"));
 	}
 
 	@Test
@@ -345,8 +341,7 @@ public class StompSetupServerHandlerLiveTests {
 		// receipt deferred to event loop, after any queued live message
 		expect(ctx.executor()).andReturn(ImmediateEventExecutor.INSTANCE);
 		Capture<Object> receiptCaptor = Capture.newInstance();
-		expect(ctx.writeAndFlush(capture(receiptCaptor)))
-				.andReturn(new DefaultChannelPromise(channel));
+		expect(ctx.writeAndFlush(capture(receiptCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
 		replayAll();
@@ -359,8 +354,7 @@ public class StompSetupServerHandlerLiveTests {
 		// THEN
 		StompFrame receipt = (StompFrame) receiptCaptor.getValue();
 		assertThat("RECEIPT frame", receipt.command(), is(StompCommand.RECEIPT));
-		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID),
-				is("r-2"));
+		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID), is("r-2"));
 		assertThat("Live subscription removed", liveService.getSubscriptionCount(), is(0));
 	}
 
@@ -379,8 +373,8 @@ public class StompSetupServerHandlerLiveTests {
 		handler.channelRead(ctx, f);
 		DatumSamples s = new DatumSamples();
 		s.putInstantaneousSampleValue("watts", 1);
-		liveService.handleEvent(DatumEvents
-				.datumCapturedEvent(SimpleDatum.nodeDatum(sourceId, Instant.now(), s)));
+		liveService.handleEvent(
+				DatumEvents.datumCapturedEvent(SimpleDatum.nodeDatum(sourceId, Instant.now(), s)));
 
 		// THEN
 		StompFrame msg = nextLiveFrame();
@@ -451,8 +445,8 @@ public class StompSetupServerHandlerLiveTests {
 
 		// WHEN
 		// subscribe with ID a\nb, escaped on the wire
-		writeWire(liveChannel, "SUBSCRIBE\nid:a\\\\nb\ndestination:/setup/datum/live\n"
-				+ "source-id:" + LIVE_SOURCE_ID + "\nproperties:watts\n\n\0");
+		writeWire(liveChannel, "SUBSCRIBE\nid:a\\\\nb\ndestination:/setup/datum/live\n" + "source-id:"
+				+ LIVE_SOURCE_ID + "\nproperties:watts\n\n\0");
 		publishLiveDatum();
 
 		// THEN

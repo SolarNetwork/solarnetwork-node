@@ -76,8 +76,8 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 
 	@Before
 	public void setup() {
-		service = newService(new StaticOptionalService<>(opModes),
-				new StaticOptionalService<>(null), objectMapper);
+		service = newService(new StaticOptionalService<>(opModes), new StaticOptionalService<>(null),
+				objectMapper);
 	}
 
 	private LiveDatumService newService(StaticOptionalService<OperationalModesService> ops,
@@ -363,10 +363,8 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		// THEN
 		StompFrame f = nextFrame();
 		assertStatus(f, SetupStatus.Ok);
-		assertThat("Subscription", f.headers().getAsString(StompHeaders.SUBSCRIPTION),
-				is("live-1"));
-		assertThat("Source ID", f.headers().getAsString(LiveHeader.SourceId.getValue()),
-				is(SOURCE_ID));
+		assertThat("Subscription", f.headers().getAsString(StompHeaders.SUBSCRIPTION), is("live-1"));
+		assertThat("Source ID", f.headers().getAsString(LiveHeader.SourceId.getValue()), is(SOURCE_ID));
 		assertThat("Only timestamp and requested present properties", body(f).keySet(),
 				contains("t", "watts", "current"));
 	}

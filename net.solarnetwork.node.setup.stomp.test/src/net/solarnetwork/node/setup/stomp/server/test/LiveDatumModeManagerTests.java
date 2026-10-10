@@ -111,8 +111,7 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 
 		// THEN
 		final long exp = clock.millis() + DEFAULT_MODE_EXPIRE_SECS * 1000L;
-		assertThat("Mode enabled with expiration", opModes.enableCalls,
-				contains(MODE + "@" + exp));
+		assertThat("Mode enabled with expiration", opModes.enableCalls, contains(MODE + "@" + exp));
 	}
 
 	@Test
@@ -252,8 +251,7 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 
 		// WHEN
 		// within refresh threshold
-		clock.advance(
-				Duration.ofSeconds(DEFAULT_MODE_EXPIRE_SECS - DEFAULT_MODE_REFRESH_SECS - 60 + 1));
+		clock.advance(Duration.ofSeconds(DEFAULT_MODE_EXPIRE_SECS - DEFAULT_MODE_REFRESH_SECS - 60 + 1));
 		manager.sync();
 
 		// THEN
@@ -295,8 +293,7 @@ public class LiveDatumModeManagerTests extends LiveDatumTestSupport {
 		lingerPasses();
 
 		// THEN
-		assertThat("Expiring mode treated as ours and disabled", opModes.disableCalls,
-				contains(MODE));
+		assertThat("Expiring mode treated as ours and disabled", opModes.disableCalls, contains(MODE));
 	}
 
 	@Test

@@ -846,8 +846,7 @@ public class StompSetupServerHandlerTests {
 
 					@Override
 					public InstructionStatus answer() throws Throwable {
-						return createStatus(instrCaptor.getValue(), InstructionState.Completed,
-								null);
+						return createStatus(instrCaptor.getValue(), InstructionState.Completed, null);
 					}
 
 				});
@@ -885,8 +884,9 @@ public class StompSetupServerHandlerTests {
 		handler.channelRead(ctx, f);
 
 		// THEN
-		assertThat("Subscription removed", session.subscriptionIdsForTopic("/setup/foo",
-				serverService.getPathMatcher()), is(empty()));
+		assertThat("Subscription removed",
+				session.subscriptionIdsForTopic("/setup/foo", serverService.getPathMatcher()),
+				is(empty()));
 	}
 
 	@Test
@@ -902,8 +902,9 @@ public class StompSetupServerHandlerTests {
 		handler.channelRead(ctx, f);
 
 		// THEN
-		assertThat("Existing subscription kept", session.subscriptionIdsForTopic("/setup/foo",
-				serverService.getPathMatcher()), contains("0"));
+		assertThat("Existing subscription kept",
+				session.subscriptionIdsForTopic("/setup/foo", serverService.getPathMatcher()),
+				contains("0"));
 	}
 
 	@Test
@@ -941,8 +942,7 @@ public class StompSetupServerHandlerTests {
 		// THEN
 		StompFrame receipt = (StompFrame) receiptCaptor.getValue();
 		assertThat("RECEIPT frame", receipt.command(), is(StompCommand.RECEIPT));
-		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID),
-				is("bye"));
+		assertThat("Receipt ID", receipt.headers().getAsString(StompHeaders.RECEIPT_ID), is("bye"));
 	}
 
 }

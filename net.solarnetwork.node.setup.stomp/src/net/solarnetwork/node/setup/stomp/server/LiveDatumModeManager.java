@@ -97,8 +97,7 @@ public class LiveDatumModeManager {
 	 * @param opModesService
 	 *        the operational modes service
 	 * @param active
-	 *        a condition that is {@literal true} while live subscriptions
-	 *        exist
+	 *        a condition that is {@literal true} while live subscriptions exist
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
@@ -210,8 +209,7 @@ public class LiveDatumModeManager {
 		if ( exp == null && ops.isOperationalModeActive(mode) ) {
 			// enabled elsewhere without expiration
 			if ( mode.equals(enabledMode) ) {
-				log.info("Live datum operational mode [{}] now has no expiration; releasing",
-						mode);
+				log.info("Live datum operational mode [{}] now has no expiration; releasing", mode);
 				enabledMode = null;
 			}
 			return;
@@ -239,11 +237,9 @@ public class LiveDatumModeManager {
 		enabledMode = null;
 		try {
 			final Map<String, Long> withExp = ops.activeOperationalModesWithExpirations();
-			if ( ops.isOperationalModeActive(mode)
-					&& (withExp == null || !withExp.containsKey(mode)) ) {
+			if ( ops.isOperationalModeActive(mode) && (withExp == null || !withExp.containsKey(mode)) ) {
 				// changed to no expiration elsewhere, so leave it alone
-				log.info("Not disabling live datum operational mode [{}]: it has no expiration",
-						mode);
+				log.info("Not disabling live datum operational mode [{}]: it has no expiration", mode);
 				return;
 			}
 			ops.disableOperationalModes(singleton(mode));
@@ -298,8 +294,8 @@ public class LiveDatumModeManager {
 	 * Set the clock.
 	 *
 	 * @param clock
-	 *        the clock to set; if {@literal null} then the system UTC clock will
-	 *        be used
+	 *        the clock to set; if {@literal null} then the system UTC clock
+	 *        will be used
 	 */
 	public void setClock(Clock clock) {
 		this.clock = (clock != null ? clock : Clock.systemUTC());
@@ -319,7 +315,8 @@ public class LiveDatumModeManager {
 	 *
 	 * @param opMode
 	 *        the mode to set; will be trimmed and converted to lower case; if
-	 *        {@literal null} or empty then {@link #DEFAULT_OP_MODE} will be used
+	 *        {@literal null} or empty then {@link #DEFAULT_OP_MODE} will be
+	 *        used
 	 */
 	public void setOpMode(String opMode) {
 		String m = (opMode != null ? opMode.trim().toLowerCase() : "");

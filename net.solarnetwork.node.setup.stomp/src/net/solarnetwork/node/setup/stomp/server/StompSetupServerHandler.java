@@ -115,8 +115,7 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
  * subscriptions. The {@literal UNSUBSCRIBE} frame removes a subscription, and
  * the {@literal DISCONNECT} frame closes the connection. A {@literal receipt}
  * header on {@literal SUBSCRIBE}, {@literal UNSUBSCRIBE}, or
- * {@literal DISCONNECT} frames is acknowledged with a {@literal RECEIPT}
- * frame.
+ * {@literal DISCONNECT} frames is acknowledged with a {@literal RECEIPT} frame.
  * </p>
  * 
  * <p>
@@ -671,8 +670,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 				}
 				f.headers().set(StompHeaders.DESTINATION, topic);
 				f.headers().set(StompHeaders.SUBSCRIPTION, encodeStompHeaderValue(subId));
-				f.headers().set(StompHeaders.MESSAGE_ID,
-						String.valueOf(session.nextMessageId()));
+				f.headers().set(StompHeaders.MESSAGE_ID, String.valueOf(session.nextMessageId()));
 				if ( json != null && json.length > 0 ) {
 					f.headers().set(StompHeaders.CONTENT_TYPE, JSON_UTF8_CONTENT_TYPE);
 					f.headers().set(StompHeaders.CONTENT_LENGTH, String.valueOf(json.length));

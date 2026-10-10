@@ -115,10 +115,10 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 	private final LiveDatumPublisher publisher;
 	private final LiveDatumModeManager modeManager;
 
-	private final ConcurrentMap<String, LiveDatumSubscription> subscriptions = new ConcurrentHashMap<>(
-			8, 0.9f, 2);
-	private final ConcurrentMap<String, Set<LiveDatumSubscription>> bySource = new ConcurrentHashMap<>(
-			8, 0.9f, 2);
+	private final ConcurrentMap<String, LiveDatumSubscription> subscriptions = new ConcurrentHashMap<>(8,
+			0.9f, 2);
+	private final ConcurrentMap<String, Set<LiveDatumSubscription>> bySource = new ConcurrentHashMap<>(8,
+			0.9f, 2);
 
 	/** Guards registry compound operations, not held during I/O. */
 	private final Object registryLock = new Object();
@@ -249,8 +249,8 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 		}
 
 		final long now = clock.millis();
-		final LiveDatumSubscription sub = new LiveDatumSubscription(session, subscriptionId, src,
-				props, intervalMs, now, now + (maxDurationSecs * 1000L));
+		final LiveDatumSubscription sub = new LiveDatumSubscription(session, subscriptionId, src, props,
+				intervalMs, now, now + (maxDurationSecs * 1000L));
 		final String key = sub.getKey();
 		SetupStatus rejectStatus = null;
 		String rejectMessage = null;
@@ -301,13 +301,11 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 				if ( latest != null ) {
 					// only a recent datum confirms the source is still producing datum
 					final Instant ts = latest.getTimestamp();
-					final boolean recent = (ts != null
-							&& now - ts.toEpochMilli() < (staleSecs * 1000L));
+					final boolean recent = (ts != null && now - ts.toEpochMilli() < (staleSecs * 1000L));
 					offer(sub, latest, now, recent);
 				}
 			} catch ( RuntimeException e ) {
-				log.warn("Error getting latest datum for live subscription {}: {}", sub,
-						e.toString());
+				log.warn("Error getting latest datum for live subscription {}: {}", sub, e.toString());
 			}
 		}
 
@@ -371,8 +369,7 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 
 	@Override
 	public void handleEvent(Event event) {
-		if ( event == null
-				|| !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(event.getTopic()) ) {
+		if ( event == null || !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(event.getTopic()) ) {
 			return;
 		}
 		final Object o = event.getProperty(DatumEvents.DATUM_PROPERTY);
@@ -534,8 +531,8 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 	}
 
 	/**
-	 * Bring the operational mode and housekeeping task in line with the
-	 * current subscriptions.
+	 * Bring the operational mode and housekeeping task in line with the current
+	 * subscriptions.
 	 */
 	private void syncTasks() {
 		if ( shutdown ) {
@@ -593,8 +590,7 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 			try {
 				housekeeping(sub, now);
 			} catch ( RuntimeException e ) {
-				log.warn("Error performing housekeeping on live subscription {}: {}", sub,
-						e.toString());
+				log.warn("Error performing housekeeping on live subscription {}: {}", sub, e.toString());
 			}
 		}
 		syncTasks();
@@ -682,8 +678,8 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 	 * </p>
 	 *
 	 * @param clock
-	 *        the clock to set; if {@literal null} then the system UTC clock will
-	 *        be used
+	 *        the clock to set; if {@literal null} then the system UTC clock
+	 *        will be used
 	 */
 	public void setClock(Clock clock) {
 		this.clock = (clock != null ? clock : Clock.systemUTC());
@@ -807,8 +803,8 @@ public class LiveDatumService implements EventHandler, ServiceLifecycleObserver 
 	 * Set the source grace period, in seconds.
 	 *
 	 * <p>
-	 * A subscription whose source produces no datum within this time is
-	 * closed with a {@link SetupStatus#NotFound} status.
+	 * A subscription whose source produces no datum within this time is closed
+	 * with a {@link SetupStatus#NotFound} status.
 	 * </p>
 	 *
 	 * @param sourceGraceSecs

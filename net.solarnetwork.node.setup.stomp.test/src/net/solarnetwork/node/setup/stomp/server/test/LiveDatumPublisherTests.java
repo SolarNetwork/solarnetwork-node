@@ -93,14 +93,10 @@ public class LiveDatumPublisherTests extends LiveDatumTestSupport {
 		assertStatus(f, SetupStatus.Ok);
 		assertThat("Destination", f.headers().getAsString(StompHeaders.DESTINATION),
 				is(SetupTopic.DatumLive.getValue()));
-		assertThat("Subscription", f.headers().getAsString(StompHeaders.SUBSCRIPTION),
-				is("live-1"));
-		assertThat("Message ID", f.headers().getAsString(StompHeaders.MESSAGE_ID),
-				is(notNullValue()));
-		assertThat("Source ID", f.headers().getAsString(LiveHeader.SourceId.getValue()),
-				is(SOURCE_ID));
-		assertThat("No message header", f.headers().getAsString(StompHeaders.MESSAGE),
-				is(nullValue()));
+		assertThat("Subscription", f.headers().getAsString(StompHeaders.SUBSCRIPTION), is("live-1"));
+		assertThat("Message ID", f.headers().getAsString(StompHeaders.MESSAGE_ID), is(notNullValue()));
+		assertThat("Source ID", f.headers().getAsString(LiveHeader.SourceId.getValue()), is(SOURCE_ID));
+		assertThat("No message header", f.headers().getAsString(StompHeaders.MESSAGE), is(nullValue()));
 		assertThat("Content type", f.headers().getAsString(StompHeaders.CONTENT_TYPE),
 				is(StompUtils.JSON_UTF8_CONTENT_TYPE));
 		assertThat("Content length", f.headers().getAsString(StompHeaders.CONTENT_LENGTH),
@@ -238,12 +234,9 @@ public class LiveDatumPublisherTests extends LiveDatumTestSupport {
 		assertStatus(f, SetupStatus.Gone);
 		assertThat("Destination", f.headers().getAsString(StompHeaders.DESTINATION),
 				is(SetupTopic.DatumLive.getValue()));
-		assertThat("Subscription", f.headers().getAsString(StompHeaders.SUBSCRIPTION),
-				is("live-1"));
-		assertThat("Source ID", f.headers().getAsString(LiveHeader.SourceId.getValue()),
-				is(SOURCE_ID));
-		assertThat("Message", f.headers().getAsString(StompHeaders.MESSAGE),
-				containsString("duration"));
+		assertThat("Subscription", f.headers().getAsString(StompHeaders.SUBSCRIPTION), is("live-1"));
+		assertThat("Source ID", f.headers().getAsString(LiveHeader.SourceId.getValue()), is(SOURCE_ID));
+		assertThat("Message", f.headers().getAsString(StompHeaders.MESSAGE), containsString("duration"));
 		assertThat("No body", f.content().readableBytes(), is(0));
 		assertThat("No content type", f.headers().getAsString(StompHeaders.CONTENT_TYPE),
 				is(nullValue()));

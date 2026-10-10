@@ -39,8 +39,8 @@ import net.solarnetwork.node.service.OperationalModesService;
  *
  * <p>
  * Modes enabled without an expiration are excluded from
- * {@link #activeOperationalModesWithExpirations()}, and enabling a mode replaces
- * any existing expiration, as in the default implementation.
+ * {@link #activeOperationalModesWithExpirations()}, and enabling a mode
+ * replaces any existing expiration, as in the default implementation.
  * </p>
  *
  * @author elijah
@@ -78,8 +78,7 @@ public class TestOperationalModesService implements OperationalModesService {
 	 *
 	 * @param mode
 	 *        the mode
-	 * @return the expiration, or {@literal null} if not active or no
-	 *         expiration
+	 * @return the expiration, or {@literal null} if not active or no expiration
 	 */
 	public synchronized Long expiration(String mode) {
 		Long exp = modes.get(mode);
@@ -94,8 +93,7 @@ public class TestOperationalModesService implements OperationalModesService {
 
 	@Override
 	public synchronized Set<String> activeOperationalModes() {
-		return modes.keySet().stream().filter(this::isOperationalModeActive)
-				.collect(Collectors.toSet());
+		return modes.keySet().stream().filter(this::isOperationalModeActive).collect(Collectors.toSet());
 	}
 
 	@Override

@@ -107,8 +107,8 @@ public abstract class LiveDatumTestSupport {
 	}
 
 	/**
-	 * Create a meter datum with {@code watts}, {@code current}, {@code voltage},
-	 * and {@code frequency} properties.
+	 * Create a meter datum with {@code watts}, {@code current},
+	 * {@code voltage}, and {@code frequency} properties.
 	 *
 	 * @param sourceId
 	 *        the source ID
