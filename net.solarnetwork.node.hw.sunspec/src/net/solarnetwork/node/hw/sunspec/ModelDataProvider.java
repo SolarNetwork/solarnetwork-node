@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sunspec;
 
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.service.Identifiable;
+import net.solarnetwork.sunspec.modbus.ModbusConnection;
 import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
@@ -46,9 +47,9 @@ public interface ModelDataProvider extends Identifiable {
 	/**
 	 * Get a {@link ModbusConnection} suitable for refreshing model data.
 	 *
-	 * @return a modbus connection
+	 * @return a modbus connection, if available
 	 */
-	// TODO: @Nullable
-	//ModbusConnection modelDataModbusConnection();
+	@Nullable
+	ModbusConnection modelDataModbusConnection();
 
 }

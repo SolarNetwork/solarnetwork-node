@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.support;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import org.jspecify.annotations.Nullable;
@@ -46,19 +47,61 @@ import net.solarnetwork.sunspec.modbus.ModbusWritingFunction;
  * @version 1.0
  * @since 6.0
  */
-public class SunSpecModbusConnectionAdapter implements ModbusConnection {
+public class SunSpecModbusConnectionAdapter implements ModbusConnection, Closeable {
 
 	private final net.solarnetwork.node.io.modbus.ModbusConnection delegate;
+	private final boolean closeable;
+
+	/**
+	 * Constructor.
+	 *
+	 * <p>
+	 * The {@code closeable} property will be {@code false}.
+	 * </p>
+	 *
+	 * @param delegate
+	 *        the delegate connection
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @see SunSpecModbusConnectionAdapter#SunSpecModbusConnectionAdapter(net.solarnetwork.node.io.modbus.ModbusConnection,
+	 *      boolean)
+	 */
+	public SunSpecModbusConnectionAdapter(net.solarnetwork.node.io.modbus.ModbusConnection delegate) {
+		this(delegate, false);
+	}
 
 	/**
 	 * Constructor.
 	 *
 	 * @param delegate
 	 *        the delegate connection
+	 * @param closeable
+	 *        {@code true} to invoke {@code close} on the given {@code delegate}
+	 *        when {@link #close()} is called, otherwise {@link #close()} does
+	 *        nothing
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
-	public SunSpecModbusConnectionAdapter(net.solarnetwork.node.io.modbus.ModbusConnection delegate) {
+	public SunSpecModbusConnectionAdapter(net.solarnetwork.node.io.modbus.ModbusConnection delegate,
+			boolean closeable) {
 		super();
 		this.delegate = requireNonNullArgument(delegate, "delegate");
+		this.closeable = closeable;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * This method will only call the delegate's {@code close()} method if the
+	 * instance was created with {@code closeable} set to {@code true}.
+	 * </p>
+	 */
+	@Override
+	public void close() throws IOException {
+		if ( closeable ) {
+			delegate.close();
+		}
 	}
 
 	@Override

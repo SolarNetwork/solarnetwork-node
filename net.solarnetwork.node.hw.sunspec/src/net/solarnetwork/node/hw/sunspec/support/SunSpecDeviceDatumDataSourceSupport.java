@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.support;
 
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,6 +47,7 @@ import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelDataProvider;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -243,16 +245,18 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		}
 	}
 
-	/*- TODO
 	@Override
-	public @Nullable ModbusConnection modelDataModbusConnection() {
-		ModbusNetwork network = OptionalService.service(getModbusNetwork());
+	public net.solarnetwork.sunspec.modbus.@Nullable ModbusConnection modelDataModbusConnection() {
+		ModbusNetwork network = service(getModbusNetwork());
 		if ( network == null ) {
 			return null;
 		}
-		return network.createConnection(getUnitId());
+		ModbusConnection conn = network.createConnection(getUnitId());
+		if ( conn == null ) {
+			return null;
+		}
+		return new SunSpecModbusConnectionAdapter(conn, true);
 	}
-	*/
 
 	/**
 	 * Get a snapshot of the cached model data.
