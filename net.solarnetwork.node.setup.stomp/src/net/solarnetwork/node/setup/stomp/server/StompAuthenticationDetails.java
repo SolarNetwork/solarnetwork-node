@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -47,10 +48,7 @@ public class StompAuthenticationDetails implements Serializable {
 	 */
 	public StompAuthenticationDetails(UUID sessionId) {
 		super();
-		if ( sessionId == null ) {
-			throw new IllegalArgumentException("The sessionId argument must not be null.");
-		}
-		this.sessionId = sessionId;
+		this.sessionId = requireNonNullArgument(sessionId, "sessionId");
 	}
 
 	/**

@@ -25,6 +25,7 @@ package net.solarnetwork.node.setup.stomp.server;
 import static net.solarnetwork.node.setup.stomp.StompUtils.JSON_UTF8_CONTENT_TYPE;
 import static net.solarnetwork.node.setup.stomp.StompUtils.decodeStompHeaderValue;
 import static net.solarnetwork.node.setup.stomp.StompUtils.encodeStompHeaderValue;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
@@ -195,22 +196,10 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	public StompSetupServerHandler(ConcurrentMap<UUID, SetupSession> sessions,
 			StompSetupServerService serverService, ObjectMapper objectMapper, Executor executor) {
 		super();
-		if ( sessions == null ) {
-			throw new IllegalArgumentException("The sessions argument must not be null.");
-		}
-		this.sessions = sessions;
-		if ( serverService == null ) {
-			throw new IllegalArgumentException("The serverService argument must not be null.");
-		}
-		this.serverService = serverService;
-		if ( objectMapper == null ) {
-			throw new IllegalArgumentException("The objectMapper argument must not be null.");
-		}
-		this.objectMapper = objectMapper;
-		if ( executor == null ) {
-			throw new IllegalArgumentException("The executor argument must not be null.");
-		}
-		this.executor = executor;
+		this.sessions = requireNonNullArgument(sessions, "sessions");
+		this.serverService = requireNonNullArgument(serverService, "serverService");
+		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
+		this.executor = requireNonNullArgument(executor, "executor");
 	}
 
 	private static Set<String> createStompHeaderNames() {

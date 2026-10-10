@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.stomp.server;
 
 import static net.solarnetwork.node.setup.stomp.StompUtils.JSON_UTF8_CONTENT_TYPE;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +79,7 @@ public class LiveDatumPublisher {
 	 */
 	public LiveDatumPublisher(ObjectMapper objectMapper) {
 		super();
-		if ( objectMapper == null ) {
-			throw new IllegalArgumentException("The objectMapper argument must not be null.");
-		}
-		this.objectMapper = objectMapper;
+		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
 	}
 
 	/**

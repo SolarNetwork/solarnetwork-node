@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.stomp.server;
 
 import static java.util.Collections.singleton;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -104,14 +105,8 @@ public class LiveDatumModeManager {
 	public LiveDatumModeManager(OptionalService<OperationalModesService> opModesService,
 			BooleanSupplier active) {
 		super();
-		if ( opModesService == null ) {
-			throw new IllegalArgumentException("The opModesService argument must not be null.");
-		}
-		this.opModesService = opModesService;
-		if ( active == null ) {
-			throw new IllegalArgumentException("The active argument must not be null.");
-		}
-		this.active = active;
+		this.opModesService = requireNonNullArgument(opModesService, "opModesService");
+		this.active = requireNonNullArgument(active, "active");
 	}
 
 	/**

@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.stomp.server;
 
 import static net.solarnetwork.node.setup.stomp.server.LiveDatumPublisher.publishStatus;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -52,6 +53,7 @@ import net.solarnetwork.node.setup.stomp.LiveHeader;
 import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.SetupTopic;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 
 /**
  * Stream live datum properties to STOMP setup sessions.
@@ -78,7 +80,7 @@ import net.solarnetwork.service.OptionalService;
  * @version 1.0
  * @since 4.1
  */
-public class LiveDatumService implements EventHandler {
+public class LiveDatumService implements EventHandler, ServiceLifecycleObserver {
 
 	/** The default {@code maxDurationSecs} property value. */
 	public static final int DEFAULT_MAX_DURATION_SECS = 900;
@@ -155,16 +157,18 @@ public class LiveDatumService implements EventHandler {
 	public LiveDatumService(OptionalService<OperationalModesService> opModesService,
 			OptionalService<DatumService> datumService, ObjectMapper objectMapper) {
 		super();
-		if ( datumService == null ) {
-			throw new IllegalArgumentException("The datumService argument must not be null.");
-		}
-		this.datumService = datumService;
+		this.datumService = requireNonNullArgument(datumService, "datumService");
 		this.publisher = new LiveDatumPublisher(objectMapper);
 		this.modeManager = new LiveDatumModeManager(opModesService, () -> !subscriptions.isEmpty());
 	}
 
+	@Override
+	public void serviceDidStartup() {
+		// nothing to do
+	}
+
 	/**
-	 * Shut down the service.
+	 * {@inheritDoc}
 	 *
 	 * <p>
 	 * All subscriptions are closed, with a best-effort
@@ -172,7 +176,8 @@ public class LiveDatumService implements EventHandler {
 	 * operational mode is disabled if this service enabled it.
 	 * </p>
 	 */
-	public void shutdown() {
+	@Override
+	public void serviceDidShutdown() {
 		final List<LiveDatumSubscription> subs;
 		synchronized ( registryLock ) {
 			// set flag with snapshot so subscribe() cannot add after it
@@ -219,12 +224,8 @@ public class LiveDatumService implements EventHandler {
 	 */
 	public SetupStatus subscribe(SetupSession session, String subscriptionId, String sourceId,
 			String properties, String interval) {
-		if ( session == null ) {
-			throw new IllegalArgumentException("The session argument must not be null.");
-		}
-		if ( subscriptionId == null ) {
-			throw new IllegalArgumentException("The subscriptionId argument must not be null.");
-		}
+		requireNonNullArgument(session, "session");
+		requireNonNullArgument(subscriptionId, "subscriptionId");
 		final String src = (sourceId != null ? sourceId.trim() : "");
 		if ( src.isEmpty() ) {
 			return reject(session, subscriptionId, null, SetupStatus.Unprocessable,
@@ -258,7 +259,7 @@ public class LiveDatumService implements EventHandler {
 			final UUID sessionId = session.getSessionId();
 			duplicate = subscriptions.get(key);
 			if ( shutdown ) {
-				// check again, as shutdown() sets the flag under this lock
+				// check again, as serviceDidShutdown() sets the flag under this lock
 				rejectStatus = SetupStatus.ServiceUnavailable;
 				rejectMessage = "Live datum not available.";
 			} else if ( duplicate != null ) {

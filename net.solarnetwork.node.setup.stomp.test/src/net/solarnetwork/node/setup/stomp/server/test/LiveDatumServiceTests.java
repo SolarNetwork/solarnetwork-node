@@ -219,7 +219,7 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 			@Override
 			public OperationalModesService service() {
 				if ( triggered.compareAndSet(false, true) ) {
-					LiveDatumServiceTests.this.service.shutdown();
+					LiveDatumServiceTests.this.service.serviceDidShutdown();
 				}
 				return super.service();
 			}
@@ -342,7 +342,7 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 	@Test
 	public void subscribe_afterShutdown_unavailable() {
 		// GIVEN
-		service.shutdown();
+		service.serviceDidShutdown();
 
 		// WHEN
 		SetupStatus result = subscribe("live-1", PROPS, null);
@@ -623,7 +623,7 @@ public class LiveDatumServiceTests extends LiveDatumTestSupport {
 		runScheduledTasks();
 
 		// WHEN
-		service.shutdown();
+		service.serviceDidShutdown();
 
 		// THEN
 		assertStatus(nextFrame(), SetupStatus.ServiceUnavailable);

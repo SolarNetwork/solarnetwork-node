@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.PathMatcher;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -58,22 +59,10 @@ public class StompSetupServerService {
 	public StompSetupServerService(UserService userService, UserDetailsService userDetailsService,
 			PathMatcher pathMatcher, InstructionExecutionService instructionService) {
 		super();
-		if ( userService == null ) {
-			throw new IllegalArgumentException("The userService argument must not be null.");
-		}
-		this.userService = userService;
-		if ( userDetailsService == null ) {
-			throw new IllegalArgumentException("The userDetailsService argument must not be null.");
-		}
-		this.userDetailsService = userDetailsService;
-		if ( pathMatcher == null ) {
-			throw new IllegalArgumentException("The pathMatcher argument must not be null.");
-		}
-		this.pathMatcher = pathMatcher;
-		if ( instructionService == null ) {
-			throw new IllegalArgumentException("The instructionService argument must not be null.");
-		}
-		this.instructionService = instructionService;
+		this.userService = requireNonNullArgument(userService, "userService");
+		this.userDetailsService = requireNonNullArgument(userDetailsService, "userDetailsService");
+		this.pathMatcher = requireNonNullArgument(pathMatcher, "pathMatcher");
+		this.instructionService = requireNonNullArgument(instructionService, "instructionService");
 	}
 
 	/**

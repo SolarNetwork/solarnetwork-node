@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.SortedSet;
@@ -69,14 +70,8 @@ public class SetupSession {
 	 */
 	public SetupSession(String login, Channel channel) {
 		super();
-		if ( login == null ) {
-			throw new IllegalArgumentException("The login argument must not be null.");
-		}
-		this.login = login;
-		if ( channel == null ) {
-			throw new IllegalArgumentException("The channel argument must not be null.");
-		}
-		this.channel = channel;
+		this.login = requireNonNullArgument(login, "login");
+		this.channel = requireNonNullArgument(channel, "channel");
 		this.sessionId = UUID.randomUUID();
 		this.created = System.currentTimeMillis();
 		this.lastActivity = this.created;

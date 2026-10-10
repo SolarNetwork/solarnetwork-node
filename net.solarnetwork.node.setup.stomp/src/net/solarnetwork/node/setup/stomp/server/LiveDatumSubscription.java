@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -82,18 +83,9 @@ public class LiveDatumSubscription {
 	public LiveDatumSubscription(SetupSession session, String subscriptionId, String sourceId,
 			List<String> properties, long intervalMs, long created, long expires) {
 		super();
-		if ( session == null ) {
-			throw new IllegalArgumentException("The session argument must not be null.");
-		}
-		this.session = session;
-		if ( subscriptionId == null ) {
-			throw new IllegalArgumentException("The subscriptionId argument must not be null.");
-		}
-		this.subscriptionId = subscriptionId;
-		if ( sourceId == null ) {
-			throw new IllegalArgumentException("The sourceId argument must not be null.");
-		}
-		this.sourceId = sourceId;
+		this.session = requireNonNullArgument(session, "session");
+		this.subscriptionId = requireNonNullArgument(subscriptionId, "subscriptionId");
+		this.sourceId = requireNonNullArgument(sourceId, "sourceId");
 		this.properties = (properties != null ? Collections.unmodifiableList(properties)
 				: Collections.emptyList());
 		this.intervalMs = intervalMs;

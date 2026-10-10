@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -63,7 +65,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * @version 2.3
  */
 public class StompSetupServer extends BaseIdentifiable
-		implements SettingsChangeObserver, SettingSpecifierProvider {
+		implements SettingsChangeObserver, SettingSpecifierProvider, ServiceLifecycleObserver {
 
 	/** The default listen port. */
 	public static final int DEFAULT_PORT = 8780;
@@ -105,31 +107,22 @@ public class StompSetupServer extends BaseIdentifiable
 	public StompSetupServer(StompSetupServerService serverService, ObjectMapper objectMapper,
 			Executor executor) {
 		super();
-		if ( serverService == null ) {
-			throw new IllegalArgumentException("The serverService argument must not be null.");
-		}
-		this.serverService = serverService;
-		if ( objectMapper == null ) {
-			throw new IllegalArgumentException("The objectMapper argument must not be null.");
-		}
-		this.objectMapper = objectMapper;
-		if ( executor == null ) {
-			throw new IllegalArgumentException("The executor argument must not be null.");
-		}
-		this.executor = executor;
+		this.serverService = requireNonNullArgument(serverService, "serverService");
+		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
+		this.executor = requireNonNullArgument(executor, "executor");
 	}
 
-	/**
-	 * Startup the server.
-	 */
-	public void startup() {
+	@Override
+	public void serviceDidStartup() {
 		restartServer();
 	}
 
-	/**
-	 * Shut the server down.
-	 */
-	public synchronized void shutdown() {
+	@Override
+	public void serviceDidShutdown() {
+		stopServer();
+	}
+
+	private synchronized void stopServer() {
 		if ( startupFuture != null && !startupFuture.isDone() ) {
 			startupFuture.cancel(true);
 			startupFuture = null;
@@ -153,7 +146,7 @@ public class StompSetupServer extends BaseIdentifiable
 	}
 
 	private synchronized void restartServer() {
-		shutdown();
+		stopServer();
 		Runnable startupTask = new StartupTask();
 		if ( taskScheduler != null ) {
 			log.info("Will start STOMP setup server on port {} in {} seconds", port, startupDelay);
@@ -170,7 +163,7 @@ public class StompSetupServer extends BaseIdentifiable
 		public void run() {
 			synchronized ( StompSetupServer.this ) {
 				startupFuture = null;
-				shutdown();
+				stopServer();
 				final int port = StompSetupServer.this.port;
 				final String bindAddress = StompSetupServer.this.bindAddress;
 				final ThreadFactory tf = new DefaultThreadFactory("STOMP-Setup:" + port, true);
@@ -190,7 +183,7 @@ public class StompSetupServer extends BaseIdentifiable
 					StompSetupServer.this.channel = future.channel();
 					log.info("STOMP setup server listening on {}:{}", bindAddress, port);
 				} catch ( InterruptedException | RuntimeException e ) {
-					shutdown();
+					stopServer();
 					log.error("Error binding STOMP setup server {} to {}:{}: {}", StompSetupServer.this,
 							bindAddress, port, e.toString());
 					if ( taskScheduler != null ) {
