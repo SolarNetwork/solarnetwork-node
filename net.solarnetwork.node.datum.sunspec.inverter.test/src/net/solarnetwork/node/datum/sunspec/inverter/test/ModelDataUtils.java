@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModelDataUtils.java - 9/10/2018 7:08:14 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,17 +27,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
+import net.solarnetwork.node.hw.sunspec.support.SunSpecModbusConnectionAdapter;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.DataUtils;
+import net.solarnetwork.sunspec.core.ModelDataFactory;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * Helper utility methods for model data testing.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public final class ModelDataUtils {
 
@@ -45,13 +46,13 @@ public final class ModelDataUtils {
 
 	/**
 	 * Parse modbus test data.
-	 * 
+	 *
 	 * <p>
 	 * This calls {@link DataUtils#parseModbusHexRegisterLines} so the address
 	 * offsets are ignored and the returned array's data will always start at
 	 * index {@literal 0}.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to load the resource from
 	 * @param resource
@@ -71,12 +72,12 @@ public final class ModelDataUtils {
 	/**
 	 * Get a connection backed by a static, read-only set of data loaded from a
 	 * class-path resource of modbus test data.
-	 * 
+	 *
 	 * <p>
 	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
 	 * text file.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to load the resource from
 	 * @param resource
@@ -91,14 +92,14 @@ public final class ModelDataUtils {
 	/**
 	 * Get a static, read-only model data instance using a class-path resource
 	 * of modbus test data.
-	 * 
+	 *
 	 * <p>
 	 * This calls {@link #getStaticDataConnection(Class, String)} to parse a
 	 * modbus data text file and then
 	 * {@link ModelDataFactory#getModelData(ModbusConnection)} to read the data
 	 * into a {@link ModelData} instance.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to load the resource from
 	 * @param resource
@@ -109,7 +110,7 @@ public final class ModelDataUtils {
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource) {
 		ModbusConnection conn = getStaticDataConnection(clazz, resource);
 		try {
-			return ModelDataFactory.getInstance().getModelData(conn);
+			return ModelDataFactory.getInstance().getModelData(new SunSpecModbusConnectionAdapter(conn));
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}

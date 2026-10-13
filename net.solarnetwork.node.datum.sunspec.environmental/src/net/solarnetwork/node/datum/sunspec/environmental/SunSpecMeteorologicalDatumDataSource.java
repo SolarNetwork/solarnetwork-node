@@ -26,29 +26,30 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.environmental.BomTemperatureModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.EnvironmentalModelId;
-import net.solarnetwork.node.hw.sunspec.environmental.IrradianceModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.MeteorologicalDatum;
-import net.solarnetwork.node.hw.sunspec.environmental.MeteorologicalModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.MiniMeteorologicalModelAccessor;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.BomTemperatureModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.EnvironmentalModelId;
+import net.solarnetwork.sunspec.api.environmental.IrradianceModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.IrradianceModelAccessor.Irradiance;
+import net.solarnetwork.sunspec.api.environmental.MeteorologicalModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.MiniMeteorologicalModelAccessor;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible meteorological devices.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -105,7 +106,14 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 		if ( currSample == null ) {
 			return null;
 		}
-		return new MeteorologicalDatum(currSample, sourceId);
+		final var d = new MeteorologicalDatum(currSample, sourceId);
+
+		final Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
+		return d;
 	}
 
 	@Override
@@ -161,9 +169,10 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 				buf.append("temp: ").append(mini.getAmbientTemperature());
 			}
 
-			IrradianceModelAccessor irr = (sample != null
+			IrradianceModelAccessor irrModel = (sample != null
 					? sample.findTypedModel(IrradianceModelAccessor.class)
 					: null);
+			Irradiance irr = (irrModel != null ? irrModel.getIrradiance() : null);
 			if ( irr != null ) {
 				if ( buf.length() > 0 ) {
 					buf.append(", ");

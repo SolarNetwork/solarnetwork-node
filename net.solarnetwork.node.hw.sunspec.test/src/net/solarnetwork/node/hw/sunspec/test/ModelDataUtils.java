@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModelDataUtils.java - 9/10/2018 7:08:14 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,36 +25,34 @@ package net.solarnetwork.node.hw.sunspec.test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
-import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
+import net.solarnetwork.node.hw.sunspec.support.SunSpecModbusConnectionAdapter;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.DataUtils;
-import net.solarnetwork.util.IntShortMap;
+import net.solarnetwork.sunspec.core.ModelDataFactory;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * Helper utility methods for model data testing.
- * 
+ *
  * @author matt
- * @version 2.3
+ * @version 3.0
  */
 public final class ModelDataUtils {
 
-	private static final Logger log = LoggerFactory.getLogger(IntegerMeterModelAccessorTests.class);
+	private static final Logger log = LoggerFactory.getLogger(ModelDataUtils.class);
 
 	/**
 	 * Parse modbus test data.
-	 * 
+	 *
 	 * <p>
 	 * This calls {@link DataUtils#parseModbusHexRegisterLines} so the address
 	 * offsets are ignored and the returned array's data will always start at
 	 * index {@literal 0}.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to load the resource from
 	 * @param resource
@@ -66,53 +64,42 @@ public final class ModelDataUtils {
 			return DataUtils.parseModbusHexRegisterLines(
 					new BufferedReader(new InputStreamReader(clazz.getResourceAsStream(resource))));
 		} catch ( IOException e ) {
-			log.error("Error reading modbus data resource [{}]", resource, e);
+			log.error("Error reading data resource [{}]", resource, e);
 			return new int[0];
 		}
 	}
 
 	/**
-	 * Parse modbus test data.
-	 * 
+	 * Get a connection backed by a static, read-only set of data loaded from a
+	 * class-path resource of modbus test data.
+	 *
 	 * <p>
-	 * This calls {@link DataUtils#parseModbusHexRegisterLines} so the address
-	 * offsets are ignored and the returned array's data will always start at
-	 * index {@literal 0}.
+	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
+	 * text file.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to load the resource from
 	 * @param resource
 	 *        the data resource to load
-	 * @return the parsed data
+	 * @return the connection backed by the static data
+	 * @see #parseTestData(Class, String)
 	 */
-	public static IntShortMap parseOffsetTestData(Class<?> clazz, String resource) {
-		IntShortMap result = new IntShortMap();
-		try {
-			Map<Integer, Integer> m = DataUtils.parseModbusHexRegisterMappingLines(
-					new BufferedReader(new InputStreamReader(clazz.getResourceAsStream(resource))));
-			if ( m != null ) {
-				for ( Map.Entry<Integer, Integer> e : m.entrySet() ) {
-					result.put(e.getKey(), e.getValue().shortValue());
-				}
-			}
-		} catch ( IOException e ) {
-			log.error("Error reading modbus data resource [{}]", resource, e);
-		}
-		return result;
+	public static ModbusConnection getStaticDataConnection(Class<?> clazz, String resource) {
+		return new StaticDataMapReadonlyModbusConnection(parseTestData(clazz, resource));
 	}
 
 	/**
 	 * Get a static, read-only model data instance using a class-path resource
 	 * of modbus test data.
-	 * 
+	 *
 	 * <p>
-	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
-	 * text file and then
+	 * This calls {@link #getStaticDataConnection(Class, String)} to parse a
+	 * modbus data text file and then
 	 * {@link ModelDataFactory#getModelData(ModbusConnection)} to read the data
 	 * into a {@link ModelData} instance.
 	 * </p>
-	 * 
+	 *
 	 * @param clazz
 	 *        the class to load the resource from
 	 * @param resource
@@ -121,149 +108,9 @@ public final class ModelDataUtils {
 	 * @see #parseTestData(Class, String)
 	 */
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource) {
-		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
-				parseTestData(clazz, resource));
+		ModbusConnection conn = getStaticDataConnection(clazz, resource);
 		try {
-			return ModelDataFactory.getInstance().getModelData(conn);
-		} catch ( IOException e ) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Get a static, read-only model data instance using a class-path resource
-	 * of modbus test data.
-	 * 
-	 * <p>
-	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
-	 * text file and then
-	 * {@link ModelDataFactory#getModelData(ModbusConnection)} to read the data
-	 * into a {@link ModelData} instance.
-	 * </p>
-	 * 
-	 * @param clazz
-	 *        the class to load the resource from
-	 * @param resource
-	 *        the data resource to load
-	 * @param parseOffsets
-	 *        if {@literal true} then parse the test data with
-	 *        {@literal [addr]:} prefixes, otherwise ignore address prefixes and
-	 *        treat the data as starting from zero
-	 * @return the model data
-	 * @see #parseTestData(Class, String)
-	 */
-	public static ModelData getModelDataInstance(Class<?> clazz, String resource, boolean parseOffsets) {
-		ModbusConnection conn;
-		if ( parseOffsets ) {
-			conn = new StaticDataMapReadonlyModbusConnection(parseOffsetTestData(clazz, resource));
-		} else {
-			conn = new StaticDataMapReadonlyModbusConnection(parseTestData(clazz, resource));
-		}
-		try {
-			return ModelDataFactory.getInstance().getModelData(conn);
-		} catch ( IOException e ) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Get a static, read-only model data instance using a class-path resource
-	 * of modbus test data, with some register values replaced.
-	 *
-	 * <p>
-	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
-	 * text file, so the data starts at address {@literal 0}.
-	 * </p>
-	 *
-	 * @param clazz
-	 *        the class to load the resource from
-	 * @param resource
-	 *        the data resource to load
-	 * @param address
-	 *        the address of the first register to replace
-	 * @param words
-	 *        the register values to replace, starting at {@code address}
-	 * @return the model data
-	 * @since 2.3
-	 */
-	public static ModelData getModelDataInstanceWithRegisters(Class<?> clazz, String resource,
-			int address, int... words) {
-		final int[] data = parseTestData(clazz, resource);
-		System.arraycopy(words, 0, data, address, words.length);
-		return getModelDataInstance(new StaticDataMapReadonlyModbusConnection(data));
-	}
-
-	/**
-	 * Get a writable Modbus connection to a class-path resource of modbus test
-	 * data.
-	 *
-	 * <p>
-	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
-	 * text file, so the data starts at address {@literal 0}. The connection
-	 * records the write requests made to it.
-	 * </p>
-	 *
-	 * @param clazz
-	 *        the class to load the resource from
-	 * @param resource
-	 *        the data resource to load
-	 * @return the connection
-	 * @since 2.3
-	 */
-	public static RecordingModbusConnection getWritableModbusConnection(Class<?> clazz,
-			String resource) {
-		return writableModbusConnection(parseTestData(clazz, resource));
-	}
-
-	/**
-	 * Get a writable Modbus connection to a class-path resource of modbus test
-	 * data, with some register values replaced.
-	 *
-	 * <p>
-	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
-	 * text file, so the data starts at address {@literal 0}. The connection
-	 * records the write requests made to it, which do not include the replaced
-	 * register values.
-	 * </p>
-	 *
-	 * @param clazz
-	 *        the class to load the resource from
-	 * @param resource
-	 *        the data resource to load
-	 * @param address
-	 *        the address of the first register to replace
-	 * @param words
-	 *        the register values to replace, starting at {@code address}
-	 * @return the connection
-	 * @since 2.3
-	 */
-	public static RecordingModbusConnection getWritableModbusConnectionWithRegisters(Class<?> clazz,
-			String resource, int address, int... words) {
-		final int[] data = parseTestData(clazz, resource);
-		System.arraycopy(words, 0, data, address, words.length);
-		return writableModbusConnection(data);
-	}
-
-	private static RecordingModbusConnection writableModbusConnection(int[] data) {
-		final IntShortMap map = new IntShortMap(data.length);
-		for ( int i = 0; i < data.length; i++ ) {
-			map.putValue(i, data[i]);
-		}
-		return new RecordingModbusConnection(map);
-	}
-
-	/**
-	 * Get a model data instance by discovering the models available on a Modbus
-	 * connection.
-	 *
-	 * @param conn
-	 *        the connection
-	 * @return the model data
-	 * @since 2.3
-	 */
-	public static ModelData getModelDataInstance(ModbusConnection conn) {
-		try {
-			return ModelDataFactory.getInstance().getModelData(conn);
+			return ModelDataFactory.getInstance().getModelData(new SunSpecModbusConnectionAdapter(conn));
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}

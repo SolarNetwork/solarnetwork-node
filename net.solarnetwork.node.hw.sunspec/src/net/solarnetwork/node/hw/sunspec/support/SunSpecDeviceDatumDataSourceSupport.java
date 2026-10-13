@@ -22,33 +22,46 @@
 
 package net.solarnetwork.node.hw.sunspec.support;
 
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.DeviceInfo;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
 import net.solarnetwork.node.domain.DataAccessor;
-import net.solarnetwork.node.hw.sunspec.GenericModelId;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.ModelDataProvider;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.sunspec.api.DataClassification;
+import net.solarnetwork.sunspec.api.GenericModelId;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.PointGroup;
+import net.solarnetwork.sunspec.api.PointGroupList;
+import net.solarnetwork.sunspec.api.PointMapMode;
+import net.solarnetwork.sunspec.api.SunSpecUtils;
+import net.solarnetwork.sunspec.core.ModelDataFactory;
+import net.solarnetwork.sunspec.modbus.ModbusReference;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -56,13 +69,27 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  *
  * @author matt
- * @version 2.4
+ * @version 3.0
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport
 		implements ModelDataProvider {
 
 	private final AtomicReference<ModelData> sample;
+
+	/**
+	 * A static cache of point name to classification, to use during secondary
+	 * model population.
+	 *
+	 * <p>
+	 * These are not expected to change over the life of the application, so
+	 * they are loaded and cached once.
+	 * </p>
+	 *
+	 * @since 3.0
+	 */
+	private static final ConcurrentMap<Integer, Map<String, DatumSamplesType>> MODEL_POINT_CLASSIFICATIONS = new ConcurrentHashMap<>(
+			8);
 
 	private long sampleCacheMs = 5000;
 	private @Nullable String sourceId;
@@ -150,7 +177,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 						accessors.addAll(secondaryAccessors);
 					}
 					if ( result != null && accessors != null && !accessors.isEmpty() ) {
-						result.readModelData(connection, accessors);
+						result.readModelData(new SunSpecModbusConnectionAdapter(connection), accessors);
 					}
 					return result;
 				}
@@ -167,10 +194,11 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	private ModelData modelData(ModbusConnection conn) throws IOException {
 		Integer manualBaseAddress = getBaseAddress();
 		if ( manualBaseAddress != null && manualBaseAddress.intValue() >= 0 ) {
-			return ModelDataFactory.getInstance().getModelData(conn,
-					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress, false);
+			return ModelDataFactory.getInstance().discoverModels(
+					new SunSpecModbusConnectionAdapter(conn),
+					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress);
 		}
-		return ModelDataFactory.getInstance().getModelData(conn, false);
+		return ModelDataFactory.getInstance().discoverModels(new SunSpecModbusConnectionAdapter(conn));
 	}
 
 	private @Nullable List<ModelAccessor> getSecondaryModelAccessors(@Nullable ModelData data) {
@@ -218,12 +246,16 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	@Override
-	public @Nullable ModbusConnection modelDataModbusConnection() {
-		ModbusNetwork network = OptionalService.service(getModbusNetwork());
+	public net.solarnetwork.sunspec.modbus.@Nullable ModbusConnection modelDataModbusConnection() {
+		ModbusNetwork network = service(getModbusNetwork());
 		if ( network == null ) {
 			return null;
 		}
-		return network.createConnection(getUnitId());
+		ModbusConnection conn = network.createConnection(getUnitId());
+		if ( conn == null ) {
+			return null;
+		}
+		return new SunSpecModbusConnectionAdapter(conn, true);
 	}
 
 	/**
@@ -274,7 +306,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 */
 	protected @Nullable Map<String, Object> readDeviceInfo(ModbusConnection connection, ModelData data)
 			throws IOException {
-		return (data != null ? data.getDeviceInfo() : null);
+		return (data != null ? deviceInfoMap(data) : null);
 	}
 
 	/**
@@ -290,6 +322,126 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	public @Nullable DeviceInfo deviceInfo() {
 		Map<String, ?> info = getDeviceInfo();
 		return (info != null ? DataAccessor.deviceInfoBuilderForInfo(info).build() : null);
+	}
+
+	private Map<String, Object> deviceInfoMap(ModelData data) {
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		String manufacturer = data.getManufacturer();
+		if ( manufacturer != null ) {
+			result.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+		}
+		String model = data.getModelName();
+		if ( model != null ) {
+			String version = data.getVersion();
+			if ( version != null ) {
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
+						String.format("%s (version %s)", model, version));
+			} else {
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model.toString());
+			}
+		}
+		String sn = data.getSerialNumber();
+		if ( sn != null ) {
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+		}
+		return result;
+	}
+
+	/**
+	 * Populate point data from a set of secondary models.
+	 *
+	 * @param sample
+	 *        the sample to populate point values on
+	 * @param data
+	 *        the data to extract the point values from
+	 * @param secondaryModelIds
+	 *        the set of secondary model IDs to extract
+	 * @since 3.0
+	 */
+	protected void populateSecondaryModelPoints(MutableDatumSamplesOperations sample, ModelData data,
+			Set<Integer> secondaryModelIds) {
+		for ( ModelAccessor accessor : data.getModels() ) {
+			if ( secondaryModelIds.contains(accessor.getModelId().getId()) ) {
+				populateModelPoints(sample, accessor);
+			}
+		}
+	}
+
+	/**
+	 * Populate point data from a model.
+	 *
+	 * @param sample
+	 *        the sample to populate point values on
+	 * @param accessor
+	 *        the model to extract from
+	 * @since 3.0
+	 */
+	protected void populateModelPoints(MutableDatumSamplesOperations sample, ModelAccessor accessor) {
+		final Map<String, Object> points = accessor.toPointMap(PointMapMode.Flat);
+		final Map<String, DatumSamplesType> types = MODEL_POINT_CLASSIFICATIONS
+				.computeIfAbsent(accessor.getModelId().getId(), id -> pointDatumSamplesTypes(accessor));
+		for ( Entry<String, Object> pointEntry : points.entrySet() ) {
+			DatumSamplesType type = types.get(pointEntry.getKey());
+			if ( type == null ) {
+				continue;
+			}
+			if ( sample.findSampleValue(pointEntry.getKey()) != null ) {
+				// do not overwrite existing properties
+				continue;
+			}
+			sample.putSampleValue(type, pointEntry.getKey(), pointEntry.getValue());
+		}
+	}
+
+	/**
+	 * Get the datum samples types of the points of a point group, including its
+	 * nested groups.
+	 *
+	 * <p>
+	 * Scale factors are ignored.
+	 * </p>
+	 *
+	 * @param group
+	 *        the group
+	 * @return the types, never {@code null}
+	 * @since 3.0
+	 */
+	public static Map<String, DatumSamplesType> pointDatumSamplesTypes(PointGroup group) {
+		final Map<String, DatumSamplesType> result = new HashMap<>(32);
+		addDatumSamplesPointTypes(group, "", result);
+		return Map.copyOf(result);
+	}
+
+	private static void addDatumSamplesPointTypes(PointGroup group, String suffix,
+			Map<String, DatumSamplesType> result) {
+		for ( ModbusReference ref : group.getPointReferences() ) {
+			final String name = ref.getName();
+			final DataClassification dataCls = ref.getClassification();
+			if ( dataCls != null && dataCls == DataClassification.ScaleFactor ) {
+				// ignore scale factors
+			}
+			DatumSamplesType type = null;
+			if ( name.endsWith("Rating") || name.endsWith("Status")
+					|| dataCls == DataClassification.Bitfield
+					|| dataCls == DataClassification.Enumeration ) {
+				type = DatumSamplesType.Status;
+			} else if ( ref.getClassification() == DataClassification.Accumulator ) {
+				type = DatumSamplesType.Accumulating;
+			}
+			if ( type == null ) {
+				// default to instantaneous if not otherwise classified
+				type = DatumSamplesType.Instantaneous;
+			}
+			result.put(SunSpecUtils.pointKey(ref.getName()) + suffix, type);
+		}
+		for ( PointGroupList list : group.getPointGroups() ) {
+			final List<? extends PointGroup> groups = list.groups();
+			for ( int i = 0, len = groups.size(); i < len; i++ ) {
+				final String groupSuffix = suffix + '_' + (list.repeating() ? String.valueOf(i + 1)
+						: SunSpecUtils.pointKey(list.name()));
+				addDatumSamplesPointTypes(groups.get(i), groupSuffix, result);
+			}
+		}
 	}
 
 	/**
@@ -372,6 +524,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
 		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(sample), true));
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
+		results.add(new BasicTitleSettingSpecifier("primaryModel", getPrimaryTypeMessage(sample), true));
 		results.add(new BasicTitleSettingSpecifier("secondaryModels", getSecondaryTypesMessage(sample),
 				true));
 
@@ -441,6 +594,33 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	/**
+	 * Get the primary type message.
+	 *
+	 * <p>
+	 * The returned message is the model ID and description of the primary
+	 * model.
+	 * </p>
+	 *
+	 * @param sample
+	 *        the model data
+	 * @return the message, or {@literal N/A} if no primary type is available
+	 * @since 3.0
+	 */
+	protected String getPrimaryTypeMessage(@Nullable ModelData sample) {
+		final ModelAccessor primary = (sample != null
+				? sample.findTypedModel(getPrimaryModelAccessorType())
+				: null);
+		if ( primary == null ) {
+			return "N/A";
+		}
+		if ( primary.getModelId() instanceof GenericModelId ) {
+			return String.valueOf(primary.getModelId().getId());
+		}
+		return String.format("%d (%s)", primary.getModelId().getId(),
+				primary.getModelId().getDescription());
+	}
+
+	/**
 	 * Get the secondary types message.
 	 *
 	 * <p>
@@ -455,11 +635,16 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *         available
 	 */
 	protected String getSecondaryTypesMessage(@Nullable ModelData sample) {
-		List<ModelAccessor> accessors = (sample != null ? sample.getModels() : null);
+		final ModelAccessor primary = (sample != null
+				? sample.findTypedModel(getPrimaryModelAccessorType())
+				: null);
+		final List<ModelAccessor> accessors = (sample != null ? sample.getModels() : null);
 		if ( accessors == null || accessors.size() < 2 ) {
 			return "N/A";
 		}
-		return accessors.subList(1, accessors.size()).stream().filter(a -> a.getModelId() != null)
+		return accessors.stream()
+				// filter out models without an ID or that matches the primary model
+				.filter(a -> (primary == null || primary.getModelId().getId() != a.getModelId().getId()))
 				.map(a -> {
 					if ( a.getModelId() instanceof GenericModelId ) {
 						return String.valueOf(a.getModelId().getId());

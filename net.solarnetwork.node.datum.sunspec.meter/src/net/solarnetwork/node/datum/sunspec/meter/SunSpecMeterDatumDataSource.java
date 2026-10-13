@@ -26,27 +26,27 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.meter.MeterDatum;
-import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.meter.MeterModelAccessor;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible power meter.
  *
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -100,14 +100,22 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		if ( currSample == null ) {
 			return null;
 		}
-		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
+
+		final MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
 		if ( data == null ) {
 			return null;
 		}
-		MeterDatum d = new MeterDatum(data, sourceId, AcPhase.Total, this.backwards);
+
+		final MeterDatum d = new MeterDatum(data, sourceId, AcPhase.Total, this.backwards);
 		if ( this.includePhaseMeasurements ) {
-			d.populatePhaseMeasurementProperties(data);
+			d.populatePhaseMeasurementProperties(new MeterAcEnergyDataAccessor(data));
 		}
+
+		final Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
 		return d;
 	}
 

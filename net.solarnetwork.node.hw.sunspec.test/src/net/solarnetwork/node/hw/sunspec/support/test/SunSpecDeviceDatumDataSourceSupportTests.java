@@ -26,19 +26,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.combiner.test.StringCombinerAdvancedModelAccessorImpl_402_01Tests;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.test.IntegerInverterModelAccessor_101_01Tests;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.inverter.InverterModelAccessor;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * Test cases for the {@link SunSpecDeviceDatumDataSourceSupport} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class SunSpecDeviceDatumDataSourceSupportTests {
 
@@ -70,8 +68,7 @@ public class SunSpecDeviceDatumDataSourceSupportTests {
 	@Test
 	public void populateSecondaryModels_NoneAvailable() {
 		// GIVEN
-		final ModelData data = ModelDataUtils.getModelDataInstance(
-				IntegerInverterModelAccessor_101_01Tests.class, "test-data-103-01.txt");
+		final ModelData data = ModelDataUtils.getModelDataInstance(getClass(), "test-data-103-01.txt");
 		TestDatumDataSource ds = new TestDatumDataSource(InverterModelAccessor.class, data);
 
 		// WHEN
@@ -84,8 +81,7 @@ public class SunSpecDeviceDatumDataSourceSupportTests {
 	@Test
 	public void populateSecondaryModels_Lots() {
 		// GIVEN
-		final ModelData data = ModelDataUtils.getModelDataInstance(
-				IntegerInverterModelAccessor_101_01Tests.class, "test-data-101-01.txt");
+		final ModelData data = ModelDataUtils.getModelDataInstance(getClass(), "test-data-101-01.txt");
 		TestDatumDataSource ds = new TestDatumDataSource(InverterModelAccessor.class, data);
 
 		// WHEN
@@ -101,8 +97,7 @@ public class SunSpecDeviceDatumDataSourceSupportTests {
 	@Test
 	public void populateSecondaryModels_Combiner() {
 		// GIVEN
-		final ModelData data = ModelDataUtils.getModelDataInstance(
-				StringCombinerAdvancedModelAccessorImpl_402_01Tests.class, "test-data-402-01.txt");
+		final ModelData data = ModelDataUtils.getModelDataInstance(getClass(), "test-data-402-01.txt");
 		TestDatumDataSource ds = new TestDatumDataSource(InverterModelAccessor.class, data);
 
 		// WHEN

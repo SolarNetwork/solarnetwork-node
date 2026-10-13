@@ -25,26 +25,26 @@ package net.solarnetwork.node.datum.sunspec.environmental;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.hw.sunspec.ModelAccessor;
-import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.environmental.EnvironmentalModelId;
-import net.solarnetwork.node.hw.sunspec.environmental.GpsModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.Incline;
-import net.solarnetwork.node.hw.sunspec.environmental.InclinometerModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.PositionalDatum;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.sunspec.api.ModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.EnvironmentalModelId;
+import net.solarnetwork.sunspec.api.environmental.GpsModelAccessor;
+import net.solarnetwork.sunspec.api.environmental.Incline;
+import net.solarnetwork.sunspec.api.environmental.InclinometerModelAccessor;
+import net.solarnetwork.sunspec.modbus.support.ModelData;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible positional devices.
  *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SunSpecPositionalDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -96,7 +96,14 @@ public class SunSpecPositionalDatumDataSource extends SunSpecDeviceDatumDataSour
 		if ( currSample == null ) {
 			return null;
 		}
-		return new PositionalDatum(currSample, sourceId);
+		final var d = new PositionalDatum(currSample, sourceId);
+
+		final Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null && !secondaryModelIds.isEmpty() ) {
+			populateSecondaryModelPoints(d.asMutableSampleOperations(), currSample, secondaryModelIds);
+		}
+
+		return d;
 	}
 
 	@Override
