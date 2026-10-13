@@ -29,7 +29,6 @@ import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.settings.SettingSpecifier;
-import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
@@ -71,7 +70,7 @@ public class DatumDataSourceScheduleConfig {
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "datumType", ""));
-		results.add(new BasicCronExpressionSettingSpecifier(prefix + "schedule", DEFAULT_SCHEDULE));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "schedule", DEFAULT_SCHEDULE));
 		results.add(new BasicToggleSettingSpecifier(prefix + "persist", Boolean.FALSE));
 
 		return results;
