@@ -24,6 +24,7 @@ package net.solarnetwork.node.control.conductor.test;
 
 import static java.lang.String.format;
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Completed;
+import static net.solarnetwork.domain.InstructionStatus.InstructionState.Declined;
 import static net.solarnetwork.node.control.conductor.ControlConductor.TOPIC_ORCHESTRATE_CONTROLS;
 import static net.solarnetwork.node.control.conductor.ControlTaskConfig.taskConfig;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
@@ -35,6 +36,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -65,6 +67,7 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.PlaceholderService;
+import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.StaticOptionalService;
@@ -84,6 +87,7 @@ public class ControlConductorTests {
 	private InstructionExecutionService instructionService;
 	private DatumService datumService;
 	private PlaceholderService placeholderService;
+	private ExpressionService exprService;
 	private ControlConductor conductor;
 
 	@Before
@@ -93,6 +97,7 @@ public class ControlConductorTests {
 		instructionService = EasyMock.createMock(InstructionExecutionService.class);
 		datumService = EasyMock.createMock(DatumService.class);
 		placeholderService = EasyMock.createMock(PlaceholderService.class);
+		exprService = new SpelExpressionService();
 
 		conductor = new ControlConductor(new StaticOptionalService<>(reactorService),
 				new StaticOptionalService<>(instructionService));
@@ -111,9 +116,8 @@ public class ControlConductorTests {
 		EasyMock.verify(clock, reactorService, instructionService, datumService, placeholderService);
 	}
 
-	private static OptionalServiceCollection<ExpressionService> spelExpressionServices() {
-		return new StaticOptionalServiceCollection<>(
-				Collections.singletonList(new SpelExpressionService()));
+	private OptionalServiceCollection<ExpressionService> spelExpressionServices() {
+		return new StaticOptionalServiceCollection<>(Collections.singletonList(exprService));
 	}
 
 	@Test
@@ -202,6 +206,42 @@ public class ControlConductorTests {
 				is(equalTo(execDate.plus(1, ChronoUnit.HOURS))));
 		assertThat("Task 3 execution Signal target", signal.getParameterValue(conductor.getUid()),
 				is(equalTo("3")));
+	}
+
+	@Test
+	public void scheduleTasks_predicateNotSatisifed() {
+		// GIVEN
+		// @formatter:off
+		ControlTaskConfig[] tasks = new ControlTaskConfig[] {
+				// task 1: set parameter mode using ms offset
+				taskConfig("/control/1", "0", "{mode}"),
+		};
+		// @formatter:on
+		conductor.setTaskConfigs(tasks);
+
+		ExpressionConfig predicateConfig = new ExpressionConfig();
+		predicateConfig.setExpression("mode == 1");
+		predicateConfig.setExpressionServiceId(exprService.getUid());
+		conductor.setPredicate(predicateConfig);
+
+		final Instant execDate = Instant.now().truncatedTo(ChronoUnit.HOURS).plus(4, ChronoUnit.HOURS);
+		final String execDateIso = DateTimeFormatter.ISO_INSTANT.format(execDate);
+		final Map<String, String> orchestrateParams = new HashMap<>(4);
+		orchestrateParams.put(InstructionHandler.PARAM_SERVICE, conductor.getUid());
+		orchestrateParams.put(ControlConductor.PARAM_ORCHESTRATE_DATE, execDateIso);
+		orchestrateParams.put("mode", "3");
+
+		final Instruction orchestrate = createLocalInstruction(TOPIC_ORCHESTRATE_CONTROLS,
+				orchestrateParams);
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = conductor.processInstruction(orchestrate);
+
+		// THEN
+		assertThat("Instruction result returned", result, is(notNullValue()));
+		assertThat("Instruction state is declined", result.getInstructionState(), is(equalTo(Declined)));
+		assertThat("Result code is 11", result.getResultParameters(), hasEntry("code", "CC.0011"));
 	}
 
 	// {mode=[3], duration=[PT1H], service=[0502632b-da9f-4be6-ad8c-c3e9f2dd625c], parentInstructionId=[LOCAL], parentInstructorId=[LOCAL], executionDate=[1680588000000], 0502632b-da9f-4be6-ad8c-c3e9f2dd625c=[1]}

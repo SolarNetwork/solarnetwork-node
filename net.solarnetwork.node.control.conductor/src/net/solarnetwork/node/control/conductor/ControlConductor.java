@@ -51,8 +51,10 @@ import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
@@ -63,7 +65,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Control that orchestrates a set of control tasks.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ControlConductor extends BaseIdentifiable
 		implements SettingSpecifierProvider, InstructionHandler {
@@ -87,6 +89,7 @@ public class ControlConductor extends BaseIdentifiable
 	private @Nullable OptionalService<DatumService> datumService;
 	private @Nullable OptionalService<OperationalModesService> opModesService;
 	private ControlTaskConfig @Nullable [] taskConfigs;
+	private @Nullable ExpressionConfig predicate;
 
 	/**
 	 * Constructor.
@@ -159,6 +162,25 @@ public class ControlConductor extends BaseIdentifiable
 		if ( taskConfigs == null || taskConfigs.length < 1 ) {
 			return createStatus(instruction, InstructionState.Declined,
 					createErrorResultParameters("No tasks configured.", "CC.0001"));
+		}
+
+		// verify the predicate, if configured
+		final ExpressionConfig predicateConfig = getPredicate();
+		if ( predicateConfig != null ) {
+			ExpressionServiceExpression expr = predicateConfig
+					.getExpression(services(getExpressionServices()));
+			if ( expr != null ) {
+				ExpressionRoot root = new ExpressionRoot(null, null, instruction.getParameterMap(),
+						service(datumService), service(opModesService));
+				root.setLocalStateDao(getLocalStateDao());
+				Boolean predicateResult = expr.getService().evaluateExpression(expr.getExpression(),
+						null, root, null, Boolean.class);
+				if ( predicateResult == null || !predicateResult ) {
+					return createStatus(instruction, InstructionState.Declined,
+							createErrorResultParameters("Predicate condition not satisifed.",
+									"CC.0011"));
+				}
+			}
 		}
 
 		// schedule a Signal instruction for each task at the appropriate execution time
@@ -335,6 +357,19 @@ public class ControlConductor extends BaseIdentifiable
 		List<SettingSpecifier> result = new ArrayList<>();
 		result.addAll(baseIdentifiableSettings(""));
 
+		// the expression drop-down menu (if we have expression services available)
+		if ( getExpressionServices() != null ) {
+			List<SettingSpecifier> predicateSettings = ExpressionConfig.settings(ControlTaskConfig.class,
+					"predicate.", services(getExpressionServices()));
+			// add only the expression + service settings
+			for ( SettingSpecifier spec : predicateSettings ) {
+				if ( spec instanceof KeyedSettingSpecifier<?> k && (k.getKey().endsWith(".expression")
+						|| k.getKey().endsWith(".expressionServiceId")) ) {
+					result.add(k);
+				}
+			}
+		}
+
 		ControlTaskConfig[] confs = getTaskConfigs();
 		List<ControlTaskConfig> confsList = (confs != null ? List.of(confs) : List.of());
 		result.add(SettingUtils.dynamicListSettingSpecifier("taskConfigs", confsList,
@@ -435,6 +470,27 @@ public class ControlConductor extends BaseIdentifiable
 	public final void setOpModesService(
 			@Nullable OptionalService<OperationalModesService> opModesService) {
 		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Get the predicate expression configuration.
+	 *
+	 * @return the predicate configuration, or {@code null}
+	 * @since 1.3
+	 */
+	public final @Nullable ExpressionConfig getPredicate() {
+		return predicate;
+	}
+
+	/**
+	 * Set the predicate expression configuration.
+	 *
+	 * @param predicate
+	 *        the predicate configuration to set
+	 * @since 1.3
+	 */
+	public final void setPredicate(@Nullable ExpressionConfig predicate) {
+		this.predicate = predicate;
 	}
 
 }
