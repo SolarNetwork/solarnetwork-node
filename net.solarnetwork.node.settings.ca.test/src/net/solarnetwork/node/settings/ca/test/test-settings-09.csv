@@ -1,0 +1,5 @@
+key,type,value,flags,modified,note
+net.solarnetwork.node.io.modbus.1,serialParams.portName,/dev/ttyUSB0,,2025-04-01 00:00:00,
+net.solarnetwork.node.io.modbus.FACTORY,1,1,,2025-04-01 00:00:00,
+net.solarnetwork.node.io.modbus.tcp.1,host,192.168.1.10,,2025-04-01 00:00:00,
+net.solarnetwork.node.io.modbus.tcp.FACTORY,1,1,,2025-04-01 00:00:00,

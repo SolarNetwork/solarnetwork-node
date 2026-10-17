@@ -939,6 +939,79 @@ public class CASettingsServiceTests {
 		assertThat("Config updated props", props.keySet(), hasSize(2));
 	}
 
+	@Test
+	public void importCsv_overlappingFactoryPids() throws Exception {
+		// GIVEN
+		final String serialFactoryUid = "net.solarnetwork.node.io.modbus";
+		final String tcpFactoryUid = "net.solarnetwork.node.io.modbus.tcp";
+
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 factory instances and their settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(4);
+
+		txManager.commit(tx);
+
+		// handle "net.solarnetwork.node.io.modbus.1" as serial factory instance "1"
+		expect(ca.listConfigurations(
+				String.format("(&(service.factoryPid=%s)(%s.FACTORY_INSTANCE_KEY=1))", serialFactoryUid,
+						CASettingsService.class.getName()))).andReturn(new Configuration[0]);
+
+		final Configuration serialConfig = EasyMock.createMock(Configuration.class);
+		mocks.add(serialConfig);
+		expect(ca.createFactoryConfiguration(serialFactoryUid, null)).andReturn(serialConfig);
+		expect(serialConfig.getProperties()).andReturn(null);
+
+		Capture<Dictionary<String, ?>> serialConfigCaptor = Capture.newInstance();
+		serialConfig.update(capture(serialConfigCaptor));
+
+		// handle "net.solarnetwork.node.io.modbus.tcp.1" as TCP factory instance "1", not as serial
+		// factory instance "tcp.1"
+		expect(ca.listConfigurations(
+				String.format("(&(service.factoryPid=%s)(%s.FACTORY_INSTANCE_KEY=1))", tcpFactoryUid,
+						CASettingsService.class.getName()))).andReturn(new Configuration[0]);
+
+		final Configuration tcpConfig = EasyMock.createMock(Configuration.class);
+		mocks.add(tcpConfig);
+		expect(ca.createFactoryConfiguration(tcpFactoryUid, null)).andReturn(tcpConfig);
+		expect(tcpConfig.getProperties()).andReturn(null);
+
+		Capture<Dictionary<String, ?>> tcpConfigCaptor = Capture.newInstance();
+		tcpConfig.update(capture(tcpConfigCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-09.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted factory instances and their settings", settingCaptor.getValues(),
+				hasSize(4));
+
+		Map<String, ?> serialProps = CollectionUtils.mapForDictionary(serialConfigCaptor.getValue());
+		assertThat("Serial config updated with imported setting", serialProps,
+				hasEntry("serialParams.portName", "/dev/ttyUSB0"));
+		assertThat("Serial config updated with instance key", serialProps,
+				hasEntry(CASettingsService.OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, "1"));
+		assertThat("Serial config updated props", serialProps.keySet(), hasSize(2));
+
+		Map<String, ?> tcpProps = CollectionUtils.mapForDictionary(tcpConfigCaptor.getValue());
+		assertThat("TCP config updated with imported setting", tcpProps,
+				hasEntry("host", "192.168.1.10"));
+		assertThat("TCP config updated with instance key", tcpProps,
+				hasEntry(CASettingsService.OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, "1"));
+		assertThat("TCP config updated props", tcpProps.keySet(), hasSize(2));
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void getSettings_nullArgs() {
 		// GIVEN

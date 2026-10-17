@@ -1185,6 +1185,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			factorySettings.put(factoryPID, s);
 		}
 
+		// order factory PIDs longest first, because one factory PID can be a prefix of another
+		// (like a.b and a.b.c) and a setting belongs to the longest one it matches
+		final List<String> factoryPIDs = factorySettings.keySet().stream()
+				.sorted(Comparator.comparingInt(String::length).reversed()).collect(toList());
+
 		// now convert imported settings into a SettingsCommand, so values are applied to Configuration Admin
 		SettingsCommand cmd = new SettingsCommand();
 
@@ -1207,7 +1212,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			SettingValueBean bean = new SettingValueBean();
 
 			// find out if this is a factory
-			for ( String factoryPID : factorySettings.keySet() ) {
+			for ( String factoryPID : factoryPIDs ) {
 				if ( s.getKey().startsWith(factoryPID + ".")
 						&& s.getKey().length() > (factoryPID.length() + 1) ) {
 					bean.setProviderKey(factoryPID);
