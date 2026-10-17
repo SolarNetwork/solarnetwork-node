@@ -55,7 +55,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that splits datum into multiple new datum streams.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class SplitDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, DatumSourceIdProvider {
@@ -92,7 +92,8 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		final long start = incrementInputStats();
 		final ReplacingPatternKeyValuePair[] mappings = getPropertySourceMappings();
 
-		if ( !conditionsMatch(datum, samples, parameters) || mappings == null || mappings.length < 1 ) {
+		if ( !conditionsMatch(datum, samples, parameters) || mappings == null || mappings.length < 1
+				|| isOwnOutput(datum, mappings, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
@@ -119,6 +120,41 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		DatumSamplesOperations result = (swallowInput ? null : samples);
 		incrementStats(start, samples, result);
 		return result;
+	}
+
+	/**
+	 * Test if a datum is an output datum of this filter.
+	 *
+	 * <p>
+	 * The {@link DatumQueue} passes the datum this filter offers it through the
+	 * same filters as any other datum, so this filter must ignore them or it
+	 * would split its own output again, endlessly. Ignoring just the mappings
+	 * whose output source ID equals the datum's source ID is not enough,
+	 * because the output of one mapping can have properties that match another
+	 * mapping, and vice versa.
+	 * </p>
+	 *
+	 * @param datum
+	 *        the datum to test
+	 * @param mappings
+	 *        the property source mappings
+	 * @param parameters
+	 *        the parameters to resolve output source ID placeholders with
+	 * @return {@code true} if the datum's source ID equals the resolved output
+	 *         source ID of any mapping
+	 */
+	private boolean isOwnOutput(Datum datum, ReplacingPatternKeyValuePair[] mappings,
+			Map<String, Object> parameters) {
+		final String sourceId = datum.getSourceId();
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return false;
+		}
+		for ( ReplacingPatternKeyValuePair mapping : mappings ) {
+			if ( sourceId.equals(resolvePlaceholders(mapping.getValue(), parameters)) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private void populateMatchingDatumProperties(Datum datum, DatumSamplesOperations samples,

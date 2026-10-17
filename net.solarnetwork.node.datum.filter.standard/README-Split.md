@@ -50,5 +50,13 @@ Each property source mapping configuration contains the following settings:
 > :point_up: If multiple property name expressions match the same property name, that property will
 > be copied to **all** the datum streams of the associated source IDs.
 
+> :warning: **Note** that the filter ignores any datum whose source ID is the same as one of the
+> mapping **Source ID** values (after resolving placeholders), and passes it through unchanged. The
+> filter adds the datum it generates to the Datum Queue, whose filters process them like any other
+> datum, so this stops the filter from splitting its own output again, endlessly. It also means a
+> datum cannot be split into a stream with its own source ID. If a mapping **Source ID** uses
+> placeholders that can resolve differently for the generated datum, configure the filter's
+> **Source ID** setting so that it does not match the generated datum.
+
 [placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
 [regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html

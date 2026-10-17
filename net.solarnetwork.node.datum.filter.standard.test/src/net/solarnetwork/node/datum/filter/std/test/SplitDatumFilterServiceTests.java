@@ -58,7 +58,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link SplitDatumFilterService} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SplitDatumFilterServiceTests {
 
@@ -315,6 +315,118 @@ public class SplitDatumFilterServiceTests {
 		assertThat("Output 2 properties copied",
 				(DatumSamples) outputSources.get(OUT_SOURCE_ID_2).asSampleOperations(),
 				is(equalTo(expected2)));
+	}
+
+	@Test
+	public void ignore_ownOutput() {
+		// GIVEN
+		xform.setSourceId(null);
+
+		// @formatter:off
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watts$", "/meter/1/power"),
+		});
+		// @formatter:on
+
+		// only the input datum is split
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true);
+
+		// WHEN
+		replayAll();
+		SimpleDatum in = createTestDatum("/meter/1");
+		DatumSamplesOperations result = xform.filter(in, in.asSampleOperations(), null);
+
+		// the DatumQueue passes the generated datum through the same filters
+		NodeDatum out = datumCaptor.getValue();
+		DatumSamplesOperations outResult = xform.filter(out, out.asSampleOperations(), null);
+
+		// THEN
+		assertThat("Input swallowed", result, is(nullValue()));
+		assertThat("Output datum generated", out.getSourceId(), is(equalTo("/meter/1/power")));
+
+		DatumSamples expected = new DatumSamples();
+		expected.putInstantaneousSampleValue(PROP_1, 1);
+		expected.setTags(in.getTags());
+		assertThat("Output properties copied", (DatumSamples) out.asSampleOperations(),
+				is(equalTo(expected)));
+
+		assertThat("Filter ignored own output datum", outResult,
+				is(sameInstance(out.asSampleOperations())));
+	}
+
+	@Test
+	public void ignore_ownOutput_otherMapping() {
+		// GIVEN
+		xform.setSourceId(null);
+
+		// @formatter:off
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watt", "/meter/1/power"),
+				new ReplacingPatternKeyValuePair("Hours$", "/meter/1/energy"),
+		});
+		// @formatter:on
+
+		// only the input datum is split
+		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
+		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true).times(2);
+
+		// WHEN
+		replayAll();
+		SimpleDatum in = createTestDatum("/meter/1");
+		xform.filter(in, in.asSampleOperations(), null);
+
+		// the DatumQueue passes the generated datum through the same filters
+		Map<String, NodeDatum> outputSources = datumCaptor.getValues().stream()
+				.collect(toMap(NodeDatum::getSourceId, identity()));
+		NodeDatum power = outputSources.get("/meter/1/power");
+		NodeDatum energy = outputSources.get("/meter/1/energy");
+		DatumSamplesOperations powerResult = xform.filter(power, power.asSampleOperations(), null);
+		DatumSamplesOperations energyResult = xform.filter(energy, energy.asSampleOperations(), null);
+
+		// THEN
+		assertThat("Power output has property matched by energy mapping",
+				power.asSampleOperations().hasSampleValue(DatumSamplesType.Accumulating, PROP_3),
+				is(true));
+		assertThat("Energy output has property matched by power mapping",
+				energy.asSampleOperations().hasSampleValue(DatumSamplesType.Accumulating, PROP_3),
+				is(true));
+		assertThat("Filter ignored own power output datum", powerResult,
+				is(sameInstance(power.asSampleOperations())));
+		assertThat("Filter ignored own energy output datum", energyResult,
+				is(sameInstance(energy.asSampleOperations())));
+	}
+
+	@Test
+	public void ignore_ownOutput_sourceIdParameters() {
+		// GIVEN
+		xform.setSourceId(null);
+
+		// @formatter:off
+		xform.setPropertySourceMappings(new ReplacingPatternKeyValuePair[] {
+				new ReplacingPatternKeyValuePair("^watts$", "{meter}/power"),
+		});
+		// @formatter:on
+
+		// only the input datum is split
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = singletonMap("meter", "/meter/1");
+		SimpleDatum in = createTestDatum("/meter/1");
+		xform.filter(in, in.asSampleOperations(), params);
+
+		// the DatumQueue passes the generated datum through the same filters
+		NodeDatum out = datumCaptor.getValue();
+		DatumSamplesOperations outResult = xform.filter(out, out.asSampleOperations(), params);
+
+		// THEN
+		assertThat("Output datum generated with resolved source ID", out.getSourceId(),
+				is(equalTo("/meter/1/power")));
+		assertThat("Filter ignored own output datum", outResult,
+				is(sameInstance(out.asSampleOperations())));
 	}
 
 }
