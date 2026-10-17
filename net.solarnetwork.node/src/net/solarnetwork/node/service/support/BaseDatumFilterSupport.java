@@ -52,7 +52,7 @@ import net.solarnetwork.util.StatCounter.Stat;
  * {@link net.solarnetwork.service.DatumFilterService} to extend.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class BaseDatumFilterSupport extends BaseIdentifiable {
@@ -258,6 +258,28 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 		}
 		stats.addAndGet(DatumFilterStats.ProcessingTimeNotIgnoredTotal, duration, true);
 		stats.addAndGet(DatumFilterStats.ProcessingTimeTotal, duration, true);
+	}
+
+	/**
+	 * Get the current count of a statistic.
+	 *
+	 * <p>
+	 * The statistics are the {@link DatumFilterStats} values, plus any extra
+	 * statistics passed to the {@link #BaseDatumFilterSupport(Stat[])}
+	 * constructor. Counts accumulate from when this service was created. For
+	 * example, the {@link DatumFilterStats#Ignored} count increases when a
+	 * filter ignores a datum, such as when its conditions do not match.
+	 * </p>
+	 *
+	 * @param stat
+	 *        the statistic to get the count for
+	 * @return the current count
+	 * @throws IllegalArgumentException
+	 *         if {@code stat} is not one of the statistics this service tracks
+	 * @since 1.3
+	 */
+	public final long getStatisticCount(Stat stat) {
+		return stats.get(stat);
 	}
 
 	/**

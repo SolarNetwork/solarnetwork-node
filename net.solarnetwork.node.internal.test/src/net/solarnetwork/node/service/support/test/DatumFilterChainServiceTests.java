@@ -66,12 +66,13 @@ import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.node.service.support.DatumFilterChainService;
 import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.DatumFilterStats;
 
 /**
  * Test cases for the {@link DatumFilterChainService} class.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DatumFilterChainServiceTests {
 
@@ -240,6 +241,74 @@ public class DatumFilterChainServiceTests {
 			.isNotSameAs(s)
 			.as("Transformed instance returned")
 			.isSameAs(xform.output.get(0))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void source_mismatch_stats() {
+		// GIVEN
+		InvocationCountingTransform xform = new InvocationCountingTransform(TEST_UID);
+		xforms.add(xform);
+		chain.setTransformUids(new String[] { TEST_UID });
+		chain.setSourceId("does not match");
+
+		SimpleDatum d = createTestDatum();
+
+		// WHEN
+		replayAll();
+		final long ignoredBefore = chain.getStatisticCount(DatumFilterStats.Ignored);
+		chain.filter(d, new DatumSamples(d.getSamples()), null);
+
+		// THEN
+		// @formatter:off
+		then(xform.count)
+			.as("Transform not invoked because source ID pattern does not match")
+			.isZero()
+			;
+
+		then(chain.getStatisticCount(DatumFilterStats.Input))
+			.as("Input count incremented")
+			.isEqualTo(1L)
+			;
+
+		then(chain.getStatisticCount(DatumFilterStats.Ignored))
+			.as("Ignored count incremented because source ID pattern does not match")
+			.isEqualTo(ignoredBefore + 1)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void source_match_stats() {
+		// GIVEN
+		InvocationCountingTransform xform = new InvocationCountingTransform(TEST_UID);
+		xforms.add(xform);
+		chain.setTransformUids(new String[] { TEST_UID });
+		chain.setSourceId("^test");
+
+		SimpleDatum d = createTestDatum();
+
+		// WHEN
+		replayAll();
+		final long ignoredBefore = chain.getStatisticCount(DatumFilterStats.Ignored);
+		chain.filter(d, new DatumSamples(d.getSamples()), null);
+
+		// THEN
+		// @formatter:off
+		then(xform.count)
+			.as("Transform invoked because source ID pattern matches")
+			.isEqualTo(1)
+			;
+
+		then(chain.getStatisticCount(DatumFilterStats.Input))
+			.as("Input count incremented")
+			.isEqualTo(1L)
+			;
+
+		then(chain.getStatisticCount(DatumFilterStats.Ignored))
+			.as("Ignored count unchanged because source ID pattern matches")
+			.isEqualTo(ignoredBefore)
 			;
 		// @formatter:on
 	}
