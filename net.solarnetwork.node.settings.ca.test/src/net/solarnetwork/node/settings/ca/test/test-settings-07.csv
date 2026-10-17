@@ -1,0 +1,4 @@
+key,type,value,flags,modified,note
+com.example.foo.FACTORY,Peak Power,Peak Power,,2025-04-01 00:00:00,
+com.example.foo.Peak Power,a,aa,,2025-04-01 00:00:00,
+com.example.foo.Peak Power,b,bb,,2025-04-01 00:00:00,

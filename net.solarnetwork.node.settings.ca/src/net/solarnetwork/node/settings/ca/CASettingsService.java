@@ -145,7 +145,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  *
  * @author matt
- * @version 2.6
+ * @version 2.7
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -1198,9 +1198,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				continue;
 			}
 
-			// skip things that don't look like CA settings
-			if ( !CA_PID_PATTERN.matcher(s.getKey()).matches() || s.getType() == null
-					|| SetupSettings.SETUP_TYPE_KEY.equals(s.getType()) || s.getType().length() < 1 ) {
+			// skip settings without a type, and setup settings
+			if ( s.getType() == null || SetupSettings.SETUP_TYPE_KEY.equals(s.getType())
+					|| s.getType().length() < 1 ) {
 				continue;
 			}
 
@@ -1214,6 +1214,17 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					bean.setInstanceKey(s.getKey().substring(factoryPID.length() + 1));
 					break;
 				}
+			}
+
+			// skip things that don't look like CA settings; a factory instance key can contain
+			// characters a CA PID cannot (like spaces), so check its factory PID and instance key
+			final String providerKey = bean.getProviderKey();
+			final String instanceKey = bean.getInstanceKey();
+			final boolean allowedFactoryInstance = (providerKey != null && instanceKey != null
+					&& CA_PID_PATTERN.matcher(providerKey).matches()
+					&& INSTANCE_UID_ALLOWED.matcher(instanceKey).matches());
+			if ( !(CA_PID_PATTERN.matcher(s.getKey()).matches() || allowedFactoryInstance) ) {
+				continue;
 			}
 
 			if ( bean.getProviderKey() == null ) {

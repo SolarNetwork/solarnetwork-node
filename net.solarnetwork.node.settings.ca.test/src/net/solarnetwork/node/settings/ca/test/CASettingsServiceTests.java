@@ -113,7 +113,7 @@ import net.solarnetwork.util.CollectionUtils;
  * Test cases for the {@link CASettingsService} class.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class CASettingsServiceTests {
 
@@ -831,6 +831,112 @@ public class CASettingsServiceTests {
 				hasProperty("note", equalTo("a note"))
 				));
 		// @formatter:on
+	}
+
+	@Test
+	public void importCsv_namedFactoryInstance() throws Exception {
+		// GIVEN
+		final String factoryUid = "com.example.foo";
+		final String instanceUid = "Peak Power";
+
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import factory instance and its 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(3);
+
+		txManager.commit(tx);
+
+		// look up instance configuration (not found)
+		expect(ca.listConfigurations(
+				String.format("(&(service.factoryPid=%s)(%s.FACTORY_INSTANCE_KEY=%s))", factoryUid,
+						CASettingsService.class.getName(), instanceUid)))
+								.andReturn(new Configuration[0]);
+
+		// create new configuration
+		final Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+		expect(ca.createFactoryConfiguration(factoryUid, null)).andReturn(config);
+		expect(config.getProperties()).andReturn(null);
+
+		// update configuration
+		Capture<Dictionary<String, ?>> configCaptor = Capture.newInstance();
+		config.update(capture(configCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-07.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted factory instance and its settings", settingCaptor.getValues(), hasSize(3));
+		assertThat("Named instance settings applied to configuration", configCaptor.hasCaptured(),
+				is(true));
+		Map<String, ?> props = CollectionUtils.mapForDictionary(configCaptor.getValue());
+		assertThat("Config updated with imported settings", props, hasEntry("a", "aa"));
+		assertThat("Config updated with imported settings", props, hasEntry("b", "bb"));
+		assertThat("Config updated with instance key", props,
+				hasEntry(CASettingsService.OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid));
+		assertThat("Config updated props", props.keySet(), hasSize(3));
+	}
+
+	@Test
+	public void importCsv_factoryInstanceWithoutFactorySetting() throws Exception {
+		// GIVEN
+		final String factoryUid = "com.example.foo";
+		final String instanceUid = "2";
+
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		txManager.commit(tx);
+
+		// handle "com.example.foo.2" as factory instance "2" ("com.example.foo.Peak Power" is skipped
+		// because without a FACTORY setting it does not look like a CA setting)
+		expect(ca.listConfigurations(
+				String.format("(&(service.factoryPid=%s)(%s.FACTORY_INSTANCE_KEY=%s))", factoryUid,
+						CASettingsService.class.getName(), instanceUid)))
+								.andReturn(new Configuration[0]);
+
+		final Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+		expect(ca.createFactoryConfiguration(factoryUid, null)).andReturn(config);
+		expect(config.getProperties()).andReturn(null);
+
+		Capture<Dictionary<String, ?>> configCaptor = Capture.newInstance();
+		config.update(capture(configCaptor));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings-08.csv"), UTF_8))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted both settings", settingCaptor.getValues(), hasSize(2));
+		Map<String, ?> props = CollectionUtils.mapForDictionary(configCaptor.getValue());
+		assertThat("Config updated with imported setting", props, hasEntry("a", "aa"));
+		assertThat("Config updated with instance key", props,
+				hasEntry(CASettingsService.OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid));
+		assertThat("Config updated props", props.keySet(), hasSize(2));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
