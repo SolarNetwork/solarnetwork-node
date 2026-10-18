@@ -14,6 +14,8 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
 	<bean id="tariffFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
@@ -73,6 +75,7 @@
 				</bean>
 			</argument>
 			<property name="messageSource" ref="tariffFilterMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
