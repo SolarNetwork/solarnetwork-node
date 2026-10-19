@@ -25,11 +25,13 @@ package net.solarnetwork.node.datum.filter.std;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.AggregateDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumId;
@@ -83,7 +85,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class DownsampleDatumFilterService extends DatumFilterSupport
@@ -117,6 +119,7 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 
 	private final ConcurrentMap<String, AggregateDatumSamples> subSamplesBySource = new ConcurrentHashMap<>(
 			8, 0.9f, 4);
+	private final Clock baseClock;
 
 	private int decimalScale = DEFAULT_DECIMAL_SCALE;
 	private String minPropertyFormat = DEFAULT_MIN_FORMAT;
@@ -124,7 +127,7 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	private Integer sampleCount = DEFAULT_SAMPLE_COUNT;
 	private Duration sampleDuration;
 
-	private Clock sampleClock;
+	private InstantSource sampleClock;
 
 	/**
 	 * Constructor.
@@ -136,14 +139,15 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	/**
 	 * Constructor.
 	 *
-	 * @param sampleClock
-	 *        the sample clock to use; if {@literal null} then the system UTC
+	 * @param baseClock
+	 *        the base clock to use; if {@literal null} then the system UTC
 	 *        clock will be used
 	 * @since 1.2
 	 */
-	public DownsampleDatumFilterService(Clock sampleClock) {
+	public DownsampleDatumFilterService(@Nullable Clock baseClock) {
 		super();
-		this.sampleClock = (sampleClock != null ? sampleClock : Clock.systemUTC());
+		this.baseClock = (baseClock != null ? baseClock : Clock.systemUTC());
+		this.sampleClock = baseClock;
 	}
 
 	private AggregateDatumSamples newAggregate(String key) {
@@ -387,9 +391,9 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	public void setSampleDuration(Duration sampleDuration) {
 		this.sampleDuration = sampleDuration;
 		if ( sampleDuration != null ) {
-			sampleClock = Clock.tick(Clock.systemUTC(), sampleDuration);
+			sampleClock = Clock.tick(baseClock, sampleDuration);
 		} else {
-			sampleClock = Clock.systemUTC();
+			sampleClock = baseClock;
 		}
 	}
 
