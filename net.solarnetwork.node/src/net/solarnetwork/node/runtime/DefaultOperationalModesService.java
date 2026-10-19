@@ -26,8 +26,10 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -77,7 +79,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * Default implementation of {@link OperationalModesService}.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
 		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
@@ -112,6 +114,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		TX_RW = def;
 	}
 
+	private final InstantSource clock;
 	private final ConcurrentMap<String, Long> activeModes;
 	private final ConcurrentMap<UUID, OperationalModeInfo> registeredModes;
 	private final OptionalService<SettingDao> settingDao;
@@ -178,7 +181,32 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
 			ConcurrentMap<UUID, OperationalModeInfo> registeredModes,
 			OptionalService<SettingDao> settingDao, @Nullable OptionalService<EventAdmin> eventAdmin) {
+		this(Clock.systemUTC(), modeCache, registeredModes, settingDao, eventAdmin);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the instant source to use
+	 * @param modeCache
+	 *        the cache to use for active mode tracking
+	 * @param registeredModes
+	 *        the map to use for registered mode tracking
+	 * @param settingDao
+	 *        the setting DAO to persist operational mode changes with
+	 * @param eventAdmin
+	 *        the event service to post notifications with
+	 * @throws IllegalArgumentException
+	 *         if {@code modeCache} or {@code registeredModes} or
+	 *         {@code settingDao} is {@code null}
+	 * @since 2.4
+	 */
+	public DefaultOperationalModesService(InstantSource clock, ConcurrentMap<String, Long> modeCache,
+			ConcurrentMap<UUID, OperationalModeInfo> registeredModes,
+			OptionalService<SettingDao> settingDao, @Nullable OptionalService<EventAdmin> eventAdmin) {
 		super();
+		this.clock = requireNonNullArgument(clock, "clock");
 		this.activeModes = requireNonNullArgument(modeCache, "modeCache");
 		this.registeredModes = requireNonNullArgument(registeredModes, "registeredModes");
 		this.settingDao = requireNonNullArgument(settingDao, "settingDao");
@@ -196,7 +224,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 					// wait for settings service to appear
 					synchronized ( DefaultOperationalModesService.this ) {
 						startupScheduledFuture = taskScheduler.schedule(this,
-								Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay));
+								Instant.ofEpochMilli(clock.millis() + startupDelay));
 					}
 					return;
 				}
@@ -216,14 +244,14 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		};
 		if ( taskScheduler != null && startupDelay > 0 && startupScheduledFuture == null ) {
 			startupScheduledFuture = taskScheduler.schedule(task,
-					Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay));
+					Instant.ofEpochMilli(clock.millis() + startupDelay));
 		} else {
 			task.run();
 		}
 		if ( taskScheduler != null && autoExpireScheduledFuture == null ) {
 			autoExpireScheduledFuture = taskScheduler.scheduleWithFixedDelay(new AutoExpireModesTask(),
-					Instant.ofEpochMilli(System.currentTimeMillis() + startupDelay
-							+ this.autoExpireModesFrequency * 1000L),
+					Instant.ofEpochMilli(
+							clock.millis() + startupDelay + this.autoExpireModesFrequency * 1000L),
 					Duration.ofSeconds(this.autoExpireModesFrequency));
 		}
 	}
@@ -245,7 +273,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 				return emptySet();
 			}
 			Set<String> active = new LinkedHashSet<>();
-			final long now = System.currentTimeMillis();
+			final long now = clock.millis();
 			for ( KeyValuePair kv : modes ) {
 				String mode = kv.getValue();
 				Long exp = modeExpiration(dao, mode);
@@ -266,7 +294,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 		@Override
 		public void run() {
-			final long now = System.currentTimeMillis();
+			final long now = clock.millis();
 			Set<String> toDeactivate = null;
 			for ( Map.Entry<String, Long> me : activeModes.entrySet() ) {
 				Long exp = me.getValue();
@@ -415,14 +443,13 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			inverted = true;
 		}
 		Long exp = activeModes.get(mode);
-		boolean result = exp != null
-				&& (NO_EXPIRATION.equals(exp) || exp.longValue() > System.currentTimeMillis());
+		boolean result = exp != null && (NO_EXPIRATION.equals(exp) || exp.longValue() > clock.millis());
 		return (inverted ? !result : result);
 	}
 
 	@Override
 	public Set<String> activeOperationalModes() {
-		final long now = System.currentTimeMillis();
+		final long now = clock.millis();
 		return activeModes.entrySet().stream().filter(e -> {
 			Long exp = e.getValue();
 			return (NO_EXPIRATION.equals(exp) || exp.longValue() > now);
@@ -431,7 +458,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	@Override
 	public Map<String, Long> activeOperationalModesWithExpirations() {
-		final long now = System.currentTimeMillis();
+		final long now = clock.millis();
 		return activeModes.entrySet().stream().filter(e -> {
 			Long exp = e.getValue();
 			return (!NO_EXPIRATION.equals(exp) && exp.longValue() > now);
