@@ -62,7 +62,7 @@ import net.solarnetwork.node.service.OperationalModesService;
  * Test cases for the {@link DownsampleDatumFilterService}.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DownsampleDatumFilterServiceTests {
 
@@ -71,6 +71,21 @@ public class DownsampleDatumFilterServiceTests {
 	private static final String TEST_PROP = "foo";
 	private static final String TEST_PROP_ACC = "bar";
 	private static final String TEST_SOURCE = "test.source";
+
+	@Test
+	public void nullClock() {
+		// GIVEN
+		DownsampleDatumFilterService xs = new DownsampleDatumFilterService(null);
+
+		// WHEN
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+		d.getSamples().putInstantaneousSampleValue(TEST_PROP, 1);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(),
+				DownsampleDatumFilterService.SUB_SAMPLE_PROPS);
+
+		// THEN
+		assertThat("Sub-sample filtered out, using the system clock", out, nullValue());
+	}
 
 	@Test
 	public void instantaneous_typical() {

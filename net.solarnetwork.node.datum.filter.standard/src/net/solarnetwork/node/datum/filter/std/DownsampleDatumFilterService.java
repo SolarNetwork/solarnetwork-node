@@ -147,7 +147,7 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	public DownsampleDatumFilterService(@Nullable Clock baseClock) {
 		super();
 		this.baseClock = (baseClock != null ? baseClock : Clock.systemUTC());
-		this.sampleClock = baseClock;
+		this.sampleClock = this.baseClock;
 	}
 
 	private AggregateDatumSamples newAggregate(String key) {
