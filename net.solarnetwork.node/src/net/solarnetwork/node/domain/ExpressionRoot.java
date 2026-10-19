@@ -70,7 +70,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 2.11
+ * @version 2.12
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot
@@ -463,16 +463,16 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * <p>
 	 * This can be used to test if {@link #latestMatching(String)} will return a
-	 * non-null value.
+	 * non-empty collection.
 	 * </p>
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return {@literal true} if {@link #latestMatching(String)} for the given
-	 *         {@code sourceIdPattern} will return a non-null value
+	 *         {@code sourceIdPattern} will return a non-empty collection
 	 */
 	public boolean hasLatestMatching(String sourceIdPattern) {
-		return latestMatching(sourceIdPattern) != null;
+		return !latestMatching(sourceIdPattern).isEmpty();
 	}
 
 	/**
@@ -480,7 +480,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * <p>
 	 * This can be used to test if {@link #latestMatching(Collection<String>)}
-	 * will return a non-null value.
+	 * will return a non-empty collection.
 	 * </p>
 	 *
 	 * @param sourceIdPatterns
@@ -492,7 +492,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * @since 2.9
 	 */
 	public boolean hasLatestMatching(Collection<String> sourceIdPatterns) {
-		return latestMatching(sourceIdPatterns) != null;
+		return !latestMatching(sourceIdPatterns).isEmpty();
 	}
 
 	/**
@@ -501,17 +501,18 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * <p>
 	 * This can be used to test if {@link #unfilteredLatestMatching(String)}
-	 * will return a non-null value.
+	 * will return a non-empty collection.
 	 * </p>
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return {@literal true} if {@link #unfilteredLatestMatching(String)} for
-	 *         the given {@code sourceIdPattern} will return a non-null value
+	 *         the given {@code sourceIdPattern} will return a non-empty
+	 *         collection
 	 * @since 2.6
 	 */
 	public boolean hasUnfilteredLatestMatching(String sourceIdPattern) {
-		return unfilteredLatestMatching(sourceIdPattern) != null;
+		return !unfilteredLatestMatching(sourceIdPattern).isEmpty();
 	}
 
 	/**
@@ -520,7 +521,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * <p>
 	 * This can be used to test if {@link #unfilteredLatestMatching(String)}
-	 * will return a non-null value.
+	 * will return a non-empty collection.
 	 * </p>
 	 *
 	 * @param sourceIdPatterns
@@ -528,11 +529,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        look for
 	 * @return {@literal true} if
 	 *         {@link #unfilteredLatestMatching(Collection<String>)} for the
-	 *         given {@code sourceIdPattern} will return a non-null value
+	 *         given {@code sourceIdPattern} will return a non-empty collection
 	 * @since 2.9
 	 */
 	public boolean hasUnfilteredLatestMatching(Collection<String> sourceIdPatterns) {
-		return unfilteredLatestMatching(sourceIdPatterns) != null;
+		return !unfilteredLatestMatching(sourceIdPatterns).isEmpty();
 	}
 
 	/**
@@ -640,16 +641,16 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *
 	 * <p>
 	 * This can be used to test if {@link #latestOthersMatching(String)} will
-	 * return a non-null value.
+	 * return a non-empty collection.
 	 * </p>
 	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return {@literal true} if {@link #latestOthersMatching(String)} for the
-	 *         given {@code sourceIdPattern} will return a non-null value
+	 *         given {@code sourceIdPattern} will return a non-empty collection
 	 */
 	public boolean hasLatestOthersMatching(String sourceIdPattern) {
-		return latestOthersMatching(sourceIdPattern) != null;
+		return !latestOthersMatching(sourceIdPattern).isEmpty();
 	}
 
 	/**
@@ -666,11 +667,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the set of Ant-style source ID patterns of the datum to look for
 	 * @return {@literal true} if
 	 *         {@link #latestOthersMatching(Collection<String>)} for the given
-	 *         {@code sourceIdPattern} will return a non-null value
+	 *         {@code sourceIdPattern} will return a non-empty collection
 	 * @since 2.9
 	 */
 	public boolean hasLatestOthersMatching(Collection<String> sourceIdPatterns) {
-		return latestOthersMatching(sourceIdPatterns) != null;
+		return !latestOthersMatching(sourceIdPatterns).isEmpty();
 	}
 
 	/**
@@ -687,11 +688,11 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return {@literal true} if
 	 *         {@link #unfilteredLatestOthersMatching(String)} for the given
-	 *         {@code sourceIdPattern} will return a non-null value
+	 *         {@code sourceIdPattern} will return a non-empty collection
 	 * @since 2.6
 	 */
 	public boolean hasUnfilteredLatestOthersMatching(String sourceIdPattern) {
-		return unfilteredLatestOthersMatching(sourceIdPattern) != null;
+		return !unfilteredLatestOthersMatching(sourceIdPattern).isEmpty();
 	}
 
 	/**
@@ -701,18 +702,19 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * <p>
 	 * This can be used to test if
 	 * {@link #unfilteredLatestOthersMatching(Collection<String>)} will return a
-	 * non-null value.
+	 * non-empty collection.
 	 * </p>
 	 *
 	 * @param sourceIdPatterns
 	 *        the set of Ant-style source ID patterns of the datum to look for
 	 * @return {@literal true} if
 	 *         {@link #unfilteredLatestOthersMatching(Collection<String>)} for
-	 *         the given {@code sourceIdPatterns} will return a non-null value
+	 *         the given {@code sourceIdPatterns} will return a non-empty
+	 *         collection
 	 * @since 2.9
 	 */
 	public boolean hasUnfilteredLatestOthersMatching(Collection<String> sourceIdPatterns) {
-		return unfilteredLatestOthersMatching(sourceIdPatterns) != null;
+		return !unfilteredLatestOthersMatching(sourceIdPatterns).isEmpty();
 	}
 
 	/**
@@ -948,8 +950,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * </p>
 	 *
 	 * @param offset
-	 *        the offset from the latest, {@literal 0} being the latest and
-	 *        {@literal 1} the next later, and so on
+	 *        the offset from this datum, {@literal 0} being this datum and
+	 *        {@literal 1} the one before it, and so on
 	 * @return {@literal true} if {@link #offset(String, Instant, int)} will
 	 *         return a non-null value
 	 * @since 2.1
@@ -963,7 +965,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		if ( datum == null ) {
 			return false;
 		}
-		return hasOffset(datum.getSourceId(), datum.getTimestamp(), offset);
+		return hasOffset(datum.getSourceId(), before(datum.getTimestamp()), offset - 1);
 	}
 
 	/**
@@ -976,8 +978,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * </p>
 	 *
 	 * @param offset
-	 *        the offset from the latest, {@literal 0} being the latest and
-	 *        {@literal 1} the next later, and so on
+	 *        the offset from this datum, {@literal 0} being this datum and
+	 *        {@literal 1} the one before it, and so on
 	 * @return {@literal true} if {@link #offset(String, Instant, int)} will
 	 *         return a non-null value
 	 * @since 2.6
@@ -991,7 +993,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		if ( datum == null ) {
 			return false;
 		}
-		return hasUnfilteredOffset(datum.getSourceId(), datum.getTimestamp(), offset);
+		return hasUnfilteredOffset(datum.getSourceId(), before(datum.getTimestamp()), offset - 1);
 	}
 
 	/**
@@ -999,17 +1001,23 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * source ID and timestamp, as an {@link DatumExpressionRoot}.
 	 *
 	 * <p>
+	 * The offset counts back from this datum, whether or not the history
+	 * includes it yet: the filtered history only does after filtering, while
+	 * the unfiltered history does before.
+	 * </p>
+	 *
+	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
 	 *
 	 * @param offset
-	 *        the offset from the latest, {@literal 0} being the latest and
-	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@code null} if
-	 *         {@link #getSourceId()} or {@link #getTimestamp()} are
-	 *         {@code null}, the {@link DatumService} provided to this
-	 *         instance's constructor was {@code null}, or
+	 *        the offset from this datum, {@literal 0} being this datum and
+	 *        {@literal 1} the one before it, and so on
+	 * @return the offset datum, or {@code null} if {@link #getSourceId()} or
+	 *         {@link #getTimestamp()} are {@code null}, the
+	 *         {@link DatumService} provided to this instance's constructor was
+	 *         {@code null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
 	 *         {@code null} for {@link #getSourceId()}
 	 * @since 2.1
@@ -1023,7 +1031,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		if ( offset == 0 ) {
 			return this;
 		}
-		return offset(datum.getSourceId(), datum.getTimestamp(), offset);
+		return offset(datum.getSourceId(), before(datum.getTimestamp()), offset - 1);
 	}
 
 	/**
@@ -1031,17 +1039,23 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 * source ID and timestamp, as an {@link DatumExpressionRoot}.
 	 *
 	 * <p>
+	 * The offset counts back from this datum, whether or not the history
+	 * includes it yet: the filtered history only does after filtering, while
+	 * the unfiltered history does before.
+	 * </p>
+	 *
+	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
 	 *
 	 * @param offset
-	 *        the offset from the latest, {@literal 0} being the latest and
-	 *        {@literal 1} the next later, and so on
-	 * @return the offset from the latest datum, or {@code null} if
-	 *         {@link #getSourceId()} or {@link #getTimestamp()} are
-	 *         {@code null}, the {@link DatumService} provided to this
-	 *         instance's constructor was {@code null}, or
+	 *        the offset from this datum, {@literal 0} being this datum and
+	 *        {@literal 1} the one before it, and so on
+	 * @return the offset datum, or {@code null} if {@link #getSourceId()} or
+	 *         {@link #getTimestamp()} are {@code null}, the
+	 *         {@link DatumService} provided to this instance's constructor was
+	 *         {@code null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
 	 *         {@code null} for {@link #getSourceId()}
 	 * @since 2.6
@@ -1055,7 +1069,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		if ( offset == 0 ) {
 			return this;
 		}
-		return unfilteredOffset(datum.getSourceId(), datum.getTimestamp(), offset);
+		return unfilteredOffset(datum.getSourceId(), before(datum.getTimestamp()), offset - 1);
 	}
 
 	/**
@@ -1267,6 +1281,19 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 			return null;
 		}
 		return copyWith(d);
+	}
+
+	/**
+	 * Get a timestamp just before a given one, to find datum strictly before
+	 * it.
+	 *
+	 * @param timestamp
+	 *        the timestamp
+	 * @return the timestamp less one nanosecond, or {@code null} if
+	 *         {@code timestamp} is {@code null}
+	 */
+	private static @Nullable Instant before(@Nullable Instant timestamp) {
+		return (timestamp != null ? timestamp.minusNanos(1) : null);
 	}
 
 	private @Nullable NodeDatum offsetDatum(@Nullable DatumHistorian history, @Nullable String sourceId,

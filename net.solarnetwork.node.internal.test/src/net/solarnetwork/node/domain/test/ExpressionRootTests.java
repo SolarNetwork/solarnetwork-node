@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +50,8 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.util.AntPathMatcher;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
@@ -60,7 +63,9 @@ import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.LocalState;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.runtime.DefaultDatumService;
 import net.solarnetwork.node.service.DatumHistorian;
+import net.solarnetwork.node.service.DatumQueueProcessObserver.Stage;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
@@ -73,7 +78,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * Test cases for the {@link ExpressionRoot} class.
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class ExpressionRootTests {
 
@@ -404,6 +409,81 @@ public class ExpressionRootTests {
 
 		// THEN
 		assertThat("Expression resolves latest datum conditionally", result, is(3 + 100 + 200));
+	}
+
+	private static SimpleDatum ampsDatum(String sourceId, Instant ts, int amps) {
+		SimpleDatum d = SimpleDatum.nodeDatum(sourceId, ts);
+		d.putSampleValue(Instantaneous, "amps", amps);
+		return d;
+	}
+
+	@Test
+	public void offset_previous() {
+		// GIVEN
+		final DefaultDatumService service = new DefaultDatumService(new AntPathMatcher(),
+				new ObjectMapper(), new StaticOptionalService<>(null));
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final SimpleDatum d1 = ampsDatum("foo", start, 1);
+		final SimpleDatum d2 = ampsDatum("foo", start.plusSeconds(1), 2);
+		final SimpleDatum d3 = ampsDatum("foo", start.plusSeconds(2), 3);
+		for ( SimpleDatum d : List.of(d1, d2) ) {
+			service.datumQueueWillProcess(null, d, Stage.PreFilter, true);
+			service.datumQueueWillProcess(null, d, Stage.PostFilter, true);
+		}
+
+		// the filtered history gets the current datum after filtering, the unfiltered before
+		service.datumQueueWillProcess(null, d3, Stage.PreFilter, true);
+		final ExpressionRoot root = new ExpressionRoot(d3, null, null, service, null, null);
+
+		// WHEN
+		replayAll();
+		Object[] results = new Object[6];
+		String[] exprs = new String[] { "offset(1).amps", "offset(2).amps", "hasOffset(3)",
+				"unfilteredOffset(1).amps", "unfilteredOffset(2).amps", "hasUnfilteredOffset(3)" };
+		for ( int i = 0; i < exprs.length; i++ ) {
+			results[i] = expressionService.evaluateExpression(exprs[i], null, root, null, Object.class);
+		}
+
+		// THEN
+		assertThat("Offsets count back from the current datum in both histories", asList(results),
+				contains(2, 1, false, 2, 1, false));
+	}
+
+	@Test
+	public void latestMatching_onlyDatum() {
+		// GIVEN
+		final DefaultDatumService service = new DefaultDatumService(new AntPathMatcher(),
+				new ObjectMapper(), new StaticOptionalService<>(null));
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		service.datumQueueWillProcess(null, ampsDatum("foo/1", start, 1), Stage.PostFilter, true);
+		service.datumQueueWillProcess(null, ampsDatum("foo/2", start, 2), Stage.PostFilter, true);
+		final ExpressionRoot root = new ExpressionRoot(ampsDatum("bar", start.plusSeconds(1), 3), null,
+				null, service, null, null);
+
+		// WHEN
+		replayAll();
+		Number result = expressionService.evaluateExpression("sum(latestMatching('foo/*').![amps])",
+				null, root, null, Number.class);
+
+		// THEN
+		assertThat("The only datum of each matching source is found", result,
+				is(equalTo(new BigDecimal("3"))));
+	}
+
+	@Test
+	public void hasLatestMatching_none() {
+		// GIVEN
+		ExpressionRoot root = createTestRoot();
+		expect(datumService.offset(singleton("foo/*"), root.getTimestamp(), 0, NodeDatum.class))
+				.andReturn(List.of());
+
+		// WHEN
+		replayAll();
+		Boolean result = expressionService.evaluateExpression("hasLatestMatching('foo/*')", null, root,
+				null, Boolean.class);
+
+		// THEN
+		assertThat("No matching datum", result, is(false));
 	}
 
 	@Test

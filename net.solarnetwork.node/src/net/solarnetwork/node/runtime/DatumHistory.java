@@ -57,7 +57,7 @@ import net.solarnetwork.util.CircularFifoQueue;
  * </p>
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.89
  */
 public class DatumHistory {
@@ -343,7 +343,7 @@ public class DatumHistory {
 				if ( nonnull(d.getTimestamp(), "Datum timestamp").compareTo(timestamp) <= 0 ) {
 					// found reference, so return offset from here
 					int offsetIdx = idx - offset;
-					if ( offsetIdx > 0 ) {
+					if ( offsetIdx >= 0 ) {
 						result = (offsetIdx == idx ? d
 								: ((CircularFifoQueue<NodeDatum>) q).get(offsetIdx));
 					}

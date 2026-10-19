@@ -54,7 +54,7 @@ import net.solarnetwork.node.runtime.DatumHistory;
  * Test cases for the {@link DatumHistory} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DatumHistoryTests {
 
@@ -251,6 +251,40 @@ public class DatumHistoryTests {
 	}
 
 	@Test
+	public void offsetTime_oldest() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		for ( int j = 0; j < 3; j++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", 0), start.plusSeconds(j),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum offset = h.offset("test.0", start.plusSeconds(2), 2);
+
+		// THEN
+		assertThat("Oldest datum returned", offset.getTimestamp(), is(start));
+	}
+
+	@Test
+	public void offsetTime_only() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		h.add(SimpleDatum.nodeDatum("test.0", start, new DatumSamples()));
+
+		// WHEN
+		NodeDatum offset = h.offset("test.0", start.plusSeconds(1), 0);
+
+		// THEN
+		assertThat("Only datum returned", offset.getTimestamp(), is(start));
+	}
+
+	@Test
 	public void offsetTime_all() {
 		// GIVEN
 		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
@@ -290,6 +324,10 @@ public class DatumHistoryTests {
 					fail("Unknown source: " + sourceId);
 			}
 		}
+		assertThat("Every source with a datum at or before the timestamp returned",
+				StreamSupport.stream(offsets.spliterator(), false).map(Datum::getSourceId)
+						.collect(Collectors.toList()),
+				containsInAnyOrder("test.0", "test.1"));
 	}
 
 	@Test
