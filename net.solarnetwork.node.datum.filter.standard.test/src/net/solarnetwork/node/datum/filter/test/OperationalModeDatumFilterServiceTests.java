@@ -32,7 +32,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -54,7 +56,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * Test cases for the {@link OperationalModeDatumFilterService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OperationalModeDatumFilterServiceTests {
 
@@ -159,6 +161,36 @@ public class OperationalModeDatumFilterServiceTests {
 		assertThat("Expire date set", expireCaptor.getValue().isBefore(Instant.ofEpochMilli(expire)),
 				is(equalTo(false)));
 
+	}
+
+	@Test
+	public void opModeActivated_withExpire_clock() {
+		// GIVEN
+		final Instant now = Instant.parse("2025-10-01T00:00:00Z");
+		xform = new OperationalModeDatumFilterService(Clock.fixed(now, ZoneOffset.UTC));
+		xform.setSourceId("^F");
+		xform.setOpModesService(opModesService);
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		OperationalModeTransformConfig config = new OperationalModeTransformConfig();
+		config.setExpressionServiceId(exprService.getUid());
+		config.setOperationalMode(OP_MODE);
+		config.setExpression("watts > 10");
+		config.setExpireSeconds(60);
+		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
+
+		Capture<Instant> expireCaptor = Capture.newInstance();
+		expect(opModesService.enableOperationalModes(eq(singleton(OP_MODE)), capture(expireCaptor)))
+				.andReturn(singleton(OP_MODE));
+
+		// WHEN
+		replayAll();
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		xform.filter(d, d.getSamples(), null);
+
+		// THEN
+		assertThat("Expire date from the clock", expireCaptor.getValue(),
+				is(equalTo(now.plusSeconds(60))));
 	}
 
 	@Test

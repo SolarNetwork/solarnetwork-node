@@ -28,7 +28,10 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -56,19 +59,32 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  *
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 2.0
  */
 public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
+	private final InstantSource clock;
 	private OperationalModeTransformConfig[] expressionConfigs;
 
 	/**
 	 * Constructor.
 	 */
 	public OperationalModeDatumFilterService() {
+		this(Clock.systemUTC());
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to compute operational mode expiration dates with
+	 * @since 1.7
+	 */
+	public OperationalModeDatumFilterService(InstantSource clock) {
 		super();
+		this.clock = requireNonNullArgument(clock, "clock");
 	}
 
 	@Override
@@ -173,8 +189,8 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 				if ( exprResult.booleanValue() ) {
 					Instant expire = null;
 					if ( config.getExpireSeconds() > 0 ) {
-						expire = Instant.ofEpochMilli(System.currentTimeMillis()
-								+ TimeUnit.SECONDS.toMillis(config.getExpireSeconds()));
+						expire = Instant.ofEpochMilli(
+								clock.millis() + TimeUnit.SECONDS.toMillis(config.getExpireSeconds()));
 					}
 					opModesService.enableOperationalModes(singleton(config.getOperationalMode()),
 							expire);
