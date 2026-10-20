@@ -33,12 +33,13 @@ import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.nonEmptyString;
 import static org.springframework.util.FileCopyUtils.copyToString;
-import static org.springframework.util.StringUtils.arrayToDelimitedString;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -46,6 +47,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.springframework.context.MessageSource;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -88,7 +92,7 @@ import net.solarnetwork.util.CollectionUtils;
  *
  * @author matt
  * @author elijah
- * @version 1.3
+ * @version 1.4
  */
 public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -104,6 +108,13 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 	/** The {@code poaResultKey} property default value. */
 	public static final String DEFAULT_POA_RESULT_KEY = "poa_global";
+
+	/**
+	 * The {@code commandTimeoutSeconds} property default value.
+	 *
+	 * @since 1.4
+	 */
+	public static final int DEFAULT_COMMAND_TIMEOUT_SECONDS = 60;
 
 	/**
 	 * The {@code transpositionModel} property default value.
@@ -144,6 +155,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 	private String command = DEFAULT_COMMAND;
 	private String poaResultKey = DEFAULT_POA_RESULT_KEY;
+	private int commandTimeoutSeconds = DEFAULT_COMMAND_TIMEOUT_SECONDS;
 
 	private ExpressionConfig[] expressionConfigs;
 
@@ -366,17 +378,17 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Validate and normalize a command option value.
 	 *
 	 * <p>
-	 * Tracker options are validated against the value ranges supported by
-	 * pvlib {@code tracking.singleaxis()}; other options are normalized
-	 * without validation.
+	 * Tracker options are validated against the value ranges supported by pvlib
+	 * {@code tracking.singleaxis()}; other options are normalized without
+	 * validation.
 	 * </p>
 	 *
 	 * @param opt
 	 *        the command option
 	 * @param val
 	 *        the proposed option value
-	 * @return the normalized argument value, or {@code null} if the value
-	 *         is not valid for the given option
+	 * @return the normalized argument value, or {@code null} if the value is
+	 *         not valid for the given option
 	 * @since 1.3
 	 */
 	private static String commandArgumentValue(CommandOptions opt, Object val) {
@@ -425,40 +437,103 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	private Map<String, ?> executeCommand(final Map<String, String> args) {
-		String[] cmd = new String[args.size() * 2 + 1];
-		cmd[0] = command;
-		int i = 0;
+		List<String> cmd = new ArrayList<>(args.size() * 2 + 1);
+		cmd.add(command);
 		for ( Entry<String, String> e : args.entrySet() ) {
-			cmd[++i] = e.getKey();
-			cmd[++i] = e.getValue();
+			cmd.add(e.getKey());
+			cmd.add(e.getValue());
 		}
 		if ( log.isDebugEnabled() ) {
-			log.debug("Executing GHI -> POA irradiance command: {} ", arrayToDelimitedString(cmd, " "));
+			log.debug("Executing GHI -> POA irradiance command: {} ", String.join(" ", cmd));
 		}
-		ProcessBuilder pb = new ProcessBuilder(cmd);
+		return executeCommand(cmd);
+	}
+
+	/**
+	 * Execute the GHI to POA irradiance command.
+	 *
+	 * <p>
+	 * The command must write a JSON object to its standard output, and nothing
+	 * to its standard error. It is stopped if it does not finish within
+	 * {@link #getCommandTimeoutSeconds()}.
+	 * </p>
+	 *
+	 * @param cmd
+	 *        the command and its arguments
+	 * @return the command result
+	 * @throws RuntimeException
+	 *         if the command cannot run, does not finish in time, writes to its
+	 *         standard error, or does not write a JSON object
+	 * @since 1.4
+	 */
+	protected Map<String, ?> executeCommand(List<String> cmd) {
+		final String cmdName = cmd.get(0);
+		final Process pr;
 		try {
-			Process pr = pb.start();
-
-			String json = nonEmptyString(
-					copyToString(new InputStreamReader(pr.getInputStream(), UTF_8)));
-
-			String err = nonEmptyString(copyToString(new InputStreamReader(pr.getErrorStream(), UTF_8)));
-			if ( err != null ) {
+			pr = new ProcessBuilder(cmd).start();
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+		final CompletableFuture<String> out = readAsync(pr.getInputStream());
+		final CompletableFuture<String> err = readAsync(pr.getErrorStream());
+		try {
+			final int timeout = commandTimeoutSeconds;
+			if ( timeout > 0 && !pr.waitFor(timeout, TimeUnit.SECONDS) ) {
+				pr.destroyForcibly();
 				throw new RuntimeException(
-						String.format("GHI -> POA irradiance command [%s] error: %s", command, err));
+						String.format("GHI -> POA irradiance command [%s] did not finish within %ds",
+								cmdName, timeout));
+			}
+
+			String json = nonEmptyString(out.get());
+			String errMsg = nonEmptyString(err.get());
+			if ( errMsg != null ) {
+				throw new RuntimeException(
+						String.format("GHI -> POA irradiance command [%s] error: %s", cmdName, errMsg));
 			} else if ( json == null ) {
 				throw new RuntimeException(
-						String.format("GHI -> POA irradiance command [%s] produced no output", command));
+						String.format("GHI -> POA irradiance command [%s] produced no output", cmdName));
 			}
 
 			return objectMapper.readValue(json, STRING_MAP_TYPE);
 		} catch ( JacksonException e ) {
 			throw new RuntimeException(
-					String.format("Error parsing GHI -> POA irradiance command [%s] output: %s", command,
+					String.format("Error parsing GHI -> POA irradiance command [%s] output: %s", cmdName,
 							e.getMessage()));
-		} catch ( IOException e ) {
-			throw new RuntimeException(e);
+		} catch ( InterruptedException e ) {
+			pr.destroyForcibly();
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(String
+					.format("Interrupted waiting for GHI -> POA irradiance command [%s]", cmdName));
+		} catch ( ExecutionException e ) {
+			throw new RuntimeException(e.getCause());
 		}
+	}
+
+	/**
+	 * Read a command output stream as a string, on another thread.
+	 *
+	 * <p>
+	 * Both output streams are read at the same time, so a command that writes a
+	 * lot to one of them cannot block on the other.
+	 * </p>
+	 *
+	 * @param in
+	 *        the stream to read
+	 * @return the future stream content
+	 */
+	private static CompletableFuture<String> readAsync(InputStream in) {
+		CompletableFuture<String> result = new CompletableFuture<>();
+		Thread t = new Thread(() -> {
+			try {
+				result.complete(copyToString(new InputStreamReader(in, UTF_8)));
+			} catch ( IOException e ) {
+				result.completeExceptionally(e);
+			}
+		}, "pvlib-command-output");
+		t.setDaemon(true);
+		t.start();
+		return result;
 	}
 
 	@Override
@@ -525,6 +600,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		results.add(modelSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier("command", DEFAULT_COMMAND));
+		results.add(new BasicTextFieldSettingSpecifier("commandTimeoutSeconds",
+				String.valueOf(DEFAULT_COMMAND_TIMEOUT_SECONDS)));
 		results.add(new BasicTextFieldSettingSpecifier("poaResultKey", DEFAULT_POA_RESULT_KEY));
 
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
@@ -874,6 +951,30 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	/**
+	 * Get the command timeout.
+	 *
+	 * @return the maximum number of seconds to wait for the command to finish,
+	 *         or {@code 0} to wait forever
+	 * @since 1.4
+	 */
+	public final int getCommandTimeoutSeconds() {
+		return commandTimeoutSeconds;
+	}
+
+	/**
+	 * Set the command timeout.
+	 *
+	 * @param commandTimeoutSeconds
+	 *        the maximum number of seconds to wait for the command to finish,
+	 *        or {@code 0} to wait forever; a negative value is treated as
+	 *        {@code 0}
+	 * @since 1.4
+	 */
+	public final void setCommandTimeoutSeconds(int commandTimeoutSeconds) {
+		this.commandTimeoutSeconds = Math.max(0, commandTimeoutSeconds);
+	}
+
+	/**
 	 * Get the POA irradiance result key.
 	 *
 	 * @return the key
@@ -992,8 +1093,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the single-axis tracker mode.
 	 *
-	 * @return {@code true} to model a single-axis tracker, in which case
-	 *         the array tilt and azimuth are ignored
+	 * @return {@code true} to model a single-axis tracker, in which case the
+	 *         array tilt and azimuth are ignored
 	 * @since 1.3
 	 */
 	public final boolean isTracking() {
@@ -1027,8 +1128,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Set the tracker axis tilt.
 	 *
 	 * @param axisTilt
-	 *        the tilt of the tracker axis in degrees from horizontal to set,
-	 *        or {@code null} for the command default
+	 *        the tilt of the tracker axis in degrees from horizontal to set, or
+	 *        {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final void setAxisTilt(BigDecimal axisTilt) {
@@ -1038,8 +1139,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the tracker axis azimuth.
 	 *
-	 * @return the angle of the tracker axis in degrees clockwise from north,
-	 *         or {@code null} for the command default
+	 * @return the angle of the tracker axis in degrees clockwise from north, or
+	 *         {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final BigDecimal getAxisAzimuth() {
@@ -1084,8 +1185,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the tracker backtracking mode.
 	 *
-	 * @return {@code true} to apply backtracking to avoid row-to-row
-	 *         shading, using the ground coverage ratio
+	 * @return {@code true} to apply backtracking to avoid row-to-row shading,
+	 *         using the ground coverage ratio
 	 * @since 1.3
 	 */
 	public final boolean isBacktrack() {
@@ -1096,8 +1197,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Set the tracker backtracking mode.
 	 *
 	 * @param backtrack
-	 *        {@code true} to apply backtracking to avoid row-to-row
-	 *        shading, using the ground coverage ratio
+	 *        {@code true} to apply backtracking to avoid row-to-row shading,
+	 *        using the ground coverage ratio
 	 * @since 1.3
 	 */
 	public final void setBacktrack(boolean backtrack) {
