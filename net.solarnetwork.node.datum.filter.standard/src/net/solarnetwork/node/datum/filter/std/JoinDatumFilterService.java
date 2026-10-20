@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
-import static java.time.Instant.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static net.solarnetwork.service.OptionalService.service;
@@ -66,7 +65,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver,
@@ -212,7 +211,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		};
 		if ( taskScheduler != null ) {
 			startupFuture = taskScheduler.schedule(startupTask,
-					Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
+					Instant.ofEpochMilli(sampleClock.millis() + (startupDelay * 1000L)));
 		} else {
 			startupTask.run();
 		}
@@ -232,7 +231,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 				coalesceFuture.cancel(true);
 				coalesceFuture = null;
 			}
-			coalesceFuture = taskScheduler.schedule(this, Instant.now().plus(coalesceDuration));
+			coalesceFuture = taskScheduler.schedule(this, sampleClock.instant().plus(coalesceDuration));
 		}
 	}
 
@@ -303,8 +302,8 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	// the mergedSamplesLock should be acquired before calling this method
 	private void generateDatum(Instant timestamp) {
-		SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId, timestamp != null ? timestamp : now(),
-				new DatumSamples(mergedSamples));
+		SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId,
+				timestamp != null ? timestamp : sampleClock.instant(), new DatumSamples(mergedSamples));
 		log.debug("Generated merged datum {}", d);
 		DatumQueue dq = service(datumQueue);
 		if ( dq != null ) {

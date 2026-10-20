@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
-import static java.time.Instant.now;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.nonEmptyString;
@@ -58,7 +57,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * is not seen within a configurable timeout.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public class TimeoutDatumFilterService extends BaseDatumFilterSupport
@@ -187,7 +186,7 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 		};
 		if ( taskScheduler != null ) {
 			startupFuture = taskScheduler.schedule(startupTask,
-					Instant.ofEpochMilli(System.currentTimeMillis()).plusSeconds(startupDelay));
+					Instant.ofEpochMilli(sampleClock.millis() + (startupDelay * 1000L)));
 		} else {
 			startupTask.run();
 		}
@@ -207,7 +206,7 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 				timeoutFuture.cancel(true);
 				timeoutFuture = null;
 			}
-			timeoutFuture = taskScheduler.schedule(this, Instant.now().plus(duration));
+			timeoutFuture = taskScheduler.schedule(this, sampleClock.instant().plus(duration));
 		}
 	}
 
@@ -242,12 +241,12 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 		if ( duration == null ) {
 			return;
 		}
-		timeoutFuture = taskScheduler.schedule(this, now().plus(duration));
+		timeoutFuture = taskScheduler.schedule(this, sampleClock.instant().plus(duration));
 	}
 
 	private void generateDatum(Instant timestamp) {
 		final SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId,
-				timestamp != null ? timestamp : now(), new DatumSamples());
+				timestamp != null ? timestamp : sampleClock.instant(), new DatumSamples());
 
 		final String tagName = nonEmptyString(getTagName());
 		if ( tagName != null ) {
