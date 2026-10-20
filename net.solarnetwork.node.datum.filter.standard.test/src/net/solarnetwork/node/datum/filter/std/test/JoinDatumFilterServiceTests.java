@@ -39,9 +39,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +66,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link JoinDatumFilterService} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JoinDatumFilterServiceTests {
 
@@ -76,20 +76,29 @@ public class JoinDatumFilterServiceTests {
 	private static final String PROP_2 = "amps";
 	private static final String OUTPUT_SOURCE_ID = "OUT";
 
-	private InstantSource sampleClock;
+	/**
+	 * How far the sample clock is from the system clock, so tests can tell that
+	 * a filter uses it.
+	 */
+	private static final Duration CLOCK_OFFSET = Duration.ofDays(-1);
+
+	private Clock sampleClock;
 	private DatumQueue datumQueue;
 	private SimpleAsyncTaskScheduler scheduler;
 	private JoinDatumFilterService xform;
 
 	@Before
 	public void setup() {
-		sampleClock = EasyMock.createMock(InstantSource.class);
+		sampleClock = Clock.offset(Clock.systemUTC(), CLOCK_OFFSET);
 		datumQueue = EasyMock.createMock(DatumQueue.class);
 		xform = new JoinDatumFilterService(sampleClock, new StaticOptionalService<>(datumQueue));
 		xform.setSourceId("^F");
 		xform.setOutputSourceId(OUTPUT_SOURCE_ID);
 
+		// the scheduler runs tasks on the sample clock, like a node's scheduler
+		// on the system clock that the node's filters use
 		scheduler = new SimpleAsyncTaskScheduler();
+		scheduler.setClock(sampleClock);
 		scheduler.start();
 		xform.setTaskScheduler(scheduler);
 	}
@@ -97,11 +106,11 @@ public class JoinDatumFilterServiceTests {
 	@After
 	public void teardown() {
 		scheduler.stop();
-		EasyMock.verify(sampleClock, datumQueue);
+		EasyMock.verify(datumQueue);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(sampleClock, datumQueue);
+		EasyMock.replay(datumQueue);
 	}
 
 	private SimpleDatum createTestSimpleDatum(String sourceId, String prop, Number val) {
@@ -308,11 +317,9 @@ public class JoinDatumFilterServiceTests {
 		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true);
 
-		final Instant timestamp = Instant.now().minusSeconds(1L);
-		expect(sampleClock.instant()).andReturn(timestamp);
-
 		// WHEN
 		replayAll();
+		final Instant start = sampleClock.instant();
 		xform.start();
 
 		final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID_1, PROP_1, 123);
@@ -323,6 +330,7 @@ public class JoinDatumFilterServiceTests {
 		} finally {
 			xform.stop();
 		}
+		final Instant end = sampleClock.instant();
 
 		// THEN
 		// @formatter:off
@@ -335,7 +343,13 @@ public class JoinDatumFilterServiceTests {
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
 			.as("Generated datum for configured output source and clock time")
-			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.returns(OUTPUT_SOURCE_ID, from(SimpleDatum::getSourceId))
+			.satisfies(d -> {
+				then(d.getTimestamp())
+					.as("Timestamp from the sample clock")
+					.isBetween(start, end)
+					;
+			})
 			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
 			.as("Only properties from seen sample included")
 			.containsExactly(entry(format("%s_s1", PROP_1), 123))
@@ -407,16 +421,12 @@ public class JoinDatumFilterServiceTests {
 		xform.setPropertySourceMappings(
 				new PatternKeyValuePair[] { new PatternKeyValuePair("_(\\d+)$", "{p}_s{1}") });
 
-		// allow any number of calls so extra timeouts (that would run on the scheduler thread)
-		// are captured and can be asserted on the test thread
-		final Instant timestamp = Instant.now().minusSeconds(1L);
-		expect(sampleClock.instant()).andReturn(timestamp).anyTimes();
-
 		final Capture<NodeDatum> outputCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true).anyTimes();
 
 		// WHEN
 		replayAll();
+		final Instant start = sampleClock.instant();
 		xform.start();
 
 		// feed in datum more frequently than the coalesce timeout, for longer than the timeout,
@@ -431,6 +441,7 @@ public class JoinDatumFilterServiceTests {
 		} finally {
 			xform.stop();
 		}
+		final Instant end = sampleClock.instant();
 
 		// wait past another timeout, to verify no timeout fires after stopped
 		Thread.sleep(xform.getCoalesceTimeout().plusMillis(200).toMillis());
@@ -450,7 +461,13 @@ public class JoinDatumFilterServiceTests {
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
 			.as("Generated datum for configured output source and timeout sample clock timestamp")
-			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.returns(OUTPUT_SOURCE_ID, from(SimpleDatum::getSourceId))
+			.satisfies(d -> {
+				then(d.getTimestamp())
+					.as("Timestamp from the sample clock")
+					.isBetween(start, end)
+					;
+			})
 			.extracting(d -> d.getSamples().getInstantaneous(), map(String.class, Number.class))
 			.as("Properties from just one source included")
 			.containsOnlyKeys(format("%s_s1", PROP_1))

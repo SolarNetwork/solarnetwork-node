@@ -31,16 +31,15 @@ import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.InstantSource;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.scheduling.concurrent.SimpleAsyncTaskScheduler;
-import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.datum.filter.std.TimeoutDatumFilterService;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -52,7 +51,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link TimeoutDatumFilterService}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class TimeoutDatumFilterServiceTests {
 
@@ -61,20 +60,29 @@ public class TimeoutDatumFilterServiceTests {
 	private static final String PROP_2 = "amps";
 	private static final String OUTPUT_SOURCE_ID = "OUT";
 
-	private InstantSource sampleClock;
+	/**
+	 * How far the sample clock is from the system clock, so tests can tell that
+	 * a filter uses it.
+	 */
+	private static final Duration CLOCK_OFFSET = Duration.ofDays(-1);
+
+	private Clock sampleClock;
 	private DatumQueue datumQueue;
 	private SimpleAsyncTaskScheduler scheduler;
 	private TimeoutDatumFilterService xform;
 
 	@Before
 	public void setup() {
-		sampleClock = EasyMock.createMock(InstantSource.class);
+		sampleClock = Clock.offset(Clock.systemUTC(), CLOCK_OFFSET);
 		datumQueue = EasyMock.createMock(DatumQueue.class);
 		xform = new TimeoutDatumFilterService(sampleClock, new StaticOptionalService<>(datumQueue));
 		xform.setSourceId("^%s$".formatted(SOURCE_ID));
 		xform.setOutputSourceId(OUTPUT_SOURCE_ID);
 
+		// the scheduler runs tasks on the sample clock, like a node's scheduler
+		// on the system clock that the node's filters use
 		scheduler = new SimpleAsyncTaskScheduler();
+		scheduler.setClock(sampleClock);
 		scheduler.start();
 		xform.setTaskScheduler(scheduler);
 	}
@@ -82,11 +90,11 @@ public class TimeoutDatumFilterServiceTests {
 	@After
 	public void teardown() {
 		scheduler.stop();
-		EasyMock.verify(sampleClock, datumQueue);
+		EasyMock.verify(datumQueue);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(sampleClock, datumQueue);
+		EasyMock.replay(datumQueue);
 	}
 
 	private SimpleDatum createTestSimpleDatum(String sourceId, String prop, Number val) {
@@ -102,11 +110,9 @@ public class TimeoutDatumFilterServiceTests {
 		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(outputCaptor), eq(false))).andReturn(true);
 
-		final Instant timestamp = Instant.now().minusSeconds(1L);
-		expect(sampleClock.instant()).andReturn(timestamp);
-
 		// WHEN
 		replayAll();
+		final Instant start = sampleClock.instant();
 		xform.start();
 
 		final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID, PROP_1, 123);
@@ -117,6 +123,7 @@ public class TimeoutDatumFilterServiceTests {
 		} finally {
 			xform.stop();
 		}
+		final Instant end = sampleClock.instant();
 
 		// THEN
 		// @formatter:off
@@ -129,7 +136,13 @@ public class TimeoutDatumFilterServiceTests {
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
 			.as("Generated datum for configured output source and clock time")
-			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.returns(OUTPUT_SOURCE_ID, from(SimpleDatum::getSourceId))
+			.satisfies(d -> {
+				then(d.getTimestamp())
+					.as("Timestamp from the sample clock")
+					.isBetween(start, end)
+					;
+			})
 			.extracting(d -> d.getSamples().getInstantaneous())
 			.isNull();
 			;
@@ -181,11 +194,9 @@ public class TimeoutDatumFilterServiceTests {
 		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(outputCaptor), eq(false))).andReturn(true);
 
-		final Instant timestamp = Instant.now().minusSeconds(1L);
-		expect(sampleClock.instant()).andReturn(timestamp);
-
 		// WHEN
 		replayAll();
+		final Instant start = sampleClock.instant();
 		xform.start();
 
 		final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID, PROP_1, 123);
@@ -196,6 +207,7 @@ public class TimeoutDatumFilterServiceTests {
 		} finally {
 			xform.stop();
 		}
+		final Instant end = sampleClock.instant();
 
 		// THEN
 		// @formatter:off
@@ -208,7 +220,13 @@ public class TimeoutDatumFilterServiceTests {
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
 			.as("Generated datum for configured output source and clock time")
-			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.returns(OUTPUT_SOURCE_ID, from(SimpleDatum::getSourceId))
+			.satisfies(d -> {
+				then(d.getTimestamp())
+					.as("Timestamp from the sample clock")
+					.isBetween(start, end)
+					;
+			})
 			.extracting(d -> d.getSamples().getTags(), set(String.class))
 			.as("Tags")
 			.containsExactly(xform.getTagName())
@@ -225,11 +243,9 @@ public class TimeoutDatumFilterServiceTests {
 		final Capture<NodeDatum> outputCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(outputCaptor), eq(false))).andReturn(true);
 
-		final Instant timestamp = Instant.now().minusSeconds(1L);
-		expect(sampleClock.instant()).andReturn(timestamp);
-
 		// WHEN
 		replayAll();
+		final Instant start = sampleClock.instant();
 		xform.start();
 
 		final SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID, PROP_1, 123);
@@ -240,6 +256,7 @@ public class TimeoutDatumFilterServiceTests {
 		} finally {
 			xform.stop();
 		}
+		final Instant end = sampleClock.instant();
 
 		// THEN
 		// @formatter:off
@@ -252,7 +269,13 @@ public class TimeoutDatumFilterServiceTests {
 			.isInstanceOf(SimpleDatum.class)
 			.asInstanceOf(type(SimpleDatum.class))
 			.as("Generated datum for configured output source and clock time")
-			.returns(DatumId.nodeId(null, OUTPUT_SOURCE_ID, timestamp), from(SimpleDatum::getId))
+			.returns(OUTPUT_SOURCE_ID, from(SimpleDatum::getSourceId))
+			.satisfies(d -> {
+				then(d.getTimestamp())
+					.as("Timestamp from the sample clock")
+					.isBetween(start, end)
+					;
+			})
 			.extracting(d -> d.getSamples().getStatus(), map(String.class, Object.class))
 			.as("Status property")
 			.containsExactly(
