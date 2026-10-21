@@ -637,7 +637,7 @@
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
 			<property name="localStateDao" ref="localStateDao"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
-			<property name="startupDelay" value="300000"/>
+			<property name="startupDelay" value="300"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -1004,7 +1004,7 @@
 			<property name="tariffScheduleProviders" ref="tariffScheduleProviders"/>
 			<property name="localStateDao" ref="localStateDao"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
-			<property name="startupDelay" value="300000"/>
+			<property name="startupDelay" value="300"/>
 		</bean>
 	</osgix:managed-service-factory>
 
