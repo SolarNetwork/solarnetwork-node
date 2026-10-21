@@ -39,6 +39,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import com.fasterxml.jackson.databind.JsonNode;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.dao.DatumDao;
@@ -52,7 +54,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link EventMessageBridge} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EventMessageBridgeTests {
 
@@ -157,6 +159,38 @@ public class EventMessageBridgeTests {
 			String prop = me.getKey();
 			assertThat("Message data " + prop, (Map<String, ?>) msgData, hasEntry(prop, me.getValue()));
 		}
+		assertThat("Message data includes datum", (Map<String, ?>) msgData,
+				hasEntry(DatumEvents.DATUM_PROPERTY, d));
+	}
+
+	@Test
+	public void handleDatumCapturedEvent_datum_json() throws Exception {
+		Capture<Object> msgCaptor = Capture.newInstance();
+		messageSendingOps.convertAndSend(EasyMock.anyString(), capture(msgCaptor),
+				EasyMock.<Map<String, Object>> isNull());
+
+		replayAll();
+
+		SimpleDatum d = SimpleDatum.nodeDatum("test-source", Instant.ofEpochMilli(1760000000123L),
+				new DatumSamples());
+		d.getSamples().putInstantaneousSampleValue("watts", 123);
+		d.getSamples().putAccumulatingSampleValue("wattHours", 12345L);
+		d.getSamples().putStatusSampleValue("status", "ok");
+		d.getSamples().addTag("power");
+		Event event = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, d);
+		eventMessageBridge.handleEvent(event);
+
+		// the node's message converter uses the node's datum ObjectMapper
+		JsonNode json = JsonUtils.newDatumObjectMapper().valueToTree(msgCaptor.getValue());
+		JsonNode datum = json.path("data").path(DatumEvents.DATUM_PROPERTY);
+		assertThat("Datum created", datum.path("created").asText(), equalTo("2025-10-09 08:53:20.123Z"));
+		assertThat("Datum source ID", datum.path("sourceId").asText(), equalTo("test-source"));
+		assertThat("Datum instantaneous", datum.path("i").path("watts").asInt(), equalTo(123));
+		assertThat("Datum accumulating", datum.path("a").path("wattHours").asLong(), equalTo(12345L));
+		assertThat("Datum status", datum.path("s").path("status").asText(), equalTo("ok"));
+		assertThat("Datum tags", datum.path("t").path(0).asText(), equalTo("power"));
+		assertThat("Flat property still included", json.path("data").path("watts").asInt(),
+				equalTo(123));
 	}
 
 }

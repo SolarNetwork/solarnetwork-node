@@ -43,6 +43,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.support.GenericMessage;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
@@ -57,8 +58,17 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Bridge between OSGi EventAdmin events and a Spring Messaging.
  *
+ * <p>
+ * Unless data extractors are registered for an event's topic, the message data
+ * is the event's properties, with a datum's properties unwrapped into top-level
+ * properties (see {@link DatumEvents#datumEventMap(Event)}). From version 2.3
+ * the datum itself is also included, on the {@link DatumEvents#DATUM_PROPERTY}
+ * property, because the top-level properties do not say which sample type each
+ * property has.
+ * </p>
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 
@@ -204,7 +214,12 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 			}
 			data = d;
 		} else {
-			data = DatumEvents.datumEventMap(event);
+			Map<String, Object> d = DatumEvents.datumEventMap(event);
+			if ( event.getProperty(DatumEvents.DATUM_PROPERTY) instanceof NodeDatum datum ) {
+				// keep the datum too, which serializes with its sample types
+				d.put(DatumEvents.DATUM_PROPERTY, datum);
+			}
+			data = d;
 		}
 		String topic = messageTopicForEvent(event, data);
 		if ( topic == null ) {

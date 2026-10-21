@@ -1,6 +1,7 @@
 'use strict';
 SolarNode.Datum = (function() {
 	var DATUM_KNOWN_PROPERTIES = Object.freeze({
+		'_Datum' : true,
 		'_DatumType' : true,
 		'_DatumTypes' : true,
 		'created' : true,
