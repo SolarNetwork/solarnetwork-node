@@ -30,8 +30,8 @@ restart.
 
 # Settings
 
-| Setting           | Default                                                    | Description                                                                                                                                                   |
-| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|      Setting      |                          Default                           |                                                                          Description                                                                          |
+|-------------------|------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Status            |                                                            | The current radio state and why it is on, including the schedule state and the time zone in use.                                                              |
 | Override For      | `0`                                                        | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                   |
 | Always On         | on                                                         | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                           |
@@ -60,8 +60,8 @@ The schedule is a list of availability windows, one per line (or separated by
 the line. Each window has up to four whitespace-separated columns, in the same
 order as the tariff datum filter's schedule:
 
-| Columns given | Meaning                              |
-| ------------- | ------------------------------------ |
+| Columns given |               Meaning                |
+|---------------|--------------------------------------|
 | 1             | `<times>`                            |
 | 2             | `<weekdays> <times>`                 |
 | 3             | `<days> <weekdays> <times>`          |
@@ -71,8 +71,8 @@ Leading columns can be left out, and a column of `*` matches every value. Each
 column is a comma-separated set of inclusive ranges (`a-b`), or single values
 for the month, day and weekday columns; a time must always be a range:
 
-| Column     | Values                                                                                             |
-| ---------- | -------------------------------------------------------------------------------------------------- |
+|   Column   |                                               Values                                               |
+|------------|----------------------------------------------------------------------------------------------------|
 | `months`   | `1-12`, or names `Jan-Dec`, `January-December`                                                     |
 | `days`     | Day of month, `1-31`                                                                               |
 | `weekdays` | `1-7` with `1` = Monday, or names `Mon-Sun`, `Monday-Sunday`                                       |
@@ -159,8 +159,8 @@ duration:600
 ^@
 ```
 
-| `action`  | Parameters           | Effect                                                                                                                                              |
-| --------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `action`  |      Parameters      |                                                                       Effect                                                                        |
+|-----------|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `status`  |                      | Return the current status (the default when no action is given).                                                                                    |
 | `enable`  | `duration` (seconds) | Enable the override mode for `duration` seconds (default _Override Duration_, capped at _Maximum Override_). Calling it again extends the override. |
 | `disable` |                      | End the override. Unless the schedule, the offline fallback, or _Always On_ keeps it on, the radio turns off, which drops the client's connection.  |
@@ -209,3 +209,4 @@ The same instruction can also be queued from SolarNetwork, with
 - The helper runs as root through `sudo`. It reads the adapter name from
   `/etc/solarnode/bluetooth-setup.env` without sourcing the file, because
   `/etc/solarnode` is writable by the SolarNode user.
+
