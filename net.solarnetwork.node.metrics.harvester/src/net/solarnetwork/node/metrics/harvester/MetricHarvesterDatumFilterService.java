@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNullElseGet;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Datum filter service that "harvests" datum properties as metric values.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -71,10 +72,25 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 	 * @param metricDao
 	 *        the metric DAO
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
 	public MetricHarvesterDatumFilterService(MetricDao metricDao) {
-		super();
+		this(InstantSource.system(), metricDao);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param metricDao
+	 *        the metric DAO
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 1.2
+	 */
+	public MetricHarvesterDatumFilterService(InstantSource clock, MetricDao metricDao) {
+		super(clock);
 		this.metricDao = ObjectUtils.requireNonNullArgument(metricDao, "metricDao");
 	}
 
@@ -127,8 +143,9 @@ public class MetricHarvesterDatumFilterService extends BaseDatumFilterSupport
 			@Nullable Map<String, Object> parameters) {
 		// store expression results in temp DatumSamples
 		DatumSamples s = new DatumSamples(samples);
-		ExpressionRoot root = new ExpressionRoot(datum, s, parameters, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()), service(getLocationService()));
+		ExpressionRoot root = new ExpressionRoot(getClock(), datum, s, parameters,
+				service(getDatumService()), getOpModesService(), service(getMetadataService()),
+				service(getLocationService()));
 		root.setTariffScheduleProviders(getTariffScheduleProviders());
 		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);

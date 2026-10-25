@@ -26,6 +26,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -70,7 +71,7 @@ import net.solarnetwork.util.CollectionUtils;
  * </p>
  *
  * @author matt
- * @version 2.12
+ * @version 2.13
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot
@@ -213,6 +214,38 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	}
 
 	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the instant source
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
+	 * @param opModesService
+	 *        the optional operational modes service
+	 * @param metadataService
+	 *        the metadata service
+	 * @param locationService
+	 *        the location service
+	 * @since 2.13
+	 */
+	public ExpressionRoot(InstantSource clock, @Nullable Datum datum,
+			@Nullable DatumSamplesOperations samples, @Nullable Map<String, ?> parameters,
+			@Nullable DatumService datumService, @Nullable OperationalModesService opModesService,
+			@Nullable MetadataService metadataService, @Nullable LocationService locationService) {
+		super(clock, datum, samples, parameters);
+		this.datumService = datumService;
+		this.opModesService = opModesService;
+		this.metadataService = metadataService;
+		this.locationService = locationService;
+	}
+
+	/**
 	 * Create a copy with a given datum value.
 	 *
 	 * <p>
@@ -243,8 +276,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 	 */
 	public ExpressionRoot copyWith(@Nullable Datum datum, @Nullable DatumSamplesOperations samples,
 			@Nullable Map<String, ?> parameters) {
-		ExpressionRoot r = new ExpressionRoot(datum, samples, parameters, datumService, opModesService,
-				metadataService, locationService);
+		ExpressionRoot r = new ExpressionRoot(clock(), datum, samples, parameters, datumService,
+				opModesService, metadataService, locationService);
 		r.setTariffScheduleProviders(tariffScheduleProviders);
 		r.setLocalStateDao(localStateDao);
 		return r;

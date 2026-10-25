@@ -28,6 +28,7 @@ import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator
 import static net.solarnetwork.service.OptionalService.service;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -73,6 +74,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.CachedResult;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Helper class for {@link net.solarnetwork.node.service.DatumDataSource} and
@@ -80,7 +82,7 @@ import net.solarnetwork.util.CachedResult;
  * extend.
  *
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -106,6 +108,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/** The {@code publishDeviceInfoMetadata} property default value. */
 	public static final boolean DEFAULT_PUBLISH_DEVICE_INFO_METADATA = true;
 
+	private final InstantSource clock;
 	private @Nullable OptionalService<DatumMetadataService> datumMetadataService;
 	private @Nullable OptionalService<DatumQueue> datumQueue;
 	private @Nullable OptionalService<DatumService> datumService;
@@ -123,7 +126,21 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Default constructor.
 	 */
 	public DatumDataSourceSupport() {
+		this(InstantSource.system());
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param clock
+	 *        the instant source to use
+	 * @since 1.7
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 */
+	public DatumDataSourceSupport(InstantSource clock) {
 		super();
+		this.clock = ObjectUtils.requireNonNullArgument(clock, "clock");
 	}
 
 	/**
@@ -377,7 +394,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 */
 	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs) {
-		ExpressionRoot root = new ExpressionRoot(d, null, null, service(datumService), null,
+		ExpressionRoot root = new ExpressionRoot(clock, d, null, null, service(datumService), null,
 				service(getMetadataService()), service(getLocationService()));
 		root.setTariffScheduleProviders(tariffScheduleProviders);
 		root.setLocalStateDao(getLocalStateDao());
@@ -903,6 +920,16 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	public final void setTariffScheduleProviders(
 			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
+	}
+
+	/**
+	 * Get the clock.
+	 * 
+	 * @return the clock
+	 * @since 1.7
+	 */
+	public final InstantSource getClock() {
+		return clock;
 	}
 
 }

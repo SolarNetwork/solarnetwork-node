@@ -27,6 +27,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.InstantSource;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,13 +56,12 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Transform service that sets a control value based on an expression result.
  *
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -78,9 +79,25 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public ControlUpdaterDatumFilterService(
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
-		super();
-		this.instructionExecutionService = ObjectUtils
-				.requireNonNullArgument(instructionExecutionService, "instructionExecutionService");
+		this(InstantSource.system(), instructionExecutionService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param instructionExecutionService
+	 *        the instruction execution service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 * @since 1.8
+	 */
+	public ControlUpdaterDatumFilterService(InstantSource clock,
+			OptionalService<InstructionExecutionService> instructionExecutionService) {
+		super(clock);
+		this.instructionExecutionService = requireNonNullArgument(instructionExecutionService,
+				"instructionExecutionService");
 	}
 
 	@Override
@@ -96,7 +113,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		if ( configs != null && configs.length > 0 ) {
 			Map<String, Object> params = smartPlaceholders(parameters);
 			DatumSamples mutableSamples = new DatumSamples(samples);
-			ExpressionRoot root = new ExpressionRoot(datum, mutableSamples, params,
+			ExpressionRoot root = new ExpressionRoot(getClock(), datum, mutableSamples, params,
 					service(getDatumService()), getOpModesService(), service(getMetadataService()),
 					service(getLocationService()));
 			root.setTariffScheduleProviders(getTariffScheduleProviders());

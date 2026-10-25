@@ -25,7 +25,6 @@ package net.solarnetwork.node.datum.filter.std;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.nonEmptyString;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
@@ -57,7 +56,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * is not seen within a configurable timeout.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.4
  */
 public class TimeoutDatumFilterService extends BaseDatumFilterSupport
@@ -68,7 +67,6 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 	public static final boolean DEFAULT_PERSIST = false;
 
 	private final OptionalService<DatumQueue> datumQueue;
-	private final InstantSource sampleClock;
 	private String outputSourceId;
 	private Duration timeout;
 	private boolean persist = DEFAULT_PERSIST;
@@ -90,7 +88,7 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 	 *         if any argument is {@code null}
 	 */
 	public TimeoutDatumFilterService(OptionalService<DatumQueue> datumQueue) {
-		this(Clock.systemUTC(), datumQueue);
+		this(InstantSource.system(), datumQueue);
 	}
 
 	/**
@@ -104,8 +102,7 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 	 *         if any argument is {@code null}
 	 */
 	public TimeoutDatumFilterService(InstantSource sampleClock, OptionalService<DatumQueue> datumQueue) {
-		super();
-		this.sampleClock = requireNonNullArgument(sampleClock, "sampleClock");
+		super(sampleClock);
 		this.datumQueue = requireNonNullArgument(datumQueue, "datumQueue");
 	}
 
@@ -186,7 +183,7 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 		};
 		if ( taskScheduler != null ) {
 			startupFuture = taskScheduler.schedule(startupTask,
-					Instant.ofEpochMilli(sampleClock.millis() + (startupDelay * 1000L)));
+					Instant.ofEpochMilli(getClock().millis() + (startupDelay * 1000L)));
 		} else {
 			startupTask.run();
 		}
@@ -206,7 +203,7 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 				timeoutFuture.cancel(true);
 				timeoutFuture = null;
 			}
-			timeoutFuture = taskScheduler.schedule(this, sampleClock.instant().plus(duration));
+			timeoutFuture = taskScheduler.schedule(this, getClock().instant().plus(duration));
 		}
 	}
 
@@ -236,17 +233,17 @@ public class TimeoutDatumFilterService extends BaseDatumFilterSupport
 	 */
 	@Override
 	public synchronized void run() {
-		generateDatum(sampleClock.instant());
+		generateDatum(getClock().instant());
 		final Duration duration = effectiveTimeout();
 		if ( duration == null ) {
 			return;
 		}
-		timeoutFuture = taskScheduler.schedule(this, sampleClock.instant().plus(duration));
+		timeoutFuture = taskScheduler.schedule(this, getClock().instant().plus(duration));
 	}
 
 	private void generateDatum(Instant timestamp) {
 		final SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId,
-				timestamp != null ? timestamp : sampleClock.instant(), new DatumSamples());
+				timestamp != null ? timestamp : getClock().instant(), new DatumSamples());
 
 		final String tagName = nonEmptyString(getTagName());
 		if ( tagName != null ) {

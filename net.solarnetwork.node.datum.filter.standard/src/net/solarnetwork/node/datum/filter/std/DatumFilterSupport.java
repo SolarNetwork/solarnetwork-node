@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.filter.std;
 
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class DatumFilterSupport extends BaseDatumFilterSupport implements SettingsChangeObserver {
@@ -63,7 +64,20 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	 * Constructor.
 	 */
 	public DatumFilterSupport() {
-		super();
+		this(InstantSource.system());
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param clock
+	 *        the clock to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 1.2
+	 */
+	public DatumFilterSupport(InstantSource clock) {
+		super(clock);
 		setUid(DEFAULT_UID);
 		setSettingKey(String.format(SETTING_KEY_TEMPLATE, DEFAULT_UID));
 	}

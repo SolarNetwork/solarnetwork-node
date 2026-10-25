@@ -29,6 +29,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
+import java.time.Instant;
+import java.time.InstantSource;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -46,7 +48,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * Test cases for the {@link ParameterDatumFilterService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ParameterDatumFilterServiceTests {
 
@@ -124,6 +126,28 @@ public class ParameterDatumFilterServiceTests {
 		assertThat("Output parameters generated", parameters.keySet(), hasSize(2));
 		assertThat("Parameters generated via expressions", parameters,
 				allOf(hasEntry(PARAM_1, 246), hasEntry(PARAM_2, 84870)));
+	}
+
+	@Test
+	public void timestamp_clock() throws Exception {
+		// GIVEN
+		final Instant date = Instant.parse("2020-02-03T04:05:06.789Z");
+		xform = new ParameterDatumFilterService(InstantSource.fixed(date));
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		ExpressionConfig config1 = new ExpressionConfig();
+		config1.setName(PARAM_1);
+		config1.setExpressionServiceId(exprService.getUid());
+		config1.setExpression("timestamp()");
+		xform.setExpressionConfigs(new ExpressionConfig[] { config1 });
+
+		// WHEN
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID_1, PROP_1, 123);
+		Map<String, Object> parameters = new LinkedHashMap<>();
+		xform.filter(d, d.getSamples(), parameters);
+
+		// THEN
+		assertThat("timestamp() uses the filter clock", parameters, hasEntry(PARAM_1, date));
 	}
 
 }

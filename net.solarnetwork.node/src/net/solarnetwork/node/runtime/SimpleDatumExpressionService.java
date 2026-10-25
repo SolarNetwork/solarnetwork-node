@@ -30,6 +30,7 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.InstantSource;
 import java.util.Map;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -58,7 +59,7 @@ import net.solarnetwork.service.support.ExpressionServiceExpression;
  * </p>
  *
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class SimpleDatumExpressionService extends BaseIdentifiable implements InstructionHandler {
 
@@ -71,6 +72,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	/** The instruction parameter for the expression language to use. */
 	public static final String PARAM_EXPRESSION_LANGUAGE = "lang";
 
+	private final InstantSource clock;
 	private final DatumService datumService;
 	private final OperationalModesService opModesService;
 	private @Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders;
@@ -87,7 +89,26 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	 */
 	public SimpleDatumExpressionService(DatumService datumService,
 			OperationalModesService opModesService) {
+		this(InstantSource.system(), datumService, opModesService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the instant source
+	 * @param datumService
+	 *        the datum service
+	 * @param opModesService
+	 *        the operational modes service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 1.5
+	 */
+	public SimpleDatumExpressionService(InstantSource clock, DatumService datumService,
+			OperationalModesService opModesService) {
 		super();
+		this.clock = requireNonNullArgument(clock, "clock");
 		this.datumService = requireNonNullArgument(datumService, "datumService");
 		this.opModesService = requireNonNullArgument(opModesService, "opModesService");
 	}
@@ -131,7 +152,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 		GeneralDatum d = new GeneralDatum(UUID.randomUUID().toString());
 
-		ExpressionRoot root = new ExpressionRoot(d, null, null, datumService, opModesService,
+		ExpressionRoot root = new ExpressionRoot(clock, d, null, null, datumService, opModesService,
 				service(getMetadataService()), service(getLocationService()));
 		root.setTariffScheduleProviders(tariffScheduleProviders);
 		root.setLocalStateDao(getLocalStateDao());
@@ -201,4 +222,15 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
 	}
+
+	/**
+	 * Get the clock.
+	 * 
+	 * @return the instant source
+	 * @since 1.5
+	 */
+	public final InstantSource getClock() {
+		return clock;
+	}
+
 }

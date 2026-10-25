@@ -27,9 +27,9 @@ import static java.util.Collections.emptyList;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collection;
@@ -73,7 +73,7 @@ import net.solarnetwork.util.CachedResult;
  * {@link DatumDataSource} for time-of-use schedules devices.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class TouDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingsChangeObserver, SettingSpecifierProvider, TariffScheduleProvider {
@@ -86,7 +86,6 @@ public class TouDatumDataSource extends DatumDataSourceSupport implements DatumD
 
 	private final AtomicReference<CachedResult<TariffSchedule>> schedule = new AtomicReference<>();
 
-	private final Clock clock;
 	private final OptionalFilterableService<MetadataService> metadataService;
 	private final OptionalFilterableService<TemporalTariffEvaluator> evaluator;
 
@@ -114,7 +113,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport implements DatumD
 	 */
 	public TouDatumDataSource(OptionalFilterableService<MetadataService> metadataService,
 			OptionalFilterableService<TemporalTariffEvaluator> evaluator) {
-		this(Clock.systemUTC(), metadataService, evaluator);
+		this(InstantSource.system(), metadataService, evaluator);
 	}
 
 	/**
@@ -129,10 +128,10 @@ public class TouDatumDataSource extends DatumDataSourceSupport implements DatumD
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public TouDatumDataSource(Clock clock, OptionalFilterableService<MetadataService> metadataService,
+	public TouDatumDataSource(InstantSource clock,
+			OptionalFilterableService<MetadataService> metadataService,
 			OptionalFilterableService<TemporalTariffEvaluator> evaluator) {
-		super();
-		this.clock = requireNonNullArgument(clock, "clock");
+		super(clock);
 		this.metadataService = requireNonNullArgument(metadataService, "metadataService");
 		this.evaluator = requireNonNullArgument(evaluator, "evaluator");
 		setMetadataService(metadataService);
@@ -172,7 +171,7 @@ public class TouDatumDataSource extends DatumDataSourceSupport implements DatumD
 		if ( schedule == null ) {
 			return null;
 		}
-		final Instant now = clock.instant();
+		final Instant now = getClock().instant();
 		final Tariff tariff = schedule.resolveTariff(
 				now.atZone(ZoneId.systemDefault()).toLocalDateTime(), Collections.emptyMap());
 		if ( tariff == null || tariff.getRates().isEmpty() ) {

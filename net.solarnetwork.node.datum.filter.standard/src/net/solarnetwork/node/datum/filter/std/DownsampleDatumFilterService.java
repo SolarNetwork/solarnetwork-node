@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.datum.AggregateDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumId;
@@ -119,7 +117,6 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 
 	private final ConcurrentMap<String, AggregateDatumSamples> subSamplesBySource = new ConcurrentHashMap<>(
 			8, 0.9f, 4);
-	private final Clock baseClock;
 
 	private int decimalScale = DEFAULT_DECIMAL_SCALE;
 	private String minPropertyFormat = DEFAULT_MIN_FORMAT;
@@ -133,21 +130,21 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	 * Constructor.
 	 */
 	public DownsampleDatumFilterService() {
-		this(Clock.systemUTC());
+		this(InstantSource.system());
 	}
 
 	/**
 	 * Constructor.
 	 *
 	 * @param baseClock
-	 *        the base clock to use; if {@literal null} then the system UTC
-	 *        clock will be used
+	 *        the base clock to use
 	 * @since 1.2
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
-	public DownsampleDatumFilterService(@Nullable Clock baseClock) {
-		super();
-		this.baseClock = (baseClock != null ? baseClock : Clock.systemUTC());
-		this.sampleClock = this.baseClock;
+	public DownsampleDatumFilterService(InstantSource baseClock) {
+		super(baseClock);
+		this.sampleClock = baseClock;
 	}
 
 	private AggregateDatumSamples newAggregate(String key) {
@@ -391,9 +388,9 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	public void setSampleDuration(Duration sampleDuration) {
 		this.sampleDuration = sampleDuration;
 		if ( sampleDuration != null ) {
-			sampleClock = Clock.tick(baseClock, sampleDuration);
+			sampleClock = InstantSource.tick(getClock(), sampleDuration);
 		} else {
-			sampleClock = baseClock;
+			sampleClock = getClock();
 		}
 	}
 

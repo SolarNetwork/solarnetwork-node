@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.time.InstantSource;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -92,7 +93,7 @@ import net.solarnetwork.util.CollectionUtils;
  *
  * @author matt
  * @author elijah
- * @version 1.4
+ * @version 1.5
  */
 public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -174,7 +175,28 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	public PvlibPoaDatumFilterService(ObjectMapper objectMapper,
 			OptionalService<DatumMetadataService> datumMetadataService,
 			OptionalFilterableService<MetadataService> characteristicsMetadataService) {
-		super();
+		this(InstantSource.system(), objectMapper, datumMetadataService, characteristicsMetadataService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param objectMapper
+	 *        the object mapper to use
+	 * @param datumMetadataService
+	 *        the datum metadata service to use
+	 * @param characteristicsMetadataService
+	 *        the metadata service to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 1.5
+	 */
+	public PvlibPoaDatumFilterService(InstantSource clock, ObjectMapper objectMapper,
+			OptionalService<DatumMetadataService> datumMetadataService,
+			OptionalFilterableService<MetadataService> characteristicsMetadataService) {
+		super(clock);
 		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
 		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
 		this.characteristicsMetadataService = requireNonNullArgument(characteristicsMetadataService,
@@ -313,7 +335,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 					Map<String, Object> params = smartPlaceholders(parameters);
 					Map<String, Object> exprData = new LinkedHashMap<>(result);
 					MapSampleOperations mapSamples = new MapSampleOperations(exprData, samplesCopy);
-					ExpressionRoot root = new ExpressionRoot(datum, mapSamples, params,
+					ExpressionRoot root = new ExpressionRoot(getClock(), datum, mapSamples, params,
 							service(getDatumService()), getOpModesService(),
 							service(getMetadataService()), service(getLocationService()));
 					root.setTariffScheduleProviders(getTariffScheduleProviders());

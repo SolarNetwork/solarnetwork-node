@@ -23,8 +23,8 @@
 package net.solarnetwork.node.datum.battery.mock;
 
 import static java.util.Collections.emptyList;
-import java.time.Clock;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,14 +53,13 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Simple simulated battery.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -76,8 +75,6 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 
 	/** The {@code initialSoc} property default value. */
 	public static final double DEFAULT_INITIAL_SOC = 100.0;
-
-	private final Clock clock;
 
 	private String sourceId;
 	private String targetPowerRateControlId;
@@ -96,7 +93,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 * Constructor.
 	 */
 	public MockBatteryDatumDataSource() {
-		this(Clock.systemUTC());
+		this(InstantSource.system());
 	}
 
 	/**
@@ -105,11 +102,10 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 * @param clock
 	 *        the clock to use
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@literal null}
+	 *         if any argument is {@code null}
 	 */
-	public MockBatteryDatumDataSource(Clock clock) {
-		super();
-		this.clock = ObjectUtils.requireNonNullArgument(clock, "clock");
+	public MockBatteryDatumDataSource(InstantSource clock) {
+		super(clock);
 	}
 
 	@Override
@@ -271,7 +267,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private synchronized SimpleEnergyStorageDatum sample() {
-		final Instant now = clock.instant();
+		final Instant now = getClock().instant();
 
 		double availCapacity = this.availableEnergy;
 		final double totalCapacity = this.energyCapacity;

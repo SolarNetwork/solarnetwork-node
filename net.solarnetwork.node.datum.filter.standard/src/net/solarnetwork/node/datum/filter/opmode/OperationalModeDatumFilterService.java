@@ -28,8 +28,6 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
-import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.util.Collection;
@@ -59,20 +57,19 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  *
  * @author matt
- * @version 1.7
+ * @version 1.8
  * @since 2.0
  */
 public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
-	private final InstantSource clock;
 	private OperationalModeTransformConfig[] expressionConfigs;
 
 	/**
 	 * Constructor.
 	 */
 	public OperationalModeDatumFilterService() {
-		this(Clock.systemUTC());
+		this(InstantSource.system());
 	}
 
 	/**
@@ -83,8 +80,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 	 * @since 1.7
 	 */
 	public OperationalModeDatumFilterService(InstantSource clock) {
-		super();
-		this.clock = requireNonNullArgument(clock, "clock");
+		super(clock);
 	}
 
 	@Override
@@ -103,8 +99,9 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 			return samples;
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
-		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()), service(getLocationService()));
+		ExpressionRoot root = new ExpressionRoot(getClock(), datum, samples, params,
+				service(getDatumService()), getOpModesService(), service(getMetadataService()),
+				service(getLocationService()));
 		root.setTariffScheduleProviders(getTariffScheduleProviders());
 		root.setLocalStateDao(getLocalStateDao());
 		DatumSamplesOperations s = samplesForEvaluation(samples, configs);
@@ -189,8 +186,8 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 				if ( exprResult.booleanValue() ) {
 					Instant expire = null;
 					if ( config.getExpireSeconds() > 0 ) {
-						expire = Instant.ofEpochMilli(
-								clock.millis() + TimeUnit.SECONDS.toMillis(config.getExpireSeconds()));
+						expire = Instant.ofEpochMilli(getClock().millis()
+								+ TimeUnit.SECONDS.toMillis(config.getExpireSeconds()));
 					}
 					opModesService.enableOperationalModes(singleton(config.getOperationalMode()),
 							expire);

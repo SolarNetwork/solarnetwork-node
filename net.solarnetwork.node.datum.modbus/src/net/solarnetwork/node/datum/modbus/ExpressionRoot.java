@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.modbus;
 
+import java.time.InstantSource;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Map;
@@ -40,7 +41,7 @@ import net.solarnetwork.util.IntShortMap;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  *
  * @author matt
- * @version 3.3
+ * @version 3.4
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -95,7 +96,25 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 */
 	public ExpressionRoot(@Nullable NodeDatum datum, ModbusRegisterData data,
 			@Nullable DatumService datumService) {
-		super(datum, null, null, datumService);
+		this(InstantSource.system(), datum, data, datumService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param data
+	 *        the current Modbus register data
+	 * @param datumService
+	 *        the datum service
+	 * @since 3.4
+	 */
+	public ExpressionRoot(InstantSource clock, @Nullable NodeDatum datum, ModbusRegisterData data,
+			@Nullable DatumService datumService) {
+		super(clock, datum, null, null, datumService, null, null, null);
 		this.data = data;
 
 		// for backwards-compat, populate sampleUnsignedData, trying to pick the register block with data,
@@ -232,10 +251,10 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * <p>
 	 * If both the {@code Input} and {@code Holding} blocks have data, this is a
 	 * copy of the {@code Input} registers with the {@code Holding} registers
-	 * merged over them, so a {@code Holding} register replaces an
-	 * {@code Input} register with the same address. Otherwise it is the block
-	 * that has data. Note that {@link #getSample()} returns only the
-	 * {@code Holding} block when it has data.
+	 * merged over them, so a {@code Holding} register replaces an {@code Input}
+	 * register with the same address. Otherwise it is the block that has data.
+	 * Note that {@link #getSample()} returns only the {@code Holding} block
+	 * when it has data.
 	 * </p>
 	 *
 	 * @return the register data as unsigned integer values, never

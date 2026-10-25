@@ -24,8 +24,8 @@ package net.solarnetwork.node.datum.price.nz.wits;
 
 import static java.lang.String.format;
 import java.io.IOException;
-import java.time.Clock;
 import java.time.Duration;
+import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,7 +77,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Electricity Authority WITS API.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -104,7 +104,6 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	/** The {code priceUrl} property default value. */
 	public static final String DEFAULT_PRICE_URL = "https://api.electricityinfo.co.nz/api/market-prices/v1/schedules/RTD/prices";
 
-	private final Clock clock;
 	private final ObjectMapper objectMapper;
 	private final OptionalService<HttpAsyncClient> httpClient;
 
@@ -150,7 +149,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	 */
 	public WitsPriceDatumDataSource(ObjectMapper objectMapper,
 			OptionalService<HttpAsyncClient> httpClient) {
-		this(Clock.systemUTC(), objectMapper, httpClient);
+		this(InstantSource.system(), objectMapper, httpClient);
 	}
 
 	/**
@@ -165,10 +164,9 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public WitsPriceDatumDataSource(Clock clock, ObjectMapper objectMapper,
+	public WitsPriceDatumDataSource(InstantSource clock, ObjectMapper objectMapper,
 			OptionalService<HttpAsyncClient> httpClient) {
-		super();
-		this.clock = ObjectUtils.requireNonNullArgument(clock, "clock");
+		super(clock);
 		this.objectMapper = ObjectUtils.requireNonNullArgument(objectMapper, "objectMapper");
 		this.httpClient = ObjectUtils.requireNonNullArgument(httpClient, "httpClient");
 	}
@@ -305,7 +303,7 @@ public class WitsPriceDatumDataSource extends DatumDataSourceSupport implements 
 		final OAuthRequest request = new OAuthRequest(Verb.GET, priceUrl);
 		request.addQuerystringParameter("marketType", type.getKey());
 		request.addQuerystringParameter("nodes", node);
-		request.addQuerystringParameter("from", clock.instant().minus(from).toString());
+		request.addQuerystringParameter("from", getClock().instant().minus(from).toString());
 		service.signRequest(token, request);
 		Callable<JsonNode> task = () -> {
 			try {

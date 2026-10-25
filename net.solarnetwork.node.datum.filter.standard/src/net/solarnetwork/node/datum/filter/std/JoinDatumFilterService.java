@@ -65,7 +65,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  *
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver,
@@ -94,7 +94,6 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	private final Lock mergedSamplesLock = new ReentrantLock(true);
 
 	private final OptionalService<DatumQueue> datumQueue;
-	private final InstantSource sampleClock;
 	private String outputSourceId;
 	private int coalesceThreshold = DEFAULT_COALESCE_THRESHOLD;
 	private Duration coalesceTimeout;
@@ -130,8 +129,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	 *         if any argument is {@code null}
 	 */
 	public JoinDatumFilterService(InstantSource sampleClock, OptionalService<DatumQueue> datumQueue) {
-		super();
-		this.sampleClock = requireNonNullArgument(sampleClock, "sampleClock");
+		super(sampleClock);
 		this.datumQueue = requireNonNullArgument(datumQueue, "datumQueue");
 	}
 
@@ -211,7 +209,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		};
 		if ( taskScheduler != null ) {
 			startupFuture = taskScheduler.schedule(startupTask,
-					Instant.ofEpochMilli(sampleClock.millis() + (startupDelay * 1000L)));
+					Instant.ofEpochMilli(getClock().millis() + (startupDelay * 1000L)));
 		} else {
 			startupTask.run();
 		}
@@ -231,7 +229,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 				coalesceFuture.cancel(true);
 				coalesceFuture = null;
 			}
-			coalesceFuture = taskScheduler.schedule(this, sampleClock.instant().plus(coalesceDuration));
+			coalesceFuture = taskScheduler.schedule(this, getClock().instant().plus(coalesceDuration));
 		}
 	}
 
@@ -294,7 +292,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 			return;
 		}
 		try {
-			generateDatum(sampleClock.instant());
+			generateDatum(getClock().instant());
 		} finally {
 			mergedSamplesLock.unlock();
 		}
@@ -303,7 +301,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 	// the mergedSamplesLock should be acquired before calling this method
 	private void generateDatum(Instant timestamp) {
 		SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId,
-				timestamp != null ? timestamp : sampleClock.instant(), new DatumSamples(mergedSamples));
+				timestamp != null ? timestamp : getClock().instant(), new DatumSamples(mergedSamples));
 		log.debug("Generated merged datum {}", d);
 		DatumQueue dq = service(datumQueue);
 		if ( dq != null ) {

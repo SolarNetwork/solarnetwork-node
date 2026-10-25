@@ -27,6 +27,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import java.time.InstantSource;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.List;
@@ -54,7 +55,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the active transform parameters.
  *
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 2.1
  */
 public class ParameterDatumFilterService extends BaseDatumFilterSupport
@@ -66,7 +67,18 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 	 * Constructor.
 	 */
 	public ParameterDatumFilterService() {
-		super();
+		this(InstantSource.system());
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param clock
+	 *        the clock to use
+	 * @since 1.6
+	 */
+	public ParameterDatumFilterService(InstantSource clock) {
+		super(clock);
 	}
 
 	@Override
@@ -79,8 +91,9 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
 		MapSampleOperations s = new MapSampleOperations(new CopyingMap<>(parameters, params), samples);
-		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()), service(getLocationService()));
+		ExpressionRoot root = new ExpressionRoot(getClock(), datum, s, params,
+				service(getDatumService()), getOpModesService(), service(getMetadataService()),
+				service(getLocationService()));
 		root.setTariffScheduleProviders(getTariffScheduleProviders());
 		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);

@@ -65,7 +65,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Control that orchestrates a set of control tasks.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ControlConductor extends BaseIdentifiable
 		implements SettingSpecifierProvider, InstructionHandler {
@@ -170,8 +170,9 @@ public class ControlConductor extends BaseIdentifiable
 			ExpressionServiceExpression expr = predicateConfig
 					.getExpression(services(getExpressionServices()));
 			if ( expr != null ) {
-				ExpressionRoot root = new ExpressionRoot(null, null, instruction.getParameterMap(),
-						service(datumService), service(opModesService));
+				ExpressionRoot root = new ExpressionRoot(clock, null, null,
+						instruction.getParameterMap(), service(datumService), service(opModesService),
+						null, null);
 				root.setLocalStateDao(getLocalStateDao());
 				Boolean predicateResult = expr.getService().evaluateExpression(expr.getExpression(),
 						null, root, null, Boolean.class);
@@ -294,8 +295,8 @@ public class ControlConductor extends BaseIdentifiable
 			ExpressionServiceExpression expr = taskConfig
 					.valueExpression(services(getExpressionServices()));
 			if ( expr != null ) {
-				ExpressionRoot root = new ExpressionRoot(null, null, instrParams, service(datumService),
-						service(opModesService));
+				ExpressionRoot root = new ExpressionRoot(clock, null, null, instrParams,
+						service(datumService), service(opModesService), null, null);
 				root.setLocalStateDao(getLocalStateDao());
 				controlValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
 						null, Object.class);

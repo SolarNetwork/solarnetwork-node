@@ -24,6 +24,7 @@ package net.solarnetwork.node.service.support;
 
 import static net.solarnetwork.node.service.PlaceholderService.smartCopyPlaceholders;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
+import java.time.InstantSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -44,6 +45,7 @@ import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StatCounter;
 import net.solarnetwork.util.StatCounter.Stat;
 
@@ -52,7 +54,7 @@ import net.solarnetwork.util.StatCounter.Stat;
  * {@link net.solarnetwork.service.DatumFilterService} to extend.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class BaseDatumFilterSupport extends BaseIdentifiable {
@@ -82,6 +84,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 */
 	protected final StatCounter stats;
 
+	private final InstantSource clock;
 	private @Nullable Pattern sourceId;
 	private @Nullable OperationalModesService opModesService;
 	private @Nullable String requiredOperationalMode;
@@ -94,7 +97,18 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * Constructor.
 	 */
 	public BaseDatumFilterSupport() {
-		this(null);
+		this((Stat @Nullable []) null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param clock
+	 *        the clock to use
+	 * @since 1.4
+	 */
+	public BaseDatumFilterSupport(InstantSource clock) {
+		this(clock, null);
 	}
 
 	/**
@@ -105,7 +119,23 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @since 1.2
 	 */
 	public BaseDatumFilterSupport(Stat @Nullable [] stats) {
+		this(InstantSource.system(), stats);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param clock
+	 *        the clock to use
+	 * @param stats
+	 *        the status to use (can be {@code null}
+	 * @since 1.4
+	 * @throws IllegalArgumentException
+	 *         if {@code clock} is {@code null}
+	 */
+	public BaseDatumFilterSupport(InstantSource clock, Stat @Nullable [] stats) {
 		super();
+		this.clock = ObjectUtils.requireNonNullArgument(clock, "clock");
 		this.stats = new StatCounter("Transform", "", log, DEFAULT_STAT_LOG_FREQUENCY,
 				DatumFilterStats.values(), stats);
 	}
@@ -670,6 +700,16 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	public final void setTariffScheduleProviders(
 			@Nullable OptionalServiceCollection<TariffScheduleProvider> tariffScheduleProviders) {
 		this.tariffScheduleProviders = tariffScheduleProviders;
+	}
+
+	/**
+	 * Get the clock.
+	 *
+	 * @return the clock, never {@code null}
+	 * @since 1.4
+	 */
+	public final InstantSource getClock() {
+		return clock;
 	}
 
 }

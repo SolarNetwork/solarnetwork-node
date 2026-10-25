@@ -26,7 +26,6 @@ import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.util.Collection;
@@ -64,7 +63,7 @@ import net.solarnetwork.util.ArrayUtils;
  * condition is met.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.6
  */
 public class InstructorDatumFilterService extends BaseDatumFilterSupport
@@ -84,7 +83,6 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public static final String INSTRUCTION_RESULT_PARAM_NAME = "instructionResult";
 
-	private final InstantSource clock;
 	private final OptionalService<ReactorService> reactorService;
 	private final OptionalService<InstructionExecutionService> instructionExecutionService;
 	private InstructorConfig @Nullable [] instructorConfigs;
@@ -115,7 +113,7 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public InstructorDatumFilterService(OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
-		this(Clock.systemUTC(), reactorService, instructionExecutionService);
+		this(InstantSource.system(), reactorService, instructionExecutionService);
 	}
 
 	/**
@@ -134,8 +132,7 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 	public InstructorDatumFilterService(InstantSource clock,
 			OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
-		super();
-		this.clock = requireNonNullArgument(clock, "clock");
+		super(clock);
 		this.reactorService = requireNonNullArgument(reactorService, "reactorService");
 		this.instructionExecutionService = requireNonNullArgument(instructionExecutionService,
 				"instructionExecutionService");
@@ -160,9 +157,9 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 				&& expressionServices != null ) {
 			final Map<String, Object> filterParams = smartPlaceholders(parameters);
 			final DatumSamples mutableSamples = new DatumSamples(samples);
-			final ExpressionRoot root = new ExpressionRoot(datum, mutableSamples, filterParams,
-					service(getDatumService()), getOpModesService(), service(getMetadataService()),
-					service(getLocationService()));
+			final ExpressionRoot root = new ExpressionRoot(getClock(), datum, mutableSamples,
+					filterParams, service(getDatumService()), getOpModesService(),
+					service(getMetadataService()), service(getLocationService()));
 			root.setTariffScheduleProviders(getTariffScheduleProviders());
 			root.setLocalStateDao(getLocalStateDao());
 
@@ -264,7 +261,7 @@ public class InstructorDatumFilterService extends BaseDatumFilterSupport
 			InstructionConfig config, ExpressionRoot root, Map<String, Object> filterParams,
 			Iterable<ExpressionService> expressionServices) {
 		final String topic = nonnull(config.getTopic(), "Topic");
-		final Instant instructionDate = clock.instant();
+		final Instant instructionDate = getClock().instant();
 		final BasicInstruction result = new BasicInstruction(
 				net.solarnetwork.domain.Instruction.localId(), topic, instructionDate,
 				Instruction.LOCAL_INSTRUCTION_ID, null);

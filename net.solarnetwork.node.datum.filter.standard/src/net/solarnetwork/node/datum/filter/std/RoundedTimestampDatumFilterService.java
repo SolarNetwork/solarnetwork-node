@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.InstantSource;
@@ -42,7 +41,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Round datum timestamp values down to duration-aligned values.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 4.4
  */
 public class RoundedTimestampDatumFilterService extends DatumFilterSupport
@@ -53,26 +52,25 @@ public class RoundedTimestampDatumFilterService extends DatumFilterSupport
 
 	private Duration duration;
 
-	private InstantSource baseClock;
 	private InstantSource sampleClock;
 
 	/**
 	 * Constructor.
 	 */
 	public RoundedTimestampDatumFilterService() {
-		this(Clock.systemUTC());
+		this(InstantSource.system());
 	}
 
 	/**
 	 * Constructor.
 	 *
 	 * @param baseClock
-	 *        the base clock to use; if {@literal null} then the system UTC
-	 *        clock will be used
+	 *        the base clock to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public RoundedTimestampDatumFilterService(InstantSource baseClock) {
-		super();
-		this.baseClock = (baseClock != null ? baseClock : Clock.systemUTC());
+		super(baseClock);
 		setDuration(DEFAULT_DURATION);
 	}
 
@@ -146,9 +144,9 @@ public class RoundedTimestampDatumFilterService extends DatumFilterSupport
 	public final synchronized void setDuration(final Duration duration) {
 		this.duration = duration;
 		if ( duration != null ) {
-			sampleClock = InstantSource.tick(baseClock, duration);
+			sampleClock = InstantSource.tick(getClock(), duration);
 		} else {
-			sampleClock = baseClock;
+			sampleClock = getClock();
 		}
 	}
 

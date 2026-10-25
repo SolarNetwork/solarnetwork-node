@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.time.Instant;
+import java.time.InstantSource;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -73,7 +74,7 @@ import net.solarnetwork.util.NumberUtils;
  * derived from another property.
  *
  * @author matt
- * @version 2.7
+ * @version 2.8
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
@@ -152,7 +153,23 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 	 *         if any argument is {@literal null}
 	 */
 	public VirtualMeterDatumFilterService(OptionalService<DatumMetadataService> datumMetadataService) {
-		super();
+		this(InstantSource.system(), datumMetadataService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param datumMetadataService
+	 *        the metadata service to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 * @since 2.8
+	 */
+	public VirtualMeterDatumFilterService(InstantSource clock,
+			OptionalService<DatumMetadataService> datumMetadataService) {
+		super(clock);
 		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
 	}
 
@@ -387,7 +404,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		final DatumMetadataService service = OptionalService.service(datumMetadataService);
 
 		final Instant date = d.getTimestamp() != null ? d.getTimestamp()
-				: Instant.ofEpochMilli(System.currentTimeMillis());
+				: Instant.ofEpochMilli(getClock().millis());
 
 		for ( VirtualMeterConfig config : meterConfs ) {
 			if ( config.getPropertyKey() == null || config.getPropertyKey().isEmpty()
@@ -469,8 +486,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 					VirtualMeterExpressionConfig exprConfig = expressionForConfig(meterPropName);
 					if ( exprConfig != null ) {
 						Map<String, Object> params = smartPlaceholders(parameters);
-						VirtualMeterExpressionRootImpl root = new VirtualMeterExpressionRootImpl(d,
-								samples, params, service(getDatumService()),
+						VirtualMeterExpressionRootImpl root = new VirtualMeterExpressionRootImpl(
+								getClock(), d, samples, params, service(getDatumService()),
 								service(getMetadataService()), service(getLocationService()), config,
 								prevDate.toEpochMilli(), date.toEpochMilli(), prevVal, currVal,
 								prevReading);

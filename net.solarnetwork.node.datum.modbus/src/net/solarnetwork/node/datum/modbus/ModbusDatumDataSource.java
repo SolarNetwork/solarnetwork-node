@@ -77,7 +77,7 @@ import net.solarnetwork.util.NumberUtils;
  * Generic Modbus device datum data source.
  *
  * @author matt
- * @version 3.13
+ * @version 3.14
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<Void>,
@@ -249,7 +249,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private void populateDatumProperties(MutableNodeDatum d, GeneralDatumMetadata m,
 			ExpressionConfig @Nullable [] expressionConfs) {
-		ExpressionRoot root = new ExpressionRoot(d, data.copy(), service(getDatumService()));
+		ExpressionRoot root = new ExpressionRoot(getClock(), d, data.copy(), service(getDatumService()));
 		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(
 				new MutableDatumSamplesWithMetadata(d.asMutableSampleOperations(), m), expressionConfs,

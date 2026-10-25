@@ -28,8 +28,8 @@ import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.Clock;
 import java.time.Duration;
+import java.time.InstantSource;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -85,7 +85,7 @@ import net.solarnetwork.util.ObjectUtils;
  *
  * @author robert
  * @author matt
- * @version 1.9
+ * @version 1.10
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -127,7 +127,6 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private Duration touOffset = Duration.ZERO;
 	private BigDecimal touScaleFactor = BigDecimal.ONE;
 
-	private final Clock clock;
 	private final Random rng;
 
 	private final AtomicReference<CachedResult<TariffSchedule>> touSchedule = new AtomicReference<>();
@@ -137,7 +136,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * Constructor.
 	 */
 	public MockEnergyMeterDatumSource() {
-		this(Clock.systemUTC(), new Random());
+		this(InstantSource.system(), new Random());
 	}
 
 	/**
@@ -150,9 +149,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public MockEnergyMeterDatumSource(Clock clock, Random rng) {
-		super();
-		this.clock = ObjectUtils.requireNonNullArgument(clock, "clock");
+	public MockEnergyMeterDatumSource(InstantSource clock, Random rng) {
+		super(clock);
 		this.rng = ObjectUtils.requireNonNullArgument(rng, "rng");
 	}
 
@@ -185,8 +183,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	@Override
 	public AcEnergyDatum readCurrentDatum() {
 		AcEnergyDatum prev = this.lastsample.get();
-		AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId), clock.instant(),
-				new DatumSamples());
+		AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId),
+				getClock().instant(), new DatumSamples());
 
 		calcVariables(datum);
 
@@ -301,8 +299,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		TariffSchedule schedule = touSchedule();
 		if ( schedule != null ) {
 			BigDecimal watts = BigDecimal.ZERO;
-			LocalDateTime now = clock.instant().plus(touOffset).atZone(TimeZone.getDefault().toZoneId())
-					.toLocalDateTime();
+			LocalDateTime now = getClock().instant().plus(touOffset)
+					.atZone(TimeZone.getDefault().toZoneId()).toLocalDateTime();
 			Tariff t = schedule.resolveTariff(now, emptyMap());
 			if ( t != null ) {
 				Tariff.Rate r = t.getRates().values().iterator().next();
@@ -314,8 +312,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 			}
 			datum.setWatts(watts.intValue());
 			final double absPf = Math.abs(pf);
-			datum.setCurrent(
-					(float) (watts.doubleValue() / (absPf > 0 ? vrms * absPf : vrms)));
+			datum.setCurrent((float) (watts.doubleValue() / (absPf > 0 ? vrms * absPf : vrms)));
 		} else {
 			final double I = readCurrent();
 			datum.setCurrent((float) I);
@@ -399,8 +396,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		result.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 		result.add(new BasicTextFieldSettingSpecifier("frequency", String.valueOf(DEFAULT_FREQUENCY)));
 		result.add(new BasicTextFieldSettingSpecifier("current", String.valueOf(DEFAULT_CURRENT)));
-		result.add(new BasicTextFieldSettingSpecifier("powerFactor",
-				String.valueOf(DEFAULT_POWER_FACTOR)));
+		result.add(
+				new BasicTextFieldSettingSpecifier("powerFactor", String.valueOf(DEFAULT_POWER_FACTOR)));
 		result.add(new BasicToggleSettingSpecifier("randomness", Boolean.FALSE));
 		result.add(new BasicTextFieldSettingSpecifier("voltdev", String.valueOf(0)));
 		result.add(new BasicTextFieldSettingSpecifier("freqdev", String.valueOf(0)));
@@ -605,8 +602,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * Set the power factor.
 	 *
 	 * <p>
-	 * Values outside the range -1 to 1 are clamped to that range when datum
-	 * are generated.
+	 * Values outside the range -1 to 1 are clamped to that range when datum are
+	 * generated.
 	 * </p>
 	 *
 	 * @param powerFactor

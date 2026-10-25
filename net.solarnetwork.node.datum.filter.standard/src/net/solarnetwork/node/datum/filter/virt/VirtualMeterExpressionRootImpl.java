@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.filter.virt;
 
 import java.math.BigDecimal;
+import java.time.InstantSource;
 import java.util.Map;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -37,7 +38,7 @@ import net.solarnetwork.service.ExpressionService;
  * evaluation.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.6
  */
 public class VirtualMeterExpressionRootImpl extends ExpressionRoot
@@ -82,7 +83,46 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 			DatumService datumService, MetadataService metadataService, LocationService locationService,
 			VirtualMeterConfig config, long prevDate, long currDate, BigDecimal prevInput,
 			BigDecimal currInput, BigDecimal prevReading) {
-		super(datum, samples, parameters, datumService, null, metadataService, locationService);
+		this(InstantSource.system(), datum, samples, parameters, datumService, metadataService,
+				locationService, config, prevDate, currDate, prevInput, currInput, prevReading);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to set
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
+	 * @param metadataService
+	 *        the metadata service
+	 * @param locationService
+	 *        the location service
+	 * @param config
+	 *        the virtual meter configuration
+	 * @param prevDate
+	 *        the previous reading date, as an epoch
+	 * @param currDate
+	 *        the current reading date, as an epoch
+	 * @param prevInput
+	 *        the previous input value
+	 * @param currInput
+	 *        the current input value
+	 * @param prevReading
+	 *        the previous reading
+	 * @since 2.3
+	 */
+	public VirtualMeterExpressionRootImpl(InstantSource clock, Datum datum, DatumSamples samples,
+			Map<String, ?> parameters, DatumService datumService, MetadataService metadataService,
+			LocationService locationService, VirtualMeterConfig config, long prevDate, long currDate,
+			BigDecimal prevInput, BigDecimal currInput, BigDecimal prevReading) {
+		super(clock, datum, samples, parameters, datumService, null, metadataService, locationService);
 		this.config = config;
 		this.prevDate = prevDate;
 		this.currDate = currDate;

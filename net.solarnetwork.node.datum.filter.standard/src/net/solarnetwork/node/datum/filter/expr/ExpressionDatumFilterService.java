@@ -27,6 +27,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import java.time.InstantSource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the output samples.
  *
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 2.0
  */
 public class ExpressionDatumFilterService extends BaseDatumFilterSupport
@@ -64,6 +65,17 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 		super();
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param clock
+	 *        the clock to use
+	 * @since 1.7
+	 */
+	public ExpressionDatumFilterService(InstantSource clock) {
+		super(clock);
+	}
+
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
@@ -74,8 +86,9 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
 		DatumSamples s = new DatumSamples(samples);
-		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
-				getOpModesService(), service(getMetadataService()), service(getLocationService()));
+		ExpressionRoot root = new ExpressionRoot(getClock(), datum, s, params,
+				service(getDatumService()), getOpModesService(), service(getMetadataService()),
+				service(getLocationService()));
 		root.setTariffScheduleProviders(getTariffScheduleProviders());
 		root.setLocalStateDao(getLocalStateDao());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
