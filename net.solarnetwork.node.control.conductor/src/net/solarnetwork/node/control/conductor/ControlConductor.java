@@ -177,7 +177,7 @@ public class ControlConductor extends BaseIdentifiable
 						null, root, null, Boolean.class);
 				if ( predicateResult == null || !predicateResult ) {
 					return createStatus(instruction, InstructionState.Declined,
-							createErrorResultParameters("Predicate condition not satisifed.",
+							createErrorResultParameters("Predicate condition not satisfied.",
 									"CC.0011"));
 				}
 			}
@@ -225,7 +225,7 @@ public class ControlConductor extends BaseIdentifiable
 		final ReactorService rs = OptionalService.service(reactorService);
 		if ( rs == null ) {
 			return createStatus(instruction, InstructionState.Declined, createErrorResultParameters(
-					"No ReactorService avaialble to schedule the control tasks.", "CC.0004"));
+					"No ReactorService available to schedule the control tasks.", "CC.0004"));
 		}
 
 		taskIndex = 0;
@@ -311,7 +311,7 @@ public class ControlConductor extends BaseIdentifiable
 		if ( ies == null ) {
 			return createStatus(instruction, InstructionState.Declined,
 					createErrorResultParameters(
-							format("No InstructionExecutionService avaialble to execute task [%s].",
+							format("No InstructionExecutionService available to execute task [%s].",
 									taskIdentifier),
 							"CC.0009"));
 		}
