@@ -33,9 +33,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NetworkIdentity;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.security.Snws2AuthorizationBuilder;
@@ -52,10 +57,10 @@ import net.solarnetwork.util.CachedResult;
  * user-level metadata.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class UserMetadataService extends JsonHttpClientSupport
-		implements MetadataService, SettingSpecifierProvider, SettingsChangeObserver {
+public class UserMetadataService extends JsonHttpClientSupport implements MetadataService,
+		InstructionHandler, SettingSpecifierProvider, SettingsChangeObserver {
 
 	/** The the user metadata path. */
 	public static final String USER_METADATA_PATH = "/api/v1/sec/users/meta";
@@ -130,6 +135,37 @@ public class UserMetadataService extends JsonHttpClientSupport
 			}
 			return null;
 		}
+	}
+
+	@Override
+	public boolean handlesTopic(@Nullable String topic) {
+		return InstructionHandler.TOPIC_SIGNAL.equalsIgnoreCase(topic);
+	}
+
+	@Override
+	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
+		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
+			return null;
+		}
+		final String uid = getUid();
+		if ( uid == null ) {
+			return null;
+		}
+		for ( String paramName : instruction.getParameterNames() ) {
+			if ( uid.equals(paramName) ) {
+				if ( SIGNAL_CLEAR_CACHE.equals(instruction.getParameterValue(paramName)) ) {
+					synchronized ( this ) {
+						cachedMetadata = null;
+					}
+					return InstructionUtils.createStatus(instruction, InstructionState.Completed);
+				}
+				// signal not supported
+				return InstructionUtils.createStatus(instruction, InstructionState.Declined,
+						InstructionUtils.createErrorResultParameters("Signal name not supported.",
+								"UMS.0001"));
+			}
+		}
+		return null;
 	}
 
 	@Override

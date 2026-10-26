@@ -30,10 +30,22 @@ import net.solarnetwork.service.Identifiable;
  * API for accessing dynamic metadata.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.83
  */
 public interface MetadataService extends Identifiable {
+
+	/**
+	 * A "clear cache" signal name.
+	 *
+	 * <p>
+	 * If the implementation caches metadata, this signal can be used to request
+	 * the service to clear its cache.
+	 * </p>
+	 *
+	 * @since 2.1
+	 */
+	String SIGNAL_CLEAR_CACHE = "clear-cache";
 
 	/**
 	 * Get all metadata available.
