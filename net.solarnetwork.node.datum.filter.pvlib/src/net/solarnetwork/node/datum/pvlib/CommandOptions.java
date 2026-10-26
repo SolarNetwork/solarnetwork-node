@@ -27,7 +27,7 @@ package net.solarnetwork.node.datum.pvlib;
  *
  * @author matt
  * @author elijah
- * @version 1.2
+ * @version 1.3
  */
 public enum CommandOptions {
 
@@ -106,11 +106,64 @@ public enum CommandOptions {
 	Backtrack("--backtrack", "backtrack"),
 
 	/**
-	 * A ground coverage ratio value, used for backtracking.
+	 * A ground coverage ratio value, used for backtracking and bifacial mode.
 	 *
 	 * @since 1.2
 	 */
 	Gcr("--gcr", "gcr"),
+
+	/**
+	 * A bifacial mode flag, as {@code true} or {@code false}.
+	 *
+	 * @since 1.3
+	 */
+	Bifacial("--bifacial", "bifacial"),
+
+	/**
+	 * A bifaciality factor value, as the ratio of rear to front module
+	 * efficiency, from {@code 0} to {@code 1}.
+	 *
+	 * @since 1.3
+	 */
+	Bifaciality("--bifaciality", "bifaciality"),
+
+	/**
+	 * A ground albedo value, as the fraction of irradiance reflected by the
+	 * ground, from {@code 0} to {@code 1}.
+	 *
+	 * @since 1.3
+	 */
+	Albedo("--albedo", "albedo"),
+
+	/**
+	 * A PV row center height value above the ground, in the same units as
+	 * {@link #RowPitch}.
+	 *
+	 * @since 1.3
+	 */
+	RowHeight("--height", "pvRowHeight"),
+
+	/**
+	 * A PV row pitch value, as the distance between adjacent rows in the same
+	 * units as {@link #RowHeight}.
+	 *
+	 * @since 1.3
+	 */
+	RowPitch("--pitch", "pvRowPitch"),
+
+	/**
+	 * A rear-side shade loss factor value, from {@code -1} to {@code 0}.
+	 *
+	 * @since 1.3
+	 */
+	ShadeFactor("--shade-factor", "shadeFactor"),
+
+	/**
+	 * A rear-side transmission loss factor value, from {@code -1} to {@code 0}.
+	 *
+	 * @since 1.3
+	 */
+	TransmissionFactor("--transmission-factor", "transmissionFactor"),
 
 	;
 

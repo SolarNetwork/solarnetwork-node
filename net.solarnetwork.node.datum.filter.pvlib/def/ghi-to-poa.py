@@ -9,7 +9,14 @@ from datetime import datetime
 from datetime import timezone
 from pvlib import irradiance
 from pvlib import tracking as pvtracking
+from pvlib.bifacial import infinite_sheds
 from pvlib.location import Location
+
+# transposition models supported by the infinite sheds bifacial model (see the
+# `model` parameter at
+# https://pvlib-python.readthedocs.io/en/v0.16.1/reference/generated/pvlib.bifacial.infinite_sheds.get_irradiance.html);
+# any other model falls back to the first one in bifacial mode
+BIFACIAL_MODELS = ('haydavies', 'isotropic')
 
 # suppress numpy/pvlib runtime warnings.
 warnings.simplefilter('ignore')
@@ -21,9 +28,17 @@ def usage():
 -A --max-angle       optional maximum tracker rotation angle from horizontal, in degrees,
                      0 exclusive to 180 (default 90)
 -b --backtrack       optional 'true'/'false' to enable tracker backtracking (default false)
+-B --bifacial        optional 'true'/'false' to enable bifacial (infinite sheds) mode;
+                     transposition models other than 'haydavies' or 'isotropic' fall
+                     back to 'haydavies' (default false)
+-c --bifaciality     optional ratio of rear to front module efficiency, 0 to 1
+                     (default 0.8); bifacial mode only
 -d --date            date, like YYYY-MM-DDTHH:mm:ss
--g --gcr             optional ground coverage ratio, used for backtracking,
-                     0 exclusive to 1 (default 0.2857)
+-e --albedo          optional ground albedo, 0 to 1 (default 0.25)
+-g --gcr             optional ground coverage ratio, used for backtracking and
+                     bifacial mode, 0 exclusive to 1 (default 0.2857)
+-H --height          optional height of the row centre above ground, same units as
+                     --pitch, 0 exclusive to 100 (default 1.5); bifacial mode only
 -i --irradiance      GHI irradiance, in W/m^2
 -k --tracking        'true'/'false' to enable single-axis tracker mode; when true
                      --array-tilt and --array-azimuth are ignored
@@ -31,10 +46,18 @@ def usage():
 -L --longitude       decimal longitude
 -m --min-cos-zenith  optional minimum cos(zenith) value when calculating global clearness index
 -M --max-zenith      optional maximum zenith value in DNI calculation
+-p --pitch           optional distance between rows, same units as --height,
+                     0 exclusive to 1000 (default 5); bifacial mode only
+-r --transmission-factor
+                     optional fraction of rear irradiance lost by transmission through
+                     the module, -1 to 0 (default 0); bifacial mode only
+-s --shade-factor    optional fraction of rear irradiance lost to shading by racking,
+                     -1 to 0 (default -0.02); bifacial mode only
 -t --array-tilt      solar array tilt angle from horizontal, in degrees
 -T --transpose       the transposition model to use, e.g. 'haydavies', 'perez-driesse'
 -u --array-azimuth   solar array angle clockwise from north
--x --axis-tilt       tracker axis tilt angle from horizontal, in degrees, 0 to 90 (default 0)
+-x --axis-tilt       tracker axis tilt angle from horizontal, in degrees, 0 to 90 (default 0);
+                     must be 0 in bifacial mode
 -X --axis-azimuth    tracker axis angle clockwise from north, in degrees, 0 to 360 (default 0)
 -z --zone            time zone, like Pacific/Auckland
 """)
@@ -74,7 +97,14 @@ def ghi_get_irradiance(location: Location,
                        axis_azimuth=0,
                        max_angle=90,
                        backtrack=False,
-                       gcr=2.0/7.0) -> dict:
+                       gcr=2.0/7.0,
+                       albedo=None,
+                       bifacial=False,
+                       bifaciality=0.8,
+                       height=1.5,
+                       pitch=5.0,
+                       shade_factor=-0.02,
+                       transmission_factor=0.0) -> dict:
 
     times = pd.DatetimeIndex(data = [date], tz = location.tz)
 
@@ -109,21 +139,65 @@ def ghi_get_irradiance(location: Location,
             gcr = gcr).fillna(0)
         surface_tilt = tracker['surface_tilt']
         surface_azimuth = tracker['surface_azimuth']
+    elif bifacial and array_tilt < 0:
+        # infinite sheds does not handle a negative tilt consistently across
+        # pvlib versions: use the equivalent positive tilt facing the other way
+        surface_tilt = -array_tilt
+        surface_azimuth = (array_azimuth + 180) % 360
     else:
         surface_tilt = array_tilt
         surface_azimuth = array_azimuth
 
-    poa = irradiance.get_total_irradiance(
-        model = transposition_model,
-        surface_tilt = surface_tilt,
-        surface_azimuth = surface_azimuth,
-        dni = erbs['dni'],
-        dhi = erbs['dhi'],
-        dni_extra = dni_extra,
-        ghi = ghi_data,
-        solar_azimuth = solar_position['azimuth'],
-        solar_zenith = solar_position['apparent_zenith']
-        )
+    if bifacial:
+        # infinite sheds: front and rear irradiance of interior rows, including
+        # row-to-row shading and restricted sky/ground views; it supports only
+        # some transposition models, so fall back to haydavies for the others
+        if transposition_model not in BIFACIAL_MODELS:
+            transposition_model = BIFACIAL_MODELS[0]
+        sheds = infinite_sheds.get_irradiance(
+            surface_tilt = surface_tilt,
+            surface_azimuth = surface_azimuth,
+            solar_zenith = solar_position['apparent_zenith'],
+            solar_azimuth = solar_position['azimuth'],
+            gcr = gcr,
+            height = height,
+            pitch = pitch,
+            ghi = ghi_data,
+            dhi = erbs['dhi'],
+            dni = erbs['dni'],
+            albedo = 0.25 if albedo is None else albedo,
+            model = transposition_model,
+            dni_extra = dni_extra,
+            bifaciality = bifaciality,
+            shade_factor = shade_factor,
+            transmission_factor = transmission_factor)
+        # keep the standard keys: poa_global is the effective total (front plus
+        # rear weighted by bifaciality, shade and transmission factors), the
+        # component keys describe the front surface
+        poa = pd.DataFrame({
+            'poa_global': sheds['poa_global'],
+            'poa_direct': sheds['poa_front_direct'],
+            'poa_diffuse': sheds['poa_front_diffuse'],
+            'poa_sky_diffuse': sheds['poa_front_sky_diffuse'],
+            'poa_ground_diffuse': sheds['poa_front_ground_diffuse'],
+            'poa_front': sheds['poa_front'],
+            'poa_back': sheds['poa_back'],
+            'shaded_fraction_front': sheds['shaded_fraction_front'],
+            })
+    else:
+        extra = {} if albedo is None else {'albedo': albedo}
+        poa = irradiance.get_total_irradiance(
+            model = transposition_model,
+            surface_tilt = surface_tilt,
+            surface_azimuth = surface_azimuth,
+            dni = erbs['dni'],
+            dhi = erbs['dhi'],
+            dni_extra = dni_extra,
+            ghi = ghi_data,
+            solar_azimuth = solar_position['azimuth'],
+            solar_zenith = solar_position['apparent_zenith'],
+            **extra
+            )
 
     # transpose single row (timestamp) into into simple dictionary
     result = {'date': date,
@@ -147,19 +221,38 @@ def ghi_get_irradiance(location: Location,
                        'surface_azimuth': tracker['surface_azimuth'].iloc[0],
                        })
 
+    if albedo is not None:
+        result['albedo'] = albedo
+    if bifacial:
+        result.update({'bifaciality': bifaciality,
+                       'gcr': gcr,
+                       'height': height,
+                       'pitch': pitch,
+                       'shade_factor': shade_factor,
+                       'transmission_factor': transmission_factor,
+                       'transposition_model': transposition_model,
+                       })
+
+    # JSON has no NaN/Infinity: replace any non-finite number with 0
+    for k, v in result.items():
+        if isinstance(v, float) and not math.isfinite(v):
+            result[k] = 0.0
+
     return result
 
 try:
     opts, args = getopt.getopt(
         sys.argv[1:],
-        'a:A:b:d:g:i:k:l:L:m:M:t:T:u:x:X:z:',
+        'a:A:b:B:c:d:e:g:H:i:k:l:L:m:M:p:r:s:t:T:u:x:X:z:',
         ['altitude=', 'date=', 'irradiance=',
         'latitude=', 'longitude=',
         'min-cos-zenith=', 'max-zenith=',
         'array-tilt=', 'transpose=',
         'array-azimuth=', 'zone=',
         'tracking=', 'axis-tilt=', 'axis-azimuth=',
-        'max-angle=', 'backtrack=', 'gcr='],
+        'max-angle=', 'backtrack=', 'gcr=',
+        'bifacial=', 'bifaciality=', 'albedo=', 'height=', 'pitch=',
+        'shade-factor=', 'transmission-factor='],
     )
 except getopt.GetoptError as e:
     print(e)
@@ -184,6 +277,14 @@ max_angle = 90
 backtrack = False
 gcr = 2.0/7.0
 
+albedo = None
+bifacial = False
+bifaciality = 0.8
+height = 1.5
+pitch = 5.0
+shade_factor = -0.02
+transmission_factor = 0.0
+
 ghi = 0
 date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -194,10 +295,18 @@ for opt, arg in opts:
         max_angle = parse_ranged_float(opt, arg, 0, 180, lo_exclusive=True)
     elif opt in ('-b', '--backtrack'):
         backtrack = parse_bool(opt, arg)
+    elif opt in ('-B', '--bifacial'):
+        bifacial = parse_bool(opt, arg)
+    elif opt in ('-c', '--bifaciality'):
+        bifaciality = parse_ranged_float(opt, arg, 0, 1)
     elif opt in ('-d', '--date'):
         date = arg
+    elif opt in ('-e', '--albedo'):
+        albedo = parse_ranged_float(opt, arg, 0, 1)
     elif opt in ('-g', '--gcr'):
         gcr = parse_ranged_float(opt, arg, 0, 1, lo_exclusive=True)
+    elif opt in ('-H', '--height'):
+        height = parse_ranged_float(opt, arg, 0, 100, lo_exclusive=True)
     elif opt in ('-i', '--irradiance'): # W/m2
         ghi = float(arg)
     elif opt in ('-k', '--tracking'):
@@ -210,6 +319,12 @@ for opt, arg in opts:
         min_cos_zenith = float(arg)
     elif opt in ('-M', '--max-zenith'):
         max_zenith = float(arg)
+    elif opt in ('-p', '--pitch'):
+        pitch = parse_ranged_float(opt, arg, 0, 1000, lo_exclusive=True)
+    elif opt in ('-r', '--transmission-factor'):
+        transmission_factor = parse_ranged_float(opt, arg, -1, 0)
+    elif opt in ('-s', '--shade-factor'):
+        shade_factor = parse_ranged_float(opt, arg, -1, 0)
     elif opt in ('-t', '--array-tilt'): # angle in degrees
         array_tilt = float(arg)
     elif opt in ('-T', '--transpose'):
@@ -222,6 +337,21 @@ for opt, arg in opts:
         axis_azimuth = parse_ranged_float(opt, arg, 0, 360)
     elif opt in ('-z', '--zone'):
         zone = arg
+
+if bifacial:
+    # infinite sheds memory/time grows with height/pitch
+    if height / pitch > 10:
+        invalid_value("--height: value %s more than 10 times --pitch %s" % (height, pitch))
+    # the lower module edge must be above ground at the steepest tilt; a tracker
+    # can rotate up to max_angle, which is steepest at 90
+    tilt = min(max_angle, 90) if tracking else array_tilt
+    drop = gcr * pitch / 2 * abs(math.sin(math.radians(tilt)))
+    if height <= drop or math.isclose(height, drop):
+        invalid_value("--height: value %s not above lower module edge drop %s (--gcr %s, --pitch %s, tilt %s)"
+                      % (height, round(drop, 4), gcr, pitch, tilt))
+    # infinite sheds assumes a horizontal tracker axis on level ground
+    if tracking and axis_tilt != 0:
+        invalid_value("--axis-tilt: value %s not supported in bifacial mode, must be 0" % axis_tilt)
 
 loc = Location(lat, lon, tz=zone, altitude=alt)
 
@@ -239,7 +369,14 @@ poa = ghi_get_irradiance(
     axis_azimuth = axis_azimuth,
     max_angle = max_angle,
     backtrack = backtrack,
-    gcr = gcr
+    gcr = gcr,
+    albedo = albedo,
+    bifacial = bifacial,
+    bifaciality = bifaciality,
+    height = height,
+    pitch = pitch,
+    shade_factor = shade_factor,
+    transmission_factor = transmission_factor
 )
 
 print(json.dumps(poa))
