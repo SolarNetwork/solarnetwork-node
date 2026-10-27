@@ -16,10 +16,12 @@ radio is off unless one of the following applies:
    extend, or end it with the `enable` and `disable` actions described below.
    Use this to turn the radio on outside the schedule, for example to keep a
    setup session going past the end of a window.
-3. **Offline fallback**: the node has been unable to reach SolarNetwork for at
-   least _Offline Threshold_ minutes. The radio stays on until _Online Grace_
-   minutes after the connection comes back. This lets a technician on site
-   connect to a node that can't be reached remotely.
+3. **Offline fallback**: the _Offline Mode_ operational mode (`net-offline` by
+   default) has been active for at least _Offline Threshold_ minutes. The radio
+   stays on until _Online Grace_ minutes after the mode becomes inactive. An
+   HTTP Ping control sets this mode when it can't reach its URL, so this lets a
+   technician on site connect to a node that has lost its network. See
+   [Offline detection](#offline-detection).
 
 When the desired state differs from the actual state the plugin runs
 `solarcfg bluetooth enable` or `solarcfg bluetooth disable`. It re-checks the
@@ -30,28 +32,59 @@ restart.
 
 # Settings
 
-| Setting           | Default                                                    | Description                                                                                                                                                   |
-|:------------------|:-----------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Status            |                                                            | The current radio state and why it is on, including the schedule state and the time zone in use.                                                              |
-| Override For      | `0`                                                        | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                   |
-| Always On         | on                                                         | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                           |
-| Schedule          |                                                            | The availability rules, as tariff schedule CSV. See [Schedule syntax](#schedule-syntax). Ignored while _Always On_ is on. An invalid schedule never applies.  |
-| Time Zone         |                                                            | The IANA zone ID to evaluate the schedule in, such as `Pacific/Auckland`. Empty means the node system zone. An invalid zone means the schedule never applies. |
-| Override Mode     | `bt-setup`                                                 | The operational mode that turns the radio on while it is active, regardless of the schedule.                                                                  |
-| Override Duration | `1800`                                                     | Seconds to turn the radio on for when an `enable` request has no `duration`.                                                                                  |
-| Maximum Override  | `14400`                                                    | The longest a single `enable` request can turn the radio on for, in seconds. `0` for no limit.                                                                |
-| Offline Trigger   | on                                                         | Turn the radio on automatically while SolarNetwork is unreachable.                                                                                            |
-| Offline Threshold | `15`                                                       | Minutes SolarNetwork must be unreachable before the radio turns on.                                                                                           |
-| Online Grace      | `10`                                                       | Minutes to keep the radio on after SolarNetwork is reachable again.                                                                                           |
-| Check Interval    | `60`                                                       | Seconds between SolarNetwork connectivity checks. `0` disables them. Does not affect the schedule check.                                                      |
-| Ping Test ID      | `net\.solarnetwork\.node\.upload\.mqtt\.MqttUploadService` | Regular expression matching the ID of the ping test that indicates SolarNetwork connectivity. If no test matches, the offline trigger never fires.            |
-| Command           | `{sn.home}/bin/solarcfg`                                   | The `solarcfg` command to execute.                                                                                                                            |
-| Command Timeout   | `60`                                                       | Seconds to wait for the `solarcfg` command before giving up on it. A helper that exceeds this is killed and the radio state is left unchanged.                |
+| Setting           | Default                  | Description                                                                                                                                                                         |
+|:------------------|:-------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Status            |                          | The current radio state and why it is on, including the schedule state and the time zone in use.                                                                                    |
+| Override For      | `0`                      | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                                         |
+| Always On         | on                       | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                                                 |
+| Schedule          |                          | The availability rules, as tariff schedule CSV. See [Schedule syntax](#schedule-syntax). Ignored while _Always On_ is on. An invalid schedule never applies.                        |
+| Time Zone         |                          | The IANA zone ID to evaluate the schedule in, such as `Pacific/Auckland`. Empty means the node system zone. An invalid zone means the schedule never applies.                       |
+| Override Mode     | `bt-setup`               | The operational mode that turns the radio on while it is active, regardless of the schedule.                                                                                        |
+| Override Duration | `1800`                   | Seconds to turn the radio on for when an `enable` request has no `duration`.                                                                                                        |
+| Maximum Override  | `14400`                  | The longest a single `enable` request can turn the radio on for, in seconds. `0` for no limit.                                                                                      |
+| Offline Trigger   | on                       | Turn the radio on automatically while the _Offline Mode_ has been active for _Offline Threshold_ minutes. Needs an HTTP Ping control; see [Offline detection](#offline-detection).  |
+| Offline Threshold | `15`                     | Minutes the _Offline Mode_ must be active before the radio turns on.                                                                                                                |
+| Online Grace      | `10`                     | Minutes to keep the radio on after the _Offline Mode_ becomes inactive.                                                                                                             |
+| Check Interval    | `60`                     | Seconds between checks of the _Offline Mode_ and the radio state. `0` disables the checks and the offline trigger. Does not affect the schedule check.                              |
+| Offline Mode      | `net-offline`            | The operational mode that means the network is offline, as set by an HTTP Ping control's _Failure Op Mode_. A single mode name (no `!` prefix). Empty disables the offline trigger. |
+| Command           | `{sn.home}/bin/solarcfg` | The `solarcfg` command to execute.                                                                                                                                                  |
+| Command Timeout   | `60`                     | Seconds to wait for the `solarcfg` command before giving up on it. A helper that exceeds this is killed and the radio state is left unchanged.                                      |
 
-The connectivity check uses the node's own system health ping tests, so by
-default it reflects whether the SolarIn/MQTT connection is established. Nodes
-that upload over HTTP instead can point _Ping Test ID_ at a different test, or
-configure an HTTP Ping control and use its ID.
+## Offline detection
+
+The offline fallback watches an operational mode instead of testing the network
+itself. It needs an **HTTP Ping** control (the `net.solarnetwork.node.control.ping`
+plugin) whose _Failure Op Mode_ matches _Offline Mode_. An HTTP Ping control
+enables its _Failure Op Mode_ (`net-offline` by default) each time it can't
+reach its URL, and disables it each time it can. The `solarnode-config-ping`
+package adds one that pings `http://www.google.com` every 5 minutes. Without an
+HTTP Ping control nothing sets the mode, so the offline trigger never fires.
+
+This detects whether the ping URL can be reached, not whether the node is
+connected to SolarNetwork. If the internet is reachable but SolarNetwork isn't,
+for example during a SolarNetwork outage or with an expired node certificate,
+the radio doesn't turn on. If the ping URL is blocked but SolarNetwork works,
+the radio turns on. To get closer to SolarNetwork reachability, point the ping
+at a SolarNetwork URL that answers a `HEAD` request with a 2xx or 3xx status
+(check with `curl -I`), since HTTP Ping doesn't follow redirects.
+
+Detection follows the ping schedule: the mode changes at most every 5 minutes
+by default, so with the default settings the radio turns on about 15 to 20
+minutes into an outage and off about 10 to 15 minutes after it ends. An
+_Offline Threshold_ shorter than the ping interval adds no delay.
+
+Each HTTP Ping control toggles its own _Success Op Mode_ and _Failure Op Mode_.
+If more than one uses the defaults, whichever ran last decides the mode. Give
+the ping you want to watch its own _Failure Op Mode_ and set _Offline Mode_ to
+match.
+
+Operational modes persist across restarts and these have no expiration. If the
+HTTP Ping control is removed or stops running while the mode is active, the
+mode stays active and the radio stays on. Clear it with a
+`DisableOperationalModes` instruction with `OpMode=net-offline`, or turn
+_Offline Trigger_ off. For a false "offline", such as a blocked ping URL, a
+`DisableOperationalModes` only lasts until the next failed ping, so change the
+ping URL or the modes instead.
 
 # Schedule syntax
 
@@ -200,7 +233,9 @@ The `result` of every action is a status object:
 ```
 
 `schedule` is the configured schedule's rules in normalised form, without the
-header and separated by `; `. `scheduleNext` is the next time the schedule
+header and separated by `; `. `offline` is whether the offline fallback is
+holding the radio on, and `offlineSince` is when the _Offline Mode_ was first
+seen active. `scheduleNext` is the next time the schedule
 changes between available and not available, and `installEnabled` is whether the
 peripheral starts at boot, which follows the last enable or disable.
 
@@ -209,8 +244,11 @@ The same instruction can also be queued from SolarNetwork, with
 
 # Notes
 
-- The offline state is not persisted. If the node restarts while offline the
-  radio stays off until the _Offline Threshold_ elapses again.
+- The offline fallback's timer is not persisted. If the node restarts while
+  the _Offline Mode_ is active the radio stays off until the _Offline
+  Threshold_ elapses again.
+- Install `solarnode-config-ping`, or configure an HTTP Ping control, for the
+  offline fallback to work.
 - Setting `CFG_BT_SETUP_GATED=1` for the OS package leaves the peripheral
   disabled at install, for nodes this plugin will gate from the start. Without
   it the radio is on until this plugin turns it off.

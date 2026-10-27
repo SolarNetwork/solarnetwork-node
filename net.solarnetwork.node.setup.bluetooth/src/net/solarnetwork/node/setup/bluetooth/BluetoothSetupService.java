@@ -57,8 +57,6 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.OperationalModesService;
-import net.solarnetwork.node.service.SystemHealthService;
-import net.solarnetwork.node.service.SystemHealthService.PingTestResults;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -87,9 +85,10 @@ import net.solarnetwork.util.DateUtils;
  * SolarNetwork can enable this remotely with the {@code EnableOperationalModes}
  * instruction (with an {@code Expiration}), and a Bluetooth client can enable
  * it with the {@code enable} action of this service (see below);</li>
- * <li>the node has been unable to reach SolarNetwork for at least
+ * <li>the {@link #getOfflineOpMode()} operational mode, which an HTTP Ping
+ * control enables when it cannot reach its URL, has been active for at least
  * {@link #getOfflineThresholdMinutes()} minutes, until
- * {@link #getOnlineGraceMinutes()} minutes after it can again.</li>
+ * {@link #getOnlineGraceMinutes()} minutes after it becomes inactive.</li>
  * </ol>
  *
  * <p>
@@ -151,10 +150,10 @@ public class BluetoothSetupService extends BaseIdentifiable
 	public static final String DEFAULT_OP_MODE = "bt-setup";
 
 	/**
-	 * The default value for the {@code pingTestIdRegex} property: the
-	 * SolarIn/MQTT upload service ping test.
+	 * The default value for the {@code offlineOpMode} property: the mode an
+	 * HTTP Ping control enables when its ping fails.
 	 */
-	public static final String DEFAULT_PING_TEST_ID_REGEX = "net\\.solarnetwork\\.node\\.upload\\.mqtt\\.MqttUploadService";
+	public static final String DEFAULT_OFFLINE_OP_MODE = "net-offline";
 
 	/** The default value for the {@code offlineThresholdMinutes} property. */
 	public static final int DEFAULT_OFFLINE_THRESHOLD_MINUTES = 15;
@@ -186,7 +185,6 @@ public class BluetoothSetupService extends BaseIdentifiable
 
 	private final OperationalModesService opModesService;
 	private final TaskScheduler taskScheduler;
-	private final SystemHealthService systemHealthService;
 
 	private Clock clock = Clock.systemUTC();
 
@@ -200,7 +198,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	private int offlineThresholdMinutes = DEFAULT_OFFLINE_THRESHOLD_MINUTES;
 	private int onlineGraceMinutes = DEFAULT_ONLINE_GRACE_MINUTES;
 	private int watchdogIntervalSeconds = DEFAULT_WATCHDOG_INTERVAL_SECONDS;
-	private String pingTestIdRegex = DEFAULT_PING_TEST_ID_REGEX;
+	private String offlineOpMode = DEFAULT_OFFLINE_OP_MODE;
 	private long defaultDurationSeconds = DEFAULT_DEFAULT_DURATION_SECONDS;
 	private long maxDurationSeconds = DEFAULT_MAX_DURATION_SECONDS;
 	private int enableMinutes = 0;
@@ -209,6 +207,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	private boolean offline = false;
 	private Instant offlineSince = null;
 	private Instant onlineSince = null;
+	private String lastOfflineOpMode = DEFAULT_OFFLINE_OP_MODE;
 	private ScheduledFuture<?> watchdogFuture = null;
 	private int watchdogScheduledIntervalSeconds = 0;
 	private @Nullable AvailabilitySchedule availability = null;
@@ -225,15 +224,11 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 *        the operational modes service
 	 * @param taskScheduler
 	 *        the task scheduler
-	 * @param systemHealthService
-	 *        the system health service
 	 */
-	public BluetoothSetupService(OperationalModesService opModesService, TaskScheduler taskScheduler,
-			SystemHealthService systemHealthService) {
+	public BluetoothSetupService(OperationalModesService opModesService, TaskScheduler taskScheduler) {
 		super();
 		this.opModesService = opModesService;
 		this.taskScheduler = taskScheduler;
-		this.systemHealthService = systemHealthService;
 		setUid("net.solarnetwork.node.setup.bluetooth.BluetoothSetupService");
 		setDisplayName("Bluetooth Setup");
 	}
@@ -248,6 +243,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 */
 	public synchronized void startup() {
 		opModeActive = opModesService.isOperationalModeActive(opMode);
+		lastOfflineOpMode = offlineOpMode;
 		applySchedule();
 		reconcileQuietly();
 		scheduleWatchdog();
@@ -288,6 +284,12 @@ public class BluetoothSetupService extends BaseIdentifiable
 		if ( watchdogFuture == null ) {
 			scheduleWatchdog();
 		}
+		if ( !offlineDetectionActive() || !offlineOpMode.equals(lastOfflineOpMode) ) {
+			// stale state from a disabled trigger or a different mode must not
+			// hold the radio on
+			clearOfflineState();
+		}
+		lastOfflineOpMode = offlineOpMode;
 		applySchedule();
 		reconcileQuietly();
 		scheduleScheduleTick();
@@ -299,16 +301,23 @@ public class BluetoothSetupService extends BaseIdentifiable
 				.equals(event.getTopic()) ) {
 			return;
 		}
-		final boolean active;
 		synchronized ( this ) {
-			active = OperationalModesService.hasActiveOperationalMode(event, opMode);
-			if ( active == opModeActive ) {
+			final boolean active = OperationalModesService.hasActiveOperationalMode(event, opMode);
+			final boolean opModeChanged = (active != opModeActive);
+			if ( opModeChanged ) {
+				opModeActive = active;
+				log.info("Bluetooth setup operational mode [{}] is now {}", opMode,
+						active ? "active" : "inactive");
+			}
+			final boolean wasOffline = offline;
+			if ( offlineDetectionActive() ) {
+				updateOfflineState(
+						OperationalModesService.hasActiveOperationalMode(event, offlineOpMode));
+			}
+			if ( !opModeChanged && offline == wasOffline ) {
 				return;
 			}
-			opModeActive = active;
 		}
-		log.info("Bluetooth setup operational mode [{}] is now {}", opMode,
-				active ? "active" : "inactive");
 		// reconcile on another thread so the event delivery thread is not blocked
 		// on the (slow) OS helper command
 		if ( taskScheduler != null ) {
@@ -407,7 +416,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * @return {@literal true} if the radio should be on
 	 */
 	public synchronized boolean desiredState() {
-		return (alwaysOn || scheduleAllows() || opModeActive || (offlineTriggerEnabled && offline));
+		return (alwaysOn || scheduleAllows() || opModeActive || (offlineDetectionActive() && offline));
 	}
 
 	/**
@@ -565,44 +574,67 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Perform one offline watchdog check and reconcile the radio state.
 	 *
 	 * <p>
-	 * The SolarNetwork connection is probed via the configured ping test. If no
-	 * matching ping test exists the offline state is left unchanged, so the
-	 * offline trigger never fires on nodes without the expected upload service.
+	 * The network is considered offline while the {@link #getOfflineOpMode()}
+	 * operational mode is active. An HTTP Ping control enables that mode when
+	 * it cannot reach its URL. If nothing ever enables the mode, the offline
+	 * trigger never fires.
 	 * </p>
 	 */
 	public synchronized void watchdogTick() {
 		try {
-			if ( offlineTriggerEnabled && systemHealthService != null ) {
-				updateOfflineState();
+			if ( offlineDetectionActive() ) {
+				updateOfflineState(opModesService.isOperationalModeActive(offlineOpMode));
 			}
 		} catch ( Exception e ) {
-			log.warn("Error checking SolarNetwork connectivity: {}", e.getMessage());
+			log.warn("Error checking offline operational mode [{}]: {}", offlineOpMode, e.getMessage());
 		}
 		reconcileQuietly();
 	}
 
-	private void updateOfflineState() {
-		final PingTestResults results = systemHealthService
-				.performPingTests(Collections.singleton(pingTestIdRegex));
-		if ( results == null || results.getResults() == null || results.getResults().isEmpty() ) {
-			log.debug("No ping test matching [{}] available; offline state unchanged", pingTestIdRegex);
-			return;
+	/**
+	 * Test if offline detection is active.
+	 *
+	 * <p>
+	 * Offline detection needs the trigger enabled, an offline mode to watch,
+	 * and the watchdog running, because only the watchdog advances the
+	 * threshold and grace periods over time.
+	 * </p>
+	 *
+	 * @return {@literal true} if offline detection is active
+	 */
+	private boolean offlineDetectionActive() {
+		return (offlineTriggerEnabled && !offlineOpMode.isEmpty() && watchdogIntervalSeconds > 0);
+	}
+
+	private void clearOfflineState() {
+		if ( offline || offlineSince != null ) {
+			log.info("Bluetooth setup offline trigger cleared by a configuration change");
 		}
-		final boolean ok = results.isAllGood();
+		offline = false;
+		offlineSince = null;
+		onlineSince = null;
+	}
+
+	/**
+	 * Update the offline state.
+	 *
+	 * @param down
+	 *        {@literal true} if the offline operational mode is active
+	 */
+	private void updateOfflineState(final boolean down) {
 		final Instant now = clock.instant();
-		if ( !ok ) {
+		if ( down ) {
 			onlineSince = null;
 			if ( offlineSince == null ) {
 				offlineSince = now;
-				log.info(
-						"SolarNetwork connection lost; Bluetooth setup radio will turn on after {} minutes",
-						offlineThresholdMinutes);
+				log.info("Offline mode [{}] active; Bluetooth setup radio will turn on after {} minutes",
+						offlineOpMode, offlineThresholdMinutes);
 			}
 			if ( !offline && !Duration.between(offlineSince, now)
 					.minus(Duration.ofMinutes(offlineThresholdMinutes)).isNegative() ) {
 				offline = true;
-				log.info("SolarNetwork connection lost since {}; turning Bluetooth setup radio on",
-						offlineSince);
+				log.info("Offline mode [{}] active since {}; turning Bluetooth setup radio on",
+						offlineOpMode, offlineSince);
 			}
 		} else {
 			offlineSince = null;
@@ -610,13 +642,13 @@ public class BluetoothSetupService extends BaseIdentifiable
 				if ( onlineSince == null ) {
 					onlineSince = now;
 					log.info(
-							"SolarNetwork connection restored; Bluetooth setup radio will turn off after {} minutes",
-							onlineGraceMinutes);
+							"Offline mode [{}] inactive; Bluetooth setup radio will turn off after {} minutes",
+							offlineOpMode, onlineGraceMinutes);
 				}
 				if ( !Duration.between(onlineSince, now).minus(Duration.ofMinutes(onlineGraceMinutes))
 						.isNegative() ) {
-					log.info("SolarNetwork connection restored since {}; offline trigger cleared",
-							onlineSince);
+					log.info("Offline mode [{}] inactive since {}; offline trigger cleared",
+							offlineOpMode, onlineSince);
 					offline = false;
 					onlineSince = null;
 				}
@@ -654,7 +686,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 				String.valueOf(DEFAULT_ONLINE_GRACE_MINUTES)));
 		result.add(new BasicTextFieldSettingSpecifier("watchdogIntervalSeconds",
 				String.valueOf(DEFAULT_WATCHDOG_INTERVAL_SECONDS)));
-		result.add(new BasicTextFieldSettingSpecifier("pingTestIdRegex", DEFAULT_PING_TEST_ID_REGEX));
+		result.add(new BasicTextFieldSettingSpecifier("offlineOpMode", DEFAULT_OFFLINE_OP_MODE));
 		result.add(new BasicTextFieldSettingSpecifier("command", DEFAULT_COMMAND));
 		result.add(new BasicTextFieldSettingSpecifier("commandTimeoutSeconds",
 				String.valueOf(DEFAULT_COMMAND_TIMEOUT_SECONDS)));
@@ -683,9 +715,14 @@ public class BluetoothSetupService extends BaseIdentifiable
 					"operational mode active", Locale.getDefault()));
 		}
 		if ( status.isOffline() ) {
-			reasons.add(
-					messageSource.getMessage("status.offline", new Object[] { status.getOfflineSince() },
-							"SolarNetwork offline", Locale.getDefault()));
+			reasons.add(messageSource.getMessage("status.offline",
+					new Object[] { offlineOpMode, status.getOfflineSince() }, "offline mode active",
+					Locale.getDefault()));
+		} else if ( status.getOfflineSince() != null ) {
+			reasons.add(messageSource.getMessage("status.offlinePending",
+					new Object[] { offlineOpMode, status.getOfflineSince(),
+							status.getOfflineSince().plus(Duration.ofMinutes(offlineThresholdMinutes)) },
+					"offline mode active", Locale.getDefault()));
 		}
 		if ( status.getScheduleError() != null ) {
 			reasons.add(messageSource.getMessage("status.scheduleInvalid",
@@ -826,9 +863,10 @@ public class BluetoothSetupService extends BaseIdentifiable
 		}
 
 		/**
-		 * Get the time the SolarNetwork connection was first seen as lost.
+		 * Get the time the offline operational mode was first seen active.
 		 *
-		 * @return the time, or {@literal null} if the connection is up
+		 * @return the time, or {@literal null} if the offline mode is not
+		 *         active
 		 */
 		public Instant getOfflineSince() {
 			return offlineSince;
@@ -960,8 +998,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 			}
 		}
 		return new Status(active, discoverable, powered, enabled, opModeActive, expires,
-				offlineTriggerEnabled && offline, offlineSince, alwaysOn,
-				sched != null ? sched.toString() : "", schedActive, scheduleError, next,
+				offlineDetectionActive() && offline, offlineDetectionActive() ? offlineSince : null,
+				alwaysOn, sched != null ? sched.toString() : "", schedActive, scheduleError, next,
 				z != null ? z.getId() : null);
 	}
 
@@ -1241,7 +1279,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/**
 	 * Get the watchdog interval.
 	 *
-	 * @return the seconds between connectivity checks
+	 * @return the seconds between checks of the offline mode and the radio
+	 *         state
 	 */
 	public int getWatchdogIntervalSeconds() {
 		return watchdogIntervalSeconds;
@@ -1251,35 +1290,49 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Set the watchdog interval.
 	 *
 	 * @param watchdogIntervalSeconds
-	 *        the seconds between connectivity checks; {@literal 0} disables the
-	 *        watchdog
+	 *        the seconds between checks of the offline mode and the radio
+	 *        state; {@literal 0} disables the watchdog, including the offline
+	 *        trigger
 	 */
 	public void setWatchdogIntervalSeconds(int watchdogIntervalSeconds) {
 		this.watchdogIntervalSeconds = watchdogIntervalSeconds;
 	}
 
 	/**
-	 * Get the ping test ID regular expression.
+	 * Get the offline operational mode.
 	 *
-	 * @return the regular expression matching the ping test(s) that indicate
-	 *         SolarNetwork connectivity
+	 * @return the mode that means the network is unreachable, or an empty
+	 *         string if offline detection is disabled
 	 */
-	public String getPingTestIdRegex() {
-		return pingTestIdRegex;
+	public String getOfflineOpMode() {
+		return offlineOpMode;
 	}
 
 	/**
-	 * Set the ping test ID regular expression.
+	 * Set the offline operational mode.
 	 *
-	 * @param pingTestIdRegex
-	 *        the regular expression matching the ping test(s) that indicate
-	 *        SolarNetwork connectivity; defaults to
-	 *        {@link #DEFAULT_PING_TEST_ID_REGEX}
+	 * <p>
+	 * The mode is normalised to lower case. An empty value disables offline
+	 * detection. A {@code !} prefix is not supported, because the mode is
+	 * matched against both the operational modes service and modes-changed
+	 * events, which treat it differently, so such a value also disables offline
+	 * detection.
+	 * </p>
+	 *
+	 * @param offlineOpMode
+	 *        the mode that means the network is unreachable, such as the
+	 *        failure mode of an HTTP Ping control; defaults to
+	 *        {@link #DEFAULT_OFFLINE_OP_MODE}
 	 */
-	public void setPingTestIdRegex(String pingTestIdRegex) {
-		if ( pingTestIdRegex != null && !pingTestIdRegex.isEmpty() ) {
-			this.pingTestIdRegex = pingTestIdRegex;
+	public void setOfflineOpMode(String offlineOpMode) {
+		String mode = (offlineOpMode != null ? offlineOpMode.trim().toLowerCase(Locale.ENGLISH) : "");
+		if ( mode.startsWith("!") ) {
+			log.warn(
+					"Offline mode [{}] is not supported: use a plain mode name; offline trigger disabled",
+					mode);
+			mode = "";
 		}
+		this.offlineOpMode = mode;
 	}
 
 	/**

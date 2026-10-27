@@ -17,8 +17,6 @@
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
-	<reference id="systemHealthService" interface="net.solarnetwork.node.service.SystemHealthService"/>
-
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basename" value="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"/>
 	</bean>
@@ -50,7 +48,6 @@
 				autowire-on-update="true" update-method="configurationChanged"/>
 			<argument ref="opModesService"/>
 			<argument ref="taskScheduler"/>
-			<argument ref="systemHealthService"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

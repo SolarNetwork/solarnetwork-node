@@ -69,14 +69,9 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.OperationalModesService;
-import net.solarnetwork.node.service.SystemHealthService;
-import net.solarnetwork.node.service.SystemHealthService.PingTestResults;
 import net.solarnetwork.node.setup.bluetooth.AvailabilitySchedule;
 import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService;
 import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService.Status;
-import net.solarnetwork.service.PingTest;
-import net.solarnetwork.service.PingTestResult;
-import net.solarnetwork.service.PingTestResultDisplay;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.TextAreaSettingSpecifier;
@@ -97,10 +92,11 @@ public class BluetoothSetupServiceTests {
 	private static final String INVALID_HOURS = SCHED_HEADER + ",,Mon-Fri,25:00-26:00,1";
 
 	private static final String OP_MODE = "bt-setup";
+
+	private static final String OFFLINE_MODE = BluetoothSetupService.DEFAULT_OFFLINE_OP_MODE;
 	private static final Instant START = Instant.parse("2026-10-06T00:00:00Z");
 
 	private OperationalModesService opModesService;
-	private SystemHealthService systemHealthService;
 	private BluetoothSetupService service;
 	private File tmpFile;
 	private File logFile;
@@ -109,9 +105,8 @@ public class BluetoothSetupServiceTests {
 	@Before
 	public void setup() throws IOException {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
-		systemHealthService = EasyMock.createMock(SystemHealthService.class);
 		// no task scheduler: reconcile runs inline, which keeps the tests deterministic
-		service = new BluetoothSetupService(opModesService, null, systemHealthService);
+		service = new BluetoothSetupService(opModesService, null);
 		// the production default is always on; these tests exercise the gated
 		// behaviour so start with the gate closed
 		service.setAlwaysOn(false);
@@ -132,7 +127,7 @@ public class BluetoothSetupServiceTests {
 
 	@After
 	public void teardown() {
-		verify(opModesService, systemHealthService);
+		verify(opModesService);
 		if ( tmpFile != null ) {
 			tmpFile.delete();
 		}
@@ -145,7 +140,7 @@ public class BluetoothSetupServiceTests {
 	}
 
 	private void replayAll() {
-		replay(opModesService, systemHealthService);
+		replay(opModesService);
 	}
 
 	private List<String> actions() throws IOException {
@@ -188,40 +183,6 @@ public class BluetoothSetupServiceTests {
 		Map<String, Object> props = new HashMap<>();
 		props.put(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES, Set.of(activeModes));
 		return new Event(OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED, props);
-	}
-
-	private PingTestResults pingResults(Boolean success) {
-		if ( success == null ) {
-			return new PingTestResults(Instant.now(), Collections.emptyMap());
-		}
-		PingTest test = new PingTest() {
-
-			@Override
-			public String getPingTestId() {
-				return "net.solarnetwork.node.upload.mqtt.MqttUploadService";
-			}
-
-			@Override
-			public String getPingTestName() {
-				return "SolarIn/MQTT";
-			}
-
-			@Override
-			public long getPingTestMaximumExecutionMilliseconds() {
-				return 1000;
-			}
-
-			@Override
-			public Result performPingTest() throws Exception {
-				return new PingTestResult(success, success ? "OK" : "No MQTT connection available.");
-			}
-		};
-		Map<String, PingTestResultDisplay> results = new HashMap<>();
-		results.put(test.getPingTestId(),
-				new PingTestResultDisplay(test,
-						new PingTestResult(success, success ? "OK" : "No MQTT connection available."),
-						Instant.now()));
-		return new PingTestResults(Instant.now(), results);
 	}
 
 	@Test
@@ -443,8 +404,7 @@ public class BluetoothSetupServiceTests {
 	public void defaultAlwaysOn_turnsRadioOn() throws IOException {
 		replayAll();
 		// a fresh instance with no configuration at all must turn the radio on
-		BluetoothSetupService fresh = new BluetoothSetupService(opModesService, null,
-				systemHealthService);
+		BluetoothSetupService fresh = new BluetoothSetupService(opModesService, null);
 		fresh.setCommand(tmpFile.getAbsolutePath());
 		assertThat(fresh.isAlwaysOn(), is(true));
 		fresh.reconcile();
@@ -455,8 +415,7 @@ public class BluetoothSetupServiceTests {
 	@Test
 	public void offline_triggersOnlyAfterThreshold() throws IOException {
 		service.setOfflineThresholdMinutes(2);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(false))
-				.anyTimes();
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).anyTimes();
 		replayAll();
 
 		service.watchdogTick();
@@ -480,9 +439,8 @@ public class BluetoothSetupServiceTests {
 	public void offline_clearsOnlyAfterGrace() throws IOException {
 		service.setOfflineThresholdMinutes(1);
 		service.setOnlineGraceMinutes(3);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(false)).times(2);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(true))
-				.anyTimes();
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(2);
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
 		service.watchdogTick();
@@ -509,10 +467,10 @@ public class BluetoothSetupServiceTests {
 	public void offline_graceResetsOnNewFailure() throws IOException {
 		service.setOfflineThresholdMinutes(1);
 		service.setOnlineGraceMinutes(2);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(false)).times(2);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(true)).times(1);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(false)).times(1);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(true)).times(2);
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(2);
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).times(1);
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(1);
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).times(2);
 		replayAll();
 
 		service.watchdogTick();
@@ -533,10 +491,9 @@ public class BluetoothSetupServiceTests {
 	}
 
 	@Test
-	public void offline_noMatchingTest_neverTriggers() throws IOException {
+	public void offline_modeNeverActive_neverTriggers() throws IOException {
 		service.setOfflineThresholdMinutes(1);
-		expect(systemHealthService.performPingTests(anyObject())).andReturn(pingResults(null))
-				.anyTimes();
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
 		service.watchdogTick();
@@ -559,6 +516,187 @@ public class BluetoothSetupServiceTests {
 
 		assertThat(radioState(), is(false));
 		assertThat(actions(), is(empty()));
+	}
+
+	private String statusTitle() {
+		SettingSpecifier title = service.getSettingSpecifiers().get(0);
+		return String.valueOf(((TitleSettingSpecifier) title).getDefaultValue());
+	}
+
+	@Test
+	public void offline_eventStartsThreshold() throws IOException {
+		service.setOfflineThresholdMinutes(2);
+		service.setOnlineGraceMinutes(3);
+		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(1);
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		assertThat("not yet offline", radioState(), is(false));
+		assertThat("threshold started", service.currentStatus().getOfflineSince(), is(START));
+
+		advanceClock(Duration.ofMinutes(2));
+		service.watchdogTick();
+		assertThat("threshold reached", radioState(), is(true));
+
+		service.handleEvent(modesEvent("other"));
+		assertThat("grace started", radioState(), is(true));
+
+		advanceClock(Duration.ofMinutes(3));
+		service.handleEvent(modesEvent("other"));
+		assertThat("grace elapsed", radioState(), is(false));
+		assertThat(actions(), contains("enable", "disable"));
+	}
+
+	@Test
+	public void offline_blankMode_neverTriggers() throws IOException {
+		service.setOfflineThresholdMinutes(0);
+		service.setOfflineOpMode("");
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE, "other"));
+		service.watchdogTick();
+		advanceClock(Duration.ofMinutes(10));
+		service.watchdogTick();
+
+		assertThat(radioState(), is(false));
+		assertThat(actions(), is(empty()));
+		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+
+		service.setOfflineOpMode(null);
+		assertThat(service.getOfflineOpMode(), equalTo(""));
+	}
+
+	@Test
+	public void offline_modeNormalised() {
+		replayAll();
+		service.setOfflineOpMode(" Net-Offline ");
+		assertThat(service.getOfflineOpMode(), equalTo("net-offline"));
+		service.setOfflineOpMode("!net-online");
+		assertThat("inverted mode not supported", service.getOfflineOpMode(), equalTo(""));
+	}
+
+	@Test
+	public void offline_customMode() throws IOException {
+		service.setOfflineThresholdMinutes(0);
+		service.setOfflineOpMode("WAN-Down");
+		expect(opModesService.isOperationalModeActive("wan-down")).andReturn(true).times(1);
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		assertThat("default mode ignored", radioState(), is(false));
+
+		service.handleEvent(modesEvent("wan-down"));
+		assertThat("custom mode event", radioState(), is(true));
+
+		service.watchdogTick();
+		assertThat("custom mode tick", radioState(), is(true));
+		assertThat(actions(), contains("enable"));
+	}
+
+	@Test
+	public void offline_triggerDisabled_eventIgnored() throws IOException {
+		service.setOfflineTriggerEnabled(false);
+		service.setOfflineThresholdMinutes(0);
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		advanceClock(Duration.ofMinutes(10));
+		service.handleEvent(modesEvent(OFFLINE_MODE, "other"));
+
+		assertThat(radioState(), is(false));
+		assertThat(actions(), is(empty()));
+		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+	}
+
+	@Test
+	public void offline_watchdogDisabled_eventIgnored() throws IOException {
+		service.setWatchdogIntervalSeconds(0);
+		service.setOfflineThresholdMinutes(1);
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		advanceClock(Duration.ofMinutes(10));
+		service.handleEvent(modesEvent(OFFLINE_MODE, "other"));
+
+		assertThat(radioState(), is(false));
+		assertThat(actions(), is(empty()));
+		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+	}
+
+	@Test
+	public void offline_configChange_blankMode_clearsState() throws IOException {
+		service.setOfflineThresholdMinutes(0);
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		assertThat(radioState(), is(true));
+
+		service.setOfflineOpMode("");
+		service.configurationChanged(Map.of());
+
+		assertThat("stale offline state cleared", radioState(), is(false));
+		assertThat(service.currentStatus().isOffline(), is(false));
+		assertThat(actions(), contains("enable", "disable"));
+	}
+
+	@Test
+	public void offline_configChange_modeChanged_clearsState() throws IOException {
+		service.setOfflineThresholdMinutes(0);
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		assertThat(radioState(), is(true));
+
+		service.setOfflineOpMode("wan-down");
+		service.configurationChanged(Map.of());
+
+		assertThat("state from the old mode cleared", radioState(), is(false));
+		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+	}
+
+	@Test
+	public void offline_configChange_triggerToggled_noImmediateTurnOn() throws IOException {
+		service.setOfflineThresholdMinutes(0);
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+		assertThat(radioState(), is(true));
+
+		service.setOfflineTriggerEnabled(false);
+		service.configurationChanged(Map.of());
+		assertThat(radioState(), is(false));
+
+		service.setOfflineTriggerEnabled(true);
+		service.configurationChanged(Map.of());
+		assertThat("no stale offline state", radioState(), is(false));
+		assertThat(actions(), contains("enable", "disable"));
+	}
+
+	@Test
+	public void status_offlinePending() throws IOException {
+		service.setOfflineThresholdMinutes(15);
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+
+		assertThat(statusTitle(), containsString(
+				"offline mode 'net-offline' active since 2026-10-06T00:00:00Z; radio turns on at 2026-10-06T00:15:00Z"));
+	}
+
+	@Test
+	public void status_offline() throws IOException {
+		service.setOfflineThresholdMinutes(0);
+		replayAll();
+
+		service.handleEvent(modesEvent(OFFLINE_MODE));
+
+		String title = statusTitle();
+		assertThat(title,
+				containsString("offline mode 'net-offline' active since 2026-10-06T00:00:00Z"));
+		assertThat(title, org.hamcrest.Matchers.not(containsString("radio turns on at")));
 	}
 
 	@Test
@@ -602,6 +740,16 @@ public class BluetoothSetupServiceTests {
 				.filter(k -> "schedule".equals(k.getKey())).findFirst().orElse(null);
 		assertThat(schedule, instanceOf(TextAreaSettingSpecifier.class));
 		assertThat(((TextAreaSettingSpecifier) schedule).isDirect(), is(true));
+		KeyedSettingSpecifier<?> offlineMode = specs.stream()
+				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
+				.filter(k -> "offlineOpMode".equals(k.getKey())).findFirst().orElse(null);
+		assertThat(offlineMode, is(notNullValue()));
+		assertThat("offline mode default", offlineMode.getDefaultValue(), equalTo("net-offline"));
+		assertThat("no ping test setting",
+				specs.stream().filter(KeyedSettingSpecifier.class::isInstance)
+						.map(KeyedSettingSpecifier.class::cast)
+						.anyMatch(k -> "pingTestIdRegex".equals(k.getKey())),
+				is(false));
 	}
 
 	private void startupWithSchedule(String schedule, String timeZone) {
@@ -710,8 +858,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		replay(scheduler);
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
-				systemHealthService);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
@@ -891,8 +1038,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		replay(scheduler, future1, future2);
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
-				systemHealthService);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
@@ -931,8 +1077,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		replay(scheduler, future);
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
-				systemHealthService);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setAlwaysOn(false);
