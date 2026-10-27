@@ -90,6 +90,12 @@ import net.solarnetwork.settings.TitleSettingSpecifier;
  */
 public class BluetoothSetupConfigurationTests {
 
+	private static final String SCHED_HEADER = AvailabilitySchedule.EXAMPLE_HEADER + "\n";
+
+	private static final String WEEKDAY_HOURS = SCHED_HEADER + ",,Mon-Fri,07:00-18:00,1";
+
+	private static final String INVALID_HOURS = SCHED_HEADER + ",,Mon-Fri,25:00-26:00,1";
+
 	private static final String OP_MODE = "bt-setup";
 	private static final Instant START = Instant.parse("2026-10-06T00:00:00Z");
 
@@ -610,7 +616,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
-		startupWithSchedule("Mon-Fri 07:00-18:00", "Pacific/Auckland");
+		startupWithSchedule(WEEKDAY_HOURS, "Pacific/Auckland");
 
 		assertThat(radioState(), is(true));
 		assertThat(actions(), contains("enable"));
@@ -626,7 +632,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
-		startupWithSchedule("Mon-Fri 07:00-18:00", "UTC");
+		startupWithSchedule(WEEKDAY_HOURS, "UTC");
 
 		assertThat(radioState(), is(false));
 		assertThat(actions(), is(empty()));
@@ -641,11 +647,11 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
-		startupWithSchedule("Mon-Fri 07:00-18:00", "");
+		startupWithSchedule(WEEKDAY_HOURS, "");
 
 		Status s = service.currentStatus();
 		assertThat(s.getTimeZone(), equalTo(ZoneId.systemDefault().getId()));
-		boolean expected = AvailabilitySchedule.parse("Mon-Fri 07:00-18:00")
+		boolean expected = AvailabilitySchedule.parse(WEEKDAY_HOURS)
 				.applies(LocalDateTime.ofInstant(START, ZoneId.systemDefault()));
 		assertThat(radioState(), is(expected));
 	}
@@ -655,7 +661,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
-		startupWithSchedule("*", "Mars/Olympus");
+		startupWithSchedule(SCHED_HEADER + ",,,,1", "Mars/Olympus");
 
 		assertThat(radioState(), is(false));
 		Status s = service.currentStatus();
@@ -669,11 +675,11 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 
-		startupWithSchedule("Mon-Fri 25:00-26:00", "UTC");
+		startupWithSchedule(INVALID_HOURS, "UTC");
 
 		assertThat(radioState(), is(false));
 		Status s = service.currentStatus();
-		assertThat(s.getScheduleError(), containsString("Window 1"));
+		assertThat(s.getScheduleError(), containsString("CSV row 2"));
 		SettingSpecifier title = service.getSettingSpecifiers().get(0);
 		assertThat(title, instanceOf(TitleSettingSpecifier.class));
 		assertThat(String.valueOf(((TitleSettingSpecifier) title).getDefaultValue()),
@@ -682,7 +688,7 @@ public class BluetoothSetupConfigurationTests {
 		InstructionStatus status = service.processInstruction(instruction("status", null));
 		Status result = (Status) status.getResultParameters()
 				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(result.getScheduleError(), containsString("Window 1"));
+		assertThat(result.getScheduleError(), containsString("CSV row 2"));
 	}
 
 	@Test
@@ -709,7 +715,7 @@ public class BluetoothSetupConfigurationTests {
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
-		s.setSchedule("Mon-Fri 07:00-18:00");
+		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC"); // window closed at 00:00 UTC
 		s.startup();
 
@@ -723,7 +729,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 		advanceClock(Duration.ofHours(6).plusMinutes(59));
-		startupWithSchedule("Mon-Fri 07:00-18:00", "UTC");
+		startupWithSchedule(WEEKDAY_HOURS, "UTC");
 		service.scheduleTick();
 		assertThat(radioState(), is(false));
 
@@ -750,7 +756,7 @@ public class BluetoothSetupConfigurationTests {
 		replayAll();
 		advanceClock(Duration.ofHours(12)); // 12:00 UTC, a reboot mid-window
 
-		startupWithSchedule("Mon-Fri 07:00-18:00", "UTC");
+		startupWithSchedule(WEEKDAY_HOURS, "UTC");
 
 		assertThat(radioState(), is(true));
 		assertThat(actions(), contains("enable"));
@@ -762,7 +768,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 		service.setClock(Clock.fixed(Instant.parse("2026-09-26T13:59:00Z"), ZoneOffset.UTC)); // 01:59 NZST
-		startupWithSchedule("Sun 02:00-03:00", "Pacific/Auckland");
+		startupWithSchedule(SCHED_HEADER + ",,Sun,02:00-03:00,1", "Pacific/Auckland");
 		assertThat(radioState(), is(false));
 
 		service.setClock(Clock.fixed(Instant.parse("2026-09-26T14:00:00Z"), ZoneOffset.UTC)); // 03:00 NZDT
@@ -781,7 +787,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 		service.setClock(Clock.fixed(Instant.parse("2027-04-03T13:30:00Z"), ZoneOffset.UTC)); // 02:30 NZDT
-		startupWithSchedule("Sun 02:00-03:00", "Pacific/Auckland");
+		startupWithSchedule(SCHED_HEADER + ",,Sun,02:00-03:00,1", "Pacific/Auckland");
 		assertThat("first 02:30", radioState(), is(true));
 
 		service.setClock(Clock.fixed(Instant.parse("2027-04-03T14:30:00Z"), ZoneOffset.UTC)); // 02:30 NZST
@@ -802,7 +808,7 @@ public class BluetoothSetupConfigurationTests {
 				.andReturn(Set.of(OP_MODE));
 		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
 		replayAll();
-		startupWithSchedule("Mon-Fri 07:00-18:00", "UTC"); // closed at 00:00 UTC
+		startupWithSchedule(WEEKDAY_HOURS, "UTC"); // closed at 00:00 UTC
 		assertThat(radioState(), is(false));
 
 		InstructionStatus status = service
@@ -821,7 +827,7 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		expect(opModesService.disableOperationalModes(Set.of(OP_MODE))).andReturn(Set.of());
 		replayAll();
-		startupWithSchedule("Mon-Fri 07:00-18:00", "Pacific/Auckland"); // 13:00 NZDT, open
+		startupWithSchedule(WEEKDAY_HOURS, "Pacific/Auckland"); // 13:00 NZDT, open
 		assertThat(radioState(), is(true));
 
 		InstructionStatus status = service.processInstruction(instruction("disable", null));
@@ -836,11 +842,11 @@ public class BluetoothSetupConfigurationTests {
 		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
 		replayAll();
 		advanceClock(Duration.ofHours(13)); // 13:00 UTC, inside
-		startupWithSchedule("mon-fri 7-18", "UTC");
+		startupWithSchedule(SCHED_HEADER + ",,mon-fri,7-18,1", "UTC");
 
 		Status s = service.currentStatus();
 
-		assertThat(s.getSchedule(), equalTo("* * Mon-Fri 07:00-18:00"));
+		assertThat(s.getSchedule(), equalTo(",,Mon-Fri,7-18,1"));
 		assertThat(s.isScheduleActive(), is(true));
 		assertThat(s.getScheduleError(), is(nullValue()));
 		assertThat(s.getTimeZone(), equalTo("UTC"));
@@ -857,7 +863,7 @@ public class BluetoothSetupConfigurationTests {
 		File failFile = new File(tmpFile.getAbsolutePath() + ".failenable");
 		try {
 			Files.writeString(failFile.toPath(), "");
-			startupWithSchedule("Mon-Fri 07:00-18:00", "UTC");
+			startupWithSchedule(WEEKDAY_HOURS, "UTC");
 			assertThat("enable failed", radioState(), is(false));
 			service.scheduleTick();
 			assertThat("still failing", radioState(), is(false));
@@ -891,7 +897,7 @@ public class BluetoothSetupConfigurationTests {
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
 		s.setAlwaysOn(false);
-		s.setSchedule("Mon-Fri 07:00-18:00");
+		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC");
 		s.startup(); // registers future1
 
@@ -903,7 +909,7 @@ public class BluetoothSetupConfigurationTests {
 		s.configurationChanged(Map.of()); // registers future2, radio off (00:00 UTC)
 		assertThat(radioState(), is(false));
 
-		s.setSchedule("Mon-Fri 25:00-26:00");
+		s.setSchedule(INVALID_HOURS);
 		s.configurationChanged(Map.of()); // invalid: cancels future2, stays off
 		assertThat(radioState(), is(false));
 		assertThat(s.currentStatus().getScheduleError(), is(notNullValue()));
@@ -931,7 +937,7 @@ public class BluetoothSetupConfigurationTests {
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setAlwaysOn(false);
 		s.setWatchdogIntervalSeconds(0);
-		s.setSchedule("Mon-Fri 07:00-18:00");
+		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC");
 		s.startup();
 		s.shutdown();
