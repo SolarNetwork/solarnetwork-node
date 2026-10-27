@@ -100,9 +100,9 @@ Dec,24-26,,,1
 ,,Sat,00:00-06:00,1
 ```
 
-Two time ranges that are exactly one minute apart in the same cell, like
-`"06:00-09:00,09:01-12:00"`, are merged, so the minute between them is
-available. Put them in separate rules to keep the gap.
+Two time ranges in the same cell that are exactly one minute apart, like
+`"06:00-09:00,09:01-12:00"`, are rejected, because they would merge and make
+the minute between them available. Put them in separate rules instead.
 
 Rules use local wall-clock time in the _Time Zone_. A rule entirely inside a
 daylight saving gap doesn't apply that day, and the repeated hour when clocks go

@@ -108,6 +108,16 @@ public class AvailabilityScheduleTests {
 	}
 
 	@Test
+	public void parse_oneMinuteGap_separateRules() {
+		AvailabilitySchedule s = parse(",,,06:00-09:00,1\n,,,09:01-12:00,1");
+		assertThat(s.applies(tue(8, 59)), is(true));
+		assertThat("gap minute stays off", s.applies(tue(9, 0)), is(false));
+		assertThat(s.applies(tue(9, 1)), is(true));
+		assertThat("next boundary is the gap", s.nextBoundary(tue(8, 0)), equalTo(tue(9, 0)));
+		assertThat("gap ends a minute later", s.nextBoundary(tue(9, 0)), equalTo(tue(9, 1)));
+	}
+
+	@Test
 	public void parse_multipleRules() {
 		AvailabilitySchedule s = parse(",,Mon-Fri,07:00-18:00,1\n,,\"Sat,Sun\",08:00-12:00,1");
 		assertThat(s.getRules(), hasSize(2));
@@ -209,6 +219,8 @@ public class AvailabilityScheduleTests {
 		assertInvalid(HEADER + ",,Mon-Fri,07:00-07:00,1", "is empty");
 		assertInvalid(HEADER + ",,Sat,09:00,1", "Time range [09:00] is empty");
 		assertInvalid(HEADER + ",,Mon-Fri,23:00-24:30,1", "ends after 24:00");
+		assertInvalid(HEADER + ",,,\"06:00-09:00,09:01-12:00\",1",
+				"Time ranges [06:00-09:00] and [09:01-12:00] are one minute apart");
 	}
 
 	@Test
