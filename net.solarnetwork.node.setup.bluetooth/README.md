@@ -30,8 +30,8 @@ restart.
 
 # Settings
 
-|      Setting      |                          Default                           |                                                                          Description                                                                          |
-|-------------------|------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Setting           | Default                                                    | Description                                                                                                                                                   |
+|:------------------|:-----------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Status            |                                                            | The current radio state and why it is on, including the schedule state and the time zone in use.                                                              |
 | Override For      | `0`                                                        | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                   |
 | Always On         | on                                                         | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                           |
@@ -59,8 +59,8 @@ The schedule uses the same CSV format as the tariff datum filter's schedule,
 with a single `Available` column. The first row is a header, and each following
 row is a rule with five columns:
 
-|   Column    |                                               Values                                               |
-|-------------|----------------------------------------------------------------------------------------------------|
+| Column      | Values                                                                                             |
+|:------------|:---------------------------------------------------------------------------------------------------|
 | `Month`     | `1-12`, or names `Jan-Dec`, `January-December`                                                     |
 | `Day`       | Day of month, `1-31`                                                                               |
 | `Weekday`   | `1-7` with `1` = Monday, or names `Mon-Sun`, `Monday-Sunday`                                       |
@@ -171,8 +171,8 @@ duration:600
 ^@
 ```
 
-| `action`  |      Parameters      |                                                                       Effect                                                                        |
-|-----------|----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `action`  | Parameters           | Effect                                                                                                                                              |
+|:----------|:---------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `status`  |                      | Return the current status (the default when no action is given).                                                                                    |
 | `enable`  | `duration` (seconds) | Enable the override mode for `duration` seconds (default _Override Duration_, capped at _Maximum Override_). Calling it again extends the override. |
 | `disable` |                      | End the override. Unless the schedule, the offline fallback, or _Always On_ keeps it on, the radio turns off, which drops the client's connection.  |
