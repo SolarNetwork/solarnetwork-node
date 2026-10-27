@@ -22,31 +22,28 @@
 
 package net.solarnetwork.node.datum.solcast.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.UUID;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.Callback;
-import org.eclipse.jetty.util.Fields;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.solcast.JsonSolcastClient;
 import net.solarnetwork.node.datum.solcast.SolcastCriteria;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
 import net.solarnetwork.test.http.AbstractHttpServerTests;
 import net.solarnetwork.test.http.TestHttpHandler;
-import net.solarnetwork.util.StringUtils;
 
 /**
  * Test cases for the {@link JsonSolcastClient} class.
@@ -82,22 +79,25 @@ public class JsonSolcastClientTests extends AbstractHttpServerTests {
 			@Override
 			protected boolean handleInternal(Request request, Response response, Callback callback)
 					throws Exception {
-				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
-				assertThat("Request path", request.getHttpURI().getPath(),
-						is(equalTo("/data/live/radiation_and_weather")));
-				assertThat("API key", request.getHeaders().get("Authorization"),
-						is(equalTo("Bearer " + TEST_API_KEY)));
-
-				Fields queryParams = Request.extractQueryParameters(request);
-
-				assertThat("Latitude param", queryParams.getValue("latitude"),
-						is(equalTo(criteria.getLat().toPlainString())));
-				assertThat("Longitude param", queryParams.getValue("longitude"),
-						is(equalTo(criteria.getLon().toPlainString())));
-				assertThat("Period param", queryParams.getValue("period"),
-						is(equalTo(criteria.getPeriod().toString())));
-				assertThat("Output params param", queryParams.getValue("output_parameters"), is(equalTo(
-						StringUtils.commaDelimitedStringFromCollection(criteria.getParameters()))));
+				// @formatter:off
+				then(request)
+					.as("Method is GET")
+					.returns("GET", from(Request::getMethod))
+					.as("Path is expected")
+					.returns("/data/live/radiation_and_weather", from(r -> r.getHttpURI().getPath()))
+					.as("API key included")
+					.returns("Bearer " + TEST_API_KEY, from(r -> r.getHeaders().get("Authorization")))
+					.extracting(r -> Request.extractQueryParameters(r))
+					.as("Latitude param")
+					.returns(criteria.getLat().toPlainString(), from(f -> f.getValue("latitude")))
+					.as("Longitude param")
+					.returns(criteria.getLon().toPlainString(), from(f -> f.getValue("longitude")))
+					.as("Period param")
+					.returns(criteria.getPeriod().toString(), from(f -> f.getValue("period")))
+					.as("PerOutput params param")
+					.returns(commaDelimitedStringFromCollection(criteria.getParameters()), from(f -> f.getValue("output_parameters")))
+					;
+				// @formatter:on
 				respondWithJsonResource(request, response, "find-most-recent-01.json");
 				return true;
 			}
@@ -109,26 +109,98 @@ public class JsonSolcastClientTests extends AbstractHttpServerTests {
 		AtmosphericDatum datum = client.getMostRecentConditions(TEST_SOURCE_ID, criteria);
 
 		// THEN
-		assertThat("Request handled", handler.isHandled(), equalTo(true));
-		assertThat("SimpleAtmosphericDatum", datum, instanceOf(SimpleAtmosphericDatum.class));
+		// @formatter:off
+		then(handler.isHandled())
+			.as("Request handled")
+			.isTrue()
+			;
+		then(datum)
+			.as("SimpleAtmosphericDatum type returned")
+			.isInstanceOf(SimpleAtmosphericDatum.class)
+			.as("Created from data")
+			.returns(ISO_INSTANT.parse("2022-10-14T01:00:00.000Z", Instant::from), from(AtmosphericDatum::getTimestamp))
+			.extracting(d -> d.asSampleOperations())
+			.as("Ambient temp mapped to temp")
+			.returns(new BigDecimal("10"), from(d -> d.getSampleBigDecimal(Instantaneous, "temp")))
+			.as("GHI mapped to irradiance")
+			.returns(970, from(d -> d.getSampleInteger(Instantaneous, "irradiance")))
+			.as("EBH mapped")
+			.returns(869, from(d -> d.getSampleInteger(Instantaneous, "ebh")))
+			.as("DNI mapped")
+			.returns(976, from(d -> d.getSampleInteger(Instantaneous, "dni")))
+			.as("Cloud opacity mapped")
+			.returns(0, from(d -> d.getSampleInteger(Instantaneous, "cloud_opacity")))
+			;
+		// @formatter:on
+	}
 
-		Instant ts = DateTimeFormatter.ISO_INSTANT.parse("2022-10-14T01:00:00.000Z", Instant::from);
-		assertThat("Created", datum.getTimestamp(), is(equalTo(ts)));
-		assertThat("Period mapped to duration",
-				datum.asSampleOperations().getSampleLong(DatumSamplesType.Instantaneous, "duration"),
-				is(equalTo(Duration.ofMinutes(30).getSeconds())));
-		assertThat("Ambient temp mapped to temp", datum.getTemperature(),
-				is(equalTo(new BigDecimal("10"))));
-		assertThat("GHI mapped to irradiance", datum.asSampleOperations()
-				.getSampleInteger(DatumSamplesType.Instantaneous, "irradiance"), is(equalTo(970)));
-		assertThat("EBH",
-				datum.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "ebh"),
-				is(equalTo(869)));
-		assertThat("DNI",
-				datum.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "dni"),
-				is(equalTo(976)));
-		assertThat("Cloud opacity", datum.asSampleOperations()
-				.getSampleInteger(DatumSamplesType.Instantaneous, "cloud_opacity"), is(equalTo(0)));
+	@Test
+	public void readMostRecentConditions_offsetTimestamps() {
+		// GIVEN
+		final SolcastCriteria criteria = new SolcastCriteria();
+		criteria.setLat(new BigDecimal("1.2345"));
+		criteria.setLon(new BigDecimal("2.3456"));
+		criteria.setParameters(new LinkedHashSet<>(Arrays.asList("foo", "bar", "baz")));
+		criteria.setPeriod(Duration.ofMinutes(10));
+
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(Request request, Response response, Callback callback)
+					throws Exception {
+				// @formatter:off
+				then(request)
+					.as("Method is GET")
+					.returns("GET", from(Request::getMethod))
+					.as("Path is expected")
+					.returns("/data/live/radiation_and_weather", from(r -> r.getHttpURI().getPath()))
+					.as("API key included")
+					.returns("Bearer " + TEST_API_KEY, from(r -> r.getHeaders().get("Authorization")))
+					.extracting(r -> Request.extractQueryParameters(r))
+					.as("Latitude param")
+					.returns(criteria.getLat().toPlainString(), from(f -> f.getValue("latitude")))
+					.as("Longitude param")
+					.returns(criteria.getLon().toPlainString(), from(f -> f.getValue("longitude")))
+					.as("Period param")
+					.returns(criteria.getPeriod().toString(), from(f -> f.getValue("period")))
+					.as("PerOutput params param")
+					.returns(commaDelimitedStringFromCollection(criteria.getParameters()), from(f -> f.getValue("output_parameters")))
+					;
+				// @formatter:on
+				respondWithJsonResource(request, response, "find-most-recent-02.json");
+				return true;
+			}
+
+		};
+		addHandler(handler);
+
+		// WHEN
+		AtmosphericDatum datum = client.getMostRecentConditions(TEST_SOURCE_ID, criteria);
+
+		// THEN
+		// @formatter:off
+		then(handler.isHandled())
+			.as("Request handled")
+			.isTrue()
+			;
+		then(datum)
+			.as("SimpleAtmosphericDatum type returned")
+			.isInstanceOf(SimpleAtmosphericDatum.class)
+			.as("Created from data")
+			.returns(ISO_INSTANT.parse("2022-10-14T01:00:00+01:30", Instant::from), from(AtmosphericDatum::getTimestamp))
+			.extracting(d -> d.asSampleOperations())
+			.as("Ambient temp mapped to temp")
+			.returns(new BigDecimal("10.1"), from(d -> d.getSampleBigDecimal(Instantaneous, "temp")))
+			.as("GHI mapped to irradiance")
+			.returns(970, from(d -> d.getSampleInteger(Instantaneous, "irradiance")))
+			.as("EBH mapped")
+			.returns(869, from(d -> d.getSampleInteger(Instantaneous, "ebh")))
+			.as("DNI mapped")
+			.returns(976, from(d -> d.getSampleInteger(Instantaneous, "dni")))
+			.as("Cloud opacity mapped")
+			.returns(0, from(d -> d.getSampleInteger(Instantaneous, "cloud_opacity")))
+			;
+		// @formatter:on
 	}
 
 }
