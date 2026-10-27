@@ -122,13 +122,13 @@ instruction, one `key`/`type`/`value` triplet per setting:
 ```
 POST /solaruser/api/v1/sec/instr/add/UpdateSetting
 nodeId=123
-&parameters[0].name=key&parameters[0].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration
+&parameters[0].name=key&parameters[0].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
 &parameters[1].name=type&parameters[1].value=schedule
 &parameters[2].name=value&parameters[2].value=Month,Day,Weekday,Time,Available%0A,,Mon-Fri,07:00-18:00,1
-&parameters[3].name=key&parameters[3].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration
+&parameters[3].name=key&parameters[3].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
 &parameters[4].name=type&parameters[4].value=timeZone
 &parameters[5].name=value&parameters[5].value=Pacific/Auckland
-&parameters[6].name=key&parameters[6].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration
+&parameters[6].name=key&parameters[6].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
 &parameters[7].name=type&parameters[7].value=alwaysOn
 &parameters[8].name=value&parameters[8].value=false
 ```

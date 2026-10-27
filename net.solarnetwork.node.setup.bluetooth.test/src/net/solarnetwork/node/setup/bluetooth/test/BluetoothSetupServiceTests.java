@@ -1,5 +1,5 @@
 /* ==================================================================
- * BluetoothSetupConfigurationTests.java - 6/10/2026 8:30:00 AM
+ * BluetoothSetupServiceTests.java - 6/10/2026 8:30:00 AM
  *
  * Copyright 2026 SolarNetwork.net Dev Team
  *
@@ -72,8 +72,8 @@ import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.SystemHealthService;
 import net.solarnetwork.node.service.SystemHealthService.PingTestResults;
 import net.solarnetwork.node.setup.bluetooth.AvailabilitySchedule;
-import net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration;
-import net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration.Status;
+import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService;
+import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService.Status;
 import net.solarnetwork.service.PingTest;
 import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.service.PingTestResultDisplay;
@@ -83,12 +83,12 @@ import net.solarnetwork.settings.TextAreaSettingSpecifier;
 import net.solarnetwork.settings.TitleSettingSpecifier;
 
 /**
- * Test cases for the {@link BluetoothSetupConfiguration} class.
+ * Test cases for the {@link BluetoothSetupService} class.
  *
  * @author elijah
  * @version 1.0
  */
-public class BluetoothSetupConfigurationTests {
+public class BluetoothSetupServiceTests {
 
 	private static final String SCHED_HEADER = AvailabilitySchedule.EXAMPLE_HEADER + "\n";
 
@@ -101,7 +101,7 @@ public class BluetoothSetupConfigurationTests {
 
 	private OperationalModesService opModesService;
 	private SystemHealthService systemHealthService;
-	private BluetoothSetupConfiguration service;
+	private BluetoothSetupService service;
 	private File tmpFile;
 	private File logFile;
 	private File stateFile;
@@ -111,7 +111,7 @@ public class BluetoothSetupConfigurationTests {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
 		systemHealthService = EasyMock.createMock(SystemHealthService.class);
 		// no task scheduler: reconcile runs inline, which keeps the tests deterministic
-		service = new BluetoothSetupConfiguration(opModesService, null, systemHealthService);
+		service = new BluetoothSetupService(opModesService, null, systemHealthService);
 		// the production default is always on; these tests exercise the gated
 		// behaviour so start with the gate closed
 		service.setAlwaysOn(false);
@@ -126,7 +126,7 @@ public class BluetoothSetupConfigurationTests {
 		service.setClock(Clock.fixed(START, ZoneOffset.UTC));
 
 		ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
-		msgSource.setBasenames(BluetoothSetupConfiguration.class.getName());
+		msgSource.setBasenames(BluetoothSetupService.class.getName());
 		service.setMessageSource(msgSource);
 	}
 
@@ -173,9 +173,9 @@ public class BluetoothSetupConfigurationTests {
 
 	private Instruction instruction(String action, Map<String, String> extra) {
 		Map<String, String> params = new LinkedHashMap<>();
-		params.put(InstructionHandler.PARAM_SERVICE, BluetoothSetupConfiguration.BLUETOOTH_SERVICE_NAME);
+		params.put(InstructionHandler.PARAM_SERVICE, BluetoothSetupService.BLUETOOTH_SERVICE_NAME);
 		if ( action != null ) {
-			params.put(BluetoothSetupConfiguration.PARAM_ACTION, action);
+			params.put(BluetoothSetupService.PARAM_ACTION, action);
 		}
 		if ( extra != null ) {
 			params.putAll(extra);
@@ -443,7 +443,7 @@ public class BluetoothSetupConfigurationTests {
 	public void defaultAlwaysOn_turnsRadioOn() throws IOException {
 		replayAll();
 		// a fresh instance with no configuration at all must turn the radio on
-		BluetoothSetupConfiguration fresh = new BluetoothSetupConfiguration(opModesService, null,
+		BluetoothSetupService fresh = new BluetoothSetupService(opModesService, null,
 				systemHealthService);
 		fresh.setCommand(tmpFile.getAbsolutePath());
 		assertThat(fresh.isAlwaysOn(), is(true));
@@ -710,7 +710,7 @@ public class BluetoothSetupConfigurationTests {
 		replayAll();
 		replay(scheduler);
 
-		BluetoothSetupConfiguration s = new BluetoothSetupConfiguration(opModesService, scheduler,
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
 				systemHealthService);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
@@ -884,14 +884,14 @@ public class BluetoothSetupConfigurationTests {
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		ScheduledFuture future2 = EasyMock.createMock(ScheduledFuture.class);
 		expect(scheduler.scheduleWithFixedDelay(anyObject(Runnable.class), anyObject(Instant.class),
-				eq(Duration.ofSeconds(BluetoothSetupConfiguration.SCHEDULE_TICK_SECONDS))))
-						.andReturn(future1).andReturn(future2);
+				eq(Duration.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS)))).andReturn(future1)
+						.andReturn(future2);
 		expect(future1.cancel(false)).andReturn(true).times(1);
 		expect(future2.cancel(false)).andReturn(true).times(1);
 		replayAll();
 		replay(scheduler, future1, future2);
 
-		BluetoothSetupConfiguration s = new BluetoothSetupConfiguration(opModesService, scheduler,
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
 				systemHealthService);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
@@ -925,13 +925,13 @@ public class BluetoothSetupConfigurationTests {
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		ScheduledFuture future = EasyMock.createMock(ScheduledFuture.class);
 		expect(scheduler.scheduleWithFixedDelay(anyObject(Runnable.class), anyObject(Instant.class),
-				eq(Duration.ofSeconds(BluetoothSetupConfiguration.SCHEDULE_TICK_SECONDS))))
-						.andReturn(future).times(1);
+				eq(Duration.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS)))).andReturn(future)
+						.times(1);
 		expect(future.cancel(false)).andReturn(true).times(1);
 		replayAll();
 		replay(scheduler, future);
 
-		BluetoothSetupConfiguration s = new BluetoothSetupConfiguration(opModesService, scheduler,
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
 				systemHealthService);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));

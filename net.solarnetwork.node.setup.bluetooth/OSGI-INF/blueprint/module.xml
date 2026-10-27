@@ -20,7 +20,7 @@
 	<reference id="systemHealthService" interface="net.solarnetwork.node.service.SystemHealthService"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basename" value="net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration"/>
+		<property name="basename" value="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"/>
 	</bean>
 
 	<!-- Published Services -->
@@ -44,9 +44,9 @@
 				</beans:array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration"
+		<bean class="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
 				init-method="startup" destroy-method="shutdown">
-			<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration"
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
 				autowire-on-update="true" update-method="configurationChanged"/>
 			<argument ref="opModesService"/>
 			<argument ref="taskScheduler"/>

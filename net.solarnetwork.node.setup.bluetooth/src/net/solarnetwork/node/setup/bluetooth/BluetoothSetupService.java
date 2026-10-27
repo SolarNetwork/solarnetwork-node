@@ -1,5 +1,5 @@
 /* ==================================================================
- * BluetoothSetupConfiguration.java - 6/10/2026 8:30:00 AM
+ * BluetoothSetupService.java - 6/10/2026 8:30:00 AM
  *
  * Copyright 2026 SolarNetwork.net Dev Team
  *
@@ -117,7 +117,7 @@ import net.solarnetwork.util.DateUtils;
  * @author elijah
  * @version 1.0
  */
-public class BluetoothSetupConfiguration extends BaseIdentifiable
+public class BluetoothSetupService extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler, EventHandler {
 
 	/** The {@code solarcfg} service name for the Bluetooth radio. */
@@ -228,13 +228,13 @@ public class BluetoothSetupConfiguration extends BaseIdentifiable
 	 * @param systemHealthService
 	 *        the system health service
 	 */
-	public BluetoothSetupConfiguration(OperationalModesService opModesService,
-			TaskScheduler taskScheduler, SystemHealthService systemHealthService) {
+	public BluetoothSetupService(OperationalModesService opModesService, TaskScheduler taskScheduler,
+			SystemHealthService systemHealthService) {
 		super();
 		this.opModesService = opModesService;
 		this.taskScheduler = taskScheduler;
 		this.systemHealthService = systemHealthService;
-		setUid("net.solarnetwork.node.setup.bluetooth.BluetoothSetupConfiguration");
+		setUid("net.solarnetwork.node.setup.bluetooth.BluetoothSetupService");
 		setDisplayName("Bluetooth Setup");
 	}
 
