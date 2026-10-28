@@ -24,7 +24,6 @@ package net.solarnetwork.node.datum.battery.mock;
 
 import static java.util.Collections.emptyList;
 import static net.solarnetwork.service.OptionalService.service;
-import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.time.temporal.ChronoUnit;
@@ -42,7 +41,6 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamples;
-import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.EnergyStorageDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleEnergyStorageDatum;
@@ -72,7 +70,7 @@ import net.solarnetwork.util.StringUtils;
  * <ul>
  * <li><b>target power rate</b> - the {@code targetPowerRateControlId}</li>
  * <li><b>SOC</b> - the {@code socControlId}</li>
- * <li>
+ * </ul>
  *
  * <p>
  * Both controls can be set with the
@@ -81,6 +79,13 @@ import net.solarnetwork.util.StringUtils;
  * control manages the {@code availableEnergy} value, as a percentage of the
  * {@code energyCapacity}. The SOC control is really meant for testing purposes
  * rather than simulation.
+ * </p>
+ *
+ * <p>
+ * The available energy changes by the target power rate over time. It is
+ * brought up to date whenever a datum is read, and before the power rate, SOC,
+ * or energy capacity changes, so a new power rate applies from the time it was
+ * set. Reading a control value does not change it.
  * </p>
  *
  * @author matt
@@ -112,6 +117,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 
 	private double targetPowerRate = 0.0;
 	private double availableEnergy = DEFAULT_ENERGY_CAPACITY;
+	private @Nullable Instant availableEnergyDate;
 
 	private @Nullable SimpleEnergyStorageDatum lastDatum;
 
@@ -170,22 +176,50 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public @Nullable NodeControlInfo getCurrentControlInfo(String controlId) {
+	public synchronized @Nullable NodeControlInfo getCurrentControlInfo(String controlId) {
 		final String targetPowerRateControlId = resolvePlaceholders(this.targetPowerRateControlId, null);
 		if ( targetPowerRateControlId != null && targetPowerRateControlId.equals(controlId) ) {
-			EnergyStorageDatum d = nonnull(readCurrentDatum(), "Datum");
 			return newSimpleNodeControlInfoDatum(targetPowerRateControlId, NodeControlPropertyType.Float,
-					"W", nonnull(d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
-							POWER_RATE_PROP), "Power rate"));
+					"W", powerRateValue());
 		}
 		final String socControlId = resolvePlaceholders(this.socControlId, null);
 		if ( socControlId != null && socControlId.equals(controlId) ) {
-			EnergyStorageDatum d = nonnull(readCurrentDatum(), "Datum");
+			// the SOC as of now, without changing the available energy
 			return newSimpleNodeControlInfoDatum(socControlId, NodeControlPropertyType.Percent, null,
-					nonnull(d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
-							EnergyStorageDatum.STATE_OF_CHARGE_PERCENTAGE_KEY), "SOC"));
+					socValue(availableEnergyAt(getClock().instant())));
 		}
 		return null;
+	}
+
+	/**
+	 * Get the power rate control value, as reported in a datum.
+	 *
+	 * @return the value
+	 */
+	private String powerRateValue() {
+		return String.valueOf((int) this.targetPowerRate);
+	}
+
+	/**
+	 * Get a SOC control value, as reported in a datum.
+	 *
+	 * @param energy
+	 *        the available energy
+	 * @return the value
+	 */
+	private String socValue(double energy) {
+		return String.valueOf(socPercentage(energy));
+	}
+
+	/**
+	 * Get a state of charge.
+	 *
+	 * @param energy
+	 *        the available energy
+	 * @return the state of charge, as a percentage from 0 - 100
+	 */
+	private float socPercentage(double energy) {
+		return (float) ((energy / this.energyCapacity) * 100.0);
 	}
 
 	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId,
@@ -249,16 +283,16 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		final String controlId = resolvePlaceholders(this.targetPowerRateControlId);
 		if ( controlId != null && Double.compare(oldValue, updatedValue) != 0 ) {
 			SimpleNodeControlInfoDatum info = newSimpleNodeControlInfoDatum(controlId,
-					NodeControlPropertyType.Float, "W", String.valueOf((int) updatedValue));
+					NodeControlPropertyType.Float, "W", powerRateValue());
 			postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		}
 		return true;
 	}
 
 	/**
-	 * Update the state of charge, as a percentage between 0 - 100.
+	 * Update the state of charge from an instruction.
 	 *
-	 * @param newValued
+	 * @param newValue
 	 *        the state of charge to set, between 0 and 100
 	 * @return {@code true} if {@code newValue} is not {@code null}
 	 */
@@ -266,20 +300,68 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		if ( newValue == null ) {
 			return false;
 		}
-		final double soc = Math.max(0, Math.min(1.0, newValue.doubleValue() / 100.0));
-		final double newAvailEnergy = soc * energyCapacity;
-		final double oldAvailEnergy = this.availableEnergy;
-		this.availableEnergy = newAvailEnergy;
+		final double oldAvailEnergy = applySoc(newValue.doubleValue());
+		final double newAvailEnergy = this.availableEnergy;
 
 		// if the value changed, post EVENT_TOPIC_CONTROL_INFO_CHANGED
 		final String controlId = resolvePlaceholders(this.socControlId);
 		if ( controlId != null && Double.compare(newAvailEnergy, oldAvailEnergy) != 0 ) {
 			SimpleNodeControlInfoDatum info = newSimpleNodeControlInfoDatum(controlId,
-					NodeControlPropertyType.Percent, null, String.valueOf((float) soc * 100.0f));
+					NodeControlPropertyType.Percent, null, socValue(newAvailEnergy));
 			postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		}
 
 		return true;
+	}
+
+	/**
+	 * Set the available energy from a state of charge.
+	 *
+	 * @param soc
+	 *        the state of charge to set, between 0 and 100
+	 * @return the available energy before the change
+	 */
+	private synchronized double applySoc(double soc) {
+		updateAvailableEnergy(getClock().instant());
+		final double oldAvailEnergy = this.availableEnergy;
+		this.availableEnergy = Math.max(0, Math.min(1.0, soc / 100.0)) * energyCapacity;
+		return oldAvailEnergy;
+	}
+
+	/**
+	 * Bring the available energy up to date.
+	 *
+	 * @param date
+	 *        the date to update the available energy to
+	 */
+	private synchronized void updateAvailableEnergy(Instant date) {
+		this.availableEnergy = availableEnergyAt(date);
+		this.availableEnergyDate = date;
+	}
+
+	/**
+	 * Get the available energy at a given date, without changing it.
+	 *
+	 * <p>
+	 * The energy changes by the target power rate, in whole watts, over the
+	 * time since the available energy was last brought up to date, limited to
+	 * the energy capacity.
+	 * </p>
+	 *
+	 * @param date
+	 *        the date
+	 * @return the available energy at {@code date}
+	 */
+	private synchronized double availableEnergyAt(Instant date) {
+		final double availCapacity = this.availableEnergy;
+		final double rate = (int) this.targetPowerRate;
+		final Instant since = this.availableEnergyDate;
+		if ( rate == 0 || since == null ) {
+			return availCapacity;
+		}
+		final double hoursDiff = (double) since.until(date, ChronoUnit.MILLIS)
+				/ TimeUnit.HOURS.toMillis(1);
+		return Math.max(0.0, Math.min(this.energyCapacity, availCapacity + hoursDiff * rate));
 	}
 
 	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
@@ -321,7 +403,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private synchronized String statusMessage(Locale locale) {
-		final double currentCapacity = this.availableEnergy;
+		final double currentCapacity = availableEnergyAt(getClock().instant());
 		final double totalCapacity = this.energyCapacity;
 		final int rate = (int) this.targetPowerRate;
 		final int soc = (int) ((currentCapacity / totalCapacity) * 100.0);
@@ -331,29 +413,18 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 
 	private synchronized SimpleEnergyStorageDatum sample() {
 		final Instant now = getClock().instant();
+		updateAvailableEnergy(now);
 
-		double availCapacity = this.availableEnergy;
+		final double availCapacity = this.availableEnergy;
 		final double totalCapacity = this.energyCapacity;
-		final double rate = (int) this.targetPowerRate;
-		final double soc = ((availCapacity / totalCapacity) * 100.0);
 
 		final DatumSamples s = new DatumSamples();
-		s.putInstantaneousSampleValue(POWER_RATE_PROP, (int) rate);
-
-		if ( rate != 0 && lastDatum != null ) {
-			double hoursDiff = (double) nonnull(lastDatum.getTimestamp(), "Datum timestamp").until(now,
-					ChronoUnit.MILLIS) / TimeUnit.HOURS.toMillis(1);
-			double newCapacity = Math.max(0.0,
-					Math.min(totalCapacity, availCapacity + hoursDiff * rate));
-			if ( newCapacity != availCapacity ) {
-				this.availableEnergy = newCapacity;
-			}
-		}
+		s.putInstantaneousSampleValue(POWER_RATE_PROP, (int) this.targetPowerRate);
 
 		final SimpleEnergyStorageDatum newDatum = new SimpleEnergyStorageDatum(sourceId, now, s);
 		newDatum.setAvailableEnergy((long) availCapacity);
 		newDatum.setEnergyCapacity((long) totalCapacity);
-		newDatum.setAvailableEnergyPercentage((float) soc);
+		newDatum.setAvailableEnergyPercentage(socPercentage(availCapacity));
 
 		this.lastDatum = newDatum;
 		return newDatum;
@@ -435,7 +506,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	public final synchronized void setInitialSoc(double initialSoc) {
 		this.initialSoc = initialSoc;
 		if ( lastDatum == null ) {
-			updateSoc(initialSoc);
+			applySoc(initialSoc);
 		}
 	}
 
@@ -460,6 +531,8 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 *        the rate to set in watts
 	 */
 	public synchronized final void setTargetPowerRate(double targetPowerRate) {
+		// the energy up to now changes at the previous rate
+		updateAvailableEnergy(getClock().instant());
 		this.targetPowerRate = (targetPowerRate > 0 ? Math.min(targetPowerRate, maxPowerRateCharge)
 				: targetPowerRate < 0 ? Math.max(targetPowerRate, maxPowerRateDischarge)
 						: targetPowerRate);
@@ -481,12 +554,13 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 *        the energyCapacity to set
 	 */
 	public synchronized final void setEnergyCapacity(double energyCapacity) {
+		updateAvailableEnergy(getClock().instant());
 		this.energyCapacity = (energyCapacity < 0.0 ? 0.0 : energyCapacity);
 		if ( this.energyCapacity < this.availableEnergy ) {
 			this.availableEnergy = this.energyCapacity;
 		}
 		if ( lastDatum == null ) {
-			updateSoc(initialSoc);
+			applySoc(initialSoc);
 		}
 	}
 
