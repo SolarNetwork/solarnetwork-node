@@ -34,6 +34,12 @@
 		</property>
 	</bean>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">

@@ -25,6 +25,7 @@ package net.solarnetwork.node.control.opmode;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
 import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
+import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -108,32 +109,32 @@ public class OperationalModeSwitch extends BaseIdentifiable
 	}
 
 	@Override
-	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
-		String mode = getMode();
-		String controlId = getControlId();
+	public @Nullable InstructionStatus processInstruction(final Instruction instruction) {
+		final String mode = getMode();
+		final String controlId = getControlId();
 		if ( instruction == null || !TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic())
 				|| mode == null || controlId == null ) {
 			return null;
 		}
-		String paramValue = instruction.getParameterValue(controlId);
+		final String paramValue = instruction.getParameterValue(controlId);
 		if ( paramValue == null ) {
 			return null;
 		}
-		boolean active = StringUtils.parseBoolean(paramValue);
-		OperationalModesService service = opModesService();
+		final boolean desiredActive = StringUtils.parseBoolean(paramValue);
+		final OperationalModesService service = opModesService();
 		if ( service == null ) {
 			log.warn(
 					"OperationalModesService not available; cannot manage [{}] mode enabled for control [{}] to [{}]",
-					mode, controlId, active);
+					mode, controlId, desiredActive);
 			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
-		if ( active ) {
+		if ( desiredActive ) {
 			service.enableOperationalModes(singleton(mode));
 		} else {
 			service.disableOperationalModes(singleton(mode));
 		}
-		log.info("Operational mode [{}] {} for control [{}]", mode, active ? "enabled" : "disabled",
-				controlId);
+		log.info("Operational mode [{}] {} for control [{}]", mode,
+				desiredActive ? "enabled" : "disabled", controlId);
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
@@ -167,7 +168,7 @@ public class OperationalModeSwitch extends BaseIdentifiable
 	}
 
 	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
-		final EventAdmin admin = OptionalService.service(eventAdmin);
+		final EventAdmin admin = service(eventAdmin);
 		if ( admin == null ) {
 			return;
 		}

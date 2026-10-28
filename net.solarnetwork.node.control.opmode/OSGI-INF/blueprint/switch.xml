@@ -48,6 +48,7 @@
 		<bean class="net.solarnetwork.node.control.opmode.OperationalModeSwitch">
 			<argument ref="operationalModesService"/>
 			<property name="messageSource" ref="messageSourceSwitch"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
