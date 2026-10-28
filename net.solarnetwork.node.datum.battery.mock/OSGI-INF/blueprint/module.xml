@@ -34,6 +34,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Services -->
 		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -74,6 +80,7 @@
 						<bean class="net.solarnetwork.node.datum.battery.mock.MockBatteryDatumDataSource">
 							<property name="messageSource" ref="jobMessageSource"/>
 							<property name="placeholderService" ref="placeholderService"/>
+							<property name="eventAdmin" ref="eventAdmin"/>
 						</bean>
 					</property>
 				</bean>

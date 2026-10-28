@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.battery.mock;
 
 import static java.util.Collections.emptyList;
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.time.temporal.ChronoUnit;
@@ -32,6 +34,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.Nullable;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -47,8 +52,10 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -58,8 +65,26 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Simple simulated battery.
  *
+ * <p>
+ * This class also implements {@link NodeControlProvider} and can expose two
+ * controls:
+ *
+ * <ul>
+ * <li><b>target power rate</b> - the {@code targetPowerRateControlId}</li>
+ * <li><b>SOC</b> - the {@code socControlId}</li>
+ * <li>
+ *
+ * <p>
+ * Both controls can be set with the
+ * {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} topic. The target
+ * power rate control manages the {@code targetPowerRate} value, while the SOC
+ * control manages the {@code availableEnergy} value, as a percentage of the
+ * {@code energyCapacity}. The SOC control is really meant for testing purposes
+ * rather than simulation.
+ * </p>
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -76,9 +101,10 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	/** The {@code initialSoc} property default value. */
 	public static final double DEFAULT_INITIAL_SOC = 100.0;
 
-	private String sourceId;
-	private String targetPowerRateControlId;
-	private String socControlId;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
+	private @Nullable String sourceId;
+	private @Nullable String targetPowerRateControlId;
+	private @Nullable String socControlId;
 	private double energyCapacity = DEFAULT_ENERGY_CAPACITY;
 	private double maxPowerRateCharge = DEFAULT_MAX_POWER_RATE;
 	private double maxPowerRateDischarge = -DEFAULT_MAX_POWER_RATE;
@@ -87,7 +113,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	private double targetPowerRate = 0.0;
 	private double availableEnergy = DEFAULT_ENERGY_CAPACITY;
 
-	private SimpleEnergyStorageDatum lastDatum;
+	private @Nullable SimpleEnergyStorageDatum lastDatum;
 
 	/**
 	 * Constructor.
@@ -114,7 +140,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public EnergyStorageDatum readCurrentDatum() {
+	public @Nullable EnergyStorageDatum readCurrentDatum() {
 		return sample();
 	}
 
@@ -144,26 +170,26 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public NodeControlInfo getCurrentControlInfo(String controlId) {
+	public @Nullable NodeControlInfo getCurrentControlInfo(String controlId) {
 		final String targetPowerRateControlId = resolvePlaceholders(this.targetPowerRateControlId, null);
 		if ( targetPowerRateControlId != null && targetPowerRateControlId.equals(controlId) ) {
-			EnergyStorageDatum d = readCurrentDatum();
+			EnergyStorageDatum d = nonnull(readCurrentDatum(), "Datum");
 			return newSimpleNodeControlInfoDatum(targetPowerRateControlId, NodeControlPropertyType.Float,
-					"W", d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
-							POWER_RATE_PROP));
+					"W", nonnull(d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
+							POWER_RATE_PROP), "Power rate"));
 		}
 		final String socControlId = resolvePlaceholders(this.socControlId, null);
 		if ( socControlId != null && socControlId.equals(controlId) ) {
-			EnergyStorageDatum d = readCurrentDatum();
+			EnergyStorageDatum d = nonnull(readCurrentDatum(), "Datum");
 			return newSimpleNodeControlInfoDatum(socControlId, NodeControlPropertyType.Percent, null,
-					d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
-							EnergyStorageDatum.STATE_OF_CHARGE_PERCENTAGE_KEY));
+					nonnull(d.asSampleOperations().getSampleString(DatumSamplesType.Instantaneous,
+							EnergyStorageDatum.STATE_OF_CHARGE_PERCENTAGE_KEY), "SOC"));
 		}
 		return null;
 	}
 
 	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId,
-			NodeControlPropertyType type, String unit, String value) {
+			NodeControlPropertyType type, @Nullable String unit, String value) {
 		// @formatter:off
 		NodeControlInfo info = BasicNodeControlInfo.builder()
 				.withControlId(controlId)
@@ -177,12 +203,12 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
 	}
 
 	@Override
-	public synchronized InstructionStatus processInstruction(Instruction instruction) {
+	public synchronized @Nullable InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -193,14 +219,14 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		for ( String paramName : instruction.getParameterNames() ) {
 			if ( targetPowerRateControlId != null && targetPowerRateControlId.equals(paramName) ) {
 				Number newValue = StringUtils.numberValue(instruction.getParameterValue(paramName));
-				if ( updateTargetPowerRate(newValue) ) {
+				if ( newValue != null && updateTargetPowerRate(newValue) ) {
 					result = InstructionState.Completed;
 				} else {
 					result = InstructionState.Declined;
 				}
 			} else if ( socControlId != null && socControlId.equals(paramName) ) {
 				Number newValue = StringUtils.numberValue(instruction.getParameterValue(paramName));
-				if ( updateSoc(newValue) ) {
+				if ( newValue != null && updateSoc(newValue) ) {
 					result = InstructionState.Completed;
 				} else {
 					result = InstructionState.Declined;
@@ -210,22 +236,59 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		return (result != null ? InstructionUtils.createStatus(instruction, result) : null);
 	}
 
-	private boolean updateTargetPowerRate(Number newValue) {
+	private synchronized boolean updateTargetPowerRate(Number newValue) {
 		if ( newValue == null ) {
 			return false;
 		}
+		final double oldValue = this.targetPowerRate;
+
 		setTargetPowerRate(newValue.doubleValue());
+
+		// if the value changed, post EVENT_TOPIC_CONTROL_INFO_CHANGED
+		final double updatedValue = this.targetPowerRate;
+		final String controlId = resolvePlaceholders(this.targetPowerRateControlId);
+		if ( controlId != null && Double.compare(oldValue, updatedValue) != 0 ) {
+			SimpleNodeControlInfoDatum info = newSimpleNodeControlInfoDatum(controlId,
+					NodeControlPropertyType.Float, null, String.valueOf(updatedValue));
+			postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
+		}
 		return true;
 	}
 
+	/**
+	 * Update the state of charge, as a percentage between 0 - 100.
+	 *
+	 * @param newValued
+	 *        the state of charge to set, between 0 and 100
+	 * @return {@code true} if {@code newValue} is not {@code null}
+	 */
 	private synchronized boolean updateSoc(Number newValue) {
 		if ( newValue == null ) {
 			return false;
 		}
 		final double soc = Math.max(0, Math.min(1.0, newValue.doubleValue() / 100.0));
 		final double newAvailEnergy = soc * energyCapacity;
+		final double oldAvailEnergy = this.availableEnergy;
 		this.availableEnergy = newAvailEnergy;
+
+		// if the value changed, post EVENT_TOPIC_CONTROL_INFO_CHANGED
+		final String controlId = resolvePlaceholders(this.socControlId);
+		if ( controlId != null && Double.compare(newAvailEnergy, oldAvailEnergy) != 0 ) {
+			SimpleNodeControlInfoDatum info = newSimpleNodeControlInfoDatum(controlId,
+					NodeControlPropertyType.Percent, null, String.valueOf((float) soc * 100.0f));
+			postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
+		}
+
 		return true;
+	}
+
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
+		final EventAdmin admin = service(eventAdmin);
+		if ( admin == null ) {
+			return;
+		}
+		Event event = DatumEvents.datumEvent(topic, info);
+		admin.postEvent(event);
 	}
 
 	@Override
@@ -262,7 +325,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		final double totalCapacity = this.energyCapacity;
 		final int rate = (int) this.targetPowerRate;
 		final int soc = (int) ((currentCapacity / totalCapacity) * 100.0);
-		return getMessageSource().getMessage("status.msg",
+		return messageSource().getMessage("status.msg",
 				new Object[] { soc, (int) currentCapacity, rate }, locale);
 	}
 
@@ -278,8 +341,8 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		s.putInstantaneousSampleValue(POWER_RATE_PROP, (int) rate);
 
 		if ( rate != 0 && lastDatum != null ) {
-			double hoursDiff = (double) lastDatum.getTimestamp().until(now, ChronoUnit.MILLIS)
-					/ TimeUnit.HOURS.toMillis(1);
+			double hoursDiff = (double) nonnull(lastDatum.getTimestamp(), "Datum timestamp").until(now,
+					ChronoUnit.MILLIS) / TimeUnit.HOURS.toMillis(1);
 			double newCapacity = Math.max(0.0,
 					Math.min(totalCapacity, availCapacity + hoursDiff * rate));
 			if ( newCapacity != availCapacity ) {
@@ -301,7 +364,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the source ID
 	 */
-	public final String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -311,7 +374,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 * @param sourceId
 	 *        the source ID to set
 	 */
-	public final void setSourceId(String sourceId) {
+	public final void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -320,7 +383,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the control ID
 	 */
-	public final String getTargetPowerRateControlId() {
+	public final @Nullable String getTargetPowerRateControlId() {
 		return targetPowerRateControlId;
 	}
 
@@ -330,7 +393,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 * @param targetPowerRateControlId
 	 *        the control ID to set
 	 */
-	public final void setTargetPowerRateControlId(String targetPowerRateControlId) {
+	public final void setTargetPowerRateControlId(@Nullable String targetPowerRateControlId) {
 		this.targetPowerRateControlId = targetPowerRateControlId;
 	}
 
@@ -339,7 +402,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 *
 	 * @return the control ID
 	 */
-	public final String getSocControlId() {
+	public final @Nullable String getSocControlId() {
 		return socControlId;
 	}
 
@@ -349,7 +412,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 	 * @param socControlId
 	 *        the control ID to set
 	 */
-	public final void setSocControlId(String socControlId) {
+	public final void setSocControlId(@Nullable String socControlId) {
 		this.socControlId = socControlId;
 	}
 
@@ -468,4 +531,23 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		setTargetPowerRate(targetPowerRate); // enforce new max
 	}
 
+	/**
+	 * Get the event admin service.
+	 *
+	 * @return the event admin service
+	 */
+	public final @Nullable OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set the event admin sevice.
+	 *
+	 * @param eventAdmin
+	 *        the service to set
+	 * @since 1.3
+	 */
+	public final void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
 }
