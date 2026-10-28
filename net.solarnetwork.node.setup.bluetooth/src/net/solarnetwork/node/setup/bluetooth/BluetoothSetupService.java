@@ -50,7 +50,6 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
@@ -430,7 +429,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 					resultParams.put(PARAM_SERVICE_RESULT, currentStatus());
 					break;
 				case ACTION_ENABLE:
-					enableForSeconds(parseDuration(instruction.getParameterValue(PARAM_DURATION)));
+					enableForSeconds(BluetoothSetupUtils
+							.parseDuration(instruction.getParameterValue(PARAM_DURATION)));
 					resultParams.put(PARAM_SERVICE_RESULT, currentStatus());
 					break;
 				case ACTION_DISABLE:
@@ -458,17 +458,6 @@ public class BluetoothSetupService extends BaseIdentifiable
 			resultState = InstructionState.Declined;
 		}
 		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
-	}
-
-	private static long parseDuration(@Nullable String value) {
-		if ( value == null || value.isEmpty() ) {
-			return 0L;
-		}
-		try {
-			return Long.parseLong(value.trim());
-		} catch ( NumberFormatException e ) {
-			throw new IllegalArgumentException("Invalid duration [" + value + "]: not a number.");
-		}
 	}
 
 	/**
@@ -787,7 +776,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 */
 	public synchronized boolean reconcile() {
 		final boolean want = desiredState();
-		final Status status = currentStatus();
+		final BluetoothSetupStatus status = currentStatus();
 		if ( status == null ) {
 			log.warn("Unable to determine Bluetooth setup radio status; not changing state.");
 			return false;
@@ -930,9 +919,11 @@ public class BluetoothSetupService extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		final Status status = currentStatus();
+		final BluetoothSetupStatus status = currentStatus();
 		final List<SettingSpecifier> result = new ArrayList<>(16);
-		result.add(new BasicTitleSettingSpecifier("status", statusMessage(status)));
+		result.add(new BasicTitleSettingSpecifier("status",
+				BluetoothSetupUtils.statusMessage(getMessageSource(), status, opMode, offlineOpMode,
+						offlineThresholdMinutes, metadataConfigured() ? metadataPath : null)));
 
 		BasicTextFieldSettingSpecifier enable = new BasicTextFieldSettingSpecifier("enableMinutes", "0");
 		enable.setTransient(true);
@@ -963,293 +954,13 @@ public class BluetoothSetupService extends BaseIdentifiable
 		return result;
 	}
 
-	private String statusMessage(@Nullable Status status) {
-		MessageSource messageSource = getMessageSource();
-		if ( messageSource == null ) {
-			return "";
-		}
-		if ( status == null ) {
-			return messageSource.getMessage("status.unknown", null, "Unknown", Locale.getDefault());
-		}
-		final List<String> reasons = new ArrayList<>(3);
-		if ( status.isAlwaysOn() ) {
-			reasons.add(
-					messageSource.getMessage("status.alwaysOn", null, "always on", Locale.getDefault()));
-		}
-		if ( status.isOpModeActive() ) {
-			Object expires = (status.getOpModeExpires() != null
-					? Instant.ofEpochMilli(status.getOpModeExpires())
-					: messageSource.getMessage("status.noExpiry", null, "no expiry",
-							Locale.getDefault()));
-			reasons.add(messageSource.getMessage("status.opMode", new Object[] { opMode, expires },
-					"operational mode active", Locale.getDefault()));
-		}
-		if ( status.isOffline() ) {
-			reasons.add(messageSource.getMessage("status.offline",
-					new Object[] { offlineOpMode, status.getOfflineSince() }, "offline mode active",
-					Locale.getDefault()));
-		} else if ( status.getOfflineSince() != null ) {
-			reasons.add(messageSource.getMessage("status.offlinePending",
-					new Object[] { offlineOpMode, status.getOfflineSince(),
-							status.getOfflineSince().plus(Duration.ofMinutes(offlineThresholdMinutes)) },
-					"offline mode active", Locale.getDefault()));
-		}
-		if ( metadataConfigured() ) {
-			final String readError = status.getScheduleMetadataError();
-			if ( !SCHEDULE_SOURCE_METADATA.equals(status.getScheduleSource()) ) {
-				reasons.add(messageSource.getMessage("status.scheduleMetadataNotLoaded",
-						new Object[] { metadataPath, readError != null ? readError : "not read yet" },
-						"metadata schedule not loaded", Locale.getDefault()));
-			} else if ( readError != null ) {
-				reasons.add(messageSource.getMessage("status.scheduleMetadataStale",
-						new Object[] { metadataPath, readError }, "metadata unavailable",
-						Locale.getDefault()));
-			} else {
-				reasons.add(messageSource.getMessage("status.scheduleMetadata",
-						new Object[] { metadataPath }, "schedule from metadata", Locale.getDefault()));
-			}
-		}
-		if ( status.getScheduleError() != null ) {
-			reasons.add(messageSource.getMessage("status.scheduleInvalid",
-					new Object[] { status.getScheduleError() }, "schedule invalid",
-					Locale.getDefault()));
-		} else if ( status.getSchedule() != null && !status.getSchedule().isEmpty() ) {
-			if ( status.getScheduleNext() == null && !status.isScheduleActive() ) {
-				reasons.add(messageSource.getMessage("status.scheduleNextNone",
-						new Object[] { status.getSchedule(), status.getTimeZone() },
-						"schedule has no window within the next year", Locale.getDefault()));
-			} else {
-				Object next = (status.getScheduleNext() != null
-						? Instant.ofEpochMilli(status.getScheduleNext())
-						: messageSource.getMessage("status.noExpiry", null, "no expiry",
-								Locale.getDefault()));
-				reasons.add(messageSource.getMessage(
-						status.isScheduleActive() ? "status.schedule" : "status.scheduleNext",
-						new Object[] { status.getSchedule(), status.getTimeZone(), next },
-						status.isScheduleActive() ? "schedule active" : "schedule inactive",
-						Locale.getDefault()));
-			}
-		}
-		String state = messageSource.getMessage(status.isRadioActive() ? "status.on" : "status.off",
-				null, status.isRadioActive() ? "On" : "Off", Locale.getDefault());
-		if ( reasons.isEmpty() ) {
-			return state;
-		}
-		return state + " (" + String.join("; ", reasons) + ")";
-	}
-
-	/**
-	 * The Bluetooth setup radio status.
-	 */
-	public static final class Status {
-
-		private final boolean radioActive;
-		private final boolean discoverable;
-		private final boolean powered;
-		private final boolean installEnabled;
-		private final boolean opModeActive;
-		private final Long opModeExpires;
-		private final boolean offline;
-		private final Instant offlineSince;
-		private final boolean alwaysOn;
-		private final String schedule;
-		private final boolean scheduleActive;
-		private final String scheduleError;
-		private final Long scheduleNext;
-		private final String scheduleSource;
-		private final String scheduleMetadataError;
-		private final String timeZone;
-
-		private Status(boolean radioActive, boolean discoverable, boolean powered,
-				boolean installEnabled, boolean opModeActive, Long opModeExpires, boolean offline,
-				Instant offlineSince, boolean alwaysOn, String schedule, boolean scheduleActive,
-				String scheduleError, Long scheduleNext, String scheduleSource,
-				String scheduleMetadataError, String timeZone) {
-			super();
-			this.radioActive = radioActive;
-			this.discoverable = discoverable;
-			this.powered = powered;
-			this.installEnabled = installEnabled;
-			this.opModeActive = opModeActive;
-			this.opModeExpires = opModeExpires;
-			this.offline = offline;
-			this.offlineSince = offlineSince;
-			this.alwaysOn = alwaysOn;
-			this.schedule = schedule;
-			this.scheduleActive = scheduleActive;
-			this.scheduleError = scheduleError;
-			this.scheduleNext = scheduleNext;
-			this.scheduleSource = scheduleSource;
-			this.scheduleMetadataError = scheduleMetadataError;
-			this.timeZone = timeZone;
-		}
-
-		/**
-		 * Get the radio active state.
-		 *
-		 * @return {@literal true} if the Bluetooth peripheral is running (and
-		 *         so advertising)
-		 */
-		public boolean isRadioActive() {
-			return radioActive;
-		}
-
-		/**
-		 * Get the adapter discoverable state.
-		 *
-		 * @return {@literal true} if the Bluetooth adapter is discoverable
-		 */
-		public boolean isDiscoverable() {
-			return discoverable;
-		}
-
-		/**
-		 * Get the adapter powered state.
-		 *
-		 * @return {@literal true} if the Bluetooth adapter is powered
-		 */
-		public boolean isPowered() {
-			return powered;
-		}
-
-		/**
-		 * Get the OS install-enabled state.
-		 *
-		 * @return {@literal true} if the OS has the peripheral service enabled
-		 *         to start at boot, which the helper sets to the last enable or
-		 *         disable decision
-		 */
-		public boolean isInstallEnabled() {
-			return installEnabled;
-		}
-
-		/**
-		 * Get the operational mode active state.
-		 *
-		 * @return {@literal true} if the configured operational mode is active
-		 */
-		public boolean isOpModeActive() {
-			return opModeActive;
-		}
-
-		/**
-		 * Get the operational mode expiration.
-		 *
-		 * @return the expiration, as milliseconds since the epoch, or
-		 *         {@literal null} if not active or no expiration
-		 */
-		public Long getOpModeExpires() {
-			return opModeExpires;
-		}
-
-		/**
-		 * Get the offline trigger state.
-		 *
-		 * @return {@literal true} if the offline trigger is currently holding
-		 *         the radio on
-		 */
-		public boolean isOffline() {
-			return offline;
-		}
-
-		/**
-		 * Get the time the offline operational mode was first seen active.
-		 *
-		 * @return the time, or {@literal null} if the offline mode is not
-		 *         active
-		 */
-		public Instant getOfflineSince() {
-			return offlineSince;
-		}
-
-		/**
-		 * Get the always-on setting.
-		 *
-		 * @return {@literal true} if the always-on setting is enabled
-		 */
-		public boolean isAlwaysOn() {
-			return alwaysOn;
-		}
-
-		/**
-		 * Get the availability schedule.
-		 *
-		 * @return the schedule in canonical form, empty if none is configured
-		 */
-		public String getSchedule() {
-			return schedule;
-		}
-
-		/**
-		 * Get the schedule active state.
-		 *
-		 * @return {@literal true} if the availability schedule currently allows
-		 *         the radio on
-		 */
-		public boolean isScheduleActive() {
-			return scheduleActive;
-		}
-
-		/**
-		 * Get the schedule error.
-		 *
-		 * @return the reason the configured schedule or time zone could not be
-		 *         used, or {@literal null} if it is valid
-		 */
-		public String getScheduleError() {
-			return scheduleError;
-		}
-
-		/**
-		 * Get the next schedule boundary.
-		 *
-		 * @return the time the schedule next starts or stops allowing the radio
-		 *         on, as milliseconds since the epoch, or {@literal null}
-		 */
-		public Long getScheduleNext() {
-			return scheduleNext;
-		}
-
-		/**
-		 * Get the source of the schedule in effect.
-		 *
-		 * @return {@link BluetoothSetupService#SCHEDULE_SOURCE_METADATA} when
-		 *         the schedule (or its error) comes from metadata, otherwise
-		 *         {@link BluetoothSetupService#SCHEDULE_SOURCE_SETTING}
-		 */
-		public String getScheduleSource() {
-			return scheduleSource;
-		}
-
-		/**
-		 * Get the metadata schedule read problem.
-		 *
-		 * @return why the metadata schedule could not be read, such as the
-		 *         metadata being unavailable or having no schedule at the path,
-		 *         or {@literal null} if it was read or is not configured
-		 */
-		public String getScheduleMetadataError() {
-			return scheduleMetadataError;
-		}
-
-		/**
-		 * Get the effective time zone.
-		 *
-		 * @return the zone ID the schedule is evaluated in, or {@literal null}
-		 *         if the configured zone is invalid
-		 */
-		public String getTimeZone() {
-			return timeZone;
-		}
-	}
-
 	/**
 	 * Get the current status.
 	 *
 	 * @return the status, or {@literal null} if the OS status cannot be
 	 *         determined
 	 */
-	public synchronized @Nullable Status currentStatus() {
+	public synchronized @Nullable BluetoothSetupStatus currentStatus() {
 		boolean active = false;
 		boolean discoverable = false;
 		boolean powered = false;
@@ -1309,7 +1020,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 				next = boundary.atZone(z).toInstant().toEpochMilli();
 			}
 		}
-		return new Status(active, discoverable, powered, enabled, opModeActive, expires,
+		return new BluetoothSetupStatus(active, discoverable, powered, enabled, opModeActive, expires,
 				offlineDetectionActive() && offline, offlineDetectionActive() ? offlineSince : null,
 				alwaysOn, sched != null ? sched.toString() : "", schedActive, scheduleError, next,
 				scheduleSource, metadataConfigured() ? metadataReadError : null,

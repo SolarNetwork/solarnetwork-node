@@ -75,7 +75,7 @@ import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.setup.bluetooth.AvailabilitySchedule;
 import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService;
-import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService.Status;
+import net.solarnetwork.node.setup.bluetooth.BluetoothSetupStatus;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.TextAreaSettingSpecifier;
@@ -228,8 +228,8 @@ public class BluetoothSetupServiceTests {
 		InstructionStatus status = service.processInstruction(instruction(null, null));
 		assertThat(status.getInstructionState(), is(InstructionState.Completed));
 		Object result = status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(result, instanceOf(Status.class));
-		Status s = (Status) result;
+		assertThat(result, instanceOf(BluetoothSetupStatus.class));
+		BluetoothSetupStatus s = (BluetoothSetupStatus) result;
 		assertThat(s.isRadioActive(), is(false));
 		assertThat(s.isOpModeActive(), is(false));
 		assertThat(s.isOffline(), is(false));
@@ -250,7 +250,8 @@ public class BluetoothSetupServiceTests {
 
 		assertThat(status.getInstructionState(), is(InstructionState.Completed));
 		assertThat(expireCapture.getValue(), is(START.plusSeconds(600)));
-		Status s = (Status) status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
+		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat(s.isRadioActive(), is(true));
 		assertThat(s.isOpModeActive(), is(true));
 		assertThat(s.getOpModeExpires(), is(START.plusSeconds(600).toEpochMilli()));
@@ -297,7 +298,8 @@ public class BluetoothSetupServiceTests {
 
 		// THEN
 		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		Status s = (Status) status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
+		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat(s.isRadioActive(), is(false));
 		assertThat(s.isOpModeActive(), is(false));
 		assertThat(actions(), contains("enable", "disable"));
@@ -309,7 +311,8 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		InstructionStatus status = service.processInstruction(instruction("restart", null));
 		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		Status s = (Status) status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
+		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat("restart never turns a gated-off radio on", s.isRadioActive(), is(false));
 		assertThat(radioState(), is(false));
 		assertThat(actions(), contains("restart"));
@@ -327,7 +330,8 @@ public class BluetoothSetupServiceTests {
 		InstructionStatus status = service.processInstruction(instruction("restart", null));
 
 		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		Status s = (Status) status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
+		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat(s.isRadioActive(), is(true));
 		assertThat(radioState(), is(true));
 		assertThat(actions(), contains("enable", "restart"));
@@ -341,7 +345,7 @@ public class BluetoothSetupServiceTests {
 		try {
 			Files.writeString(hangFile.toPath(), "");
 			final long start = System.nanoTime();
-			Status s = service.currentStatus();
+			BluetoothSetupStatus s = service.currentStatus();
 			final long elapsedMs = (System.nanoTime() - start) / 1_000_000L;
 			assertThat("hung helper reported as unknown status", s, is(nullValue()));
 			assertThat("timeout enforced from process start, not after output", elapsedMs < 10_000L,
@@ -358,7 +362,7 @@ public class BluetoothSetupServiceTests {
 		File noisyFile = new File(tmpFile.getAbsolutePath() + ".noisy");
 		try {
 			Files.writeString(noisyFile.toPath(), "");
-			Status s = service.currentStatus();
+			BluetoothSetupStatus s = service.currentStatus();
 			assertThat("status parsed despite large stderr output", s, is(notNullValue()));
 			assertThat(s.isRadioActive(), is(false));
 		} finally {
@@ -440,7 +444,7 @@ public class BluetoothSetupServiceTests {
 		assertThat("threshold reached", radioState(), is(true));
 		assertThat(actions(), contains("enable"));
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.isOffline(), is(true));
 		assertThat(s.getOfflineSince(), is(START));
 	}
@@ -792,7 +796,7 @@ public class BluetoothSetupServiceTests {
 
 		assertThat(radioState(), is(true));
 		assertThat(actions(), contains("enable"));
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.isScheduleActive(), is(true));
 		assertThat(s.getScheduleError(), is(nullValue()));
 		assertThat(s.getTimeZone(), equalTo("Pacific/Auckland"));
@@ -808,7 +812,7 @@ public class BluetoothSetupServiceTests {
 
 		assertThat(radioState(), is(false));
 		assertThat(actions(), is(empty()));
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.isScheduleActive(), is(false));
 		assertThat("next window start", s.getScheduleNext(),
 				equalTo(START.plus(Duration.ofHours(7)).toEpochMilli()));
@@ -821,7 +825,7 @@ public class BluetoothSetupServiceTests {
 
 		startupWithSchedule(WEEKDAY_HOURS, "");
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getTimeZone(), equalTo(ZoneId.systemDefault().getId()));
 		boolean expected = AvailabilitySchedule.parse(WEEKDAY_HOURS)
 				.applies(LocalDateTime.ofInstant(START, ZoneId.systemDefault()));
@@ -836,7 +840,7 @@ public class BluetoothSetupServiceTests {
 		startupWithSchedule(SCHED_HEADER + ",,,,1", "Mars/Olympus");
 
 		assertThat(radioState(), is(false));
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleError(), containsString("Mars/Olympus"));
 		assertThat(s.getTimeZone(), is(nullValue()));
 		assertThat(s.isScheduleActive(), is(false));
@@ -850,7 +854,7 @@ public class BluetoothSetupServiceTests {
 		startupWithSchedule(INVALID_HOURS, "UTC");
 
 		assertThat(radioState(), is(false));
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleError(), containsString("CSV row 2"));
 		SettingSpecifier title = service.getSettingSpecifiers().get(0);
 		assertThat(title, instanceOf(TitleSettingSpecifier.class));
@@ -858,7 +862,7 @@ public class BluetoothSetupServiceTests {
 				containsString("invalid"));
 		// the instruction result carries the error too
 		InstructionStatus status = service.processInstruction(instruction("status", null));
-		Status result = (Status) status.getResultParameters()
+		BluetoothSetupStatus result = (BluetoothSetupStatus) status.getResultParameters()
 				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat(result.getScheduleError(), containsString("CSV row 2"));
 	}
@@ -988,7 +992,8 @@ public class BluetoothSetupServiceTests {
 		assertThat(status.getInstructionState(), is(InstructionState.Completed));
 		assertThat(expireCapture.getValue(), is(START.plusSeconds(600)));
 		assertThat("override turns the radio on outside the window", radioState(), is(true));
-		Status s = (Status) status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
+		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat(s.isScheduleActive(), is(false));
 		assertThat(s.isOpModeActive(), is(true));
 	}
@@ -1015,7 +1020,7 @@ public class BluetoothSetupServiceTests {
 		advanceClock(Duration.ofHours(13)); // 13:00 UTC, inside
 		startupWithSchedule(SCHED_HEADER + ",,mon-fri,7-18,1", "UTC");
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 
 		assertThat(s.getSchedule(), equalTo(",,Mon-Fri,7-18,1"));
 		assertThat(s.isScheduleActive(), is(true));
@@ -1184,7 +1189,7 @@ public class BluetoothSetupServiceTests {
 		startWithMetadata(WEEKDAY_HOURS);
 
 		assertThat("metadata schedule turns radio on", radioState(), is(true));
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
 		assertThat(s.getScheduleMetadataError(), is(nullValue()));
 		assertThat(s.getScheduleError(), is(nullValue()));
@@ -1192,7 +1197,7 @@ public class BluetoothSetupServiceTests {
 		assertThat(statusTitleText(), containsString("schedule from metadata '" + META_PATH + "'"));
 
 		InstructionStatus status = service.processInstruction(instruction("status", null));
-		Status result = (Status) status.getResultParameters()
+		BluetoothSetupStatus result = (BluetoothSetupStatus) status.getResultParameters()
 				.get(InstructionHandler.PARAM_SERVICE_RESULT);
 		assertThat(result.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
 	}
@@ -1207,7 +1212,7 @@ public class BluetoothSetupServiceTests {
 		startWithMetadata(WEEKDAY_HOURS);
 		service.scheduleTick();
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
 		assertThat(s.getScheduleMetadataError(), is(nullValue()));
 		assertThat(radioState(), is(false));
@@ -1221,7 +1226,7 @@ public class BluetoothSetupServiceTests {
 
 		metadataServiceRef.service = null;
 		startWithMetadata(WEEKDAY_HOURS);
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat("inline used", s.getScheduleSource(),
 				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
 		assertThat(s.getScheduleMetadataError(), containsString("no Metadata Service"));
@@ -1240,7 +1245,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 
 		startWithMetadata(ALWAYS);
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
 		assertThat(s.getScheduleMetadataError(), containsString("metadata unavailable"));
 		assertThat("inline schedule applies", radioState(), is(true));
@@ -1267,7 +1272,7 @@ public class BluetoothSetupServiceTests {
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat("last result kept", s.getScheduleSource(),
 				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
 		assertThat(s.getScheduleMetadataError(), containsString("offline"));
@@ -1293,7 +1298,7 @@ public class BluetoothSetupServiceTests {
 
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat("outage does not restore the older schedule", radioState(), is(false));
 		assertThat(s.getScheduleError(), containsString("metadata schedule invalid"));
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
@@ -1308,7 +1313,7 @@ public class BluetoothSetupServiceTests {
 		startWithMetadata(ALWAYS);
 		service.scheduleTick();
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
 		assertThat(s.getScheduleMetadataError(), equalTo("no schedule at " + META_PATH));
 		assertThat(radioState(), is(true));
@@ -1322,7 +1327,7 @@ public class BluetoothSetupServiceTests {
 
 		startWithMetadata(ALWAYS);
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
 		assertThat(s.getScheduleError(), containsString("header row"));
 		assertThat("invalid metadata never applies", radioState(), is(false));
@@ -1338,7 +1343,7 @@ public class BluetoothSetupServiceTests {
 
 		startWithMetadata(ALWAYS);
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
 		assertThat(s.getScheduleError(), is(nullValue()));
 		assertThat("empty metadata schedule turns scheduled availability off", radioState(), is(false));
@@ -1352,7 +1357,7 @@ public class BluetoothSetupServiceTests {
 
 		startWithMetadata(INVALID_HOURS);
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleError(), is(nullValue()));
 		assertThat(radioState(), is(true));
 	}
@@ -1429,7 +1434,7 @@ public class BluetoothSetupServiceTests {
 		service.setMetadataPath("/pm/bluetooth/other");
 		service.configurationChanged(Map.of());
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat("old path's schedule not kept", s.getScheduleSource(),
 				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
 		assertThat(s.getScheduleMetadataError(), equalTo("no schedule at /pm/bluetooth/other"));
@@ -1448,7 +1453,7 @@ public class BluetoothSetupServiceTests {
 		service.setMetadataPath("");
 		service.configurationChanged(Map.of());
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
 		assertThat(s.getScheduleMetadataError(), is(nullValue()));
 		assertThat(radioState(), is(false));
@@ -1470,7 +1475,7 @@ public class BluetoothSetupServiceTests {
 
 		startWithMetadata(WEEKDAY_HOURS);
 
-		Status s = service.currentStatus();
+		BluetoothSetupStatus s = service.currentStatus();
 		assertThat("newer path applies", s.getScheduleSource(),
 				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
 		assertThat("old path's open schedule dropped", s.getSchedule(), equalTo(""));
