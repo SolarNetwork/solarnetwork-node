@@ -82,9 +82,10 @@ import net.solarnetwork.util.DateUtils;
  * on only while the {@link AvailabilitySchedule} applies, the
  * {@link #getOpMode()} override mode is active, or the
  * {@link #getOfflineOpMode()} mode has been active for
- * {@link #getOfflineThresholdMinutes()} minutes. The schedule comes from
- * metadata when {@link #getMetadataPath()} is configured and loaded, otherwise
- * from {@link #getSchedule()}.
+ * {@link #getOfflineThresholdMinutes()} minutes (until
+ * {@link #getOnlineGraceMinutes()} minutes after it clears). The schedule comes
+ * from metadata when {@link #getMetadataPath()} is configured and loaded,
+ * otherwise from {@link #getSchedule()}.
  * </p>
  *
  * <p>

@@ -22,7 +22,7 @@ radio turned on by something else is turned off again.
 | Setting           | Default                  | Description                                                                                              |
 |:------------------|:-------------------------|:---------------------------------------------------------------------------------------------------------|
 | Status            |                          | The current radio state and why it is on.                                                                |
-| Override For      | `0`                      | Minutes to turn the radio on for, starting now. Returns to `0` once applied.                             |
+| Override For      | `0`                      | Minutes to turn the radio on for, starting now, at most _Maximum Override_. Returns to `0` once applied. |
 | Always On         | on                       | Keep the radio on at all times.                                                                          |
 | Schedule          |                          | The availability rules. See [Schedule](#schedule).                                                       |
 | Time Zone         |                          | The zone to evaluate the schedule in, such as `Pacific/Auckland`. Empty for the system zone.             |
@@ -48,7 +48,7 @@ control's _Failure Op Mode_ must match _Offline Mode_. Without such a control th
 never fires.
 
 "Offline" therefore means the ping URL can't be reached, not that SolarNetwork can't be. With the
-default settings the radio turns on 15 to 20 minutes into an outage.
+default settings the radio turns on about 15 to 21 minutes into an outage.
 
 The mode has no expiration. If the ping control is removed while the mode is active, the radio stays
 on until the mode is cleared with a `DisableOperationalModes` instruction (`OpMode=net-offline`) or
@@ -104,6 +104,10 @@ string, or an array of rows with the header first:
   metadata schedule.
 - If the metadata can't be loaded, the last result is kept and the read is retried after 5 minutes.
 - An invalid metadata schedule never applies, and the setting isn't used in its place.
+
+Anyone who can write the metadata path can turn the radio on, and a user metadata path applies to
+every node that reads it. Update node metadata with `POST`: `PUT` replaces all of the node's
+metadata.
 
 Node metadata is cached for an hour by default. To apply a change sooner, send a `Signal`
 instruction with the parameter `net.solarnetwork.node.metadata.json` set to `clear-cache`. The User
