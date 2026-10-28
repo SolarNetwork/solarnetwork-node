@@ -249,7 +249,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 		final String controlId = resolvePlaceholders(this.targetPowerRateControlId);
 		if ( controlId != null && Double.compare(oldValue, updatedValue) != 0 ) {
 			SimpleNodeControlInfoDatum info = newSimpleNodeControlInfoDatum(controlId,
-					NodeControlPropertyType.Float, null, String.valueOf(updatedValue));
+					NodeControlPropertyType.Float, "W", String.valueOf((int) updatedValue));
 			postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		}
 		return true;
