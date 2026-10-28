@@ -21,9 +21,25 @@
 		<property name="basename" value="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"/>
 	</bean>
 
+	<bean id="bluetoothSetupService" class="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
+			init-method="startup" destroy-method="shutdown">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
+			autowire-on-update="true" update-method="configurationChanged"/>
+		<argument ref="opModesService"/>
+		<argument ref="taskScheduler"/>
+		<argument>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+				<property name="requirePropertyFilter" value="true"/>
+			</bean>
+		</argument>
+		<property name="messageSource" ref="messageSource"/>
+	</bean>
+
 	<!-- Published Services -->
 
-	<service>
+	<service ref="bluetoothSetupService">
 		<interfaces>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
@@ -42,21 +58,6 @@
 				</beans:array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
-				init-method="startup" destroy-method="shutdown">
-			<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
-				autowire-on-update="true" update-method="configurationChanged"/>
-			<argument ref="opModesService"/>
-			<argument ref="taskScheduler"/>
-			<argument>
-				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-					<argument ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
-					<property name="requirePropertyFilter" value="true"/>
-				</bean>
-			</argument>
-			<property name="messageSource" ref="messageSource"/>
-		</bean>
 	</service>
 
 </blueprint>
