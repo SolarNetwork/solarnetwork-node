@@ -93,7 +93,7 @@ import net.solarnetwork.util.CollectionUtils;
  *
  * @author matt
  * @author elijah
- * @version 1.5
+ * @version 1.6
  */
 public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -127,6 +127,9 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	private static final BigDecimal DEGREES_90 = new BigDecimal(90);
 	private static final BigDecimal DEGREES_180 = new BigDecimal(180);
 	private static final BigDecimal DEGREES_360 = new BigDecimal(360);
+	private static final BigDecimal NEGATIVE_ONE = BigDecimal.ONE.negate();
+	private static final BigDecimal MAX_ROW_HEIGHT = new BigDecimal(100);
+	private static final BigDecimal MAX_ROW_PITCH = new BigDecimal(1000);
 
 	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private final OptionalFilterableService<MetadataService> characteristicsMetadataService;
@@ -153,6 +156,13 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	private BigDecimal maxAngle;
 	private boolean backtrack;
 	private BigDecimal gcr;
+	private boolean bifacial;
+	private BigDecimal bifaciality;
+	private BigDecimal albedo;
+	private BigDecimal rowHeight;
+	private BigDecimal rowPitch;
+	private BigDecimal shadeFactor;
+	private BigDecimal transmissionFactor;
 
 	private String command = DEFAULT_COMMAND;
 	private String poaResultKey = DEFAULT_POA_RESULT_KEY;
@@ -215,7 +225,7 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 		final String sourceId = datum.getSourceId();
 
-		final Map<String, String> cmdArguments = new HashMap<>(16);
+		final Map<String, String> cmdArguments = new HashMap<>(24);
 		if ( lat != null ) {
 			cmdArguments.put(CommandOptions.Latitude.getOption(), lat.toPlainString());
 		}
@@ -253,6 +263,15 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		putCommandArgument(cmdArguments, CommandOptions.AxisAzimuth, axisAzimuth);
 		putCommandArgument(cmdArguments, CommandOptions.MaxAngle, maxAngle);
 		putCommandArgument(cmdArguments, CommandOptions.Gcr, gcr);
+		if ( bifacial ) {
+			cmdArguments.put(CommandOptions.Bifacial.getOption(), Boolean.TRUE.toString());
+		}
+		putCommandArgument(cmdArguments, CommandOptions.Bifaciality, bifaciality);
+		putCommandArgument(cmdArguments, CommandOptions.Albedo, albedo);
+		putCommandArgument(cmdArguments, CommandOptions.RowHeight, rowHeight);
+		putCommandArgument(cmdArguments, CommandOptions.RowPitch, rowPitch);
+		putCommandArgument(cmdArguments, CommandOptions.ShadeFactor, shadeFactor);
+		putCommandArgument(cmdArguments, CommandOptions.TransmissionFactor, transmissionFactor);
 
 		final String metaPath = nonEmptyString(metadataPath);
 		final String altMetaPath = nonEmptyString(alternateMetadataPath);
@@ -401,7 +420,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 *
 	 * <p>
 	 * Tracker options are validated against the value ranges supported by pvlib
-	 * {@code tracking.singleaxis()}; other options are normalized without
+	 * {@code tracking.singleaxis()}, and bifacial options against the value
+	 * ranges supported by the command; other options are normalized without
 	 * validation.
 	 * </p>
 	 *
@@ -416,7 +436,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	private static String commandArgumentValue(CommandOptions opt, Object val) {
 		switch (opt) {
 			case Tracking:
-			case Backtrack: {
+			case Backtrack:
+			case Bifacial: {
 				if ( val instanceof Boolean ) {
 					return val.toString();
 				}
@@ -437,6 +458,20 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 
 			case Gcr:
 				return rangedDecimalArgumentValue(val, BigDecimal.ZERO, true, BigDecimal.ONE);
+
+			case Bifaciality:
+			case Albedo:
+				return rangedDecimalArgumentValue(val, BigDecimal.ZERO, false, BigDecimal.ONE);
+
+			case RowHeight:
+				return rangedDecimalArgumentValue(val, BigDecimal.ZERO, true, MAX_ROW_HEIGHT);
+
+			case RowPitch:
+				return rangedDecimalArgumentValue(val, BigDecimal.ZERO, true, MAX_ROW_PITCH);
+
+			case ShadeFactor:
+			case TransmissionFactor:
+				return rangedDecimalArgumentValue(val, NEGATIVE_ONE, false, BigDecimal.ZERO);
 
 			default:
 				return (val instanceof BigDecimal n ? n.toPlainString() : val.toString());
@@ -607,6 +642,14 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 		results.add(new BasicTextFieldSettingSpecifier("maxAngle", null));
 		results.add(new BasicToggleSettingSpecifier("backtrack", Boolean.FALSE));
 		results.add(new BasicTextFieldSettingSpecifier("gcr", null));
+
+		results.add(new BasicToggleSettingSpecifier("bifacial", Boolean.FALSE));
+		results.add(new BasicTextFieldSettingSpecifier("bifaciality", null));
+		results.add(new BasicTextFieldSettingSpecifier("albedo", null));
+		results.add(new BasicTextFieldSettingSpecifier("rowHeight", null));
+		results.add(new BasicTextFieldSettingSpecifier("rowPitch", null));
+		results.add(new BasicTextFieldSettingSpecifier("shadeFactor", null));
+		results.add(new BasicTextFieldSettingSpecifier("transmissionFactor", null));
 
 		final MessageSource messageSource = getMessageSource();
 
@@ -1230,8 +1273,8 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Get the ground coverage ratio.
 	 *
-	 * @return the ratio of PV row width to row spacing, used for backtracking,
-	 *         or {@code null} for the command default
+	 * @return the ratio of PV row width to row spacing, used for backtracking
+	 *         and bifacial mode, or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final BigDecimal getGcr() {
@@ -1242,12 +1285,177 @@ public class PvlibPoaDatumFilterService extends BaseDatumFilterSupport
 	 * Set the ground coverage ratio.
 	 *
 	 * @param gcr
-	 *        the ratio of PV row width to row spacing, used for backtracking,
-	 *        to set, or {@code null} for the command default
+	 *        the ratio of PV row width to row spacing, used for backtracking
+	 *        and bifacial mode, to set, or {@code null} for the command default
 	 * @since 1.3
 	 */
 	public final void setGcr(BigDecimal gcr) {
 		this.gcr = gcr;
+	}
+
+	/**
+	 * Get the bifacial mode.
+	 *
+	 * @return {@code true} to model bifacial modules, in which case the POA
+	 *         irradiance includes the rear-side irradiance
+	 * @since 1.6
+	 */
+	public final boolean isBifacial() {
+		return bifacial;
+	}
+
+	/**
+	 * Set the bifacial mode.
+	 *
+	 * @param bifacial
+	 *        {@code true} to model bifacial modules, in which case the POA
+	 *        irradiance includes the rear-side irradiance
+	 * @since 1.6
+	 */
+	public final void setBifacial(boolean bifacial) {
+		this.bifacial = bifacial;
+	}
+
+	/**
+	 * Get the bifaciality factor.
+	 *
+	 * @return the ratio of rear to front module efficiency, from {@code 0} to
+	 *         {@code 1}, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final BigDecimal getBifaciality() {
+		return bifaciality;
+	}
+
+	/**
+	 * Set the bifaciality factor.
+	 *
+	 * @param bifaciality
+	 *        the ratio of rear to front module efficiency, from {@code 0} to
+	 *        {@code 1}, to set, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final void setBifaciality(BigDecimal bifaciality) {
+		this.bifaciality = bifaciality;
+	}
+
+	/**
+	 * Get the ground albedo.
+	 *
+	 * @return the fraction of irradiance reflected by the ground, from
+	 *         {@code 0} to {@code 1}, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final BigDecimal getAlbedo() {
+		return albedo;
+	}
+
+	/**
+	 * Set the ground albedo.
+	 *
+	 * @param albedo
+	 *        the fraction of irradiance reflected by the ground, from {@code 0}
+	 *        to {@code 1}, to set, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final void setAlbedo(BigDecimal albedo) {
+		this.albedo = albedo;
+	}
+
+	/**
+	 * Get the PV row height.
+	 *
+	 * @return the height of the PV row center above the ground, in the same
+	 *         units as the row pitch, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final BigDecimal getRowHeight() {
+		return rowHeight;
+	}
+
+	/**
+	 * Set the PV row height.
+	 *
+	 * @param rowHeight
+	 *        the height of the PV row center above the ground, in the same
+	 *        units as the row pitch, to set, or {@code null} for the command
+	 *        default
+	 * @since 1.6
+	 */
+	public final void setRowHeight(BigDecimal rowHeight) {
+		this.rowHeight = rowHeight;
+	}
+
+	/**
+	 * Get the PV row pitch.
+	 *
+	 * @return the distance between adjacent PV rows, in the same units as the
+	 *         row height, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final BigDecimal getRowPitch() {
+		return rowPitch;
+	}
+
+	/**
+	 * Set the PV row pitch.
+	 *
+	 * @param rowPitch
+	 *        the distance between adjacent PV rows, in the same units as the
+	 *        row height, to set, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final void setRowPitch(BigDecimal rowPitch) {
+		this.rowPitch = rowPitch;
+	}
+
+	/**
+	 * Get the rear-side shade loss factor.
+	 *
+	 * @return the fractional rear-side irradiance loss from shading, from
+	 *         {@code -1} to {@code 0}, or {@code null} for the command default
+	 * @since 1.6
+	 */
+	public final BigDecimal getShadeFactor() {
+		return shadeFactor;
+	}
+
+	/**
+	 * Set the rear-side shade loss factor.
+	 *
+	 * @param shadeFactor
+	 *        the fractional rear-side irradiance loss from shading, from
+	 *        {@code -1} to {@code 0}, to set, or {@code null} for the command
+	 *        default
+	 * @since 1.6
+	 */
+	public final void setShadeFactor(BigDecimal shadeFactor) {
+		this.shadeFactor = shadeFactor;
+	}
+
+	/**
+	 * Get the rear-side transmission loss factor.
+	 *
+	 * @return the fractional rear-side irradiance loss from transmission
+	 *         through the module, from {@code -1} to {@code 0}, or {@code null}
+	 *         for the command default
+	 * @since 1.6
+	 */
+	public final BigDecimal getTransmissionFactor() {
+		return transmissionFactor;
+	}
+
+	/**
+	 * Set the rear-side transmission loss factor.
+	 *
+	 * @param transmissionFactor
+	 *        the fractional rear-side irradiance loss from transmission through
+	 *        the module, from {@code -1} to {@code 0}, to set, or {@code null}
+	 *        for the command default
+	 * @since 1.6
+	 */
+	public final void setTransmissionFactor(BigDecimal transmissionFactor) {
+		this.transmissionFactor = transmissionFactor;
 	}
 
 }
