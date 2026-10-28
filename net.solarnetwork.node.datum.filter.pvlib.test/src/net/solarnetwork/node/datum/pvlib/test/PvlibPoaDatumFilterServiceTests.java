@@ -23,17 +23,15 @@
 package net.solarnetwork.node.datum.pvlib.test;
 
 import static java.util.Collections.emptyMap;
-import static org.easymock.EasyMock.expect;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
+import static java.util.Map.entry;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService.DEFAULT_GHI_PROPERTY_NAME;
+import static net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService.DEFAULT_POA_PROPERTY_NAME;
+import static org.assertj.core.api.BDDAssertions.and;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.InstantSource;
@@ -41,14 +39,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
-import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.datum.pvlib.PvlibPoaDatumFilterService;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -64,14 +60,19 @@ import net.solarnetwork.service.StaticOptionalService;
  * @author elijah
  * @version 1.0
  */
+@SuppressWarnings("static-access")
 public class PvlibPoaDatumFilterServiceTests {
 
 	private static final String SOURCE_ID = "test.source";
 	private static final String META_PATH = "/pm/pv-characteristics";
+	private static final String META_KEY = "pv-characteristics";
 	private static final Instant DATE = Instant.parse("2026-01-15T01:00:00Z");
+	private static final int GHI = 800;
 
-	private static final String[] BIFACIAL_OPTIONS = new String[] { "--bifacial", "--bifaciality",
-			"--albedo", "--height", "--pitch", "--shade-factor", "--transmission-factor" };
+	private static final String BIFACIAL_OPTION = "--bifacial";
+
+	private static final String[] BIFACIAL_VALUE_OPTIONS = new String[] { "--bifaciality", "--albedo",
+			"--height", "--pitch", "--shade-factor", "--transmission-factor" };
 
 	/**
 	 * Test filter that captures the command instead of running it.
@@ -101,8 +102,8 @@ public class PvlibPoaDatumFilterServiceTests {
 
 	@Before
 	public void setup() {
-		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
-		metadataService = EasyMock.createMock(MetadataService.class);
+		datumMetadataService = mock(DatumMetadataService.class);
+		metadataService = mock(MetadataService.class);
 		service = new TestPvlibPoaDatumFilterService(InstantSource.fixed(DATE), new ObjectMapper(),
 				new StaticOptionalService<>(datumMetadataService),
 				new StaticOptionalService<>(metadataService));
@@ -113,35 +114,59 @@ public class PvlibPoaDatumFilterServiceTests {
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumMetadataService, metadataService);
+		then(datumMetadataService).shouldHaveNoMoreInteractions();
+		then(metadataService).shouldHaveNoMoreInteractions();
 	}
 
-	private void replayAll() {
-		EasyMock.replay(datumMetadataService, metadataService);
-	}
-
-	private SimpleDatum createTestDatum() {
+	private static SimpleDatum createTestDatum() {
 		DatumSamples s = new DatumSamples();
-		s.putInstantaneousSampleValue(PvlibPoaDatumFilterService.DEFAULT_GHI_PROPERTY_NAME, 800);
+		s.putInstantaneousSampleValue(DEFAULT_GHI_PROPERTY_NAME, GHI);
 		return SimpleDatum.nodeDatum(SOURCE_ID, DATE, s);
 	}
 
-	private Map<String, String> commandArguments(List<String> cmd) {
-		assertThat("Command arguments are option/value pairs", (cmd.size() - 1) % 2, is(equalTo(0)));
+	private static Map<String, Object> pvCharacteristics(Object... keyValuePairs) {
+		Map<String, Object> result = new LinkedHashMap<>(keyValuePairs.length / 2);
+		for ( int i = 0; i < keyValuePairs.length; i += 2 ) {
+			result.put((String) keyValuePairs[i], keyValuePairs[i + 1]);
+		}
+		return result;
+	}
+
+	private static GeneralDatumMetadata pvCharacteristicsMetadata(Map<String, Object> props) {
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		props.forEach((k, v) -> meta.putInfoValue(META_KEY, k, v));
+		return meta;
+	}
+
+	/**
+	 * Get the arguments of the one command executed by the service.
+	 *
+	 * @return the command arguments, as a map of option keys to values
+	 */
+	private Map<String, String> executedCommandArguments() {
+		// @formatter:off
+		and.then(service.commands)
+			.as("Command executed once")
+			.hasSize(1)
+			;
+		// @formatter:on
+		final List<String> cmd = service.commands.get(0);
+		// @formatter:off
+		and.then(cmd)
+			.as("Command is configured command")
+			.first()
+			.isEqualTo(service.getCommand())
+			;
+		and.then(cmd.size() - 1)
+			.as("Command arguments are option/value pairs")
+			.isEven()
+			;
+		// @formatter:on
 		Map<String, String> args = new LinkedHashMap<>(cmd.size() / 2);
 		for ( int i = 1; i < cmd.size(); i += 2 ) {
 			args.put(cmd.get(i), cmd.get(i + 1));
 		}
 		return args;
-	}
-
-	private Map<String, String> filterAndCaptureArguments() {
-		SimpleDatum d = createTestDatum();
-		service.filter(d, d.getSamples(), emptyMap());
-		assertThat("Command executed once", service.commands, hasSize(1));
-		List<String> cmd = service.commands.get(0);
-		assertThat("Command is configured command", cmd.get(0), is(equalTo(service.getCommand())));
-		return commandArguments(cmd);
 	}
 
 	@Test
@@ -150,19 +175,51 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setTilt(new BigDecimal("20"));
 		service.setAzimuth(new BigDecimal("0"));
 
+		final SimpleDatum datum = createTestDatum();
+
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Standard options provided", args,
-				allOf(hasEntry("--latitude", "-36.8485"), hasEntry("--longitude", "174.7633"),
-						hasEntry("--zone", "Pacific/Auckland"), hasEntry("--array-tilt", "20"),
-						hasEntry("--array-azimuth", "0"), hasEntry("--transpose", "haydavies"),
-						hasEntry("--irradiance", "800"), hasEntry("--date", "2026-01-15T14:00")));
-		for ( String opt : BIFACIAL_OPTIONS ) {
-			assertThat("Bifacial option not provided when not configured", args, not(hasKey(opt)));
-		}
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Standard options provided")
+			.contains(
+					entry("--latitude", "-36.8485"),
+					entry("--longitude", "174.7633"),
+					entry("--zone", "Pacific/Auckland"),
+					entry("--array-tilt", "20"),
+					entry("--array-azimuth", "0"),
+					entry("--transpose", "haydavies"),
+					entry("--irradiance", "800"),
+					entry("--date", "2026-01-15T14:00"))
+			.as("Bifacial mode not provided when not configured")
+			.doesNotContainKey(BIFACIAL_OPTION)
+			.as("Bifacial options not provided when not configured")
+			.doesNotContainKeys(BIFACIAL_VALUE_OPTIONS)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void bifacialOff_albedoProvided() {
+		// GIVEN
+		service.setAlbedo(new BigDecimal("0.3"));
+
+		final SimpleDatum datum = createTestDatum();
+
+		// WHEN
+		service.filter(datum, datum.getSamples(), emptyMap());
+
+		// THEN
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial mode not provided when not configured")
+			.doesNotContainKey(BIFACIAL_OPTION)
+			.as("Albedo provided without bifacial mode")
+			.containsEntry("--albedo", "0.3")
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -177,20 +234,32 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setShadeFactor(new BigDecimal("-0.05"));
 		service.setTransmissionFactor(new BigDecimal("-0.01"));
 
+		final SimpleDatum datum = createTestDatum();
+
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Bifacial options provided from settings", args, allOf(hasEntry("--gcr", "0.4"),
-				hasEntry("--bifacial", "true"), hasEntry("--bifaciality", "0.7"),
-				hasEntry("--albedo", "0.3"), hasEntry("--height", "2.1"), hasEntry("--pitch", "6.5"),
-				hasEntry("--shade-factor", "-0.05"), hasEntry("--transmission-factor", "-0.01")));
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial options provided from settings")
+			.contains(
+					entry("--gcr", "0.4"),
+					entry("--bifacial", "true"),
+					entry("--bifaciality", "0.7"),
+					entry("--albedo", "0.3"),
+					entry("--height", "2.1"),
+					entry("--pitch", "6.5"),
+					entry("--shade-factor", "-0.05"),
+					entry("--transmission-factor", "-0.01"))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void bifacialSettings_rangeBoundaries() {
 		// GIVEN
+		service.setGcr(BigDecimal.ONE);
 		service.setBifacial(true);
 		service.setBifaciality(BigDecimal.ONE);
 		service.setAlbedo(BigDecimal.ZERO);
@@ -199,20 +268,31 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setShadeFactor(new BigDecimal("-1"));
 		service.setTransmissionFactor(BigDecimal.ZERO);
 
+		final SimpleDatum datum = createTestDatum();
+
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Bifacial options at range boundaries provided", args,
-				allOf(hasEntry("--bifaciality", "1"), hasEntry("--albedo", "0"),
-						hasEntry("--height", "100"), hasEntry("--pitch", "1000"),
-						hasEntry("--shade-factor", "-1"), hasEntry("--transmission-factor", "0")));
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial options at range boundaries provided")
+			.contains(
+					entry("--gcr", "1"),
+					entry("--bifaciality", "1"),
+					entry("--albedo", "0"),
+					entry("--height", "100"),
+					entry("--pitch", "1000"),
+					entry("--shade-factor", "-1"),
+					entry("--transmission-factor", "0"))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void bifacialSettings_outOfRange() {
 		// GIVEN
+		service.setGcr(BigDecimal.ZERO);
 		service.setBifacial(true);
 		service.setBifaciality(new BigDecimal("1.5"));
 		service.setAlbedo(new BigDecimal("-0.1"));
@@ -221,48 +301,92 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setShadeFactor(new BigDecimal("0.1"));
 		service.setTransmissionFactor(new BigDecimal("-1.5"));
 
+		final SimpleDatum datum = createTestDatum();
+
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Bifacial mode provided", args, hasEntry("--bifacial", "true"));
-		for ( String opt : BIFACIAL_OPTIONS ) {
-			if ( "--bifacial".equals(opt) ) {
-				continue;
-			}
-			assertThat("Out of range bifacial setting not provided", args, not(hasKey(opt)));
-		}
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial mode provided")
+			.containsEntry(BIFACIAL_OPTION, "true")
+			.as("Out of range bifacial settings not provided")
+			.doesNotContainKeys(BIFACIAL_VALUE_OPTIONS)
+			.as("Out of range GCR not provided")
+			.doesNotContainKey("--gcr")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void bifacialSettings_rowGeometryOtherBoundsOutOfRange() {
+		// GIVEN
+		service.setBifacial(true);
+		service.setRowHeight(new BigDecimal("100.1"));
+		service.setRowPitch(BigDecimal.ZERO);
+
+		final SimpleDatum datum = createTestDatum();
+
+		// WHEN
+		service.filter(datum, datum.getSamples(), emptyMap());
+
+		// THEN
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial mode provided")
+			.containsEntry(BIFACIAL_OPTION, "true")
+			.as("Row height above maximum not provided")
+			.doesNotContainKey("--height")
+			.as("Row pitch at exclusive minimum not provided")
+			.doesNotContainKey("--pitch")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void datumMetadata_overridesSettings() {
 		// GIVEN
 		service.setMetadataPath(META_PATH);
+		service.setGcr(new BigDecimal("0.4"));
 		service.setBifaciality(new BigDecimal("0.8"));
 		service.setRowHeight(new BigDecimal("1.5"));
 		service.setRowPitch(new BigDecimal("5"));
 
-		GeneralDatumMetadata meta = new GeneralDatumMetadata();
-		meta.putInfoValue("pv-characteristics", "bifacial", true);
-		meta.putInfoValue("pv-characteristics", "bifaciality", 0.75);
-		meta.putInfoValue("pv-characteristics", "albedo", 0.3);
-		meta.putInfoValue("pv-characteristics", "pvRowHeight", 2.5);
-		meta.putInfoValue("pv-characteristics", "pvRowPitch", 7);
-		meta.putInfoValue("pv-characteristics", "shadeFactor", -0.03);
-		meta.putInfoValue("pv-characteristics", "transmissionFactor", "-0.01");
-		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta);
+		// @formatter:off
+		final GeneralDatumMetadata meta = pvCharacteristicsMetadata(pvCharacteristics(
+				"gcr", 0.35,
+				"bifacial", true,
+				"bifaciality", 0.75,
+				"albedo", 0.3,
+				"pvRowHeight", 2.5,
+				"pvRowPitch", 7,
+				"shadeFactor", -0.03,
+				"transmissionFactor", "-0.01"));
+		// @formatter:on
+		given(datumMetadataService.getSourceMetadata(SOURCE_ID)).willReturn(meta);
+
+		final SimpleDatum datum = createTestDatum();
 
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Bifacial options provided from datum metadata", args,
-				allOf(hasEntry("--bifacial", "true"), hasEntry("--bifaciality", "0.75"),
-						hasEntry("--albedo", "0.3"), hasEntry("--height", "2.5"),
-						hasEntry("--pitch", "7"), hasEntry("--shade-factor", "-0.03"),
-						hasEntry("--transmission-factor", "-0.01")));
+		then(datumMetadataService).should().getSourceMetadata(SOURCE_ID);
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial options provided from datum metadata")
+			.contains(
+					entry("--gcr", "0.35"),
+					entry("--bifacial", "true"),
+					entry("--bifaciality", "0.75"),
+					entry("--albedo", "0.3"),
+					entry("--height", "2.5"),
+					entry("--pitch", "7"),
+					entry("--shade-factor", "-0.03"),
+					entry("--transmission-factor", "-0.01"))
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -271,23 +395,34 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setMetadataPath(META_PATH);
 		service.setCharacteristicsMetadataServiceUid("pv");
 
-		GeneralDatumMetadata pvMeta = new GeneralDatumMetadata();
-		pvMeta.putInfoValue("pv-characteristics", "bifacial", "true");
-		pvMeta.putInfoValue("pv-characteristics", "pvRowHeight", 2);
-		pvMeta.putInfoValue("pv-characteristics", "pvRowPitch", 6);
-		expect(metadataService.getAllMetadata()).andReturn(pvMeta);
+		// @formatter:off
+		final GeneralDatumMetadata pvMeta = pvCharacteristicsMetadata(pvCharacteristics(
+				"bifacial", "true",
+				"pvRowHeight", 2,
+				"pvRowPitch", 6));
+		// @formatter:on
+		given(metadataService.getAllMetadata()).willReturn(pvMeta);
 
-		GeneralDatumMetadata meta = new GeneralDatumMetadata();
-		meta.putInfoValue("pv-characteristics", "pvRowHeight", 3);
-		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta);
+		final GeneralDatumMetadata meta = pvCharacteristicsMetadata(pvCharacteristics("pvRowHeight", 3));
+		given(datumMetadataService.getSourceMetadata(SOURCE_ID)).willReturn(meta);
+
+		final SimpleDatum datum = createTestDatum();
 
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Bifacial options merged from metadata sources", args, allOf(
-				hasEntry("--bifacial", "true"), hasEntry("--height", "3"), hasEntry("--pitch", "6")));
+		then(metadataService).should().getAllMetadata();
+		then(datumMetadataService).should().getSourceMetadata(SOURCE_ID);
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial options merged from metadata sources")
+			.contains(
+					entry("--bifacial", "true"),
+					entry("--height", "3"),
+					entry("--pitch", "6"))
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -296,22 +431,30 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setMetadataPath(META_PATH);
 		service.setBifacial(true);
 
-		GeneralDatumMetadata meta = new GeneralDatumMetadata();
-		meta.putInfoValue("pv-characteristics", "bifacial", false);
-		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta);
+		final GeneralDatumMetadata meta = pvCharacteristicsMetadata(
+				pvCharacteristics("bifacial", false));
+		given(datumMetadataService.getSourceMetadata(SOURCE_ID)).willReturn(meta);
+
+		final SimpleDatum datum = createTestDatum();
 
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Bifacial mode disabled from datum metadata", args, hasEntry("--bifacial", "false"));
+		then(datumMetadataService).should().getSourceMetadata(SOURCE_ID);
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Bifacial mode disabled from datum metadata")
+			.containsEntry(BIFACIAL_OPTION, "false")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void datumMetadata_invalid_keepsSettings() {
 		// GIVEN
 		service.setMetadataPath(META_PATH);
+		service.setGcr(new BigDecimal("0.4"));
 		service.setBifacial(true);
 		service.setBifaciality(new BigDecimal("0.7"));
 		service.setAlbedo(new BigDecimal("0.2"));
@@ -320,26 +463,40 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setShadeFactor(new BigDecimal("-0.05"));
 		service.setTransmissionFactor(new BigDecimal("-0.02"));
 
-		GeneralDatumMetadata meta = new GeneralDatumMetadata();
-		meta.putInfoValue("pv-characteristics", "bifacial", "yes");
-		meta.putInfoValue("pv-characteristics", "bifaciality", 1.5);
-		meta.putInfoValue("pv-characteristics", "albedo", "not a number");
-		meta.putInfoValue("pv-characteristics", "pvRowHeight", 0);
-		meta.putInfoValue("pv-characteristics", "pvRowPitch", -5);
-		meta.putInfoValue("pv-characteristics", "shadeFactor", 0.1);
-		meta.putInfoValue("pv-characteristics", "transmissionFactor", -1.5);
-		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta);
+		// @formatter:off
+		final GeneralDatumMetadata meta = pvCharacteristicsMetadata(pvCharacteristics(
+				"gcr", 1.1,
+				"bifacial", "yes",
+				"bifaciality", 1.5,
+				"albedo", "not a number",
+				"pvRowHeight", 0,
+				"pvRowPitch", 0,
+				"shadeFactor", 0.1,
+				"transmissionFactor", -1.5));
+		// @formatter:on
+		given(datumMetadataService.getSourceMetadata(SOURCE_ID)).willReturn(meta);
+
+		final SimpleDatum datum = createTestDatum();
 
 		// WHEN
-		replayAll();
-		Map<String, String> args = filterAndCaptureArguments();
+		service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Invalid metadata values ignored, keeping setting values", args,
-				allOf(hasEntry("--bifacial", "true"), hasEntry("--bifaciality", "0.7"),
-						hasEntry("--albedo", "0.2"), hasEntry("--height", "2"), hasEntry("--pitch", "6"),
-						hasEntry("--shade-factor", "-0.05"),
-						hasEntry("--transmission-factor", "-0.02")));
+		then(datumMetadataService).should().getSourceMetadata(SOURCE_ID);
+		// @formatter:off
+		and.then(executedCommandArguments())
+			.as("Invalid metadata values ignored, keeping setting values")
+			.contains(
+					entry("--gcr", "0.4"),
+					entry("--bifacial", "true"),
+					entry("--bifaciality", "0.7"),
+					entry("--albedo", "0.2"),
+					entry("--height", "2"),
+					entry("--pitch", "6"),
+					entry("--shade-factor", "-0.05"),
+					entry("--transmission-factor", "-0.02"))
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -347,28 +504,36 @@ public class PvlibPoaDatumFilterServiceTests {
 		// GIVEN
 		service.setBifacial(true);
 
-		Map<String, Object> cmdResult = new LinkedHashMap<>(4);
+		final Map<String, Object> cmdResult = new LinkedHashMap<>(4);
 		cmdResult.put("poa_global", 1012.5);
 		cmdResult.put("poa_front", 934.1);
 		cmdResult.put("poa_back", 98.0);
 		service.result = cmdResult;
 
+		final SimpleDatum datum = createTestDatum();
+
 		// WHEN
-		replayAll();
-		SimpleDatum d = createTestDatum();
-		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
+		DatumSamplesOperations result = service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("Command executed once", service.commands, hasSize(1));
-		assertThat("Result changed", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("POA global result extracted",
-				result.getSampleBigDecimal(DatumSamplesType.Instantaneous,
-						PvlibPoaDatumFilterService.DEFAULT_POA_PROPERTY_NAME),
-				is(equalTo(new BigDecimal("1012.5"))));
-		assertThat("GHI property preserved", result.getSampleInteger(DatumSamplesType.Instantaneous,
-				PvlibPoaDatumFilterService.DEFAULT_GHI_PROPERTY_NAME), is(equalTo(800)));
-		assertThat("Other result values not added without expressions",
-				result.getSampleValue(DatumSamplesType.Instantaneous, "poa_front"), is(nullValue()));
+		// @formatter:off
+		and.then(service.commands)
+			.as("Command executed once")
+			.hasSize(1)
+			;
+		and.then(result)
+			.as("Result changed")
+			.isNotSameAs(datum.getSamples())
+			.as("POA global result extracted")
+			.returns(new BigDecimal("1012.5"),
+					from(s -> s.getSampleBigDecimal(Instantaneous, DEFAULT_POA_PROPERTY_NAME)))
+			.as("GHI property preserved")
+			.returns(GHI,
+					from(s -> s.getSampleInteger(Instantaneous, DEFAULT_GHI_PROPERTY_NAME)))
+			.as("Other result values not added without expressions")
+			.returns(null, from(s -> s.getSampleValue(Instantaneous, "poa_front")))
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -377,21 +542,24 @@ public class PvlibPoaDatumFilterServiceTests {
 		service.setBifacial(true);
 		service.setPoaResultKey("poa_front");
 
-		Map<String, Object> cmdResult = new LinkedHashMap<>(4);
+		final Map<String, Object> cmdResult = new LinkedHashMap<>(4);
 		cmdResult.put("poa_global", 1012.5);
 		cmdResult.put("poa_front", 934.1);
 		service.result = cmdResult;
 
+		final SimpleDatum datum = createTestDatum();
+
 		// WHEN
-		replayAll();
-		SimpleDatum d = createTestDatum();
-		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
+		DatumSamplesOperations result = service.filter(datum, datum.getSamples(), emptyMap());
 
 		// THEN
-		assertThat("POA front result extracted",
-				result.getSampleBigDecimal(DatumSamplesType.Instantaneous,
-						PvlibPoaDatumFilterService.DEFAULT_POA_PROPERTY_NAME),
-				is(equalTo(new BigDecimal("934.1"))));
+		// @formatter:off
+		and.then(result)
+			.as("POA front result extracted")
+			.returns(new BigDecimal("934.1"),
+					from(s -> s.getSampleBigDecimal(Instantaneous, DEFAULT_POA_PROPERTY_NAME)))
+			;
+		// @formatter:on
 	}
 
 }
