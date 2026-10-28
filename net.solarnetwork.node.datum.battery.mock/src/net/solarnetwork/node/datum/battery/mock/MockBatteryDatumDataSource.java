@@ -173,7 +173,7 @@ public class MockBatteryDatumDataSource extends DatumDataSourceSupport
 				.withValue(value)
 				.build();
 		// @formatter:on
-		return new SimpleNodeControlInfoDatum(info, Instant.now());
+		return new SimpleNodeControlInfoDatum(info, getClock().instant());
 	}
 
 	@Override
