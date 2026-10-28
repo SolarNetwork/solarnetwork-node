@@ -3,8 +3,8 @@
 ## Quick start
 
 Bundles build with Ant and Ivy through the shared harness in the sibling `../solarnetwork-build`
-repository: every `build.xml` imports `solarnetwork-build/solarnetwork-osgi-lib/lib-build.xml`. The
-build process looks like this:
+repository: every `build.xml` imports `solarnetwork-build/solarnetwork-osgi-lib/lib-build.xml`.
+Dependencies are declared in the `ivy.xml` file of each bundle. The build process looks like this:
 
 ```sh
 cd net.solarnetwork.node
@@ -15,6 +15,30 @@ ant clean test              # rebuild the bundle under test, then run its tests
 ```
 
 Ant must run on JDK 22+ to support Error Prone.
+
+
+## Inter-bundle dependency development with Ant
+
+When you are working on changes across multiple bundles, you can publish your dependency bundles
+to a local Ivy repository, before they land on Maven Central, like this:
+
+```sh
+ant publish -Dpublish.ivy=true
+```
+
+For example, let's say you have a fix in `net.solarnetwork.node` that you need while making
+changes in `net.solarnetwork.node.setup.web`. After you update the version of the `.node`
+bundle, you can publish that to the local Ivy repository, then compile the second:
+
+```sh
+# publish dep
+cd net.solarnetwork.node
+ant publish -Dpublish.ivy=true
+
+# compile bundle that needs dep (assumes ivy.xml declares dep for updated .node version)
+cd ../net.solarnetwork.node.setup.web
+ant compile
+```
 
 
 ## Conventions
@@ -101,12 +125,17 @@ then(result)
 // @formatter:on
 ```
 
-When both BDD AssertJ and BDD Mockito are used, then the `BDDMockito.then()` method should be
-statically imported and the AssertJ `BDDAssertions.and` method should be statically imported; a
-`@SuppressWarnings("static-access")` should be added to the test class to ignore warnings on the
-`and.` usage.
+### Mockito style
 
-Mockito `@Captor` argument captors should only be verified in the `// THEN` block. Tests of this
+Use `@Mock` and `@Captor` class fields where possible, with the required class-level
+`@RunWith(MockitoJUnitRunner.class)`.
+
+When both BDD AssertJ `then()` and BDD Mockito `then()` are used, the `BDDMockito.then()` method
+should be statically imported and the AssertJ `BDDAssertions.and` method should be statically
+imported; a `@SuppressWarnings("static-access")` should be added to the test class to ignore
+warnings on the `and.` usage.
+
+`@Captor` argument captors should only be verified in the `// THEN` block. Tests of this
 nature follow this pattern:
 
 ```java
@@ -128,6 +157,9 @@ and.then(ownershipCaptor.getValue())
 // @formatter:on
 ```
 
+> :bulb: Do not bother verifying Mockito `given()` statements with `then()` unless you need to
+> validate the contents of a `@Captor`.
+
 ### Other test info
 
 - The sibling bundles they build from source in a `bundle.deps` dirset in `build.xml`.
@@ -146,7 +178,7 @@ and.then(ownershipCaptor.getValue())
   ```
 
 - Tests are JUnit 4 (no Jupiter) with AssertJ, Mockito, Hancrest, and EasyMock. They live in a `test`
-  sub-package of the code under test (e.g. `net.solarnetwork.util.test`) and are named `*Tests`.
+  sub-package of the code under test (e.g. `net.solarnetwork.node.domain.test`) and are named `*Tests`.
 - Coverage: `ant test -Dwith-coverage=true`, then `ant coverage-report`.
 - Integration tests that need a real service are skipped unless a system property is set
   (`SystemPropertyMatchTestRule`: `mqtt5-int`, `s3-int`, `protoc-int`). They read their settings from
