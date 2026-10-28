@@ -26,7 +26,8 @@ import static java.util.Collections.singleton;
 import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
 import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static net.solarnetwork.service.OptionalService.service;
-import java.time.Instant;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,11 +79,12 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class OperationalModeSwitch extends BaseIdentifiable
 		implements EventHandler, InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
 
+	private final InstantSource clock;
 	private final OptionalService<OperationalModesService> opModesService;
 	private final AtomicBoolean active = new AtomicBoolean(false);
 
@@ -95,10 +97,29 @@ public class OperationalModeSwitch extends BaseIdentifiable
 	 *
 	 * @param opModesService
 	 *        the operational modes service to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
 	 */
 	public OperationalModeSwitch(OptionalService<OperationalModesService> opModesService) {
+		this(InstantSource.system(), opModesService);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @param opModesService
+	 *        the operational modes service to use
+	 * @since 2.1
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 */
+	public OperationalModeSwitch(InstantSource clock,
+			OptionalService<OperationalModesService> opModesService) {
 		super();
-		this.opModesService = opModesService;
+		this.clock = requireNonNullArgument(clock, "clock");
+		this.opModesService = requireNonNullArgument(opModesService, "opModesService");
 	}
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -164,7 +185,7 @@ public class OperationalModeSwitch extends BaseIdentifiable
 				.withValue(String.valueOf(active))
 				.build();
 		// @formatter:on
-		return new SimpleNodeControlInfoDatum(info, Instant.now());
+		return new SimpleNodeControlInfoDatum(info, clock.instant());
 	}
 
 	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
