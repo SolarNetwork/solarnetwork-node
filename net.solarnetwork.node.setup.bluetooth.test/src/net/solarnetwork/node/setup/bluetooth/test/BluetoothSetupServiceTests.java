@@ -47,12 +47,14 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -64,10 +66,12 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.setup.bluetooth.AvailabilitySchedule;
 import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService;
@@ -75,6 +79,8 @@ import net.solarnetwork.node.setup.bluetooth.BluetoothSetupService.Status;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.TextAreaSettingSpecifier;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.TextFieldSettingSpecifier;
 import net.solarnetwork.settings.TitleSettingSpecifier;
 
 /**
@@ -97,6 +103,8 @@ public class BluetoothSetupServiceTests {
 	private static final Instant START = Instant.parse("2026-10-06T00:00:00Z");
 
 	private OperationalModesService opModesService;
+	private MetadataService metadataService;
+	private SwitchableService metadataServiceRef;
 	private BluetoothSetupService service;
 	private File tmpFile;
 	private File logFile;
@@ -105,8 +113,10 @@ public class BluetoothSetupServiceTests {
 	@Before
 	public void setup() throws IOException {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
+		metadataService = EasyMock.createMock(MetadataService.class);
+		metadataServiceRef = new SwitchableService(metadataService);
 		// no task scheduler: reconcile runs inline, which keeps the tests deterministic
-		service = new BluetoothSetupService(opModesService, null);
+		service = new BluetoothSetupService(opModesService, null, metadataServiceRef);
 		// the production default is always on; these tests exercise the gated
 		// behaviour so start with the gate closed
 		service.setAlwaysOn(false);
@@ -127,7 +137,7 @@ public class BluetoothSetupServiceTests {
 
 	@After
 	public void teardown() {
-		verify(opModesService);
+		verify(opModesService, metadataService);
 		if ( tmpFile != null ) {
 			tmpFile.delete();
 		}
@@ -140,7 +150,7 @@ public class BluetoothSetupServiceTests {
 	}
 
 	private void replayAll() {
-		replay(opModesService);
+		replay(opModesService, metadataService);
 	}
 
 	private List<String> actions() throws IOException {
@@ -404,7 +414,7 @@ public class BluetoothSetupServiceTests {
 	public void defaultAlwaysOn_turnsRadioOn() throws IOException {
 		replayAll();
 		// a fresh instance with no configuration at all must turn the radio on
-		BluetoothSetupService fresh = new BluetoothSetupService(opModesService, null);
+		BluetoothSetupService fresh = new BluetoothSetupService(opModesService, null, null);
 		fresh.setCommand(tmpFile.getAbsolutePath());
 		assertThat(fresh.isAlwaysOn(), is(true));
 		fresh.reconcile();
@@ -729,7 +739,21 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		List<SettingSpecifier> specs = service.getSettingSpecifiers();
 		assertThat(specs, is(notNullValue()));
-		assertThat(specs.size(), equalTo(15));
+		assertThat(specs.size(), equalTo(17));
+		KeyedSettingSpecifier<?> metaUid = specs.stream().filter(KeyedSettingSpecifier.class::isInstance)
+				.map(KeyedSettingSpecifier.class::cast)
+				.filter(k -> "metadataServiceUid".equals(k.getKey())).findFirst().orElse(null);
+		assertThat(metaUid, instanceOf(TextFieldSettingSpecifier.class));
+		assertThat("metadata service default", metaUid.getDefaultValue(),
+				equalTo(BluetoothSetupService.DEFAULT_METADATA_SERVICE_UID));
+		assertThat("metadata service lookup",
+				((TextFieldSettingSpecifier) metaUid).getRelatedServiceFilter(),
+				equalTo("(objectClass=net.solarnetwork.node.service.MetadataService)"));
+		KeyedSettingSpecifier<?> metaPath = specs.stream()
+				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
+				.filter(k -> "metadataPath".equals(k.getKey())).findFirst().orElse(null);
+		assertThat(metaPath, is(notNullValue()));
+		assertThat("metadata path default", metaPath.getDefaultValue(), equalTo(""));
 		KeyedSettingSpecifier<?> alwaysOn = specs.stream()
 				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
 				.filter(k -> "alwaysOn".equals(k.getKey())).findFirst().orElse(null);
@@ -858,7 +882,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		replay(scheduler);
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler, null);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
@@ -1038,7 +1062,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		replay(scheduler, future1, future2);
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler, null);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
@@ -1077,7 +1101,7 @@ public class BluetoothSetupServiceTests {
 		replayAll();
 		replay(scheduler, future);
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler, null);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setAlwaysOn(false);
@@ -1088,6 +1112,469 @@ public class BluetoothSetupServiceTests {
 		s.shutdown();
 
 		verify(scheduler, future);
+	}
+
+	/** An optional metadata service whose service can be swapped in a test. */
+	private static final class SwitchableService implements OptionalFilterableService<MetadataService> {
+
+		private MetadataService service;
+		private final Map<String, Object> filters = new ConcurrentHashMap<>(2);
+
+		private SwitchableService(MetadataService service) {
+			super();
+			this.service = service;
+		}
+
+		@Override
+		public MetadataService service() {
+			return service;
+		}
+
+		@Override
+		public Map<String, ?> getPropertyFilters() {
+			return filters;
+		}
+
+		@Override
+		public void setPropertyFilter(String key, Object value) {
+			if ( value == null ) {
+				filters.remove(key);
+			} else {
+				filters.put(key, value);
+			}
+		}
+
+		@Override
+		public Object removePropertyFilter(String key) {
+			return filters.remove(key);
+		}
+	}
+
+	private static final String META_PATH = "/pm/bluetooth/schedule";
+
+	private static final String ALWAYS = SCHED_HEADER + ",,,,1";
+
+	private static GeneralDatumMetadata meta(Object schedule) {
+		GeneralDatumMetadata m = new GeneralDatumMetadata();
+		if ( schedule != null ) {
+			m.putInfoValue("bluetooth", "schedule", schedule);
+		}
+		return m;
+	}
+
+	private void startWithMetadata(String inline) {
+		service.setMetadataPath(META_PATH);
+		service.setSchedule(inline);
+		service.setTimeZone("UTC");
+		service.startup();
+	}
+
+	private String statusTitleText() {
+		SettingSpecifier title = service.getSettingSpecifiers().get(0);
+		return String.valueOf(((TitleSettingSpecifier) title).getDefaultValue());
+	}
+
+	@Test
+	public void metadata_loadsAndOverridesInline() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
+		replayAll();
+
+		// the inline schedule is closed at 00:00 UTC Tuesday; the metadata one is open
+		startWithMetadata(WEEKDAY_HOURS);
+
+		assertThat("metadata schedule turns radio on", radioState(), is(true));
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+		assertThat(s.getScheduleMetadataError(), is(nullValue()));
+		assertThat(s.getScheduleError(), is(nullValue()));
+		assertThat(s.getSchedule(), equalTo(",,,,1"));
+		assertThat(statusTitleText(), containsString("schedule from metadata '" + META_PATH + "'"));
+
+		InstructionStatus status = service.processInstruction(instruction("status", null));
+		Status result = (Status) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
+		assertThat(result.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+	}
+
+	@Test
+	public void metadata_notConfigured_noRead() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		replayAll();
+
+		// a path with no service UID is not configured either
+		service.setMetadataServiceUid("");
+		startWithMetadata(WEEKDAY_HOURS);
+		service.scheduleTick();
+
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), is(nullValue()));
+		assertThat(radioState(), is(false));
+	}
+
+	@Test
+	public void metadata_noService_retriesWithoutBackoff() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
+		replayAll();
+
+		metadataServiceRef.service = null;
+		startWithMetadata(WEEKDAY_HOURS);
+		Status s = service.currentStatus();
+		assertThat("inline used", s.getScheduleSource(),
+				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), containsString("no Metadata Service"));
+		assertThat(radioState(), is(false));
+
+		metadataServiceRef.service = metadataService;
+		service.scheduleTick();
+		assertThat("loaded on the next tick", radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_unreachableBeforeLoad_usesInline() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(null).times(1);
+		expect(metadataService.getAllMetadata()).andThrow(new RuntimeException("boom")).times(1);
+		replayAll();
+
+		startWithMetadata(ALWAYS);
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), containsString("metadata unavailable"));
+		assertThat("inline schedule applies", radioState(), is(true));
+		assertThat(statusTitleText(), containsString("not loaded"));
+
+		advanceClock(Duration.ofSeconds(BluetoothSetupService.METADATA_RETRY_SECONDS + 1));
+		service.scheduleTick();
+		s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), containsString("boom"));
+		assertThat(radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_unreachableAfterLoad_keepsLastSchedule() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
+		expect(metadataService.getAllMetadata()).andThrow(new RuntimeException("offline")).times(1);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+		assertThat(radioState(), is(true));
+
+		advanceClock(Duration.ofSeconds(15));
+		service.scheduleTick();
+
+		Status s = service.currentStatus();
+		assertThat("last result kept", s.getScheduleSource(),
+				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+		assertThat(s.getScheduleMetadataError(), containsString("offline"));
+		assertThat(radioState(), is(true));
+		assertThat(statusTitleText(), containsString("keeping the last result"));
+	}
+
+	@Test
+	public void metadata_invalidThenUnreachable_staysClosed() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS))
+				.andReturn(meta("Mon-Fri 07:00-18:00")).andThrow(new RuntimeException("offline"));
+		replayAll();
+
+		startWithMetadata(ALWAYS);
+		assertThat("valid metadata schedule", radioState(), is(true));
+
+		advanceClock(Duration.ofSeconds(15));
+		service.scheduleTick();
+		assertThat("invalid push closes the radio", radioState(), is(false));
+		assertThat(service.currentStatus().getScheduleError(),
+				containsString("metadata schedule invalid"));
+
+		advanceClock(Duration.ofSeconds(15));
+		service.scheduleTick();
+		Status s = service.currentStatus();
+		assertThat("outage does not restore the older schedule", radioState(), is(false));
+		assertThat(s.getScheduleError(), containsString("metadata schedule invalid"));
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+	}
+
+	@Test
+	public void metadata_pathAbsent_usesInlineWithoutBackoff() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(null)).times(2);
+		replayAll();
+
+		startWithMetadata(ALWAYS);
+		service.scheduleTick();
+
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), equalTo("no schedule at " + META_PATH));
+		assertThat(radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_invalid_failsClosedDespiteInline() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(",,Mon-Fri,07:00-18:00,1")).times(1);
+		replayAll();
+
+		startWithMetadata(ALWAYS);
+
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+		assertThat(s.getScheduleError(), containsString("header row"));
+		assertThat("invalid metadata never applies", radioState(), is(false));
+	}
+
+	@Test
+	public void metadata_headerOnly_closesRadio() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata())
+				.andReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "Available"))))
+				.times(1);
+		replayAll();
+
+		startWithMetadata(ALWAYS);
+
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+		assertThat(s.getScheduleError(), is(nullValue()));
+		assertThat("empty metadata schedule turns scheduled availability off", radioState(), is(false));
+	}
+
+	@Test
+	public void metadata_validWithInvalidInline() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
+		replayAll();
+
+		startWithMetadata(INVALID_HOURS);
+
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleError(), is(nullValue()));
+		assertThat(radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_arrayForm() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata())
+				.andReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "Available"),
+						Arrays.asList(null, null, "Mon-Fri", "00:00-06:00", 1))))
+				.times(1);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+
+		assertThat(service.currentStatus().getSchedule(), equalTo(",,Mon-Fri,0-6,1"));
+		assertThat(radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_valueChange_pickedUpOnNextTick() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).andReturn(meta(WEEKDAY_HOURS));
+		replayAll();
+
+		startWithMetadata("");
+		assertThat(radioState(), is(true));
+
+		// as after a clear-cache signal: the next read returns the new value
+		advanceClock(Duration.ofSeconds(15));
+		service.scheduleTick();
+		assertThat(radioState(), is(false));
+		assertThat(actions(), contains("enable", "disable"));
+	}
+
+	@Test
+	public void metadata_backoffAfterUnreachable() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(null).andReturn(meta(ALWAYS));
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+
+		advanceClock(Duration.ofSeconds(BluetoothSetupService.METADATA_RETRY_SECONDS - 1));
+		service.scheduleTick();
+		assertThat("no read during back-off", radioState(), is(false));
+
+		advanceClock(Duration.ofSeconds(2));
+		service.scheduleTick();
+		assertThat("read after back-off", radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_configChange_clearsBackoff() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(null).andReturn(meta(ALWAYS));
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+		service.configurationChanged(Map.of());
+
+		assertThat(radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_pathChange_dropsOldSchedule() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(2);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+		assertThat(radioState(), is(true));
+
+		service.setMetadataPath("/pm/bluetooth/other");
+		service.configurationChanged(Map.of());
+
+		Status s = service.currentStatus();
+		assertThat("old path's schedule not kept", s.getScheduleSource(),
+				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), equalTo("no schedule at /pm/bluetooth/other"));
+		assertThat(radioState(), is(false));
+	}
+
+	@Test
+	public void metadata_pathCleared_revertsToInline() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+		assertThat(radioState(), is(true));
+
+		service.setMetadataPath("");
+		service.configurationChanged(Map.of());
+
+		Status s = service.currentStatus();
+		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
+		assertThat(s.getScheduleMetadataError(), is(nullValue()));
+		assertThat(radioState(), is(false));
+	}
+
+	@Test
+	public void metadata_staleResultDropped() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		final GeneralDatumMetadata both = meta(ALWAYS);
+		both.putInfoValue("bluetooth", "other", SCHED_HEADER);
+		// the first read is overtaken by a reconfiguration to another path
+		expect(metadataService.getAllMetadata()).andAnswer(() -> {
+			service.setMetadataPath("/pm/bluetooth/other");
+			service.configurationChanged(Map.of());
+			return both;
+		});
+		expect(metadataService.getAllMetadata()).andReturn(both);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+
+		Status s = service.currentStatus();
+		assertThat("newer path applies", s.getScheduleSource(),
+				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+		assertThat("old path's open schedule dropped", s.getSchedule(), equalTo(""));
+		assertThat(radioState(), is(false));
+	}
+
+	@Test
+	public void metadata_readsWithoutHoldingLock() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andAnswer(() -> {
+			assertThat("service lock not held while reading metadata", Thread.holdsLock(service),
+					is(false));
+			return meta(ALWAYS);
+		}).times(3);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+		service.configurationChanged(Map.of());
+		service.scheduleTick();
+		assertThat(radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_alwaysOn_noScheduleTickOrRead() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		TaskScheduler scheduler = EasyMock.createMock(TaskScheduler.class);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		ScheduledFuture future = EasyMock.createMock(ScheduledFuture.class);
+		// with Always On nothing is scheduled and no metadata is read
+		replayAll();
+		replay(scheduler, future);
+
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
+				metadataServiceRef);
+		s.setCommand(tmpFile.getAbsolutePath());
+		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
+		s.setWatchdogIntervalSeconds(0);
+		s.setAlwaysOn(true);
+		s.setMetadataPath(META_PATH);
+		s.startup();
+
+		verify(scheduler, future);
+	}
+
+	@Test
+	public void metadata_pathOnly_registersScheduleTick() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		TaskScheduler scheduler = EasyMock.createMock(TaskScheduler.class);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		ScheduledFuture future = EasyMock.createMock(ScheduledFuture.class);
+		expect(scheduler.scheduleWithFixedDelay(anyObject(Runnable.class), anyObject(Instant.class),
+				eq(Duration.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS)))).andReturn(future)
+						.times(1);
+		expect(scheduler.schedule(anyObject(Runnable.class), anyObject(Instant.class))).andReturn(future)
+				.times(1);
+		replayAll();
+		replay(scheduler, future);
+
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
+				metadataServiceRef);
+		s.setCommand(tmpFile.getAbsolutePath());
+		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
+		s.setWatchdogIntervalSeconds(0);
+		s.setAlwaysOn(false);
+		s.setTimeZone("UTC");
+		s.setMetadataPath(META_PATH);
+		s.startup();
+
+		verify(scheduler, future);
+	}
+
+	@Test
+	public void metadata_errorDoesNotBlockLaterReads() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andThrow(new LinkageError("bundle refreshed"))
+				.andReturn(meta(ALWAYS));
+		replayAll();
+
+		try {
+			startWithMetadata(WEEKDAY_HOURS);
+			org.junit.Assert.fail("Error should propagate");
+		} catch ( LinkageError e ) {
+			// expected
+		}
+		assertThat(radioState(), is(false));
+
+		service.scheduleTick();
+		assertThat("the next tick reads again", radioState(), is(true));
+	}
+
+	@Test
+	public void metadata_shutdown_stopsTick() throws IOException {
+		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
+		replayAll();
+
+		startWithMetadata(WEEKDAY_HOURS);
+		assertThat(radioState(), is(true));
+		final int lines = rawLogLines();
+
+		service.shutdown();
+		service.scheduleTick();
+
+		assertThat("no metadata read or helper call after shutdown", rawLogLines(), equalTo(lines));
 	}
 
 }

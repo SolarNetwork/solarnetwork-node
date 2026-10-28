@@ -40,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -52,12 +53,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.Identifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -77,10 +84,13 @@ import net.solarnetwork.util.DateUtils;
  * </p>
  *
  * <ol>
- * <li>the {@link #getSchedule()} availability schedule applies at the current
- * time in the {@link #getTimeZone()} zone (see {@link AvailabilitySchedule} for
- * the syntax). An unparseable schedule or an invalid zone never applies, so a
- * mistake can only narrow availability;</li>
+ * <li>the availability schedule applies at the current time in the
+ * {@link #getTimeZone()} zone (see {@link AvailabilitySchedule} for the
+ * syntax). The schedule comes from the {@link #getMetadataPath()} metadata path
+ * of the {@link #getMetadataServiceUid()} metadata service when configured and
+ * loaded, otherwise from the {@link #getSchedule()} setting. An unparseable
+ * schedule or an invalid zone never applies, so a mistake can only narrow
+ * availability;</li>
  * <li>the {@link #getOpMode()} operational mode is active, as an override.
  * SolarNetwork can enable this remotely with the {@code EnableOperationalModes}
  * instruction (with an {@code Expiration}), and a Bluetooth client can enable
@@ -176,6 +186,21 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/** The number of seconds between availability schedule checks. */
 	public static final int SCHEDULE_TICK_SECONDS = 15;
 
+	/** The default value for the {@code metadataServiceUid} property. */
+	public static final String DEFAULT_METADATA_SERVICE_UID = "Node Metadata Service";
+
+	/**
+	 * The number of seconds to wait before reading the metadata schedule again
+	 * after the metadata could not be loaded.
+	 */
+	public static final int METADATA_RETRY_SECONDS = 300;
+
+	/** The {@code scheduleSource} status value for the Schedule setting. */
+	public static final String SCHEDULE_SOURCE_SETTING = "setting";
+
+	/** The {@code scheduleSource} status value for a metadata schedule. */
+	public static final String SCHEDULE_SOURCE_METADATA = "metadata";
+
 	/**
 	 * The time to wait for the output reader threads after the process exits.
 	 */
@@ -185,6 +210,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 
 	private final OperationalModesService opModesService;
 	private final TaskScheduler taskScheduler;
+	private final @Nullable OptionalFilterableService<MetadataService> metadataService;
 
 	private Clock clock = Clock.systemUTC();
 
@@ -194,6 +220,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	private boolean alwaysOn = true;
 	private String schedule = "";
 	private String timeZone = "";
+	private String metadataServiceUid = DEFAULT_METADATA_SERVICE_UID;
+	private String metadataPath = "";
 	private boolean offlineTriggerEnabled = true;
 	private int offlineThresholdMinutes = DEFAULT_OFFLINE_THRESHOLD_MINUTES;
 	private int onlineGraceMinutes = DEFAULT_ONLINE_GRACE_MINUTES;
@@ -212,10 +240,28 @@ public class BluetoothSetupService extends BaseIdentifiable
 	private int watchdogScheduledIntervalSeconds = 0;
 	private @Nullable AvailabilitySchedule availability = null;
 	private @Nullable String scheduleError = null;
+	private String scheduleSource = SCHEDULE_SOURCE_SETTING;
 	private @Nullable ZoneId zone = null;
+	private @Nullable String zoneError = null;
+	private @Nullable AvailabilitySchedule inlineSchedule = null;
+	private @Nullable String inlineError = null;
+
+	// the last metadata schedule result: a schedule or a parse error, kept while
+	// the metadata is unreachable so an outage never restores an older schedule
+	private boolean metadataInEffect = false;
+	private @Nullable AvailabilitySchedule metadataSchedule = null;
+	private @Nullable String metadataError = null;
+	private @Nullable Object lastMetadataValue = null;
+	private @Nullable String metadataReadError = null;
+	private @Nullable Instant metadataRetryAfter = null;
+	private long metadataGeneration = 0;
+	private boolean metadataReadInFlight = false;
+	private String lastMetadataServiceUid = DEFAULT_METADATA_SERVICE_UID;
+	private String lastMetadataPath = "";
 	private ScheduledFuture<?> scheduleFuture = null;
 	private @Nullable Boolean lastScheduleAllows = null;
 	private boolean lastReconcileOk = false;
+	private boolean stopped = false;
 
 	/**
 	 * Constructor.
@@ -224,11 +270,17 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 *        the operational modes service
 	 * @param taskScheduler
 	 *        the task scheduler
+	 * @param metadataService
+	 *        the metadata service to read a schedule from, or {@literal null}
 	 */
-	public BluetoothSetupService(OperationalModesService opModesService, TaskScheduler taskScheduler) {
+	public BluetoothSetupService(OperationalModesService opModesService, TaskScheduler taskScheduler,
+			@Nullable OptionalFilterableService<MetadataService> metadataService) {
 		super();
 		this.opModesService = opModesService;
 		this.taskScheduler = taskScheduler;
+		this.metadataService = metadataService;
+		FilterableService.setFilterProp((FilterableService) metadataService, Identifiable.UID_PROPERTY,
+				DEFAULT_METADATA_SERVICE_UID);
 		setUid("net.solarnetwork.node.setup.bluetooth.BluetoothSetupService");
 		setDisplayName("Bluetooth Setup");
 	}
@@ -238,16 +290,23 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 *
 	 * <p>
 	 * Synchronises the radio with the current desired state and starts the
-	 * offline watchdog.
+	 * offline watchdog. A metadata schedule, if configured, is read afterwards
+	 * without holding the service lock.
 	 * </p>
 	 */
-	public synchronized void startup() {
-		opModeActive = opModesService.isOperationalModeActive(opMode);
-		lastOfflineOpMode = offlineOpMode;
-		applySchedule();
-		reconcileQuietly();
-		scheduleWatchdog();
-		scheduleScheduleTick();
+	public void startup() {
+		synchronized ( this ) {
+			stopped = false;
+			opModeActive = opModesService.isOperationalModeActive(opMode);
+			lastOfflineOpMode = offlineOpMode;
+			lastMetadataServiceUid = metadataServiceUid;
+			lastMetadataPath = metadataPath;
+			applySchedule();
+			reconcileQuietly();
+			scheduleWatchdog();
+			scheduleScheduleTick();
+		}
+		requestMetadataRefresh();
 	}
 
 	/**
@@ -259,12 +318,22 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * </p>
 	 */
 	public synchronized void shutdown() {
+		// a tick already running, or a one-off metadata read already queued, must
+		// not change the radio after shutdown
+		stopped = true;
 		cancelWatchdog();
 		cancelScheduleTick();
 	}
 
 	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(Map<String, Object> properties) {
+		synchronized ( this ) {
+			configurationChangedInternal();
+		}
+		requestMetadataRefresh();
+	}
+
+	private void configurationChangedInternal() {
 		opModeActive = opModesService.isOperationalModeActive(opMode);
 		// the "enableMinutes" field is transient: when set, enable the radio for
 		// that long and then clear the value so the UI returns to 0 on reload
@@ -290,6 +359,17 @@ public class BluetoothSetupService extends BaseIdentifiable
 			clearOfflineState();
 		}
 		lastOfflineOpMode = offlineOpMode;
+		if ( !metadataServiceUid.equals(lastMetadataServiceUid)
+				|| !metadataPath.equals(lastMetadataPath) ) {
+			// a different source: forget the old source's schedule and drop any
+			// read still in flight for it
+			metadataGeneration++;
+			clearMetadataState();
+			metadataReadInFlight = false;
+		}
+		lastMetadataServiceUid = metadataServiceUid;
+		lastMetadataPath = metadataPath;
+		metadataRetryAfter = null;
 		applySchedule();
 		reconcileQuietly();
 		scheduleScheduleTick();
@@ -447,47 +527,234 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * </p>
 	 */
 	private void applySchedule() {
-		String error = null;
 		AvailabilitySchedule sched = null;
-		ZoneId z = null;
+		String error = null;
 		try {
 			sched = AvailabilitySchedule.parse(schedule);
 		} catch ( IllegalArgumentException e ) {
 			error = e.getMessage();
 		}
+		ZoneId z = null;
+		String zError = null;
 		try {
 			z = DateUtils.tz(timeZone == null || timeZone.isBlank() ? null : timeZone.trim());
 		} catch ( IllegalArgumentException e ) {
-			error = (error != null ? error + "; " : "") + e.getMessage();
+			zError = e.getMessage();
 		}
+		this.inlineSchedule = sched;
+		this.inlineError = error;
+		this.zone = z;
+		this.zoneError = zError;
+		updateEffectiveSchedule();
+		this.lastScheduleAllows = null;
+	}
+
+	/**
+	 * Choose the schedule in effect: the metadata schedule when one is
+	 * configured and loaded, otherwise the Schedule setting.
+	 *
+	 * @return {@literal true} if the schedule in effect changed
+	 */
+	private boolean updateEffectiveSchedule() {
+		final boolean useMetadata = metadataConfigured() && metadataInEffect;
+		final AvailabilitySchedule sched = (useMetadata ? metadataSchedule : inlineSchedule);
+		String error = (useMetadata ? metadataError : inlineError);
+		if ( zoneError != null ) {
+			error = (error != null ? error + "; " : "") + zoneError;
+		}
+		final String source = (useMetadata ? SCHEDULE_SOURCE_METADATA : SCHEDULE_SOURCE_SETTING);
+		final boolean changed = (sched != availability || !Objects.equals(error, scheduleError)
+				|| !source.equals(scheduleSource));
 		if ( error != null && !error.equals(this.scheduleError) ) {
 			log.warn("Bluetooth setup schedule is invalid and will not apply: {}", error);
 		}
 		this.availability = sched;
-		this.zone = z;
 		this.scheduleError = error;
-		this.lastScheduleAllows = null;
+		this.scheduleSource = source;
+		if ( changed ) {
+			this.lastScheduleAllows = null;
+		}
+		return changed;
+	}
+
+	private boolean metadataConfigured() {
+		return (metadataService != null && !metadataServiceUid.isEmpty() && !metadataPath.isEmpty());
+	}
+
+	private void clearMetadataState() {
+		metadataInEffect = false;
+		metadataSchedule = null;
+		metadataError = null;
+		lastMetadataValue = null;
+		metadataReadError = null;
+		metadataRetryAfter = null;
+	}
+
+	/**
+	 * Read the metadata schedule soon, without holding the service lock.
+	 */
+	private void requestMetadataRefresh() {
+		synchronized ( this ) {
+			// with Always On the schedule is ignored, so there is nothing to read;
+			// turning Always On off is a configuration change that requests a read
+			if ( alwaysOn || !metadataConfigured() ) {
+				return;
+			}
+		}
+		if ( taskScheduler != null ) {
+			taskScheduler.schedule(this::scheduleTick, clock.instant());
+		} else {
+			scheduleTick();
+		}
+	}
+
+	/** The outcome of reading the metadata schedule. */
+	private enum MetadataReadKind {
+		/** No metadata service is available. */
+		NO_SERVICE,
+		/** The metadata could not be loaded. */
+		UNREACHABLE,
+		/** The metadata loaded but has no value at the path. */
+		ABSENT,
+		/** The metadata has a value at the path. */
+		VALUE,
+	}
+
+	/**
+	 * Read the metadata schedule, if one is configured and due.
+	 *
+	 * <p>
+	 * The metadata service is called without holding the service lock, because
+	 * loading metadata can mean a slow network request. At most one read runs
+	 * at a time, and a result for a source that has since been reconfigured is
+	 * ignored.
+	 * </p>
+	 */
+	private void refreshMetadataSchedule() {
+		final String path;
+		final long generation;
+		synchronized ( this ) {
+			if ( stopped || !metadataConfigured() || metadataReadInFlight ) {
+				return;
+			}
+			if ( metadataRetryAfter != null && clock.instant().isBefore(metadataRetryAfter) ) {
+				return;
+			}
+			path = metadataPath;
+			generation = metadataGeneration;
+			metadataReadInFlight = true;
+		}
+		MetadataReadKind kind;
+		Object value = null;
+		String message = null;
+		try {
+			final MetadataService service = OptionalService.service(metadataService);
+			if ( service == null ) {
+				kind = MetadataReadKind.NO_SERVICE;
+			} else {
+				final GeneralDatumMetadata meta = service.getAllMetadata();
+				if ( meta == null ) {
+					kind = MetadataReadKind.UNREACHABLE;
+				} else {
+					value = meta.metadataAtPath(path);
+					kind = (value != null ? MetadataReadKind.VALUE : MetadataReadKind.ABSENT);
+				}
+			}
+		} catch ( Exception e ) {
+			kind = MetadataReadKind.UNREACHABLE;
+			message = e.getMessage();
+		} catch ( Throwable t ) {
+			// release the in-flight flag so an Error does not block later reads
+			synchronized ( this ) {
+				if ( generation == metadataGeneration ) {
+					metadataReadInFlight = false;
+				}
+			}
+			throw t;
+		}
+		applyMetadataResult(generation, path, kind, value, message);
+	}
+
+	private synchronized void applyMetadataResult(long generation, String path, MetadataReadKind kind,
+			@Nullable Object value, @Nullable String message) {
+		if ( generation != metadataGeneration ) {
+			// the source was reconfigured while reading; a newer read applies
+			return;
+		}
+		metadataReadInFlight = false;
+		if ( stopped ) {
+			return;
+		}
+		switch (kind) {
+			case NO_SERVICE:
+				// cheap to retry, so no back-off
+				metadataReadError = "no Metadata Service available";
+				break;
+
+			case UNREACHABLE:
+				// keep the last result, schedule or error alike
+				metadataReadError = "metadata unavailable" + (message != null ? ": " + message : "");
+				metadataRetryAfter = clock.instant().plusSeconds(METADATA_RETRY_SECONDS);
+				log.warn("Bluetooth setup metadata schedule at [{}] could not be loaded: {}", path,
+						metadataReadError);
+				break;
+
+			case ABSENT:
+				if ( metadataInEffect ) {
+					log.info(
+							"Bluetooth setup metadata schedule at [{}] removed; using the Schedule setting",
+							path);
+				}
+				clearMetadataState();
+				metadataReadError = "no schedule at " + path;
+				break;
+
+			case VALUE:
+				metadataReadError = null;
+				if ( !metadataInEffect || !Objects.equals(value, lastMetadataValue) ) {
+					try {
+						metadataSchedule = AvailabilitySchedule.fromMetadata(value);
+						metadataError = null;
+						log.info("Bluetooth setup schedule loaded from metadata at [{}]", path);
+					} catch ( RuntimeException e ) {
+						// fail closed: an invalid metadata schedule never applies
+						metadataSchedule = null;
+						metadataError = "metadata schedule invalid: " + e.getMessage();
+					}
+					lastMetadataValue = value;
+					metadataInEffect = true;
+				}
+				break;
+		}
+		updateEffectiveSchedule();
 	}
 
 	/**
 	 * Check the availability schedule and reconcile the radio if it has crossed
 	 * a window edge since the last check.
 	 */
-	public synchronized void scheduleTick() {
-		final boolean allows = scheduleAllows();
-		if ( lastScheduleAllows != null && lastScheduleAllows.booleanValue() == allows ) {
-			return;
+	public void scheduleTick() {
+		refreshMetadataSchedule();
+		synchronized ( this ) {
+			if ( stopped ) {
+				return;
+			}
+			final boolean allows = scheduleAllows();
+			if ( lastScheduleAllows != null && lastScheduleAllows.booleanValue() == allows ) {
+				return;
+			}
+			log.info("Bluetooth setup schedule now {} the radio on",
+					allows ? "allows" : "does not allow");
+			// only treat the edge as handled once the radio really followed it, so a
+			// failed helper call is retried on the next tick
+			lastScheduleAllows = (reconcileQuietly() ? Boolean.valueOf(allows) : null);
 		}
-		log.info("Bluetooth setup schedule now {} the radio on", allows ? "allows" : "does not allow");
-		// only treat the edge as handled once the radio really followed it, so a
-		// failed helper call is retried on the next tick
-		lastScheduleAllows = (reconcileQuietly() ? Boolean.valueOf(allows) : null);
 	}
 
 	private void scheduleScheduleTick() {
 		final AvailabilitySchedule sched = this.availability;
-		final boolean wanted = (!alwaysOn && sched != null && !sched.isEmpty() && scheduleError == null
-				&& taskScheduler != null);
+		final boolean wanted = (!alwaysOn && taskScheduler != null && (metadataConfigured()
+				|| (sched != null && !sched.isEmpty() && scheduleError == null)));
 		if ( !wanted ) {
 			cancelScheduleTick();
 			return;
@@ -674,6 +941,9 @@ public class BluetoothSetupService extends BaseIdentifiable
 		result.add(new BasicToggleSettingSpecifier("alwaysOn", Boolean.TRUE));
 		result.add(new BasicTextAreaSettingSpecifier("schedule", "", true));
 		result.add(new BasicTextFieldSettingSpecifier("timeZone", ""));
+		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", DEFAULT_METADATA_SERVICE_UID,
+				false, "(objectClass=net.solarnetwork.node.service.MetadataService)"));
+		result.add(new BasicTextFieldSettingSpecifier("metadataPath", ""));
 		result.add(new BasicTextFieldSettingSpecifier("opMode", DEFAULT_OP_MODE));
 		result.add(new BasicTextFieldSettingSpecifier("defaultDurationSeconds",
 				String.valueOf(DEFAULT_DEFAULT_DURATION_SECONDS)));
@@ -724,6 +994,21 @@ public class BluetoothSetupService extends BaseIdentifiable
 							status.getOfflineSince().plus(Duration.ofMinutes(offlineThresholdMinutes)) },
 					"offline mode active", Locale.getDefault()));
 		}
+		if ( metadataConfigured() ) {
+			final String readError = status.getScheduleMetadataError();
+			if ( !SCHEDULE_SOURCE_METADATA.equals(status.getScheduleSource()) ) {
+				reasons.add(messageSource.getMessage("status.scheduleMetadataNotLoaded",
+						new Object[] { metadataPath, readError != null ? readError : "not read yet" },
+						"metadata schedule not loaded", Locale.getDefault()));
+			} else if ( readError != null ) {
+				reasons.add(messageSource.getMessage("status.scheduleMetadataStale",
+						new Object[] { metadataPath, readError }, "metadata unavailable",
+						Locale.getDefault()));
+			} else {
+				reasons.add(messageSource.getMessage("status.scheduleMetadata",
+						new Object[] { metadataPath }, "schedule from metadata", Locale.getDefault()));
+			}
+		}
 		if ( status.getScheduleError() != null ) {
 			reasons.add(messageSource.getMessage("status.scheduleInvalid",
 					new Object[] { status.getScheduleError() }, "schedule invalid",
@@ -771,12 +1056,15 @@ public class BluetoothSetupService extends BaseIdentifiable
 		private final boolean scheduleActive;
 		private final String scheduleError;
 		private final Long scheduleNext;
+		private final String scheduleSource;
+		private final String scheduleMetadataError;
 		private final String timeZone;
 
 		private Status(boolean radioActive, boolean discoverable, boolean powered,
 				boolean installEnabled, boolean opModeActive, Long opModeExpires, boolean offline,
 				Instant offlineSince, boolean alwaysOn, String schedule, boolean scheduleActive,
-				String scheduleError, Long scheduleNext, String timeZone) {
+				String scheduleError, Long scheduleNext, String scheduleSource,
+				String scheduleMetadataError, String timeZone) {
 			super();
 			this.radioActive = radioActive;
 			this.discoverable = discoverable;
@@ -791,6 +1079,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 			this.scheduleActive = scheduleActive;
 			this.scheduleError = scheduleError;
 			this.scheduleNext = scheduleNext;
+			this.scheduleSource = scheduleSource;
+			this.scheduleMetadataError = scheduleMetadataError;
 			this.timeZone = timeZone;
 		}
 
@@ -921,6 +1211,28 @@ public class BluetoothSetupService extends BaseIdentifiable
 		}
 
 		/**
+		 * Get the source of the schedule in effect.
+		 *
+		 * @return {@link BluetoothSetupService#SCHEDULE_SOURCE_METADATA} when
+		 *         the schedule (or its error) comes from metadata, otherwise
+		 *         {@link BluetoothSetupService#SCHEDULE_SOURCE_SETTING}
+		 */
+		public String getScheduleSource() {
+			return scheduleSource;
+		}
+
+		/**
+		 * Get the metadata schedule read problem.
+		 *
+		 * @return why the metadata schedule could not be read, such as the
+		 *         metadata being unavailable or having no schedule at the path,
+		 *         or {@literal null} if it was read or is not configured
+		 */
+		public String getScheduleMetadataError() {
+			return scheduleMetadataError;
+		}
+
+		/**
 		 * Get the effective time zone.
 		 *
 		 * @return the zone ID the schedule is evaluated in, or {@literal null}
@@ -1000,6 +1312,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 		return new Status(active, discoverable, powered, enabled, opModeActive, expires,
 				offlineDetectionActive() && offline, offlineDetectionActive() ? offlineSince : null,
 				alwaysOn, sched != null ? sched.toString() : "", schedActive, scheduleError, next,
+				scheduleSource, metadataConfigured() ? metadataReadError : null,
 				z != null ? z.getId() : null);
 	}
 
@@ -1192,6 +1505,50 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 */
 	public void setSchedule(String schedule) {
 		this.schedule = (schedule != null ? schedule : "");
+	}
+
+	/**
+	 * Get the metadata service UID.
+	 *
+	 * @return the UID of the metadata service to read a schedule from, such as
+	 *         {@link #DEFAULT_METADATA_SERVICE_UID}
+	 */
+	public String getMetadataServiceUid() {
+		return metadataServiceUid;
+	}
+
+	/**
+	 * Set the metadata service UID.
+	 *
+	 * @param metadataServiceUid
+	 *        the UID of the metadata service to read a schedule from; empty
+	 *        means no metadata schedule
+	 */
+	public void setMetadataServiceUid(String metadataServiceUid) {
+		this.metadataServiceUid = (metadataServiceUid != null ? metadataServiceUid.trim() : "");
+		FilterableService.setFilterProp((FilterableService) metadataService, Identifiable.UID_PROPERTY,
+				this.metadataServiceUid);
+	}
+
+	/**
+	 * Get the metadata path.
+	 *
+	 * @return the metadata path to read a schedule from, or an empty string for
+	 *         none
+	 */
+	public String getMetadataPath() {
+		return metadataPath;
+	}
+
+	/**
+	 * Set the metadata path.
+	 *
+	 * @param metadataPath
+	 *        the metadata path to read a schedule from, such as
+	 *        {@code /pm/bluetooth/schedule}; empty means no metadata schedule
+	 */
+	public void setMetadataPath(String metadataPath) {
+		this.metadataPath = (metadataPath != null ? metadataPath.trim() : "");
 	}
 
 	/**

@@ -31,9 +31,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 import de.siegmar.fastcsv.reader.CommentStrategy;
@@ -41,6 +44,7 @@ import de.siegmar.fastcsv.reader.CsvReader;
 import de.siegmar.fastcsv.reader.CsvRecord;
 import de.siegmar.fastcsv.reader.CsvRecordHandler;
 import de.siegmar.fastcsv.reader.FieldModifiers;
+import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
 import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
@@ -168,6 +172,63 @@ public final class AvailabilitySchedule {
 			}
 		}
 		return (rules.isEmpty() ? EMPTY : new AvailabilitySchedule(rules));
+	}
+
+	/**
+	 * Parse a schedule from a metadata value.
+	 *
+	 * <p>
+	 * The value can be the schedule CSV as a string, or the CSV rows as a list
+	 * of lists, like a JSON array of arrays, where the first row is the header.
+	 * A list is converted to CSV text and parsed the same way as a string, so
+	 * both forms are validated identically.
+	 * </p>
+	 *
+	 * @param value
+	 *        the metadata value
+	 * @return the schedule, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if the value is not a supported type or the schedule cannot be
+	 *         parsed
+	 */
+	public static AvailabilitySchedule fromMetadata(Object value) {
+		if ( value instanceof String s ) {
+			return parse(s);
+		}
+		if ( value instanceof List<?> rows ) {
+			return parse(toCsv(rows));
+		}
+		throw new IllegalArgumentException("Unsupported schedule metadata type "
+				+ (value != null ? value.getClass().getSimpleName() : "null")
+				+ ": use a CSV string or an array of rows");
+	}
+
+	private static String toCsv(List<?> rows) {
+		StringWriter out = new StringWriter();
+		try (CsvWriter csv = CsvWriter.builder().build(out)) {
+			int rowNum = 0;
+			for ( Object row : rows ) {
+				rowNum++;
+				if ( !(row instanceof List<?> cells) ) {
+					throw new IllegalArgumentException(String
+							.format("Schedule metadata row %d must be an array of values", rowNum));
+				}
+				List<String> fields = new ArrayList<>(cells.size());
+				for ( Object cell : cells ) {
+					if ( cell instanceof Map<?, ?> || cell instanceof Collection<?>
+							|| (cell != null && cell.getClass().isArray()) ) {
+						throw new IllegalArgumentException(String.format(
+								"Schedule metadata row %d must contain only simple values", rowNum));
+					}
+					fields.add(cell != null ? String.valueOf(cell) : "");
+				}
+				csv.writeRecord(fields);
+			}
+		} catch ( IOException e ) {
+			// not expected from a StringWriter
+			throw new IllegalStateException(e);
+		}
+		return out.toString();
 	}
 
 	/**

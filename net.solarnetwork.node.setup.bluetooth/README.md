@@ -32,23 +32,25 @@ restart.
 
 # Settings
 
-| Setting           | Default                  | Description                                                                                                                                                                         |
-|:------------------|:-------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Status            |                          | The current radio state and why it is on, including the schedule state and the time zone in use.                                                                                    |
-| Override For      | `0`                      | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                                         |
-| Always On         | on                       | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                                                 |
-| Schedule          |                          | The availability rules, as tariff schedule CSV. See [Schedule syntax](#schedule-syntax). Ignored while _Always On_ is on. An invalid schedule never applies.                        |
-| Time Zone         |                          | The IANA zone ID to evaluate the schedule in, such as `Pacific/Auckland`. Empty means the node system zone. An invalid zone means the schedule never applies.                       |
-| Override Mode     | `bt-setup`               | The operational mode that turns the radio on while it is active, regardless of the schedule.                                                                                        |
-| Override Duration | `1800`                   | Seconds to turn the radio on for when an `enable` request has no `duration`.                                                                                                        |
-| Maximum Override  | `14400`                  | The longest a single `enable` request can turn the radio on for, in seconds. `0` for no limit.                                                                                      |
-| Offline Trigger   | on                       | Turn the radio on automatically while the _Offline Mode_ has been active for _Offline Threshold_ minutes. Needs an HTTP Ping control; see [Offline detection](#offline-detection).  |
-| Offline Threshold | `15`                     | Minutes the _Offline Mode_ must be active before the radio turns on.                                                                                                                |
-| Online Grace      | `10`                     | Minutes to keep the radio on after the _Offline Mode_ becomes inactive.                                                                                                             |
-| Check Interval    | `60`                     | Seconds between checks of the _Offline Mode_ and the radio state. `0` disables the checks and the offline trigger. Does not affect the schedule check.                              |
-| Offline Mode      | `net-offline`            | The operational mode that means the network is offline, as set by an HTTP Ping control's _Failure Op Mode_. A single mode name (no `!` prefix). Empty disables the offline trigger. |
-| Command           | `{sn.home}/bin/solarcfg` | The `solarcfg` command to execute.                                                                                                                                                  |
-| Command Timeout   | `60`                     | Seconds to wait for the `solarcfg` command before giving up on it. A helper that exceeds this is killed and the radio state is left unchanged.                                      |
+| Setting           | Default                  | Description                                                                                                                                                                                                                                                                |
+|:------------------|:-------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Status            |                          | The current radio state and why it is on, including the schedule state and the time zone in use.                                                                                                                                                                           |
+| Override For      | `0`                      | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                                                                                                                                |
+| Always On         | on                       | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                                                                                                                                        |
+| Schedule          |                          | The availability rules, as tariff schedule CSV. See [Schedule syntax](#schedule-syntax). Ignored while _Always On_ is on. Replaced by a metadata schedule when one is in effect; see [Schedule from metadata](#schedule-from-metadata). An invalid schedule never applies. |
+| Time Zone         |                          | The IANA zone ID to evaluate the schedule in, such as `Pacific/Auckland`. Empty means the node system zone. An invalid zone means the schedule never applies.                                                                                                              |
+| Metadata Service  | `Node Metadata Service`  | The metadata service to read the schedule from: `Node Metadata Service` for node metadata, or the _Service Name_ of a User Metadata Service component.                                                                                                                     |
+| Metadata Path     |                          | The metadata path to read the schedule from, such as `/pm/bluetooth/schedule`. Empty means only the _Schedule_ setting is used.                                                                                                                                            |
+| Override Mode     | `bt-setup`               | The operational mode that turns the radio on while it is active, regardless of the schedule.                                                                                                                                                                               |
+| Override Duration | `1800`                   | Seconds to turn the radio on for when an `enable` request has no `duration`.                                                                                                                                                                                               |
+| Maximum Override  | `14400`                  | The longest a single `enable` request can turn the radio on for, in seconds. `0` for no limit.                                                                                                                                                                             |
+| Offline Trigger   | on                       | Turn the radio on automatically while the _Offline Mode_ has been active for _Offline Threshold_ minutes. Needs an HTTP Ping control; see [Offline detection](#offline-detection).                                                                                         |
+| Offline Threshold | `15`                     | Minutes the _Offline Mode_ must be active before the radio turns on.                                                                                                                                                                                                       |
+| Online Grace      | `10`                     | Minutes to keep the radio on after the _Offline Mode_ becomes inactive.                                                                                                                                                                                                    |
+| Check Interval    | `60`                     | Seconds between checks of the _Offline Mode_ and the radio state. `0` disables the checks and the offline trigger. Does not affect the schedule check.                                                                                                                     |
+| Offline Mode      | `net-offline`            | The operational mode that means the network is offline, as set by an HTTP Ping control's _Failure Op Mode_. A single mode name (no `!` prefix). Empty disables the offline trigger.                                                                                        |
+| Command           | `{sn.home}/bin/solarcfg` | The `solarcfg` command to execute.                                                                                                                                                                                                                                         |
+| Command Timeout   | `60`                     | Seconds to wait for the `solarcfg` command before giving up on it. A helper that exceeds this is killed and the radio state is left unchanged.                                                                                                                             |
 
 ## Offline detection
 
@@ -146,18 +148,68 @@ If the schedule or time zone is invalid, the schedule never applies (so the
 radio stays off unless something else turns it on). A warning is logged and the
 error is shown in the _Status_ and in the `status` instruction result.
 
+## Schedule from metadata
+
+The schedule can also come from SolarNetwork metadata, so it can be changed
+without touching each node's settings. Set _Metadata Service_ and _Metadata
+Path_, and the plugin reads the schedule from that path each time it checks the
+schedule (every 15 seconds). The value is the same CSV, either as a string or
+as an array of rows whose first row is the header:
+
+```json
+{"pm":{"bluetooth":{"schedule":"Month,Day,Weekday,Time,Available\n,,Mon-Fri,07:00-18:00,1\n,,\"Sat,Sun\",08:00-12:00,1"}}}
+```
+
+```json
+{"pm":{"bluetooth":{"schedule":[
+  ["Month","Day","Weekday","Time","Available"],
+  ["","","Mon-Fri","07:00-18:00",1],
+  ["","","Sat,Sun","08:00-12:00",1]
+]}}}
+```
+
+In the string form, line breaks are written `\n` and quotes `\"`. In the array
+form no quoting is needed.
+
+Which schedule applies:
+
+- When a schedule loads from the metadata path, it replaces the _Schedule_
+  setting.
+- When the metadata loads but has nothing at the path, the _Schedule_ setting
+  applies.
+- Until the metadata first loads, including after a restart without network,
+  the _Schedule_ setting applies. Leave _Schedule_ empty, or make it no wider
+  than the metadata schedule, so this never opens the radio more than intended.
+- When the metadata can't be loaded later, the last result is kept, and the
+  plugin tries again after 5 minutes. A node with no metadata at all counts as
+  metadata that can't be loaded.
+- An invalid metadata schedule never applies, and the _Schedule_ setting isn't
+  used in its place, so a mistake can only narrow availability.
+
+To turn scheduled availability off from metadata, push a schedule with only the
+header row. To go back to the _Schedule_ setting, clear _Metadata Path_. Update
+node metadata with `POST`, which changes only the keys you send: `PUT` replaces
+all of the node's metadata and `DELETE` removes all of it. The schedule is
+always evaluated in each node's own _Time Zone_.
+
+Write access to the metadata path now controls the radio, separately from
+permission to send instructions. Only an invalid schedule fails closed: a valid
+but wider schedule pushed by mistake opens the radio more. Prefer node metadata.
+A user metadata path can open the radio on every node that reads it, so leave
+_Metadata Path_ empty on nodes that shouldn't follow a shared schedule.
+
 ## Pushing a schedule from SolarNetwork
 
-The schedule, time zone and _Always On_ settings are ordinary SolarNode
-settings, so they can be set on many nodes with the standard `UpdateSetting`
-instruction, one `key`/`type`/`value` triplet per setting:
+First configure each node once with the standard `UpdateSetting` instruction,
+one `key`/`type`/`value` triplet per setting. This sets _Always On_, _Time Zone_
+and _Metadata Path_ (_Metadata Service_ defaults to the node metadata service):
 
 ```
 POST /solaruser/api/v1/sec/instr/add/UpdateSetting
 nodeId=123
 &parameters[0].name=key&parameters[0].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
-&parameters[1].name=type&parameters[1].value=schedule
-&parameters[2].name=value&parameters[2].value=Month,Day,Weekday,Time,Available%0A,,Mon-Fri,07:00-18:00,1
+&parameters[1].name=type&parameters[1].value=metadataPath
+&parameters[2].name=value&parameters[2].value=/pm/bluetooth/schedule
 &parameters[3].name=key&parameters[3].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
 &parameters[4].name=type&parameters[4].value=timeZone
 &parameters[5].name=value&parameters[5].value=Pacific/Auckland
@@ -166,10 +218,47 @@ nodeId=123
 &parameters[8].name=value&parameters[8].value=false
 ```
 
-The schedule value is CSV, so URL-encode its line breaks as `%0A`.
-`UpdateSetting` completes even if the value is invalid, so afterwards send a
-`SystemConfigure` instruction with `service=/setup/bluetooth` and
-`action=status` and check that `scheduleError` is `null`.
+Then set or change the schedule by updating the node's metadata:
+
+```
+POST /solaruser/api/v1/sec/nodes/meta/123
+Content-Type: application/json
+
+{"pm":{"bluetooth":{"schedule":"Month,Day,Weekday,Time,Available\n,,Mon-Fri,07:00-18:00,1"}}}
+```
+
+The node metadata service caches metadata for an hour by default. To apply the
+change straight away, queue a `Signal` instruction that clears its cache. The
+parameter name is always `net.solarnetwork.node.metadata.json`, whatever
+_Metadata Service_ is set to:
+
+```
+POST /solaruser/api/v1/sec/instr/add/Signal
+nodeId=123&parameters[0].name=net.solarnetwork.node.metadata.json&parameters[0].value=clear-cache
+```
+
+The node then reads the new schedule within about 15 seconds, or up to 5
+minutes if its last read failed or it had no metadata before. Saving the
+Bluetooth Setup settings again clears that wait. To confirm it,
+send a `SystemConfigure` instruction with `service=/setup/bluetooth` and
+`action=status` and check that `scheduleSource` is `metadata` and
+`scheduleError` is `null`. If the metadata service caches nothing
+(_Cache Seconds_ `0`), every schedule check is a request to SolarNetwork.
+
+To share one schedule between nodes, use user metadata instead:
+
+- Create a User Metadata Service component with a read-only token.
+- Set _Metadata Service_ to its _Service Name_.
+- Update the schedule with `POST /solaruser/api/v1/sec/users/meta`.
+
+The user metadata service doesn't handle the clear-cache signal yet (NODE-290).
+Changes apply when its cache expires (an hour by default), or sooner when its
+settings are saved again.
+
+The _Schedule_ setting can also be set with `UpdateSetting`, using
+`type=schedule` and the CSV as the value with line breaks URL-encoded as `%0A`.
+`UpdateSetting` completes even if the value is invalid, so check the `status`
+result afterwards in the same way.
 
 # Overriding the schedule
 
@@ -228,12 +317,16 @@ The `result` of every action is a status object:
 	"scheduleActive": true,
 	"scheduleError": null,
 	"scheduleNext": 1791000000000,
+	"scheduleSource": "metadata",
+	"scheduleMetadataError": null,
 	"timeZone": "Pacific/Auckland"
 }
 ```
 
-`schedule` is the configured schedule's rules in normalised form, without the
-header and separated by `; `. `offline` is whether the offline fallback is
+`schedule` is the rules of the schedule in effect in normalised form, without
+the header and separated by `; `. `scheduleSource` is `metadata` when that
+schedule comes from metadata, otherwise `setting`, and `scheduleMetadataError`
+says why the metadata schedule couldn't be read, if it couldn't. `offline` is whether the offline fallback is
 holding the radio on, and `offlineSince` is when the _Offline Mode_ was first
 seen active. `scheduleNext` is the next time the schedule
 changes between available and not available, and `installEnabled` is whether the

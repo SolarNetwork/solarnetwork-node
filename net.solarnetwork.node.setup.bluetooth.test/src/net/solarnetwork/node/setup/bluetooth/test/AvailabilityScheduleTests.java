@@ -31,6 +31,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import net.solarnetwork.node.setup.bluetooth.AvailabilitySchedule;
 
@@ -301,6 +304,65 @@ public class AvailabilityScheduleTests {
 				equalTo(",,Mon-Fri,7-18,1; Jun-Aug,1-15,,\"6-9,16-20\",1; Dec,24-26,,,1"));
 		assertThat("round trip", AvailabilitySchedule.parse(s.toCsv()).toString(),
 				equalTo(s.toString()));
+	}
+
+	private static final List<Object> HEADER_ROW = List.of("Month", "Day", "Weekday", "Time",
+			"Available");
+
+	@Test
+	public void fromMetadata_string() {
+		AvailabilitySchedule s = AvailabilitySchedule.fromMetadata(HEADER + ",,Mon-Fri,07:00-18:00,1");
+		assertThat(s.applies(tue(12, 0)), is(true));
+		assertThat(s.applies(sat(12, 0)), is(false));
+	}
+
+	@Test
+	public void fromMetadata_rows() {
+		AvailabilitySchedule s = AvailabilitySchedule
+				.fromMetadata(List.of(HEADER_ROW, Arrays.asList(null, null, "Sat,Sun", "08:00-12:00", 1),
+						Arrays.asList("", "", "Mon-Fri", "07:00-09:00", "1")));
+		assertThat("comma cell needs no quoting", s.applies(sat(9, 0)), is(true));
+		assertThat("numeric cell", s.applies(sat(13, 0)), is(false));
+		assertThat(s.getRules(), hasSize(2));
+		assertThat("same as the string form", s.toString(), equalTo(AvailabilitySchedule
+				.parse(HEADER + ",,\"Sat,Sun\",08:00-12:00,1\n,,Mon-Fri,07:00-09:00,1").toString()));
+	}
+
+	@Test
+	public void fromMetadata_rows_validatedLikeString() {
+		try {
+			AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, Arrays.asList(null, null, null, "22:00-06:00", 1)));
+			fail("descending range should be rejected");
+		} catch ( IllegalArgumentException e ) {
+			assertThat(e.getMessage(), containsString("is descending"));
+		}
+		try {
+			AvailabilitySchedule.fromMetadata(List.of(Arrays.asList(null, null, "Mon-Fri", "7-18", 1)));
+			fail("missing header should be rejected");
+		} catch ( IllegalArgumentException e ) {
+			assertThat(e.getMessage(), containsString("header row"));
+		}
+	}
+
+	@Test
+	public void fromMetadata_empty() {
+		assertThat(AvailabilitySchedule.fromMetadata("").isEmpty(), is(true));
+		assertThat(AvailabilitySchedule.fromMetadata(List.of()).isEmpty(), is(true));
+		assertThat(AvailabilitySchedule.fromMetadata(List.of(HEADER_ROW)).isEmpty(), is(true));
+	}
+
+	@Test
+	public void fromMetadata_unsupported() {
+		for ( Object value : new Object[] { List.of(AvailabilitySchedule.EXAMPLE_HEADER, ",,,,1"),
+				List.of(HEADER_ROW, List.of(Map.of("a", 1), "", "", "", "1")), Map.of("a", 1), 42 } ) {
+			try {
+				AvailabilitySchedule.fromMetadata(value);
+				fail("Expected [" + value + "] to be rejected");
+			} catch ( IllegalArgumentException e ) {
+				// expected
+			}
+		}
 	}
 
 }
