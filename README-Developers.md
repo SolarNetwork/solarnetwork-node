@@ -1,5 +1,60 @@
 # SolarNetwork SolarNode - Developer Info
 
+## Quick start
+
+Bundles build with Ant and Ivy through the shared harness in the sibling `../solarnetwork-build`
+repository: every `build.xml` imports `solarnetwork-build/solarnetwork-osgi-lib/lib-build.xml`. The
+build process looks like this:
+
+```sh
+cd net.solarnetwork.node
+ant compile                 # compile
+ant format                  # format src/ in SolarNetwork style
+cd ../net.solarnetwork.node.internal.test
+ant clean test              # rebuild the bundle under test, then run its tests
+```
+
+Ant must run on JDK 22+ to support Error Prone.
+
+
+## Conventions
+
+### JSpecify `@NullMarked`
+
+All non-test packages have a `package-info.java` annotated `@org.jspecify.annotations.NullMarked`,
+  so NullAway checks it. Use `@org.jspecify.annotations.Nullable` where needed.
+
+### Source formatting
+
+Run `ant format` to apply SolarNetwork Java formatting and `README.md` formatting. It applies
+`solarnetwork-build/solarnetwork-osgi-target/defs/solarnetwork-codeformat.xml`. You can fence off
+hand-written blocks (like long method chains) with
+
+```java
+// @formatter:off
+
+// @formatter:on
+```
+
+### Git
+
+The Gitflow branching model is used, with primary work merged onto the `develop` branch. Features
+branch off `develop` as `feature/x` branches. A "release" in the Gitflow sense is a coordinated
+tagging/publishing of updated bundles to Maven Central, and merged onto the `master` branch.
+
+### Versions
+
+Java top-level types use `@version` and `@since` JavaDoc tags. The `@since` refers to the **bundle**
+version the type was added. Bundles declare their version (bundle and exported packages) in their
+`MANIFEST.MF` resource.
+
+> :bulb: **Note** that all OSGi version bumps should be made by release cycle (e.g. merge into
+> `master`). Thus you should compare your changes against the `master` branch when resolving new
+> semantic versions. For example, multiple changes made by different commits to `develop` that make
+> fixes to classes in the same package would only bump the _patch_ level of that package by `1`
+> when performing a Gitflow release.
+
+
 ## Testing
 
 Tests are written as OSGi fragment bundles that target the bundle they want to test. They are not
