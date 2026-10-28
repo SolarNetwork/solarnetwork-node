@@ -32,12 +32,13 @@ import java.time.Duration;
 import java.time.InstantSource;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -156,16 +157,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	/**
 	 * Get a mock starting value for our meter based on the current time so the
-	 * meter back to zero each time the app restarts.
+	 * meter does not go back to zero each time the app restarts.
 	 *
 	 * @return a starting meter value
 	 */
-	private static long meterStartValue() {
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		Date now = cal.getTime();
-		cal.set(2010, cal.getMinimum(Calendar.MONTH), 1, 0, 0, 0);
-		cal.set(Calendar.MILLISECOND, 0);
-		return (now.getTime() - cal.getTimeInMillis()) / (1000L * 60);
+	private long meterStartValue() {
+		var meterEpoch = LocalDate.of(2010, 1, 1).atStartOfDay(ZoneOffset.UTC);
+		return ChronoUnit.MINUTES.between(meterEpoch.toInstant(), getClock().instant());
 	}
 
 	@Override
@@ -431,7 +429,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				buf.append("<p>").append(messageSource.getMessage("rules.empty", null, null))
 						.append("</p>");
 			} else {
-				final LocalDateTime now = LocalDateTime.now();
+				final LocalDateTime now = getClock().instant().atZone(ZoneId.systemDefault())
+						.toLocalDateTime();
 				Map<Integer, Tariff> active = renderRulesTable(schedule, now, buf);
 				if ( !active.isEmpty() ) {
 					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
