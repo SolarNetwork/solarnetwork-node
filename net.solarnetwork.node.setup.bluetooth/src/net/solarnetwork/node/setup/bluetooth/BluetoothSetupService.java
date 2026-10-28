@@ -78,48 +78,20 @@ import net.solarnetwork.util.DateUtils;
  * setup radio is on.
  *
  * <p>
- * By default the radio is always on. Turning {@link #isAlwaysOn()} off gates
- * the radio: it is then <b>off</b> unless at least one of the following holds:
+ * The radio is always on unless {@link #isAlwaysOn()} is turned off. Then it is
+ * on only while the {@link AvailabilitySchedule} applies, the
+ * {@link #getOpMode()} override mode is active, or the
+ * {@link #getOfflineOpMode()} mode has been active for
+ * {@link #getOfflineThresholdMinutes()} minutes. The schedule comes from
+ * metadata when {@link #getMetadataPath()} is configured and loaded, otherwise
+ * from {@link #getSchedule()}.
  * </p>
  *
- * <ol>
- * <li>the availability schedule applies at the current time in the
- * {@link #getTimeZone()} zone (see {@link AvailabilitySchedule} for the
- * syntax). The schedule comes from the {@link #getMetadataPath()} metadata path
- * of the {@link #getMetadataServiceUid()} metadata service when configured and
- * loaded, otherwise from the {@link #getSchedule()} setting. An unparseable
- * schedule or an invalid zone never applies, so a mistake can only narrow
- * availability;</li>
- * <li>the {@link #getOpMode()} operational mode is active, as an override.
- * SolarNetwork can enable this remotely with the {@code EnableOperationalModes}
- * instruction (with an {@code Expiration}), and a Bluetooth client can enable
- * it with the {@code enable} action of this service (see below);</li>
- * <li>the {@link #getOfflineOpMode()} operational mode, which an HTTP Ping
- * control enables when it cannot reach its URL, has been active for at least
- * {@link #getOfflineThresholdMinutes()} minutes, until
- * {@link #getOnlineGraceMinutes()} minutes after it becomes inactive.</li>
- * </ol>
- *
  * <p>
- * This service handles the {@link InstructionHandler#TOPIC_SYSTEM_CONFIGURE}
- * instruction topic when the {@link InstructionHandler#PARAM_SERVICE} parameter
- * is {@link #BLUETOOTH_SERVICE_NAME}. The {@link #PARAM_ACTION} parameter
- * selects the operation to perform:
- * </p>
- *
- * <ul>
- * <li>{@code status} (or no action) - return the current radio status</li>
- * <li>{@code enable} - enable the operational mode for {@link #PARAM_DURATION}
- * seconds (default {@link #getDefaultDurationSeconds()}, at most
- * {@link #getMaxDurationSeconds()})</li>
- * <li>{@code disable} - disable the operational mode</li>
- * <li>{@code restart} - restart the Bluetooth peripheral service, if it is
- * running; this never turns a gated-off radio on</li>
- * </ul>
- *
- * <p>
- * The radio itself is controlled through the OS-specific {@code solarcfg}
- * helper script, invoked as {@code solarcfg bluetooth <action>}.
+ * Handles the {@link InstructionHandler#TOPIC_SYSTEM_CONFIGURE} topic for the
+ * {@link #BLUETOOTH_SERVICE_NAME} service, with the {@link #ACTION_STATUS},
+ * {@link #ACTION_ENABLE}, {@link #ACTION_DISABLE} and {@link #ACTION_RESTART}
+ * actions. The radio is controlled with {@code solarcfg bluetooth <action>}.
  * </p>
  *
  * @author elijah
@@ -288,9 +260,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Start up the service.
 	 *
 	 * <p>
-	 * Synchronises the radio with the current desired state and starts the
-	 * offline watchdog. A metadata schedule, if configured, is read afterwards
-	 * without holding the service lock.
+	 * Reconciles the radio and starts the watchdog and schedule checks. A
+	 * metadata schedule is read afterwards, without holding the service lock.
 	 * </p>
 	 */
 	public void startup() {
@@ -309,12 +280,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	}
 
 	/**
-	 * Shut down the service.
-	 *
-	 * <p>
-	 * The radio is left in its current state: the operational mode persists
-	 * across restarts and will be re-applied on the next startup.
-	 * </p>
+	 * Shut down the service, leaving the radio in its current state.
 	 */
 	public synchronized void shutdown() {
 		// a tick already running, or a one-off metadata read already queued, must
@@ -334,8 +300,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 
 	private void configurationChangedInternal() {
 		opModeActive = opModesService.isOperationalModeActive(opMode);
-		// the "enableMinutes" field is transient: when set, enable the radio for
-		// that long and then clear the value so the UI returns to 0 on reload
+		// transient setting: apply once, then reset so the UI shows 0 again
 		if ( enableMinutes > 0 ) {
 			final long seconds = enableMinutes * 60L;
 			enableMinutes = 0;
@@ -827,14 +792,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	}
 
 	/**
-	 * Perform one offline watchdog check and reconcile the radio state.
-	 *
-	 * <p>
-	 * The network is considered offline while the {@link #getOfflineOpMode()}
-	 * operational mode is active. An HTTP Ping control enables that mode when
-	 * it cannot reach its URL. If nothing ever enables the mode, the offline
-	 * trigger never fires.
-	 * </p>
+	 * Check the offline operational mode and reconcile the radio state.
 	 */
 	public synchronized void watchdogTick() {
 		try {
@@ -851,9 +809,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Test if offline detection is active.
 	 *
 	 * <p>
-	 * Offline detection needs the trigger enabled, an offline mode to watch,
-	 * and the watchdog running, because only the watchdog advances the
-	 * threshold and grace periods over time.
+	 * The watchdog must be running, because only it advances the threshold and
+	 * grace periods.
 	 * </p>
 	 *
 	 * @return {@literal true} if offline detection is active
@@ -1046,9 +1003,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 		Process pr = null;
 		try {
 			pr = pb.start();
-			// drain both streams concurrently so a hung or chatty helper can
-			// neither block this thread nor fill a pipe; the timeout below is
-			// measured from process start
+			// drain both streams concurrently so a chatty helper cannot fill a pipe
+			// and block before the timeout
 			Thread outReader = captureInputStream(pr.getInputStream(), result::add,
 					"BluetoothSetup-" + action + "-stdout");
 			Thread errReader = captureInputStream(pr.getErrorStream(), line -> {
@@ -1284,8 +1240,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/**
 	 * Get the offline trigger enabled setting.
 	 *
-	 * @return {@literal true} to turn the radio on while SolarNetwork is
-	 *         unreachable
+	 * @return {@literal true} to turn the radio on while the offline mode is
+	 *         active
 	 */
 	public boolean isOfflineTriggerEnabled() {
 		return offlineTriggerEnabled;
@@ -1295,8 +1251,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Set the offline trigger enabled setting.
 	 *
 	 * @param offlineTriggerEnabled
-	 *        {@literal true} to turn the radio on while SolarNetwork is
-	 *        unreachable
+	 *        {@literal true} to turn the radio on while the offline mode is
+	 *        active
 	 */
 	public void setOfflineTriggerEnabled(boolean offlineTriggerEnabled) {
 		this.offlineTriggerEnabled = offlineTriggerEnabled;
@@ -1305,7 +1261,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/**
 	 * Get the offline threshold.
 	 *
-	 * @return the minutes SolarNetwork must be unreachable before the radio
+	 * @return the minutes the offline mode must be active before the radio
 	 *         turns on
 	 */
 	public int getOfflineThresholdMinutes() {
@@ -1316,8 +1272,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Set the offline threshold.
 	 *
 	 * @param offlineThresholdMinutes
-	 *        the minutes SolarNetwork must be unreachable before the radio
-	 *        turns on
+	 *        the minutes the offline mode must be active before the radio turns
+	 *        on
 	 */
 	public void setOfflineThresholdMinutes(int offlineThresholdMinutes) {
 		this.offlineThresholdMinutes = offlineThresholdMinutes;
@@ -1326,8 +1282,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/**
 	 * Get the online grace period.
 	 *
-	 * @return the minutes to keep the radio on after SolarNetwork becomes
-	 *         reachable again
+	 * @return the minutes to keep the radio on after the offline mode becomes
+	 *         inactive
 	 */
 	public int getOnlineGraceMinutes() {
 		return onlineGraceMinutes;
@@ -1337,8 +1293,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Set the online grace period.
 	 *
 	 * @param onlineGraceMinutes
-	 *        the minutes to keep the radio on after SolarNetwork becomes
-	 *        reachable again
+	 *        the minutes to keep the radio on after the offline mode becomes
+	 *        inactive
 	 */
 	public void setOnlineGraceMinutes(int onlineGraceMinutes) {
 		this.onlineGraceMinutes = onlineGraceMinutes;
@@ -1369,8 +1325,8 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/**
 	 * Get the offline operational mode.
 	 *
-	 * @return the mode that means the network is unreachable, or an empty
-	 *         string if offline detection is disabled
+	 * @return the mode that means the network is offline, or an empty string if
+	 *         offline detection is disabled
 	 */
 	public String getOfflineOpMode() {
 		return offlineOpMode;
@@ -1380,16 +1336,13 @@ public class BluetoothSetupService extends BaseIdentifiable
 	 * Set the offline operational mode.
 	 *
 	 * <p>
-	 * The mode is normalised to lower case. An empty value disables offline
-	 * detection. A {@code !} prefix is not supported, because the mode is
-	 * matched against both the operational modes service and modes-changed
-	 * events, which treat it differently, so such a value also disables offline
-	 * detection.
+	 * A {@code !} prefix is not supported, because the operational modes
+	 * service and modes-changed events treat it differently; such a value
+	 * disables offline detection, as does an empty value.
 	 * </p>
 	 *
 	 * @param offlineOpMode
-	 *        the mode that means the network is unreachable, such as the
-	 *        failure mode of an HTTP Ping control; defaults to
+	 *        the mode that means the network is offline; defaults to
 	 *        {@link #DEFAULT_OFFLINE_OP_MODE}
 	 */
 	public void setOfflineOpMode(String offlineOpMode) {
@@ -1445,13 +1398,9 @@ public class BluetoothSetupService extends BaseIdentifiable
 	/**
 	 * Set the transient enable duration.
 	 *
-	 * <p>
-	 * This is a transient setting: when set to a positive value the radio is
-	 * enabled for that many minutes and the value is reset to {@literal 0}.
-	 * </p>
-	 *
 	 * @param enableMinutes
-	 *        the minutes to enable the radio for
+	 *        the minutes to enable the radio for, applied on the next
+	 *        configuration change and then reset to {@literal 0}
 	 */
 	public void setEnableMinutes(int enableMinutes) {
 		this.enableMinutes = enableMinutes;

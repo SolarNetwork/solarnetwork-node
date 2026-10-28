@@ -1,288 +1,122 @@
 # SolarNode Bluetooth Setup
 
-This plugin controls when the SolarNode Bluetooth setup radio (the BLE
-peripheral provided by the `solarnode-bluetooth-setup` OS package) is on.
+This plugin controls when the SolarNode Bluetooth setup radio is on. The radio is the BLE peripheral
+provided by the `solarnode-bluetooth-setup` OS package (4.0 or later).
 
-By default the radio is always on. If you turn the _Always On_ setting off, the
-radio is off unless one of the following applies:
+By default the radio is always on. With _Always On_ turned off, the radio is on only while at least
+one of these applies:
 
-1. **Schedule**: the _Schedule_ makes the radio available at the current time,
-   in the _Time Zone_. For example the rule `,,Mon-Fri,07:00-18:00,1` makes the
-   radio available on weekdays during business hours. See
-   [Schedule syntax](#schedule-syntax).
-2. **Override**: the override operational mode (default `bt-setup`) is active.
-   SolarNetwork can enable it, with an expiration, using the
-   `EnableOperationalModes` instruction, and a Bluetooth client can enable,
-   extend, or end it with the `enable` and `disable` actions described below.
-   Use this to turn the radio on outside the schedule, for example to keep a
-   setup session going past the end of a window.
-3. **Offline fallback**: the _Offline Mode_ operational mode (`net-offline` by
-   default) has been active for at least _Offline Threshold_ minutes. The radio
-   stays on until _Online Grace_ minutes after the mode becomes inactive. An
-   HTTP Ping control sets this mode when it can't reach its URL, so this lets a
-   technician on site connect to a node that has lost its network. See
+1. **Schedule**: the [schedule](#schedule) allows it at the current time.
+2. **Override**: the _Override Mode_ operational mode (`bt-setup`) is active. See
+   [Overriding the schedule](#overriding-the-schedule).
+3. **Offline**: the _Offline Mode_ operational mode (`net-offline`) has been active for _Offline
+   Threshold_ minutes. The radio stays on until _Online Grace_ minutes after the mode clears. See
    [Offline detection](#offline-detection).
 
-When the desired state differs from the actual state the plugin runs
-`solarcfg bluetooth enable` or `solarcfg bluetooth disable`. It re-checks the
-actual state periodically, so a radio turned on by something else gets turned
-off again. The schedule is checked every 15 seconds, so the radio turns on or
-off within 15 seconds of a window starting or ending, including after a
-restart.
+The plugin turns the radio on and off with `solarcfg bluetooth enable` and `disable`. It checks the
+schedule every 15 seconds, and checks the actual radio state every _Check Interval_ seconds, so a
+radio turned on by something else is turned off again.
 
 # Settings
 
-| Setting           | Default                  | Description                                                                                                                                                                                                                                                                |
-|:------------------|:-------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Status            |                          | The current radio state and why it is on, including the schedule state and the time zone in use.                                                                                                                                                                           |
-| Override For      | `0`                      | Enter a number of minutes to turn the radio on for now, regardless of the schedule. Transient: returns to `0` once applied.                                                                                                                                                |
-| Always On         | on                       | Keep the radio on at all times. Turn off to gate the radio by the schedule, the override, and the offline fallback.                                                                                                                                                        |
-| Schedule          |                          | The availability rules, as tariff schedule CSV. See [Schedule syntax](#schedule-syntax). Ignored while _Always On_ is on. Replaced by a metadata schedule when one is in effect; see [Schedule from metadata](#schedule-from-metadata). An invalid schedule never applies. |
-| Time Zone         |                          | The IANA zone ID to evaluate the schedule in, such as `Pacific/Auckland`. Empty means the node system zone. An invalid zone means the schedule never applies.                                                                                                              |
-| Metadata Service  | `Node Metadata Service`  | The metadata service to read the schedule from: `Node Metadata Service` for node metadata, or the _Service Name_ of a User Metadata Service component.                                                                                                                     |
-| Metadata Path     |                          | The metadata path to read the schedule from, such as `/pm/bluetooth/schedule`. Empty means only the _Schedule_ setting is used.                                                                                                                                            |
-| Override Mode     | `bt-setup`               | The operational mode that turns the radio on while it is active, regardless of the schedule.                                                                                                                                                                               |
-| Override Duration | `1800`                   | Seconds to turn the radio on for when an `enable` request has no `duration`.                                                                                                                                                                                               |
-| Maximum Override  | `14400`                  | The longest a single `enable` request can turn the radio on for, in seconds. `0` for no limit.                                                                                                                                                                             |
-| Offline Trigger   | on                       | Turn the radio on automatically while the _Offline Mode_ has been active for _Offline Threshold_ minutes. Needs an HTTP Ping control; see [Offline detection](#offline-detection).                                                                                         |
-| Offline Threshold | `15`                     | Minutes the _Offline Mode_ must be active before the radio turns on.                                                                                                                                                                                                       |
-| Online Grace      | `10`                     | Minutes to keep the radio on after the _Offline Mode_ becomes inactive.                                                                                                                                                                                                    |
-| Check Interval    | `60`                     | Seconds between checks of the _Offline Mode_ and the radio state. `0` disables the checks and the offline trigger. Does not affect the schedule check.                                                                                                                     |
-| Offline Mode      | `net-offline`            | The operational mode that means the network is offline, as set by an HTTP Ping control's _Failure Op Mode_. A single mode name (no `!` prefix). Empty disables the offline trigger.                                                                                        |
-| Command           | `{sn.home}/bin/solarcfg` | The `solarcfg` command to execute.                                                                                                                                                                                                                                         |
-| Command Timeout   | `60`                     | Seconds to wait for the `solarcfg` command before giving up on it. A helper that exceeds this is killed and the radio state is left unchanged.                                                                                                                             |
+| Setting           | Default                  | Description                                                                                              |
+|:------------------|:-------------------------|:---------------------------------------------------------------------------------------------------------|
+| Status            |                          | The current radio state and why it is on.                                                                |
+| Override For      | `0`                      | Minutes to turn the radio on for, starting now. Returns to `0` once applied.                             |
+| Always On         | on                       | Keep the radio on at all times.                                                                          |
+| Schedule          |                          | The availability rules. See [Schedule](#schedule).                                                       |
+| Time Zone         |                          | The zone to evaluate the schedule in, such as `Pacific/Auckland`. Empty for the system zone.             |
+| Metadata Service  | `Node Metadata Service`  | The metadata service to read the schedule from, or the _Service Name_ of a User Metadata Service.        |
+| Metadata Path     |                          | The metadata path to read the schedule from, such as `/pm/bluetooth/schedule`. Empty to use _Schedule_.  |
+| Override Mode     | `bt-setup`               | The operational mode that turns the radio on while it is active.                                         |
+| Override Duration | `1800`                   | Seconds an `enable` request lasts when it has no `duration`.                                             |
+| Maximum Override  | `14400`                  | The longest an `enable` request can last, in seconds. `0` for no limit.                                  |
+| Offline Trigger   | on                       | Turn the radio on while the network is offline.                                                          |
+| Offline Threshold | `15`                     | Minutes _Offline Mode_ must be active before the radio turns on.                                         |
+| Online Grace      | `10`                     | Minutes to keep the radio on after _Offline Mode_ clears.                                                |
+| Check Interval    | `60`                     | Seconds between checks of _Offline Mode_ and the radio state. `0` disables them and the offline trigger. |
+| Offline Mode      | `net-offline`            | The operational mode that means the network is offline. Empty disables the offline trigger.              |
+| Command           | `{sn.home}/bin/solarcfg` | The `solarcfg` command.                                                                                  |
+| Command Timeout   | `60`                     | Seconds to wait for the command before killing it.                                                       |
 
 ## Offline detection
 
-The offline fallback watches an operational mode instead of testing the network
-itself. It needs an **HTTP Ping** control (the `net.solarnetwork.node.control.ping`
-plugin) whose _Failure Op Mode_ matches _Offline Mode_. An HTTP Ping control
-enables its _Failure Op Mode_ (`net-offline` by default) each time it can't
-reach its URL, and disables it each time it can. The `solarnode-config-ping`
-package adds one that pings `http://www.google.com` every 5 minutes. Without an
-HTTP Ping control nothing sets the mode, so the offline trigger never fires.
+The plugin doesn't test the network itself. It watches _Offline Mode_, which an **HTTP Ping**
+control (`net.solarnetwork.node.control.ping`) enables while it can't reach its URL. The
+`solarnode-config-ping` package adds one that pings `http://www.google.com` every 5 minutes. The
+control's _Failure Op Mode_ must match _Offline Mode_. Without such a control the offline trigger
+never fires.
 
-This detects whether the ping URL can be reached, not whether the node is
-connected to SolarNetwork. If the internet is reachable but SolarNetwork isn't,
-for example during a SolarNetwork outage or with an expired node certificate,
-the radio doesn't turn on. If the ping URL is blocked but SolarNetwork works,
-the radio turns on. To get closer to SolarNetwork reachability, point the ping
-at a SolarNetwork URL that answers a `HEAD` request with a 2xx or 3xx status
-(check with `curl -I`), since HTTP Ping doesn't follow redirects.
+"Offline" therefore means the ping URL can't be reached, not that SolarNetwork can't be. With the
+default settings the radio turns on 15 to 20 minutes into an outage.
 
-Detection follows the ping schedule: the mode changes at most every 5 minutes
-by default, so with the default settings the radio turns on about 15 to 20
-minutes into an outage and off about 10 to 15 minutes after it ends. An
-_Offline Threshold_ shorter than the ping interval adds no delay.
+The mode has no expiration. If the ping control is removed while the mode is active, the radio stays
+on until the mode is cleared with a `DisableOperationalModes` instruction (`OpMode=net-offline`) or
+_Offline Trigger_ is turned off. The offline timer isn't persisted, so after a restart the threshold
+starts again.
 
-Each HTTP Ping control toggles its own _Success Op Mode_ and _Failure Op Mode_.
-If more than one uses the defaults, whichever ran last decides the mode. Give
-the ping you want to watch its own _Failure Op Mode_ and set _Offline Mode_ to
-match.
+# Schedule
 
-Operational modes persist across restarts and these have no expiration. If the
-HTTP Ping control is removed or stops running while the mode is active, the
-mode stays active and the radio stays on. Clear it with a
-`DisableOperationalModes` instruction with `OpMode=net-offline`, or turn
-_Offline Trigger_ off. For a false "offline", such as a blocked ping URL, a
-`DisableOperationalModes` only lasts until the next failed ping, so change the
-ping URL or the modes instead.
+The schedule uses the tariff schedule CSV format with a single `Available` column: a header row,
+then one rule per line.
 
-# Schedule syntax
+| Column      | Values                                                                           |
+|:------------|:---------------------------------------------------------------------------------|
+| `Month`     | `1-12` or `Jan-Dec`                                                              |
+| `Day`       | `1-31`                                                                           |
+| `Weekday`   | `1-7` (Monday is `1`) or `Mon-Sun`                                               |
+| `Time`      | `HH:MM-HH:MM`, or whole hours `H-H`. The end is exclusive; `24:00` ends the day. |
+| `Available` | `1` for available, `0` for off                                                   |
 
-The schedule uses the same CSV format as the tariff datum filter's schedule,
-with a single `Available` column. The first row is a header, and each following
-row is a rule with five columns:
-
-| Column      | Values                                                                                             |
-|:------------|:---------------------------------------------------------------------------------------------------|
-| `Month`     | `1-12`, or names `Jan-Dec`, `January-December`                                                     |
-| `Day`       | Day of month, `1-31`                                                                               |
-| `Weekday`   | `1-7` with `1` = Monday, or names `Mon-Sun`, `Monday-Sunday`                                       |
-| `Time`      | `HH:MM-HH:MM`, or whole hours `H-H` (`0-24`). `24:00` is the end of the day. The end is exclusive. |
-| `Available` | `1` to make the radio available, or `0` to keep it off                                             |
-
-An empty cell matches every value. Each of the first four columns can hold a
-comma-separated set of inclusive ranges (`a-b`) or single values; quote a cell
-that contains a comma, like `"Sat,Sun"`. A single whole hour like `9` means that
-hour (`9-10`). Lines starting with `#` are comments; a comment can't follow a
-rule on the same line.
-
-Each time range excludes its end: `07:00-18:00` applies from 07:00:00 up to but
-not including 18:00:00, and with `"06:00-09:00,16:00-20:00"` the radio is off at
-09:00. Ranges must be ascending, so `22:00-06:00`, `Fri-Mon` and `Dec-Jan` are
-rejected; write an overnight window as two rules. A time range must not be empty
-(`09:00` or `09:00-09:00`) or end after `24:00`. Names are matched in English.
-
-The first rule that matches the current time decides it, so a `0` rule placed
-before the others is a blackout. For example the first rule below keeps the
-radio off on Christmas Day even though it is a weekday:
+- An empty cell matches anything. A cell can hold several values or ranges, quoted: `"Sat,Sun"`.
+- Ranges must be ascending, so write an overnight window as two rules.
+- The first rule that matches decides, so a `0` rule first acts as a blackout.
+- Lines starting with `#` are comments.
+- Times are local to _Time Zone_. Many SolarNodeOS images run in UTC, so set it to the site's zone.
+- An invalid schedule or time zone never applies. The error is shown in _Status_.
 
 ```
 Month,Day,Weekday,Time,Available
 # no setup on Christmas Day
 Dec,25,,,0
-# weekdays, business hours
 ,,Mon-Fri,07:00-18:00,1
-,,Mon-Fri,"06:00-09:00,16:00-20:00",1
 ,,"Sat,Sun",08:00-12:00,1
-# summer weekdays only
-Jun-Aug,,Mon-Fri,07:00-18:00,1
-# whole days, 24-26 December
-Dec,24-26,,,1
 # Friday night into Saturday
 ,,Fri,22:00-24:00,1
 ,,Sat,00:00-06:00,1
 ```
 
-Two time ranges in the same cell that are exactly one minute apart, like
-`"06:00-09:00,09:01-12:00"`, are rejected, because they would merge and make
-the minute between them available. Put them in separate rules instead.
-
-Rules use local wall-clock time in the _Time Zone_. A rule entirely inside a
-daylight saving gap doesn't apply that day, and the repeated hour when clocks go
-back applies twice. Many SolarNodeOS images run in UTC, so set _Time Zone_ to
-the site's zone; the status shows which zone is in use.
-
-If the schedule or time zone is invalid, the schedule never applies (so the
-radio stays off unless something else turns it on). A warning is logged and the
-error is shown in the _Status_ and in the `status` instruction result.
-
 ## Schedule from metadata
 
-The schedule can also come from SolarNetwork metadata, so it can be changed
-without touching each node's settings. Set _Metadata Service_ and _Metadata
-Path_, and the plugin reads the schedule from that path each time it checks the
-schedule (every 15 seconds). The value is the same CSV, either as a string or
-as an array of rows whose first row is the header:
-
-```json
-{"pm":{"bluetooth":{"schedule":"Month,Day,Weekday,Time,Available\n,,Mon-Fri,07:00-18:00,1\n,,\"Sat,Sun\",08:00-12:00,1"}}}
-```
+To manage the schedule from SolarNetwork, set _Metadata Path_. The value is the same CSV as a
+string, or an array of rows with the header first:
 
 ```json
 {"pm":{"bluetooth":{"schedule":[
   ["Month","Day","Weekday","Time","Available"],
-  ["","","Mon-Fri","07:00-18:00",1],
-  ["","","Sat,Sun","08:00-12:00",1]
+  ["","","Mon-Fri","07:00-18:00",1]
 ]}}}
 ```
 
-In the string form, line breaks are written `\n` and quotes `\"`. In the array
-form no quoting is needed.
+- A schedule loaded from metadata replaces the _Schedule_ setting. If there is nothing at the path,
+  the setting applies.
+- Until metadata first loads, the _Schedule_ setting applies, so leave it empty or no wider than the
+  metadata schedule.
+- If the metadata can't be loaded, the last result is kept and the read is retried after 5 minutes.
+- An invalid metadata schedule never applies, and the setting isn't used in its place.
 
-Which schedule applies:
-
-- When a schedule loads from the metadata path, it replaces the _Schedule_
-  setting.
-- When the metadata loads but has nothing at the path, the _Schedule_ setting
-  applies.
-- Until the metadata first loads, including after a restart without network,
-  the _Schedule_ setting applies. Leave _Schedule_ empty, or make it no wider
-  than the metadata schedule, so this never opens the radio more than intended.
-- When the metadata can't be loaded later, the last result is kept, and the
-  plugin tries again after 5 minutes. A node with no metadata at all counts as
-  metadata that can't be loaded.
-- An invalid metadata schedule never applies, and the _Schedule_ setting isn't
-  used in its place, so a mistake can only narrow availability.
-
-To turn scheduled availability off from metadata, push a schedule with only the
-header row. To go back to the _Schedule_ setting, clear _Metadata Path_. Update
-node metadata with `POST`, which changes only the keys you send: `PUT` replaces
-all of the node's metadata and `DELETE` removes all of it. The schedule is
-always evaluated in each node's own _Time Zone_.
-
-Write access to the metadata path now controls the radio, separately from
-permission to send instructions. Only an invalid schedule fails closed: a valid
-but wider schedule pushed by mistake opens the radio more. Prefer node metadata.
-A user metadata path can open the radio on every node that reads it, so leave
-_Metadata Path_ empty on nodes that shouldn't follow a shared schedule.
-
-## Pushing a schedule from SolarNetwork
-
-First configure each node once with the standard `UpdateSetting` instruction,
-one `key`/`type`/`value` triplet per setting. This sets _Always On_, _Time Zone_
-and _Metadata Path_ (_Metadata Service_ defaults to the node metadata service):
-
-```
-POST /solaruser/api/v1/sec/instr/add/UpdateSetting
-nodeId=123
-&parameters[0].name=key&parameters[0].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
-&parameters[1].name=type&parameters[1].value=metadataPath
-&parameters[2].name=value&parameters[2].value=/pm/bluetooth/schedule
-&parameters[3].name=key&parameters[3].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
-&parameters[4].name=type&parameters[4].value=timeZone
-&parameters[5].name=value&parameters[5].value=Pacific/Auckland
-&parameters[6].name=key&parameters[6].value=net.solarnetwork.node.setup.bluetooth.BluetoothSetupService
-&parameters[7].name=type&parameters[7].value=alwaysOn
-&parameters[8].name=value&parameters[8].value=false
-```
-
-Then set or change the schedule by updating the node's metadata:
-
-```
-POST /solaruser/api/v1/sec/nodes/meta/123
-Content-Type: application/json
-
-{"pm":{"bluetooth":{"schedule":"Month,Day,Weekday,Time,Available\n,,Mon-Fri,07:00-18:00,1"}}}
-```
-
-The node metadata service caches metadata for an hour by default. To apply the
-change straight away, queue a `Signal` instruction that clears its cache. The
-parameter name is always `net.solarnetwork.node.metadata.json`, whatever
-_Metadata Service_ is set to:
-
-```
-POST /solaruser/api/v1/sec/instr/add/Signal
-nodeId=123&parameters[0].name=net.solarnetwork.node.metadata.json&parameters[0].value=clear-cache
-```
-
-The node then reads the new schedule within about 15 seconds, or up to 5
-minutes if its last read failed or it had no metadata before. Saving the
-Bluetooth Setup settings again clears that wait. To confirm it,
-send a `SystemConfigure` instruction with `service=/setup/bluetooth` and
-`action=status` and check that `scheduleSource` is `metadata` and
-`scheduleError` is `null`. If the metadata service caches nothing
-(_Cache Seconds_ `0`), every schedule check is a request to SolarNetwork.
-
-To share one schedule between nodes, use user metadata instead:
-
-- Create a User Metadata Service component with a read-only token.
-- Set _Metadata Service_ to its _Service Name_.
-- Update the schedule with `POST /solaruser/api/v1/sec/users/meta`.
-
-The user metadata service doesn't handle the clear-cache signal yet (NODE-290).
-Changes apply when its cache expires (an hour by default), or sooner when its
-settings are saved again.
-
-The _Schedule_ setting can also be set with `UpdateSetting`, using
-`type=schedule` and the CSV as the value with line breaks URL-encoded as `%0A`.
-`UpdateSetting` completes even if the value is invalid, so check the `status`
-result afterwards in the same way.
+Node metadata is cached for an hour by default. To apply a change sooner, send a `Signal`
+instruction with the parameter `net.solarnetwork.node.metadata.json` set to `clear-cache`. The User
+Metadata Service doesn't support this signal yet.
 
 # Overriding the schedule
 
-## From SolarNetwork
+From SolarNetwork, send an `EnableOperationalModes` instruction with `OpMode=bt-setup` and an
+`Expiration` in milliseconds since the epoch. A `DisableOperationalModes` instruction ends the
+override early.
 
-Queue an `EnableOperationalModes` instruction for the node with the override
-mode name and an expiration (milliseconds since the epoch). For example, with
-the SolarUser API:
-
-```
-POST /solaruser/api/v1/sec/instr/add/EnableOperationalModes
-nodeId=123&parameters[0].name=OpMode&parameters[0].value=bt-setup&parameters[1].name=Expiration&parameters[1].value=1791000000000
-```
-
-The node persists the mode across restarts and turns it off automatically at the
-expiration. A `DisableOperationalModes` instruction with `OpMode=bt-setup` ends
-the override early.
-
-## Over Bluetooth (STOMP)
-
-The plugin handles `SystemConfigure` instructions with `service` set to
-`/setup/bluetooth`. Over the Bluetooth STOMP setup connection the destination is
-used as the `service` parameter and other headers become instruction
-parameters, so an authenticated client can send:
+The plugin also handles `SystemConfigure` instructions with `service` set to `/setup/bluetooth`,
+including over the Bluetooth STOMP setup connection:
 
 ```
 SEND
@@ -293,14 +127,14 @@ duration:600
 ^@
 ```
 
-| `action`  | Parameters           | Effect                                                                                                                                              |
-|:----------|:---------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `status`  |                      | Return the current status (the default when no action is given).                                                                                    |
-| `enable`  | `duration` (seconds) | Enable the override mode for `duration` seconds (default _Override Duration_, capped at _Maximum Override_). Calling it again extends the override. |
-| `disable` |                      | End the override. Unless the schedule, the offline fallback, or _Always On_ keeps it on, the radio turns off, which drops the client's connection.  |
-| `restart` |                      | Restart the Bluetooth peripheral service if it is running, then reconcile. It never turns a gated-off radio on.                                     |
+| `action`              | Effect                                                                                                |
+|:----------------------|:------------------------------------------------------------------------------------------------------|
+| `status` (or omitted) | Return the current status.                                                                            |
+| `enable`              | Enable the override for `duration` seconds (default _Override Duration_, at most _Maximum Override_). |
+| `disable`             | End the override. If nothing else keeps the radio on, it turns off, dropping the client's connection. |
+| `restart`             | Restart the Bluetooth peripheral if it is running. This never turns on a radio that should be off.    |
 
-The `result` of every action is a status object:
+Every action returns the status as its `result`:
 
 ```json
 {
@@ -323,34 +157,13 @@ The `result` of every action is a status object:
 }
 ```
 
-`schedule` is the rules of the schedule in effect in normalised form, without
-the header and separated by `; `. `scheduleSource` is `metadata` when that
-schedule comes from metadata, otherwise `setting`, and `scheduleMetadataError`
-says why the metadata schedule couldn't be read, if it couldn't. `offline` is whether the offline fallback is
-holding the radio on, and `offlineSince` is when the _Offline Mode_ was first
-seen active. `scheduleNext` is the next time the schedule
-changes between available and not available, and `installEnabled` is whether the
-peripheral starts at boot, which follows the last enable or disable.
-
-The same instruction can also be queued from SolarNetwork, with
-`service=/setup/bluetooth` and `action=enable`.
+`scheduleSource` is `metadata` or `setting`. `scheduleNext` is when the schedule next changes.
+`installEnabled` is whether the peripheral starts at boot.
 
 # Notes
 
-- The offline fallback's timer is not persisted. If the node restarts while
-  the _Offline Mode_ is active the radio stays off until the _Offline
-  Threshold_ elapses again.
-- Install `solarnode-config-ping`, or configure an HTTP Ping control, for the
-  offline fallback to work.
-- Setting `CFG_BT_SETUP_GATED=1` for the OS package leaves the peripheral
-  disabled at install, for nodes this plugin will gate from the start. Without
-  it the radio is on until this plugin turns it off.
-- Each enable or disable also sets whether the peripheral starts at boot. If
-  this plugin is removed while the radio is off, it stays off until
-  `sudo solarcfg bluetooth enable` is run.
-- This plugin requires `solarnode-bluetooth-setup` 4.0 or later, which provides
-  the `solarcfg bluetooth` helper.
-- The helper runs as root through `sudo`. It reads the adapter name from
-  `/etc/solarnode/bluetooth-setup.env` without sourcing the file, because
-  `/etc/solarnode` is writable by the SolarNode user.
+- Setting `CFG_BT_SETUP_GATED=1` when installing the OS package leaves the peripheral disabled, for
+  nodes this plugin will gate from the start.
+- Each enable or disable also sets whether the peripheral starts at boot. If this plugin is removed
+  while the radio is off, run `sudo solarcfg bluetooth enable` to turn it back on.
 

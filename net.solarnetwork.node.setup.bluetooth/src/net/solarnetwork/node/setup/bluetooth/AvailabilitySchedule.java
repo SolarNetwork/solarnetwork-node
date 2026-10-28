@@ -55,12 +55,6 @@ import net.solarnetwork.util.IntRangeContainer;
 /**
  * A schedule of availability windows, in the tariff schedule CSV format.
  *
- * <p>
- * The schedule is CSV with a header row and five columns: month, day of month,
- * weekday, time of day, and an availability value of {@code 1} (available) or
- * {@code 0} (not available), for example:
- * </p>
- *
  * <pre>
  * Month,Day,Weekday,Time,Available
  * ,,Mon-Fri,07:00-18:00,1
@@ -68,17 +62,9 @@ import net.solarnetwork.util.IntRangeContainer;
  * </pre>
  *
  * <p>
- * An empty cell matches every value. Lines starting with {@code #} are
- * comments. The time end is exclusive, so {@code 07:00-18:00} applies from
- * 07:00 up to but not including 18:00, and {@code 24:00} is the end of the day.
- * The first row that matches a time decides it, so a {@code 0} row placed
- * before others acts as a blackout.
- * </p>
- *
- * <p>
- * Ranges must be ascending. A descending range such as {@code 22:00-06:00} is
- * rejected rather than silently reordered, so an overnight window must be
- * written as two rows. Names are parsed in English.
+ * The first row that matches a time decides it. Time ranges exclude their end.
+ * Descending ranges such as {@code 22:00-06:00} are rejected rather than
+ * reordered.
  * </p>
  *
  * @author elijah
@@ -178,10 +164,8 @@ public final class AvailabilitySchedule {
 	 * Parse a schedule from a metadata value.
 	 *
 	 * <p>
-	 * The value can be the schedule CSV as a string, or the CSV rows as a list
-	 * of lists, like a JSON array of arrays, where the first row is the header.
-	 * A list is converted to CSV text and parsed the same way as a string, so
-	 * both forms are validated identically.
+	 * The value can be the schedule CSV as a string, or a list of rows where
+	 * the first row is the header.
 	 * </p>
 	 *
 	 * @param value
