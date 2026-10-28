@@ -23,9 +23,13 @@
 package net.solarnetwork.node.datum.energymeter.mock;
 
 import static java.time.format.TextStyle.SHORT;
+import static java.time.temporal.ChronoField.MINUTE_OF_DAY;
+import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.util.Collections.emptyMap;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -49,7 +53,8 @@ import java.util.Random;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.random.RandomGenerator;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
@@ -77,7 +82,6 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.IntRangeContainer;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, this
@@ -110,7 +114,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 */
 	public static final double DEFAULT_POWER_FACTOR = 1.0;
 
-	private String sourceId;
+	private @Nullable String sourceId;
 	private double voltagerms = DEFAULT_VOLTAGE;
 	private double frequency = DEFAULT_FREQUENCY;
 	private double current = DEFAULT_CURRENT;
@@ -120,18 +124,19 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private double voltDeviation;
 	private double currentDeviation;
 	private double powerFactorDeviation;
-	private String weatherSourceId;
+	private @Nullable String weatherSourceId;
 
 	private Duration touScheduleCacheTtl = DEFAULT_TOU_SCHEDULE_CACHE_TTL;
-	private String touMetadataPath;
+	private @Nullable String touMetadataPath;
 	private Locale touLocale = Locale.getDefault();
 	private Duration touOffset = Duration.ZERO;
 	private BigDecimal touScaleFactor = BigDecimal.ONE;
 
-	private final Random rng;
+	private final RandomGenerator rng;
 
-	private final AtomicReference<CachedResult<TariffSchedule>> touSchedule = new AtomicReference<>();
-	private final AtomicReference<AcEnergyDatum> lastsample = new AtomicReference<>();
+	private @Nullable CachedResult<TariffSchedule> touSchedule;
+	private @Nullable AcEnergyDatum lastsample;
+	private double whReading;
 
 	/**
 	 * Constructor.
@@ -146,13 +151,14 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param clock
 	 *        the clock to use
 	 * @param rng
-	 *        the random instance to use
+	 *        the random generator to use
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public MockEnergyMeterDatumSource(InstantSource clock, Random rng) {
+	public MockEnergyMeterDatumSource(InstantSource clock, RandomGenerator rng) {
 		super(clock);
-		this.rng = ObjectUtils.requireNonNullArgument(rng, "rng");
+		this.rng = requireNonNullArgument(rng, "rng");
+		this.whReading = meterStartValue(clock);
 	}
 
 	/**
@@ -161,9 +167,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return a starting meter value
 	 */
-	private long meterStartValue() {
+	private static long meterStartValue(InstantSource clock) {
 		var meterEpoch = LocalDate.of(2010, 1, 1).atStartOfDay(ZoneOffset.UTC);
-		return ChronoUnit.MINUTES.between(meterEpoch.toInstant(), getClock().instant());
+		return MINUTES.between(meterEpoch.toInstant(), clock.instant());
 	}
 
 	@Override
@@ -179,16 +185,16 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @return an {@link AcEnergyDatum}
 	 */
 	@Override
-	public AcEnergyDatum readCurrentDatum() {
-		AcEnergyDatum prev = this.lastsample.get();
-		AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId),
+	public synchronized @Nullable AcEnergyDatum readCurrentDatum() {
+		final AcEnergyDatum prev = this.lastsample;
+		final AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId),
 				getClock().instant(), new DatumSamples());
 
 		calcVariables(datum);
 
 		calcWattHours(prev, datum);
 
-		this.lastsample.compareAndSet(prev, datum);
+		this.lastsample = datum;
 
 		AcEnergyDatum result = (AcEnergyDatum) applyDatumFilter(datum, null);
 
@@ -196,12 +202,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public String deviceInfoSourceId() {
+	public @Nullable String deviceInfoSourceId() {
 		return resolvePlaceholders(sourceId);
 	}
 
 	@Override
-	public DeviceInfo deviceInfo() {
+	public @Nullable DeviceInfo deviceInfo() {
 		// @formatter:off
 		return BasicDeviceInfo.builder()
 				.withName("Mock Energy Meter")
@@ -216,7 +222,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		// @formatter:on
 	}
 
-	private TariffSchedule touSchedule() {
+	private synchronized @Nullable TariffSchedule touSchedule() {
 		final String metadataPath = getTouMetadataPath();
 		if ( metadataPath == null || metadataPath.isEmpty() ) {
 			return null;
@@ -228,34 +234,33 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 					getUid());
 			return null;
 		}
-		CachedResult<TariffSchedule> r = touSchedule.updateAndGet(c -> {
-			if ( c != null && c.isValid() ) {
-				return c;
-			}
-			Object o = service.metadataAtPath(metadataPath);
-			if ( o == null ) {
-				log.warn(
-						"No TOU schedule found in mock energy meter [{}] at metadata path [{}], unable to resolve TOU schedule.",
-						getUid(), metadataPath);
+		final CachedResult<TariffSchedule> c = this.touSchedule;
+
+		if ( c != null && c.isValid() ) {
+			return c.getResult();
+		}
+		Object o = service.metadataAtPath(metadataPath);
+		if ( o == null ) {
+			log.warn(
+					"No TOU schedule found in mock energy meter [{}] at metadata path [{}], unable to resolve TOU schedule.",
+					getUid(), metadataPath);
+			return null;
+		}
+		try {
+			TariffSchedule s = parseSchedule(o);
+			if ( s == null ) {
 				return null;
 			}
-			try {
-				TariffSchedule s = parseSchedule(o);
-				if ( s == null ) {
-					return null;
-				}
-				return new CachedResult<>(s, touScheduleCacheTtl.getSeconds(), TimeUnit.SECONDS);
-			} catch ( Exception e ) {
-				log.warn(
-						"Mock energy meter [{}] error parsing TOU schedule from metadata at path [{}]: {}",
-						getUid(), touMetadataPath, e.getMessage(), e);
-				return null;
-			}
-		});
-		return (r != null ? r.getResult() : null);
+			this.touSchedule = new CachedResult<>(s, touScheduleCacheTtl.getSeconds(), TimeUnit.SECONDS);
+			return s;
+		} catch ( Exception e ) {
+			log.warn("Mock energy meter [{}] error parsing TOU schedule from metadata at path [{}]: {}",
+					getUid(), touMetadataPath, e.getMessage(), e);
+			return null;
+		}
 	}
 
-	private TariffSchedule parseSchedule(Object o) throws IOException {
+	private @Nullable TariffSchedule parseSchedule(Object o) throws IOException {
 		return TariffUtils.parseCsvTemporalRangeSchedule(touLocale, true, true, DEFAULT_EVALUATOR, o);
 	}
 
@@ -324,23 +329,23 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 			return watts;
 		}
 		ChronoFieldsTariff ct = t.unwrap(ChronoFieldsTariff.class);
-		IntRangeContainer ranges = ct.rangeForChronoField(ChronoField.MINUTE_OF_DAY);
+		IntRangeContainer ranges = (ct != null ? ct.rangeForChronoField(MINUTE_OF_DAY) : null);
 		if ( ranges == null ) {
 			return watts;
 		}
 
 		// single minute range; find value at next minute block
-		LocalDateTime next = now.with(ChronoField.MINUTE_OF_DAY, ranges.max())
-				.truncatedTo(ChronoUnit.MINUTES);
+		LocalDateTime next = now.with(MINUTE_OF_DAY, nonnull(ranges.max(), "Minute range max"))
+				.truncatedTo(MINUTES);
 		Tariff tNext = schedule.resolveTariff(next, emptyMap());
 		if ( tNext != null && tNext != t ) {
 			Tariff.Rate rNext = tNext.getRates().values().iterator().next();
 			if ( rNext != null ) {
 				BigDecimal wattsNext = rNext.getAmount().multiply(touScaleFactor);
 				if ( wattsNext.compareTo(watts) != 0 ) {
-					Number y = NumberUtils.linearInterpolate(now.get(ChronoField.MINUTE_OF_DAY),
-							ranges.min(), ranges.max(), watts.intValue(), wattsNext.intValue());
-					watts = NumberUtils.bigDecimalForNumber(y);
+					Number y = NumberUtils.linearInterpolate(now.get(MINUTE_OF_DAY), ranges.min(),
+							ranges.max(), watts.intValue(), wattsNext.intValue());
+					watts = nonnull(NumberUtils.bigDecimalForNumber(y), "Watts");
 				}
 			}
 		}
@@ -348,17 +353,19 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		return watts;
 	}
 
-	private void calcWattHours(AcEnergyDatum prev, AcEnergyDatum datum) {
+	private void calcWattHours(@Nullable AcEnergyDatum prev, AcEnergyDatum datum) {
+		double newReading;
 		if ( prev == null ) {
-			datum.setWattHourReading(meterStartValue());
+			newReading = whReading;
 		} else {
-			double diffHours = prev.getTimestamp().until(datum.getTimestamp(), ChronoUnit.MILLIS)
-					/ (double) (1000 * 60 * 60);
-			long wh = (long) ((datum.getRealPower() != null ? datum.getRealPower() : datum.getWatts())
-					* diffHours);
-			long newWh = prev.getWattHourReading() + wh;
-			datum.setWattHourReading(newWh);
+			double diffHours = nonnull(prev.getTimestamp(), "Previous datum timestamp")
+					.until(datum.getTimestamp(), ChronoUnit.MILLIS) / (double) (1000 * 60 * 60);
+			double wh = ((datum.getRealPower() != null ? datum.getRealPower()
+					: nonnull(datum.getWatts(), "Datum watts")) * diffHours);
+			newReading = whReading + wh;
+			this.whReading = newReading;
 		}
+		datum.setWattHourReading((long) Math.floor(newReading));
 	}
 
 	@Override
@@ -419,10 +426,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	private String touStatusMessage() {
-		StringBuilder buf = new StringBuilder();
-		TariffSchedule schedule = touSchedule();
-		CachedResult<TariffSchedule> cached = this.touSchedule.get();
-		MessageSource messageSource = getMessageSource();
+		final StringBuilder buf = new StringBuilder();
+		final TariffSchedule schedule = touSchedule();
+		final CachedResult<TariffSchedule> cached = this.touSchedule;
+		final MessageSource messageSource = messageSource();
 		if ( schedule != null ) {
 			Collection<? extends Tariff> rules = schedule.rules();
 			if ( rules.isEmpty() ) {
@@ -499,7 +506,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, t)).append("</td>");
 			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, t)).append("</td>");
 			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, t)).append("</td>");
-			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, t)).append("</td>");
+			buf.append("<td>").append(rangeDisplayString(MINUTE_OF_DAY, t)).append("</td>");
 			Map<String, Rate> tariffRates = tariff.getRates();
 			// iterate over global rates, to keep order consistent in case rows vary
 			for ( String id : rates.keySet() ) {
@@ -526,7 +533,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the source ID
 	 */
-	public final String getSourceId() {
+	public final @Nullable String getSourceId() {
 		return sourceId;
 	}
 
@@ -536,7 +543,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param sourceId
 	 *        the source ID to set
 	 */
-	public final void setSourceId(String sourceId) {
+	public final void setSourceId(@Nullable String sourceId) {
 		this.sourceId = sourceId;
 	}
 
@@ -545,8 +552,18 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the source ID
 	 */
-	public final String getWeatherSourceId() {
+	public final @Nullable String getWeatherSourceId() {
 		return weatherSourceId;
+	}
+
+	/**
+	 * Set the weather source ID.
+	 *
+	 * @param weatherSourceId
+	 *        the weather source ID to set
+	 */
+	public final void setWeatherSourceId(@Nullable String weatherSourceId) {
+		this.weatherSourceId = weatherSourceId;
 	}
 
 	/**
@@ -735,7 +752,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the service UID
 	 */
-	public final String getMetadataServiceUid() {
+	public final @Nullable String getMetadataServiceUid() {
 		final OptionalService<MetadataService> service = getMetadataService();
 		if ( service instanceof FilterableService ) {
 			return ((FilterableService) service).getPropertyValue(UID_PROPERTY);
@@ -749,7 +766,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param uid
 	 *        the service UID
 	 */
-	public final void setMetadataServiceUid(String uid) {
+	public final void setMetadataServiceUid(@Nullable String uid) {
 		final OptionalService<MetadataService> service = getMetadataService();
 		if ( service instanceof FilterableService ) {
 			((FilterableService) service).setPropertyFilter(UID_PROPERTY, uid);
@@ -769,9 +786,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * Get the locale to use for parsing/formatting TOU data.
 	 *
 	 * @param locale
-	 *        the locale to set
+	 *        the locale to set; if {@code null} then the system default will be
+	 *        used
 	 */
-	public void setTouLocale(Locale locale) {
+	public void setTouLocale(@Nullable Locale locale) {
 		if ( locale == null ) {
 			locale = Locale.getDefault();
 		}
@@ -810,10 +828,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * Set the TOU schedule cache time-to-live.
 	 *
 	 * @param touScheduleCacheTtl
-	 *        the TTL to set
+	 *        the TTL to set; if {@code null} then {@code 0} will be used
 	 */
-	public final void setTouScheduleCacheTtl(Duration touScheduleCacheTtl) {
-		this.touScheduleCacheTtl = touScheduleCacheTtl;
+	public final void setTouScheduleCacheTtl(@Nullable Duration touScheduleCacheTtl) {
+		this.touScheduleCacheTtl = (touScheduleCacheTtl != null ? touScheduleCacheTtl : Duration.ZERO);
 	}
 
 	/**
@@ -840,7 +858,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *
 	 * @return the metadata path
 	 */
-	public final String getTouMetadataPath() {
+	public final @Nullable String getTouMetadataPath() {
 		return touMetadataPath;
 	}
 
@@ -850,7 +868,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param touMetadataPath
 	 *        the metadata path to set
 	 */
-	public final void setTouMetadataPath(String touMetadataPath) {
+	public final void setTouMetadataPath(@Nullable String touMetadataPath) {
 		this.touMetadataPath = touMetadataPath;
 	}
 
@@ -874,7 +892,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param touOffset
 	 *        the offset to set; of {@literal null} then 0 will be used
 	 */
-	public final void setTouOffset(Duration touOffset) {
+	public final void setTouOffset(@Nullable Duration touOffset) {
 		this.touOffset = (touOffset != null ? touOffset : Duration.ZERO);
 	}
 
@@ -918,7 +936,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 *        the touScaleFactor to set; if {@literal null} then {@code 1} will
 	 *        be used
 	 */
-	public final void setTouScaleFactor(BigDecimal touScaleFactor) {
+	public final void setTouScaleFactor(@Nullable BigDecimal touScaleFactor) {
 		this.touScaleFactor = (touScaleFactor != null ? touScaleFactor : BigDecimal.ONE);
 	}
 
