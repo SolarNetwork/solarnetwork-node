@@ -38,6 +38,7 @@ _discharge_ (supply) rate. The battery only simulates a "perfect" system where t
 is maintained without variation, until the available energy is depleted or reaches the configured
 capacity.
 
-> **Note** the available capacity of the battery is only updated according to the configured power
-> rate _when the battery information is measured_ according to the configured **Schedule**.
+The available energy changes by the power rate over time: a new rate applies from the time it is
+set, and each datum reports the energy and state of charge at the time it is measured, according to
+the configured **Schedule**. Reading a control value does not change the available energy.
 
