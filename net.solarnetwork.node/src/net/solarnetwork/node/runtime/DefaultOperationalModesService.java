@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -433,7 +434,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			return true;
 		}
 		boolean inverted = false;
-		mode = mode.toLowerCase();
+		mode = mode.toLowerCase(Locale.ROOT);
 		if ( mode.charAt(0) == '!' ) {
 			mode = mode.substring(1);
 			if ( mode.isEmpty() ) {
@@ -496,7 +497,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			if ( mode == null ) {
 				continue;
 			}
-			mode = mode.toLowerCase();
+			mode = mode.toLowerCase(Locale.ROOT);
 			Long exp = activeModes.get(mode);
 			if ( (expireMs == null && !NO_EXPIRATION.equals(exp))
 					|| (expireMs != null && (exp == null || !expireMs.equals(exp))) ) {
@@ -555,7 +556,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			if ( mode == null ) {
 				continue;
 			}
-			mode = mode.toLowerCase();
+			mode = mode.toLowerCase(Locale.ROOT);
 			if ( active.contains(mode) ) {
 				if ( toDeactivate == null ) {
 					toDeactivate = new LinkedHashSet<>(modes.size());
