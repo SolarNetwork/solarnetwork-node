@@ -242,4 +242,25 @@ public class OperationalModeSwitchTests {
 		Event ctlCapturedEvent = eventCaptor.getValue();
 		verifyControlEvent(ctlCapturedEvent, EVENT_TOPIC_CONTROL_INFO_CHANGED, false);
 	}
+	@Test
+	public void eventOpModeAdded_mixedCaseMode() {
+		// given
+		ctl.setMode("Test-Mode");
+		Capture<Event> eventCaptor = Capture.newInstance();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// when
+		replayAll();
+		// the operational modes service lowercases mode names
+		Set<String> modeSet = singleton(TEST_OP_MODE);
+		Map<String, Object> params = Collections.singletonMap(EVENT_PARAM_ACTIVE_OPERATIONAL_MODES,
+				modeSet);
+		Event evt = new Event(EVENT_TOPIC_OPERATIONAL_MODES_CHANGED, params);
+		ctl.handleEvent(evt);
+
+		// then
+		Event ctlCapturedEvent = eventCaptor.getValue();
+		verifyControlEvent(ctlCapturedEvent, EVENT_TOPIC_CONTROL_INFO_CHANGED, true);
+	}
+
 }

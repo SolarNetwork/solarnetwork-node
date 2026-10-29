@@ -31,6 +31,7 @@ import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
@@ -209,7 +210,9 @@ public class OperationalModeSwitch extends BaseIdentifiable
 		String mode = getMode();
 		@SuppressWarnings({ "unchecked", "null", "NullAway" })
 		Set<String> enabledModes = (Set<String>) event.getProperty(EVENT_PARAM_ACTIVE_OPERATIONAL_MODES);
-		boolean enabled = enabledModes != null && enabledModes.contains(mode);
+		// the operational modes service lowercases mode names
+		boolean enabled = enabledModes != null && mode != null
+				&& enabledModes.contains(mode.toLowerCase(Locale.ROOT));
 		if ( enabled != active.getAndSet(enabled) ) {
 			// notify of changed control value
 			SimpleNodeControlInfoDatum d = createDatum(enabled);
