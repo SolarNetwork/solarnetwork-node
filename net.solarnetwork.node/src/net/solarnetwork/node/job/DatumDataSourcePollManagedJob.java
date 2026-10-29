@@ -63,15 +63,20 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * data source.
  * </p>
  *
+ * <p>
+ * The data source's device info is published as source metadata the first time
+ * the job offers datum for its device info source ID.
+ * </p>
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		implements JobService, SettingsChangeObserver, ServiceLifecycleObserver {
 
-	// a static concurrent set to tack the publication of device infos
-	private static final Set<String> PUBLISHED_DEVICE_INFO_SOURCE_IDS = new ConcurrentSkipListSet<>();
+	// the device info source IDs this job has published metadata for
+	private final Set<String> publishedDeviceInfoSourceIds = new ConcurrentSkipListSet<>();
 
 	private @Nullable DatumDataSource datumDataSource;
 	private @Nullable MultiDatumDataSource multiDatumDataSource;
@@ -248,7 +253,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		if ( metadataService == null ) {
 			return;
 		}
-		if ( PUBLISHED_DEVICE_INFO_SOURCE_IDS.contains(metaSourceId) ) {
+		if ( publishedDeviceInfoSourceIds.contains(metaSourceId) ) {
 			return;
 		}
 		DeviceInfo info = infoProvider.deviceInfo();
@@ -258,7 +263,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 					Collections.singletonMap(DeviceInfo.DEVICE_INFO_METADATA_KEY, m));
 			metadataService.addSourceMetadata(metaSourceId, meta);
 		}
-		PUBLISHED_DEVICE_INFO_SOURCE_IDS.add(metaSourceId);
+		publishedDeviceInfoSourceIds.add(metaSourceId);
 	}
 
 	private @Nullable SettingSpecifierProvider settingSpecifierProvider() {
