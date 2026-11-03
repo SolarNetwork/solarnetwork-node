@@ -1,0 +1,289 @@
+/* ==================================================================
+ * BluetoothSetupUtils.java - 29/10/2026 9:00:00 AM
+ *
+ * Copyright 2026 SolarNetwork.net Dev Team
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.setup.bluetooth;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import org.jspecify.annotations.Nullable;
+import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.tariff.Tariff;
+import net.solarnetwork.domain.tariff.Tariff.Rate;
+import net.solarnetwork.node.service.support.TariffScheduleUtils;
+
+/**
+ * Utilities for Bluetooth setup.
+ *
+ * @author elijah
+ * @version 1.0
+ */
+public final class BluetoothSetupUtils {
+
+	private BluetoothSetupUtils() {
+		// not available
+	}
+
+	/**
+	 * Parse an instruction duration parameter value.
+	 *
+	 * @param value
+	 *        the value to parse, in seconds
+	 * @return the duration, or {@literal 0} if {@code value} is {@literal null}
+	 *         or empty
+	 * @throws IllegalArgumentException
+	 *         if {@code value} is not a number
+	 */
+	public static long parseDuration(@Nullable String value) {
+		if ( value == null || value.isEmpty() ) {
+			return 0L;
+		}
+		try {
+			return Long.parseLong(value.trim());
+		} catch ( NumberFormatException e ) {
+			throw new IllegalArgumentException("Invalid duration [" + value + "]: not a number.");
+		}
+	}
+
+	/**
+	 * Generate a localized status message describing the radio state and why it
+	 * is on.
+	 *
+	 * @param messageSource
+	 *        the message source, or {@literal null}
+	 * @param status
+	 *        the status, or {@literal null} if unknown
+	 * @param opMode
+	 *        the operational mode that enables the radio
+	 * @param offlineOpMode
+	 *        the operational mode that signals the network is offline
+	 * @param offlineThresholdMinutes
+	 *        the minutes the offline mode must be active before the radio turns
+	 *        on
+	 * @param metadataPath
+	 *        the metadata schedule path, or {@literal null} if no metadata
+	 *        schedule is configured
+	 * @return the message, or an empty string if {@code messageSource} is
+	 *         {@literal null}
+	 */
+	public static String statusMessage(@Nullable MessageSource messageSource,
+			@Nullable BluetoothSetupStatus status, String opMode, String offlineOpMode,
+			int offlineThresholdMinutes, @Nullable String metadataPath) {
+		if ( messageSource == null ) {
+			return "";
+		}
+		if ( status == null ) {
+			return messageSource.getMessage("status.unknown", null, "Unknown", Locale.getDefault());
+		}
+		final List<String> reasons = new ArrayList<>(3);
+		if ( status.isAlwaysOn() ) {
+			reasons.add(
+					messageSource.getMessage("status.alwaysOn", null, "always on", Locale.getDefault()));
+		}
+		if ( status.isOpModeActive() ) {
+			Object expires = (status.getOpModeExpires() != null
+					? Instant.ofEpochMilli(status.getOpModeExpires())
+					: messageSource.getMessage("status.noExpiry", null, "no expiry",
+							Locale.getDefault()));
+			reasons.add(messageSource.getMessage("status.opMode", new Object[] { opMode, expires },
+					"operational mode active", Locale.getDefault()));
+		}
+		if ( status.isOffline() ) {
+			reasons.add(messageSource.getMessage("status.offline",
+					new Object[] { offlineOpMode, status.getOfflineSince() }, "offline mode active",
+					Locale.getDefault()));
+		} else if ( status.getOfflineSince() != null ) {
+			reasons.add(messageSource.getMessage("status.offlinePending",
+					new Object[] { offlineOpMode, status.getOfflineSince(),
+							status.getOfflineSince().plus(Duration.ofMinutes(offlineThresholdMinutes)) },
+					"offline mode active", Locale.getDefault()));
+		}
+		if ( metadataPath != null ) {
+			final String readError = status.getScheduleMetadataError();
+			if ( !BluetoothSetupService.SCHEDULE_SOURCE_METADATA.equals(status.getScheduleSource()) ) {
+				reasons.add(messageSource.getMessage("status.scheduleMetadataNotLoaded",
+						new Object[] { metadataPath, readError != null ? readError : "not read yet" },
+						"metadata schedule not loaded", Locale.getDefault()));
+			} else if ( readError != null ) {
+				reasons.add(messageSource.getMessage("status.scheduleMetadataStale",
+						new Object[] { metadataPath, readError }, "metadata unavailable",
+						Locale.getDefault()));
+			} else {
+				reasons.add(messageSource.getMessage("status.scheduleMetadata",
+						new Object[] { metadataPath }, "schedule from metadata", Locale.getDefault()));
+			}
+		}
+		if ( status.getScheduleError() != null ) {
+			reasons.add(messageSource.getMessage("status.scheduleInvalid",
+					new Object[] { status.getScheduleError() }, "schedule invalid",
+					Locale.getDefault()));
+		} else if ( status.getSchedule() != null && !status.getSchedule().isEmpty() ) {
+			// the rules are shown in the schedule table, not inline
+			if ( status.getScheduleNext() == null && !status.isScheduleActive() ) {
+				reasons.add(messageSource.getMessage("status.scheduleNextNone",
+						new Object[] { status.getTimeZone() },
+						"schedule has no window within the next year", Locale.getDefault()));
+			} else {
+				Object next = (status.getScheduleNext() != null
+						? Instant.ofEpochMilli(status.getScheduleNext())
+						: messageSource.getMessage("status.noExpiry", null, "no expiry",
+								Locale.getDefault()));
+				reasons.add(messageSource.getMessage(
+						status.isScheduleActive() ? "status.schedule" : "status.scheduleNext",
+						new Object[] { status.getTimeZone(), next },
+						status.isScheduleActive() ? "schedule active" : "schedule inactive",
+						Locale.getDefault()));
+			}
+		}
+		String state = messageSource.getMessage(status.isRadioActive() ? "status.on" : "status.off",
+				null, status.isRadioActive() ? "On" : "Off", Locale.getDefault());
+		if ( reasons.isEmpty() ) {
+			return state;
+		}
+		return state + " (" + String.join("; ", reasons) + ")";
+	}
+
+	/**
+	 * Escape text for use as HTML element content.
+	 *
+	 * @param text
+	 *        the text to escape
+	 * @return the escaped text
+	 */
+	public static String escapeHtml(String text) {
+		StringBuilder buf = null;
+		for ( int i = 0, len = text.length(); i < len; i++ ) {
+			char c = text.charAt(i);
+			String rep = switch (c) {
+				case '&' -> "&amp;";
+				case '<' -> "&lt;";
+				case '>' -> "&gt;";
+				default -> null;
+			};
+			if ( rep == null ) {
+				if ( buf != null ) {
+					buf.append(c);
+				}
+				continue;
+			}
+			if ( buf == null ) {
+				buf = new StringBuilder(len + 16);
+				buf.append(text, 0, i);
+			}
+			buf.append(rep);
+		}
+		return (buf != null ? buf.toString() : text);
+	}
+
+	/**
+	 * Render an availability schedule as HTML: a table of its rules and the
+	 * rule that matches now.
+	 *
+	 * <p>
+	 * The table lists the rules actually parsed, so it can be compared with the
+	 * expected rules: a schedule without a header row is missing its first
+	 * rule, which was taken as the header.
+	 * </p>
+	 *
+	 * @param messageSource
+	 *        the message source, or {@literal null}
+	 * @param schedule
+	 *        the schedule
+	 * @param now
+	 *        the date and time to find the matching rule at, in the schedule's
+	 *        time zone, or {@literal null} to not show the matching rule (for
+	 *        example when the time zone is invalid)
+	 * @param locale
+	 *        the locale
+	 * @return the HTML, or an empty string if {@code messageSource} is
+	 *         {@literal null}
+	 */
+	public static String scheduleTable(@Nullable MessageSource messageSource,
+			AvailabilitySchedule schedule, @Nullable LocalDateTime now, Locale locale) {
+		if ( messageSource == null ) {
+			return "";
+		}
+		final StringBuilder buf = new StringBuilder();
+		if ( schedule.isEmpty() ) {
+			buf.append("<p>").append(escapeHtml(messageSource.getMessage("status.scheduleRulesEmpty",
+					null, "The schedule has no rules.", locale))).append("</p>");
+			return buf.toString();
+		}
+		final StringBuilder table = new StringBuilder();
+		final Map<Integer, Tariff> active = TariffScheduleUtils.renderTariffScheduleTable(messageSource,
+				schedule.getSchedule(), (now != null ? now : LocalDateTime.MIN),
+				AvailabilitySchedule.EVALUATOR, true, locale, table);
+		buf.append(escapeRateHeaders(schedule, table.toString()));
+		if ( now != null ) {
+			final String when = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+					.withLocale(locale).format(now);
+			buf.append("<p>");
+			if ( active.isEmpty() ) {
+				buf.append(escapeHtml(messageSource.getMessage("status.scheduleRuleNone",
+						new Object[] { when }, "No rule matches now.", locale)));
+			} else {
+				buf.append(escapeHtml(messageSource.getMessage("status.scheduleRuleActive",
+						new Object[] { active.keySet().iterator().next() + 1, when },
+						"A rule matches now.", locale)));
+			}
+			buf.append("</p>");
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * Escape the rate column headers in a rendered schedule table.
+	 *
+	 * <p>
+	 * The rate column headers are the schedule's header row names, which can
+	 * come from metadata, and the table renders them without escaping.
+	 * </p>
+	 */
+	private static String escapeRateHeaders(AvailabilitySchedule schedule, String html) {
+		final Set<String> names = new LinkedHashSet<>(4);
+		for ( Tariff rule : schedule.getRules() ) {
+			for ( Rate rate : rule.getRates().values() ) {
+				String name = rate.getDescription();
+				if ( name != null ) {
+					names.add(name);
+				}
+			}
+		}
+		String result = html;
+		for ( String name : names ) {
+			String escaped = escapeHtml(name);
+			if ( !escaped.equals(name) ) {
+				result = result.replace("<th>" + name + "</th>", "<th>" + escaped + "</th>");
+			}
+		}
+		return result;
+	}
+
+}
