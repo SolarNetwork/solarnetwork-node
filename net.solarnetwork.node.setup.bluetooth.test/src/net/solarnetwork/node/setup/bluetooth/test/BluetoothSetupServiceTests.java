@@ -151,7 +151,8 @@ public class BluetoothSetupServiceTests {
 		service.setClock(Clock.fixed(START, ZoneOffset.UTC));
 
 		ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
-		msgSource.setBasenames(BluetoothSetupService.class.getName());
+		msgSource.setBasenames(BluetoothSetupService.class.getName(),
+				"net.solarnetwork.node.service.support.TariffScheduleUtils");
 		service.setMessageSource(msgSource);
 	}
 
@@ -2323,8 +2324,7 @@ public class BluetoothSetupServiceTests {
 	@Test
 	public void metadata_unreachableBeforeLoad_usesInline() throws IOException {
 		// GIVEN
-		given(metadataService.getAllMetadata()).willReturn(null)
-				.willThrow(new RuntimeException("boom"));
+		given(metadataService.getAllMetadata()).willReturn(null).willThrow(new RuntimeException("boom"));
 
 		// WHEN
 		startWithMetadata(ALWAYS);
@@ -2494,7 +2494,8 @@ public class BluetoothSetupServiceTests {
 	@Test
 	public void metadata_invalid_failsClosedDespiteInline() throws IOException {
 		// GIVEN
-		given(metadataService.getAllMetadata()).willReturn(meta(",,Mon-Fri,07:00-18:00,1"));
+		given(metadataService.getAllMetadata())
+				.willReturn(meta(SCHED_HEADER + ",,Mon-Fri,22:00-06:00,1"));
 
 		// WHEN
 		startWithMetadata(ALWAYS);
@@ -2504,9 +2505,19 @@ public class BluetoothSetupServiceTests {
 		and.then(service.currentStatus())
 			.as("Schedule from metadata")
 			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
-			.as("Schedule error reports header row")
+			.as("Schedule error reports the invalid range")
 			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
-			.contains("header row")
+			.contains("metadata schedule invalid")
+			.as("Schedule error names the descending range")
+			.contains("is descending")
+			;
+		and.then(statusTitleText())
+			.as("Status title shows the schedule is invalid")
+			.contains("schedule invalid")
+			.as("No rule table for an invalid schedule")
+			.doesNotContain("<table")
+			.as("No empty schedule message for an invalid schedule")
+			.doesNotContain("The schedule has no rules.")
 			;
 		and.then(radioState())
 			.as("invalid metadata never applies")
@@ -2950,6 +2961,233 @@ public class BluetoothSetupServiceTests {
 			;
 		then(metadataService).should()
 			.getAllMetadata()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void metadata_missingHeader_firstRowIsHeader() throws IOException {
+		// GIVEN
+		// without a header row the only rule is taken as the header
+		given(metadataService.getAllMetadata()).willReturn(meta(",,,,1"));
+
+		// WHEN
+		startWithMetadata(ALWAYS);
+
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from metadata")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Not an error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleError))
+			.as("No rules left")
+			.returns("", from(BluetoothSetupStatus::getSchedule))
+			;
+		and.then(statusTitleText())
+			.as("Status title shows the schedule has no rules, so the lost rule can be noticed")
+			.contains("<p>The schedule has no rules.</p>")
+			.as("No rule table")
+			.doesNotContain("<table")
+			;
+		and.then(radioState())
+			.as("Radio off: the lost rule never applies")
+			.isFalse()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_scheduleTable() {
+		// GIVEN
+		// START is 2026-10-06T00:00Z, a Tuesday; 13:00 NZDT in Pacific/Auckland
+		final String sched = WEEKDAY_HOURS + "\n,,\"Sat,Sun\",08:00-12:00,1";
+
+		// WHEN
+		startupWithSchedule(sched, "Pacific/Auckland");
+
+		// THEN
+		// @formatter:off
+		and.then(service.getSettingSpecifiers().get(0))
+			.as("Status title setting first")
+			.asInstanceOf(type(TitleSettingSpecifier.class))
+			.as("Status title is markup")
+			.returns(true, from(TitleSettingSpecifier::isMarkup))
+			;
+		and.then(statusTitle())
+			.as("Status message first")
+			.startsWith("<p>On (schedule ")
+			.as("Rule table rendered")
+			.contains("<table class=\"table counts\">")
+			.as("Rule column header")
+			.contains("<th>Rule</th>")
+			.as("Availability column header")
+			.contains("<th>Available</th>")
+			.as("First rule row")
+			.contains("<tr><th>1</th>")
+			.as("Second rule row")
+			.contains("<tr><th>2</th>")
+			.as("No third rule row")
+			.doesNotContain("<tr><th>3</th>")
+			.as("Weekday range shown")
+			.contains("<td>Mon-Fri</td>")
+			.as("Time range shown")
+			.contains("<td>7-18</td>")
+			.as("Matching rule in the time zone")
+			.contains("<p>Rule 1 matches at ")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_scheduleTable_noRuleMatches() {
+		// GIVEN
+		// START is 2026-10-06T00:00Z, a Tuesday, outside the window in UTC
+
+		// WHEN
+		startupWithSchedule(WEEKDAY_HOURS, "UTC");
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Rule table rendered")
+			.contains("<tr><th>1</th>")
+			.as("No rule matches now")
+			.contains("<p>No rule matches at ")
+			.as("No active rule")
+			.doesNotContain("Rule 1 matches")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_scheduleTable_invalidZone() {
+		// WHEN
+		startupWithSchedule(WEEKDAY_HOURS, "Mars/Olympus");
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Rule table rendered")
+			.contains("<tr><th>1</th>")
+			.as("No matching rule without a valid time zone")
+			.doesNotContain("matches at")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_noSchedule() {
+		// WHEN
+		startupWithSchedule("", "UTC");
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Only the status message")
+			.isEqualTo("<p>Off</p>")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_scheduleEmpty() {
+		// GIVEN
+		// without a header row the only rule is taken as the header
+		final String sched = ",,Mon-Fri,07:00-18:00,1";
+
+		// WHEN
+		startupWithSchedule(sched, "UTC");
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Empty schedule message")
+			.contains("<p>The schedule has no rules.</p>")
+			.as("No rule table")
+			.doesNotContain("<table")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_alwaysOn_noSchedule() {
+		// GIVEN
+		service.setAlwaysOn(true);
+
+		// WHEN
+		startupWithSchedule("", "UTC");
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Always on, with no schedule shown")
+			.isEqualTo("<p>On (always on)</p>")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_alwaysOn_scheduleTable() {
+		// GIVEN
+		service.setAlwaysOn(true);
+
+		// WHEN
+		startupWithSchedule(WEEKDAY_HOURS, "UTC");
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Always on first")
+			.startsWith("<p>On (always on; schedule (UTC) next allows at ")
+			.as("Schedule rules not inline")
+			.doesNotContain("Mon-Fri,7-18")
+			.as("Rule table still rendered")
+			.contains("<tr><th>1</th>")
+			.as("Weekday range shown in the table")
+			.contains("<td>Mon-Fri</td>")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void status_escapesText() throws IOException {
+		// GIVEN
+		given(metadataService.getAllMetadata())
+				.willReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "<i>Available</i>"),
+						List.of("", "", "", "", "1"))));
+		service.setMetadataPath(META_PATH);
+		service.setTimeZone("UTC");
+
+		// WHEN
+		service.serviceDidStartup();
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitleText())
+			.as("Rule table rendered")
+			.contains("<tr><th>1</th>")
+			.as("Rate header from metadata escaped")
+			.contains("<th>&lt;i&gt;Available&lt;/i&gt;</th>")
+			.as("Raw rate header markup not present")
+			.doesNotContain("<i>")
+			;
+		// @formatter:on
+
+		// WHEN
+		service.setMetadataPath("/pm/<b>/schedule");
+		service.configurationChanged(Map.of());
+
+		// THEN
+		// @formatter:off
+		and.then(statusTitleText())
+			.as("Status message escaped")
+			.contains("/pm/&lt;b&gt;/schedule")
+			.as("Raw path markup not present")
+			.doesNotContain("<b>")
 			;
 		// @formatter:on
 	}

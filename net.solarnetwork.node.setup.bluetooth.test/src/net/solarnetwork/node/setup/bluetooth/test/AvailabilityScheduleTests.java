@@ -25,12 +25,14 @@ package net.solarnetwork.node.setup.bluetooth.test;
 import static org.assertj.core.api.BDDAssertions.from;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.BDDAssertions.thenIllegalArgumentException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
+import net.solarnetwork.domain.tariff.Tariff;
 import net.solarnetwork.node.setup.bluetooth.AvailabilitySchedule;
 
 /**
@@ -390,24 +392,147 @@ public class AvailabilityScheduleTests {
 	}
 
 	@Test
-	public void parse_missingHeader_rejected() {
-		assertInvalid(",,Mon-Fri,07:00-18:00,1", "header row");
-		assertInvalid("# hours\n,,Mon-Fri,07:00-18:00,1\n,,Sat,08:00-12:00,1", "header row");
+	public void parse_missingHeader_firstRowIsHeader() {
+		// WHEN
+		AvailabilitySchedule oneRule = AvailabilitySchedule.parse(",,Mon-Fri,07:00-18:00,1");
+		AvailabilitySchedule twoRules = AvailabilitySchedule
+				.parse("# hours\n,,Mon-Fri,07:00-18:00,1\n,,Sat,08:00-12:00,1");
+
+		// THEN
+		// @formatter:off
+		then(oneRule)
+			.as("The only rule became the header")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			.as("Lost rule never applies")
+			.returns(false, from(x -> x.applies(tue(12, 0))))
+			;
+		then(twoRules.getRules())
+			.as("The first rule became the header")
+			.hasSize(1)
+			;
+		then(twoRules)
+			.as("Only the second rule is left")
+			.hasToString(",,Sat,8-12,1")
+			.as("Second rule applies")
+			.returns(true, from(x -> x.applies(sat(9, 0))))
+			.as("Lost first rule does not apply")
+			.returns(false, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
 		assertInvalid("Mon-Fri 07:00-18:00", "Not enough columns in CSV header");
 	}
 
 	@Test
 	public void parse_availabilityValue_rejected() {
-		assertInvalid(HEADER + ",,Mon-Fri,07:00-18:00,2", "availability value [2] must be 0 or 1");
-		assertInvalid(HEADER + ",,Mon-Fri,07:00-18:00,", "must have exactly one availability value");
+		assertInvalid(HEADER + ",,Mon-Fri,07:00-18:00,2",
+				"Schedule rule 1 availability value [2] must be 0 or 1");
 		assertInvalid(HEADER + ",,Mon-Fri,07:00-18:00,yes", "rate value");
-		assertInvalid("Month,Day,Weekday,Time,Available,Other\n,,Mon-Fri,07:00-18:00,1,1",
-				"must have exactly one availability value");
+		assertInvalid(HEADER + ",,,,1\n,,Mon-Fri,07:00-18:00,-1",
+				"Schedule rule 2 availability value [-1] must be 0 or 1");
 
 		// @formatter:off
 		then(parse(",,Mon-Fri,07:00-18:00,1.0"))
 			.as("Decimal one is available")
 			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void parse_missingAvailabilityValue_rejected() {
+		assertInvalid(HEADER + ",,Mon-Fri,07:00-18:00,", "Schedule rule 1 has no availability value");
+		assertInvalid(HEADER + ",,,,1\n,,Mon-Fri,07:00-18:00", "CSV row 3");
+		assertInvalid(HEADER + ",,,,1\n,,Sat,,\n", "Schedule rule 2 has no availability value");
+	}
+
+	@Test
+	public void parse_extraRateColumns_firstRateDecides() {
+		// GIVEN
+		final String header = "Month,Day,Weekday,Time,Available,Other\n";
+
+		// WHEN
+		AvailabilitySchedule on = AvailabilitySchedule.parse(header + ",,Mon-Fri,07:00-18:00,1,5");
+		AvailabilitySchedule off = AvailabilitySchedule.parse(header + ",,Mon-Fri,07:00-18:00,0,1");
+		AvailabilitySchedule onlyOther = AvailabilitySchedule.parse(header + ",,Mon-Fri,07:00-18:00,,1");
+		AvailabilitySchedule extraCell = AvailabilitySchedule
+				.parse(HEADER + ",,Mon-Fri,07:00-18:00,1,7");
+
+		// THEN
+		// @formatter:off
+		then(on)
+			.as("Extra rate is ignored")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		then(off)
+			.as("First rate decides")
+			.returns(false, from(x -> x.applies(tue(12, 0))))
+			.as("Rule is kept")
+			.returns(false, from(AvailabilitySchedule::isEmpty))
+			;
+		then(onlyOther)
+			.as("First available rate decides")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		then(extraCell)
+			.as("Value without a header column is ignored")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
+		assertInvalid(header + ",,Mon-Fri,07:00-18:00,1,5\n,,Sat,,5,1",
+				"Schedule rule 2 availability value [5] must be 0 or 1");
+	}
+
+	@Test
+	public void toCsv_extraRateColumns_onlyDecidingValue() {
+		// GIVEN
+		// rule 1 is decided by Other, as its Available is empty
+		AvailabilitySchedule s = AvailabilitySchedule
+				.parse("Month,Day,Weekday,Time,Available,Other\n,,Mon-Fri,07:00-18:00,,1\n,,,,0,5");
+
+		// WHEN
+		String csv = s.toCsv();
+		AvailabilitySchedule reparsed = AvailabilitySchedule.parse(csv);
+
+		// THEN
+		// @formatter:off
+		then(csv)
+			.as("Only the deciding value, under the Available column")
+			.isEqualToNormalizingNewlines(HEADER + ",,Mon-Fri,7-18,1\n,,,,0\n")
+			;
+		then(s)
+			.as("Rows show only the deciding value")
+			.hasToString(",,Mon-Fri,7-18,1; ,,,,0")
+			;
+		then(reparsed)
+			.as("CSV parses back to the same rules")
+			.hasToString(s.toString())
+			.as("Rule 1 applies after round trip")
+			.returns(true, from(x -> x.applies(tue(8, 0))))
+			.as("Rule 2 blocks after round trip")
+			.returns(false, from(x -> x.applies(sat(8, 0))))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void getSchedule() {
+		// WHEN
+		AvailabilitySchedule s = parse(",,Mon-Fri,07:00-18:00,1\n,,Sat,08:00-12:00,1");
+
+		// THEN
+		// @formatter:off
+		then(List.<Tariff> copyOf(s.getSchedule().rules()))
+			.as("Schedule rules are the parsed rules")
+			.containsExactlyElementsOf(s.getRules())
+			;
+		then(s.getSchedule().resolveTariff(sat(9, 0)))
+			.as("Schedule resolves the matching rule")
+			.isNotNull()
+			.returns(BigDecimal.ONE, from(Tariff::amount))
+			;
+		then(AvailabilitySchedule.empty().getSchedule().rules())
+			.as("Empty schedule has no rules")
+			.isEmpty()
 			;
 		// @formatter:on
 	}
@@ -558,6 +683,56 @@ public class AvailabilityScheduleTests {
 	}
 
 	@Test
+	public void fromMetadata_stringArray() {
+		// WHEN
+		AvailabilitySchedule s = AvailabilitySchedule
+				.fromMetadata(new String[][] { { "Month", "Day", "Weekday", "Time", "Available" },
+						{ "", "", "Sat,Sun", "08:00-12:00", "1" }, { "", "", "Mon-Fri", "7", "1" } });
+
+		// THEN
+		// @formatter:off
+		then(s.getRules())
+			.as("Two rules parsed")
+			.hasSize(2)
+			;
+		then(s)
+			.as("Same as the string form")
+			.hasToString(AvailabilitySchedule
+					.parse(HEADER + ",,\"Sat,Sun\",08:00-12:00,1\n,,Mon-Fri,07:00-08:00,1").toString())
+			.as("Weekend window applies")
+			.returns(true, from(x -> x.applies(sat(9, 0))))
+			.as("Whole hour widened")
+			.returns(true, from(x -> x.applies(tue(7, 30))))
+			.as("Whole hour end exclusive")
+			.returns(false, from(x -> x.applies(tue(8, 0))))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void fromMetadata_stringArray_parsedLikeList() {
+		// WHEN
+		AvailabilitySchedule s = AvailabilitySchedule
+				.fromMetadata(new String[][] { { "Month", "Day", "Weekday", "Time", "Available" },
+						{ " ", "", "Mon-Fri ", "07:00-18:00", " 1", "9" }, null, { "", "", "Sat" } });
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Values trimmed; short, null and extra values ignored, like a List")
+			.hasToString(",,Mon-Fri,7-18,1")
+			;
+		then(AvailabilitySchedule.fromMetadata(new String[][] {
+				{ "Month", "Day", "Weekday", "Time", "Available" },
+				{ " ", "", "Mon-Fri ", "07:00-18:00", " 1", "9" } }))
+			.as("Same as the List form")
+			.hasToString(AvailabilitySchedule.fromMetadata(List.of(HEADER_ROW,
+					List.of(" ", "", "Mon-Fri ", "07:00-18:00", " 1", "9"))).toString())
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void fromMetadata_rows_validatedLikeString() {
 		// @formatter:off
 		thenIllegalArgumentException()
@@ -567,10 +742,86 @@ public class AvailabilityScheduleTests {
 			.withMessageContaining("is descending")
 			;
 		thenIllegalArgumentException()
-			.as("Missing header should be rejected")
+			.as("Invalid token should be rejected")
 			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
-					List.of(Arrays.asList(null, null, "Mon-Fri", "7-18", 1))))
-			.withMessageContaining("header row")
+					List.of(HEADER_ROW, Arrays.asList(null, null, "Mon-Fry", "7-18", 1))))
+			.withMessageContaining("Invalid schedule: Text 'Fry' could not be parsed")
+			;
+		thenIllegalArgumentException()
+			.as("Availability value should be 0 or 1")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, Arrays.asList(null, null, "Mon-Fri", "7-18", 2))))
+			.withMessageContaining("Schedule rule 1 availability value [2] must be 0 or 1")
+			;
+		thenIllegalArgumentException()
+			.as("Availability value should be a number")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, Arrays.asList(null, null, "Mon-Fri", "7-18", "yes"))))
+			.withMessageContaining("Invalid schedule availability value")
+			;
+		thenIllegalArgumentException()
+			.as("Empty availability value should be rejected")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, Arrays.asList(null, null, "Mon-Fri", "7-18", ""))))
+			.withMessageContaining("Schedule rule 1 has no availability value")
+			;
+		thenIllegalArgumentException()
+			.as("Missing availability value should be rejected")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, Arrays.asList(null, null, "Mon-Fri", "7-18", null))))
+			.withMessageContaining("Schedule rule 1 has no availability value")
+			;
+		thenIllegalArgumentException()
+			.as("String[][] empty availability value should be rejected like a List")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(new String[][] {
+				{ "Month", "Day", "Weekday", "Time", "Available" },
+				{ "", "", "Mon-Fri", "7-18", "" } }))
+			.withMessageContaining("Schedule rule 1 has no availability value")
+			;
+		thenIllegalArgumentException()
+			.as("String[][] null availability value should be rejected like a List")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(new String[][] {
+				{ "Month", "Day", "Weekday", "Time", "Available" },
+				{ "", "", "Mon-Fri", "7-18", null } }))
+			.withMessageContaining("Schedule rule 1 has no availability value")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void fromMetadata_rows_missingHeader_firstRowIsHeader() {
+		// WHEN
+		AvailabilitySchedule oneRule = AvailabilitySchedule
+				.fromMetadata(List.of(Arrays.asList(null, null, "Mon-Fri", "7-18", 1)));
+		AvailabilitySchedule twoRules = AvailabilitySchedule
+				.fromMetadata(List.of(Arrays.asList(null, null, "Mon-Fri", "7-18", 1),
+						Arrays.asList(null, null, "Sat", "8-12", 1)));
+
+		// THEN
+		// @formatter:off
+		then(oneRule)
+			.as("The only rule became the header")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		then(twoRules)
+			.as("Only the second rule is left")
+			.hasToString(",,Sat,8-12,1")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void fromMetadata_rows_shortAndExtraValues() {
+		// WHEN
+		AvailabilitySchedule s = AvailabilitySchedule
+				.fromMetadata(List.of(HEADER_ROW, Arrays.asList(null, null, "Mon-Fri", "7-18"),
+						Arrays.asList(null, null, "Sat", "8-12", 1, 9), "not a row"));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Short and non-list rows ignored; value without a header column ignored")
+			.hasToString(",,Sat,8-12,1")
 			;
 		// @formatter:on
 	}
@@ -596,14 +847,31 @@ public class AvailabilityScheduleTests {
 	@Test
 	public void fromMetadata_unsupported() {
 		for ( Object value : new Object[] { List.of(AvailabilitySchedule.EXAMPLE_HEADER, ",,,,1"),
-				List.of(HEADER_ROW, List.of(Map.of("a", 1), "", "", "", "1")), Map.of("a", 1), 42 } ) {
+				List.of(List.of("Month", "Day", "Weekday", "Time"), List.of("", "", "", "", "1")),
+				new String[][] { { "Month", "Day", "Weekday", "Time" }, { "", "", "", "", "1" } },
+				new String[][] { { "Month" } }, Map.of("a", 1), 42 } ) {
 			// @formatter:off
 			thenIllegalArgumentException()
 				.as("Expected [%s] to be rejected", value)
 				.isThrownBy(() -> AvailabilitySchedule.fromMetadata(value))
+				.withMessageContaining("Unsupported schedule metadata")
 				;
 			// @formatter:on
 		}
+
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Null rejected")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(null))
+			.withMessageContaining("Unsupported schedule metadata null")
+			;
+		thenIllegalArgumentException()
+			.as("Complex cell rejected")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, List.of(Map.of("a", 1), "", "", "", "1"))))
+			.withMessageContaining("Invalid schedule: ")
+			;
+		// @formatter:on
 	}
 
 }

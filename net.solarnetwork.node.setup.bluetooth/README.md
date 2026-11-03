@@ -60,10 +60,9 @@ starts again.
 The schedule uses the tariff schedule CSV format with a single `Available` column: a header row,
 then one rule per line.
 
-> [!IMPORTANT]
-> The first row is **always** the header row, even if it looks like a rule. A schedule without a
-> header loses its first rule, and no error is shown. _Status_ lists the rules actually in effect in
-> a table, so check that it has the rules you expect.
+> :warning: **Note** that the first row is **always** the header row, even if it looks like a rule.
+> A schedule without a header loses its first rule, and no error is shown. _Status_ lists the rules
+> actually in effect in a table, so check that it has the rules you expect.
 
 | Column      | Values                                                                           |
 |:------------|:---------------------------------------------------------------------------------|
@@ -71,14 +70,14 @@ then one rule per line.
 | `Day`       | `1-31`                                                                           |
 | `Weekday`   | `1-7` (Monday is `1`) or `Mon-Sun`                                               |
 | `Time`      | `HH:MM-HH:MM`, or whole hours `H-H`. The end is exclusive; `24:00` ends the day. |
-| `Available` | `1` for available, `0` for off. Required.                                        |
+| `Available` | `1` for available, `0` for off.                                                  |
 
 - An empty cell matches anything. A cell can hold several values or ranges, quoted: `"Sat,Sun"`.
 - Ranges must be ascending, so write an overnight window as two rules.
 - The first rule that matches decides, so a `0` rule first acts as a blackout.
-- Only the first non-empty value after `Time` is used, so keep `Available` as the only column
-  after it. Any further columns are ignored.
-- Lines starting with `#` are comments.
+- The first non-empty value after `Time` decides the rule, so if `Available` is empty a later
+  column is used. Keep `Available` as the only column after `Time`.
+- Lines starting with `#` are comments. A row with fewer than 5 values is an error.
 - Times are local to _Time Zone_. Many SolarNodeOS images run in UTC, so set it to the site's zone.
 - An invalid schedule or time zone never applies. The error is shown in _Status_.
 - _Status_ shows a table of the rules in effect, and which rule matches now.
@@ -106,8 +105,9 @@ string, or an array of rows. Either way the first row is always the header, as i
 ]}}}
 ```
 
-- In the array form, rows with fewer than 5 values are ignored, as are values beyond the header
-  row. Compare the rule table in _Status_ with the rows you expect.
+- In the array form, rows that are not arrays or have fewer than 5 values are ignored, as are
+  values in columns past the header row's last column. There are no comment rows. Compare the rule
+  table in _Status_ with the rows you expect.
 - A schedule loaded from metadata replaces the _Schedule_ setting. If there is nothing at the path,
   the setting applies.
 - Until metadata first loads, the _Schedule_ setting applies, so leave it empty or no wider than the

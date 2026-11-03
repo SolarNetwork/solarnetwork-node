@@ -99,9 +99,8 @@ import net.solarnetwork.util.DateUtils;
  * @author elijah
  * @version 1.0
  */
-public class BluetoothSetupService extends BaseIdentifiable
-		implements SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler, EventHandler,
-		ServiceLifecycleObserver {
+public class BluetoothSetupService extends BaseIdentifiable implements SettingSpecifierProvider,
+		SettingsChangeObserver, InstructionHandler, EventHandler, ServiceLifecycleObserver {
 
 	/** The {@code solarcfg} service name for the Bluetooth radio. */
 	public static final String CONFIG_SERVICE = "bluetooth";
@@ -540,6 +539,16 @@ public class BluetoothSetupService extends BaseIdentifiable
 		return changed;
 	}
 
+	/**
+	 * Test if the schedule in effect comes from configured schedule text.
+	 *
+	 * @return {@literal true} if the schedule in effect is from metadata, or
+	 *         the Schedule setting is not blank
+	 */
+	private boolean scheduleConfigured() {
+		return (SCHEDULE_SOURCE_METADATA.equals(scheduleSource) || !schedule.isBlank());
+	}
+
 	private boolean metadataConfigured() {
 		return (metadataService != null && !metadataServiceUid.isEmpty() && !metadataPath.isEmpty());
 	}
@@ -887,9 +896,7 @@ public class BluetoothSetupService extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		final BluetoothSetupStatus status = currentStatus();
 		final List<SettingSpecifier> result = new ArrayList<>(16);
-		result.add(new BasicTitleSettingSpecifier("status",
-				BluetoothSetupUtils.statusMessage(getMessageSource(), status, opMode, offlineOpMode,
-						offlineThresholdMinutes, metadataConfigured() ? metadataPath : null)));
+		result.add(new BasicTitleSettingSpecifier("status", statusHtml(status), true, true));
 
 		BasicTextFieldSettingSpecifier enable = new BasicTextFieldSettingSpecifier("enableMinutes", "0");
 		enable.setTransient(true);
@@ -918,6 +925,34 @@ public class BluetoothSetupService extends BaseIdentifiable
 		result.add(new BasicTextFieldSettingSpecifier("commandTimeoutSeconds",
 				String.valueOf(DEFAULT_COMMAND_TIMEOUT_SECONDS)));
 		return result;
+	}
+
+	/**
+	 * Render the status setting HTML: the status message, then the rules of the
+	 * schedule in effect.
+	 *
+	 * @param status
+	 *        the current status
+	 * @return the HTML
+	 */
+	private synchronized String statusHtml(@Nullable BluetoothSetupStatus status) {
+		final StringBuilder buf = new StringBuilder();
+		final String msg = BluetoothSetupUtils.statusMessage(getMessageSource(), status, opMode,
+				offlineOpMode, offlineThresholdMinutes, metadataConfigured() ? metadataPath : null);
+		if ( !msg.isEmpty() ) {
+			buf.append("<p>").append(BluetoothSetupUtils.escapeHtml(msg)).append("</p>");
+		}
+		final AvailabilitySchedule sched = this.availability;
+		// an invalid schedule has no rules to show, its error is in the message; an
+		// empty schedule is only worth noting when one was configured, as then a
+		// rule may have been lost to the header row
+		if ( sched != null && (!sched.isEmpty() || scheduleConfigured()) ) {
+			final ZoneId z = this.zone;
+			buf.append(BluetoothSetupUtils.scheduleTable(getMessageSource(), sched,
+					z != null ? LocalDateTime.ofInstant(clock.instant(), z) : null,
+					Locale.getDefault()));
+		}
+		return buf.toString();
 	}
 
 	/**

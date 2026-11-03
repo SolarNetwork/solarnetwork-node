@@ -18,7 +18,12 @@
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basename" value="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"/>
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.setup.bluetooth.BluetoothSetupService</value>
+				<value>net.solarnetwork.node.service.support.TariffScheduleUtils</value>
+			</array>
+		</property>
 	</bean>
 
 	<bean id="bluetoothSetupService" class="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"

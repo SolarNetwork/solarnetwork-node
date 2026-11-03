@@ -23,32 +23,31 @@
 package net.solarnetwork.node.setup.bluetooth;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
-import de.siegmar.fastcsv.reader.CommentStrategy;
-import de.siegmar.fastcsv.reader.CsvReader;
-import de.siegmar.fastcsv.reader.CsvRecord;
-import de.siegmar.fastcsv.reader.CsvRecordHandler;
-import de.siegmar.fastcsv.reader.FieldModifiers;
-import de.siegmar.fastcsv.writer.CsvWriter;
 import net.solarnetwork.domain.tariff.ChronoFieldsTariff;
 import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
+import net.solarnetwork.domain.tariff.SimpleTariffRate;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
 import net.solarnetwork.domain.tariff.Tariff;
+import net.solarnetwork.domain.tariff.Tariff.Rate;
+import net.solarnetwork.domain.tariff.TariffSchedule;
+import net.solarnetwork.domain.tariff.TariffUtils;
+import net.solarnetwork.domain.tariff.TemporalRangeSetsTariff;
+import net.solarnetwork.domain.tariff.TemporalTariffEvaluator;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeContainer;
 
@@ -62,9 +61,18 @@ import net.solarnetwork.util.IntRangeContainer;
  * </pre>
  *
  * <p>
- * The first row that matches a time decides it. Time ranges exclude their end.
- * Descending ranges such as {@code 22:00-06:00} are rejected rather than
- * reordered.
+ * The first row is <b>always</b> the header row, even if it looks like a rule.
+ * A schedule without a header therefore loses its first rule, which becomes the
+ * header. The rule table in the status shows the rules actually parsed, so
+ * compare it with the rules you expect.
+ * </p>
+ *
+ * <p>
+ * The first non-empty rate of each rule, normally the {@code Available} column,
+ * decides the rule and must be {@code 0} or {@code 1}: if {@code Available} is
+ * empty a later rate column decides. The first rule that matches a time decides
+ * it. Time ranges exclude their end. Descending ranges such as
+ * {@code 22:00-06:00} are rejected rather than reordered.
  * </p>
  *
  * @author elijah
@@ -75,23 +83,33 @@ public final class AvailabilitySchedule {
 	/** An example header row. */
 	public static final String EXAMPLE_HEADER = "Month,Day,Weekday,Time,Available";
 
+	/** The evaluator used to match rules to dates. */
+	public static final TemporalTariffEvaluator EVALUATOR = SimpleTemporalTariffSchedule.DEFAULT_EVALUATOR;
+
 	/** The number of minutes in a day. */
 	private static final int MINUTES_PER_DAY = 24 * 60;
 
 	/** The maximum number of days to scan for the next boundary. */
 	private static final int MAX_BOUNDARY_SCAN_DAYS = 366;
 
-	private static final AvailabilitySchedule EMPTY = new AvailabilitySchedule(Collections.emptyList());
+	/** The rate description of the deciding value, for {@link #toCsv()}. */
+	private static final String AVAILABLE = "Available";
 
+	private static final AvailabilitySchedule EMPTY = new AvailabilitySchedule(
+			new SimpleTemporalTariffSchedule(Collections.emptyList(), EVALUATOR),
+			Collections.emptyList(), Collections.emptyList());
+
+	private final TariffSchedule schedule;
 	private final List<ChronoFieldsTariff> rules;
-	private final SimpleTemporalTariffSchedule schedule;
+	private final List<ChronoFieldsTariff> csvRules;
 	private final int[] edges;
 
-	private AvailabilitySchedule(List<ChronoFieldsTariff> rules) {
+	private AvailabilitySchedule(TariffSchedule schedule, List<ChronoFieldsTariff> rules,
+			List<ChronoFieldsTariff> csvRules) {
 		super();
+		this.schedule = schedule;
 		this.rules = Collections.unmodifiableList(rules);
-		this.schedule = new SimpleTemporalTariffSchedule(rules, null);
-		this.schedule.setFirstMatchOnly(true);
+		this.csvRules = csvRules;
 
 		// every minute of the day a rule's time range starts or ends; the start
 		// and end of each day are edges too, in case the date columns change
@@ -123,127 +141,135 @@ public final class AvailabilitySchedule {
 	/**
 	 * Parse a schedule.
 	 *
+	 * <p>
+	 * The first row is always the header row: see the class description.
+	 * </p>
+	 *
 	 * @param text
 	 *        the schedule CSV text; {@literal null} or blank produces an empty
 	 *        schedule
 	 * @return the schedule, never {@literal null}
 	 * @throws IllegalArgumentException
-	 *         if the schedule cannot be parsed; the message names the row
+	 *         if the schedule cannot be parsed
 	 */
 	public static AvailabilitySchedule parse(@Nullable String text) {
 		if ( text == null || text.isBlank() ) {
 			return EMPTY;
 		}
-		List<ChronoFieldsTariff> rules;
-		try {
-			requireHeader(text);
-			rules = new CsvTemporalRangeTariffParser(Locale.ENGLISH, false, true)
-					.parseTariffs(new StringReader(text));
-		} catch ( IOException e ) {
-			// not expected from a StringReader
-			throw new IllegalArgumentException(e.getMessage(), e);
-		}
-		int row = 0;
-		for ( ChronoFieldsTariff rule : rules ) {
-			row++;
-			if ( rule.getRates().size() != 1 ) {
-				throw new IllegalArgumentException(String.format(
-						"Schedule rule %d must have exactly one availability value of 0 or 1", row));
-			}
-			BigDecimal value = rule.getRates().values().iterator().next().getAmount();
-			if ( value.signum() != 0 && value.compareTo(BigDecimal.ONE) != 0 ) {
-				throw new IllegalArgumentException(
-						String.format("Schedule rule %d availability value [%s] must be 0 or 1", row,
-								value.toPlainString()));
-			}
-		}
-		return (rules.isEmpty() ? EMPTY : new AvailabilitySchedule(rules));
+		return of(text);
 	}
 
 	/**
 	 * Parse a schedule from a metadata value.
 	 *
 	 * <p>
-	 * The value can be the schedule CSV as a string, or a list of rows where
-	 * the first row is the header.
+	 * The value can be the schedule CSV as a string, or the rows as a
+	 * {@code List} of {@code List} (like a JSON array of arrays) or a
+	 * {@code String[][]}. The first row is always the header row: see the class
+	 * description.
+	 * </p>
+	 *
+	 * <p>
+	 * In the row forms, values are trimmed, rows that are not arrays or have
+	 * fewer than 5 values are ignored, as are values in columns past the header
+	 * row's last column, and there are no comment rows. In the CSV form a row
+	 * with fewer than 5 values is rejected.
 	 * </p>
 	 *
 	 * @param value
 	 *        the metadata value
 	 * @return the schedule, never {@literal null}
 	 * @throws IllegalArgumentException
-	 *         if the value is not a supported type or the schedule cannot be
-	 *         parsed
+	 *         if the value is not a supported type, its header row has fewer
+	 *         than 5 values, or the schedule cannot be parsed
+	 * @see TariffUtils#parseCsvTemporalRangeSchedule(Locale, boolean, boolean,
+	 *      boolean, TemporalTariffEvaluator, Object)
 	 */
-	public static AvailabilitySchedule fromMetadata(Object value) {
+	public static AvailabilitySchedule fromMetadata(@Nullable Object value) {
+		if ( value == null ) {
+			throw new IllegalArgumentException(unsupportedMessage("null"));
+		}
 		if ( value instanceof String s ) {
 			return parse(s);
 		}
-		if ( value instanceof List<?> rows ) {
-			return parse(toCsv(rows));
+		if ( value instanceof String[][] a ) {
+			// parse like a List of List, which trims values and skips empty ones
+			final List<@Nullable List<@Nullable String>> rows = new ArrayList<>(a.length);
+			for ( String[] row : a ) {
+				rows.add(row != null ? Arrays.asList(row) : null);
+			}
+			return of(rows);
 		}
-		throw new IllegalArgumentException("Unsupported schedule metadata type "
-				+ (value != null ? value.getClass().getSimpleName() : "null")
-				+ ": use a CSV string or an array of rows");
+		return of(value);
 	}
 
-	private static String toCsv(List<?> rows) {
-		StringWriter out = new StringWriter();
-		try (CsvWriter csv = CsvWriter.builder().build(out)) {
-			int rowNum = 0;
-			for ( Object row : rows ) {
-				rowNum++;
-				if ( !(row instanceof List<?> cells) ) {
-					throw new IllegalArgumentException(String
-							.format("Schedule metadata row %d must be an array of values", rowNum));
-				}
-				List<String> fields = new ArrayList<>(cells.size());
-				for ( Object cell : cells ) {
-					if ( cell instanceof Map<?, ?> || cell instanceof Collection<?>
-							|| (cell != null && cell.getClass().isArray()) ) {
-						throw new IllegalArgumentException(String.format(
-								"Schedule metadata row %d must contain only simple values", rowNum));
-					}
-					fields.add(cell != null ? String.valueOf(cell) : "");
-				}
-				csv.writeRecord(fields);
-			}
+	private static String unsupportedMessage(String type) {
+		return "Unsupported schedule metadata " + type
+				+ ": use a CSV string, or an array of rows starting with a header row"
+				+ " of at least 5 values like " + EXAMPLE_HEADER;
+	}
+
+	private static AvailabilitySchedule of(Object data) {
+		final TariffSchedule sched;
+		try {
+			sched = TariffUtils.parseCsvTemporalRangeSchedule(Locale.ENGLISH, false, true, true,
+					EVALUATOR, data);
 		} catch ( IOException e ) {
-			// not expected from a StringWriter
-			throw new IllegalStateException(e);
+			// not expected from in-memory data
+			throw new IllegalArgumentException(e.getMessage(), e);
+		} catch ( NumberFormatException e ) {
+			// the row form does not wrap a bad number like the CSV parser does
+			throw new IllegalArgumentException("Invalid schedule availability value: " + e.getMessage(),
+					e);
+		} catch ( DateTimeException e ) {
+			// the row form does not wrap a bad range like the CSV parser does
+			throw new IllegalArgumentException("Invalid schedule: " + e.getMessage(), e);
 		}
-		return out.toString();
+		if ( sched == null ) {
+			throw new IllegalArgumentException(unsupportedMessage(data.getClass().getSimpleName()));
+		}
+		final List<ChronoFieldsTariff> rules = new ArrayList<>(sched.rules().size());
+		final List<ChronoFieldsTariff> csvRules = new ArrayList<>(sched.rules().size());
+		int row = 0;
+		for ( Tariff t : sched.rules() ) {
+			row++;
+			if ( !(t instanceof TemporalRangeSetsTariff rule) ) {
+				// not expected from TariffUtils
+				throw new IllegalArgumentException(
+						String.format("Schedule rule %d is not a supported rule type", row));
+			}
+			final Rate rate = rule.rate();
+			if ( rate == null ) {
+				throw new IllegalArgumentException(
+						String.format("Schedule rule %d has no availability value: use 0 or 1", row));
+			}
+			final BigDecimal value = rate.getAmount();
+			if ( value.signum() != 0 && value.compareTo(BigDecimal.ONE) != 0 ) {
+				throw new IllegalArgumentException(
+						String.format("Schedule rule %d availability value [%s] must be 0 or 1", row,
+								value.toPlainString()));
+			}
+			rules.add(rule);
+			// only the deciding value, so the CSV parses back to the same schedule
+			csvRules.add(new TemporalRangeSetsTariff(rule.getMonthRanges(), rule.getDayOfMonthRanges(),
+					rule.getDayOfWeekRanges(), rule.getMinuteOfDayRanges(),
+					List.of(new SimpleTariffRate(AVAILABLE, value))));
+		}
+		return (rules.isEmpty() ? EMPTY : new AvailabilitySchedule(sched, rules, csvRules));
 	}
 
 	/**
-	 * Reject a schedule whose first row is a rule rather than a header.
+	 * Get the tariff schedule.
 	 *
 	 * <p>
-	 * The tariff parser always treats the first row as the header, so without
-	 * this check a missing header would silently drop the first rule.
+	 * The schedule resolves only the first matching rule. Use
+	 * {@link #EVALUATOR} to evaluate its rules.
 	 * </p>
+	 *
+	 * @return the schedule, never {@literal null}
 	 */
-	private static void requireHeader(String text) throws IOException {
-		try (CsvReader<CsvRecord> csv = CsvReader.builder().allowMissingFields(true)
-				.allowExtraFields(true).commentStrategy(CommentStrategy.SKIP)
-				.build(CsvRecordHandler.builder().fieldModifier(FieldModifiers.TRIM).build(),
-						new StringReader(text))) {
-			for ( CsvRecord header : csv ) {
-				if ( header.getFieldCount() < 5 ) {
-					// the parser reports this
-					return;
-				}
-				String value = header.getField(4);
-				try {
-					new BigDecimal(value);
-				} catch ( NumberFormatException e ) {
-					// not a number, so a header name
-					return;
-				}
-				throw new IllegalArgumentException(
-						"The schedule must start with a header row, like " + EXAMPLE_HEADER);
-			}
-		}
+	public TariffSchedule getSchedule() {
+		return schedule;
 	}
 
 	/**
@@ -269,17 +295,17 @@ public final class AvailabilitySchedule {
 	 *
 	 * @param dateTime
 	 *        the date and time
-	 * @return {@literal true} if the first rule that matches has an
+	 * @return {@literal true} if the first rule that matches has a first
 	 *         availability value of {@code 1}
 	 */
 	public boolean applies(LocalDateTime dateTime) {
 		if ( rules.isEmpty() ) {
 			return false;
 		}
-		// parse() guarantees each rule has exactly one rate
+		// parsing guarantees each rule's first rate is 0 or 1
 		Tariff t = schedule.resolveTariff(dateTime);
-		return (t != null && !t.getRates().isEmpty()
-				&& t.getRates().values().iterator().next().getAmount().signum() > 0);
+		BigDecimal value = (t != null ? t.amount() : null);
+		return (value != null && value.signum() > 0);
 	}
 
 	/**
@@ -350,6 +376,11 @@ public final class AvailabilitySchedule {
 	/**
 	 * Get the schedule as CSV, with a header row.
 	 *
+	 * <p>
+	 * Each rule is written with only its deciding value, under a single
+	 * {@code Available} column, so the CSV parses back to the same schedule.
+	 * </p>
+	 *
 	 * @return the CSV, or an empty string if the schedule is empty
 	 */
 	public String toCsv() {
@@ -358,7 +389,7 @@ public final class AvailabilitySchedule {
 		}
 		StringWriter out = new StringWriter();
 		try {
-			new CsvTemporalRangeTariffParser(Locale.ENGLISH).formatCsv(rules, out);
+			new CsvTemporalRangeTariffParser(Locale.ENGLISH).formatCsv(csvRules, out);
 		} catch ( IOException e ) {
 			// not expected from a StringWriter
 			throw new IllegalStateException(e);

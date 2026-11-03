@@ -24,11 +24,20 @@ package net.solarnetwork.node.setup.bluetooth;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.tariff.Tariff;
+import net.solarnetwork.domain.tariff.Tariff.Rate;
+import net.solarnetwork.node.service.support.TariffScheduleUtils;
 
 /**
  * Utilities for Bluetooth setup.
@@ -136,9 +145,10 @@ public final class BluetoothSetupUtils {
 					new Object[] { status.getScheduleError() }, "schedule invalid",
 					Locale.getDefault()));
 		} else if ( status.getSchedule() != null && !status.getSchedule().isEmpty() ) {
+			// the rules are shown in the schedule table, not inline
 			if ( status.getScheduleNext() == null && !status.isScheduleActive() ) {
 				reasons.add(messageSource.getMessage("status.scheduleNextNone",
-						new Object[] { status.getSchedule(), status.getTimeZone() },
+						new Object[] { status.getTimeZone() },
 						"schedule has no window within the next year", Locale.getDefault()));
 			} else {
 				Object next = (status.getScheduleNext() != null
@@ -147,7 +157,7 @@ public final class BluetoothSetupUtils {
 								Locale.getDefault()));
 				reasons.add(messageSource.getMessage(
 						status.isScheduleActive() ? "status.schedule" : "status.scheduleNext",
-						new Object[] { status.getSchedule(), status.getTimeZone(), next },
+						new Object[] { status.getTimeZone(), next },
 						status.isScheduleActive() ? "schedule active" : "schedule inactive",
 						Locale.getDefault()));
 			}
@@ -158,6 +168,122 @@ public final class BluetoothSetupUtils {
 			return state;
 		}
 		return state + " (" + String.join("; ", reasons) + ")";
+	}
+
+	/**
+	 * Escape text for use as HTML element content.
+	 *
+	 * @param text
+	 *        the text to escape
+	 * @return the escaped text
+	 */
+	public static String escapeHtml(String text) {
+		StringBuilder buf = null;
+		for ( int i = 0, len = text.length(); i < len; i++ ) {
+			char c = text.charAt(i);
+			String rep = switch (c) {
+				case '&' -> "&amp;";
+				case '<' -> "&lt;";
+				case '>' -> "&gt;";
+				default -> null;
+			};
+			if ( rep == null ) {
+				if ( buf != null ) {
+					buf.append(c);
+				}
+				continue;
+			}
+			if ( buf == null ) {
+				buf = new StringBuilder(len + 16);
+				buf.append(text, 0, i);
+			}
+			buf.append(rep);
+		}
+		return (buf != null ? buf.toString() : text);
+	}
+
+	/**
+	 * Render an availability schedule as HTML: a table of its rules and the
+	 * rule that matches now.
+	 *
+	 * <p>
+	 * The table lists the rules actually parsed, so it can be compared with the
+	 * expected rules: a schedule without a header row is missing its first
+	 * rule, which was taken as the header.
+	 * </p>
+	 *
+	 * @param messageSource
+	 *        the message source, or {@literal null}
+	 * @param schedule
+	 *        the schedule
+	 * @param now
+	 *        the date and time to find the matching rule at, in the schedule's
+	 *        time zone, or {@literal null} to not show the matching rule (for
+	 *        example when the time zone is invalid)
+	 * @param locale
+	 *        the locale
+	 * @return the HTML, or an empty string if {@code messageSource} is
+	 *         {@literal null}
+	 */
+	public static String scheduleTable(@Nullable MessageSource messageSource,
+			AvailabilitySchedule schedule, @Nullable LocalDateTime now, Locale locale) {
+		if ( messageSource == null ) {
+			return "";
+		}
+		final StringBuilder buf = new StringBuilder();
+		if ( schedule.isEmpty() ) {
+			buf.append("<p>").append(escapeHtml(messageSource.getMessage("status.scheduleRulesEmpty",
+					null, "The schedule has no rules.", locale))).append("</p>");
+			return buf.toString();
+		}
+		final StringBuilder table = new StringBuilder();
+		final Map<Integer, Tariff> active = TariffScheduleUtils.renderTariffScheduleTable(messageSource,
+				schedule.getSchedule(), (now != null ? now : LocalDateTime.MIN),
+				AvailabilitySchedule.EVALUATOR, true, locale, table);
+		buf.append(escapeRateHeaders(schedule, table.toString()));
+		if ( now != null ) {
+			final String when = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+					.withLocale(locale).format(now);
+			buf.append("<p>");
+			if ( active.isEmpty() ) {
+				buf.append(escapeHtml(messageSource.getMessage("status.scheduleRuleNone",
+						new Object[] { when }, "No rule matches now.", locale)));
+			} else {
+				buf.append(escapeHtml(messageSource.getMessage("status.scheduleRuleActive",
+						new Object[] { active.keySet().iterator().next() + 1, when },
+						"A rule matches now.", locale)));
+			}
+			buf.append("</p>");
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * Escape the rate column headers in a rendered schedule table.
+	 *
+	 * <p>
+	 * The rate column headers are the schedule's header row names, which can
+	 * come from metadata, and the table renders them without escaping.
+	 * </p>
+	 */
+	private static String escapeRateHeaders(AvailabilitySchedule schedule, String html) {
+		final Set<String> names = new LinkedHashSet<>(4);
+		for ( Tariff rule : schedule.getRules() ) {
+			for ( Rate rate : rule.getRates().values() ) {
+				String name = rate.getDescription();
+				if ( name != null ) {
+					names.add(name);
+				}
+			}
+		}
+		String result = html;
+		for ( String name : names ) {
+			String escaped = escapeHtml(name);
+			if ( !escaped.equals(name) ) {
+				result = result.replace("<th>" + name + "</th>", "<th>" + escaped + "</th>");
+			}
+		}
+		return result;
 	}
 
 }
