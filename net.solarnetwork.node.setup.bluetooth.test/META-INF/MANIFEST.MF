@@ -7,7 +7,10 @@ Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.setup.bluetooth;bundle-version="[1.0,2.0)"
 Automatic-Module-Name: net.solarnetwork.node.setup.bluetooth.test
 Bundle-RequiredExecutionEnvironment: JavaSE-17
-Import-Package: net.solarnetwork.node.test;version="[2.0,3.0)",
+Import-Package: 
+ net.bytebuddy;version="[1.18,2.0)",
+ net.bytebuddy.agent;version="[1.18,2.0)",
+ net.solarnetwork.node.test;version="[2.0,3.0)",
  org.assertj.core.api;version="[3.27,4.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
