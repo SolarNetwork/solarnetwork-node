@@ -21,7 +21,7 @@ radio turned on by something else is turned off again.
 
 | Setting           | Default                  | Description                                                                                              |
 |:------------------|:-------------------------|:---------------------------------------------------------------------------------------------------------|
-| Status            |                          | The current radio state and why it is on.                                                                |
+| Status            |                          | The current radio state and why it is on, and the rules of the schedule in effect.                       |
 | Override For      | `0`                      | Minutes to turn the radio on for, starting now, at most _Maximum Override_. Returns to `0` once applied. |
 | Always On         | on                       | Keep the radio on at all times.                                                                          |
 | Schedule          |                          | The availability rules. See [Schedule](#schedule).                                                       |
@@ -60,25 +60,33 @@ starts again.
 The schedule uses the tariff schedule CSV format with a single `Available` column: a header row,
 then one rule per line.
 
+> [!IMPORTANT]
+> The first row is **always** the header row, even if it looks like a rule. A schedule without a
+> header loses its first rule, and no error is shown. _Status_ lists the rules actually in effect in
+> a table, so check that it has the rules you expect.
+
 | Column      | Values                                                                           |
 |:------------|:---------------------------------------------------------------------------------|
 | `Month`     | `1-12` or `Jan-Dec`                                                              |
 | `Day`       | `1-31`                                                                           |
 | `Weekday`   | `1-7` (Monday is `1`) or `Mon-Sun`                                               |
 | `Time`      | `HH:MM-HH:MM`, or whole hours `H-H`. The end is exclusive; `24:00` ends the day. |
-| `Available` | `1` for available, `0` for off                                                   |
+| `Available` | `1` for available, `0` for off. Required.                                        |
 
 - An empty cell matches anything. A cell can hold several values or ranges, quoted: `"Sat,Sun"`.
 - Ranges must be ascending, so write an overnight window as two rules.
 - The first rule that matches decides, so a `0` rule first acts as a blackout.
+- Only the first non-empty value after `Time` is used, so keep `Available` as the only column
+  after it. Any further columns are ignored.
 - Lines starting with `#` are comments.
 - Times are local to _Time Zone_. Many SolarNodeOS images run in UTC, so set it to the site's zone.
 - An invalid schedule or time zone never applies. The error is shown in _Status_.
+- _Status_ shows a table of the rules in effect, and which rule matches now.
 
 ```
 Month,Day,Weekday,Time,Available
-# no setup on Christmas Day
-Dec,25,,,0
+# no setup on Boxing Day, Santa is resting
+Dec,26,,,0
 ,,Mon-Fri,07:00-18:00,1
 ,,"Sat,Sun",08:00-12:00,1
 # Friday night into Saturday
@@ -89,7 +97,7 @@ Dec,25,,,0
 ## Schedule from metadata
 
 To manage the schedule from SolarNetwork, set _Metadata Path_. The value is the same CSV as a
-string, or an array of rows with the header first:
+string, or an array of rows. Either way the first row is always the header, as in the CSV form:
 
 ```json
 {"pm":{"bluetooth":{"schedule":[
@@ -98,6 +106,8 @@ string, or an array of rows with the header first:
 ]}}}
 ```
 
+- In the array form, rows with fewer than 5 values are ignored, as are values beyond the header
+  row. Compare the rule table in _Status_ with the rows you expect.
 - A schedule loaded from metadata replaces the _Schedule_ setting. If there is nothing at the path,
   the setting applies.
 - Until metadata first loads, the _Schedule_ setting applies, so leave it empty or no wider than the
@@ -110,8 +120,7 @@ every node that reads it. Update node metadata with `POST`: `PUT` replaces all o
 metadata.
 
 Node metadata is cached for an hour by default. To apply a change sooner, send a `Signal`
-instruction with the parameter `net.solarnetwork.node.metadata.json` set to `clear-cache`. The User
-Metadata Service doesn't support this signal yet.
+instruction with the parameter `net.solarnetwork.node.metadata.json` set to `clear-cache`.
 
 # Overriding the schedule
 
