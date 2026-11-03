@@ -22,7 +22,7 @@
 	</bean>
 
 	<bean id="bluetoothSetupService" class="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
-			init-method="startup" destroy-method="shutdown">
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.bluetooth.BluetoothSetupService"
 			autowire-on-update="true" update-method="configurationChanged"/>
 		<argument ref="opModesService"/>

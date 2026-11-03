@@ -64,6 +64,7 @@ import net.solarnetwork.service.FilterableService;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -99,7 +100,8 @@ import net.solarnetwork.util.DateUtils;
  * @version 1.0
  */
 public class BluetoothSetupService extends BaseIdentifiable
-		implements SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler, EventHandler {
+		implements SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler, EventHandler,
+		ServiceLifecycleObserver {
 
 	/** The {@code solarcfg} service name for the Bluetooth radio. */
 	public static final String CONFIG_SERVICE = "bluetooth";
@@ -258,14 +260,15 @@ public class BluetoothSetupService extends BaseIdentifiable
 	}
 
 	/**
-	 * Start up the service.
+	 * {@inheritDoc}
 	 *
 	 * <p>
 	 * Reconciles the radio and starts the watchdog and schedule checks. A
 	 * metadata schedule is read afterwards, without holding the service lock.
 	 * </p>
 	 */
-	public void startup() {
+	@Override
+	public void serviceDidStartup() {
 		synchronized ( this ) {
 			stopped = false;
 			opModeActive = opModesService.isOperationalModeActive(opMode);
@@ -281,9 +284,14 @@ public class BluetoothSetupService extends BaseIdentifiable
 	}
 
 	/**
-	 * Shut down the service, leaving the radio in its current state.
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * Leaves the radio in its current state.
+	 * </p>
 	 */
-	public synchronized void shutdown() {
+	@Override
+	public synchronized void serviceDidShutdown() {
 		// a tick already running, or a one-off metadata read already queued, must
 		// not change the radio after shutdown
 		stopped = true;

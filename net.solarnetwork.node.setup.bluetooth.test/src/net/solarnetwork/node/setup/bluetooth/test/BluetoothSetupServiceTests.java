@@ -1474,7 +1474,7 @@ public class BluetoothSetupServiceTests {
 	private void startupWithSchedule(String schedule, String timeZone) {
 		service.setSchedule(schedule);
 		service.setTimeZone(timeZone);
-		service.startup();
+		service.serviceDidStartup();
 	}
 
 	@Test
@@ -1654,7 +1654,7 @@ public class BluetoothSetupServiceTests {
 		s.setTimeZone("UTC"); // window closed at 00:00 UTC
 
 		// WHEN
-		s.startup();
+		s.serviceDidStartup();
 
 		// THEN
 		// @formatter:off
@@ -1667,7 +1667,7 @@ public class BluetoothSetupServiceTests {
 			.shouldHaveNoInteractions()
 			;
 		// @formatter:on
-		s.shutdown();
+		s.serviceDidShutdown();
 	}
 
 	@Test
@@ -2032,7 +2032,7 @@ public class BluetoothSetupServiceTests {
 		s.setAlwaysOn(false);
 		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC");
-		s.startup(); // registers future
+		s.serviceDidStartup(); // registers future
 
 		// WHEN
 		s.setAlwaysOn(true);
@@ -2076,7 +2076,7 @@ public class BluetoothSetupServiceTests {
 		// @formatter:on
 
 		// WHEN
-		s.shutdown();
+		s.serviceDidShutdown();
 
 		// THEN
 		final InOrder order = inOrder(taskScheduler, future, future2);
@@ -2120,8 +2120,8 @@ public class BluetoothSetupServiceTests {
 		s.setTimeZone("UTC");
 
 		// WHEN
-		s.startup();
-		s.shutdown();
+		s.serviceDidStartup();
+		s.serviceDidShutdown();
 
 		// THEN
 		// @formatter:off
@@ -2192,7 +2192,7 @@ public class BluetoothSetupServiceTests {
 		service.setMetadataPath(META_PATH);
 		service.setSchedule(inline);
 		service.setTimeZone("UTC");
-		service.startup();
+		service.serviceDidStartup();
 	}
 
 	private String statusTitleText() {
@@ -2832,7 +2832,7 @@ public class BluetoothSetupServiceTests {
 		s.setMetadataPath(META_PATH);
 
 		// WHEN
-		s.startup();
+		s.serviceDidStartup();
 
 		// THEN
 		// with Always On nothing is scheduled and no metadata is read
@@ -2866,7 +2866,7 @@ public class BluetoothSetupServiceTests {
 		s.setMetadataPath(META_PATH);
 
 		// WHEN
-		s.startup();
+		s.serviceDidStartup();
 
 		// THEN
 		// @formatter:off
@@ -2939,7 +2939,7 @@ public class BluetoothSetupServiceTests {
 		final int lines = rawLogLines();
 
 		// WHEN
-		service.shutdown();
+		service.serviceDidShutdown();
 		service.scheduleTick();
 
 		// THEN
