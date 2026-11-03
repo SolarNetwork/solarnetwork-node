@@ -7,6 +7,8 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Testing -->
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="3.1.0"/>
+		<dependency org="org.assertj" name="assertj-core" rev="3.27.6"/>
+		<dependency org="org.mockito" name="mockito-core" rev="5.23.0"/>
 
 		<!-- Testing support -->
     </dependencies>

@@ -22,13 +22,9 @@
 
 package net.solarnetwork.node.setup.bluetooth.test;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.then;
+import static org.assertj.core.api.BDDAssertions.thenIllegalArgumentException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -61,155 +57,311 @@ public class AvailabilityScheduleTests {
 	}
 
 	private static void assertInvalid(String schedule, String expectedMessagePart) {
-		try {
-			AvailabilitySchedule.parse(schedule);
-			fail("Expected [" + schedule + "] to be rejected");
-		} catch ( IllegalArgumentException e ) {
-			assertThat("message for [" + schedule + "]", e.getMessage(),
-					containsString(expectedMessagePart));
-		}
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Message for [%s]", schedule)
+			.isThrownBy(() -> AvailabilitySchedule.parse(schedule))
+			.withMessageContaining(expectedMessagePart)
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_blank_isEmpty() {
-		assertThat(AvailabilitySchedule.parse(null).isEmpty(), is(true));
-		assertThat(AvailabilitySchedule.parse("").isEmpty(), is(true));
-		assertThat(AvailabilitySchedule.parse("  \n\t ").isEmpty(), is(true));
-		assertThat(AvailabilitySchedule.parse("# only a comment\n").isEmpty(), is(true));
-		assertThat("header only", AvailabilitySchedule.parse(HEADER).isEmpty(), is(true));
-		assertThat(AvailabilitySchedule.parse("").applies(tue(12, 0)), is(false));
+		// @formatter:off
+		then(AvailabilitySchedule.parse(null))
+			.as("Null is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		then(AvailabilitySchedule.parse(""))
+			.as("Empty string is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			.as("Empty schedule never applies")
+			.returns(false, from(s -> s.applies(tue(12, 0))))
+			;
+		then(AvailabilitySchedule.parse("  \n\t "))
+			.as("Whitespace is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		then(AvailabilitySchedule.parse("# only a comment\n"))
+			.as("Comment only is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		then(AvailabilitySchedule.parse(HEADER))
+			.as("Header only")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_commentsAndBlankLines() {
+		// WHEN
 		AvailabilitySchedule s = AvailabilitySchedule
 				.parse("# business hours\n" + HEADER + "\n# weekdays\n,,Mon-Fri,07:00-18:00,1\n\n");
-		assertThat(s.getRules(), hasSize(1));
-		assertThat(s.applies(tue(12, 0)), is(true));
+
+		// THEN
+		// @formatter:off
+		then(s.getRules())
+			.as("One rule parsed")
+			.hasSize(1)
+			;
+		then(s)
+			.as("Weekday window applies")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_weekdayWindow_edges() {
+		// WHEN
 		AvailabilitySchedule s = parse(",,Mon-Fri,07:00-18:00,1");
-		assertThat("before start", s.applies(tue(6, 59)), is(false));
-		assertThat("start inclusive", s.applies(tue(7, 0)), is(true));
-		assertThat("inside", s.applies(tue(17, 59)), is(true));
-		assertThat("end exclusive", s.applies(tue(18, 0)), is(false));
-		assertThat("weekend", s.applies(sat(10, 0)), is(false));
-		assertThat("Monday before start", s.applies(LocalDateTime.of(2026, 10, 5, 6, 59)), is(false));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Before start")
+			.returns(false, from(x -> x.applies(tue(6, 59))))
+			.as("Start inclusive")
+			.returns(true, from(x -> x.applies(tue(7, 0))))
+			.as("Inside")
+			.returns(true, from(x -> x.applies(tue(17, 59))))
+			.as("End exclusive")
+			.returns(false, from(x -> x.applies(tue(18, 0))))
+			.as("Weekend")
+			.returns(false, from(x -> x.applies(sat(10, 0))))
+			.as("Monday before start")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2026, 10, 5, 6, 59))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_multiRange_innerEndExclusive() {
+		// WHEN
 		AvailabilitySchedule s = parse(",,Mon-Fri,\"06:00-09:00,16:00-20:00\",1");
-		assertThat(s.applies(tue(8, 59)), is(true));
-		assertThat("inner end is exclusive too", s.applies(tue(9, 0)), is(false));
-		assertThat(s.applies(tue(9, 30)), is(false));
-		assertThat(s.applies(tue(16, 0)), is(true));
-		assertThat(s.applies(tue(19, 59)), is(true));
-		assertThat(s.applies(tue(20, 0)), is(false));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Inside first range")
+			.returns(true, from(x -> x.applies(tue(8, 59))))
+			.as("Inner end is exclusive too")
+			.returns(false, from(x -> x.applies(tue(9, 0))))
+			.as("Between ranges")
+			.returns(false, from(x -> x.applies(tue(9, 30))))
+			.as("Second range start inclusive")
+			.returns(true, from(x -> x.applies(tue(16, 0))))
+			.as("Inside second range")
+			.returns(true, from(x -> x.applies(tue(19, 59))))
+			.as("Second range end exclusive")
+			.returns(false, from(x -> x.applies(tue(20, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_oneMinuteGap_separateRules() {
+		// WHEN
 		AvailabilitySchedule s = parse(",,,06:00-09:00,1\n,,,09:01-12:00,1");
-		assertThat(s.applies(tue(8, 59)), is(true));
-		assertThat("gap minute stays off", s.applies(tue(9, 0)), is(false));
-		assertThat(s.applies(tue(9, 1)), is(true));
-		assertThat("next boundary is the gap", s.nextBoundary(tue(8, 0)), equalTo(tue(9, 0)));
-		assertThat("gap ends a minute later", s.nextBoundary(tue(9, 0)), equalTo(tue(9, 1)));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Inside first rule")
+			.returns(true, from(x -> x.applies(tue(8, 59))))
+			.as("Gap minute stays off")
+			.returns(false, from(x -> x.applies(tue(9, 0))))
+			.as("Second rule start inclusive")
+			.returns(true, from(x -> x.applies(tue(9, 1))))
+			.as("Next boundary is the gap")
+			.returns(tue(9, 0), from(x -> x.nextBoundary(tue(8, 0))))
+			.as("Gap ends a minute later")
+			.returns(tue(9, 1), from(x -> x.nextBoundary(tue(9, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_multipleRules() {
+		// WHEN
 		AvailabilitySchedule s = parse(",,Mon-Fri,07:00-18:00,1\n,,\"Sat,Sun\",08:00-12:00,1");
-		assertThat(s.getRules(), hasSize(2));
-		assertThat(s.applies(tue(12, 0)), is(true));
-		assertThat(s.applies(sat(9, 0)), is(true));
-		assertThat(s.applies(sat(13, 0)), is(false));
+
+		// THEN
+		// @formatter:off
+		then(s.getRules())
+			.as("Two rules parsed")
+			.hasSize(2)
+			;
+		then(s)
+			.as("Weekday window applies")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			.as("Weekend window applies")
+			.returns(true, from(x -> x.applies(sat(9, 0))))
+			.as("Outside weekend window")
+			.returns(false, from(x -> x.applies(sat(13, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_numericDaysAndWholeHours() {
+		// WHEN
 		AvailabilitySchedule numeric = parse(",,1-5,7-18,1");
 		AvailabilitySchedule named = parse(",,Mon-Fri,07:00-18:00,1");
-		assertThat(numeric.toString(), equalTo(named.toString()));
-		assertThat(numeric.applies(tue(7, 0)), is(true));
-		assertThat(numeric.applies(tue(18, 0)), is(false));
-		assertThat(numeric.applies(sat(12, 0)), is(false));
-
 		AvailabilitySchedule allSunday = parse(",,Sun,0-24,1");
-		assertThat(allSunday.applies(LocalDateTime.of(2026, 10, 11, 23, 59)), is(true));
-		assertThat(allSunday.applies(LocalDateTime.of(2026, 10, 11, 0, 0)), is(true));
-		assertThat(allSunday.applies(sat(23, 59)), is(false));
-
 		AvailabilitySchedule endOfDay = parse(",,,22:00-24:00,1");
-		assertThat(endOfDay.applies(tue(23, 59)), is(true));
-		assertThat(endOfDay.applies(tue(21, 59)), is(false));
-
 		AvailabilitySchedule oneHour = parse(",,Sat,9,1");
-		assertThat("whole hour is that hour", oneHour.applies(sat(9, 30)), is(true));
-		assertThat(oneHour.applies(sat(10, 0)), is(false));
+
+		// THEN
+		// @formatter:off
+		then(numeric)
+			.as("Numeric same as named")
+			.hasToString(named.toString())
+			.as("Numeric start inclusive")
+			.returns(true, from(x -> x.applies(tue(7, 0))))
+			.as("Numeric end exclusive")
+			.returns(false, from(x -> x.applies(tue(18, 0))))
+			.as("Numeric weekend")
+			.returns(false, from(x -> x.applies(sat(12, 0))))
+			;
+		then(allSunday)
+			.as("End of Sunday")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 10, 11, 23, 59))))
+			.as("Start of Sunday")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 10, 11, 0, 0))))
+			.as("Saturday")
+			.returns(false, from(x -> x.applies(sat(23, 59))))
+			;
+		then(endOfDay)
+			.as("Last minute of day")
+			.returns(true, from(x -> x.applies(tue(23, 59))))
+			.as("Before start")
+			.returns(false, from(x -> x.applies(tue(21, 59))))
+			;
+		then(oneHour)
+			.as("Whole hour is that hour")
+			.returns(true, from(x -> x.applies(sat(9, 30))))
+			.as("Whole hour end exclusive")
+			.returns(false, from(x -> x.applies(sat(10, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_emptyCellsMatchAll() {
-		assertThat(parse(",,,07:00-18:00,1").applies(sat(12, 0)), is(true));
-		assertThat(parse(",,,07:00-18:00,1").applies(sat(19, 0)), is(false));
+		// WHEN
+		AvailabilitySchedule anyDay = parse(",,,07:00-18:00,1");
 		AvailabilitySchedule weekend = parse(",,Sat-Sun,,1");
-		assertThat(weekend.applies(sat(0, 0)), is(true));
-		assertThat(weekend.applies(sat(23, 59)), is(true));
-		assertThat(weekend.applies(tue(12, 0)), is(false));
 		AvailabilitySchedule always = parse(",,,,1");
-		assertThat(always.isEmpty(), is(false));
-		assertThat(always.applies(tue(12, 0)), is(true));
+
+		// THEN
+		// @formatter:off
+		then(anyDay)
+			.as("Any day inside window")
+			.returns(true, from(x -> x.applies(sat(12, 0))))
+			.as("Any day outside window")
+			.returns(false, from(x -> x.applies(sat(19, 0))))
+			;
+		then(weekend)
+			.as("Start of weekend day")
+			.returns(true, from(x -> x.applies(sat(0, 0))))
+			.as("End of weekend day")
+			.returns(true, from(x -> x.applies(sat(23, 59))))
+			.as("Weekday")
+			.returns(false, from(x -> x.applies(tue(12, 0))))
+			;
+		then(always)
+			.as("Not empty")
+			.returns(false, from(AvailabilitySchedule::isEmpty))
+			.as("Always applies")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_daysAndMonths() {
+		// WHEN
 		AvailabilitySchedule s = parse(",1-15,Mon-Fri,07:00-18:00,1");
-		assertThat("6th of the month", s.applies(tue(12, 0)), is(true));
-		assertThat("20th of the month (a Tuesday)", s.applies(LocalDateTime.of(2026, 10, 20, 12, 0)),
-				is(false));
-		assertThat("10th but Saturday", s.applies(sat(12, 0)), is(false));
-
 		AvailabilitySchedule summer = parse("Jun-Aug,,Mon-Fri,07:00-18:00,1");
-		assertThat("October", summer.applies(tue(12, 0)), is(false));
-		// 2026-07-07 is a Tuesday
-		assertThat("July weekday", summer.applies(LocalDateTime.of(2026, 7, 7, 12, 0)), is(true));
-		// 2026-07-11 is a Saturday
-		assertThat("July weekend", summer.applies(LocalDateTime.of(2026, 7, 11, 12, 0)), is(false));
-
 		AvailabilitySchedule xmas = parse("Dec,24-26,,,1");
-		assertThat(xmas.applies(LocalDateTime.of(2026, 12, 24, 0, 0)), is(true));
-		assertThat(xmas.applies(LocalDateTime.of(2026, 12, 26, 23, 59)), is(true));
-		assertThat(xmas.applies(LocalDateTime.of(2026, 12, 27, 0, 0)), is(false));
-		assertThat(xmas.applies(LocalDateTime.of(2026, 11, 25, 12, 0)), is(false));
-		assertThat(parse("12,24-26,,,1").toString(), equalTo(xmas.toString()));
-
 		AvailabilitySchedule leap = parse("Feb,29,,,1");
-		assertThat(leap.applies(LocalDateTime.of(2028, 2, 29, 12, 0)), is(true));
-		assertThat(leap.applies(LocalDateTime.of(2027, 2, 28, 12, 0)), is(false));
-
 		AvailabilitySchedule full = parse("January-March,,Monday-Friday,7-18,1");
-		assertThat(full.applies(LocalDateTime.of(2026, 2, 3, 12, 0)), is(true)); // Tuesday
-		assertThat(full.applies(tue(12, 0)), is(false));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("6th of the month")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			.as("20th of the month (a Tuesday)")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2026, 10, 20, 12, 0))))
+			.as("10th but Saturday")
+			.returns(false, from(x -> x.applies(sat(12, 0))))
+			;
+		then(summer)
+			.as("October")
+			.returns(false, from(x -> x.applies(tue(12, 0))))
+			// 2026-07-07 is a Tuesday
+			.as("July weekday")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 7, 7, 12, 0))))
+			// 2026-07-11 is a Saturday
+			.as("July weekend")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2026, 7, 11, 12, 0))))
+			;
+		then(xmas)
+			.as("Start of first day")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 12, 24, 0, 0))))
+			.as("End of last day")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 12, 26, 23, 59))))
+			.as("Day after")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2026, 12, 27, 0, 0))))
+			.as("Other month")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2026, 11, 25, 12, 0))))
+			;
+		then(parse("12,24-26,,,1"))
+			.as("Numeric month same as named")
+			.hasToString(xmas.toString())
+			;
+		then(leap)
+			.as("Leap day")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2028, 2, 29, 12, 0))))
+			.as("Non-leap year end of February")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2027, 2, 28, 12, 0))))
+			;
+		then(full)
+			.as("Full names: February Tuesday")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 2, 3, 12, 0))))
+			.as("Full names: October")
+			.returns(false, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void parse_blackoutRow() {
+		// WHEN
 		AvailabilitySchedule s = parse("Dec,25,,,0\n,,Mon-Fri,07:00-18:00,1");
-		// 2026-12-24 is a Thursday, 2026-12-25 a Friday
-		assertThat(s.applies(LocalDateTime.of(2026, 12, 24, 12, 0)), is(true));
-		assertThat("blackout first match wins", s.applies(LocalDateTime.of(2026, 12, 25, 12, 0)),
-				is(false));
-		assertThat("next start skips the blackout",
-				s.nextBoundary(LocalDateTime.of(2026, 12, 24, 20, 0)),
-				equalTo(LocalDateTime.of(2026, 12, 28, 7, 0)));
-
 		AvailabilitySchedule later = parse(",,Mon-Fri,07:00-18:00,1\nDec,25,,,0");
-		assertThat("a later blackout never matches",
-				later.applies(LocalDateTime.of(2026, 12, 25, 12, 0)), is(true));
+
+		// THEN
+		// 2026-12-24 is a Thursday, 2026-12-25 a Friday
+		// @formatter:off
+		then(s)
+			.as("Day before blackout")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 12, 24, 12, 0))))
+			.as("Blackout first match wins")
+			.returns(false, from(x -> x.applies(LocalDateTime.of(2026, 12, 25, 12, 0))))
+			.as("Next start skips the blackout")
+			.returns(LocalDateTime.of(2026, 12, 28, 7, 0),
+					from(x -> x.nextBoundary(LocalDateTime.of(2026, 12, 24, 20, 0))))
+			;
+		then(later)
+			.as("A later blackout never matches")
+			.returns(true, from(x -> x.applies(LocalDateTime.of(2026, 12, 25, 12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
@@ -251,59 +403,114 @@ public class AvailabilityScheduleTests {
 		assertInvalid(HEADER + ",,Mon-Fri,07:00-18:00,yes", "rate value");
 		assertInvalid("Month,Day,Weekday,Time,Available,Other\n,,Mon-Fri,07:00-18:00,1,1",
 				"must have exactly one availability value");
-		assertThat(parse(",,Mon-Fri,07:00-18:00,1.0").applies(tue(12, 0)), is(true));
+
+		// @formatter:off
+		then(parse(",,Mon-Fri,07:00-18:00,1.0"))
+			.as("Decimal one is available")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void nextBoundary_skipsDstGap() {
+		// GIVEN
 		// NZ clocks go from 02:00 NZST to 03:00 NZDT on Sunday 2026-09-27, so
 		// 02:00 that day never happens and the window first applies the next Sunday
 		AvailabilitySchedule s = parse(",,Sun,02:00-03:00,1");
-		LocalDateTime from = LocalDateTime.of(2026, 9, 27, 1, 0);
-		assertThat("zone-unaware returns the gap time", s.nextBoundary(from),
-				equalTo(LocalDateTime.of(2026, 9, 27, 2, 0)));
-		assertThat("zone-aware skips the gap", s.nextBoundary(from, ZoneId.of("Pacific/Auckland")),
-				equalTo(LocalDateTime.of(2026, 10, 4, 2, 0)));
+		LocalDateTime start = LocalDateTime.of(2026, 9, 27, 1, 0);
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Zone-unaware returns the gap time")
+			.returns(LocalDateTime.of(2026, 9, 27, 2, 0), from(x -> x.nextBoundary(start)))
+			.as("Zone-aware skips the gap")
+			.returns(LocalDateTime.of(2026, 10, 4, 2, 0),
+					from(x -> x.nextBoundary(start, ZoneId.of("Pacific/Auckland"))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void nextBoundary() {
+		// GIVEN
 		AvailabilitySchedule s = parse(",,Mon-Fri,07:00-18:00,1");
-		assertThat("inside: end of window", s.nextBoundary(tue(12, 0)), equalTo(tue(18, 0)));
-		assertThat("outside: next start", s.nextBoundary(tue(18, 0)),
-				equalTo(LocalDateTime.of(2026, 10, 7, 7, 0)));
-		assertThat("before start same day", s.nextBoundary(tue(6, 30)), equalTo(tue(7, 0)));
-		assertThat("weekend wraps to Monday", s.nextBoundary(sat(12, 0)),
-				equalTo(LocalDateTime.of(2026, 10, 12, 7, 0)));
-		assertThat("empty schedule", AvailabilitySchedule.parse("").nextBoundary(tue(12, 0)),
-				is(nullValue()));
-		assertThat("always applies", parse(",,,,1").nextBoundary(tue(12, 0)), is(nullValue()));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Inside: end of window")
+			.returns(tue(18, 0), from(x -> x.nextBoundary(tue(12, 0))))
+			.as("Outside: next start")
+			.returns(LocalDateTime.of(2026, 10, 7, 7, 0), from(x -> x.nextBoundary(tue(18, 0))))
+			.as("Before start same day")
+			.returns(tue(7, 0), from(x -> x.nextBoundary(tue(6, 30))))
+			.as("Weekend wraps to Monday")
+			.returns(LocalDateTime.of(2026, 10, 12, 7, 0), from(x -> x.nextBoundary(sat(12, 0))))
+			;
+		then(AvailabilitySchedule.parse("").nextBoundary(tue(12, 0)))
+			.as("Empty schedule")
+			.isNull()
+			;
+		then(parse(",,,,1").nextBoundary(tue(12, 0)))
+			.as("Always applies")
+			.isNull()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void nextBoundary_multiRange() {
+		// GIVEN
 		AvailabilitySchedule s = parse(",,Mon-Fri,\"06:00-09:00,16:00-20:00\",1");
-		assertThat("inner end", s.nextBoundary(tue(8, 0)), equalTo(tue(9, 0)));
-		assertThat("next inner start", s.nextBoundary(tue(9, 0)), equalTo(tue(16, 0)));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Inner end")
+			.returns(tue(9, 0), from(x -> x.nextBoundary(tue(8, 0))))
+			.as("Next inner start")
+			.returns(tue(16, 0), from(x -> x.nextBoundary(tue(9, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void nextBoundary_fullDays() {
+		// GIVEN
 		AvailabilitySchedule s = parse("Dec,24-26,,,1");
-		assertThat(s.nextBoundary(LocalDateTime.of(2026, 12, 20, 12, 0)),
-				equalTo(LocalDateTime.of(2026, 12, 24, 0, 0)));
-		assertThat(s.nextBoundary(LocalDateTime.of(2026, 12, 25, 12, 0)),
-				equalTo(LocalDateTime.of(2026, 12, 27, 0, 0)));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Before: start of first day")
+			.returns(LocalDateTime.of(2026, 12, 24, 0, 0),
+					from(x -> x.nextBoundary(LocalDateTime.of(2026, 12, 20, 12, 0))))
+			.as("Inside: start of day after last day")
+			.returns(LocalDateTime.of(2026, 12, 27, 0, 0),
+					from(x -> x.nextBoundary(LocalDateTime.of(2026, 12, 25, 12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void toString_canonical() {
+		// WHEN
 		AvailabilitySchedule s = parse(
 				",,mon-fri,07:00-18:00,1\nJun-Aug,1-15,,\"06:00-09:00,16:00-20:00\",1\nDec,24-26,,,1");
-		assertThat(s.toString(),
-				equalTo(",,Mon-Fri,7-18,1; Jun-Aug,1-15,,\"6-9,16-20\",1; Dec,24-26,,,1"));
-		assertThat("round trip", AvailabilitySchedule.parse(s.toCsv()).toString(),
-				equalTo(s.toString()));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Canonical form")
+			.hasToString(",,Mon-Fri,7-18,1; Jun-Aug,1-15,,\"6-9,16-20\",1; Dec,24-26,,,1")
+			;
+		then(AvailabilitySchedule.parse(s.toCsv()))
+			.as("Round trip")
+			.hasToString(s.toString())
+			;
+		// @formatter:on
 	}
 
 	private static final List<Object> HEADER_ROW = List.of("Month", "Day", "Weekday", "Time",
@@ -311,57 +518,91 @@ public class AvailabilityScheduleTests {
 
 	@Test
 	public void fromMetadata_string() {
+		// WHEN
 		AvailabilitySchedule s = AvailabilitySchedule.fromMetadata(HEADER + ",,Mon-Fri,07:00-18:00,1");
-		assertThat(s.applies(tue(12, 0)), is(true));
-		assertThat(s.applies(sat(12, 0)), is(false));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Weekday window applies")
+			.returns(true, from(x -> x.applies(tue(12, 0))))
+			.as("Weekend")
+			.returns(false, from(x -> x.applies(sat(12, 0))))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void fromMetadata_rows() {
+		// WHEN
 		AvailabilitySchedule s = AvailabilitySchedule
 				.fromMetadata(List.of(HEADER_ROW, Arrays.asList(null, null, "Sat,Sun", "08:00-12:00", 1),
 						Arrays.asList("", "", "Mon-Fri", "07:00-09:00", "1")));
-		assertThat("comma cell needs no quoting", s.applies(sat(9, 0)), is(true));
-		assertThat("numeric cell", s.applies(sat(13, 0)), is(false));
-		assertThat(s.getRules(), hasSize(2));
-		assertThat("same as the string form", s.toString(), equalTo(AvailabilitySchedule
-				.parse(HEADER + ",,\"Sat,Sun\",08:00-12:00,1\n,,Mon-Fri,07:00-09:00,1").toString()));
+
+		// THEN
+		// @formatter:off
+		then(s)
+			.as("Comma cell needs no quoting")
+			.returns(true, from(x -> x.applies(sat(9, 0))))
+			.as("Numeric cell")
+			.returns(false, from(x -> x.applies(sat(13, 0))))
+			.as("Same as the string form")
+			.hasToString(AvailabilitySchedule
+					.parse(HEADER + ",,\"Sat,Sun\",08:00-12:00,1\n,,Mon-Fri,07:00-09:00,1").toString())
+			;
+		then(s.getRules())
+			.as("Two rules parsed")
+			.hasSize(2)
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void fromMetadata_rows_validatedLikeString() {
-		try {
-			AvailabilitySchedule.fromMetadata(
-					List.of(HEADER_ROW, Arrays.asList(null, null, null, "22:00-06:00", 1)));
-			fail("descending range should be rejected");
-		} catch ( IllegalArgumentException e ) {
-			assertThat(e.getMessage(), containsString("is descending"));
-		}
-		try {
-			AvailabilitySchedule.fromMetadata(List.of(Arrays.asList(null, null, "Mon-Fri", "7-18", 1)));
-			fail("missing header should be rejected");
-		} catch ( IllegalArgumentException e ) {
-			assertThat(e.getMessage(), containsString("header row"));
-		}
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Descending range should be rejected")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(HEADER_ROW, Arrays.asList(null, null, null, "22:00-06:00", 1))))
+			.withMessageContaining("is descending")
+			;
+		thenIllegalArgumentException()
+			.as("Missing header should be rejected")
+			.isThrownBy(() -> AvailabilitySchedule.fromMetadata(
+					List.of(Arrays.asList(null, null, "Mon-Fri", "7-18", 1))))
+			.withMessageContaining("header row")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void fromMetadata_empty() {
-		assertThat(AvailabilitySchedule.fromMetadata("").isEmpty(), is(true));
-		assertThat(AvailabilitySchedule.fromMetadata(List.of()).isEmpty(), is(true));
-		assertThat(AvailabilitySchedule.fromMetadata(List.of(HEADER_ROW)).isEmpty(), is(true));
+		// @formatter:off
+		then(AvailabilitySchedule.fromMetadata(""))
+			.as("Empty string is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		then(AvailabilitySchedule.fromMetadata(List.of()))
+			.as("Empty list is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		then(AvailabilitySchedule.fromMetadata(List.of(HEADER_ROW)))
+			.as("Header row only is empty")
+			.returns(true, from(AvailabilitySchedule::isEmpty))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void fromMetadata_unsupported() {
 		for ( Object value : new Object[] { List.of(AvailabilitySchedule.EXAMPLE_HEADER, ",,,,1"),
 				List.of(HEADER_ROW, List.of(Map.of("a", 1), "", "", "", "1")), Map.of("a", 1), 42 } ) {
-			try {
-				AvailabilitySchedule.fromMetadata(value);
-				fail("Expected [" + value + "] to be rejected");
-			} catch ( IllegalArgumentException e ) {
-				// expected
-			}
+			// @formatter:off
+			thenIllegalArgumentException()
+				.as("Expected [%s] to be rejected", value)
+				.isThrownBy(() -> AvailabilitySchedule.fromMetadata(value))
+				;
+			// @formatter:on
 		}
 	}
 

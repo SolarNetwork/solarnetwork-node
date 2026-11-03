@@ -22,21 +22,18 @@
 
 package net.solarnetwork.node.setup.bluetooth.test;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.BDDAssertions.and;
+import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,11 +53,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.service.event.Event;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.scheduling.TaskScheduler;
@@ -89,6 +90,8 @@ import net.solarnetwork.settings.TitleSettingSpecifier;
  * @author elijah
  * @version 1.0
  */
+@SuppressWarnings("static-access")
+@RunWith(MockitoJUnitRunner.class)
 public class BluetoothSetupServiceTests {
 
 	private static final String SCHED_HEADER = AvailabilitySchedule.EXAMPLE_HEADER + "\n";
@@ -102,8 +105,27 @@ public class BluetoothSetupServiceTests {
 	private static final String OFFLINE_MODE = BluetoothSetupService.DEFAULT_OFFLINE_OP_MODE;
 	private static final Instant START = Instant.parse("2026-10-06T00:00:00Z");
 
+	private static final Duration SCHEDULE_TICK = Duration
+			.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS);
+
+	@Mock
 	private OperationalModesService opModesService;
+
+	@Mock
 	private MetadataService metadataService;
+
+	@Mock
+	private TaskScheduler taskScheduler;
+
+	@Mock
+	private ScheduledFuture<?> future;
+
+	@Mock
+	private ScheduledFuture<?> future2;
+
+	@Captor
+	private ArgumentCaptor<Instant> expireCaptor;
+
 	private SwitchableService metadataServiceRef;
 	private BluetoothSetupService service;
 	private File tmpFile;
@@ -112,8 +134,6 @@ public class BluetoothSetupServiceTests {
 
 	@Before
 	public void setup() throws IOException {
-		opModesService = EasyMock.createMock(OperationalModesService.class);
-		metadataService = EasyMock.createMock(MetadataService.class);
 		metadataServiceRef = new SwitchableService(metadataService);
 		// no task scheduler: reconcile runs inline, which keeps the tests deterministic
 		service = new BluetoothSetupService(opModesService, null, metadataServiceRef);
@@ -137,7 +157,6 @@ public class BluetoothSetupServiceTests {
 
 	@After
 	public void teardown() {
-		verify(opModesService, metadataService);
 		if ( tmpFile != null ) {
 			tmpFile.delete();
 		}
@@ -147,10 +166,6 @@ public class BluetoothSetupServiceTests {
 		if ( stateFile != null ) {
 			stateFile.delete();
 		}
-	}
-
-	private void replayAll() {
-		replay(opModesService, metadataService);
 	}
 
 	private List<String> actions() throws IOException {
@@ -189,6 +204,11 @@ public class BluetoothSetupServiceTests {
 				params);
 	}
 
+	private static BluetoothSetupStatus serviceResult(InstructionStatus status) {
+		return (BluetoothSetupStatus) status.getResultParameters()
+				.get(InstructionHandler.PARAM_SERVICE_RESULT);
+	}
+
 	private Event modesEvent(String... activeModes) {
 		Map<String, Object> props = new HashMap<>();
 		props.put(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES, Set.of(activeModes));
@@ -197,159 +217,338 @@ public class BluetoothSetupServiceTests {
 
 	@Test
 	public void handlesTopic() {
-		replayAll();
-		assertThat(service.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE), is(true));
-		assertThat(service.handlesTopic("Other"), is(false));
+		// @formatter:off
+		and.then(service.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+			.as("System configure topic handled")
+			.isTrue()
+			;
+		and.then(service.handlesTopic("Other"))
+			.as("Other topic not handled")
+			.isFalse()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_otherService_ignored() {
-		replayAll();
+		// GIVEN
 		Map<String, String> params = new LinkedHashMap<>();
 		params.put(InstructionHandler.PARAM_SERVICE, "/setup/network/wifi");
 		Instruction instr = InstructionUtils
 				.createLocalInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE, params);
-		assertThat(service.processInstruction(instr), is(nullValue()));
+
+		// WHEN
+		InstructionStatus status = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Instruction for another service ignored")
+			.isNull()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_unsupportedAction_declined() {
-		replayAll();
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("explode", null));
-		assertThat(status, is(notNullValue()));
-		assertThat(status.getInstructionState(), is(InstructionState.Declined));
-		assertThat(status.getResultParameters().get(InstructionHandler.PARAM_MESSAGE),
-				is(notNullValue()));
+
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Status returned")
+			.isNotNull()
+			.as("Unsupported action declined")
+			.returns(InstructionState.Declined, from(InstructionStatus::getInstructionState))
+			;
+		and.then(status.getResultParameters())
+			.as("Message provided")
+			.extractingByKey(InstructionHandler.PARAM_MESSAGE)
+			.isNotNull()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_status() throws IOException {
-		replayAll();
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction(null, null));
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		Object result = status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(result, instanceOf(BluetoothSetupStatus.class));
-		BluetoothSetupStatus s = (BluetoothSetupStatus) result;
-		assertThat(s.isRadioActive(), is(false));
-		assertThat(s.isOpModeActive(), is(false));
-		assertThat(s.isOffline(), is(false));
-		assertThat("status does not change the radio", actions(), is(empty()));
+
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT))
+			.as("Result is Bluetooth status")
+			.asInstanceOf(type(BluetoothSetupStatus.class))
+			.as("Radio not active")
+			.returns(false, from(BluetoothSetupStatus::isRadioActive))
+			.as("Op mode not active")
+			.returns(false, from(BluetoothSetupStatus::isOpModeActive))
+			.as("Not offline")
+			.returns(false, from(BluetoothSetupStatus::isOffline))
+			;
+		and.then(actions())
+			.as("status does not change the radio")
+			.isEmpty()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_enable_defaultDuration() throws IOException {
+		// GIVEN
 		service.setDefaultDurationSeconds(600);
-		Capture<Instant> expireCapture = Capture.newInstance();
-		expect(opModesService.enableOperationalModes(eq(Set.of(OP_MODE)), capture(expireCapture)))
-				.andReturn(Set.of(OP_MODE));
-		expect(opModesService.activeOperationalModesWithExpirations())
-				.andReturn(Map.of(OP_MODE, START.plusSeconds(600).toEpochMilli())).anyTimes();
-		replayAll();
+		given(opModesService.activeOperationalModesWithExpirations())
+				.willReturn(Map.of(OP_MODE, START.plusSeconds(600).toEpochMilli()));
 
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("enable", null));
 
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		assertThat(expireCapture.getValue(), is(START.plusSeconds(600)));
-		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(s.isRadioActive(), is(true));
-		assertThat(s.isOpModeActive(), is(true));
-		assertThat(s.getOpModeExpires(), is(START.plusSeconds(600).toEpochMilli()));
-		assertThat(actions(), contains("enable"));
-		assertThat(radioState(), is(true));
+		// THEN
+		// @formatter:off
+		then(opModesService).should()
+			.enableOperationalModes(eq(Set.of(OP_MODE)), expireCaptor.capture())
+			;
+		and.then(expireCaptor.getValue())
+			.as("Op mode enabled for default duration")
+			.isEqualTo(START.plusSeconds(600))
+			;
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(serviceResult(status))
+			.as("Radio active")
+			.returns(true, from(BluetoothSetupStatus::isRadioActive))
+			.as("Op mode active")
+			.returns(true, from(BluetoothSetupStatus::isOpModeActive))
+			.as("Op mode expiration")
+			.returns(START.plusSeconds(600).toEpochMilli(), from(BluetoothSetupStatus::getOpModeExpires))
+			;
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		and.then(radioState())
+			.as("Radio on")
+			.isTrue()
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_enable_capsDuration() throws IOException {
+		// GIVEN
 		service.setMaxDurationSeconds(100);
-		Capture<Instant> expireCapture = Capture.newInstance();
-		expect(opModesService.enableOperationalModes(eq(Set.of(OP_MODE)), capture(expireCapture)))
-				.andReturn(Set.of(OP_MODE));
-		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
-		replayAll();
 
+		// WHEN
 		service.processInstruction(instruction("enable", Map.of("duration", "99999")));
 
-		assertThat(expireCapture.getValue(), is(START.plusSeconds(100)));
+		// THEN
+		// @formatter:off
+		then(opModesService).should()
+			.enableOperationalModes(eq(Set.of(OP_MODE)), expireCaptor.capture())
+			;
+		and.then(expireCaptor.getValue())
+			.as("Duration capped at maximum")
+			.isEqualTo(START.plusSeconds(100))
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_enable_invalidDuration_declined() throws IOException {
-		replayAll();
+		// WHEN
 		InstructionStatus status = service
 				.processInstruction(instruction("enable", Map.of("duration", "soon")));
-		assertThat(status.getInstructionState(), is(InstructionState.Declined));
-		assertThat(actions(), is(empty()));
+
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Invalid duration declined")
+			.returns(InstructionState.Declined, from(InstructionStatus::getInstructionState))
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_disable() throws IOException {
 		// GIVEN radio currently on via op mode
-		expect(opModesService.enableOperationalModes(eq(Set.of(OP_MODE)), anyObject()))
-				.andReturn(Set.of(OP_MODE));
-		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
-		expect(opModesService.disableOperationalModes(Set.of(OP_MODE))).andReturn(Set.of());
-		replayAll();
 		service.processInstruction(instruction("enable", null));
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio on after enable")
+			.isTrue()
+			;
+		// @formatter:on
 
 		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("disable", null));
 
 		// THEN
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(s.isRadioActive(), is(false));
-		assertThat(s.isOpModeActive(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
-		assertThat(radioState(), is(false));
+		// @formatter:off
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(serviceResult(status))
+			.as("Radio not active")
+			.returns(false, from(BluetoothSetupStatus::isRadioActive))
+			.as("Op mode not active")
+			.returns(false, from(BluetoothSetupStatus::isOpModeActive))
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		then(opModesService).should()
+			.enableOperationalModes(eq(Set.of(OP_MODE)), any())
+			;
+		then(opModesService).should()
+			.disableOperationalModes(Set.of(OP_MODE))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_restart_whenOff_leavesRadioOff() throws IOException {
-		replayAll();
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("restart", null));
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat("restart never turns a gated-off radio on", s.isRadioActive(), is(false));
-		assertThat(radioState(), is(false));
-		assertThat(actions(), contains("restart"));
+
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(serviceResult(status))
+			.as("restart never turns a gated-off radio on")
+			.returns(false, from(BluetoothSetupStatus::isRadioActive))
+			;
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Only restart executed")
+			.containsExactly("restart")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_restart_whenOn_keepsRadioOn() throws IOException {
-		expect(opModesService.enableOperationalModes(eq(Set.of(OP_MODE)), anyObject()))
-				.andReturn(Set.of(OP_MODE));
-		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
-		replayAll();
+		// GIVEN
 		service.processInstruction(instruction("enable", null));
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio on after enable")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("restart", null));
 
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(s.isRadioActive(), is(true));
-		assertThat(radioState(), is(true));
-		assertThat(actions(), contains("enable", "restart"));
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(serviceResult(status))
+			.as("Radio still active")
+			.returns(true, from(BluetoothSetupStatus::isRadioActive))
+			;
+		and.then(radioState())
+			.as("Radio on")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio enabled then restarted")
+			.containsExactly("enable", "restart")
+			;
+		then(opModesService).should()
+			.enableOperationalModes(eq(Set.of(OP_MODE)), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void executeAction_hang_timesOut() throws IOException {
-		replayAll();
+		// GIVEN
 		service.setCommandTimeoutSeconds(1);
 		File hangFile = new File(tmpFile.getAbsolutePath() + ".hang");
 		try {
 			Files.writeString(hangFile.toPath(), "");
+
+			// WHEN
 			final long start = System.nanoTime();
 			BluetoothSetupStatus s = service.currentStatus();
 			final long elapsedMs = (System.nanoTime() - start) / 1_000_000L;
-			assertThat("hung helper reported as unknown status", s, is(nullValue()));
-			assertThat("timeout enforced from process start, not after output", elapsedMs < 10_000L,
-					is(true));
+
+			// THEN
+			// @formatter:off
+			and.then(s)
+				.as("hung helper reported as unknown status")
+				.isNull()
+				;
+			and.then(elapsedMs)
+				.as("timeout enforced from process start, not after output")
+				.isLessThan(10_000L)
+				;
+			// @formatter:on
 		} finally {
 			hangFile.delete();
 		}
@@ -357,14 +556,24 @@ public class BluetoothSetupServiceTests {
 
 	@Test
 	public void executeAction_largeStderr_doesNotDeadlock() throws IOException {
-		replayAll();
+		// GIVEN
 		service.setCommandTimeoutSeconds(10);
 		File noisyFile = new File(tmpFile.getAbsolutePath() + ".noisy");
 		try {
 			Files.writeString(noisyFile.toPath(), "");
+
+			// WHEN
 			BluetoothSetupStatus s = service.currentStatus();
-			assertThat("status parsed despite large stderr output", s, is(notNullValue()));
-			assertThat(s.isRadioActive(), is(false));
+
+			// THEN
+			// @formatter:off
+			and.then(s)
+				.as("status parsed despite large stderr output")
+				.isNotNull()
+				.as("Radio not active")
+				.returns(false, from(BluetoothSetupStatus::isRadioActive))
+				;
+			// @formatter:on
 		} finally {
 			noisyFile.delete();
 		}
@@ -372,126 +581,295 @@ public class BluetoothSetupServiceTests {
 
 	@Test
 	public void modesChanged_enablesThenDisables() throws IOException {
-		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
-		replayAll();
-
+		// WHEN
 		service.handleEvent(modesEvent(OP_MODE, "other"));
-		assertThat(radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Op mode active turns radio on")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.handleEvent(modesEvent("other"));
-		assertThat(radioState(), is(false));
 
-		assertThat(actions(), contains("enable", "disable"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Op mode inactive turns radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void modesChanged_otherMode_ignored() throws IOException {
-		replayAll();
+		// WHEN
 		service.handleEvent(modesEvent("quiet"));
-		assertThat(actions(), is(empty()));
-		assertThat(radioState(), is(false));
+
+		// THEN
+		// @formatter:off
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void reconcile_idempotent() throws IOException {
-		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
-		replayAll();
-
+		// WHEN
 		service.handleEvent(modesEvent(OP_MODE));
 		service.handleEvent(modesEvent(OP_MODE));
 		service.reconcile();
 		service.reconcile();
 
-		assertThat("only one enable despite repeated events", actions(), contains("enable"));
+		// THEN
+		// @formatter:off
+		and.then(actions())
+			.as("only one enable despite repeated events")
+			.containsExactly("enable")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void alwaysOn_turnsRadioOn() throws IOException {
-		replayAll();
+		// GIVEN
 		service.setAlwaysOn(true);
+
+		// WHEN
 		service.reconcile();
-		assertThat(actions(), contains("enable"));
-		assertThat(radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		and.then(radioState())
+			.as("Radio on")
+			.isTrue()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void defaultAlwaysOn_turnsRadioOn() throws IOException {
-		replayAll();
+		// GIVEN
 		// a fresh instance with no configuration at all must turn the radio on
 		BluetoothSetupService fresh = new BluetoothSetupService(opModesService, null, null);
 		fresh.setCommand(tmpFile.getAbsolutePath());
-		assertThat(fresh.isAlwaysOn(), is(true));
+		// @formatter:off
+		and.then(fresh.isAlwaysOn())
+			.as("Always on by default")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		fresh.reconcile();
-		assertThat(actions(), contains("enable"));
-		assertThat(radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		and.then(radioState())
+			.as("Radio on")
+			.isTrue()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_triggersOnlyAfterThreshold() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(2);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).anyTimes();
-		replayAll();
+		given(opModesService.isOperationalModeActive(OFFLINE_MODE)).willReturn(true);
 
+		// WHEN
 		service.watchdogTick();
-		assertThat("not yet offline", radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("not yet offline")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick();
-		assertThat("still under threshold", radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("still under threshold")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick();
-		assertThat("threshold reached", radioState(), is(true));
-		assertThat(actions(), contains("enable"));
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.isOffline(), is(true));
-		assertThat(s.getOfflineSince(), is(START));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("threshold reached")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		and.then(service.currentStatus())
+			.as("Offline")
+			.returns(true, from(BluetoothSetupStatus::isOffline))
+			.as("Offline since first offline tick")
+			.returns(START, from(BluetoothSetupStatus::getOfflineSince))
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_clearsOnlyAfterGrace() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(1);
 		service.setOnlineGraceMinutes(3);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(2);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).anyTimes();
-		replayAll();
+		given(opModesService.isOperationalModeActive(OFFLINE_MODE)).willReturn(true, true, false);
 
+		// WHEN
 		service.watchdogTick();
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick();
-		assertThat(radioState(), is(true));
 
-		// back online
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("threshold reached")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN back online
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick();
-		assertThat("grace period started", radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("grace period started")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(2));
 		service.watchdogTick();
-		assertThat("still within grace", radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("still within grace")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick();
-		assertThat("grace elapsed", radioState(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("grace elapsed")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_graceResetsOnNewFailure() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(1);
 		service.setOnlineGraceMinutes(2);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(2);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).times(1);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(1);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).times(2);
-		replayAll();
+		given(opModesService.isOperationalModeActive(OFFLINE_MODE)).willReturn(true, true, false, true,
+				false, false);
 
+		// WHEN
 		service.watchdogTick();
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick();
-		assertThat(radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("threshold reached")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick(); // online, grace starts
 		advanceClock(Duration.ofMinutes(1));
@@ -500,36 +878,77 @@ public class BluetoothSetupServiceTests {
 		service.watchdogTick(); // online, grace restarts
 		advanceClock(Duration.ofMinutes(1));
 		service.watchdogTick(); // only 1 minute of grace since restart
-		assertThat("grace restarted so radio still on", radioState(), is(true));
-		assertThat(actions(), contains("enable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("grace restarted so radio still on")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio only enabled")
+			.containsExactly("enable")
+			;
+		then(opModesService).should(times(6))
+			.isOperationalModeActive(OFFLINE_MODE)
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_modeNeverActive_neverTriggers() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(1);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(false).anyTimes();
-		replayAll();
 
+		// WHEN
 		service.watchdogTick();
 		advanceClock(Duration.ofMinutes(10));
 		service.watchdogTick();
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_triggerDisabled_neverTriggers() throws IOException {
+		// GIVEN
 		service.setOfflineTriggerEnabled(false);
 		service.setOfflineThresholdMinutes(1);
-		replayAll();
 
+		// WHEN
 		service.watchdogTick();
 		advanceClock(Duration.ofMinutes(10));
 		service.watchdogTick();
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(any())
+			;
+		// @formatter:on
 	}
 
 	private String statusTitle() {
@@ -539,245 +958,517 @@ public class BluetoothSetupServiceTests {
 
 	@Test
 	public void offline_eventStartsThreshold() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(2);
 		service.setOnlineGraceMinutes(3);
-		expect(opModesService.isOperationalModeActive(OFFLINE_MODE)).andReturn(true).times(1);
-		replayAll();
+		given(opModesService.isOperationalModeActive(OFFLINE_MODE)).willReturn(true);
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE));
-		assertThat("not yet offline", radioState(), is(false));
-		assertThat("threshold started", service.currentStatus().getOfflineSince(), is(START));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("not yet offline")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("threshold started")
+			.returns(START, from(BluetoothSetupStatus::getOfflineSince))
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(2));
 		service.watchdogTick();
-		assertThat("threshold reached", radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("threshold reached")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.handleEvent(modesEvent("other"));
-		assertThat("grace started", radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("grace started")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(3));
 		service.handleEvent(modesEvent("other"));
-		assertThat("grace elapsed", radioState(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("grace elapsed")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should()
+			.isOperationalModeActive(OFFLINE_MODE)
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_blankMode_neverTriggers() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(0);
 		service.setOfflineOpMode("");
-		replayAll();
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE, "other"));
 		service.watchdogTick();
 		advanceClock(Duration.ofMinutes(10));
 		service.watchdogTick();
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
-		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		and.then(service.currentStatus())
+			.as("No offline state")
+			.returns(null, from(BluetoothSetupStatus::getOfflineSince))
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(any())
+			;
+		// @formatter:on
 
+		// WHEN
 		service.setOfflineOpMode(null);
-		assertThat(service.getOfflineOpMode(), equalTo(""));
+
+		// THEN
+		// @formatter:off
+		and.then(service.getOfflineOpMode())
+			.as("Null mode normalised to empty")
+			.isEqualTo("")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_modeNormalised() {
-		replayAll();
+		// WHEN
 		service.setOfflineOpMode(" Net-Offline ");
-		assertThat(service.getOfflineOpMode(), equalTo("net-offline"));
+
+		// THEN
+		// @formatter:off
+		and.then(service.getOfflineOpMode())
+			.as("Mode trimmed and lower-cased")
+			.isEqualTo("net-offline")
+			;
+		// @formatter:on
+
+		// WHEN
 		service.setOfflineOpMode("!net-online");
-		assertThat("inverted mode not supported", service.getOfflineOpMode(), equalTo(""));
+
+		// THEN
+		// @formatter:off
+		and.then(service.getOfflineOpMode())
+			.as("inverted mode not supported")
+			.isEqualTo("")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_customMode() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(0);
 		service.setOfflineOpMode("WAN-Down");
-		expect(opModesService.isOperationalModeActive("wan-down")).andReturn(true).times(1);
-		replayAll();
+		given(opModesService.isOperationalModeActive("wan-down")).willReturn(true);
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE));
-		assertThat("default mode ignored", radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("default mode ignored")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.handleEvent(modesEvent("wan-down"));
-		assertThat("custom mode event", radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("custom mode event")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.watchdogTick();
-		assertThat("custom mode tick", radioState(), is(true));
-		assertThat(actions(), contains("enable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("custom mode tick")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		then(opModesService).should()
+			.isOperationalModeActive("wan-down")
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(OFFLINE_MODE)
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_triggerDisabled_eventIgnored() throws IOException {
+		// GIVEN
 		service.setOfflineTriggerEnabled(false);
 		service.setOfflineThresholdMinutes(0);
-		replayAll();
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE));
 		advanceClock(Duration.ofMinutes(10));
 		service.handleEvent(modesEvent(OFFLINE_MODE, "other"));
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
-		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		and.then(service.currentStatus())
+			.as("No offline state")
+			.returns(null, from(BluetoothSetupStatus::getOfflineSince))
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_watchdogDisabled_eventIgnored() throws IOException {
+		// GIVEN
 		service.setWatchdogIntervalSeconds(0);
 		service.setOfflineThresholdMinutes(1);
-		replayAll();
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE));
 		advanceClock(Duration.ofMinutes(10));
 		service.handleEvent(modesEvent(OFFLINE_MODE, "other"));
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
-		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		and.then(service.currentStatus())
+			.as("No offline state")
+			.returns(null, from(BluetoothSetupStatus::getOfflineSince))
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_configChange_blankMode_clearsState() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(0);
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
 		service.handleEvent(modesEvent(OFFLINE_MODE));
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Offline turns radio on")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		service.setOfflineOpMode("");
 		service.configurationChanged(Map.of());
 
-		assertThat("stale offline state cleared", radioState(), is(false));
-		assertThat(service.currentStatus().isOffline(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("stale offline state cleared")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("Not offline")
+			.returns(false, from(BluetoothSetupStatus::isOffline))
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(OFFLINE_MODE)
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_configChange_modeChanged_clearsState() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(0);
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
 		service.handleEvent(modesEvent(OFFLINE_MODE));
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Offline turns radio on")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		service.setOfflineOpMode("wan-down");
 		service.configurationChanged(Map.of());
 
-		assertThat("state from the old mode cleared", radioState(), is(false));
-		assertThat(service.currentStatus().getOfflineSince(), is(nullValue()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("state from the old mode cleared")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("No offline state")
+			.returns(null, from(BluetoothSetupStatus::getOfflineSince))
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(OFFLINE_MODE)
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive("wan-down")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void offline_configChange_triggerToggled_noImmediateTurnOn() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(0);
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
 		service.handleEvent(modesEvent(OFFLINE_MODE));
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Offline turns radio on")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		service.setOfflineTriggerEnabled(false);
 		service.configurationChanged(Map.of());
-		assertThat(radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Disabling the trigger turns radio off")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.setOfflineTriggerEnabled(true);
 		service.configurationChanged(Map.of());
-		assertThat("no stale offline state", radioState(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("no stale offline state")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should(never())
+			.isOperationalModeActive(OFFLINE_MODE)
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void status_offlinePending() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(15);
-		replayAll();
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE));
 
-		assertThat(statusTitle(), containsString(
-				"offline mode 'net-offline' active since 2026-10-06T00:00:00Z; radio turns on at 2026-10-06T00:15:00Z"));
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Status shows pending offline turn on")
+			.contains("offline mode 'net-offline' active since 2026-10-06T00:00:00Z; radio turns on at 2026-10-06T00:15:00Z")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void status_offline() throws IOException {
+		// GIVEN
 		service.setOfflineThresholdMinutes(0);
-		replayAll();
 
+		// WHEN
 		service.handleEvent(modesEvent(OFFLINE_MODE));
 
-		String title = statusTitle();
-		assertThat(title,
-				containsString("offline mode 'net-offline' active since 2026-10-06T00:00:00Z"));
-		assertThat(title, org.hamcrest.Matchers.not(containsString("radio turns on at")));
+		// THEN
+		// @formatter:off
+		and.then(statusTitle())
+			.as("Status shows offline mode")
+			.contains("offline mode 'net-offline' active since 2026-10-06T00:00:00Z")
+			.as("Status has no pending turn on")
+			.doesNotContain("radio turns on at")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void status_commandFailure_returnsNull() throws IOException {
-		replayAll();
+		// GIVEN
 		service.setCommand("/nonexistent/solarcfg");
-		assertThat(service.currentStatus(), is(nullValue()));
+
+		// WHEN
+		BluetoothSetupStatus s = service.currentStatus();
+
+		// THEN
+		// @formatter:off
+		and.then(s)
+			.as("Command failure reported as unknown status")
+			.isNull()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void executeAction_nonZeroExit_declined() throws IOException {
-		replayAll();
+		// GIVEN
 		// the fake script exits 3 from "restart" when a ".fail" marker exists; the
 		// non-zero exit must surface as a Declined instruction, not Completed
 		File failFile = new File(tmpFile.getAbsolutePath() + ".fail");
 		try {
 			Files.writeString(failFile.toPath(), "");
+
+			// WHEN
 			InstructionStatus status = service.processInstruction(instruction("restart", null));
-			assertThat(status.getInstructionState(), is(InstructionState.Declined));
-			assertThat(
-					String.valueOf(status.getResultParameters().get(InstructionHandler.PARAM_MESSAGE)),
-					org.hamcrest.Matchers.containsString("exit code 3"));
+
+			// THEN
+			// @formatter:off
+			and.then(status)
+				.as("Non-zero exit declined")
+				.returns(InstructionState.Declined, from(InstructionStatus::getInstructionState))
+				;
+			and.then(status.getResultParameters())
+				.as("Message includes exit code")
+				.extractingByKey(InstructionHandler.PARAM_MESSAGE)
+				.asString()
+				.contains("exit code 3")
+				;
+			// @formatter:on
 		} finally {
 			failFile.delete();
 		}
 	}
 
+	private static KeyedSettingSpecifier<?> keyedSetting(List<SettingSpecifier> specs, String key) {
+		return specs.stream().filter(KeyedSettingSpecifier.class::isInstance)
+				.map(KeyedSettingSpecifier.class::cast).filter(k -> key.equals(k.getKey())).findFirst()
+				.orElse(null);
+	}
+
 	@Test
 	public void settings() {
-		replayAll();
+		// WHEN
 		List<SettingSpecifier> specs = service.getSettingSpecifiers();
-		assertThat(specs, is(notNullValue()));
-		assertThat(specs.size(), equalTo(17));
-		KeyedSettingSpecifier<?> metaUid = specs.stream().filter(KeyedSettingSpecifier.class::isInstance)
-				.map(KeyedSettingSpecifier.class::cast)
-				.filter(k -> "metadataServiceUid".equals(k.getKey())).findFirst().orElse(null);
-		assertThat(metaUid, instanceOf(TextFieldSettingSpecifier.class));
-		assertThat("metadata service default", metaUid.getDefaultValue(),
-				equalTo(BluetoothSetupService.DEFAULT_METADATA_SERVICE_UID));
-		assertThat("metadata service lookup",
-				((TextFieldSettingSpecifier) metaUid).getRelatedServiceFilter(),
-				equalTo("(objectClass=net.solarnetwork.node.service.MetadataService)"));
-		KeyedSettingSpecifier<?> metaPath = specs.stream()
-				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
-				.filter(k -> "metadataPath".equals(k.getKey())).findFirst().orElse(null);
-		assertThat(metaPath, is(notNullValue()));
-		assertThat("metadata path default", metaPath.getDefaultValue(), equalTo(""));
-		KeyedSettingSpecifier<?> alwaysOn = specs.stream()
-				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
-				.filter(k -> "alwaysOn".equals(k.getKey())).findFirst().orElse(null);
-		assertThat(alwaysOn, is(notNullValue()));
-		assertThat("always on by default", alwaysOn.getDefaultValue(), equalTo(Boolean.TRUE));
-		KeyedSettingSpecifier<?> schedule = specs.stream()
-				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
-				.filter(k -> "schedule".equals(k.getKey())).findFirst().orElse(null);
-		assertThat(schedule, instanceOf(TextAreaSettingSpecifier.class));
-		assertThat(((TextAreaSettingSpecifier) schedule).isDirect(), is(true));
-		KeyedSettingSpecifier<?> offlineMode = specs.stream()
-				.filter(KeyedSettingSpecifier.class::isInstance).map(KeyedSettingSpecifier.class::cast)
-				.filter(k -> "offlineOpMode".equals(k.getKey())).findFirst().orElse(null);
-		assertThat(offlineMode, is(notNullValue()));
-		assertThat("offline mode default", offlineMode.getDefaultValue(), equalTo("net-offline"));
-		assertThat("no ping test setting",
-				specs.stream().filter(KeyedSettingSpecifier.class::isInstance)
-						.map(KeyedSettingSpecifier.class::cast)
-						.anyMatch(k -> "pingTestIdRegex".equals(k.getKey())),
-				is(false));
+
+		// THEN
+		// @formatter:off
+		and.then(specs)
+			.as("Settings provided")
+			.isNotNull()
+			.as("Setting count")
+			.hasSize(17)
+			;
+		and.then(keyedSetting(specs, "metadataServiceUid"))
+			.as("metadata service setting is a text field")
+			.isInstanceOf(TextFieldSettingSpecifier.class)
+			.as("metadata service default")
+			.returns(BluetoothSetupService.DEFAULT_METADATA_SERVICE_UID, from(KeyedSettingSpecifier::getDefaultValue))
+			.asInstanceOf(type(TextFieldSettingSpecifier.class))
+			.as("metadata service lookup")
+			.returns("(objectClass=net.solarnetwork.node.service.MetadataService)", from(TextFieldSettingSpecifier::getRelatedServiceFilter))
+			;
+		and.then(keyedSetting(specs, "metadataPath"))
+			.as("metadata path setting")
+			.isNotNull()
+			.as("metadata path default")
+			.returns("", from(KeyedSettingSpecifier::getDefaultValue))
+			;
+		and.then(keyedSetting(specs, "alwaysOn"))
+			.as("always on setting")
+			.isNotNull()
+			.as("always on by default")
+			.returns(Boolean.TRUE, from(KeyedSettingSpecifier::getDefaultValue))
+			;
+		and.then(keyedSetting(specs, "schedule"))
+			.as("schedule setting is a text area")
+			.asInstanceOf(type(TextAreaSettingSpecifier.class))
+			.as("schedule text area is direct")
+			.returns(true, from(TextAreaSettingSpecifier::isDirect))
+			;
+		and.then(keyedSetting(specs, "offlineOpMode"))
+			.as("offline mode setting")
+			.isNotNull()
+			.as("offline mode default")
+			.returns("net-offline", from(KeyedSettingSpecifier::getDefaultValue))
+			;
+		and.then(keyedSetting(specs, "pingTestIdRegex"))
+			.as("no ping test setting")
+			.isNull()
+			;
+		// @formatter:on
 	}
 
 	private void startupWithSchedule(String schedule, String timeZone) {
@@ -788,335 +1479,665 @@ public class BluetoothSetupServiceTests {
 
 	@Test
 	public void schedule_insideWindow_turnsOn() throws IOException {
+		// GIVEN
 		// START is 2026-10-06T00:00Z, a Tuesday; 13:00 NZDT in Pacific/Auckland
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
 
+		// WHEN
 		startupWithSchedule(WEEKDAY_HOURS, "Pacific/Auckland");
 
-		assertThat(radioState(), is(true));
-		assertThat(actions(), contains("enable"));
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.isScheduleActive(), is(true));
-		assertThat(s.getScheduleError(), is(nullValue()));
-		assertThat(s.getTimeZone(), equalTo("Pacific/Auckland"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio on inside window")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		and.then(service.currentStatus())
+			.as("Schedule active")
+			.returns(true, from(BluetoothSetupStatus::isScheduleActive))
+			.as("No schedule error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleError))
+			.as("Time zone")
+			.returns("Pacific/Auckland", from(BluetoothSetupStatus::getTimeZone))
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void schedule_outsideWindow_staysOff() throws IOException {
+		// GIVEN
 		// 00:00 UTC is outside the window
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
 
+		// WHEN
 		startupWithSchedule(WEEKDAY_HOURS, "UTC");
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.isScheduleActive(), is(false));
-		assertThat("next window start", s.getScheduleNext(),
-				equalTo(START.plus(Duration.ofHours(7)).toEpochMilli()));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off outside window")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		and.then(service.currentStatus())
+			.as("Schedule not active")
+			.returns(false, from(BluetoothSetupStatus::isScheduleActive))
+			.as("next window start")
+			.returns(START.plus(Duration.ofHours(7)).toEpochMilli(), from(BluetoothSetupStatus::getScheduleNext))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void schedule_blankZone_usesSystemDefault() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
+		// WHEN
 		startupWithSchedule(WEEKDAY_HOURS, "");
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getTimeZone(), equalTo(ZoneId.systemDefault().getId()));
-		boolean expected = AvailabilitySchedule.parse(WEEKDAY_HOURS)
+		// THEN
+		final boolean expected = AvailabilitySchedule.parse(WEEKDAY_HOURS)
 				.applies(LocalDateTime.ofInstant(START, ZoneId.systemDefault()));
-		assertThat(radioState(), is(expected));
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("System default time zone used")
+			.returns(ZoneId.systemDefault().getId(), from(BluetoothSetupStatus::getTimeZone))
+			;
+		and.then(radioState())
+			.as("Radio follows schedule in system time zone")
+			.isEqualTo(expected)
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void schedule_invalidZone_failsClosed() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
+		// WHEN
 		startupWithSchedule(SCHED_HEADER + ",,,,1", "Mars/Olympus");
 
-		assertThat(radioState(), is(false));
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleError(), containsString("Mars/Olympus"));
-		assertThat(s.getTimeZone(), is(nullValue()));
-		assertThat(s.isScheduleActive(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off with invalid zone")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("No time zone")
+			.returns(null, from(BluetoothSetupStatus::getTimeZone))
+			.as("Schedule not active")
+			.returns(false, from(BluetoothSetupStatus::isScheduleActive))
+			.as("Schedule error names the zone")
+			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
+			.contains("Mars/Olympus")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void schedule_invalid_failsClosed() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
+		// WHEN
 		startupWithSchedule(INVALID_HOURS, "UTC");
 
-		assertThat(radioState(), is(false));
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleError(), containsString("CSV row 2"));
-		SettingSpecifier title = service.getSettingSpecifiers().get(0);
-		assertThat(title, instanceOf(TitleSettingSpecifier.class));
-		assertThat(String.valueOf(((TitleSettingSpecifier) title).getDefaultValue()),
-				containsString("invalid"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off with invalid schedule")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("Schedule error names the row")
+			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
+			.contains("CSV row 2")
+			;
+		and.then(service.getSettingSpecifiers().get(0))
+			.as("Status title setting first")
+			.asInstanceOf(type(TitleSettingSpecifier.class))
+			.as("Status title shows the schedule is invalid")
+			.extracting(TitleSettingSpecifier::getDefaultValue, STRING)
+			.contains("invalid")
+			;
+		// @formatter:on
+
+		// WHEN
 		// the instruction result carries the error too
 		InstructionStatus status = service.processInstruction(instruction("status", null));
-		BluetoothSetupStatus result = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(result.getScheduleError(), containsString("CSV row 2"));
+
+		// THEN
+		// @formatter:off
+		and.then(serviceResult(status))
+			.as("Instruction result schedule error names the row")
+			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
+			.contains("CSV row 2")
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void schedule_emptyWithAlwaysOnOff_behavesLikeBefore() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
+		// WHEN
 		startupWithSchedule("", "UTC");
 
-		assertThat(radioState(), is(false));
-		assertThat(actions(), is(empty()));
-		assertThat(service.currentStatus().getSchedule(), equalTo(""));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		and.then(service.currentStatus())
+			.as("Empty schedule")
+			.returns("", from(BluetoothSetupStatus::getSchedule))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void schedule_withAlwaysOn_ignored() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		TaskScheduler scheduler = EasyMock.createStrictMock(TaskScheduler.class);
-		replayAll();
-		replay(scheduler);
-
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler, null);
+		// GIVEN
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, taskScheduler, null);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
 		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC"); // window closed at 00:00 UTC
+
+		// WHEN
 		s.startup();
 
-		assertThat("always on wins over a closed window", radioState(), is(true));
-		verify(scheduler); // no schedule tick registered while always on
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("always on wins over a closed window")
+			.isTrue()
+			;
+		// no schedule tick registered while always on
+		then(taskScheduler)
+			.shouldHaveNoInteractions()
+			;
+		// @formatter:on
 		s.shutdown();
 	}
 
 	@Test
 	public void scheduleTick_reconcilesOnlyOnEdge() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
+		// GIVEN
 		advanceClock(Duration.ofHours(6).plusMinutes(59));
 		startupWithSchedule(WEEKDAY_HOURS, "UTC");
-		service.scheduleTick();
-		assertThat(radioState(), is(false));
 
+		// WHEN
+		service.scheduleTick();
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off before window")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(1)); // 07:00
 		service.scheduleTick();
-		assertThat(radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio on at window start")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofMinutes(1)); // 07:01
 		int linesBefore = rawLogLines();
 		service.scheduleTick();
-		assertThat(radioState(), is(true));
-		assertThat("no helper call at all on a non-edge tick", rawLogLines(), equalTo(linesBefore));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio still on")
+			.isTrue()
+			;
+		and.then(rawLogLines())
+			.as("no helper call at all on a non-edge tick")
+			.isEqualTo(linesBefore)
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofHours(10).plusMinutes(59)); // 18:00
 		service.scheduleTick();
-		assertThat(radioState(), is(false));
 
-		assertThat("exactly one enable and one disable", actions(), contains("enable", "disable"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off at window end")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("exactly one enable and one disable")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void startup_insideWindow_turnsOn() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
+		// GIVEN
 		advanceClock(Duration.ofHours(12)); // 12:00 UTC, a reboot mid-window
 
+		// WHEN
 		startupWithSchedule(WEEKDAY_HOURS, "UTC");
 
-		assertThat(radioState(), is(true));
-		assertThat(actions(), contains("enable"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio on inside window")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio enabled")
+			.containsExactly("enable")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void dst_springForward_gapWindowNeverApplies() throws IOException {
+		// GIVEN
 		// NZ clocks go from 02:00 NZST to 03:00 NZDT on Sunday 2026-09-27
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
 		service.setClock(Clock.fixed(Instant.parse("2026-09-26T13:59:00Z"), ZoneOffset.UTC)); // 01:59 NZST
-		startupWithSchedule(SCHED_HEADER + ",,Sun,02:00-03:00,1", "Pacific/Auckland");
-		assertThat(radioState(), is(false));
 
+		// WHEN
+		startupWithSchedule(SCHED_HEADER + ",,Sun,02:00-03:00,1", "Pacific/Auckland");
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off before gap")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.setClock(Clock.fixed(Instant.parse("2026-09-26T14:00:00Z"), ZoneOffset.UTC)); // 03:00 NZDT
 		service.scheduleTick();
-		assertThat(radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off after gap")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.setClock(Clock.fixed(Instant.parse("2026-09-26T14:30:00Z"), ZoneOffset.UTC)); // 03:30 NZDT
 		service.scheduleTick();
-		assertThat("window inside the gap never applies", radioState(), is(false));
-		assertThat(actions(), is(empty()));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("window inside the gap never applies")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio not changed")
+			.isEmpty()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void dst_fallBack_repeatedHourAppliesTwice() throws IOException {
+		// GIVEN
 		// NZ clocks go from 03:00 NZDT back to 02:00 NZST on Sunday 2027-04-04
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
 		service.setClock(Clock.fixed(Instant.parse("2027-04-03T13:30:00Z"), ZoneOffset.UTC)); // 02:30 NZDT
-		startupWithSchedule(SCHED_HEADER + ",,Sun,02:00-03:00,1", "Pacific/Auckland");
-		assertThat("first 02:30", radioState(), is(true));
 
+		// WHEN
+		startupWithSchedule(SCHED_HEADER + ",,Sun,02:00-03:00,1", "Pacific/Auckland");
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("first 02:30")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.setClock(Clock.fixed(Instant.parse("2027-04-03T14:30:00Z"), ZoneOffset.UTC)); // 02:30 NZST
 		service.scheduleTick();
-		assertThat("second 02:30", radioState(), is(true));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("second 02:30")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.setClock(Clock.fixed(Instant.parse("2027-04-03T15:00:00Z"), ZoneOffset.UTC)); // 03:00 NZST
 		service.scheduleTick();
-		assertThat(radioState(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off at 03:00 NZST")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_enable_overridesClosedWindow() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		Capture<Instant> expireCapture = Capture.newInstance();
-		expect(opModesService.enableOperationalModes(eq(Set.of(OP_MODE)), capture(expireCapture)))
-				.andReturn(Set.of(OP_MODE));
-		expect(opModesService.activeOperationalModesWithExpirations()).andReturn(Map.of()).anyTimes();
-		replayAll();
+		// GIVEN
 		startupWithSchedule(WEEKDAY_HOURS, "UTC"); // closed at 00:00 UTC
-		assertThat(radioState(), is(false));
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio off outside window")
+			.isFalse()
+			;
+		// @formatter:on
 
+		// WHEN
 		InstructionStatus status = service
 				.processInstruction(instruction("enable", Map.of("duration", "600")));
 
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		assertThat(expireCapture.getValue(), is(START.plusSeconds(600)));
-		assertThat("override turns the radio on outside the window", radioState(), is(true));
-		BluetoothSetupStatus s = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(s.isScheduleActive(), is(false));
-		assertThat(s.isOpModeActive(), is(true));
+		// THEN
+		// @formatter:off
+		then(opModesService).should()
+			.enableOperationalModes(eq(Set.of(OP_MODE)), expireCaptor.capture())
+			;
+		and.then(expireCaptor.getValue())
+			.as("Op mode enabled for requested duration")
+			.isEqualTo(START.plusSeconds(600))
+			;
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(radioState())
+			.as("override turns the radio on outside the window")
+			.isTrue()
+			;
+		and.then(serviceResult(status))
+			.as("Schedule not active")
+			.returns(false, from(BluetoothSetupStatus::isScheduleActive))
+			.as("Op mode active")
+			.returns(true, from(BluetoothSetupStatus::isOpModeActive))
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void instruction_disable_insideWindow_keepsRadioOn() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(opModesService.disableOperationalModes(Set.of(OP_MODE))).andReturn(Set.of());
-		replayAll();
+		// GIVEN
 		startupWithSchedule(WEEKDAY_HOURS, "Pacific/Auckland"); // 13:00 NZDT, open
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Radio on inside window")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("disable", null));
 
-		assertThat(status.getInstructionState(), is(InstructionState.Completed));
-		assertThat("schedule keeps the radio on", radioState(), is(true));
-		assertThat(actions(), contains("enable"));
+		// THEN
+		// @formatter:off
+		and.then(status)
+			.as("Status completed")
+			.returns(InstructionState.Completed, from(InstructionStatus::getInstructionState))
+			;
+		and.then(radioState())
+			.as("schedule keeps the radio on")
+			.isTrue()
+			;
+		and.then(actions())
+			.as("Radio only enabled")
+			.containsExactly("enable")
+			;
+		then(opModesService).should()
+			.disableOperationalModes(Set.of(OP_MODE))
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void status_includesScheduleFields() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
+		// GIVEN
 		advanceClock(Duration.ofHours(13)); // 13:00 UTC, inside
 		startupWithSchedule(SCHED_HEADER + ",,mon-fri,7-18,1", "UTC");
 
+		// WHEN
 		BluetoothSetupStatus s = service.currentStatus();
 
-		assertThat(s.getSchedule(), equalTo(",,Mon-Fri,7-18,1"));
-		assertThat(s.isScheduleActive(), is(true));
-		assertThat(s.getScheduleError(), is(nullValue()));
-		assertThat(s.getTimeZone(), equalTo("UTC"));
-		assertThat("next boundary is the window end", s.getScheduleNext(),
-				equalTo(START.plus(Duration.ofHours(18)).toEpochMilli()));
-		assertThat(s.isInstallEnabled(), is(true));
+		// THEN
+		// @formatter:off
+		and.then(s)
+			.as("Normalised schedule")
+			.returns(",,Mon-Fri,7-18,1", from(BluetoothSetupStatus::getSchedule))
+			.as("Schedule active")
+			.returns(true, from(BluetoothSetupStatus::isScheduleActive))
+			.as("No schedule error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleError))
+			.as("Time zone")
+			.returns("UTC", from(BluetoothSetupStatus::getTimeZone))
+			.as("next boundary is the window end")
+			.returns(START.plus(Duration.ofHours(18)).toEpochMilli(), from(BluetoothSetupStatus::getScheduleNext))
+			.as("Install enabled")
+			.returns(true, from(BluetoothSetupStatus::isInstallEnabled))
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void scheduleTick_retriesAfterHelperFailure() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
+		// GIVEN
 		advanceClock(Duration.ofHours(7)); // 07:00, inside the window
 		File failFile = new File(tmpFile.getAbsolutePath() + ".failenable");
 		try {
 			Files.writeString(failFile.toPath(), "");
+
+			// WHEN
 			startupWithSchedule(WEEKDAY_HOURS, "UTC");
-			assertThat("enable failed", radioState(), is(false));
+
+			// THEN
+			// @formatter:off
+			and.then(radioState())
+				.as("enable failed")
+				.isFalse()
+				;
+			// @formatter:on
+
+			// WHEN
 			service.scheduleTick();
-			assertThat("still failing", radioState(), is(false));
+
+			// THEN
+			// @formatter:off
+			and.then(radioState())
+				.as("still failing")
+				.isFalse()
+				;
+			// @formatter:on
 		} finally {
 			failFile.delete();
 		}
+
+		// WHEN
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
-		assertThat("edge retried once the helper works", radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("edge retried once the helper works")
+			.isTrue()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void configurationChanged_registersAndCancelsTick() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		TaskScheduler scheduler = EasyMock.createMock(TaskScheduler.class);
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		ScheduledFuture future1 = EasyMock.createMock(ScheduledFuture.class);
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		ScheduledFuture future2 = EasyMock.createMock(ScheduledFuture.class);
-		expect(scheduler.scheduleWithFixedDelay(anyObject(Runnable.class), anyObject(Instant.class),
-				eq(Duration.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS)))).andReturn(future1)
-						.andReturn(future2);
-		expect(future1.cancel(false)).andReturn(true).times(1);
-		expect(future2.cancel(false)).andReturn(true).times(1);
-		replayAll();
-		replay(scheduler, future1, future2);
+		// GIVEN
+		willReturn(future, future2).given(taskScheduler).scheduleWithFixedDelay(any(Runnable.class),
+				any(Instant.class), any(Duration.class));
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler, null);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, taskScheduler, null);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
 		s.setAlwaysOn(false);
 		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC");
-		s.startup(); // registers future1
+		s.startup(); // registers future
 
+		// WHEN
 		s.setAlwaysOn(true);
-		s.configurationChanged(Map.of()); // cancels future1, radio on
-		assertThat(radioState(), is(true));
+		s.configurationChanged(Map.of()); // cancels future, radio on
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Always on turns radio on")
+			.isTrue()
+			;
+		// @formatter:on
+
+		// WHEN
 		s.setAlwaysOn(false);
 		s.configurationChanged(Map.of()); // registers future2, radio off (00:00 UTC)
-		assertThat(radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Closed window turns radio off")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		s.setSchedule(INVALID_HOURS);
 		s.configurationChanged(Map.of()); // invalid: cancels future2, stays off
-		assertThat(radioState(), is(false));
-		assertThat(s.currentStatus().getScheduleError(), is(notNullValue()));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Invalid schedule keeps radio off")
+			.isFalse()
+			;
+		and.then(s.currentStatus())
+			.as("Schedule error reported")
+			.extracting(BluetoothSetupStatus::getScheduleError)
+			.isNotNull()
+			;
+		// @formatter:on
+
+		// WHEN
 		s.shutdown();
-		verify(scheduler, future1, future2);
+
+		// THEN
+		final InOrder order = inOrder(taskScheduler, future, future2);
+		// @formatter:off
+		then(taskScheduler).should(order)
+			.scheduleWithFixedDelay(any(Runnable.class), any(Instant.class), eq(SCHEDULE_TICK))
+			;
+		then(future).should(order)
+			.cancel(false)
+			;
+		then(taskScheduler).should(order)
+			.scheduleWithFixedDelay(any(Runnable.class), any(Instant.class), eq(SCHEDULE_TICK))
+			;
+		then(future2).should(order)
+			.cancel(false)
+			;
+		then(taskScheduler)
+			.shouldHaveNoMoreInteractions()
+			;
+		then(future)
+			.shouldHaveNoMoreInteractions()
+			;
+		then(future2)
+			.shouldHaveNoMoreInteractions()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void watchdogDisabled_scheduleStillTicks() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		TaskScheduler scheduler = EasyMock.createMock(TaskScheduler.class);
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		ScheduledFuture future = EasyMock.createMock(ScheduledFuture.class);
-		expect(scheduler.scheduleWithFixedDelay(anyObject(Runnable.class), anyObject(Instant.class),
-				eq(Duration.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS)))).andReturn(future)
-						.times(1);
-		expect(future.cancel(false)).andReturn(true).times(1);
-		replayAll();
-		replay(scheduler, future);
+		// GIVEN
+		willReturn(future).given(taskScheduler).scheduleWithFixedDelay(any(Runnable.class),
+				any(Instant.class), any(Duration.class));
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler, null);
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, taskScheduler, null);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setAlwaysOn(false);
 		s.setWatchdogIntervalSeconds(0);
 		s.setSchedule(WEEKDAY_HOURS);
 		s.setTimeZone("UTC");
+
+		// WHEN
 		s.startup();
 		s.shutdown();
 
-		verify(scheduler, future);
+		// THEN
+		// @formatter:off
+		then(taskScheduler).should()
+			.scheduleWithFixedDelay(any(Runnable.class), any(Instant.class), eq(SCHEDULE_TICK))
+			;
+		then(future).should()
+			.cancel(false)
+			;
+		then(taskScheduler)
+			.shouldHaveNoMoreInteractions()
+			;
+		then(future)
+			.shouldHaveNoMoreInteractions()
+			;
+		// @formatter:on
 	}
 
 	/** An optional metadata service whose service can be swapped in a test. */
@@ -1181,360 +2202,661 @@ public class BluetoothSetupServiceTests {
 
 	@Test
 	public void metadata_loadsAndOverridesInline() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS));
 
+		// WHEN
 		// the inline schedule is closed at 00:00 UTC Tuesday; the metadata one is open
 		startWithMetadata(WEEKDAY_HOURS);
 
-		assertThat("metadata schedule turns radio on", radioState(), is(true));
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
-		assertThat(s.getScheduleMetadataError(), is(nullValue()));
-		assertThat(s.getScheduleError(), is(nullValue()));
-		assertThat(s.getSchedule(), equalTo(",,,,1"));
-		assertThat(statusTitleText(), containsString("schedule from metadata '" + META_PATH + "'"));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("metadata schedule turns radio on")
+			.isTrue()
+			;
+		and.then(service.currentStatus())
+			.as("Schedule from metadata")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("No metadata error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleMetadataError))
+			.as("No schedule error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleError))
+			.as("Metadata schedule in effect")
+			.returns(",,,,1", from(BluetoothSetupStatus::getSchedule))
+			;
+		and.then(statusTitleText())
+			.as("Status title shows metadata source")
+			.contains("schedule from metadata '" + META_PATH + "'")
+			;
+		// @formatter:on
 
+		// WHEN
 		InstructionStatus status = service.processInstruction(instruction("status", null));
-		BluetoothSetupStatus result = (BluetoothSetupStatus) status.getResultParameters()
-				.get(InstructionHandler.PARAM_SERVICE_RESULT);
-		assertThat(result.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+
+		// THEN
+		// @formatter:off
+		and.then(serviceResult(status))
+			.as("Instruction result schedule from metadata")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_notConfigured_noRead() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		replayAll();
-
+		// GIVEN
 		// a path with no service UID is not configured either
 		service.setMetadataServiceUid("");
+
+		// WHEN
 		startWithMetadata(WEEKDAY_HOURS);
 		service.scheduleTick();
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), is(nullValue()));
-		assertThat(radioState(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from setting")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("No metadata error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleMetadataError))
+			;
+		and.then(radioState())
+			.as("Inline schedule closed")
+			.isFalse()
+			;
+		then(metadataService).should(never())
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_noService_retriesWithoutBackoff() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS));
 		metadataServiceRef.service = null;
-		startWithMetadata(WEEKDAY_HOURS);
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat("inline used", s.getScheduleSource(),
-				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), containsString("no Metadata Service"));
-		assertThat(radioState(), is(false));
 
+		// WHEN
+		startWithMetadata(WEEKDAY_HOURS);
+
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("inline used")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Metadata error reports no service")
+			.extracting(BluetoothSetupStatus::getScheduleMetadataError, STRING)
+			.contains("no Metadata Service")
+			;
+		and.then(radioState())
+			.as("Inline schedule closed")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		metadataServiceRef.service = metadataService;
 		service.scheduleTick();
-		assertThat("loaded on the next tick", radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("loaded on the next tick")
+			.isTrue()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_unreachableBeforeLoad_usesInline() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(null).times(1);
-		expect(metadataService.getAllMetadata()).andThrow(new RuntimeException("boom")).times(1);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(null)
+				.willThrow(new RuntimeException("boom"));
 
+		// WHEN
 		startWithMetadata(ALWAYS);
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), containsString("metadata unavailable"));
-		assertThat("inline schedule applies", radioState(), is(true));
-		assertThat(statusTitleText(), containsString("not loaded"));
 
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from setting")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Metadata error reports unavailable")
+			.extracting(BluetoothSetupStatus::getScheduleMetadataError, STRING)
+			.contains("metadata unavailable")
+			;
+		and.then(radioState())
+			.as("inline schedule applies")
+			.isTrue()
+			;
+		and.then(statusTitleText())
+			.as("Status title shows metadata not loaded")
+			.contains("not loaded")
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofSeconds(BluetoothSetupService.METADATA_RETRY_SECONDS + 1));
 		service.scheduleTick();
-		s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), containsString("boom"));
-		assertThat(radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from setting")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Metadata error reports exception")
+			.extracting(BluetoothSetupStatus::getScheduleMetadataError, STRING)
+			.contains("boom")
+			;
+		and.then(radioState())
+			.as("inline schedule still applies")
+			.isTrue()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_unreachableAfterLoad_keepsLastSchedule() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
-		expect(metadataService.getAllMetadata()).andThrow(new RuntimeException("offline")).times(1);
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS))
+				.willThrow(new RuntimeException("offline"));
 		startWithMetadata(WEEKDAY_HOURS);
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("metadata schedule turns radio on")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat("last result kept", s.getScheduleSource(),
-				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
-		assertThat(s.getScheduleMetadataError(), containsString("offline"));
-		assertThat(radioState(), is(true));
-		assertThat(statusTitleText(), containsString("keeping the last result"));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("last result kept")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Metadata error reports exception")
+			.extracting(BluetoothSetupStatus::getScheduleMetadataError, STRING)
+			.contains("offline")
+			;
+		and.then(radioState())
+			.as("Radio still on")
+			.isTrue()
+			;
+		and.then(statusTitleText())
+			.as("Status title shows last result kept")
+			.contains("keeping the last result")
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_invalidThenUnreachable_staysClosed() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS))
-				.andReturn(meta("Mon-Fri 07:00-18:00")).andThrow(new RuntimeException("offline"));
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS), meta("Mon-Fri 07:00-18:00"))
+				.willThrow(new RuntimeException("offline"));
 		startWithMetadata(ALWAYS);
-		assertThat("valid metadata schedule", radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("valid metadata schedule")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
-		assertThat("invalid push closes the radio", radioState(), is(false));
-		assertThat(service.currentStatus().getScheduleError(),
-				containsString("metadata schedule invalid"));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("invalid push closes the radio")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("Schedule error reports invalid metadata")
+			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
+			.contains("metadata schedule invalid")
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat("outage does not restore the older schedule", radioState(), is(false));
-		assertThat(s.getScheduleError(), containsString("metadata schedule invalid"));
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("outage does not restore the older schedule")
+			.isFalse()
+			;
+		and.then(service.currentStatus())
+			.as("Schedule from metadata")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Schedule error still reports invalid metadata")
+			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
+			.contains("metadata schedule invalid")
+			;
+		then(metadataService).should(times(3))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_pathAbsent_usesInlineWithoutBackoff() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(null)).times(2);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(null));
 
+		// WHEN
 		startWithMetadata(ALWAYS);
 		service.scheduleTick();
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), equalTo("no schedule at " + META_PATH));
-		assertThat(radioState(), is(true));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from setting")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Metadata error reports absent path")
+			.returns("no schedule at " + META_PATH, from(BluetoothSetupStatus::getScheduleMetadataError))
+			;
+		and.then(radioState())
+			.as("Inline schedule applies")
+			.isTrue()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_invalid_failsClosedDespiteInline() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(",,Mon-Fri,07:00-18:00,1")).times(1);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(",,Mon-Fri,07:00-18:00,1"));
 
+		// WHEN
 		startWithMetadata(ALWAYS);
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
-		assertThat(s.getScheduleError(), containsString("header row"));
-		assertThat("invalid metadata never applies", radioState(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from metadata")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Schedule error reports header row")
+			.extracting(BluetoothSetupStatus::getScheduleError, STRING)
+			.contains("header row")
+			;
+		and.then(radioState())
+			.as("invalid metadata never applies")
+			.isFalse()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_headerOnly_closesRadio() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata())
-				.andReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "Available"))))
-				.times(1);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata())
+				.willReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "Available"))));
 
+		// WHEN
 		startWithMetadata(ALWAYS);
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
-		assertThat(s.getScheduleError(), is(nullValue()));
-		assertThat("empty metadata schedule turns scheduled availability off", radioState(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from metadata")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("No schedule error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleError))
+			;
+		and.then(radioState())
+			.as("empty metadata schedule turns scheduled availability off")
+			.isFalse()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_validWithInvalidInline() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS));
 
+		// WHEN
 		startWithMetadata(INVALID_HOURS);
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleError(), is(nullValue()));
-		assertThat(radioState(), is(true));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("No schedule error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleError))
+			;
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_arrayForm() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata())
-				.andReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "Available"),
-						Arrays.asList(null, null, "Mon-Fri", "00:00-06:00", 1))))
-				.times(1);
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata())
+				.willReturn(meta(List.of(List.of("Month", "Day", "Weekday", "Time", "Available"),
+						Arrays.asList(null, null, "Mon-Fri", "00:00-06:00", 1))));
 
+		// WHEN
 		startWithMetadata(WEEKDAY_HOURS);
 
-		assertThat(service.currentStatus().getSchedule(), equalTo(",,Mon-Fri,0-6,1"));
-		assertThat(radioState(), is(true));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Array form normalised")
+			.returns(",,Mon-Fri,0-6,1", from(BluetoothSetupStatus::getSchedule))
+			;
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_valueChange_pickedUpOnNextTick() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).andReturn(meta(WEEKDAY_HOURS));
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS), meta(WEEKDAY_HOURS));
 		startWithMetadata("");
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		// as after a clear-cache signal: the next read returns the new value
 		advanceClock(Duration.ofSeconds(15));
 		service.scheduleTick();
-		assertThat(radioState(), is(false));
-		assertThat(actions(), contains("enable", "disable"));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("New metadata schedule applies")
+			.isFalse()
+			;
+		and.then(actions())
+			.as("Radio enabled then disabled")
+			.containsExactly("enable", "disable")
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		then(opModesService).should(never())
+			.enableOperationalModes(any(), any())
+			;
+		then(opModesService).should(never())
+			.disableOperationalModes(any())
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_backoffAfterUnreachable() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(null).andReturn(meta(ALWAYS));
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(null, meta(ALWAYS));
 		startWithMetadata(WEEKDAY_HOURS);
 
+		// WHEN
 		advanceClock(Duration.ofSeconds(BluetoothSetupService.METADATA_RETRY_SECONDS - 1));
 		service.scheduleTick();
-		assertThat("no read during back-off", radioState(), is(false));
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("no read during back-off")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		advanceClock(Duration.ofSeconds(2));
 		service.scheduleTick();
-		assertThat("read after back-off", radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("read after back-off")
+			.isTrue()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_configChange_clearsBackoff() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(null).andReturn(meta(ALWAYS));
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(null, meta(ALWAYS));
 		startWithMetadata(WEEKDAY_HOURS);
+
+		// WHEN
 		service.configurationChanged(Map.of());
 
-		assertThat(radioState(), is(true));
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Metadata read again right away")
+			.isTrue()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_pathChange_dropsOldSchedule() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(2);
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS));
 		startWithMetadata(WEEKDAY_HOURS);
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		service.setMetadataPath("/pm/bluetooth/other");
 		service.configurationChanged(Map.of());
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat("old path's schedule not kept", s.getScheduleSource(),
-				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), equalTo("no schedule at /pm/bluetooth/other"));
-		assertThat(radioState(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("old path's schedule not kept")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("Metadata error reports absent new path")
+			.returns("no schedule at /pm/bluetooth/other", from(BluetoothSetupStatus::getScheduleMetadataError))
+			;
+		and.then(radioState())
+			.as("Inline schedule closed")
+			.isFalse()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_pathCleared_revertsToInline() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS));
 		startWithMetadata(WEEKDAY_HOURS);
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		// @formatter:on
 
+		// WHEN
 		service.setMetadataPath("");
 		service.configurationChanged(Map.of());
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat(s.getScheduleSource(), equalTo(BluetoothSetupService.SCHEDULE_SOURCE_SETTING));
-		assertThat(s.getScheduleMetadataError(), is(nullValue()));
-		assertThat(radioState(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("Schedule from setting")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_SETTING, from(BluetoothSetupStatus::getScheduleSource))
+			.as("No metadata error")
+			.returns(null, from(BluetoothSetupStatus::getScheduleMetadataError))
+			;
+		and.then(radioState())
+			.as("Inline schedule closed")
+			.isFalse()
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_staleResultDropped() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
+		// GIVEN
 		final GeneralDatumMetadata both = meta(ALWAYS);
 		both.putInfoValue("bluetooth", "other", SCHED_HEADER);
 		// the first read is overtaken by a reconfiguration to another path
-		expect(metadataService.getAllMetadata()).andAnswer(() -> {
+		given(metadataService.getAllMetadata()).willAnswer(invocation -> {
 			service.setMetadataPath("/pm/bluetooth/other");
 			service.configurationChanged(Map.of());
 			return both;
-		});
-		expect(metadataService.getAllMetadata()).andReturn(both);
-		replayAll();
+		}).willReturn(both);
 
+		// WHEN
 		startWithMetadata(WEEKDAY_HOURS);
 
-		BluetoothSetupStatus s = service.currentStatus();
-		assertThat("newer path applies", s.getScheduleSource(),
-				equalTo(BluetoothSetupService.SCHEDULE_SOURCE_METADATA));
-		assertThat("old path's open schedule dropped", s.getSchedule(), equalTo(""));
-		assertThat(radioState(), is(false));
+		// THEN
+		// @formatter:off
+		and.then(service.currentStatus())
+			.as("newer path applies")
+			.returns(BluetoothSetupService.SCHEDULE_SOURCE_METADATA, from(BluetoothSetupStatus::getScheduleSource))
+			.as("old path's open schedule dropped")
+			.returns("", from(BluetoothSetupStatus::getSchedule))
+			;
+		and.then(radioState())
+			.as("Newer path's empty schedule closed")
+			.isFalse()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_readsWithoutHoldingLock() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andAnswer(() -> {
-			assertThat("service lock not held while reading metadata", Thread.holdsLock(service),
-					is(false));
+		// GIVEN
+		given(metadataService.getAllMetadata()).willAnswer(invocation -> {
+			// @formatter:off
+			and.then(Thread.holdsLock(service))
+				.as("service lock not held while reading metadata")
+				.isFalse()
+				;
+			// @formatter:on
 			return meta(ALWAYS);
-		}).times(3);
-		replayAll();
+		});
 
+		// WHEN
 		startWithMetadata(WEEKDAY_HOURS);
 		service.configurationChanged(Map.of());
 		service.scheduleTick();
-		assertThat(radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		then(metadataService).should(times(3))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_alwaysOn_noScheduleTickOrRead() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		TaskScheduler scheduler = EasyMock.createMock(TaskScheduler.class);
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		ScheduledFuture future = EasyMock.createMock(ScheduledFuture.class);
-		// with Always On nothing is scheduled and no metadata is read
-		replayAll();
-		replay(scheduler, future);
-
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
+		// GIVEN
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, taskScheduler,
 				metadataServiceRef);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
 		s.setWatchdogIntervalSeconds(0);
 		s.setAlwaysOn(true);
 		s.setMetadataPath(META_PATH);
+
+		// WHEN
 		s.startup();
 
-		verify(scheduler, future);
+		// THEN
+		// with Always On nothing is scheduled and no metadata is read
+		// @formatter:off
+		then(taskScheduler)
+			.shouldHaveNoInteractions()
+			;
+		then(future)
+			.shouldHaveNoInteractions()
+			;
+		then(metadataService).should(never())
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_pathOnly_registersScheduleTick() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		TaskScheduler scheduler = EasyMock.createMock(TaskScheduler.class);
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		ScheduledFuture future = EasyMock.createMock(ScheduledFuture.class);
-		expect(scheduler.scheduleWithFixedDelay(anyObject(Runnable.class), anyObject(Instant.class),
-				eq(Duration.ofSeconds(BluetoothSetupService.SCHEDULE_TICK_SECONDS)))).andReturn(future)
-						.times(1);
-		expect(scheduler.schedule(anyObject(Runnable.class), anyObject(Instant.class))).andReturn(future)
-				.times(1);
-		replayAll();
-		replay(scheduler, future);
+		// GIVEN
+		willReturn(future).given(taskScheduler).scheduleWithFixedDelay(any(Runnable.class),
+				any(Instant.class), any(Duration.class));
+		willReturn(future).given(taskScheduler).schedule(any(Runnable.class), any(Instant.class));
 
-		BluetoothSetupService s = new BluetoothSetupService(opModesService, scheduler,
+		BluetoothSetupService s = new BluetoothSetupService(opModesService, taskScheduler,
 				metadataServiceRef);
 		s.setCommand(tmpFile.getAbsolutePath());
 		s.setClock(Clock.fixed(START, ZoneOffset.UTC));
@@ -1542,44 +2864,94 @@ public class BluetoothSetupServiceTests {
 		s.setAlwaysOn(false);
 		s.setTimeZone("UTC");
 		s.setMetadataPath(META_PATH);
+
+		// WHEN
 		s.startup();
 
-		verify(scheduler, future);
+		// THEN
+		// @formatter:off
+		then(taskScheduler).should()
+			.scheduleWithFixedDelay(any(Runnable.class), any(Instant.class), eq(SCHEDULE_TICK))
+			;
+		then(taskScheduler).should()
+			.schedule(any(Runnable.class), any(Instant.class))
+			;
+		then(taskScheduler)
+			.shouldHaveNoMoreInteractions()
+			;
+		then(future)
+			.shouldHaveNoInteractions()
+			;
+		then(metadataService).should(never())
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_errorDoesNotBlockLaterReads() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andThrow(new LinkageError("bundle refreshed"))
-				.andReturn(meta(ALWAYS));
-		replayAll();
+		// GIVEN
+		given(metadataService.getAllMetadata()).willThrow(new LinkageError("bundle refreshed"))
+				.willReturn(meta(ALWAYS));
 
-		try {
-			startWithMetadata(WEEKDAY_HOURS);
-			org.junit.Assert.fail("Error should propagate");
-		} catch ( LinkageError e ) {
-			// expected
-		}
-		assertThat(radioState(), is(false));
+		// WHEN
+		// @formatter:off
+		and.thenThrownBy(() -> startWithMetadata(WEEKDAY_HOURS))
+			.as("Error should propagate")
+			.isInstanceOf(LinkageError.class)
+			;
+		// @formatter:on
 
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("Inline schedule closed")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// WHEN
 		service.scheduleTick();
-		assertThat("the next tick reads again", radioState(), is(true));
+
+		// THEN
+		// @formatter:off
+		and.then(radioState())
+			.as("the next tick reads again")
+			.isTrue()
+			;
+		then(metadataService).should(times(2))
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 	@Test
 	public void metadata_shutdown_stopsTick() throws IOException {
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false).anyTimes();
-		expect(metadataService.getAllMetadata()).andReturn(meta(ALWAYS)).times(1);
-		replayAll();
-
+		// GIVEN
+		given(metadataService.getAllMetadata()).willReturn(meta(ALWAYS));
 		startWithMetadata(WEEKDAY_HOURS);
-		assertThat(radioState(), is(true));
+		// @formatter:off
+		and.then(radioState())
+			.as("Metadata schedule applies")
+			.isTrue()
+			;
+		// @formatter:on
 		final int lines = rawLogLines();
 
+		// WHEN
 		service.shutdown();
 		service.scheduleTick();
 
-		assertThat("no metadata read or helper call after shutdown", rawLogLines(), equalTo(lines));
+		// THEN
+		// @formatter:off
+		and.then(rawLogLines())
+			.as("no metadata read or helper call after shutdown")
+			.isEqualTo(lines)
+			;
+		then(metadataService).should()
+			.getAllMetadata()
+			;
+		// @formatter:on
 	}
 
 }
