@@ -1008,8 +1008,8 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 						// ignore
 				}
 			}
-		} catch ( Throwable t ) {
-			log.warn("Error getting current Bluetooth setup radio status: {}", t.getMessage());
+		} catch ( RuntimeException e ) {
+			log.warn("Error getting current Bluetooth setup radio status: {}", e.getMessage());
 			return null;
 		}
 		Long expires = null;
