@@ -32,7 +32,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -96,8 +95,7 @@ public final class AvailabilitySchedule {
 	private static final String AVAILABLE = "Available";
 
 	private static final AvailabilitySchedule EMPTY = new AvailabilitySchedule(
-			new SimpleTemporalTariffSchedule(Collections.emptyList(), EVALUATOR),
-			Collections.emptyList(), Collections.emptyList());
+			new SimpleTemporalTariffSchedule(List.of(), EVALUATOR), List.of(), List.of());
 
 	private final TariffSchedule schedule;
 	private final List<ChronoFieldsTariff> rules;
@@ -139,27 +137,6 @@ public final class AvailabilitySchedule {
 	}
 
 	/**
-	 * Parse a schedule.
-	 *
-	 * <p>
-	 * The first row is always the header row: see the class description.
-	 * </p>
-	 *
-	 * @param text
-	 *        the schedule CSV text; {@literal null} or blank produces an empty
-	 *        schedule
-	 * @return the schedule, never {@literal null}
-	 * @throws IllegalArgumentException
-	 *         if the schedule cannot be parsed
-	 */
-	public static AvailabilitySchedule parse(@Nullable String text) {
-		if ( text == null || text.isBlank() ) {
-			return EMPTY;
-		}
-		return of(text);
-	}
-
-	/**
 	 * Parse a schedule from a metadata value.
 	 *
 	 * <p>
@@ -182,25 +159,13 @@ public final class AvailabilitySchedule {
 	 * @throws IllegalArgumentException
 	 *         if the value is not a supported type, its header row has fewer
 	 *         than 5 values, or the schedule cannot be parsed
-	 * @see TariffUtils#parseCsvTemporalRangeSchedule(Locale, boolean, boolean,
-	 *      boolean, TemporalTariffEvaluator, Object)
+	 * @see #parse(Object)
 	 */
 	public static AvailabilitySchedule fromMetadata(@Nullable Object value) {
 		if ( value == null ) {
 			throw new IllegalArgumentException(unsupportedMessage("null"));
 		}
-		if ( value instanceof String s ) {
-			return parse(s);
-		}
-		if ( value instanceof String[][] a ) {
-			// parse like a List of List, which trims values and skips empty ones
-			final List<@Nullable List<@Nullable String>> rows = new ArrayList<>(a.length);
-			for ( String[] row : a ) {
-				rows.add(row != null ? Arrays.asList(row) : null);
-			}
-			return of(rows);
-		}
-		return of(value);
+		return parse(value);
 	}
 
 	private static String unsupportedMessage(String type) {
@@ -209,7 +174,26 @@ public final class AvailabilitySchedule {
 				+ " of at least 5 values like " + EXAMPLE_HEADER;
 	}
 
-	private static AvailabilitySchedule of(Object data) {
+	/**
+	 * Parse a schedule.
+	 *
+	 * <p>
+	 * The first row is always the header row: see the class description.
+	 * </p>
+	 *
+	 * @param text
+	 *        the schedule CSV text; {@literal null} or blank produces an empty
+	 *        schedule
+	 * @return the schedule, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if the schedule cannot be parsed
+	 * @see TariffUtils#parseCsvTemporalRangeSchedule(Locale, boolean, boolean,
+	 *      boolean, TemporalTariffEvaluator, Object)
+	 */
+	public static AvailabilitySchedule parse(@Nullable Object data) {
+		if ( data == null || (data instanceof String s && s.isBlank())) {
+			return EMPTY;
+		}
 		final TariffSchedule sched;
 		try {
 			sched = TariffUtils.parseCsvTemporalRangeSchedule(Locale.ENGLISH, false, true, true,
