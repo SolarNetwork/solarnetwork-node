@@ -23,6 +23,7 @@
 package net.solarnetwork.node.service.support;
 
 import static java.time.format.TextStyle.SHORT;
+import static net.solarnetwork.util.StringUtils.escapeHtml;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -103,7 +104,7 @@ public final class TariffScheduleUtils {
 				messageSource.getMessage("tariffScheduleTable.col.weekday", null, "Weekday", locale),
 				messageSource.getMessage("tariffScheduleTable.col.time", null, "Time", locale)));
 		for ( Rate r : rates.values() ) {
-			buf.append("<th>").append(r.getDescription()).append("</th>");
+			buf.append("<th>").append(escapeHtml(r.getDescription())).append("</th>");
 		}
 		buf.append("</tr></thead><tbody>");
 
@@ -199,7 +200,7 @@ public final class TariffScheduleUtils {
 					if ( rateCount++ > 0 ) {
 						buf.append("; ");
 					}
-					buf.append("<b>").append(rate.getDescription()).append("</b>: ")
+					buf.append("<b>").append(escapeHtml(rate.getDescription())).append("</b>: ")
 							.append(rate.getAmount().toPlainString());
 				}
 				buf.append("</li>");
