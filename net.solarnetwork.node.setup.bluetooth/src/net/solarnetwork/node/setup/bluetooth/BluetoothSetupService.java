@@ -48,6 +48,7 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
@@ -100,6 +101,9 @@ import net.solarnetwork.util.StringUtils;
  */
 public class BluetoothSetupService extends BaseIdentifiable implements SettingSpecifierProvider,
 		SettingsChangeObserver, InstructionHandler, EventHandler, ServiceLifecycleObserver {
+
+	/** The setting UID. */
+	public static final String SETTING_UID = "net.solarnetwork.node.setup.bluetooth.BluetoothSetupService";
 
 	/** The {@code solarcfg} service name for the Bluetooth radio. */
 	public static final String CONFIG_SERVICE = "bluetooth";
@@ -181,7 +185,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OperationalModesService opModesService;
-	private final TaskScheduler taskScheduler;
+	private final @Nullable TaskScheduler taskScheduler;
 	private final @Nullable OptionalFilterableService<MetadataService> metadataService;
 
 	private Clock clock = Clock.systemUTC();
@@ -205,10 +209,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 
 	private boolean opModeActive = false;
 	private boolean offline = false;
-	private Instant offlineSince = null;
-	private Instant onlineSince = null;
+	private @Nullable Instant offlineSince = null;
+	private @Nullable Instant onlineSince = null;
 	private String lastOfflineOpMode = DEFAULT_OFFLINE_OP_MODE;
-	private ScheduledFuture<?> watchdogFuture = null;
+	private @Nullable ScheduledFuture<?> watchdogFuture = null;
 	private int watchdogScheduledIntervalSeconds = 0;
 	private @Nullable AvailabilitySchedule availability = null;
 	private @Nullable String scheduleError = null;
@@ -230,7 +234,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	private boolean metadataReadInFlight = false;
 	private String lastMetadataServiceUid = DEFAULT_METADATA_SERVICE_UID;
 	private String lastMetadataPath = "";
-	private ScheduledFuture<?> scheduleFuture = null;
+	private @Nullable ScheduledFuture<?> scheduleFuture = null;
 	private @Nullable Boolean lastScheduleAllows = null;
 	private boolean lastReconcileOk = false;
 	private boolean stopped = false;
@@ -241,11 +245,13 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * @param opModesService
 	 *        the operational modes service
 	 * @param taskScheduler
-	 *        the task scheduler
+	 *        the task scheduler, or {@literal null} to run tasks on the calling
+	 *        thread and not run the watchdog or schedule checks
 	 * @param metadataService
 	 *        the metadata service to read a schedule from, or {@literal null}
 	 */
-	public BluetoothSetupService(OperationalModesService opModesService, TaskScheduler taskScheduler,
+	public BluetoothSetupService(OperationalModesService opModesService,
+			@Nullable TaskScheduler taskScheduler,
 			@Nullable OptionalFilterableService<MetadataService> metadataService) {
 		super();
 		this.opModesService = opModesService;
@@ -253,7 +259,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		this.metadataService = metadataService;
 		FilterableService.setFilterProp((FilterableService) metadataService, Identifiable.UID_PROPERTY,
 				DEFAULT_METADATA_SERVICE_UID);
-		setUid("net.solarnetwork.node.setup.bluetooth.BluetoothSetupService");
+		setUid(SETTING_UID);
 		setDisplayName("Bluetooth Setup");
 	}
 
@@ -298,7 +304,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	}
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		synchronized ( this ) {
 			configurationChangedInternal();
 		}
@@ -347,7 +353,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	}
 
 	@Override
-	public void handleEvent(Event event) {
+	public void handleEvent(@Nullable Event event) {
 		if ( event == null || !OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED
 				.equals(event.getTopic()) ) {
 			return;
@@ -371,21 +377,22 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		}
 		// reconcile on another thread so the event delivery thread is not blocked
 		// on the (slow) OS helper command
-		if ( taskScheduler != null ) {
-			taskScheduler.schedule(this::reconcileQuietly, clock.instant());
+		final TaskScheduler scheduler = this.taskScheduler;
+		if ( scheduler != null ) {
+			scheduler.schedule(this::reconcileQuietly, clock.instant());
 		} else {
 			reconcileQuietly();
 		}
 	}
 
 	@Override
-	public boolean handlesTopic(String topic) {
+	public boolean handlesTopic(@Nullable String topic) {
 		return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
 	}
 
 	@Override
-	public synchronized InstructionStatus processInstruction(Instruction instruction) {
-		if ( instruction == null || !handlesTopic(instruction.getTopic())
+	public synchronized @Nullable InstructionStatus processInstruction(Instruction instruction) {
+		if ( !handlesTopic(instruction.getTopic())
 				|| !BLUETOOTH_SERVICE_NAME.equals(instruction.getParameterValue(PARAM_SERVICE)) ) {
 			return null;
 		}
@@ -418,12 +425,15 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 					reconcile();
 					resultParams.put(PARAM_SERVICE_RESULT, currentStatus());
 					break;
-				default:
+				default: {
+					final MessageSource ms = getMessageSource();
 					resultParams.put(PARAM_MESSAGE,
-							getMessageSource().getMessage("error.unsupportedAction",
-									new Object[] { action }, "Unsupported action.",
-									Locale.getDefault()));
+							ms != null
+									? ms.getMessage("error.unsupportedAction", new Object[] { action },
+											"Unsupported action.", Locale.getDefault())
+									: "Unsupported action.");
 					resultState = InstructionState.Declined;
+				}
 			}
 		} catch ( Exception e ) {
 			resultParams.put(PARAM_MESSAGE, e.toString());
@@ -498,7 +508,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		ZoneId z = null;
 		String zError = null;
 		try {
-			z = DateUtils.tz(timeZone == null || timeZone.isBlank() ? null : timeZone.trim());
+			z = DateUtils.tz(timeZone.isBlank() ? null : timeZone.trim());
 		} catch ( IllegalArgumentException e ) {
 			zError = e.getMessage();
 		}
@@ -572,8 +582,9 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 				return;
 			}
 		}
-		if ( taskScheduler != null ) {
-			taskScheduler.schedule(this::scheduleTick, clock.instant());
+		final TaskScheduler scheduler = this.taskScheduler;
+		if ( scheduler != null ) {
+			scheduler.schedule(this::scheduleTick, clock.instant());
 		} else {
 			scheduleTick();
 		}
@@ -711,7 +722,8 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 				return;
 			}
 			final boolean allows = scheduleAllows();
-			if ( lastScheduleAllows != null && lastScheduleAllows.booleanValue() == allows ) {
+			final Boolean lastAllows = this.lastScheduleAllows;
+			if ( lastAllows != null && lastAllows.booleanValue() == allows ) {
 				return;
 			}
 			log.info("Bluetooth setup schedule now {} the radio on",
@@ -723,10 +735,11 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	}
 
 	private void scheduleScheduleTick() {
+		final TaskScheduler scheduler = this.taskScheduler;
 		final AvailabilitySchedule sched = this.availability;
-		final boolean wanted = (!alwaysOn && taskScheduler != null && (metadataConfigured()
+		final boolean wanted = (!alwaysOn && scheduler != null && (metadataConfigured()
 				|| (sched != null && !sched.isEmpty() && scheduleError == null)));
-		if ( !wanted ) {
+		if ( scheduler == null || !wanted ) {
 			cancelScheduleTick();
 			return;
 		}
@@ -737,13 +750,14 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 			return;
 		}
 		final Duration interval = Duration.ofSeconds(SCHEDULE_TICK_SECONDS);
-		scheduleFuture = taskScheduler.scheduleWithFixedDelay(this::scheduleTick,
+		scheduleFuture = scheduler.scheduleWithFixedDelay(this::scheduleTick,
 				clock.instant().plus(interval), interval);
 	}
 
 	private void cancelScheduleTick() {
-		if ( scheduleFuture != null ) {
-			scheduleFuture.cancel(false);
+		final ScheduledFuture<?> f = this.scheduleFuture;
+		if ( f != null ) {
+			f.cancel(false);
 			scheduleFuture = null;
 		}
 	}
@@ -792,18 +806,20 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	}
 
 	private void scheduleWatchdog() {
-		if ( taskScheduler == null || watchdogIntervalSeconds < 1 ) {
+		final TaskScheduler scheduler = this.taskScheduler;
+		if ( scheduler == null || watchdogIntervalSeconds < 1 ) {
 			return;
 		}
 		final Duration interval = Duration.ofSeconds(watchdogIntervalSeconds);
-		watchdogFuture = taskScheduler.scheduleWithFixedDelay(this::watchdogTick,
+		watchdogFuture = scheduler.scheduleWithFixedDelay(this::watchdogTick,
 				clock.instant().plus(interval), interval);
 		watchdogScheduledIntervalSeconds = watchdogIntervalSeconds;
 	}
 
 	private void cancelWatchdog() {
-		if ( watchdogFuture != null ) {
-			watchdogFuture.cancel(false);
+		final ScheduledFuture<?> f = this.watchdogFuture;
+		if ( f != null ) {
+			f.cancel(false);
 			watchdogFuture = null;
 		}
 	}
@@ -855,30 +871,34 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		final Instant now = clock.instant();
 		if ( down ) {
 			onlineSince = null;
-			if ( offlineSince == null ) {
-				offlineSince = now;
+			Instant since = offlineSince;
+			if ( since == null ) {
+				since = now;
+				offlineSince = since;
 				log.info("Offline mode [{}] active; Bluetooth setup radio will turn on after {} minutes",
 						offlineOpMode, offlineThresholdMinutes);
 			}
-			if ( !offline && !Duration.between(offlineSince, now)
+			if ( !offline && !Duration.between(since, now)
 					.minus(Duration.ofMinutes(offlineThresholdMinutes)).isNegative() ) {
 				offline = true;
 				log.info("Offline mode [{}] active since {}; turning Bluetooth setup radio on",
-						offlineOpMode, offlineSince);
+						offlineOpMode, since);
 			}
 		} else {
 			offlineSince = null;
 			if ( offline ) {
-				if ( onlineSince == null ) {
-					onlineSince = now;
+				Instant since = onlineSince;
+				if ( since == null ) {
+					since = now;
+					onlineSince = since;
 					log.info(
 							"Offline mode [{}] inactive; Bluetooth setup radio will turn off after {} minutes",
 							offlineOpMode, onlineGraceMinutes);
 				}
-				if ( !Duration.between(onlineSince, now).minus(Duration.ofMinutes(onlineGraceMinutes))
+				if ( !Duration.between(since, now).minus(Duration.ofMinutes(onlineGraceMinutes))
 						.isNegative() ) {
 					log.info("Offline mode [{}] inactive since {}; offline trigger cleared",
-							offlineOpMode, onlineSince);
+							offlineOpMode, since);
 					offline = false;
 					onlineSince = null;
 				}
@@ -888,7 +908,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 
 	@Override
 	public String getSettingUid() {
-		return getUid();
+		return SETTING_UID;
 	}
 
 	@Override
@@ -967,30 +987,28 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		boolean enabled = false;
 		try {
 			List<String> result = executeAction(ACTION_STATUS);
-			if ( result != null ) {
-				for ( String line : result ) {
-					int idx = line.indexOf(':');
-					if ( idx < 0 ) {
-						continue;
-					}
-					String key = line.substring(0, idx).trim().toLowerCase(Locale.ENGLISH);
-					String value = line.substring(idx + 1).trim();
-					switch (key) {
-						case "active":
-							active = "true".equalsIgnoreCase(value);
-							break;
-						case "discoverable":
-							discoverable = "true".equalsIgnoreCase(value);
-							break;
-						case "powered":
-							powered = "true".equalsIgnoreCase(value);
-							break;
-						case "enabled":
-							enabled = "true".equalsIgnoreCase(value);
-							break;
-						default:
-							// ignore
-					}
+			for ( String line : result ) {
+				int idx = line.indexOf(':');
+				if ( idx < 0 ) {
+					continue;
+				}
+				String key = line.substring(0, idx).trim().toLowerCase(Locale.ENGLISH);
+				String value = line.substring(idx + 1).trim();
+				switch (key) {
+					case "active":
+						active = "true".equalsIgnoreCase(value);
+						break;
+					case "discoverable":
+						discoverable = "true".equalsIgnoreCase(value);
+						break;
+					case "powered":
+						powered = "true".equalsIgnoreCase(value);
+						break;
+					case "enabled":
+						enabled = "true".equalsIgnoreCase(value);
+						break;
+					default:
+						// ignore
 				}
 			}
 		} catch ( Throwable t ) {
@@ -1000,10 +1018,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		Long expires = null;
 		if ( opModeActive ) {
 			try {
-				Map<String, Long> expirations = opModesService.activeOperationalModesWithExpirations();
-				if ( expirations != null ) {
-					expires = expirations.get(opMode);
-				}
+				expires = opModesService.activeOperationalModesWithExpirations().get(opMode);
 			} catch ( Exception e ) {
 				log.debug("Error getting operational mode expirations: {}", e.getMessage());
 			}
@@ -1033,7 +1048,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		cmd.add(command);
 		cmd.add(CONFIG_SERVICE);
 		cmd.add(action);
-		if ( args != null && args.length > 0 ) {
+		if ( args.length > 0 ) {
 			for ( String arg : args ) {
 				cmd.add(arg);
 			}
@@ -1076,9 +1091,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InterruptedException e ) {
-			if ( pr != null ) {
-				pr.destroyForcibly();
-			}
+			pr.destroyForcibly();
 			Thread.currentThread().interrupt();
 			throw new RuntimeException("Interrupted waiting for bluetooth action " + action, e);
 		}
@@ -1117,9 +1130,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * Set the clock to use.
 	 *
 	 * @param clock
-	 *        the clock to set; defaults to the system UTC clock
+	 *        the clock to set, or {@literal null} to keep the current clock;
+	 *        defaults to the system UTC clock
 	 */
-	public void setClock(Clock clock) {
+	public void setClock(@Nullable Clock clock) {
 		if ( clock != null ) {
 			this.clock = clock;
 		}
@@ -1170,9 +1184,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * Set the operational mode that turns the radio on.
 	 *
 	 * @param opMode
-	 *        the mode name to set; defaults to {@link #DEFAULT_OP_MODE}
+	 *        the mode name to set, or {@literal null} or empty to keep the
+	 *        current mode; defaults to {@link #DEFAULT_OP_MODE}
 	 */
-	public void setOpMode(String opMode) {
+	public void setOpMode(@Nullable String opMode) {
 		if ( opMode != null && !opMode.isEmpty() ) {
 			this.opMode = opMode.trim().toLowerCase(Locale.ENGLISH);
 		}
@@ -1210,10 +1225,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * Set the availability schedule text.
 	 *
 	 * @param schedule
-	 *        the schedule to set; see {@link AvailabilitySchedule} for the
-	 *        syntax
+	 *        the schedule to set, or {@literal null} for none; see
+	 *        {@link AvailabilitySchedule} for the syntax
 	 */
-	public void setSchedule(String schedule) {
+	public void setSchedule(@Nullable String schedule) {
 		this.schedule = (schedule != null ? schedule : "");
 	}
 
@@ -1231,10 +1246,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * Set the metadata service UID.
 	 *
 	 * @param metadataServiceUid
-	 *        the UID of the metadata service to read a schedule from; empty
-	 *        means no metadata schedule
+	 *        the UID of the metadata service to read a schedule from; empty or
+	 *        {@literal null} means no metadata schedule
 	 */
-	public void setMetadataServiceUid(String metadataServiceUid) {
+	public void setMetadataServiceUid(@Nullable String metadataServiceUid) {
 		this.metadataServiceUid = (metadataServiceUid != null ? metadataServiceUid.trim() : "");
 		FilterableService.setFilterProp((FilterableService) metadataService, Identifiable.UID_PROPERTY,
 				this.metadataServiceUid);
@@ -1255,9 +1270,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 *
 	 * @param metadataPath
 	 *        the metadata path to read a schedule from, such as
-	 *        {@code /pm/bluetooth/schedule}; empty means no metadata schedule
+	 *        {@code /pm/bluetooth/schedule}; empty or {@literal null} means no
+	 *        metadata schedule
 	 */
-	public void setMetadataPath(String metadataPath) {
+	public void setMetadataPath(@Nullable String metadataPath) {
 		this.metadataPath = (metadataPath != null ? metadataPath.trim() : "");
 	}
 
@@ -1274,9 +1290,10 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * Set the schedule time zone.
 	 *
 	 * @param timeZone
-	 *        the zone ID to set, or empty for the system default zone
+	 *        the zone ID to set, or {@literal null} or empty for the system
+	 *        default zone
 	 */
-	public void setTimeZone(String timeZone) {
+	public void setTimeZone(@Nullable String timeZone) {
 		this.timeZone = (timeZone != null ? timeZone : "");
 	}
 
@@ -1385,10 +1402,11 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * </p>
 	 *
 	 * @param offlineOpMode
-	 *        the mode that means the network is offline; defaults to
+	 *        the mode that means the network is offline, or {@literal null} to
+	 *        disable offline detection; defaults to
 	 *        {@link #DEFAULT_OFFLINE_OP_MODE}
 	 */
-	public void setOfflineOpMode(String offlineOpMode) {
+	public void setOfflineOpMode(@Nullable String offlineOpMode) {
 		String mode = (offlineOpMode != null ? offlineOpMode.trim().toLowerCase(Locale.ENGLISH) : "");
 		if ( mode.startsWith("!") ) {
 			log.warn(
