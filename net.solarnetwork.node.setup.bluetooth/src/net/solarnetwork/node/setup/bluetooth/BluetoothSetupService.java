@@ -23,7 +23,6 @@
 package net.solarnetwork.node.setup.bluetooth;
 
 import static net.solarnetwork.node.Constants.solarNodeHome;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -72,6 +71,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.DateUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Settings provider and instruction handler that controls when the Bluetooth
@@ -939,7 +939,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 		final String msg = BluetoothSetupUtils.statusMessage(getMessageSource(), status, opMode,
 				offlineOpMode, offlineThresholdMinutes, metadataConfigured() ? metadataPath : null);
 		if ( !msg.isEmpty() ) {
-			buf.append("<p>").append(BluetoothSetupUtils.escapeHtml(msg)).append("</p>");
+			buf.append("<p>").append(StringUtils.escapeHtml(msg)).append("</p>");
 		}
 		final AvailabilitySchedule sched = this.availability;
 		// an invalid schedule has no rules to show, its error is in the message; an

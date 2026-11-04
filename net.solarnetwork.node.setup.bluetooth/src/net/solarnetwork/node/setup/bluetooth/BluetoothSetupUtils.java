@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.bluetooth;
 
+import static net.solarnetwork.util.StringUtils.escapeHtml;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -168,38 +169,6 @@ public final class BluetoothSetupUtils {
 			return state;
 		}
 		return state + " (" + String.join("; ", reasons) + ")";
-	}
-
-	/**
-	 * Escape text for use as HTML element content.
-	 *
-	 * @param text
-	 *        the text to escape
-	 * @return the escaped text
-	 */
-	public static String escapeHtml(String text) {
-		StringBuilder buf = null;
-		for ( int i = 0, len = text.length(); i < len; i++ ) {
-			char c = text.charAt(i);
-			String rep = switch (c) {
-				case '&' -> "&amp;";
-				case '<' -> "&lt;";
-				case '>' -> "&gt;";
-				default -> null;
-			};
-			if ( rep == null ) {
-				if ( buf != null ) {
-					buf.append(c);
-				}
-				continue;
-			}
-			if ( buf == null ) {
-				buf = new StringBuilder(len + 16);
-				buf.append(text, 0, i);
-			}
-			buf.append(rep);
-		}
-		return (buf != null ? buf.toString() : text);
 	}
 
 	/**
