@@ -67,7 +67,7 @@ import net.solarnetwork.util.NumberUtils;
  * Generate datum based on static configuration.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class FixedDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -245,6 +245,8 @@ public class FixedDatumDataSource extends DatumDataSourceSupport
 		if ( touSchedule() != null ) {
 			result.add(new BasicTitleSettingSpecifier("touStatus", touStatusMessage(), true, true));
 		}
+
+		result.addAll(getIdentifiableSettingSpecifiers());
 
 		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null, false,
