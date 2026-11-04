@@ -29,15 +29,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.tariff.Tariff;
-import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.node.service.support.TariffScheduleUtils;
 
 /**
@@ -205,11 +202,9 @@ public final class BluetoothSetupUtils {
 					null, "The schedule has no rules.", locale))).append("</p>");
 			return buf.toString();
 		}
-		final StringBuilder table = new StringBuilder();
 		final Map<Integer, Tariff> active = TariffScheduleUtils.renderTariffScheduleTable(messageSource,
 				schedule.getSchedule(), (now != null ? now : LocalDateTime.MIN),
-				AvailabilitySchedule.EVALUATOR, true, locale, table);
-		buf.append(escapeRateHeaders(schedule, table.toString()));
+				AvailabilitySchedule.EVALUATOR, true, locale, buf);
 		if ( now != null ) {
 			final String when = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
 					.withLocale(locale).format(now);
@@ -225,34 +220,6 @@ public final class BluetoothSetupUtils {
 			buf.append("</p>");
 		}
 		return buf.toString();
-	}
-
-	/**
-	 * Escape the rate column headers in a rendered schedule table.
-	 *
-	 * <p>
-	 * The rate column headers are the schedule's header row names, which can
-	 * come from metadata, and the table renders them without escaping.
-	 * </p>
-	 */
-	private static String escapeRateHeaders(AvailabilitySchedule schedule, String html) {
-		final Set<String> names = new LinkedHashSet<>(4);
-		for ( Tariff rule : schedule.getRules() ) {
-			for ( Rate rate : rule.getRates().values() ) {
-				String name = rate.getDescription();
-				if ( name != null ) {
-					names.add(name);
-				}
-			}
-		}
-		String result = html;
-		for ( String name : names ) {
-			String escaped = escapeHtml(name);
-			if ( !escaped.equals(name) ) {
-				result = result.replace("<th>" + name + "</th>", "<th>" + escaped + "</th>");
-			}
-		}
-		return result;
 	}
 
 }
