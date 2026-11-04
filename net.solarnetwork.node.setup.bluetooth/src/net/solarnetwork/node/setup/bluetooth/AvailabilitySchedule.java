@@ -181,12 +181,14 @@ public final class AvailabilitySchedule {
 	 * The first row is always the header row: see the class description.
 	 * </p>
 	 *
-	 * @param text
-	 *        the schedule CSV text; {@literal null} or blank produces an empty
-	 *        schedule
+	 * @param data
+	 *        the schedule CSV text, or the rows as a {@code List} of
+	 *        {@code List} or a {@code String[][]}; {@literal null} or blank
+	 *        text produces an empty schedule
 	 * @return the schedule, never {@literal null}
 	 * @throws IllegalArgumentException
-	 *         if the schedule cannot be parsed
+	 *         if the value is not a supported type or the schedule cannot be
+	 *         parsed
 	 * @see TariffUtils#parseCsvTemporalRangeSchedule(Locale, boolean, boolean,
 	 *      boolean, TemporalTariffEvaluator, Object)
 	 */
