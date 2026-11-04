@@ -439,7 +439,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 			resultParams.put(PARAM_MESSAGE, e.toString());
 			resultState = InstructionState.Declined;
 		}
-		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
+		return InstructionUtils.createStatus(instruction, resultState, clock.instant(), resultParams);
 	}
 
 	/**
