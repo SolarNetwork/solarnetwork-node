@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.bluetooth;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static net.solarnetwork.node.Constants.solarNodeHome;
 import java.io.BufferedReader;
 import java.io.File;
@@ -1112,7 +1113,7 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	private Thread captureInputStream(final InputStream in, final Consumer<String> consumer,
 			final String name) {
 		Thread t = new Thread(() -> {
-			try (BufferedReader r = new BufferedReader(new InputStreamReader(in))) {
+			try (BufferedReader r = new BufferedReader(new InputStreamReader(in, UTF_8))) {
 				String line;
 				while ( (line = r.readLine()) != null ) {
 					consumer.accept(line);
