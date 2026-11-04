@@ -191,7 +191,7 @@ public final class AvailabilitySchedule {
 	 *      boolean, TemporalTariffEvaluator, Object)
 	 */
 	public static AvailabilitySchedule parse(@Nullable Object data) {
-		if ( data == null || (data instanceof String s && s.isBlank())) {
+		if ( data == null || (data instanceof String s && s.isBlank()) ) {
 			return EMPTY;
 		}
 		final TariffSchedule sched;
