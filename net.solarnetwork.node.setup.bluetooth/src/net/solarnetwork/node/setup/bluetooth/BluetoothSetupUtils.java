@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.bluetooth;
 
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.StringUtils.escapeHtml;
 import java.time.Duration;
 import java.time.Instant;
@@ -98,7 +99,9 @@ public final class BluetoothSetupUtils {
 			return "";
 		}
 		if ( status == null ) {
-			return messageSource.getMessage("status.unknown", null, "Unknown", Locale.getDefault());
+			return nonnull(
+					messageSource.getMessage("status.unknown", null, "Unknown", Locale.getDefault()),
+					"Status message");
 		}
 		final List<String> reasons = new ArrayList<>(3);
 		if ( status.isAlwaysOn() ) {
@@ -106,21 +109,22 @@ public final class BluetoothSetupUtils {
 					messageSource.getMessage("status.alwaysOn", null, "always on", Locale.getDefault()));
 		}
 		if ( status.isOpModeActive() ) {
-			Object expires = (status.getOpModeExpires() != null
-					? Instant.ofEpochMilli(status.getOpModeExpires())
+			final Long opModeExpires = status.getOpModeExpires();
+			Object expires = (opModeExpires != null ? Instant.ofEpochMilli(opModeExpires)
 					: messageSource.getMessage("status.noExpiry", null, "no expiry",
 							Locale.getDefault()));
 			reasons.add(messageSource.getMessage("status.opMode", new Object[] { opMode, expires },
 					"operational mode active", Locale.getDefault()));
 		}
+		final Instant offlineSince = status.getOfflineSince();
 		if ( status.isOffline() ) {
 			reasons.add(messageSource.getMessage("status.offline",
-					new Object[] { offlineOpMode, status.getOfflineSince() }, "offline mode active",
+					new Object[] { offlineOpMode, offlineSince }, "offline mode active",
 					Locale.getDefault()));
-		} else if ( status.getOfflineSince() != null ) {
+		} else if ( offlineSince != null ) {
 			reasons.add(messageSource.getMessage("status.offlinePending",
-					new Object[] { offlineOpMode, status.getOfflineSince(),
-							status.getOfflineSince().plus(Duration.ofMinutes(offlineThresholdMinutes)) },
+					new Object[] { offlineOpMode, offlineSince,
+							offlineSince.plus(Duration.ofMinutes(offlineThresholdMinutes)) },
 					"offline mode active", Locale.getDefault()));
 		}
 		if ( metadataPath != null ) {
@@ -142,15 +146,15 @@ public final class BluetoothSetupUtils {
 			reasons.add(messageSource.getMessage("status.scheduleInvalid",
 					new Object[] { status.getScheduleError() }, "schedule invalid",
 					Locale.getDefault()));
-		} else if ( status.getSchedule() != null && !status.getSchedule().isEmpty() ) {
+		} else if ( !status.getSchedule().isEmpty() ) {
 			// the rules are shown in the schedule table, not inline
-			if ( status.getScheduleNext() == null && !status.isScheduleActive() ) {
+			final Long scheduleNext = status.getScheduleNext();
+			if ( scheduleNext == null && !status.isScheduleActive() ) {
 				reasons.add(messageSource.getMessage("status.scheduleNextNone",
 						new Object[] { status.getTimeZone() },
 						"schedule has no window within the next year", Locale.getDefault()));
 			} else {
-				Object next = (status.getScheduleNext() != null
-						? Instant.ofEpochMilli(status.getScheduleNext())
+				Object next = (scheduleNext != null ? Instant.ofEpochMilli(scheduleNext)
 						: messageSource.getMessage("status.noExpiry", null, "no expiry",
 								Locale.getDefault()));
 				reasons.add(messageSource.getMessage(
@@ -160,8 +164,10 @@ public final class BluetoothSetupUtils {
 						Locale.getDefault()));
 			}
 		}
-		String state = messageSource.getMessage(status.isRadioActive() ? "status.on" : "status.off",
-				null, status.isRadioActive() ? "On" : "Off", Locale.getDefault());
+		final String state = nonnull(
+				messageSource.getMessage(status.isRadioActive() ? "status.on" : "status.off", null,
+						status.isRadioActive() ? "On" : "Off", Locale.getDefault()),
+				"Status message");
 		if ( reasons.isEmpty() ) {
 			return state;
 		}

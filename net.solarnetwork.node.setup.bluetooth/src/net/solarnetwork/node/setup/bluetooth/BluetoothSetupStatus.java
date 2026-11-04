@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.bluetooth;
 
 import java.time.Instant;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The Bluetooth setup radio status.
@@ -37,23 +38,23 @@ public final class BluetoothSetupStatus {
 	private final boolean powered;
 	private final boolean installEnabled;
 	private final boolean opModeActive;
-	private final Long opModeExpires;
+	private final @Nullable Long opModeExpires;
 	private final boolean offline;
-	private final Instant offlineSince;
+	private final @Nullable Instant offlineSince;
 	private final boolean alwaysOn;
 	private final String schedule;
 	private final boolean scheduleActive;
-	private final String scheduleError;
-	private final Long scheduleNext;
+	private final @Nullable String scheduleError;
+	private final @Nullable Long scheduleNext;
 	private final String scheduleSource;
-	private final String scheduleMetadataError;
-	private final String timeZone;
+	private final @Nullable String scheduleMetadataError;
+	private final @Nullable String timeZone;
 
 	BluetoothSetupStatus(boolean radioActive, boolean discoverable, boolean powered,
-			boolean installEnabled, boolean opModeActive, Long opModeExpires, boolean offline,
-			Instant offlineSince, boolean alwaysOn, String schedule, boolean scheduleActive,
-			String scheduleError, Long scheduleNext, String scheduleSource, String scheduleMetadataError,
-			String timeZone) {
+			boolean installEnabled, boolean opModeActive, @Nullable Long opModeExpires, boolean offline,
+			@Nullable Instant offlineSince, boolean alwaysOn, String schedule, boolean scheduleActive,
+			@Nullable String scheduleError, @Nullable Long scheduleNext, String scheduleSource,
+			@Nullable String scheduleMetadataError, @Nullable String timeZone) {
 		super();
 		this.radioActive = radioActive;
 		this.discoverable = discoverable;
@@ -127,7 +128,7 @@ public final class BluetoothSetupStatus {
 	 * @return the expiration, as milliseconds since the epoch, or
 	 *         {@literal null} if not active or no expiration
 	 */
-	public Long getOpModeExpires() {
+	public @Nullable Long getOpModeExpires() {
 		return opModeExpires;
 	}
 
@@ -146,7 +147,7 @@ public final class BluetoothSetupStatus {
 	 *
 	 * @return the time, or {@literal null} if the offline mode is not active
 	 */
-	public Instant getOfflineSince() {
+	public @Nullable Instant getOfflineSince() {
 		return offlineSince;
 	}
 
@@ -184,7 +185,7 @@ public final class BluetoothSetupStatus {
 	 * @return the reason the configured schedule or time zone could not be
 	 *         used, or {@literal null} if it is valid
 	 */
-	public String getScheduleError() {
+	public @Nullable String getScheduleError() {
 		return scheduleError;
 	}
 
@@ -194,7 +195,7 @@ public final class BluetoothSetupStatus {
 	 * @return the time the schedule next starts or stops allowing the radio on,
 	 *         as milliseconds since the epoch, or {@literal null}
 	 */
-	public Long getScheduleNext() {
+	public @Nullable Long getScheduleNext() {
 		return scheduleNext;
 	}
 
@@ -216,7 +217,7 @@ public final class BluetoothSetupStatus {
 	 *         being unavailable or having no schedule at the path, or
 	 *         {@literal null} if it was read or is not configured
 	 */
-	public String getScheduleMetadataError() {
+	public @Nullable String getScheduleMetadataError() {
 		return scheduleMetadataError;
 	}
 
@@ -226,7 +227,7 @@ public final class BluetoothSetupStatus {
 	 * @return the zone ID the schedule is evaluated in, or {@literal null} if
 	 *         the configured zone is invalid
 	 */
-	public String getTimeZone() {
+	public @Nullable String getTimeZone() {
 		return timeZone;
 	}
 }
