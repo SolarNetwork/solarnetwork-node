@@ -47,8 +47,6 @@ import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
@@ -182,8 +180,6 @@ public class BluetoothSetupService extends BaseIdentifiable implements SettingSp
 	 * The time to wait for the output reader threads after the process exits.
 	 */
 	private static final long READER_JOIN_MILLISECONDS = 5000L;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OperationalModesService opModesService;
 	private final @Nullable TaskScheduler taskScheduler;
