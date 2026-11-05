@@ -28,12 +28,13 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruct
 import static net.solarnetwork.util.ObjectUtils.nonnull;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -218,7 +219,8 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 				? value.setScale(0, RoundingMode.DOWN)
 				: value);
 		final Map<String, Instruction> result = new LinkedHashMap<>(memberConfigs.size());
-		final List<String> controlIds = new ArrayList<>(memberConfigs.size());
+		// a set so duplicate members only get one allocation
+		final Set<String> controlIds = new LinkedHashSet<>(memberConfigs.size());
 		for ( MemberControlConfig memberConfig : memberConfigs ) {
 			final String controlId = memberConfig.getControlId();
 			if ( controlId == null || controlId.isBlank() ) {
@@ -239,12 +241,14 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 
 		final BigDecimal divisor = new BigDecimal(memberCount);
 		BigDecimal remaining = sum;
-		for ( int i = 0; i < memberCount; i++ ) {
-			var allocation = (i + 1 == memberCount ? remaining
+		int i = 0;
+		for ( String controlId : controlIds ) {
+			i++;
+			var allocation = (i == memberCount ? remaining
 					: sum.divide(divisor, scale, RoundingMode.DOWN)).stripTrailingZeros();
 			remaining = remaining.subtract(allocation);
-			result.put(controlIds.get(i), createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER,
-					controlIds.get(i), allocation.toPlainString()));
+			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, controlId,
+					allocation.toPlainString()));
 		}
 
 		return result;

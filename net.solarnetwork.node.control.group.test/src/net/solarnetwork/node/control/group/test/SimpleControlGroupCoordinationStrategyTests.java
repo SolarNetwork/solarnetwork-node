@@ -516,6 +516,38 @@ public class SimpleControlGroupCoordinationStrategyTests {
 	}
 
 	@Test
+	public void distribute_SetControlParameter_Float_duplicateMembers() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), Float, "amount");
+		final String duplicateControlId = randomString();
+		final var members = members(duplicateControlId, duplicateControlId, randomString());
+
+		// WHEN
+		final var target = 90;
+		final var req = createSetControlValueLocalInstruction(group.getControlId(), target);
+		final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("One instruction generated per unique member control ID")
+			.containsOnlyKeys(
+					  members.get(0).controlId()
+					, members.get(2).controlId())
+			.satisfies(m -> {
+				for (Entry<String, Instruction> e : m.entrySet()) {
+					then(e.getValue())
+						.as("Instruction %s has single parameter for member control ID -> target/2", e.getKey())
+						.returns("45", from(in -> in.getParameterValue(e.getKey())))
+						;
+				}
+			})
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void distribute_noValidMembers() {
 		for ( NodeControlPropertyType type : NodeControlPropertyType.values() ) {
 			// GIVEN
