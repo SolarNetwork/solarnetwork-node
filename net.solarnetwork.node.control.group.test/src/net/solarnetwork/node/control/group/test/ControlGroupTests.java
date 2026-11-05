@@ -437,6 +437,50 @@ public class ControlGroupTests {
 	}
 
 	@Test
+	public void processInstruction_groupAsMember() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Float);
+		service.setMemberConfigs(members(GROUP_CONTROL_ID, MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		// execution service passes member instructions to every handler, including the group
+		given(instructionService.executeInstruction(any())).willAnswer(invocation -> {
+			Instruction memberInstr = invocation.getArgument(0);
+			InstructionStatus status = service.processInstruction(memberInstr);
+			return (status != null ? status : createStatus(memberInstr, Completed));
+		});
+
+		// WHEN
+		final Instruction instr = createSetControlValueLocalInstruction(GROUP_CONTROL_ID, 2400);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Group skipped as member, other member instructions executed in member order")
+			.satisfiesExactly(
+				i -> and.then(i)
+					.as("Member 1 given half of group total")
+					.returns("1200", from(in -> in.getParameterValue(MEMBER_1_CONTROL_ID)))
+					,
+				i -> and.then(i)
+					.as("Member 2 given half of group total")
+					.returns("1200", from(in -> in.getParameterValue(MEMBER_2_CONTROL_ID)))
+			)
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Member updates provided in result")
+			.containsEntry("updates", Map.of(MEMBER_1_CONTROL_ID, "1200", MEMBER_2_CONTROL_ID, "1200"))
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void processInstruction_memberDeclined() {
 		// GIVEN
 		service.setControlPropertyType(NodeControlPropertyType.Percent);

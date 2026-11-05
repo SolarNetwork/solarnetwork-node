@@ -219,7 +219,9 @@ public class ControlGroup extends BaseIdentifiable
 		final NodeControlInfo group = groupInfo(controlId, null);
 		final ControlGroupCoordinationStrategy coordStrategy = coordinationStrategy();
 		final ControlGroupConsensusStrategy consensStrategy = consensusStrategy();
-		final List<MemberControlConfig> members = memberConfigs();
+		// exclude the group itself as a member, to avoid recursing back into this group
+		final List<MemberControlConfig> members = memberConfigs().stream()
+				.filter(m -> !controlId.equals(m.getControlId())).toList();
 		try {
 			final Map<String, Instruction> instructions = coordStrategy.distribute(group, members,
 					instruction, controls);
