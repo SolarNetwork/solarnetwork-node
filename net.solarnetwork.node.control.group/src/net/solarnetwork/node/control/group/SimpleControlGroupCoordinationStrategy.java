@@ -93,7 +93,7 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 		Map<String, Integer> countsByValue = new LinkedHashMap<>(values.size());
 		for ( NodeControlInfo memberValue : values ) {
 			String val = memberValue.getValue();
-			countsByValue.merge(val, 1, (k, v) -> v + 1);
+			countsByValue.merge(val, 1, Integer::sum);
 		}
 		Integer maxCount = null;
 		String result = null;

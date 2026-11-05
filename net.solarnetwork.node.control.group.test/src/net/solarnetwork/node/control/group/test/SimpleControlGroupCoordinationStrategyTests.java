@@ -563,6 +563,32 @@ public class SimpleControlGroupCoordinationStrategyTests {
 	}
 
 	@Test
+	public void combine_mode_moreThanTwo() {
+		for ( NodeControlPropertyType type : EnumSet.of(NodeControlPropertyType.Boolean,
+				NodeControlPropertyType.Percent, NodeControlPropertyType.String) ) {
+			// GIVEN
+			final var service = new SimpleControlGroupCoordinationStrategy();
+			final var group = group(randomString(), type, "max");
+			final var members = members(randomString(), randomString(), randomString(), randomString(),
+					randomString());
+
+			// WHEN
+			final var memberValues = controlValues(type, "max", members, "1", "1", "22", "22", "22");
+			final NodeControlInfo result = service.combine(group, members, memberValues);
+
+			// THEN
+			// @formatter:off
+			then(result)
+				.as("Combined control ID is group ID")
+				.returns(group.getControlId(), from(NodeControlInfo::getControlId))
+				.as("%s control values combined to mode (most frequent) value, counting every occurrence.", type)
+				.returns("22", from(NodeControlInfo::getValue))
+				;
+			// @formatter:on
+		}
+	}
+
+	@Test
 	public void combine_sum() {
 		for ( NodeControlPropertyType type : EnumSet.of(Integer, Float) ) {
 			// GIVEN
