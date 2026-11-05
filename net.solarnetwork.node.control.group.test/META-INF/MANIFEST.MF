@@ -16,6 +16,7 @@ Import-Package:
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
  org.mockito;version="[5.23,6.0)",
+ org.mockito.invocation;version="[5.23,6.0)",
  org.mockito.junit;version="[5.23,6.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.core.io;version="[6.2,7.0)",
