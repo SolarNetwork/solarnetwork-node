@@ -25,7 +25,9 @@ package net.solarnetwork.node.control.group;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_DEMAND_BALANCE;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
+import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.StringUtils.numberValue;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collection;
@@ -44,7 +46,6 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.StringUtils;
 
 /**
  * A basic implementation of {@link ControlGroupCoordinationStrategy} that
@@ -59,6 +60,13 @@ import net.solarnetwork.util.StringUtils;
  * the total is first rounded down to a whole number, so that every portion is a
  * whole number. For all other types the group value is passed through to the
  * members as-is.
+ * </p>
+ *
+ * <p>
+ * When combining member values into a group value, <b>Float</b> and
+ * <b>Integer</b> member values are summed. For all other types the most common
+ * member value is used. If more than one value is the most common, the highest
+ * of those values is used for <b>Percent</b>, and the first one otherwise.
  * </p>
  *
  * <p>
@@ -89,16 +97,19 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			Collection<NodeControlInfo> values) {
 		final var type = nonnull(group.getType(), "Control type");
 		return switch (type) {
-			case Boolean -> combineMode(group, memberConfigs, values);
+			case Boolean -> combineMode(type, group, memberConfigs, values);
 			case Float, Integer -> combineSum(type, group, memberConfigs, values);
-			case Percent -> combineMode(group, memberConfigs, values);
-			case String -> combineMode(group, memberConfigs, values);
+			case Percent -> combineMode(type, group, memberConfigs, values);
+			case String -> combineMode(type, group, memberConfigs, values);
 		};
 	}
 
-	private NodeControlInfo combineMode(NodeControlInfo group, List<MemberControlConfig> memberConfigs,
-			Collection<NodeControlInfo> values) {
-		// find the mode (most popular value); in the case of a tie the first one of those values is selected
+	private NodeControlInfo combineMode(NodeControlPropertyType type, NodeControlInfo group,
+			List<MemberControlConfig> memberConfigs, Collection<NodeControlInfo> values) {
+		// find the mode (most popular value); in the case of a tie the highest of those values is
+		// selected for number types, otherwise the first one of those values is selected
+		final boolean number = (type == NodeControlPropertyType.Float
+				|| type == NodeControlPropertyType.Integer || type == NodeControlPropertyType.Percent);
 		Map<String, Integer> countsByValue = new LinkedHashMap<>(values.size());
 		for ( NodeControlInfo memberValue : values ) {
 			String val = memberValue.getValue();
@@ -107,7 +118,9 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 		Integer maxCount = null;
 		String result = null;
 		for ( Entry<String, Integer> e : countsByValue.entrySet() ) {
-			if ( maxCount == null || e.getValue() > maxCount ) {
+			// non-number values sort before numbers, so a number wins a tie against them
+			if ( maxCount == null || e.getValue() > maxCount || (number && e.getValue().equals(maxCount)
+					&& NumberUtils.compare(numberValue(e.getKey()), numberValue(result)) > 0) ) {
 				result = e.getKey();
 				maxCount = e.getValue();
 			}
@@ -120,8 +133,7 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			List<MemberControlConfig> memberConfigs, Collection<NodeControlInfo> values) {
 		BigDecimal total = BigDecimal.ZERO;
 		for ( NodeControlInfo memberValue : values ) {
-			final BigDecimal val = NumberUtils
-					.bigDecimalForNumber(StringUtils.numberValue(memberValue.getValue()));
+			final BigDecimal val = bigDecimalForNumber(numberValue(memberValue.getValue()));
 			if ( val != null ) {
 				total = total.add(val);
 			}
@@ -206,7 +218,7 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			NodeControlInfo group, List<MemberControlConfig> memberConfigs, Instruction request,
 			Collection<NodeControlProvider> controls) {
 		// every member gets the equal fraction of group sum
-		final BigDecimal value = NumberUtils.bigDecimalForNumber(StringUtils.numberValue(
+		final BigDecimal value = bigDecimalForNumber(numberValue(
 				request.getParameterValue(nonnull(group.getControlId(), "Group control ID"))));
 		if ( value == null ) {
 			// no sum provided, or not a number

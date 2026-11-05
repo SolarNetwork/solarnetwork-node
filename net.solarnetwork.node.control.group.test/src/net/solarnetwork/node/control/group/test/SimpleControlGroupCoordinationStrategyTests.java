@@ -666,7 +666,7 @@ public class SimpleControlGroupCoordinationStrategyTests {
 	@Test
 	public void combine_mode_tie() {
 		for ( NodeControlPropertyType type : EnumSet.of(NodeControlPropertyType.Boolean,
-				NodeControlPropertyType.Percent, NodeControlPropertyType.String) ) {
+				NodeControlPropertyType.String) ) {
 			// GIVEN
 			final var service = new SimpleControlGroupCoordinationStrategy();
 			final var group = group(randomString(), type, "max");
@@ -674,7 +674,7 @@ public class SimpleControlGroupCoordinationStrategyTests {
 					randomString());
 
 			// WHEN
-			final var memberValues = controlValues(type, "max", members, "1", "22", "22", "3", "3");
+			final var memberValues = controlValues(type, "max", members, "1", "3", "3", "22", "22");
 			final NodeControlInfo result = service.combine(group, members, memberValues);
 
 			// THEN
@@ -687,10 +687,75 @@ public class SimpleControlGroupCoordinationStrategyTests {
 				.as("Combined control property name is group property name.")
 				.returns(group.getPropertyName(), from(NodeControlInfo::getPropertyName))
 				.as("%s control values combined to first mode (most frequent) value.", type)
-				.returns("22", from(NodeControlInfo::getValue))
+				.returns("3", from(NodeControlInfo::getValue))
 				;
 			// @formatter:on
 		}
+	}
+
+	@Test
+	public void combine_mode_tie_highest() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), NodeControlPropertyType.Percent, "max");
+		final var members = members(randomString(), randomString(), randomString(), randomString());
+
+		// WHEN
+		final var memberValues = controlValues(NodeControlPropertyType.Percent, "max", members, "1", "1",
+				"2", "2");
+		final NodeControlInfo result = service.combine(group, members, memberValues);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Combined control ID is group ID")
+			.returns(group.getControlId(), from(NodeControlInfo::getControlId))
+			.as("Percent control values combined to highest mode (most frequent) value.")
+			.returns("2", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void combine_mode_tie_highest_twoMembers() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), NodeControlPropertyType.Percent, "max");
+		final var members = members(randomString(), randomString());
+
+		// WHEN
+		final var memberValues = controlValues(NodeControlPropertyType.Percent, "max", members, "50",
+				"100");
+		final NodeControlInfo result = service.combine(group, members, memberValues);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Disagreeing Percent control values combined to highest value, compared as numbers.")
+			.returns("100", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void combine_mode_tie_highest_notNumber() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), NodeControlPropertyType.Percent, "max");
+		final var members = members(randomString(), randomString(), randomString());
+
+		// WHEN
+		final var memberValues = controlValues(NodeControlPropertyType.Percent, "max", members, null,
+				"abc", "50");
+		final NodeControlInfo result = service.combine(group, members, memberValues);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Number value preferred over missing and non-number values in tie.")
+			.returns("50", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
 	}
 
 	@Test
