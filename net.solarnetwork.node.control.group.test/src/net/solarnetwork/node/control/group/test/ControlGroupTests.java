@@ -525,8 +525,8 @@ public class ControlGroupTests {
 			.as("Group instruction declined")
 			.returns(Declined, from(InstructionStatus::getInstructionState))
 			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
-			.as("Message describes failed member")
-			.containsEntry("message", "Member control /test/inv/1/limit -> 50 was not completed (Declined).")
+			.as("Message describes failed member and its exception")
+			.containsEntry("message", "Member control /test/inv/1/limit -> 50 was not completed (Declined: Boom).")
 			;
 		// @formatter:on
 	}

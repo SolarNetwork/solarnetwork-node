@@ -27,6 +27,7 @@ import static net.solarnetwork.domain.InstructionStatus.InstructionState.Decline
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Executing;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_DEMAND_BALANCE;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
+import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static net.solarnetwork.node.reactor.InstructionUtils.createSetControlValueLocalInstruction;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
@@ -90,6 +91,12 @@ public class AllOrNothingControlGroupConsensusStrategyTests {
 	private static InstructionExecution execution(String controlId, String value,
 			@Nullable InstructionState state) {
 		return execution(createSetControlValueLocalInstruction(controlId, value), state);
+	}
+
+	private static InstructionExecution execution(String controlId, String value, InstructionState state,
+			Map<String, ?> resultParameters) {
+		final Instruction instr = createSetControlValueLocalInstruction(controlId, value);
+		return new InstructionExecution(instr, createStatus(instr, state, resultParameters));
 	}
 
 	@Test
@@ -178,6 +185,58 @@ public class AllOrNothingControlGroupConsensusStrategyTests {
 	}
 
 	@Test
+	public void evaluate_memberNotCompleted_withCause() {
+		// GIVEN
+		final Instruction req = request();
+		final Map<String, InstructionExecution> results = new LinkedHashMap<>(2);
+		results.put(MEMBER_1_CONTROL_ID, execution(MEMBER_1_CONTROL_ID, "50", Completed));
+		results.put(MEMBER_2_CONTROL_ID, execution(MEMBER_2_CONTROL_ID, "50", Declined,
+				createErrorResultParameters("Boom", null)));
+
+		// WHEN
+		InstructionStatus result = service.evaluate(group(), members(), req, results);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Declined when member declined")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Message includes member result message as cause")
+			.containsOnly(entry("message", "Member control /test/inv/2/limit -> 50 was not completed (Declined: Boom)."))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void evaluate_memberNotCompleted_blankCause() {
+		// GIVEN
+		final Instruction req = request();
+		final Map<String, InstructionExecution> results = new LinkedHashMap<>(2);
+		results.put(MEMBER_1_CONTROL_ID, execution(MEMBER_1_CONTROL_ID, "50", Completed));
+		results.put(MEMBER_2_CONTROL_ID,
+				execution(MEMBER_2_CONTROL_ID, "50", Declined, Map.of("message", " ")));
+
+		// WHEN
+		InstructionStatus result = service.evaluate(group(), members(), req, results);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Declined when member declined")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Blank member result message omitted from message")
+			.containsOnly(entry("message", "Member control /test/inv/2/limit -> 50 was not completed (Declined)."))
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void evaluate_memberExecuting() {
 		// GIVEN
 		final Instruction req = request();
@@ -203,11 +262,12 @@ public class AllOrNothingControlGroupConsensusStrategyTests {
 	}
 
 	@Test
-	public void evaluate_firstFailureReported() {
+	public void evaluate_allFailuresReported() {
 		// GIVEN
 		final Instruction req = request();
 		final Map<String, InstructionExecution> results = new LinkedHashMap<>(2);
-		results.put(MEMBER_1_CONTROL_ID, execution(MEMBER_1_CONTROL_ID, "40", Declined));
+		results.put(MEMBER_1_CONTROL_ID, execution(MEMBER_1_CONTROL_ID, "40", Declined,
+				createErrorResultParameters("Boom", null)));
 		results.put(MEMBER_2_CONTROL_ID, execution(MEMBER_2_CONTROL_ID, "60", null));
 
 		// WHEN
@@ -221,8 +281,10 @@ public class AllOrNothingControlGroupConsensusStrategyTests {
 			.as("Declined when members fail")
 			.returns(Declined, from(InstructionStatus::getInstructionState))
 			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
-			.as("Message describes first failed member")
-			.containsOnly(entry("message", "Member control /test/inv/1/limit -> 40 was not completed (Declined)."))
+			.as("Message describes every failed member, in member order")
+			.containsOnly(entry("message",
+					"Member control /test/inv/1/limit -> 40 was not completed (Declined: Boom). "
+					+ "Member control /test/inv/2/limit -> 60 was not handled."))
 			;
 		// @formatter:on
 	}
