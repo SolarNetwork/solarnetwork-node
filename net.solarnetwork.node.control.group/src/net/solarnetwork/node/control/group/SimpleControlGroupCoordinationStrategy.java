@@ -54,8 +54,10 @@ import net.solarnetwork.util.StringUtils;
  * This strategy implements the following logic: for <b>Float</b> and
  * <b>Integer</b> control types the group control value is treated as a sum
  * total and each member receives an equal portion of that total. Some small
- * variation in the portion size can occur due to rounding. For all other types
- * the group value is passed through to the members as-is.
+ * variation in the portion size can occur due to rounding. For <b>Integer</b>
+ * the total is first rounded down to a whole number, so that every portion is a
+ * whole number. For all other types the group value is passed through to the
+ * members as-is.
  * </p>
  *
  * <p>
@@ -203,12 +205,18 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			NodeControlInfo group, List<MemberControlConfig> memberConfigs, Instruction request,
 			Collection<NodeControlProvider> controls) {
 		// every member gets the equal fraction of group sum
-		final BigDecimal sum = NumberUtils.bigDecimalForNumber(StringUtils.numberValue(
+		final BigDecimal value = NumberUtils.bigDecimalForNumber(StringUtils.numberValue(
 				request.getParameterValue(nonnull(group.getControlId(), "Group control ID"))));
-		if ( sum == null ) {
+		if ( value == null ) {
 			// no sum provided, or not a number
 			return null;
 		}
+
+		// for Integer type round down to a whole number, so the allocations are whole numbers
+		// that do not add up to more than the requested value
+		final BigDecimal sum = (type == NodeControlPropertyType.Integer
+				? value.setScale(0, RoundingMode.DOWN)
+				: value);
 		final Map<String, Instruction> result = new LinkedHashMap<>(memberConfigs.size());
 		final List<String> controlIds = new ArrayList<>(memberConfigs.size());
 		for ( MemberControlConfig memberConfig : memberConfigs ) {

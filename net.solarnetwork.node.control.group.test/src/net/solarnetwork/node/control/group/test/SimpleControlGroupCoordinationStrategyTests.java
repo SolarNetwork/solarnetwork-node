@@ -421,6 +421,39 @@ public class SimpleControlGroupCoordinationStrategyTests {
 	}
 
 	@Test
+	public void distribute_SetControlParameter_Integer_fractionalValue() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), Integer, "amount");
+		final var members = members(randomString(), randomString());
+
+		// WHEN
+		final var req = createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, group.getControlId(),
+				"99.5");
+		final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Instructions generated for controls based on member configurations.")
+			.containsOnlyKeys(
+					  members.get(0).controlId()
+					, members.get(1).controlId())
+			.satisfies(m -> {
+				then(m.get(members.get(0).controlId()))
+					.as("Instruction 0 has single parameter for member control ID -> floor(target)/2 (rounded down)")
+					.returns("49", from(in -> in.getParameterValue(members.get(0).controlId())))
+					;
+				then(m.get(members.get(1).controlId()))
+					.as("Instruction 1 has single parameter for member control ID -> floor(target)/2 (remaining, whole number)")
+					.returns("50", from(in -> in.getParameterValue(members.get(1).controlId())))
+					;
+			})
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void distribute_SetControlParameter_Percent_invalidMembersSkipped() {
 		// GIVEN
 		final var service = new SimpleControlGroupCoordinationStrategy();
