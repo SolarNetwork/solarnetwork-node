@@ -64,9 +64,10 @@ import net.solarnetwork.util.NumberUtils;
  *
  * <p>
  * When combining member values into a group value, <b>Float</b> and
- * <b>Integer</b> member values are summed. For all other types the most common
- * member value is used. If more than one value is the most common, the highest
- * of those values is used for <b>Percent</b>, and the first one otherwise.
+ * <b>Integer</b> member values are summed, and the group has no value if no
+ * member value is a number. For all other types the most common member value is
+ * used. If more than one value is the most common, the highest of those values
+ * is used for <b>Percent</b>, and the first one otherwise.
  * </p>
  *
  * <p>
@@ -131,12 +132,16 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 
 	private NodeControlInfo combineSum(NodeControlPropertyType type, NodeControlInfo group,
 			List<MemberControlConfig> memberConfigs, Collection<NodeControlInfo> values) {
-		BigDecimal total = BigDecimal.ZERO;
+		BigDecimal total = null;
 		for ( NodeControlInfo memberValue : values ) {
 			final BigDecimal val = bigDecimalForNumber(numberValue(memberValue.getValue()));
 			if ( val != null ) {
-				total = total.add(val);
+				total = (total != null ? total.add(val) : val);
 			}
+		}
+		if ( total == null ) {
+			// no member values to sum
+			return groupValue(group, null);
 		}
 		if ( type == NodeControlPropertyType.Integer ) {
 			total = total.setScale(0, RoundingMode.UP);
