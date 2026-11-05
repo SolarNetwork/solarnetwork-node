@@ -210,8 +210,10 @@ public class ControlGroup extends BaseIdentifiable
 			return null;
 		} else if ( controlReadOnly ) {
 			return createStatus(instruction, Declined,
-					Map.of("message", messageSource().getMessage("error.update.controlReadOnly", null,
-							"Control is read only.", Locale.getDefault())));
+					createErrorResultParameters(
+							messageSource().getMessage("error.update.controlReadOnly", null,
+									"Control is read only.", Locale.getDefault()),
+							null));
 		}
 
 		final NodeControlInfo group = groupInfo(controlId, null);
@@ -223,17 +225,18 @@ public class ControlGroup extends BaseIdentifiable
 					instruction, controls);
 			if ( instructions == null ) {
 				return createStatus(instruction, Declined,
-						Map.of("message", messageSource().getMessage("error.update.notDistributed", null,
-								"Update was not distributed.", Locale.getDefault())));
+						createErrorResultParameters(
+								messageSource().getMessage("error.update.notDistributed", null,
+										"Update was not distributed.", Locale.getDefault()),
+								null));
 			}
 
 			final InstructionExecutionService exec = service(getInstructionService());
 			if ( exec == null ) {
-				return createStatus(instruction, Declined,
-						Map.of("message",
-								messageSource().getMessage("error.update.noExecutionService", null,
-										"No InstructionExecutionService available.",
-										Locale.getDefault())));
+				return createStatus(instruction, Declined, createErrorResultParameters(
+						messageSource().getMessage("error.update.noExecutionService", null,
+								"No InstructionExecutionService available.", Locale.getDefault()),
+						null));
 			}
 
 			final Map<String, InstructionExecution> memberStatuses = new LinkedHashMap<>(
@@ -258,10 +261,9 @@ public class ControlGroup extends BaseIdentifiable
 			log.error("Control group [{}] error processing instruction {}: {}", controlId,
 					instruction.getIdentifier(), e.getMessage(), e);
 			return createStatus(instruction, Declined,
-					Map.of("message",
-							messageSource().getMessage("error.update.exception",
-									new Object[] { e.getMessage() }, "Exception while processing.",
-									Locale.getDefault())));
+					createErrorResultParameters(messageSource().getMessage("error.update.exception",
+							new Object[] { e.getMessage() }, "Exception while processing.",
+							Locale.getDefault()), null));
 		}
 	}
 
