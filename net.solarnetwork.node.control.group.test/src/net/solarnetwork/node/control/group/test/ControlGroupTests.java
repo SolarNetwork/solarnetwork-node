@@ -32,6 +32,7 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static org.assertj.core.api.BDDAssertions.and;
 import static org.assertj.core.api.BDDAssertions.entry;
 import static org.assertj.core.api.BDDAssertions.from;
+import static org.assertj.core.api.BDDAssertions.tuple;
 import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.assertj.core.api.InstanceOfAssertFactories.map;
 import static org.assertj.core.api.InstanceOfAssertFactories.type;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.times;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,6 +131,9 @@ public class ControlGroupTests {
 
 	@Captor
 	private ArgumentCaptor<Map<String, InstructionExecution>> resultsCaptor;
+
+	@Captor
+	private ArgumentCaptor<Collection<NodeControlInfo>> valuesCaptor;
 
 	private InstantSource clock;
 	private List<NodeControlProvider> controls;
@@ -397,6 +402,65 @@ public class ControlGroupTests {
 	}
 
 	@Test
+	public void processInstruction_changedEvent() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(eventAdmin).should().postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getValue())
+			.as("Control info changed event posted")
+			.returns(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, from(Event::getTopic))
+			.extracting(e -> e.getProperty(DatumEvents.DATUM_PROPERTY), type(SimpleNodeControlInfoDatum.class))
+			.as("Event datum control ID is group control ID")
+			.returns(GROUP_CONTROL_ID, from(NodeControlInfo::getControlId))
+			.as("Event datum control type is group control type")
+			.returns(NodeControlPropertyType.Percent, from(NodeControlInfo::getType))
+			.as("Event datum value is updated group value")
+			.returns("50", from(NodeControlInfo::getValue))
+			.as("Event datum timestamp from clock")
+			.returns(clock.instant(), from(SimpleNodeControlInfoDatum::getTimestamp))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_changedEvent_integer() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Integer);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, GROUP_CONTROL_ID,
+				"99.5");
+		service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(eventAdmin).should().postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getValue())
+			.as("Control info changed event posted")
+			.returns(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, from(Event::getTopic))
+			.extracting(e -> e.getProperty(DatumEvents.DATUM_PROPERTY), type(SimpleNodeControlInfoDatum.class))
+			.as("Event datum value is total of member values, not requested value")
+			.returns("99", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void processInstruction_setControlParameter_float() {
 		// GIVEN
 		service.setControlPropertyType(NodeControlPropertyType.Float);
@@ -514,6 +578,7 @@ public class ControlGroupTests {
 			.containsEntry("message", "Member control /test/inv/1/limit -> 50 was not completed (Declined).")
 			;
 		// @formatter:on
+		then(eventAdmin).shouldHaveNoInteractions();
 	}
 
 	@Test
@@ -737,6 +802,10 @@ public class ControlGroupTests {
 		final InstructionStatus groupStatus = createStatus(instr, Completed);
 		given(consensusStrategy.evaluate(any(), any(), same(instr), any())).willReturn(groupStatus);
 
+		final NodeControlInfo groupValue = controlInfo(GROUP_CONTROL_ID, NodeControlPropertyType.Percent,
+				"40");
+		given(coordinationStrategy.combine(any(), any(), any())).willReturn(groupValue);
+
 		// WHEN
 		InstructionStatus result = service.processInstruction(instr);
 
@@ -763,6 +832,21 @@ public class ControlGroupTests {
 		and.then(resultsCaptor.getValue())
 			.as("Distributed instruction results provided to consensus strategy")
 			.containsExactly(entry(MEMBER_1_CONTROL_ID, new InstructionExecution(memberInstr, memberStatus)))
+			;
+		then(coordinationStrategy).should().combine(same(groupCaptor.getValue()),
+				same(membersCaptor.getValue()), valuesCaptor.capture());
+		and.then(valuesCaptor.getValue())
+			.as("Distributed member values provided to coordination strategy to combine")
+			.extracting(NodeControlInfo::getControlId, NodeControlInfo::getValue)
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "40"))
+			;
+		then(eventAdmin).should().postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getValue())
+			.as("Control info changed event posted")
+			.returns(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, from(Event::getTopic))
+			.extracting(e -> e.getProperty(DatumEvents.DATUM_PROPERTY), type(SimpleNodeControlInfoDatum.class))
+			.as("Event datum value is combined value from coordination strategy")
+			.returns("40", from(NodeControlInfo::getValue))
 			;
 		and.then(result)
 			.as("Consensus strategy result returned")

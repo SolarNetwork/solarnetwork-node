@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.group;
 
+import static net.solarnetwork.domain.InstructionStatus.InstructionState.Completed;
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Declined;
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
@@ -81,6 +82,14 @@ import net.solarnetwork.util.StringUtils;
  * together as if they were a single switch, or a group of devices need to
  * "split" some control value, such as a site-wide active power constraint split
  * across multiple inverters.
+ * </p>
+ *
+ * <p>
+ * When an update to the group completes, a
+ * {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CHANGED} event is posted.
+ * The event's value is what the coordination strategy combines from the values
+ * sent to the members, which can differ from the requested value because of
+ * rounding.
  * </p>
  *
  * @author matt
@@ -258,7 +267,12 @@ public class ControlGroup extends BaseIdentifiable
 				}
 				memberStatuses.put(memberControlId, new InstructionExecution(instr, status));
 			}
-			return consensStrategy.evaluate(group, members, instruction, memberStatuses);
+			final InstructionStatus result = consensStrategy.evaluate(group, members, instruction,
+					memberStatuses);
+			if ( result != null && result.getInstructionState() == Completed ) {
+				postControlChangedEvent(coordStrategy, group, members, instructions);
+			}
+			return result;
 		} catch ( Exception e ) {
 			log.error("Control group [{}] error processing instruction {}: {}", controlId,
 					instruction.getIdentifier(), e.getMessage(), e);
@@ -359,6 +373,31 @@ public class ControlGroup extends BaseIdentifiable
 		Event event = DatumEvents.datumEvent(topic, info);
 		log.debug("Posting [{}] event with {}", topic, info);
 		admin.postEvent(event);
+	}
+
+	private void postControlChangedEvent(ControlGroupCoordinationStrategy strategy,
+			NodeControlInfo group, List<MemberControlConfig> members,
+			Map<String, Instruction> instructions) {
+		try {
+			// combine the distributed member values, so the group value reflects what was applied
+			final List<NodeControlInfo> memberValues = new ArrayList<>(instructions.size());
+			for ( Entry<String, Instruction> e : instructions.entrySet() ) {
+				final String memberControlId = e.getKey();
+				// @formatter:off
+				memberValues.add(BasicNodeControlInfo.builder()
+						.withControlId(memberControlId)
+						.withValue(e.getValue().getParameterValue(memberControlId))
+						.build());
+				// @formatter:on
+			}
+			final NodeControlInfo info = strategy.combine(group, members, memberValues);
+			postControlEvent(new SimpleNodeControlInfoDatum(info, clock.instant()),
+					NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
+		} catch ( Exception ex ) {
+			// the update itself succeeded, so do not fail because of the event
+			log.warn("Control group [{}] error posting control changed event: {}", group.getControlId(),
+					ex.getMessage(), ex);
+		}
 	}
 
 	// Settings
