@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Control Group Test
+Bundle-SymbolicName: net.solarnetwork.node.control.group.test
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Fragment-Host: net.solarnetwork.node.control.group;bundle-version="[1.0.0,2.0.0)"
+Automatic-Module-Name: net.solarnetwork.node.control.group.test
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: 
+ net.bytebuddy;version="[1.18,2.0)",
+ net.bytebuddy.agent;version="[1.18,2.0)",
+ net.solarnetwork.node.test;version="[2.0,3.0)",
+ net.solarnetwork.test;version="[1.9,2.0)",
+ org.assertj.core.api;version="[3.27,4.0)",
+ org.junit;version="[4.5,5.0)",
+ org.junit.runner;version="[4.5,5.0)",
+ org.mockito;version="[5.23,6.0)",
+ org.mockito.junit;version="[5.23,6.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"
