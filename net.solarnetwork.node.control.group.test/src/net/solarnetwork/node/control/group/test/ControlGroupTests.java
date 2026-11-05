@@ -493,12 +493,52 @@ public class ControlGroupTests {
 	}
 
 	@Test
-	public void processInstruction_exception() {
+	public void processInstruction_memberException() {
 		// GIVEN
 		service.setControlPropertyType(NodeControlPropertyType.Percent);
 		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
 
-		given(instructionService.executeInstruction(any())).willThrow(new RuntimeException("Boom"));
+		// member 1 handler throws an exception
+		given(instructionService.executeInstruction(any())).willAnswer(invocation -> {
+			Instruction memberInstr = invocation.getArgument(0);
+			if ( memberInstr.getParameterValue(MEMBER_1_CONTROL_ID) != null ) {
+				throw new RuntimeException("Boom");
+			}
+			return createStatus(memberInstr, Completed);
+		});
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Remaining members still updated after a member throws an exception")
+			.extracting(i -> i.getParameterNames().iterator().next())
+			.containsExactly(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID)
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction declined")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Message describes failed member")
+			.containsEntry("message", "Member control /test/inv/1/limit -> 50 was not completed (Declined).")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_exception() {
+		// GIVEN
+		service = newControlGroup(coordinationStrategy, null, instructionService);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		given(coordinationStrategy.distribute(any(), any(), any(), any()))
+				.willThrow(new RuntimeException("Boom"));
 
 		// WHEN
 		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
@@ -516,6 +556,7 @@ public class ControlGroupTests {
 			.containsEntry("message", "An exception occurred updating the member controls: Boom")
 			;
 		// @formatter:on
+		then(instructionService).shouldHaveNoInteractions();
 	}
 
 	@Test

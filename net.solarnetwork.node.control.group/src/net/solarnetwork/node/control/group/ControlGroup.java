@@ -23,6 +23,7 @@
 package net.solarnetwork.node.control.group;
 
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Declined;
+import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
@@ -240,12 +241,22 @@ public class ControlGroup extends BaseIdentifiable
 			for ( Entry<String, Instruction> e : instructions.entrySet() ) {
 				final String memberControlId = e.getKey();
 				final Instruction instr = e.getValue();
-				//final String memberVal = instr.getParameterValue(memberControlId);
-				final InstructionStatus status = exec.executeInstruction(instr);
+				InstructionStatus status;
+				try {
+					status = exec.executeInstruction(instr);
+				} catch ( Exception ex ) {
+					// treat as declined so the remaining members are still updated
+					log.warn("Control group [{}] error updating member control [{}]: {}", controlId,
+							memberControlId, ex.getMessage());
+					status = createStatus(instr, Declined,
+							createErrorResultParameters(ex.getMessage(), null));
+				}
 				memberStatuses.put(memberControlId, new InstructionExecution(instr, status));
 			}
 			return consensStrategy.evaluate(group, members, instruction, memberStatuses);
 		} catch ( Exception e ) {
+			log.error("Control group [{}] error processing instruction {}: {}", controlId,
+					instruction.getIdentifier(), e.getMessage(), e);
 			return createStatus(instruction, Declined,
 					Map.of("message",
 							messageSource().getMessage("error.update.exception",
