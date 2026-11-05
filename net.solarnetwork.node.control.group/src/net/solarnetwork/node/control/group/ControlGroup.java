@@ -297,7 +297,7 @@ public class ControlGroup extends BaseIdentifiable
 
 	@Override
 	public List<String> getAvailableControlIds() {
-		final String controlId = getControlId();
+		final String controlId = controlId(null);
 		return controlId == null ? Collections.emptyList() : Collections.singletonList(controlId);
 	}
 

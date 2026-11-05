@@ -72,6 +72,7 @@ import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.settings.GroupSettingSpecifier;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
@@ -110,6 +111,9 @@ public class ControlGroupTests {
 
 	@Mock
 	private ControlGroupConsensusStrategy consensusStrategy;
+
+	@Mock
+	private PlaceholderService placeholderService;
 
 	@Captor
 	private ArgumentCaptor<Instruction> instructionCaptor;
@@ -743,6 +747,36 @@ public class ControlGroupTests {
 		and.then(service.getAvailableControlIds())
 			.as("No control ID available when none configured")
 			.isEmpty()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void getAvailableControlIds_placeholders() {
+		// GIVEN
+		service.setControlId("/test/{site}/limit");
+		service.setPlaceholderService(new StaticOptionalService<>(placeholderService));
+
+		given(placeholderService.resolvePlaceholders(any(), any())).willAnswer(invocation -> {
+			String s = invocation.getArgument(0);
+			return s.replace("{site}", "site");
+		});
+
+		// WHEN
+		List<String> result = service.getAvailableControlIds();
+		NodeControlInfo info = service.getCurrentControlInfo(result.get(0));
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Group control ID available with placeholders resolved")
+			.containsExactly(GROUP_CONTROL_ID)
+			;
+		and.then(info)
+			.as("Group info available from advertised control ID")
+			.isNotNull()
+			.as("Control ID is resolved group control ID")
+			.returns(GROUP_CONTROL_ID, from(NodeControlInfo::getControlId))
 			;
 		// @formatter:on
 	}
