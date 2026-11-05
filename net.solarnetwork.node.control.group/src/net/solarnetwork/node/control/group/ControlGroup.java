@@ -149,7 +149,9 @@ public class ControlGroup extends BaseIdentifiable
 	 * Constructor.
 	 *
 	 * @param coordinationStrategy
-	 *        the coordinationStrategy
+	 *        the coordination strategy
+	 * @param consensusStrategy
+	 *        the consensus strategy
 	 * @param controls
 	 *        all available controls
 	 * @param instructionService
@@ -749,7 +751,7 @@ public class ControlGroup extends BaseIdentifiable
 	 *
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link ControlMemberConfig} instances.
+	 * {@link MemberControlConfig} instances.
 	 * </p>
 	 *
 	 * @param count

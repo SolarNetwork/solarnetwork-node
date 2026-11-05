@@ -47,8 +47,8 @@ public interface ControlGroupCoordinationStrategy {
 	 *        {@code value} is not expected to be available
 	 * @param memberConfigs
 	 *        member configurations
-	 * @param controls
-	 *        the set of controls to combine
+	 * @param values
+	 *        the member control values to combine
 	 * @return the combined control value
 	 */
 	NodeControlInfo combine(NodeControlInfo group, List<MemberControlConfig> memberConfigs,
@@ -65,10 +65,10 @@ public interface ControlGroupCoordinationStrategy {
 	 *        member configurations
 	 * @param request
 	 *        the control instruction
+	 * @param controls
+	 *        all available controls
 	 * @return the instructions to execute, grouped by member control ID, or
-	 *         {@code null} if the request was not handled; a {@code null} map
-	 *         value signals that the request was handled but no further
-	 *         instructions are necessary
+	 *         {@code null} if the request was not handled
 	 */
 	@Nullable
 	Map<String, Instruction> distribute(NodeControlInfo group, List<MemberControlConfig> memberConfigs,

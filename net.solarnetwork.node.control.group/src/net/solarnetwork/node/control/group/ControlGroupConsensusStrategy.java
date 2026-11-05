@@ -51,8 +51,6 @@ public interface ControlGroupConsensusStrategy {
 	 * @param results
 	 *        the member results, with control ID keys to associated instruction
 	 *        status
-	 * @param messageSource
-	 *        a message source to resolve messages
 	 * @return the group instruction status consensus
 	 */
 	@Nullable
