@@ -46,6 +46,7 @@ import java.time.InstantSource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
@@ -208,6 +209,37 @@ public class ControlGroupTests {
 		and.then(service.handlesTopic(TOPIC_SET_CONTROL_PARAMETER))
 			.as("Default topic not handled when not configured")
 			.isFalse()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void handlesTopic_null() {
+		// @formatter:off
+		and.then(service.handlesTopic(null))
+			.as("Null topic not handled by default")
+			.isFalse()
+			;
+		// @formatter:on
+
+		// GIVEN
+		service.setInstructionTopics(Set.of("Foo"));
+
+		// THEN
+		// @formatter:off
+		and.then(service.handlesTopic(null))
+			.as("Null topic not handled when configured with immutable set")
+			.isFalse()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void instructionTopicsValue_defaults() {
+		// @formatter:off
+		and.then(service.getInstructionTopicsValue())
+			.as("Default topics listed in declared order")
+			.isEqualTo(TOPIC_SET_CONTROL_PARAMETER + "," + TOPIC_DEMAND_BALANCE)
 			;
 		// @formatter:on
 	}

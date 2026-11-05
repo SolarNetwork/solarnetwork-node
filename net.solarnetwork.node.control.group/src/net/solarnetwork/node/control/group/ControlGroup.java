@@ -96,8 +96,8 @@ public class ControlGroup extends BaseIdentifiable
 	public static final NodeControlPropertyType DEFAULT_CONTROL_PROPERTY_TYPE = NodeControlPropertyType.Float;
 
 	/** The {@code instructionTopics} property default value. */
-	public static final Set<String> DEFAULT_INSTRUCTION_TOPICS = Set.of(TOPIC_SET_CONTROL_PARAMETER,
-			TOPIC_DEMAND_BALANCE);
+	public static final Set<String> DEFAULT_INSTRUCTION_TOPICS = Collections.unmodifiableSet(
+			new LinkedHashSet<>(List.of(TOPIC_SET_CONTROL_PARAMETER, TOPIC_DEMAND_BALANCE)));
 
 	private final InstantSource clock;
 	private final OptionalFilterableService<ControlGroupCoordinationStrategy> coordinationStrategy;
@@ -195,7 +195,7 @@ public class ControlGroup extends BaseIdentifiable
 
 	@Override
 	public boolean handlesTopic(@Nullable String topic) {
-		return instructionTopics.contains(topic);
+		return (topic != null && instructionTopics.contains(topic));
 	}
 
 	@Override
