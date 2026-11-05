@@ -547,6 +547,57 @@ public class ControlGroupTests {
 	}
 
 	@Test
+	public void processInstruction_noMembers() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction declined when no members configured")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Message describes undistributed update")
+			.containsEntry("message",
+					"The control update was not handled by the configured coordination strategy.")
+			;
+		// @formatter:on
+		then(instructionService).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void processInstruction_nonNumericValue() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Float);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		// WHEN
+		final Instruction instr = createSetControlValueLocalInstruction(GROUP_CONTROL_ID, "abc");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction declined when value is not a number")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Message describes undistributed update")
+			.containsEntry("message",
+					"The control update was not handled by the configured coordination strategy.")
+			;
+		// @formatter:on
+		then(instructionService).shouldHaveNoInteractions();
+	}
+
+	@Test
 	public void processInstruction_configuredStrategies() {
 		// GIVEN
 		service = newControlGroup(coordinationStrategy, consensusStrategy, instructionService);

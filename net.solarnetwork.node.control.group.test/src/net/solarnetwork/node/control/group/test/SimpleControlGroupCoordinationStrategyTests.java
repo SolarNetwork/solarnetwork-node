@@ -482,6 +482,72 @@ public class SimpleControlGroupCoordinationStrategyTests {
 		// @formatter:on
 	}
 
+	@Test
+	public void distribute_noValidMembers() {
+		for ( NodeControlPropertyType type : NodeControlPropertyType.values() ) {
+			// GIVEN
+			final var service = new SimpleControlGroupCoordinationStrategy();
+			final var group = group(randomString(), type, "amount");
+			final var members = members(null, " ");
+
+			// WHEN
+			final var req = createSetControlValueLocalInstruction(group.getControlId(), 1);
+			final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+			// THEN
+			// @formatter:off
+			then(result)
+				.as("%s instruction not distributed when no valid members configured", type)
+				.isNull()
+				;
+			// @formatter:on
+		}
+	}
+
+	@Test
+	public void distribute_noValue() {
+		for ( NodeControlPropertyType type : NodeControlPropertyType.values() ) {
+			// GIVEN
+			final var service = new SimpleControlGroupCoordinationStrategy();
+			final var group = group(randomString(), type, "amount");
+			final var members = members(randomString(), randomString());
+
+			// WHEN
+			final var req = createSetControlValueLocalInstruction(randomString(), 1);
+			final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+			// THEN
+			// @formatter:off
+			then(result)
+				.as("%s instruction not distributed when no group value provided", type)
+				.isNull()
+				;
+			// @formatter:on
+		}
+	}
+
+	@Test
+	public void distribute_SetControlParameter_nonNumeric() {
+		for ( NodeControlPropertyType type : EnumSet.of(Integer, Float) ) {
+			// GIVEN
+			final var service = new SimpleControlGroupCoordinationStrategy();
+			final var group = group(randomString(), type, "amount");
+			final var members = members(randomString(), randomString());
+
+			// WHEN
+			final var req = createSetControlValueLocalInstruction(group.getControlId(), "abc");
+			final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+			// THEN
+			// @formatter:off
+			then(result)
+				.as("%s instruction not distributed when group value is not a number", type)
+				.isNull()
+				;
+			// @formatter:on
+		}
+	}
+
 	private List<NodeControlInfo> controlValues(NodeControlPropertyType type, String propertyName,
 			List<MemberControlConfig> members, String @Nullable... values) {
 		if ( values == null || members.size() != values.length ) {

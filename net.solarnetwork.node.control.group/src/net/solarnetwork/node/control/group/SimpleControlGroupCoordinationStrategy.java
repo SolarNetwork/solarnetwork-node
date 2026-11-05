@@ -58,6 +58,12 @@ import net.solarnetwork.util.StringUtils;
  * the group value is passed through to the members as-is.
  * </p>
  *
+ * <p>
+ * A request is not handled, so {@code distribute()} returns {@code null}, if it
+ * does not provide a group value, the value is not a number for the
+ * <b>Float</b> and <b>Integer</b> types, or no valid members are configured.
+ * </p>
+ *
  *
  * @author matt
  * @version 1.0
@@ -161,13 +167,14 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 	 *        the members to distribute to
 	 * @param val
 	 *        the value to distribute
-	 * @return the resulting instructions
+	 * @return the resulting instructions, or {@code null} if {@code val} is
+	 *         {@code null} or there are no valid members
 	 */
-	private Map<String, Instruction> distributeValue(List<MemberControlConfig> memberConfigs,
+	private @Nullable Map<String, Instruction> distributeValue(List<MemberControlConfig> memberConfigs,
 			@Nullable String val) {
 		if ( val == null ) {
 			// no value provided
-			return Map.of();
+			return null;
 		}
 		final Map<String, Instruction> result = new LinkedHashMap<>(memberConfigs.size());
 		for ( MemberControlConfig memberConfig : memberConfigs ) {
@@ -177,10 +184,14 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			final String controlId = memberConfig.controlId();
 			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, controlId, val));
 		}
+		if ( result.isEmpty() ) {
+			// no members to distribute to
+			return null;
+		}
 		return result;
 	}
 
-	private Map<String, Instruction> distributePassthrough(NodeControlInfo group,
+	private @Nullable Map<String, Instruction> distributePassthrough(NodeControlInfo group,
 			List<MemberControlConfig> memberConfigs, Instruction request,
 			Collection<NodeControlProvider> controls) {
 		// every member gets same value as group
@@ -188,15 +199,15 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 		return distributeValue(memberConfigs, val);
 	}
 
-	private Map<String, Instruction> distributeSum(NodeControlPropertyType type, NodeControlInfo group,
-			List<MemberControlConfig> memberConfigs, Instruction request,
+	private @Nullable Map<String, Instruction> distributeSum(NodeControlPropertyType type,
+			NodeControlInfo group, List<MemberControlConfig> memberConfigs, Instruction request,
 			Collection<NodeControlProvider> controls) {
 		// every member gets the equal fraction of group sum
 		final BigDecimal sum = NumberUtils.bigDecimalForNumber(StringUtils.numberValue(
 				request.getParameterValue(nonnull(group.getControlId(), "Group control ID"))));
 		if ( sum == null ) {
-			// no sum provided
-			return Map.of();
+			// no sum provided, or not a number
+			return null;
 		}
 		final Map<String, Instruction> result = new LinkedHashMap<>(memberConfigs.size());
 		final List<String> controlIds = new ArrayList<>(memberConfigs.size());
@@ -211,7 +222,7 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 		final int memberCount = controlIds.size();
 		if ( memberCount < 1 ) {
 			// no members to distribute to
-			return Map.of();
+			return null;
 		}
 
 		// for Integer type round allocations to whole integers
