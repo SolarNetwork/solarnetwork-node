@@ -56,8 +56,10 @@ import net.solarnetwork.util.NumberUtils;
  * This strategy implements the following logic: for <b>Float</b> and
  * <b>Integer</b> control types the group control value is treated as a sum
  * total and each member receives an equal portion of that total. Some small
- * variation in the portion size can occur due to rounding. For <b>Integer</b>
- * the total is first rounded down to a whole number, so that every portion is a
+ * variation in the portion size can occur due to rounding. For <b>Float</b>
+ * each portion is rounded down to 9 more decimal places than the total has, and
+ * the last portion receives what remains of the total. For <b>Integer</b> the
+ * total is first rounded down to a whole number, so that every portion is a
  * whole number. For all other types the group value is passed through to the
  * members as-is.
  * </p>
@@ -252,9 +254,9 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			return null;
 		}
 
-		// for Integer type round allocations to whole integers
-		final int scale = (type == NodeControlPropertyType.Integer ? 0
-				: sum.scale() > 0 ? sum.scale() : 9);
+		// for Integer type round allocations to whole integers, otherwise allow 9 more
+		// decimal places than the sum has
+		final int scale = (type == NodeControlPropertyType.Integer ? 0 : Math.max(sum.scale(), 0) + 9);
 
 		final BigDecimal divisor = new BigDecimal(memberCount);
 		BigDecimal remaining = sum;

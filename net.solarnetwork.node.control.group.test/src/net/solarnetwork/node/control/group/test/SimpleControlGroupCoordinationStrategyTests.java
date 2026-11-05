@@ -383,6 +383,76 @@ public class SimpleControlGroupCoordinationStrategyTests {
 	}
 
 	@Test
+	public void distribute_SetControlParameter_Float_decimalThreeWay() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), Float, "amount");
+		final var members = members(randomString(), randomString(), randomString());
+
+		// WHEN
+		final var req = createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, group.getControlId(), "0.5");
+		final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Instructions generated for controls based on member configurations.")
+			.containsOnlyKeys(
+					  members.get(0).controlId()
+					, members.get(1).controlId()
+					, members.get(2).controlId())
+			.satisfies(m -> {
+				then(m.get(members.get(0).controlId()))
+					.as("Instruction 0 has single parameter for member control ID -> target/3 (rounded down, 9 more decimal places than target)")
+					.returns("0.1666666666", from(in -> in.getParameterValue(members.get(0).controlId())))
+					;
+				then(m.get(members.get(1).controlId()))
+					.as("Instruction 1 has single parameter for member control ID -> target/3 (rounded down, 9 more decimal places than target)")
+					.returns("0.1666666666", from(in -> in.getParameterValue(members.get(1).controlId())))
+					;
+				then(m.get(members.get(2).controlId()))
+					.as("Instruction 2 has single parameter for member control ID -> target/3 (remaining)")
+					.returns("0.1666666668", from(in -> in.getParameterValue(members.get(2).controlId())))
+					;
+			})
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void distribute_SetControlParameter_Float_highPrecision() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), Float, "amount");
+		final var members = members(randomString(), randomString());
+
+		// WHEN
+		final var req = createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, group.getControlId(),
+				"1.0000000001");
+		final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Instructions generated for controls based on member configurations.")
+			.containsOnlyKeys(
+					  members.get(0).controlId()
+					, members.get(1).controlId())
+			.satisfies(m -> {
+				then(m.get(members.get(0).controlId()))
+					.as("Instruction 0 has single parameter for member control ID -> target/2 (exact)")
+					.returns("0.50000000005", from(in -> in.getParameterValue(members.get(0).controlId())))
+					;
+				then(m.get(members.get(1).controlId()))
+					.as("Instruction 1 has single parameter for member control ID -> target/2 (remaining, exact)")
+					.returns("0.50000000005", from(in -> in.getParameterValue(members.get(1).controlId())))
+					;
+			})
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void distribute_SetControlParameter_Integer_threeWay() {
 		// GIVEN
 		final var service = new SimpleControlGroupCoordinationStrategy();
