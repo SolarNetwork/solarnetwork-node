@@ -314,7 +314,9 @@ public class ControlGroup extends BaseIdentifiable
 				}
 				if ( memberControlIds.remove(aControlId) ) {
 					NodeControlInfo memberValue = control.getCurrentControlInfo(aControlId);
-					memberValues.add(memberValue);
+					if ( memberValue != null ) {
+						memberValues.add(memberValue);
+					}
 					if ( memberControlIds.isEmpty() ) {
 						break CONTROLS;
 					}

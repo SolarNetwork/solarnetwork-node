@@ -776,6 +776,36 @@ public class ControlGroupTests {
 	}
 
 	@Test
+	public void getCurrentControlInfo_memberValueUnavailable() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+		controls.add(control1);
+		controls.add(control2);
+
+		given(control1.getAvailableControlIds()).willReturn(List.of(MEMBER_1_CONTROL_ID));
+		given(control1.getCurrentControlInfo(MEMBER_1_CONTROL_ID))
+				.willReturn(controlInfo(MEMBER_1_CONTROL_ID, NodeControlPropertyType.Percent, "50"));
+
+		// member 2 cannot be read, e.g. device offline
+		given(control2.getAvailableControlIds()).willReturn(List.of(MEMBER_2_CONTROL_ID));
+		given(control2.getCurrentControlInfo(MEMBER_2_CONTROL_ID)).willReturn(null);
+
+		// WHEN
+		NodeControlInfo result = service.getCurrentControlInfo(GROUP_CONTROL_ID);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Result provided")
+			.isNotNull()
+			.as("Value combined from readable member values")
+			.returns("50", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
 	public void controlPropertyTypeKey() {
 		// WHEN
 		service.setControlPropertyTypeKey("p");
