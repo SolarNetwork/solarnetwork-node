@@ -220,11 +220,8 @@ public class ControlGroup extends BaseIdentifiable
 		if ( paramValue == null ) {
 			return null;
 		} else if ( controlReadOnly ) {
-			return createStatus(instruction, Declined,
-					createErrorResultParameters(
-							messageSource().getMessage("error.update.controlReadOnly", null,
-									"Control is read only.", Locale.getDefault()),
-							null));
+			return declined(instruction, controlId, paramValue, messageSource().getMessage(
+					"error.update.controlReadOnly", null, "Control is read only.", Locale.getDefault()));
 		}
 
 		final NodeControlInfo group = groupInfo(controlId, null);
@@ -237,19 +234,16 @@ public class ControlGroup extends BaseIdentifiable
 			final Map<String, Instruction> instructions = coordStrategy.distribute(group, members,
 					instruction, controls);
 			if ( instructions == null ) {
-				return createStatus(instruction, Declined,
-						createErrorResultParameters(
-								messageSource().getMessage("error.update.notDistributed", null,
-										"Update was not distributed.", Locale.getDefault()),
-								null));
+				return declined(instruction, controlId, paramValue,
+						messageSource().getMessage("error.update.notDistributed", null,
+								"Update was not distributed.", Locale.getDefault()));
 			}
 
 			final InstructionExecutionService exec = service(getInstructionService());
 			if ( exec == null ) {
-				return createStatus(instruction, Declined, createErrorResultParameters(
+				return declined(instruction, controlId, paramValue,
 						messageSource().getMessage("error.update.noExecutionService", null,
-								"No InstructionExecutionService available.", Locale.getDefault()),
-						null));
+								"No InstructionExecutionService available.", Locale.getDefault()));
 			}
 
 			final Map<String, InstructionExecution> memberStatuses = new LinkedHashMap<>(
@@ -273,6 +267,10 @@ public class ControlGroup extends BaseIdentifiable
 					memberStatuses);
 			if ( result != null && result.getInstructionState() == Completed ) {
 				postControlChangedEvent(coordStrategy, group, members, instructions);
+			} else if ( result != null && result.getInstructionState() == Declined ) {
+				final Map<String, ?> params = result.getResultParameters();
+				log.warn("Control group [{}] update to [{}] declined: {}", controlId, paramValue,
+						params != null ? params.get(InstructionStatus.MESSAGE_RESULT_PARAM) : null);
 			}
 			return result;
 		} catch ( Exception e ) {
@@ -283,6 +281,12 @@ public class ControlGroup extends BaseIdentifiable
 							new Object[] { e.getMessage() }, "Exception while processing.",
 							Locale.getDefault()), null));
 		}
+	}
+
+	private InstructionStatus declined(Instruction instruction, String controlId, String value,
+			@Nullable String message) {
+		log.warn("Control group [{}] update to [{}] declined: {}", controlId, value, message);
+		return createStatus(instruction, Declined, createErrorResultParameters(message, null));
 	}
 
 	private @Nullable String controlId(@Nullable Map<String, ?> parameters) {
