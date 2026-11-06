@@ -255,9 +255,7 @@ public class ControlGroup extends BaseIdentifiable
 							new Object[] { consensStrategyUid },
 							"Configured Consensus Strategy [{0}] not available.", Locale.getDefault()));
 		}
-		// exclude the group itself as a member, to avoid recursing back into this group
-		final List<MemberControlConfig> members = memberConfigs().stream()
-				.filter(m -> !controlId.equals(m.getControlId())).toList();
+		final List<MemberControlConfig> members = resolvedMemberConfigs(controlId);
 		try {
 			final Map<String, Instruction> instructions = coordStrategy.distribute(group, members,
 					instruction, controls);
@@ -352,22 +350,16 @@ public class ControlGroup extends BaseIdentifiable
 		if ( coordStrategy == null ) {
 			return null;
 		}
-		final List<MemberControlConfig> members = memberConfigs();
+		final List<MemberControlConfig> members = resolvedMemberConfigs(controlId);
 
 		final Set<String> memberControlIds = new LinkedHashSet<>(members.size());
 		for ( MemberControlConfig member : members ) {
-			if ( member.isValid() ) {
-				memberControlIds.add(resolvePlaceholders(member.controlId()));
-			}
+			memberControlIds.add(member.controlId());
 		}
 
 		final List<NodeControlInfo> memberValues = new ArrayList<>(members.size());
 		CONTROLS: for ( NodeControlProvider control : controls ) {
 			for ( String aControlId : control.getAvailableControlIds() ) {
-				if ( controlId.equals(aControlId) ) {
-					// don't recurse into group value
-					continue;
-				}
 				if ( memberControlIds.remove(aControlId) ) {
 					NodeControlInfo memberValue = control.getCurrentControlInfo(aControlId);
 					if ( memberValue != null ) {
@@ -388,9 +380,40 @@ public class ControlGroup extends BaseIdentifiable
 		return result;
 	}
 
-	private List<MemberControlConfig> memberConfigs() {
-		var configs = getMemberConfigs();
-		return (configs != null ? List.of(configs) : List.of());
+	/**
+	 * Get the valid member configurations, with placeholders resolved in their
+	 * control IDs.
+	 *
+	 * <p>
+	 * Strategies are given these configurations, so they do not need to resolve
+	 * placeholders themselves. A configuration is only copied if resolving
+	 * placeholders changes its control ID.
+	 * </p>
+	 *
+	 * @param groupControlId
+	 *        the resolved group control ID; a member that resolves to this is
+	 *        excluded, to avoid recursing back into this group
+	 * @return the member configurations, never {@code null}
+	 */
+	private List<MemberControlConfig> resolvedMemberConfigs(String groupControlId) {
+		final MemberControlConfig[] configs = getMemberConfigs();
+		if ( configs == null ) {
+			return List.of();
+		}
+		final List<MemberControlConfig> result = new ArrayList<>(configs.length);
+		for ( MemberControlConfig config : configs ) {
+			if ( !config.isValid() ) {
+				continue;
+			}
+			final String memberControlId = config.controlId();
+			final String resolvedControlId = nonEmptyString(resolvePlaceholders(memberControlId));
+			if ( resolvedControlId == null || groupControlId.equals(resolvedControlId) ) {
+				continue;
+			}
+			result.add(resolvedControlId.equals(memberControlId) ? config
+					: config.withControlId(resolvedControlId));
+		}
+		return result;
 	}
 
 	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {

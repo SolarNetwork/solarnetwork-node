@@ -40,7 +40,6 @@
 	<service interface="net.solarnetwork.node.control.group.ControlGroupCoordinationStrategy">
 		<bean class="net.solarnetwork.node.control.group.SimpleControlGroupCoordinationStrategy">
 			<property name="displayName" value="Simple Control Group Coordination Strategy"/>
-			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</service>
 
@@ -49,7 +48,6 @@
 	<service interface="net.solarnetwork.node.control.group.ControlGroupConsensusStrategy">
 		<bean class="net.solarnetwork.node.control.group.AllOrNothingControlGroupConsensusStrategy">
 			<property name="displayName" value="All-or-nothing Control Group Consensus Strategy"/>
-			<property name="placeholderService" ref="placeholderService"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 					<property name="basenames">

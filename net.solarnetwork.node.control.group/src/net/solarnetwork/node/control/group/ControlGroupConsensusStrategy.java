@@ -32,6 +32,12 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 /**
  * API for handling control group member state change consensus.
  *
+ * <p>
+ * The member configurations passed to this API include only the valid members
+ * of the group, with any placeholders in their control IDs already resolved. A
+ * member that resolves to the group's own control ID is not included.
+ * </p>
+ *
  * @author matt
  * @version 1.0
  */
@@ -45,7 +51,7 @@ public interface ControlGroupConsensusStrategy {
 	 *        used for information about the control style only, and the
 	 *        {@code value} is not expected to be available
 	 * @param memberConfigs
-	 *        member configurations
+	 *        the member configurations, with control ID placeholders resolved
 	 * @param request
 	 *        the group control instruction
 	 * @param results

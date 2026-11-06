@@ -161,6 +161,23 @@ public class MemberControlConfig {
 	}
 
 	/**
+	 * Create a copy of this configuration with a different control ID.
+	 *
+	 * <p>
+	 * The copy shares the {@code parameters} map of this configuration.
+	 * </p>
+	 *
+	 * @param controlId
+	 *        the control ID to use
+	 * @return the new configuration
+	 */
+	public MemberControlConfig withControlId(@Nullable String controlId) {
+		final MemberControlConfig result = new MemberControlConfig(controlId);
+		result.setParameters(parameters);
+		return result;
+	}
+
+	/**
 	 * Get the optional parameters.
 	 *
 	 * @return the parameters

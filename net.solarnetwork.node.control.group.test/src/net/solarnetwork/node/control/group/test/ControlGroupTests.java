@@ -547,6 +547,252 @@ public class ControlGroupTests {
 		// @formatter:on
 	}
 
+	/**
+	 * Configure the service with a placeholder service that resolves
+	 * {@code {env}} to {@code test} and {@code {site}} to {@code site}.
+	 *
+	 * <p>
+	 * Only the group is given the placeholder service, as the strategies are
+	 * given member configurations with placeholders already resolved.
+	 * </p>
+	 */
+	private void givenPlaceholderControlGroup() {
+		given(placeholderService.resolvePlaceholders(any(), any())).willAnswer(invocation -> {
+			String s = invocation.getArgument(0);
+			return (s != null ? s.replace("{env}", "test").replace("{site}", "site") : null);
+		});
+		service.setPlaceholderService(new StaticOptionalService<>(placeholderService));
+	}
+
+	private static String memberControlId(Instruction instr) {
+		return instr.getParameterNames().iterator().next();
+	}
+
+	@Test
+	public void processInstruction_groupPlaceholders() {
+		// GIVEN
+		givenPlaceholderControlGroup();
+		service.setControlId("/{env}/{site}/limit");
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Member instructions executed for instruction to resolved group control ID")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "50"), tuple(MEMBER_2_CONTROL_ID, "50"))
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			;
+		then(eventAdmin).should().postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getValue())
+			.as("Control info changed event posted")
+			.returns(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, from(Event::getTopic))
+			.extracting(e -> e.getProperty(DatumEvents.DATUM_PROPERTY), type(SimpleNodeControlInfoDatum.class))
+			.as("Event datum control ID is resolved group control ID")
+			.returns(GROUP_CONTROL_ID, from(NodeControlInfo::getControlId))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_groupPlaceholders_unresolvedControlId() {
+		// GIVEN
+		givenPlaceholderControlGroup();
+		service.setControlId("/{env}/{site}/limit");
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, "/{env}/{site}/limit",
+				"50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Instruction to unresolved group control ID not handled")
+			.isNull()
+			;
+		// @formatter:on
+		then(instructionService).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void processInstruction_memberPlaceholders() {
+		// GIVEN
+		givenPlaceholderControlGroup();
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		service.setMemberConfigs(members("/{env}/inv/1/limit", "/{env}/inv/2/limit"));
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Member instructions executed for resolved member control IDs")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "50"), tuple(MEMBER_2_CONTROL_ID, "50"))
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Member updates provided in result with resolved member control IDs")
+			.containsEntry("updates", Map.of(MEMBER_1_CONTROL_ID, "50", MEMBER_2_CONTROL_ID, "50"))
+			;
+		then(eventAdmin).should().postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getValue())
+			.as("Control info changed event posted")
+			.returns(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, from(Event::getTopic))
+			.extracting(e -> e.getProperty(DatumEvents.DATUM_PROPERTY), type(SimpleNodeControlInfoDatum.class))
+			.as("Event datum value combined from member values")
+			.returns("50", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_memberPlaceholders_float() {
+		// GIVEN
+		givenPlaceholderControlGroup();
+		service.setControlPropertyType(NodeControlPropertyType.Float);
+		service.setMemberConfigs(members("/{env}/inv/1/limit", "/{env}/inv/2/limit"));
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createSetControlValueLocalInstruction(GROUP_CONTROL_ID, 2400);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Member instructions executed for resolved member control IDs")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "1200"), tuple(MEMBER_2_CONTROL_ID, "1200"))
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Member updates provided in result with resolved member control IDs")
+			.containsEntry("updates", Map.of(MEMBER_1_CONTROL_ID, "1200", MEMBER_2_CONTROL_ID, "1200"))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_groupAsMember_placeholders() {
+		// GIVEN
+		givenPlaceholderControlGroup();
+		service.setControlId("/{env}/{site}/limit");
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		// first member resolves to the group control ID
+		service.setMemberConfigs(
+				members("/{env}/{site}/limit", "/{env}/inv/1/limit", "/{env}/inv/2/limit"));
+
+		// execution service passes member instructions to every handler, including the group
+		given(instructionService.executeInstruction(any())).willAnswer(invocation -> {
+			Instruction memberInstr = invocation.getArgument(0);
+			InstructionStatus status = service.processInstruction(memberInstr);
+			return (status != null ? status : createStatus(memberInstr, Completed));
+		});
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Group skipped as member, other member instructions executed in member order")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "50"), tuple(MEMBER_2_CONTROL_ID, "50"))
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_memberPlaceholders_configuredStrategies() {
+		// GIVEN
+		service = newControlGroup(coordinationStrategy, consensusStrategy, instructionService);
+		service.setControlId("/{env}/{site}/limit");
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		givenPlaceholderControlGroup();
+
+		final MemberControlConfig groupMember = new MemberControlConfig("/{env}/{site}/limit");
+		final MemberControlConfig member1 = new MemberControlConfig("/{env}/inv/1/limit");
+		member1.setParameters(Map.of(MemberControlConfig.RATED_CAPACITY_PARAM, "1000"));
+		final MemberControlConfig invalidMember = new MemberControlConfig(" ");
+		final MemberControlConfig member2 = new MemberControlConfig(MEMBER_2_CONTROL_ID);
+		service.setMemberConfigs(
+				new MemberControlConfig[] { groupMember, member1, invalidMember, member2 });
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(coordinationStrategy).should().distribute(any(), membersCaptor.capture(), same(instr),
+				same(controls));
+		and.then(membersCaptor.getValue())
+			.as("Group and invalid members excluded, member placeholders resolved")
+			.extracting(MemberControlConfig::getControlId)
+			.containsExactly(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID)
+			;
+		and.then(membersCaptor.getValue().get(0))
+			.as("Member with placeholders given as copy")
+			.isNotSameAs(member1)
+			.as("Copy has configured parameters")
+			.returns(member1.getParameters(), from(MemberControlConfig::getParameters))
+			;
+		and.then(member1)
+			.as("Configured member control ID not changed")
+			.returns("/{env}/inv/1/limit", from(MemberControlConfig::getControlId))
+			;
+		and.then(membersCaptor.getValue().get(1))
+			.as("Member without placeholders given as configured")
+			.isSameAs(member2)
+			;
+		then(consensusStrategy).should().evaluate(any(), same(membersCaptor.getValue()), same(instr),
+				any());
+		// @formatter:on
+	}
+
 	@Test
 	public void processInstruction_memberDeclined() {
 		// GIVEN
@@ -911,6 +1157,39 @@ public class ControlGroupTests {
 			.isNotNull()
 			.as("Control ID is resolved group control ID")
 			.returns(GROUP_CONTROL_ID, from(NodeControlInfo::getControlId))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void getCurrentControlInfo_placeholders() {
+		// GIVEN
+		givenPlaceholderControlGroup();
+		service.setControlId("/{env}/{site}/limit");
+		service.setControlPropertyType(NodeControlPropertyType.Float);
+		service.setMemberConfigs(members("/{env}/inv/1/limit", "/{env}/inv/2/limit"));
+		controls.add(control1);
+		controls.add(control2);
+
+		given(control1.getAvailableControlIds()).willReturn(List.of(MEMBER_1_CONTROL_ID));
+		given(control1.getCurrentControlInfo(MEMBER_1_CONTROL_ID))
+				.willReturn(controlInfo(MEMBER_1_CONTROL_ID, NodeControlPropertyType.Float, "1000"));
+		given(control2.getAvailableControlIds()).willReturn(List.of(MEMBER_2_CONTROL_ID));
+		given(control2.getCurrentControlInfo(MEMBER_2_CONTROL_ID))
+				.willReturn(controlInfo(MEMBER_2_CONTROL_ID, NodeControlPropertyType.Float, "1200"));
+
+		// WHEN
+		NodeControlInfo result = service.getCurrentControlInfo(GROUP_CONTROL_ID);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Result provided for resolved group control ID")
+			.isNotNull()
+			.as("Control ID is resolved group control ID")
+			.returns(GROUP_CONTROL_ID, from(NodeControlInfo::getControlId))
+			.as("Value is sum of resolved member values")
+			.returns("2200", from(NodeControlInfo::getValue))
 			;
 		// @formatter:on
 	}

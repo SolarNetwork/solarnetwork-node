@@ -33,6 +33,12 @@ import net.solarnetwork.node.service.NodeControlProvider;
 /**
  * API for evaluating control group member state.
  *
+ * <p>
+ * The member configurations passed to this API include only the valid members
+ * of the group, with any placeholders in their control IDs already resolved. A
+ * member that resolves to the group's own control ID is not included.
+ * </p>
+ *
  * @author matt
  * @version 1.0
  */
@@ -46,7 +52,7 @@ public interface ControlGroupCoordinationStrategy {
 	 *        used for information about the control style only, and the
 	 *        {@code value} is not expected to be available
 	 * @param memberConfigs
-	 *        member configurations
+	 *        the member configurations, with control ID placeholders resolved
 	 * @param values
 	 *        the member control values to combine
 	 * @return the combined control value
@@ -62,7 +68,7 @@ public interface ControlGroupCoordinationStrategy {
 	 *        used for information about the control style only, and the
 	 *        {@code value} is not expected to be available
 	 * @param memberConfigs
-	 *        member configurations
+	 *        the member configurations, with placeholders resolved
 	 * @param request
 	 *        the control instruction
 	 * @param controls

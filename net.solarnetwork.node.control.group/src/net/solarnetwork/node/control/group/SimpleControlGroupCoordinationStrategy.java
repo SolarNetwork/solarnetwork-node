@@ -207,7 +207,7 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			if ( !memberConfig.isValid() ) {
 				continue;
 			}
-			final String controlId = resolvePlaceholders(memberConfig.controlId());
+			final String controlId = memberConfig.controlId();
 			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, controlId, val));
 		}
 		if ( result.isEmpty() ) {
@@ -245,11 +245,10 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 		// a set so duplicate members only get one allocation
 		final Set<String> controlIds = new LinkedHashSet<>(memberConfigs.size());
 		for ( MemberControlConfig memberConfig : memberConfigs ) {
-			final String controlId = memberConfig.getControlId();
-			if ( controlId == null || controlId.isBlank() ) {
+			if ( !memberConfig.isValid() ) {
 				continue;
 			}
-			controlIds.add(controlId);
+			controlIds.add(memberConfig.controlId());
 		}
 
 		final int memberCount = controlIds.size();
