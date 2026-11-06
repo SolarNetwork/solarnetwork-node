@@ -93,6 +93,13 @@ import net.solarnetwork.util.StringUtils;
  * rounding.
  * </p>
  *
+ * <p>
+ * A member control can be another control group. When a member control refers
+ * back to the group, directly or through other groups, the group declines an
+ * update that comes back to it, and gives no value to a read that comes back to
+ * it, so neither loops forever.
+ * </p>
+ *
  * @author matt
  * @version 1.0
  */
@@ -122,6 +129,11 @@ public class ControlGroup extends BaseIdentifiable
 	private boolean controlReadOnly;
 	private Set<String> instructionTopics = DEFAULT_INSTRUCTION_TOPICS;
 	private MemberControlConfig @Nullable [] memberConfigs;
+
+	// set while this group updates or reads a member on a thread, so a member control that refers
+	// back to this group stops instead of looping
+	private final ThreadLocal<Boolean> updatingMembers = new ThreadLocal<>();
+	private final ThreadLocal<Boolean> readingMembers = new ThreadLocal<>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -223,6 +235,11 @@ public class ControlGroup extends BaseIdentifiable
 		} else if ( controlReadOnly ) {
 			return declined(instruction, controlId, paramValue, messageSource().getMessage(
 					"error.update.controlReadOnly", null, "Control is read only.", Locale.getDefault()));
+		} else if ( Boolean.TRUE.equals(updatingMembers.get()) ) {
+			// this group is updating a member, which refers back to it
+			return declined(instruction, controlId, paramValue,
+					messageSource().getMessage("error.update.loop", null,
+							"Member control refers back to group.", Locale.getDefault()));
 		}
 
 		final NodeControlInfo group = groupInfo(controlId, null);
@@ -279,7 +296,7 @@ public class ControlGroup extends BaseIdentifiable
 				final Instruction instr = e.getValue();
 				InstructionStatus status;
 				try {
-					status = exec.executeInstruction(instr);
+					status = executeMember(exec, instr);
 				} catch ( Exception ex ) {
 					// treat as declined so the remaining members are still updated
 					log.warn("Control group [{}] error updating member control [{}]: {}", controlId,
@@ -315,6 +332,53 @@ public class ControlGroup extends BaseIdentifiable
 		return createStatus(instruction, Declined, createErrorResultParameters(message, null));
 	}
 
+	/**
+	 * Execute a member control instruction.
+	 *
+	 * <p>
+	 * While it runs, an update to this group on the same thread is declined, as
+	 * that means the member control refers back to this group.
+	 * </p>
+	 *
+	 * @param exec
+	 *        the execution service
+	 * @param instruction
+	 *        the member control instruction
+	 * @return the status, or {@code null} if the instruction was not handled
+	 */
+	private @Nullable InstructionStatus executeMember(InstructionExecutionService exec,
+			Instruction instruction) {
+		updatingMembers.set(Boolean.TRUE);
+		try {
+			return exec.executeInstruction(instruction);
+		} finally {
+			updatingMembers.remove();
+		}
+	}
+
+	/**
+	 * Read a member control value.
+	 *
+	 * <p>
+	 * While it runs, a read of this group on the same thread gets no value, as
+	 * that means the member control refers back to this group.
+	 * </p>
+	 *
+	 * @param control
+	 *        the control provider
+	 * @param memberControlId
+	 *        the member control ID
+	 * @return the value, or {@code null} if not available
+	 */
+	private @Nullable NodeControlInfo readMember(NodeControlProvider control, String memberControlId) {
+		readingMembers.set(Boolean.TRUE);
+		try {
+			return control.getCurrentControlInfo(memberControlId);
+		} finally {
+			readingMembers.remove();
+		}
+	}
+
 	private @Nullable String controlId(@Nullable Map<String, ?> parameters) {
 		return nonEmptyString(resolvePlaceholders(getControlId(), parameters));
 	}
@@ -344,6 +408,11 @@ public class ControlGroup extends BaseIdentifiable
 		final String controlId = controlId(null);
 		if ( controlId == null || !controlId.equals(id) ) {
 			return null;
+		} else if ( Boolean.TRUE.equals(readingMembers.get()) ) {
+			// this group is reading a member, which refers back to it
+			log.warn("Control group [{}] not read: a member control refers back to the group.",
+					controlId);
+			return null;
 		}
 
 		final ControlGroupCoordinationStrategy coordStrategy = service(coordinationStrategy);
@@ -361,7 +430,7 @@ public class ControlGroup extends BaseIdentifiable
 		CONTROLS: for ( NodeControlProvider control : controls ) {
 			for ( String aControlId : control.getAvailableControlIds() ) {
 				if ( memberControlIds.remove(aControlId) ) {
-					NodeControlInfo memberValue = control.getCurrentControlInfo(aControlId);
+					NodeControlInfo memberValue = readMember(control, aControlId);
 					if ( memberValue != null ) {
 						memberValues.add(memberValue);
 					}
