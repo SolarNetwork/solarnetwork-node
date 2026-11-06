@@ -63,11 +63,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.node.control.group.AllOrNothingControlGroupConsensusStrategy;
 import net.solarnetwork.node.control.group.ControlGroup;
 import net.solarnetwork.node.control.group.ControlGroupConsensusStrategy;
 import net.solarnetwork.node.control.group.ControlGroupCoordinationStrategy;
 import net.solarnetwork.node.control.group.InstructionExecution;
 import net.solarnetwork.node.control.group.MemberControlConfig;
+import net.solarnetwork.node.control.group.SimpleControlGroupCoordinationStrategy;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -143,7 +145,8 @@ public class ControlGroupTests {
 	public void setup() {
 		clock = InstantSource.fixed(Instant.parse("2026-11-05T06:00:00Z"));
 		controls = new ArrayList<>();
-		service = newControlGroup(null, null, instructionService);
+		service = newControlGroup(SimpleControlGroupCoordinationStrategy.INSTANCE,
+				AllOrNothingControlGroupConsensusStrategy.INSTANCE, instructionService);
 	}
 
 	private ControlGroup newControlGroup(@Nullable ControlGroupCoordinationStrategy coordinationStrategy,
@@ -615,7 +618,8 @@ public class ControlGroupTests {
 	@Test
 	public void processInstruction_noInstructionService() {
 		// GIVEN
-		service = newControlGroup(null, null, null);
+		service = newControlGroup(SimpleControlGroupCoordinationStrategy.INSTANCE,
+				AllOrNothingControlGroupConsensusStrategy.INSTANCE, null);
 		service.setControlPropertyType(NodeControlPropertyType.Percent);
 		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
 
@@ -679,7 +683,8 @@ public class ControlGroupTests {
 	@Test
 	public void processInstruction_exception() {
 		// GIVEN
-		service = newControlGroup(coordinationStrategy, null, instructionService);
+		service = newControlGroup(coordinationStrategy,
+				AllOrNothingControlGroupConsensusStrategy.INSTANCE, instructionService);
 		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
 
 		given(coordinationStrategy.distribute(any(), any(), any(), any()))
@@ -707,7 +712,8 @@ public class ControlGroupTests {
 	@Test
 	public void processInstruction_notDistributed() {
 		// GIVEN
-		service = newControlGroup(coordinationStrategy, null, instructionService);
+		service = newControlGroup(coordinationStrategy,
+				AllOrNothingControlGroupConsensusStrategy.INSTANCE, instructionService);
 		service.setMemberConfigs(members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID));
 
 		given(coordinationStrategy.distribute(any(), any(), any(), any())).willReturn(null);

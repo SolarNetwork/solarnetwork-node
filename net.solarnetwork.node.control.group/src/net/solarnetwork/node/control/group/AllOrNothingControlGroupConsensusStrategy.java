@@ -33,11 +33,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.jspecify.annotations.Nullable;
-import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 
 /**
  * Consensus strategy that implements an all-or-nothing success result.
@@ -52,17 +52,19 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * @author matt
  * @version 1.0
  */
-public class AllOrNothingControlGroupConsensusStrategy implements ControlGroupConsensusStrategy {
+public class AllOrNothingControlGroupConsensusStrategy extends BaseIdentifiable
+		implements ControlGroupConsensusStrategy {
 
 	/** A default instance. */
-	public static final ControlGroupConsensusStrategy INSTANCE = new AllOrNothingControlGroupConsensusStrategy();
+	public static final ControlGroupConsensusStrategy INSTANCE;
 
-	private static final MessageSource MESSAGE_SOURCE;
 	static {
+		var s = new AllOrNothingControlGroupConsensusStrategy();
 		var msg = new ResourceBundleMessageSource();
 		msg.setBasename(AllOrNothingControlGroupConsensusStrategy.class.getName());
 		msg.setBundleClassLoader(AllOrNothingControlGroupConsensusStrategy.class.getClassLoader());
-		MESSAGE_SOURCE = msg;
+		s.setMessageSource(msg);
+		INSTANCE = s;
 	}
 
 	/**
@@ -70,6 +72,7 @@ public class AllOrNothingControlGroupConsensusStrategy implements ControlGroupCo
 	 */
 	public AllOrNothingControlGroupConsensusStrategy() {
 		super();
+		setUid("All or Nothing");
 	}
 
 	@Override
@@ -84,12 +87,12 @@ public class AllOrNothingControlGroupConsensusStrategy implements ControlGroupCo
 			final String memberVal = instr.getParameterValue(memberControlId);
 			final InstructionStatus status = e.getValue().result();
 			if ( status == null ) {
-				failures.add(MESSAGE_SOURCE.getMessage("error.update.notHandled",
+				failures.add(messageSource().getMessage("error.update.notHandled",
 						new Object[] { memberControlId, memberVal != null ? memberVal : "?" },
 						"Update was not processed.", Locale.getDefault()));
 			} else if ( status.getInstructionState() != Completed ) {
 				final String cause = resultMessage(status);
-				failures.add(MESSAGE_SOURCE.getMessage(
+				failures.add(messageSource().getMessage(
 						cause != null ? "error.update.notCompletedWithCause"
 								: "error.update.notCompleted",
 						new Object[] { memberControlId, memberVal != null ? memberVal : "?",

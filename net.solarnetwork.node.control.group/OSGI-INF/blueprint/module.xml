@@ -29,7 +29,42 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<!-- Simple Coordination Strategy -->
+	
+	<service interface="net.solarnetwork.node.control.group.ControlGroupCoordinationStrategy">
+		<bean class="net.solarnetwork.node.control.group.SimpleControlGroupCoordinationStrategy">
+			<property name="displayName" value="Simple Control Group Coordination Strategy"/>
+			<property name="placeholderService" ref="placeholderService"/>
+		</bean>
+	</service>
+
+	<!-- AllOrNothing Consensus Strategy -->
+	
+	<service interface="net.solarnetwork.node.control.group.ControlGroupConsensusStrategy">
+		<bean class="net.solarnetwork.node.control.group.AllOrNothingControlGroupConsensusStrategy">
+			<property name="displayName" value="All-or-nothing Control Group Consensus Strategy"/>
+			<property name="placeholderService" ref="placeholderService"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames">
+						<list>
+							<value>net.solarnetwork.node.control.group.AllOrNothingControlGroupConsensusStrategy</value>
+						</list>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</service>
+
+	<!-- Control Group Service -->
+	
+	<bean id="controlGroupMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.group.ControlGroup</value>
@@ -52,13 +87,11 @@
   		</property>
 	</bean>
 
-	<!-- Published Services -->
-	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Control Group"/>
 			<property name="factoryUid" value="net.solarnetwork.node.control.group.ControlGroup"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="controlGroupMessageSource"/>
 		</bean>
 	</service>
 	
@@ -76,6 +109,7 @@
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.control.group.ControlGroupCoordinationStrategy"/>
+					<property name="requirePropertyFilter" value="true"/>
 					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 				</bean>	
 			</argument>
@@ -83,13 +117,15 @@
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.control.group.ControlGroupConsensusStrategy"/>
+					<property name="requirePropertyFilter" value="true"/>
 					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 				</bean>	
 			</argument>
 			<argument ref="nodeControlProviders"/>
 			<argument ref="instructionExecutionService"/>
 			<argument ref="eventAdmin"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="controlGroupMessageSource"/>
+			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

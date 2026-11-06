@@ -62,7 +62,7 @@ public class AllOrNothingControlGroupConsensusStrategyTests {
 	private static final String MEMBER_1_CONTROL_ID = "/test/inv/1/limit";
 	private static final String MEMBER_2_CONTROL_ID = "/test/inv/2/limit";
 
-	private final AllOrNothingControlGroupConsensusStrategy service = new AllOrNothingControlGroupConsensusStrategy();
+	private final AllOrNothingControlGroupConsensusStrategy service = (AllOrNothingControlGroupConsensusStrategy) AllOrNothingControlGroupConsensusStrategy.INSTANCE;
 
 	private NodeControlInfo group() {
 		// @formatter:off

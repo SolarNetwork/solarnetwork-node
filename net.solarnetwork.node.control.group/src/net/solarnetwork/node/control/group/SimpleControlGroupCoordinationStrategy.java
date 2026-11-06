@@ -88,11 +88,15 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 	/** A default instance. */
 	public static final ControlGroupCoordinationStrategy INSTANCE = new SimpleControlGroupCoordinationStrategy();
 
+	/** The setting UID. */
+	public static final String SETTING_UID = "net.solarnetwork.node.control.group.SimpleControlGroupCoordinationStrategy";
+
 	/**
 	 * Constructor.
 	 */
 	public SimpleControlGroupCoordinationStrategy() {
 		super();
+		setUid("Simple");
 	}
 
 	@Override

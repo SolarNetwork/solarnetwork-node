@@ -226,8 +226,35 @@ public class ControlGroup extends BaseIdentifiable
 		}
 
 		final NodeControlInfo group = groupInfo(controlId, null);
-		final ControlGroupCoordinationStrategy coordStrategy = coordinationStrategy();
-		final ControlGroupConsensusStrategy consensStrategy = consensusStrategy();
+		final ControlGroupCoordinationStrategy coordStrategy = service(coordinationStrategy);
+		if ( coordStrategy == null ) {
+			final String coordStrategyUid = nonEmptyString(getCoordinationStrategyUid());
+			if ( coordStrategyUid == null ) {
+				// not configured yet
+				return declined(instruction, controlId, paramValue,
+						messageSource().getMessage("error.coordinationStrategyNotConfigured", null,
+								"Coordination Strategy not configured.", Locale.getDefault()));
+			}
+			// configured service not available
+			return declined(instruction, controlId, paramValue, messageSource().getMessage(
+					"error.coordinationStrategyNotAvailable", new Object[] { coordStrategyUid },
+					"Configured Coordination Strategy [{0}] not available.", Locale.getDefault()));
+		}
+		final ControlGroupConsensusStrategy consensStrategy = service(consensusStrategy);
+		if ( consensStrategy == null ) {
+			final String consensStrategyUid = nonEmptyString(getConsensusStrategyUid());
+			if ( consensStrategyUid == null ) {
+				// not configured yet
+				return declined(instruction, controlId, paramValue,
+						messageSource().getMessage("error.consensusStrategyNotConfigured", null,
+								"Consensus Strategy not configured.", Locale.getDefault()));
+			}
+			// configured service not available
+			return declined(instruction, controlId, paramValue,
+					messageSource().getMessage("error.consensusStrategyNotAvailable",
+							new Object[] { consensStrategyUid },
+							"Configured Consensus Strategy [{0}] not available.", Locale.getDefault()));
+		}
 		// exclude the group itself as a member, to avoid recursing back into this group
 		final List<MemberControlConfig> members = memberConfigs().stream()
 				.filter(m -> !controlId.equals(m.getControlId())).toList();
@@ -294,16 +321,6 @@ public class ControlGroup extends BaseIdentifiable
 		return nonEmptyString(resolvePlaceholders(getControlId(), parameters));
 	}
 
-	private ControlGroupCoordinationStrategy coordinationStrategy() {
-		ControlGroupCoordinationStrategy result = service(coordinationStrategy);
-		return (result != null ? result : SimpleControlGroupCoordinationStrategy.INSTANCE);
-	}
-
-	private ControlGroupConsensusStrategy consensusStrategy() {
-		ControlGroupConsensusStrategy result = service(consensusStrategy);
-		return (result != null ? result : AllOrNothingControlGroupConsensusStrategy.INSTANCE);
-	}
-
 	private NodeControlInfo groupInfo(String controlId, @Nullable String value) {
 		// @formatter:off
 		return BasicNodeControlInfo.builder()
@@ -331,7 +348,10 @@ public class ControlGroup extends BaseIdentifiable
 			return null;
 		}
 
-		final ControlGroupCoordinationStrategy strategy = coordinationStrategy();
+		final ControlGroupCoordinationStrategy coordStrategy = service(coordinationStrategy);
+		if ( coordStrategy == null ) {
+			return null;
+		}
 		final List<MemberControlConfig> members = memberConfigs();
 
 		final Set<String> memberControlIds = new LinkedHashSet<>(members.size());
@@ -360,7 +380,8 @@ public class ControlGroup extends BaseIdentifiable
 			}
 		}
 
-		final NodeControlInfo info = strategy.combine(groupInfo(controlId, null), members, memberValues);
+		final NodeControlInfo info = coordStrategy.combine(groupInfo(controlId, null), members,
+				memberValues);
 
 		SimpleNodeControlInfoDatum result = new SimpleNodeControlInfoDatum(info, clock.instant());
 		postControlEvent(result, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
