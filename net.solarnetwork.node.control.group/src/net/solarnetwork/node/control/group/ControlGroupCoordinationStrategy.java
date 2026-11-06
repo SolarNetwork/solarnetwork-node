@@ -29,6 +29,7 @@ import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for evaluating control group member state.
@@ -42,7 +43,7 @@ import net.solarnetwork.node.service.NodeControlProvider;
  * @author matt
  * @version 1.0
  */
-public interface ControlGroupCoordinationStrategy {
+public interface ControlGroupCoordinationStrategy extends Identifiable {
 
 	/**
 	 * Combine a collection of controls into a group value.

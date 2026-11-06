@@ -28,6 +28,7 @@ import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for handling control group member state change consensus.
@@ -41,7 +42,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * @author matt
  * @version 1.0
  */
-public interface ControlGroupConsensusStrategy {
+public interface ControlGroupConsensusStrategy extends Identifiable {
 
 	/**
 	 * Determine the group state change result consensus.
