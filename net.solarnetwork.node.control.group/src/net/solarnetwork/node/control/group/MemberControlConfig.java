@@ -28,6 +28,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
@@ -59,6 +60,7 @@ public class MemberControlConfig {
 
 	private @Nullable String controlId;
 	private @Nullable Map<String, String> parameters;
+	private boolean disabled;
 
 	/**
 	 * Constructor.
@@ -90,6 +92,7 @@ public class MemberControlConfig {
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "parametersValue", null));
+		results.add(new BasicToggleSettingSpecifier(prefix + "disabled", Boolean.FALSE));
 
 		return results;
 	}
@@ -98,14 +101,15 @@ public class MemberControlConfig {
 	 * Test if this configuration is valid.
 	 *
 	 * <p>
-	 * This tests that the {@code controlId} is not blank.
+	 * This tests that the {@code disabled} is {@code false} and
+	 * {@code controlId} is not blank.
 	 * </p>
 	 *
 	 * @return {@code true} if this configuration is valid
 	 */
 	public boolean isValid() {
 		final String controlId = getControlId();
-		return (controlId != null && !controlId.isBlank());
+		return (!disabled && controlId != null && !controlId.isBlank());
 	}
 
 	@Override
@@ -120,6 +124,10 @@ public class MemberControlConfig {
 		if ( parameters != null ) {
 			builder.append("parameters=");
 			builder.append(parameters);
+		}
+		if ( disabled ) {
+			builder.append("disabled");
+			builder.append(", ");
 		}
 		builder.append("}");
 		return builder.toString();
@@ -174,6 +182,7 @@ public class MemberControlConfig {
 	public MemberControlConfig withControlId(@Nullable String controlId) {
 		final MemberControlConfig result = new MemberControlConfig(controlId);
 		result.setParameters(parameters);
+		result.setDisabled(disabled);
 		return result;
 	}
 
@@ -215,6 +224,25 @@ public class MemberControlConfig {
 	 */
 	public final void setParametersValue(@Nullable String value) {
 		setParameters(StringUtils.commaDelimitedStringToMap(value));
+	}
+
+	/**
+	 * Get the disabled flag.
+	 *
+	 * @return the disabled flag
+	 */
+	public final boolean isDisabled() {
+		return disabled;
+	}
+
+	/**
+	 * Set the disabled flag.
+	 *
+	 * @param disabled
+	 *        the disabled to set
+	 */
+	public final void setDisabled(boolean disabled) {
+		this.disabled = disabled;
 	}
 
 }
