@@ -27,9 +27,11 @@ import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.numberValue;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.InstantSource;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -91,11 +93,26 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 	/** The setting UID. */
 	public static final String SETTING_UID = "net.solarnetwork.node.control.group.SimpleControlGroupCoordinationStrategy";
 
+	private final InstantSource clock;
+
 	/**
 	 * Constructor.
 	 */
 	public SimpleControlGroupCoordinationStrategy() {
+		this(InstantSource.system());
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param clock
+	 *        the clock to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 */
+	public SimpleControlGroupCoordinationStrategy(InstantSource clock) {
 		super();
+		this.clock = requireNonNullArgument(clock, "clock");
 		setUid("Simple");
 	}
 
@@ -208,7 +225,8 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 				continue;
 			}
 			final String controlId = memberConfig.controlId();
-			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, controlId, val));
+			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, clock.instant(),
+					Map.of(controlId, val)));
 		}
 		if ( result.isEmpty() ) {
 			// no members to distribute to
@@ -269,8 +287,8 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			var allocation = (i == memberCount ? remaining
 					: sum.divide(divisor, scale, RoundingMode.DOWN)).stripTrailingZeros();
 			remaining = remaining.subtract(allocation);
-			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, controlId,
-					allocation.toPlainString()));
+			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, clock.instant(),
+					Map.of(controlId, allocation.toPlainString())));
 		}
 
 		return result;
