@@ -357,7 +357,7 @@ public class ControlGroup extends BaseIdentifiable
 		final Set<String> memberControlIds = new LinkedHashSet<>(members.size());
 		for ( MemberControlConfig member : members ) {
 			if ( member.isValid() ) {
-				memberControlIds.add(member.controlId());
+				memberControlIds.add(resolvePlaceholders(member.controlId()));
 			}
 		}
 

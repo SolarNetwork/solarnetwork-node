@@ -207,7 +207,7 @@ public class SimpleControlGroupCoordinationStrategy extends BaseIdentifiable
 			if ( !memberConfig.isValid() ) {
 				continue;
 			}
-			final String controlId = memberConfig.controlId();
+			final String controlId = resolvePlaceholders(memberConfig.controlId());
 			result.put(controlId, createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, controlId, val));
 		}
 		if ( result.isEmpty() ) {
