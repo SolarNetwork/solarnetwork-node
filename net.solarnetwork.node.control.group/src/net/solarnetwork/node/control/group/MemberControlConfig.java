@@ -115,19 +115,16 @@ public class MemberControlConfig {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("MemberControlConfig{");
+		builder.append("MemberControlConfig{controlId=");
 		if ( controlId != null ) {
-			builder.append("controlId=");
 			builder.append(controlId);
-			builder.append(", ");
 		}
 		if ( parameters != null ) {
-			builder.append("parameters=");
+			builder.append(", parameters=");
 			builder.append(parameters);
 		}
 		if ( disabled ) {
-			builder.append("disabled");
-			builder.append(", ");
+			builder.append(", disabled");
 		}
 		builder.append("}");
 		return builder.toString();

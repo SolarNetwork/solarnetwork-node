@@ -95,6 +95,7 @@ public class ControlGroupTests {
 	private static final String GROUP_CONTROL_ID = "/test/site/limit";
 	private static final String MEMBER_1_CONTROL_ID = "/test/inv/1/limit";
 	private static final String MEMBER_2_CONTROL_ID = "/test/inv/2/limit";
+	private static final String MEMBER_3_CONTROL_ID = "/test/inv/3/limit";
 	private static final String OTHER_CONTROL_ID = "/test/other";
 	private static final String PROPERTY_NAME = "limit";
 
@@ -794,6 +795,140 @@ public class ControlGroupTests {
 	}
 
 	@Test
+	public void processInstruction_disabledMember_percent() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		final MemberControlConfig[] members = members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID,
+				MEMBER_3_CONTROL_ID);
+		members[1].setDisabled(true);
+		service.setMemberConfigs(members);
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Disabled member skipped, other member instructions executed in member order")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "50"), tuple(MEMBER_3_CONTROL_ID, "50"))
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Member updates exclude disabled member")
+			.containsEntry("updates", Map.of(MEMBER_1_CONTROL_ID, "50", MEMBER_3_CONTROL_ID, "50"))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_disabledMember_float() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Float);
+		final MemberControlConfig[] members = members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID,
+				MEMBER_3_CONTROL_ID);
+		members[1].setDisabled(true);
+		service.setMemberConfigs(members);
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		final Instruction instr = createSetControlValueLocalInstruction(GROUP_CONTROL_ID, 2400);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(2)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Group total split across members that are not disabled")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(tuple(MEMBER_1_CONTROL_ID, "1200"), tuple(MEMBER_3_CONTROL_ID, "1200"))
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			;
+		then(eventAdmin).should().postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getValue())
+			.as("Control info changed event posted")
+			.returns(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, from(Event::getTopic))
+			.extracting(e -> e.getProperty(DatumEvents.DATUM_PROPERTY), type(SimpleNodeControlInfoDatum.class))
+			.as("Event datum value combined from members that are not disabled")
+			.returns("2400", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void processInstruction_allMembersDisabled() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		final MemberControlConfig[] members = members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID);
+		for ( MemberControlConfig member : members ) {
+			member.setDisabled(true);
+		}
+		service.setMemberConfigs(members);
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction declined when all members disabled")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Message describes undistributed update")
+			.containsEntry("message",
+					"The control update was not handled by the configured coordination strategy.")
+			;
+		// @formatter:on
+		then(instructionService).shouldHaveNoInteractions();
+		then(eventAdmin).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void processInstruction_disabledMember_configuredStrategies() {
+		// GIVEN
+		service = newControlGroup(coordinationStrategy, consensusStrategy, instructionService);
+		service.setControlPropertyType(NodeControlPropertyType.Percent);
+		final MemberControlConfig[] members = members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID);
+		members[0].setDisabled(true);
+		service.setMemberConfigs(members);
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(coordinationStrategy).should().distribute(any(), membersCaptor.capture(), same(instr),
+				same(controls));
+		and.then(membersCaptor.getValue())
+			.as("Disabled member not given to coordination strategy")
+			.containsExactly(members[1])
+			;
+		then(consensusStrategy).should().evaluate(any(), same(membersCaptor.getValue()), same(instr),
+				any());
+		// @formatter:on
+	}
+
+	@Test
 	public void processInstruction_memberDeclined() {
 		// GIVEN
 		service.setControlPropertyType(NodeControlPropertyType.Percent);
@@ -1320,6 +1455,38 @@ public class ControlGroupTests {
 	}
 
 	@Test
+	public void getCurrentControlInfo_disabledMember() {
+		// GIVEN
+		service.setControlPropertyType(NodeControlPropertyType.Float);
+		final MemberControlConfig[] members = members(MEMBER_1_CONTROL_ID, MEMBER_2_CONTROL_ID);
+		members[1].setDisabled(true);
+		service.setMemberConfigs(members);
+
+		// the disabled member's control is still available
+		controls.add(control2);
+		controls.add(control1);
+
+		given(control2.getAvailableControlIds()).willReturn(List.of(MEMBER_2_CONTROL_ID));
+		given(control1.getAvailableControlIds()).willReturn(List.of(MEMBER_1_CONTROL_ID));
+		given(control1.getCurrentControlInfo(MEMBER_1_CONTROL_ID))
+				.willReturn(controlInfo(MEMBER_1_CONTROL_ID, NodeControlPropertyType.Float, "1000"));
+
+		// WHEN
+		NodeControlInfo result = service.getCurrentControlInfo(GROUP_CONTROL_ID);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Result provided")
+			.isNotNull()
+			.as("Value is sum of members that are not disabled")
+			.returns("1000", from(NodeControlInfo::getValue))
+			;
+		// @formatter:on
+		then(control2).should(never()).getCurrentControlInfo(any());
+	}
+
+	@Test
 	public void getCurrentControlInfo_memberUnavailable() {
 		// GIVEN
 		service.setControlPropertyType(NodeControlPropertyType.Percent);
@@ -1480,8 +1647,10 @@ public class ControlGroupTests {
 			.containsExactly(
 				  "memberConfigs[0].controlId"
 				, "memberConfigs[0].parametersValue"
+				, "memberConfigs[0].disabled"
 				, "memberConfigs[1].controlId"
 				, "memberConfigs[1].parametersValue"
+				, "memberConfigs[1].disabled"
 			)
 			;
 		// @formatter:on

@@ -618,6 +618,93 @@ public class SimpleControlGroupCoordinationStrategyTests {
 	}
 
 	@Test
+	public void distribute_SetControlParameter_Percent_disabledMemberSkipped() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), NodeControlPropertyType.Percent, "max");
+		final var members = members(randomString(), randomString(), randomString());
+		members.get(1).setDisabled(true);
+
+		// WHEN
+		final var target = 50;
+		final var req = createSetControlValueLocalInstruction(group.getControlId(), target);
+		final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Instructions generated only for members that are not disabled")
+			.containsOnlyKeys(
+					  members.get(0).controlId()
+					, members.get(2).controlId())
+			.satisfies(m -> {
+				for (Entry<String, Instruction> e : m.entrySet()) {
+					then(e.getValue())
+						.as("Instruction %s has single parameter for member control ID -> target", e.getKey())
+						.returns(String.valueOf(target), from(in -> in.getParameterValue(e.getKey())))
+						;
+				}
+			})
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void distribute_SetControlParameter_Float_disabledMemberSkipped() {
+		// GIVEN
+		final var service = new SimpleControlGroupCoordinationStrategy();
+		final var group = group(randomString(), Float, "amount");
+		final var members = members(randomString(), randomString(), randomString());
+		members.get(1).setDisabled(true);
+
+		// WHEN
+		final var target = 100;
+		final var req = createSetControlValueLocalInstruction(group.getControlId(), target);
+		final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Instructions generated only for members that are not disabled")
+			.containsOnlyKeys(
+					  members.get(0).controlId()
+					, members.get(2).controlId())
+			.satisfies(m -> {
+				for (Entry<String, Instruction> e : m.entrySet()) {
+					then(e.getValue())
+						.as("Instruction %s has parameter for member control ID -> target/2", e.getKey())
+						.returns("50", from(in -> in.getParameterValue(e.getKey())))
+						;
+				}
+			})
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void distribute_allMembersDisabled() {
+		for ( NodeControlPropertyType type : NodeControlPropertyType.values() ) {
+			// GIVEN
+			final var service = new SimpleControlGroupCoordinationStrategy();
+			final var group = group(randomString(), type, "val");
+			final var members = members(randomString(), randomString());
+			members.forEach(m -> m.setDisabled(true));
+
+			// WHEN
+			final var req = createSetControlValueLocalInstruction(group.getControlId(), 1);
+			final Map<String, Instruction> result = service.distribute(group, members, req, List.of());
+
+			// THEN
+			// @formatter:off
+			then(result)
+				.as("%s request not handled when all members disabled", type)
+				.isNull()
+				;
+			// @formatter:on
+		}
+	}
+
+	@Test
 	public void distribute_noValidMembers() {
 		for ( NodeControlPropertyType type : NodeControlPropertyType.values() ) {
 			// GIVEN
