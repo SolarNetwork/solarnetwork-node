@@ -93,6 +93,7 @@ import net.solarnetwork.settings.SettingSpecifier;
 public class ControlGroupTests {
 
 	private static final String GROUP_CONTROL_ID = "/test/site/limit";
+	private static final String SUB_GROUP_CONTROL_ID = "/test/site/east/limit";
 	private static final String MEMBER_1_CONTROL_ID = "/test/inv/1/limit";
 	private static final String MEMBER_2_CONTROL_ID = "/test/inv/2/limit";
 	private static final String MEMBER_3_CONTROL_ID = "/test/inv/3/limit";
@@ -544,6 +545,115 @@ public class ControlGroupTests {
 			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
 			.as("Member updates provided in result")
 			.containsEntry("updates", Map.of(MEMBER_1_CONTROL_ID, "1200", MEMBER_2_CONTROL_ID, "1200"))
+			;
+		// @formatter:on
+	}
+
+	/**
+	 * Configure the service with a sub group that is one of its members, and
+	 * that has the service as one of its own members, so the two groups refer
+	 * back to each other.
+	 *
+	 * @param type
+	 *        the control type of both groups
+	 * @return the sub group
+	 */
+	private ControlGroup givenLoopingControlGroups(NodeControlPropertyType type) {
+		service.setControlPropertyType(type);
+		service.setMemberConfigs(members(SUB_GROUP_CONTROL_ID, MEMBER_1_CONTROL_ID));
+
+		final ControlGroup subGroup = newControlGroup(SimpleControlGroupCoordinationStrategy.INSTANCE,
+				AllOrNothingControlGroupConsensusStrategy.INSTANCE, instructionService);
+		subGroup.setControlId(SUB_GROUP_CONTROL_ID);
+		subGroup.setControlPropertyType(type);
+		subGroup.setMemberConfigs(members(GROUP_CONTROL_ID, MEMBER_2_CONTROL_ID));
+		return subGroup;
+	}
+
+	/**
+	 * Configure the execution service to give each instruction to the groups in
+	 * turn, like a node's execution service asks every handler, and complete
+	 * the instructions no group handles.
+	 *
+	 * @param groups
+	 *        the groups
+	 */
+	private void givenGroupInstructionHandlers(ControlGroup... groups) {
+		given(instructionService.executeInstruction(any())).willAnswer(invocation -> {
+			Instruction memberInstr = invocation.getArgument(0);
+			for ( ControlGroup group : groups ) {
+				InstructionStatus status = group.processInstruction(memberInstr);
+				if ( status != null ) {
+					return status;
+				}
+			}
+			return createStatus(memberInstr, Completed);
+		});
+	}
+
+	@Test
+	public void processInstruction_loop() {
+		// GIVEN
+		final ControlGroup subGroup = givenLoopingControlGroups(NodeControlPropertyType.Percent);
+		givenGroupInstructionHandlers(service, subGroup);
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should(times(4)).executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getAllValues())
+			.as("Update looped back to group once, and the other members were still updated")
+			.extracting(ControlGroupTests::memberControlId, i -> i.getParameterValue(memberControlId(i)))
+			.containsExactly(
+				tuple(SUB_GROUP_CONTROL_ID, "50"),
+				tuple(GROUP_CONTROL_ID, "50"),
+				tuple(MEMBER_2_CONTROL_ID, "50"),
+				tuple(MEMBER_1_CONTROL_ID, "50")
+			)
+			;
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction declined")
+			.returns(Declined, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Message describes sub group declining, because the update looped back to the group")
+			.containsEntry("message", "Member control /test/site/east/limit -> 50 was not completed "
+					+ "(Declined: Member control /test/site/limit -> 50 was not completed "
+					+ "(Declined: A member control refers back to this group, which is already "
+					+ "being updated.).).")
+			;
+		// @formatter:on
+		then(eventAdmin).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void processInstruction_afterLoop() {
+		// GIVEN
+		final ControlGroup subGroup = givenLoopingControlGroups(NodeControlPropertyType.Percent);
+		givenGroupInstructionHandlers(service, subGroup);
+		service.processInstruction(createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "50"));
+
+		// the sub group no longer refers back to the group
+		subGroup.setMemberConfigs(members(MEMBER_2_CONTROL_ID));
+
+		// WHEN
+		final Instruction instr = createLocalInstruction(TOPIC_DEMAND_BALANCE, GROUP_CONTROL_ID, "60");
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Status returned")
+			.isNotNull()
+			.as("Group instruction completed, as the loop before left the groups updatable")
+			.returns(Completed, from(InstructionStatus::getInstructionState))
+			.extracting(InstructionStatus::getResultParameters, map(String.class, Object.class))
+			.as("Member updates provided in result")
+			.containsEntry("updates", Map.of(SUB_GROUP_CONTROL_ID, "60", MEMBER_1_CONTROL_ID, "60"))
 			;
 		// @formatter:on
 	}
@@ -1452,6 +1562,42 @@ public class ControlGroupTests {
 			;
 		// @formatter:on
 		then(control1).should(never()).getCurrentControlInfo(OTHER_CONTROL_ID);
+	}
+
+	@Test
+	public void getCurrentControlInfo_loop() {
+		// GIVEN
+		final ControlGroup subGroup = givenLoopingControlGroups(NodeControlPropertyType.Float);
+		controls.add(service);
+		controls.add(subGroup);
+		controls.add(control1);
+		controls.add(control2);
+
+		given(control1.getAvailableControlIds()).willReturn(List.of(MEMBER_1_CONTROL_ID));
+		given(control1.getCurrentControlInfo(MEMBER_1_CONTROL_ID))
+				.willReturn(controlInfo(MEMBER_1_CONTROL_ID, NodeControlPropertyType.Float, "1000"));
+		given(control2.getAvailableControlIds()).willReturn(List.of(MEMBER_2_CONTROL_ID));
+		given(control2.getCurrentControlInfo(MEMBER_2_CONTROL_ID))
+				.willReturn(controlInfo(MEMBER_2_CONTROL_ID, NodeControlPropertyType.Float, "1200"));
+
+		// WHEN
+		NodeControlInfo result = service.getCurrentControlInfo(GROUP_CONTROL_ID);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Result provided")
+			.isNotNull()
+			.as("Value is sum of sub group and member 1, the sub group leaving out the group it loops back to")
+			.returns("2200", from(NodeControlInfo::getValue))
+			;
+		then(eventAdmin).should(times(2)).postEvent(eventCaptor.capture());
+		and.then(eventCaptor.getAllValues())
+			.as("Captured events posted by sub group then group, and none by the read that looped back")
+			.extracting(e -> ((NodeControlInfo) e.getProperty(DatumEvents.DATUM_PROPERTY)).getControlId())
+			.containsExactly(SUB_GROUP_CONTROL_ID, GROUP_CONTROL_ID)
+			;
+		// @formatter:on
 	}
 
 	@Test
