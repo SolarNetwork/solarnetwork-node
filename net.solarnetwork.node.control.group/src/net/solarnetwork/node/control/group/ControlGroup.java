@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
@@ -397,6 +398,13 @@ public class ControlGroup extends BaseIdentifiable
 				// @formatter:on
 			}
 			final NodeControlInfo info = strategy.combine(group, members, memberValues);
+			if ( log.isInfoEnabled() ) {
+				log.info("Control group [{}] updated to [{}]; member controls updated as: [{}]",
+						group.getControlId(), info.getValue(),
+						instructions.entrySet().stream().map(
+								e -> e.getKey() + " -> " + e.getValue().getParameterValue(e.getKey()))
+								.collect(Collectors.joining("\n\t", "\n\t", "\n")));
+			}
 			postControlEvent(new SimpleNodeControlInfoDatum(info, clock.instant()),
 					NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		} catch ( Exception ex ) {
