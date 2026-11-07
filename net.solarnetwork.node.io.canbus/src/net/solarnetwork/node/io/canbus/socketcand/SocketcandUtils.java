@@ -155,6 +155,9 @@ public final class SocketcandUtils {
 	 * @param toIndex
 	 *        an offset within {@code hexData} to stop at (exclusive)
 	 * @return the bytes, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if {@link ByteUtils#decodeHexPadStart(char[])} rejects a value in
+	 *         {@code hexData}, for example one with a non-hex character
 	 */
 	public static byte[] decodeHexStrings(final List<String> hexData, final int fromIndex,
 			final int toIndex) {
