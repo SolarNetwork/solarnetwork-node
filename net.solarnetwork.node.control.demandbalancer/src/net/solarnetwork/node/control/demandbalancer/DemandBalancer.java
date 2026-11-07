@@ -24,6 +24,8 @@ package net.solarnetwork.node.control.demandbalancer;
 
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * keeps generation at or below current consumption levels.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class DemandBalancer implements SettingSpecifierProvider {
 
@@ -296,9 +298,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 				powerMaximumWatts, currentLimit);
 		if ( desiredLimit > 0 && desiredLimit != currentLimit ) {
 			log.info("Demand of {} with generation {} (capacity {}) will be adjusted from {}% to {}%",
-					demandWatts, powerControlId, powerMaximumWatts, currentLimit, desiredLimit);
+					demandWatts, generationWatts, powerMaximumWatts, currentLimit, desiredLimit);
 			InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
-			log.info("Demand adjumstment instruction result: {}", result);
+			log.info("Demand adjustment instruction result: {}", result);
 			return result;
 		}
 		return null;
@@ -342,8 +344,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			return null;
 		}
 		try {
-			return Integer.valueOf(limit.getValue());
-		} catch ( NumberFormatException e ) {
+			// round down any fraction, so the limit is not treated as higher than reported
+			return new BigDecimal(limit.getValue()).setScale(0, RoundingMode.DOWN).intValueExact();
+		} catch ( NumberFormatException | ArithmeticException e ) {
 			log.warn("Error parsing limit value as integer percentage: {}", e.getMessage());
 		}
 		return null;
