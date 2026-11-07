@@ -58,7 +58,7 @@ import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
  * Implementation of {@link CanbusNetwork} for socketcand CAN bus servers.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @see <a href=
  *      "https://github.com/linux-can/socketcand">linux-can/socketcand</a>
  */
@@ -225,14 +225,14 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 					final CanbusFrame frame = (CanbusFrame) m;
 					CanbusFrameListener listener = monitorSubscription.get();
 					if ( listener != null ) {
-						listener.canbusFrameReceived(frame);
+						notifyFrameListener(listener, frame);
 					} else {
 						final int addr = frame.getAddress();
 						for ( CanbusSubscription sub : subscriptions.values() ) {
 							if ( addr == sub.getAddress() ) {
 								listener = sub.getListener();
 								if ( listener != null ) {
-									listener.canbusFrameReceived(frame);
+									notifyFrameListener(listener, frame);
 								}
 							}
 						}
@@ -255,6 +255,16 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 				log.debug("Communication error in CanbusSocket message reader thread: {}", e.toString());
 				// ignore?
 			}
+		}
+	}
+
+	private void notifyFrameListener(CanbusFrameListener listener, CanbusFrame frame) {
+		try {
+			listener.canbusFrameReceived(frame);
+		} catch ( RuntimeException e ) {
+			// keep the reader thread alive so later frames are still delivered
+			log.warn("Error handling CAN bus [{}] frame from address {}: {}", busName,
+					String.format("0x%X", frame.getAddress()), e.toString(), e);
 		}
 	}
 

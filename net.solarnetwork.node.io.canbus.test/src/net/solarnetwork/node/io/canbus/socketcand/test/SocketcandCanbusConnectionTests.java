@@ -40,6 +40,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -66,7 +68,7 @@ import net.solarnetwork.node.io.canbus.socketcand.msg.UnsubscribeMessageImpl;
  * Test cases for the {@link SocketcandCanbusConnection} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SocketcandCanbusConnectionTests {
 
@@ -293,6 +295,90 @@ public class SocketcandCanbusConnectionTests {
 				Arrays.equals(f.getData(),
 						new byte[] { (byte) 0x11, (byte) 0x22, (byte) 0x33, (byte) 0x44 }),
 				equalTo(true));
+	}
+
+	/**
+	 * Create a listener that collects frames and throws an exception for the
+	 * first frame it receives.
+	 *
+	 * @param frames
+	 *        the list to add received frames to
+	 * @param latch
+	 *        a latch to count down for each received frame
+	 * @return the listener
+	 */
+	private static CanbusFrameListener throwOnFirstFrameListener(List<CanbusFrame> frames,
+			CountDownLatch latch) {
+		return (frame) -> {
+			frames.add(frame);
+			latch.countDown();
+			if ( frames.size() == 1 ) {
+				throw new IllegalArgumentException("Test listener exception");
+			}
+		};
+	}
+
+	@Test
+	public void subscribe_receive_listenerThrows() throws Exception {
+		// GIVEN
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		final List<CanbusFrame> frames = new CopyOnWriteArrayList<>();
+		final CountDownLatch latch = new CountDownLatch(2);
+		final CanbusFrameListener listener = throwOnFirstFrameListener(frames, latch);
+
+		// WHEN
+		replayAll();
+		boolean allReceived = false;
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
+			conn.open();
+			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
+
+			// mock two frame messages from the server; the listener throws on the first one
+			socket.respondMessage(new FrameMessageImpl(asList("1 23.424242 11 22 33 44".split(" "))));
+			socket.respondMessage(new FrameMessageImpl(asList("1 32.0 22 33 44 55".split(" "))));
+
+			allReceived = latch.await(2, TimeUnit.SECONDS);
+		}
+
+		// THEN
+		assertThat("Frame after listener exception received", allReceived, equalTo(true));
+		assertThat("Both frames captured", frames, hasSize(2));
+		assertThat("Second frame data",
+				Arrays.equals(frames.get(1).getData(),
+						new byte[] { (byte) 0x22, (byte) 0x33, (byte) 0x44, (byte) 0x55 }),
+				equalTo(true));
+	}
+
+	@Test
+	public void monitor_receive_listenerThrows() throws Exception {
+		// GIVEN
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		final List<CanbusFrame> frames = new CopyOnWriteArrayList<>();
+		final CountDownLatch latch = new CountDownLatch(2);
+		final CanbusFrameListener listener = throwOnFirstFrameListener(frames, latch);
+
+		// WHEN
+		replayAll();
+		boolean allReceived = false;
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
+			conn.open();
+			conn.monitor(listener);
+
+			// mock two frame messages from the server; the listener throws on the first one
+			socket.respondMessage(new FrameMessageImpl(asList("1 23.424242 11 22 33 44".split(" "))));
+			socket.respondMessage(new FrameMessageImpl(asList("2 32.0 22 33 44 55".split(" "))));
+
+			allReceived = latch.await(2, TimeUnit.SECONDS);
+		}
+
+		// THEN
+		assertThat("Frame after listener exception received", allReceived, equalTo(true));
+		assertThat("Both frames captured", frames, hasSize(2));
+		assertThat("Second frame address", frames.get(1).getAddress(), equalTo(2));
 	}
 
 	@Test
