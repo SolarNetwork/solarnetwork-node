@@ -167,8 +167,10 @@ public class ModbusControlConfigCsvWriter {
 		}
 		switch (fn) {
 			case WriteCoil:
+			case WriteMultipleCoils:
 				return "Coil";
 			case WriteHoldingRegister:
+			case WriteMultipleHoldingRegisters:
 				return "Holding";
 			default:
 				return null;
