@@ -554,7 +554,8 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 					}
 				} else if ( sj.future != null ) {
 					sj.stop();
-					log.info("Stopped job [{}]", sj.identifier, oldSchedule, newSchedule);
+					log.info("Stopped job [{}] because schedule changed from [{}] to [{}]",
+							sj.identifier, oldSchedule, newSchedule);
 				}
 			}
 		}
