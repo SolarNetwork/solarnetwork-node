@@ -92,7 +92,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * </p>
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ManagedJobScheduler implements ServiceLifecycleObserver, ConfigurationListener, PingTest {
 
@@ -249,25 +249,29 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			stop(false);
 		}
 
+		private boolean isScheduled() {
+			return (future != null && !future.isDone());
+		}
+
 		private void stop(boolean preserveRegisteredServices) {
 			if ( future != null && !future.isDone() ) {
 				future.cancel(true);
 				log.info("Unscheduled job [{}]", identifier);
-				if ( !preserveRegisteredServices && registeredServices != null
-						&& !registeredServices.isEmpty() ) {
-					for ( ServiceRegistration<?> reg : registeredServices ) {
-						try {
-							reg.unregister();
-							log.info("Unregistered job [{}] managed service {}", identifier, reg);
-						} catch ( Exception e ) {
-							log.warn("Error unregistering job [{}] managed service {}: {}", identifier,
-									reg, e.toString());
-						}
-					}
-					registeredServices.clear();
-				}
 			}
 			future = null;
+			if ( !preserveRegisteredServices && registeredServices != null
+					&& !registeredServices.isEmpty() ) {
+				for ( ServiceRegistration<?> reg : registeredServices ) {
+					try {
+						reg.unregister();
+						log.info("Unregistered job [{}] managed service {}", identifier, reg);
+					} catch ( Exception e ) {
+						log.warn("Error unregistering job [{}] managed service {}: {}", identifier,
+								reg, e.toString());
+					}
+				}
+				registeredServices.clear();
+			}
 		}
 
 		@Override
@@ -543,8 +547,10 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				newSchedule = configScheduleExpression.toString();
 			}
 
+			// oldSchedule is the schedule the job was last scheduled with, which is retained
+			// if the job is stopped from an invalid schedule; so also reschedule if not scheduled
 			if ( isSchedulerActive() && newSchedule != null
-					&& (oldSchedule == null || !oldSchedule.equalsIgnoreCase(newSchedule)) ) {
+					&& (!sj.isScheduled() || !newSchedule.equalsIgnoreCase(oldSchedule)) ) {
 				Trigger trigger = triggerForSchedule(newSchedule);
 				if ( trigger != null ) {
 					sj.stop(true);
@@ -552,8 +558,8 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 					if ( f != null ) {
 						sj.scheduled(f, newSchedule, trigger);
 					}
-				} else if ( sj.future != null ) {
-					sj.stop();
+				} else if ( sj.isScheduled() ) {
+					sj.stop(true);
 					log.info("Stopped job [{}] because schedule changed from [{}] to [{}]",
 							sj.identifier, oldSchedule, newSchedule);
 				}

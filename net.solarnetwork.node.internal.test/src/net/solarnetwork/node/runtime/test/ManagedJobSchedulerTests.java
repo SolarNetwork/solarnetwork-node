@@ -76,7 +76,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * Test cases for the {@link ManagedJobScheduler} class.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ManagedJobSchedulerTests {
 
@@ -633,6 +633,143 @@ public class ManagedJobSchedulerTests {
 		assertThat("Rescheduled trigger is periodic from settings update", trigCaptor2.getValue(),
 				is(expectedTrigger));
 		assertThat("Rescheduled task active", future2.isDone(), is(false));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void observer_change_invalidThenRestore() throws Exception {
+		// GIVEN
+		final String settingPid = "foo.bar";
+		final String schedule = "0 * * * * *";
+		JobService job = EasyMock.createMock(JobService.class);
+		expect(job.getSettingUid()).andReturn(settingPid).anyTimes();
+		expect(job.getDisplayName()).andReturn(null).anyTimes();
+
+		// register ConfigurationListener first time
+		ServiceRegistration<ConfigurationListener> configurationListenerReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(ConfigurationListener.class, service, null))
+				.andReturn(configurationListenerReg);
+
+		// register SettingSpecifierProvider for job
+		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
+				anyObject(SettingSpecifierProvider.class), anyObject(Dictionary.class)))
+						.andReturn(settingProviderReg);
+
+		// schedule the actual job
+		Capture<Trigger> trigCaptor = Capture.newInstance();
+		TestScheduledFuture future = new TestScheduledFuture();
+		expect(taskScheduler.schedule(anyObject(Runnable.class), capture(trigCaptor)))
+				.andReturn((ScheduledFuture) future);
+
+		ConfigurationAdmin ca = EasyMock.createMock(ConfigurationAdmin.class);
+		ServiceReference<ConfigurationAdmin> caRef = EasyMock.createMock(ServiceReference.class);
+		expect(bundleContext.getService(caRef)).andReturn(ca).anyTimes();
+		Configuration conf = EasyMock.createMock(Configuration.class);
+		expect(ca.getConfiguration(settingPid, null)).andReturn(conf).times(2);
+
+		// first CM update changes schedule to invalid value, second restores original value
+		Hashtable<String, Object> invalidConfProps = new Hashtable<>();
+		invalidConfProps.put("schedule", "OFF");
+		Hashtable<String, Object> restoredConfProps = new Hashtable<>();
+		restoredConfProps.put("schedule", schedule);
+		expect(conf.getProperties()).andReturn(invalidConfProps).andReturn(restoredConfProps);
+
+		// reschedule the actual job
+		Capture<Trigger> trigCaptor2 = Capture.newInstance();
+		TestScheduledFuture future2 = new TestScheduledFuture();
+		expect(taskScheduler.schedule(anyObject(Runnable.class), capture(trigCaptor2)))
+				.andReturn((ScheduledFuture) future2);
+
+		// WHEN
+		replayAll(job, configurationListenerReg, settingProviderReg, ca, caRef, conf);
+		SimpleManagedJob managedJob = new SimpleManagedJob(job);
+		managedJob.setSchedule(schedule);
+		service.registerJob(managedJob, Collections.emptyMap());
+
+		// CM update to invalid schedule
+		service.configurationEvent(new ConfigurationEvent(caRef, CM_UPDATED, null, settingPid));
+
+		// CM update to restore original schedule
+		service.configurationEvent(new ConfigurationEvent(caRef, CM_UPDATED, null, settingPid));
+
+		// THEN
+		assertThat("Scheduled trigger is cron", trigCaptor.getValue(), is(new CronTrigger(schedule)));
+		assertThat("Scheduled task cancelled from invalid schedule", future.isCancelled(), is(true));
+		assertThat("Rescheduled trigger is cron from restored schedule", trigCaptor2.getValue(),
+				is(new CronTrigger(schedule)));
+		assertThat("Rescheduled task active", future2.isDone(), is(false));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void observer_change_invalid_serviceProvider() throws Exception {
+		// GIVEN
+		final String settingPid = "foo.bar";
+		TestJobService job = new TestJobService(settingPid);
+
+		// register ConfigurationListener first time
+		ServiceRegistration<ConfigurationListener> configurationListenerReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(ConfigurationListener.class, service, null))
+				.andReturn(configurationListenerReg);
+
+		// register the service provider
+		ServiceRegistration<Serializable> serviceProviderReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(
+				EasyMock.aryEq(new String[] { Serializable.class.getName() }),
+				anyObject(Serializable.class), anyObject(Dictionary.class)))
+						.andReturn((ServiceRegistration) serviceProviderReg);
+
+		// register SettingSpecifierProvider for job
+		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
+				anyObject(SettingSpecifierProvider.class), anyObject(Dictionary.class)))
+						.andReturn(settingProviderReg);
+
+		// schedule the actual job
+		TestScheduledFuture future = new TestScheduledFuture();
+		expect(taskScheduler.schedule(anyObject(Runnable.class), anyObject(Trigger.class)))
+				.andReturn((ScheduledFuture) future);
+
+		ConfigurationAdmin ca = EasyMock.createMock(ConfigurationAdmin.class);
+		ServiceReference<ConfigurationAdmin> caRef = EasyMock.createMock(ServiceReference.class);
+		expect(bundleContext.getService(caRef)).andReturn(ca).anyTimes();
+		Configuration conf = EasyMock.createMock(Configuration.class);
+		expect(ca.getConfiguration(settingPid, null)).andReturn(conf);
+		Hashtable<String, Object> confProps = new Hashtable<>();
+		confProps.put("schedule", "OFF");
+		expect(conf.getProperties()).andReturn(confProps);
+
+		// WHEN
+		replayAll(configurationListenerReg, settingProviderReg, serviceProviderReg, ca, caRef, conf);
+		SimpleManagedJob managedJob = new SimpleManagedJob(job);
+		managedJob.setSchedule("0 * * * * *");
+
+		SimpleServiceProviderConfiguration serviceProviderConf = new SimpleServiceProviderConfiguration();
+		serviceProviderConf.setInterfaces(new String[] { Serializable.class.getName() });
+		managedJob.setServiceProviderConfigurations(singletonMap("otherService", serviceProviderConf));
+
+		service.registerJob(managedJob, Collections.emptyMap());
+
+		// CM update to invalid schedule: job stopped, but service provider must remain registered
+		service.configurationEvent(new ConfigurationEvent(caRef, CM_UPDATED, null, settingPid));
+
+		// THEN
+		assertThat("Scheduled task cancelled from invalid schedule", future.isCancelled(), is(true));
+		EasyMock.verify(settingProviderReg, serviceProviderReg);
+
+		// unregister job: service provider must be unregistered even though job not scheduled
+		EasyMock.reset(settingProviderReg, serviceProviderReg);
+		settingProviderReg.unregister();
+		serviceProviderReg.unregister();
+		EasyMock.replay(settingProviderReg, serviceProviderReg);
+
+		service.unregisterJob(managedJob, Collections.emptyMap());
 	}
 
 }
