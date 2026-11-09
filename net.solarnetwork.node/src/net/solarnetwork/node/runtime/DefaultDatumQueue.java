@@ -371,8 +371,11 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						log.info("Waiting {}s before starting DatumQueue processor",
 								processorStartupDelayMs / 1000);
 						Thread.sleep(processorStartupDelayMs);
-					} catch ( Exception e ) {
-						// ignore
+					} catch ( InterruptedException e ) {
+						if ( !processing ) {
+							// shut down or replaced while waiting to start
+							return;
+						}
 					}
 					processorStartupDelayMs = -1;
 				}

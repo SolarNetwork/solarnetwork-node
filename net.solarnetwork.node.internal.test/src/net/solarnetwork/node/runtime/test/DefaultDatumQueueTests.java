@@ -1076,4 +1076,30 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Discarded), is(rejected.longValue()));
 	}
 
+	@Test
+	public void shutdown_duringStartupDelay() throws InterruptedException {
+		// GIVEN
+		queue.shutdown();
+		queue = new DefaultDatumQueue(datumDao, new StaticOptionalService<>(eventAdmin),
+				new StaticOptionalService<>(directConsumer), DefaultDatumQueue.DEFAULT_QUEUE_SIZE);
+		queue.setStartupDelayMs(60_000L);
+		queue.setDatumProcessorExceptionHandler(this);
+		queue.addConsumer(consumer);
+
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		// WHEN
+		replayAll();
+		queue.startup();
+		queue.offer(datum);
+		queue.shutdown();
+
+		sleep(300L);
+
+		// THEN
+		assertThat("Datum queued during startup delay not processed after shutdown",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(0L));
+	}
+
 }
