@@ -24,10 +24,12 @@ package net.solarnetwork.node.runtime;
 
 import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -68,7 +70,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 
@@ -202,9 +204,16 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 
 	@Override
 	public void handleEvent(Event event) {
-		final Set<Function<Event, Map<String, ?>>> extractors = eventExtractors.get(event.getTopic());
+		// copy the extractors so they can be applied while others are registered
+		List<Function<Event, Map<String, ?>>> extractors = null;
+		synchronized ( eventExtractors ) {
+			final Set<Function<Event, Map<String, ?>>> set = eventExtractors.get(event.getTopic());
+			if ( set != null && !set.isEmpty() ) {
+				extractors = new ArrayList<>(set);
+			}
+		}
 		Map<String, ?> data;
-		if ( extractors != null && !extractors.isEmpty() ) {
+		if ( extractors != null ) {
 			Map<String, Object> d = new LinkedHashMap<>(8);
 			for ( Function<Event, Map<String, ?>> fn : extractors ) {
 				Map<String, ?> ed = fn.apply(event);
@@ -237,7 +246,10 @@ public class EventMessageBridge implements EventHandler, EventMessageRegistrar {
 		boolean pubTopic = false;
 		String topic = event.getTopic();
 		if ( topicMapping != null ) {
-			String val = topicMapping.get(topic);
+			String val;
+			synchronized ( topicMapping ) {
+				val = topicMapping.get(topic);
+			}
 			if ( val != null ) {
 				topic = val;
 			}

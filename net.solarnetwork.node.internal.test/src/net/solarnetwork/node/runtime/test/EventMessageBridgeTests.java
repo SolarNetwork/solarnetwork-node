@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,7 +55,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link EventMessageBridge} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class EventMessageBridgeTests {
 
@@ -191,6 +192,40 @@ public class EventMessageBridgeTests {
 		assertThat("Datum tags", datum.path("t").path(0).asText(), equalTo("power"));
 		assertThat("Flat property still included", json.path("data").path("watts").asInt(),
 				equalTo(123));
+	}
+
+	@Test
+	public void handleEvent_extractorRegisteredWhileHandling() {
+		// GIVEN
+		final String eventTopic = "test/topic";
+
+		// each extractor registers another while the event is handled, as another thread could
+		eventMessageBridge.registerEventDataExtractor(eventTopic, e -> {
+			eventMessageBridge.registerEventDataExtractor(eventTopic, e2 -> null);
+			return Collections.singletonMap("a", 1);
+		});
+		eventMessageBridge.registerEventDataExtractor(eventTopic, e -> {
+			eventMessageBridge.registerEventDataExtractor(eventTopic, e2 -> null);
+			return Collections.singletonMap("b", 2);
+		});
+
+		Capture<String> destCaptor = Capture.newInstance();
+		Capture<Object> msgCaptor = Capture.newInstance();
+		messageSendingOps.convertAndSend(capture(destCaptor), capture(msgCaptor),
+				EasyMock.<Map<String, Object>> isNull());
+
+		// WHEN
+		replayAll();
+		eventMessageBridge.handleEvent(new Event(eventTopic, Collections.emptyMap()));
+
+		// THEN
+		assertThat("Message topic", destCaptor.getValue(), equalTo("/topic/test/topic"));
+		Object msgData = ((Result<?>) msgCaptor.getValue()).getData();
+		Map<String, Object> expectedMsgData = new HashMap<>(2);
+		expectedMsgData.put("a", 1);
+		expectedMsgData.put("b", 2);
+		assertThat("Message data from extractors registered before event", msgData,
+				equalTo((Object) expectedMsgData));
 	}
 
 }
