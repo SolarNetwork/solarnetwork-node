@@ -87,7 +87,7 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  *
  * @author matt
- * @version 3.2
+ * @version 3.3
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -200,9 +200,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		if ( processorStartupDelayMs < 0 ) {
 			processorStartupDelayMs = getStartupDelayMs();
 		}
-		datumProcessor = new ProcessorThread();
-		datumProcessor.setUncaughtExceptionHandler(this);
-		datumProcessor.start();
+		startProcessor();
 
 		// restart any registered consumers
 		List<ConsumerThread> newConsumers = new ArrayList<>();
@@ -214,6 +212,13 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		}
 		consumers.clear();
 		consumers.addAll(newConsumers);
+	}
+
+	private synchronized void startProcessor() {
+		final ProcessorThread processor = new ProcessorThread();
+		processor.setUncaughtExceptionHandler(this);
+		datumProcessor = processor;
+		processor.start();
 	}
 
 	/**
@@ -405,7 +410,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						log.error("Error processing datum {}; {}.", event.datum,
 								(discardDatumOnFilterException ? "discarding" : "continuing anyway"), t);
 						if ( discardDatumOnFilterException ) {
-							uncaughtException(Thread.currentThread(), t);
+							handleProcessorException(Thread.currentThread(), t);
 							result = null;
 						} else {
 							result = event.datum;
@@ -429,7 +434,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 							} catch ( Throwable t ) {
 								stats.incrementAndGet(QueueStats.Errors);
 								log.error("Error persisting datum {}; discarding.", event.datum, t);
-								uncaughtException(Thread.currentThread(), t);
+								handleProcessorException(Thread.currentThread(), t);
 								result = null;
 							}
 						}
@@ -556,12 +561,18 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {
 		synchronized ( this ) {
-			final Thread processor = this.datumProcessor;
-			if ( processor != null && !processor.isAlive() ) {
-				datumProcessor = null;
-				startup();
+			// invoked on the dying thread itself, while it is still alive, so compare by identity
+			if ( t == datumProcessor ) {
+				stats.incrementAndGet(QueueStats.Errors);
+				log.error("DatumQueue processor {} died; restarting.", Integer.toHexString(t.hashCode()),
+						e);
+				startProcessor();
 			}
 		}
+		handleProcessorException(t, e);
+	}
+
+	private void handleProcessorException(Thread t, Throwable e) {
 		final UncaughtExceptionHandler datumProcessorExceptionHandler = this.datumProcessorExceptionHandler;
 		if ( datumProcessorExceptionHandler != null ) {
 			datumProcessorExceptionHandler.uncaughtException(t, e);

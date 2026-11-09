@@ -82,7 +82,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link DefaultDatumQueue}.
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
@@ -784,6 +784,62 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 2, datum2);
+	}
+
+	@Test
+	public void exception_processorDied_restart() throws InterruptedException {
+		// GIVEN
+		final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
+		queue.setDatumProcessorExceptionHandler(new UncaughtExceptionHandler() {
+
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+				exceptionRef.set(e);
+			}
+		});
+
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now().minusMillis(10),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum2.getSamples().putInstantaneousSampleValue("watts", 2345);
+
+		directConsumer.datumQueueWillProcess(queue, datum, Stage.PreFilter, true);
+
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PreFilter, true);
+		directConsumer.datumQueueWillProcess(queue, datum2, Stage.PostFilter, true);
+		datumDao.storeDatum(datum2);
+		consumer.accept(datum2);
+
+		// posting the first event throws outside any per-datum error handling, killing the processor
+		final RuntimeException eventException = new RuntimeException("test");
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().andThrow(eventException).andVoid().times(2);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+		queue.offer(datum2);
+
+		sleep(300L);
+
+		// THEN
+		assertThat("Exception passed to handler", exceptionRef.get(), is(sameInstance(eventException)));
+		assertThat("Two datum recorded as processed, the second by the restarted processor",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(2L));
+		assertThat("One datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+		assertThat("One datum recorded as error",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Errors), is(1L));
+
+		assertThat("Event 1 is DATUM_CAPTURED", eventCaptor.getValues().get(0).getTopic(),
+				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		assertThat("Event 1 datum",
+				eventCaptor.getValues().get(0).getProperty(DatumEvents.DATUM_PROPERTY),
+				sameInstance(datum));
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 1, datum2);
 	}
 
 	@Test
