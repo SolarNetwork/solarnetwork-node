@@ -32,6 +32,7 @@ import static net.solarnetwork.node.service.OperationalModesService.withTag;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.notNull;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -54,9 +55,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -78,7 +82,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link DefaultOperationalModesService} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultOperationalModesServiceTests {
 
@@ -941,6 +945,52 @@ public class DefaultOperationalModesServiceTests {
 				is(equalTo(false)));
 		assertThat("Service reports mode state", service.isOperationalModeActive("bar"),
 				is(equalTo(true)));
+	}
+
+	@Test
+	public void expire_expired_reenabledDuringExpire() throws Exception {
+		// GIVEN
+		Long expire = System.currentTimeMillis() - 10_000L;
+		activeModeCache.put("test", expire);
+
+		final Instant newExpire = Instant.now().plus(1, ChronoUnit.HOURS);
+		final FutureTask<Set<String>> reenable = new FutureTask<>(
+				() -> service.enableOperationalModes(singleton("test"), newExpire));
+
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
+				.andAnswer(() -> {
+					// re-enable the mode from another thread while the expire task is running; the
+					// join is timed because enable must wait for the expire task to finish
+					Thread t = new Thread(reenable);
+					t.start();
+					t.join(200);
+					return true;
+				});
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
+				.andReturn(true);
+
+		settingDao.storeSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test", "test");
+		settingDao.storeSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test",
+				String.valueOf(newExpire.toEpochMilli()));
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		service.expireNow();
+		Set<String> active = reenable.get(5, TimeUnit.SECONDS);
+
+		// THEN
+		assertThat("Re-enabled mode activated", active, containsInAnyOrder("test"));
+		assertThat("Re-enabled mode remains", activeModeCache,
+				hasEntry("test", newExpire.toEpochMilli()));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
+		assertThat("Expire and enable events posted", eventCaptor.getValues(), hasSize(2));
+		assertModesChangedEvent("Expired ", eventCaptor.getValues().get(0));
+		assertModesChangedEvent("Re-enabled ", eventCaptor.getValues().get(1), "test");
 	}
 
 	@Test

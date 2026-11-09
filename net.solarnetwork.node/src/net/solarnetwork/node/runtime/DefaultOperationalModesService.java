@@ -80,7 +80,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * Default implementation of {@link OperationalModesService}.
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
 		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
@@ -295,44 +295,47 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 		@Override
 		public void run() {
-			final long now = clock.millis();
-			Set<String> toDeactivate = null;
-			for ( Map.Entry<String, Long> me : activeModes.entrySet() ) {
-				Long exp = me.getValue();
-				if ( !NO_EXPIRATION.equals(exp) && exp.longValue() < now ) {
-					if ( toDeactivate == null ) {
-						toDeactivate = new HashSet<>(4);
+			// synchronized with enable/disable so a mode re-enabled while expiring is not lost
+			synchronized ( DefaultOperationalModesService.this ) {
+				final long now = clock.millis();
+				Set<String> toDeactivate = null;
+				for ( Map.Entry<String, Long> me : activeModes.entrySet() ) {
+					Long exp = me.getValue();
+					if ( !NO_EXPIRATION.equals(exp) && exp.longValue() < now ) {
+						if ( toDeactivate == null ) {
+							toDeactivate = new HashSet<>(4);
+						}
+						toDeactivate.add(me.getKey());
 					}
-					toDeactivate.add(me.getKey());
 				}
-			}
-			if ( toDeactivate == null ) {
-				// no expired values
-				return;
-			}
-			final SettingDao dao = settingDao.service();
-			if ( dao == null ) {
-				return;
-			}
-			final PlatformTransactionManager txManager = OptionalService.service(transactionManager);
-			TransactionStatus tx = null;
-			if ( txManager != null ) {
-				tx = txManager.getTransaction(TX_RW);
-			}
-			try {
-				for ( String mode : toDeactivate ) {
-					dao.deleteSetting(SETTING_OP_MODE, mode);
-					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
-					activeModes.remove(mode);
+				if ( toDeactivate == null ) {
+					// no expired values
+					return;
 				}
-				Set<String> newActive = activeOperationalModes();
-				log.info("Expired operational modes [{}]; active modes now [{}]",
-						commaDelimitedStringFromCollection(toDeactivate),
-						commaDelimitedStringFromCollection(newActive));
-				postOperationalModesChangedEvent(newActive);
-			} finally {
-				if ( tx != null && txManager != null ) {
-					txManager.commit(tx);
+				final SettingDao dao = settingDao.service();
+				if ( dao == null ) {
+					return;
+				}
+				final PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+				TransactionStatus tx = null;
+				if ( txManager != null ) {
+					tx = txManager.getTransaction(TX_RW);
+				}
+				try {
+					for ( String mode : toDeactivate ) {
+						dao.deleteSetting(SETTING_OP_MODE, mode);
+						dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
+						activeModes.remove(mode);
+					}
+					Set<String> newActive = activeOperationalModes();
+					log.info("Expired operational modes [{}]; active modes now [{}]",
+							commaDelimitedStringFromCollection(toDeactivate),
+							commaDelimitedStringFromCollection(newActive));
+					postOperationalModesChangedEvent(newActive);
+				} finally {
+					if ( tx != null && txManager != null ) {
+						txManager.commit(tx);
+					}
 				}
 			}
 		}
