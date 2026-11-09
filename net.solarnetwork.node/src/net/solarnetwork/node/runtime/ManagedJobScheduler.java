@@ -266,8 +266,8 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 						reg.unregister();
 						log.info("Unregistered job [{}] managed service {}", identifier, reg);
 					} catch ( Exception e ) {
-						log.warn("Error unregistering job [{}] managed service {}: {}", identifier,
-								reg, e.toString());
+						log.warn("Error unregistering job [{}] managed service {}: {}", identifier, reg,
+								e.toString());
 					}
 				}
 				registeredServices.clear();
