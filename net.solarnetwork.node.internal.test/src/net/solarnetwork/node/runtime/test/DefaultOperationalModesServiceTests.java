@@ -43,6 +43,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.fail;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -203,6 +205,31 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertModesChangedEvent("Init TX active", eventCaptor.getValue(), "test");
+	}
+
+	@Test
+	public void init_tx_exception() {
+		// GIVEN
+		service.setTransactionManager(new StaticOptionalService<>(txManager));
+
+		TransactionStatus txStatus = new SimpleTransactionStatus();
+		expect(txManager.getTransaction(notNull(TransactionDefinition.class))).andReturn(txStatus);
+
+		RuntimeException ex = new RuntimeException("test");
+		expect(settingDao.getSettingValues(DefaultOperationalModesService.SETTING_OP_MODE)).andThrow(ex);
+
+		// the transaction is rolled back, not committed
+		txManager.rollback(txStatus);
+
+		// WHEN
+		replayAll();
+		try {
+			service.serviceDidStartup();
+			fail("Exception should be thrown");
+		} catch ( RuntimeException e ) {
+			// THEN
+			assertThat("DAO exception thrown", e, is(sameInstance(ex)));
+		}
 	}
 
 	@Test
@@ -499,6 +526,34 @@ public class DefaultOperationalModesServiceTests {
 	}
 
 	@Test
+	public void enableMode_tx_exception() {
+		// GIVEN
+		service.setTransactionManager(new StaticOptionalService<>(txManager));
+
+		TransactionStatus txStatus = new SimpleTransactionStatus();
+		expect(txManager.getTransaction(notNull(TransactionDefinition.class))).andReturn(txStatus);
+
+		RuntimeException ex = new RuntimeException("test");
+		settingDao.storeSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test", "test");
+		expectLastCall().andThrow(ex);
+
+		// the transaction is rolled back, not committed
+		txManager.rollback(txStatus);
+
+		// WHEN
+		replayAll();
+		try {
+			service.enableOperationalModes(singleton("test"));
+			fail("Exception should be thrown");
+		} catch ( RuntimeException e ) {
+			// THEN
+			assertThat("DAO exception thrown", e, is(sameInstance(ex)));
+		}
+		assertThat("Service reports mode state unchanged", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
+	}
+
+	@Test
 	public void enableMode_alreadyActive() {
 		// GIVEN
 		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
@@ -682,6 +737,35 @@ public class DefaultOperationalModesServiceTests {
 		assertModesChangedEvent("Deactivated ", eventCaptor.getValue());
 		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
 				is(equalTo(false)));
+	}
+
+	@Test
+	public void disableMode_tx_exception() {
+		// GIVEN
+		service.setTransactionManager(new StaticOptionalService<>(txManager));
+
+		TransactionStatus txStatus = new SimpleTransactionStatus();
+		expect(txManager.getTransaction(notNull(TransactionDefinition.class))).andReturn(txStatus);
+
+		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
+		RuntimeException ex = new RuntimeException("test");
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
+				.andThrow(ex);
+
+		// the transaction is rolled back, not committed
+		txManager.rollback(txStatus);
+
+		// WHEN
+		replayAll();
+		try {
+			service.disableOperationalModes(singleton("test"));
+			fail("Exception should be thrown");
+		} catch ( RuntimeException e ) {
+			// THEN
+			assertThat("DAO exception thrown", e, is(sameInstance(ex)));
+		}
+		assertThat("Service reports mode state unchanged", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -988,6 +1072,37 @@ public class DefaultOperationalModesServiceTests {
 		assertModesChangedEvent("Expired ", eventCaptor.getValue());
 		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
 				is(equalTo(false)));
+	}
+
+	@Test
+	public void expire_expired_tx_exception() {
+		// GIVEN
+		service.setTransactionManager(new StaticOptionalService<>(txManager));
+
+		TransactionStatus txStatus = new SimpleTransactionStatus();
+		expect(txManager.getTransaction(notNull(TransactionDefinition.class))).andReturn(txStatus);
+
+		Long expire = System.currentTimeMillis() - 10_000L;
+		activeModeCache.put("test", expire);
+
+		RuntimeException ex = new RuntimeException("test");
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
+				.andThrow(ex);
+
+		// the transaction is rolled back, not committed
+		txManager.rollback(txStatus);
+
+		// WHEN
+		replayAll();
+		try {
+			service.expireNow();
+			fail("Exception should be thrown");
+		} catch ( RuntimeException e ) {
+			// THEN
+			assertThat("DAO exception thrown", e, is(sameInstance(ex)));
+		}
+		assertThat("Expired mode kept so expiring is tried again", activeModeCache,
+				hasEntry("test", expire));
 	}
 
 	@Test

@@ -284,6 +284,13 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 				}
 			}
 			return active;
+		} catch ( RuntimeException | Error e ) {
+			if ( tx != null && txManager != null ) {
+				final TransactionStatus failedTx = tx;
+				tx = null; // do not commit in finally
+				txManager.rollback(failedTx);
+			}
+			throw e;
 		} finally {
 			if ( tx != null && txManager != null ) {
 				txManager.commit(tx);
@@ -325,13 +332,21 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 					for ( String mode : toDeactivate ) {
 						dao.deleteSetting(SETTING_OP_MODE, mode);
 						dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
-						activeModes.remove(mode);
 					}
+					// update the cache only once all settings are deleted
+					activeModes.keySet().removeAll(toDeactivate);
 					Set<String> newActive = activeOperationalModes();
 					log.info("Expired operational modes [{}]; active modes now [{}]",
 							commaDelimitedStringFromCollection(toDeactivate),
 							commaDelimitedStringFromCollection(newActive));
 					postOperationalModesChangedEvent(newActive);
+				} catch ( RuntimeException | Error e ) {
+					if ( tx != null && txManager != null ) {
+						final TransactionStatus failedTx = tx;
+						tx = null; // do not commit in finally
+						txManager.rollback(failedTx);
+					}
+					throw e;
 				} finally {
 					if ( tx != null && txManager != null ) {
 						txManager.commit(tx);
@@ -527,13 +542,16 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		}
 		try {
 			for ( String mode : toActivate ) {
-				activeModes.put(mode, expireMs != null ? expireMs : NO_EXPIRATION);
 				dao.storeSetting(SETTING_OP_MODE, mode, mode);
 				if ( expire != null ) {
 					dao.storeSetting(SETTING_OP_MODE_EXPIRE, mode, String.valueOf(expireMs));
 				} else {
 					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
 				}
+			}
+			// update the cache only once all settings are saved
+			for ( String mode : toActivate ) {
+				activeModes.put(mode, expireMs != null ? expireMs : NO_EXPIRATION);
 			}
 			Set<String> active = activeOperationalModes();
 			if ( log.isInfoEnabled() ) {
@@ -543,6 +561,13 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			}
 			postOperationalModesChangedEvent(active);
 			return active;
+		} catch ( RuntimeException | Error e ) {
+			if ( tx != null && txManager != null ) {
+				final TransactionStatus failedTx = tx;
+				tx = null; // do not commit in finally
+				txManager.rollback(failedTx);
+			}
+			throw e;
 		} finally {
 			if ( tx != null && txManager != null ) {
 				txManager.commit(tx);
@@ -585,11 +610,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		}
 		try {
 			for ( String mode : toDeactivate ) {
-				activeModes.remove(mode);
 				dao.deleteSetting(SETTING_OP_MODE, mode);
 				dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
-				active.remove(mode);
 			}
+			// update the cache only once all settings are deleted
+			activeModes.keySet().removeAll(toDeactivate);
+			active.removeAll(toDeactivate);
 			if ( log.isInfoEnabled() ) {
 				log.info("Disabled operational modes [{}]; active modes now [{}]",
 						commaDelimitedStringFromCollection(modes),
@@ -597,6 +623,13 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			}
 			postOperationalModesChangedEvent(active);
 			return active;
+		} catch ( RuntimeException | Error e ) {
+			if ( tx != null && txManager != null ) {
+				final TransactionStatus failedTx = tx;
+				tx = null; // do not commit in finally
+				txManager.rollback(failedTx);
+			}
+			throw e;
 		} finally {
 			if ( tx != null && txManager != null ) {
 				txManager.commit(tx);
