@@ -1723,7 +1723,9 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot
 		if ( history == null || sourceId == null ) {
 			return List.of();
 		}
-		Collection<NodeDatum> found = history.slice(sourceId, timestamp, offset, count, null);
+		Collection<NodeDatum> found = (timestamp != null
+				? history.slice(sourceId, timestamp, offset, count, null)
+				: history.slice(sourceId, offset, count, null));
 		if ( found == null || found.isEmpty() ) {
 			return singleton(this);
 		}
