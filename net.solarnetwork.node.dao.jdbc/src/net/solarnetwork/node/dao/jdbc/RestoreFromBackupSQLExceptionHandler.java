@@ -47,7 +47,7 @@ import net.solarnetwork.service.OptionalService;
  * Recover from connection exceptions by restoring from backup.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHandler {
 
@@ -177,13 +177,17 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 	}
 
 	private @Nullable BackupService getBackupService() {
-		BackupManager mgr = backupManager();
+		ServiceReference<BackupManager> mgrRef = bundleContext.getServiceReference(BackupManager.class);
+		BackupManager mgr = (mgrRef != null ? bundleContext.getService(mgrRef) : null);
 		if ( mgr == null ) {
 			log.debug("No BackupManager available to restore from");
 			return null;
 		}
-		BackupService result = mgr.activeBackupService();
-		return result;
+		try {
+			return mgr.activeBackupService();
+		} finally {
+			bundleContext.ungetService(mgrRef);
+		}
 	}
 
 	private @Nullable Backup getBackupToRestore(BackupService backupService) {
@@ -208,14 +212,6 @@ public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHa
 			}
 		}
 		return backup;
-	}
-
-	private @Nullable BackupManager backupManager() {
-		ServiceReference<BackupManager> mgrRef = bundleContext.getServiceReference(BackupManager.class);
-		if ( mgrRef == null ) {
-			return null;
-		}
-		return bundleContext.getService(mgrRef);
 	}
 
 	private void shutdown(Backup backup) {

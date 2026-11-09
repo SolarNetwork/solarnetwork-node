@@ -534,8 +534,14 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		try {
 			ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 			ConfigurationAdmin ca = bundleContext.getService(caRef);
-			Configuration config = ca.getConfiguration(pid, null);
-			props = config.getProperties();
+			if ( ca != null ) {
+				try {
+					Configuration config = ca.getConfiguration(pid, null);
+					props = config.getProperties();
+				} finally {
+					bundleContext.ungetService(caRef);
+				}
+			}
 		} catch ( Exception e ) {
 			log.warn("Exception processing job [{}] configuration update event", pid, e);
 		}

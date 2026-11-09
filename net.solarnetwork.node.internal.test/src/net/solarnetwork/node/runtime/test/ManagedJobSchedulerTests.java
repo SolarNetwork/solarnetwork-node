@@ -648,7 +648,8 @@ public class ManagedJobSchedulerTests {
 
 		ConfigurationAdmin ca = EasyMock.createMock(ConfigurationAdmin.class);
 		ServiceReference<ConfigurationAdmin> caRef = EasyMock.createMock(ServiceReference.class);
-		expect(bundleContext.getService(caRef)).andReturn(ca).anyTimes();
+		expect(bundleContext.getService(caRef)).andReturn(ca);
+		expect(bundleContext.ungetService(caRef)).andReturn(true);
 		Configuration conf = EasyMock.createMock(Configuration.class);
 		expect(ca.getConfiguration(settingPid, null)).andReturn(conf);
 		Hashtable<String, Object> confProps = new Hashtable<>();
@@ -718,7 +719,8 @@ public class ManagedJobSchedulerTests {
 
 		ConfigurationAdmin ca = EasyMock.createMock(ConfigurationAdmin.class);
 		ServiceReference<ConfigurationAdmin> caRef = EasyMock.createMock(ServiceReference.class);
-		expect(bundleContext.getService(caRef)).andReturn(ca).anyTimes();
+		expect(bundleContext.getService(caRef)).andReturn(ca).times(2);
+		expect(bundleContext.ungetService(caRef)).andReturn(true).times(2);
 		Configuration conf = EasyMock.createMock(Configuration.class);
 		expect(ca.getConfiguration(settingPid, null)).andReturn(conf).times(2);
 
@@ -790,7 +792,8 @@ public class ManagedJobSchedulerTests {
 
 		ConfigurationAdmin ca = EasyMock.createMock(ConfigurationAdmin.class);
 		ServiceReference<ConfigurationAdmin> caRef = EasyMock.createMock(ServiceReference.class);
-		expect(bundleContext.getService(caRef)).andReturn(ca).anyTimes();
+		expect(bundleContext.getService(caRef)).andReturn(ca);
+		expect(bundleContext.ungetService(caRef)).andReturn(true);
 		Configuration conf = EasyMock.createMock(Configuration.class);
 		expect(ca.getConfiguration(settingPid, null)).andReturn(conf);
 		Hashtable<String, Object> confProps = new Hashtable<>();

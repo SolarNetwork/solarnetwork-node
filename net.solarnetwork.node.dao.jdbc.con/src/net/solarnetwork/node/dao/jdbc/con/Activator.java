@@ -17,7 +17,7 @@ import org.osgi.service.cm.ConfigurationAdmin;
  * </p>
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class Activator implements BundleActivator {
 
@@ -45,9 +45,13 @@ public class Activator implements BundleActivator {
 					if ( caRef != null ) {
 						ConfigurationAdmin ca = bundleContext.getService(caRef);
 						if ( ca != null ) {
-							DefaultDataSourceConfigurer configurer = new DefaultDataSourceConfigurer(
-									bundleContext, ca);
-							configurer.init();
+							try {
+								DefaultDataSourceConfigurer configurer = new DefaultDataSourceConfigurer(
+										bundleContext, ca);
+								configurer.init();
+							} finally {
+								bundleContext.ungetService(caRef);
+							}
 						}
 					}
 
