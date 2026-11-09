@@ -575,7 +575,8 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		}
 		SettingDao dao = settingDao.service();
 		if ( dao == null ) {
-			return emptySet();
+			// no change
+			return active;
 		}
 		PlatformTransactionManager txManager = OptionalService.service(transactionManager);
 		TransactionStatus tx = null;
@@ -586,6 +587,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 			for ( String mode : toDeactivate ) {
 				activeModes.remove(mode);
 				dao.deleteSetting(SETTING_OP_MODE, mode);
+				dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
 				active.remove(mode);
 			}
 			if ( log.isInfoEnabled() ) {

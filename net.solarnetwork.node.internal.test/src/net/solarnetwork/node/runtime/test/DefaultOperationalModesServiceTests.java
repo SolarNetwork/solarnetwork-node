@@ -637,6 +637,8 @@ public class DefaultOperationalModesServiceTests {
 		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
 				.andReturn(true);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
+				.andReturn(false);
 
 		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -663,6 +665,8 @@ public class DefaultOperationalModesServiceTests {
 		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
 				.andReturn(true);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
+				.andReturn(false);
 
 		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -688,8 +692,12 @@ public class DefaultOperationalModesServiceTests {
 		activeModeCache.put("bar", DefaultOperationalModesService.NO_EXPIRATION);
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
 				.andReturn(true);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
+				.andReturn(false);
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "bar"))
 				.andReturn(true);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "bar"))
+				.andReturn(false);
 
 		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -722,8 +730,12 @@ public class DefaultOperationalModesServiceTests {
 		activeModeCache.put("bar", DefaultOperationalModesService.NO_EXPIRATION);
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
 				.andReturn(true);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
+				.andReturn(false);
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "bar"))
 				.andReturn(true);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "bar"))
+				.andReturn(false);
 
 		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -819,6 +831,49 @@ public class DefaultOperationalModesServiceTests {
 		assertThat("Mode deactivated", active, hasSize(0));
 		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
 				is(equalTo(false)));
+	}
+
+	@Test
+	public void disableMode_expiring() {
+		// GIVEN
+		Long expire = System.currentTimeMillis() + 60_000L;
+		activeModeCache.put("test", expire);
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
+				.andReturn(true);
+
+		// the expiration setting is removed along with the mode
+		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
+				.andReturn(true);
+
+		Capture<Event> eventCaptor = Capture.newInstance();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		Set<String> active = service.disableOperationalModes(singleton("test"));
+
+		// THEN
+		assertThat("Mode deactivated", active, hasSize(0));
+		assertModesChangedEvent("Deactivated ", eventCaptor.getValue());
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
+	}
+
+	@Test
+	public void disableMode_noDao() {
+		// GIVEN
+		service = new DefaultOperationalModesService(activeModeCache, registeredMap,
+				new StaticOptionalService<>(null), new StaticOptionalService<>(eventAdmin));
+		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
+
+		// WHEN
+		replayAll();
+		Set<String> active = service.disableOperationalModes(singleton("test"));
+
+		// THEN
+		assertThat("Mode not deactivated without DAO", active, containsInAnyOrder("test"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
