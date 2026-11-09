@@ -54,7 +54,7 @@ import net.solarnetwork.node.runtime.DatumHistory;
  * Test cases for the {@link DatumHistory} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DatumHistoryTests {
 
@@ -621,6 +621,169 @@ public class DatumHistoryTests {
 		// WHEN
 		final int count = 2;
 		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(1), 2, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(0)));
+	}
+
+	@Test
+	public void offset_negative() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum result = h.offset(sourceId, -1);
+
+		// THEN
+		assertThat("No datum after the latest", result, is(nullValue()));
+	}
+
+	@Test
+	public void offsetTime_negativeOffsetTooFar() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum result = h.offset(sourceId, start.plusSeconds(2), -1);
+
+		// THEN
+		assertThat("No datum after the latest", result, is(nullValue()));
+	}
+
+	@Test
+	public void slice_negativeOffset() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		Iterable<NodeDatum> slice = h.slice(sourceId, -1, 2);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Only the part of the slice within the history returned", datum.size(),
+				is(equalTo(1)));
+		assertThat("Latest datum returned", datum.get(0).getTimestamp(),
+				is(equalTo(start.plusSeconds(2))));
+	}
+
+	@Test
+	public void slice_negativeCount() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		Iterable<NodeDatum> slice = h.slice(sourceId, 0, -1);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(0)));
+	}
+
+	@Test
+	public void slice_hugeCount() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		Iterable<NodeDatum> slice = h.slice(sourceId, 0, Integer.MAX_VALUE);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("All captured datum returned", datum.size(), is(equalTo(captureCount)));
+	}
+
+	@Test
+	public void slice_offsetTime_negativeOffset() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(1), -2, 2);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Only the part of the slice within the history returned", datum.size(),
+				is(equalTo(1)));
+		assertThat("Latest datum returned", datum.get(0).getTimestamp(),
+				is(equalTo(start.plusSeconds(2))));
+	}
+
+	@Test
+	public void slice_offsetTime_negativeCount() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(2), 0, -1);
 
 		// THEN
 		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)

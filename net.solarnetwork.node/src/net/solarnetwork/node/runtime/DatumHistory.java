@@ -57,7 +57,7 @@ import net.solarnetwork.util.CircularFifoQueue;
  * </p>
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.89
  */
 public class DatumHistory {
@@ -264,7 +264,7 @@ public class DatumHistory {
 		NodeDatum result;
 		synchronized ( q ) {
 			int idx = q.size() - 1 - offset;
-			if ( idx >= 0 ) {
+			if ( idx >= 0 && idx < q.size() ) {
 				result = ((CircularFifoQueue<NodeDatum>) q).get(idx);
 			} else {
 				result = null;
@@ -343,7 +343,7 @@ public class DatumHistory {
 				if ( nonnull(d.getTimestamp(), "Datum timestamp").compareTo(timestamp) <= 0 ) {
 					// found reference, so return offset from here
 					int offsetIdx = idx - offset;
-					if ( offsetIdx >= 0 ) {
+					if ( offsetIdx >= 0 && offsetIdx < q.size() ) {
 						result = (offsetIdx == idx ? d
 								: ((CircularFifoQueue<NodeDatum>) q).get(offsetIdx));
 					}
@@ -373,18 +373,20 @@ public class DatumHistory {
 	public Iterable<NodeDatum> slice(String sourceId, int offset, int count) {
 		final Queue<NodeDatum> q = raw.get(sourceId);
 		log.debug("Queue [{}]: {}", sourceId, q);
-		if ( q == null ) {
+		if ( q == null || count < 1 ) {
 			return List.of();
 		}
 		return new Iterable<NodeDatum>() {
 
 			@Override
 			public Iterator<NodeDatum> iterator() {
-				final List<NodeDatum> datum = new ArrayList<>(count);
+				final List<NodeDatum> datum = new ArrayList<>(Math.min(count, config.getRawCount()));
 				synchronized ( q ) {
 					final int size = q.size();
-					final int max = size - offset;
-					int idx = Math.max(max - count, 0);
+					// the slice can extend past the available history: return only what overlaps
+					final int end = size - offset;
+					final int max = Math.min(end, size);
+					int idx = Math.max(end - count, 0);
 					while ( idx < max ) {
 						NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
 						datum.add(d);
@@ -417,22 +419,24 @@ public class DatumHistory {
 	public Iterable<NodeDatum> slice(String sourceId, Instant timestamp, int offset, int count) {
 		final Queue<NodeDatum> q = raw.get(sourceId);
 		log.debug("Queue [{}]: {}", sourceId, q);
-		if ( q == null ) {
+		if ( q == null || count < 1 ) {
 			return List.of();
 		}
 		return new Iterable<NodeDatum>() {
 
 			@Override
 			public Iterator<NodeDatum> iterator() {
-				final List<NodeDatum> datum = new ArrayList<>(count);
+				final List<NodeDatum> datum = new ArrayList<>(Math.min(count, config.getRawCount()));
 				synchronized ( q ) {
 					int idx = q.size();
 					while ( --idx >= 0 ) {
 						NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
 						if ( nonnull(d.getTimestamp(), "Datum timestamp").compareTo(timestamp) <= 0 ) {
-							// found reference, so return offset from here
-							final int max = idx - offset + 1;
-							idx = Math.max(max - count, 0);
+							// found reference, so return offset from here, limited to what overlaps
+							// the available history
+							final int end = idx - offset + 1;
+							final int max = Math.min(end, q.size());
+							idx = Math.max(end - count, 0);
 							while ( idx < max ) {
 								d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
 								datum.add(d);
