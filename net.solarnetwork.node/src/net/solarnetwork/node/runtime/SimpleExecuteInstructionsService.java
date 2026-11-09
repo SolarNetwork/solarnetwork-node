@@ -48,7 +48,7 @@ import net.solarnetwork.util.StringUtils;
  * of other instructions to execute.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.16
  */
 public class SimpleExecuteInstructionsService extends BaseIdentifiable implements InstructionHandler {
@@ -160,7 +160,7 @@ public class SimpleExecuteInstructionsService extends BaseIdentifiable implement
 
 	@Override
 	public @Nullable InstructionStatus processInstruction(Instruction instruction) {
-		if ( instruction == null || !handlesTopic(TOPIC_EXECUTE_INSTRUCTIONS) ) {
+		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
 

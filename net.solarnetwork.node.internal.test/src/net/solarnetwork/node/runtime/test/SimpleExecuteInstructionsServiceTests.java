@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -65,7 +66,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link SimpleExecuteInstructionsService} class.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleExecuteInstructionsServiceTests {
 
@@ -255,6 +256,22 @@ public class SimpleExecuteInstructionsServiceTests {
 				sameInstance(returnedStatuses.get(0)));
 		assertThat("Result status 2 is from InstructionExecutionService", resultStatuses.get(1),
 				sameInstance(returnedStatuses.get(1)));
+	}
+
+	@Test
+	public void otherTopic() {
+		// GIVEN
+		Map<String, String> params = new LinkedHashMap<>(4);
+		params.put(PARAM_INSTRUCTIONS, resource("exec-instructions-01.json"));
+		Instruction exec = InstructionUtils
+				.createLocalInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, params);
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = service.processInstruction(exec);
+
+		// THEN
+		assertThat("Instruction with other topic not handled", result, is(nullValue()));
 	}
 
 }
