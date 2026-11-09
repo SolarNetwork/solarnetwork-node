@@ -386,7 +386,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 	@Override
 	public String getDisplayName() {
-		return "Operational Modes Servcie";
+		return "Operational Modes Service";
 	}
 
 	@Override

@@ -35,7 +35,7 @@ import net.solarnetwork.node.service.support.BaseIdentifiable;
  * Simple {@link ObjectCodec} for {@link Datum} objects.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.4
  */
 public class JsonDatumObjectCodec extends BaseIdentifiable implements ObjectCodec {
@@ -48,7 +48,7 @@ public class JsonDatumObjectCodec extends BaseIdentifiable implements ObjectCode
 	public JsonDatumObjectCodec() {
 		super();
 		setUid("JSON Datum Codec");
-		setDisplayName("JSON Daum Codec");
+		setDisplayName("JSON Datum Codec");
 		this.mapper = JsonUtils.newDatumObjectMapper();
 	}
 
