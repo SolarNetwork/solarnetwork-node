@@ -53,13 +53,37 @@ import net.solarnetwork.util.StringUtils;
  * Default implementation of {@link SystemHealthService}.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.2
  */
 public class DefaultSystemHealthService extends BasicIdentifiable implements SystemHealthService {
 
 	private static final ExecutorService EXECUTOR = Executors
 			.newCachedThreadPool(new CustomizableThreadFactory("Ping-"));
+
+	/** A stand-in test to report an invalid test ID pattern with. */
+	private static final PingTest ID_PATTERN_ERROR_TEST = new PingTest() {
+
+		@Override
+		public String getPingTestId() {
+			return "__error.idPattern";
+		}
+
+		@Override
+		public String getPingTestName() {
+			return "Ping test ID filter";
+		}
+
+		@Override
+		public long getPingTestMaximumExecutionMilliseconds() {
+			return 0;
+		}
+
+		@Override
+		public PingTest.Result performPingTest() throws Exception {
+			throw new UnsupportedOperationException();
+		}
+	};
 
 	private final List<PingTest> tests;
 
@@ -84,25 +108,29 @@ public class DefaultSystemHealthService extends BasicIdentifiable implements Sys
 		if ( pingTestIds == null || pingTestIds.isEmpty() ) {
 			runTests.addAll(tests);
 		} else {
-			Pattern[] idExprs = nonnull(StringUtils.patterns(pingTestIds.stream().toArray(String[]::new),
-					Pattern.CASE_INSENSITIVE), "Test ID patterns");
+			final Pattern[] idExprs;
+			try {
+				idExprs = nonnull(StringUtils.patterns(pingTestIds.stream().toArray(String[]::new),
+						Pattern.CASE_INSENSITIVE), "Test ID patterns");
+			} catch ( PatternSyntaxException e ) {
+				final MessageSource msgSrc = getMessageSource();
+				final String defaultMsg = "Invalid test ID pattern [" + e.getPattern() + "]: "
+						+ e.getDescription();
+				String msg = (msgSrc != null ? msgSrc.getMessage("error.invalidIdPattern",
+						new Object[] { e.getPattern(), e.getDescription() }, defaultMsg,
+						Locale.getDefault()) : defaultMsg);
+				PingTestResult r = new PingTestResult(false, msg);
+				PingTestResultDisplay rd = new PingTestResultDisplay(ID_PATTERN_ERROR_TEST, r,
+						Instant.now());
+				results.put(ID_PATTERN_ERROR_TEST.getPingTestId(), rd);
+				return new PingTestResults(start, results);
+			}
 			for ( PingTest test : tests ) {
-				try {
-					for ( Pattern p : idExprs ) {
-						if ( p.matcher(test.getPingTestId()).find() ) {
-							runTests.add(test);
-							break;
-						}
+				for ( Pattern p : idExprs ) {
+					if ( p.matcher(test.getPingTestId()).find() ) {
+						runTests.add(test);
+						break;
 					}
-				} catch ( PatternSyntaxException e ) {
-					final MessageSource msgSrc = getMessageSource();
-					final String defaultMsg = "Invalid test ID pattern.";
-					String msg = (msgSrc != null ? msgSrc.getMessage("error.invalidIdPattern",
-							new Object[] { e.getPattern(), e.getMessage() }, defaultMsg,
-							Locale.getDefault()) : defaultMsg);
-					PingTestResult r = new PingTestResult(false, msg);
-					PingTestResultDisplay rd = new PingTestResultDisplay(test, r, Instant.now());
-					results.put("__error.idPattern", rd);
 				}
 			}
 		}
