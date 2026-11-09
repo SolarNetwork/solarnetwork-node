@@ -441,8 +441,10 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		if ( mode.charAt(0) == '!' ) {
 			mode = mode.substring(1);
 			if ( mode.isEmpty() ) {
-				// inverted default, so true if NO mode active
-				return activeModes.isEmpty();
+				// inverted default, so true if NO mode active; ignore expired modes not yet removed
+				final long now = clock.millis();
+				return activeModes.values().stream()
+						.noneMatch(exp -> NO_EXPIRATION.equals(exp) || exp.longValue() > now);
 			}
 			inverted = true;
 		}

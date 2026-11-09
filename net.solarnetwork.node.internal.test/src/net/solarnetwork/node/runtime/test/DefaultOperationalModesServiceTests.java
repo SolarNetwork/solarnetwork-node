@@ -278,6 +278,37 @@ public class DefaultOperationalModesServiceTests {
 	}
 
 	@Test
+	public void isActive_empty_inverted_expiring() {
+		// GIVEN
+		Instant expire = Instant.now().plus(1, ChronoUnit.HOURS);
+		activeModeCache.put("test", expire.toEpochMilli());
+
+		// WHEN
+		replayAll();
+		boolean result = service.isOperationalModeActive("!");
+
+		// THEN
+		assertThat("Invertered empty is default is not active when expiring mode active", result,
+				is(equalTo(false)));
+	}
+
+	@Test
+	public void isActive_empty_inverted_expired() {
+		// GIVEN
+		// expired but not yet removed by the auto-expire task
+		Instant expire = Instant.now().minus(1, ChronoUnit.HOURS);
+		activeModeCache.put("test", expire.toEpochMilli());
+
+		// WHEN
+		replayAll();
+		boolean result = service.isOperationalModeActive("!");
+
+		// THEN
+		assertThat("Invertered empty is default is active when only expired modes remain", result,
+				is(equalTo(true)));
+	}
+
+	@Test
 	public void isActive_no() {
 		// GIVEN
 
