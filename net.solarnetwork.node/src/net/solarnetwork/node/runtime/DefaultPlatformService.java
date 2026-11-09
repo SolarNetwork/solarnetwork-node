@@ -49,7 +49,7 @@ import net.solarnetwork.service.OptionalService;
  * Default implementation of {@link PlatformService}.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DefaultPlatformService implements PlatformService {
 
@@ -150,11 +150,11 @@ public class DefaultPlatformService implements PlatformService {
 
 			@Override
 			public T call() throws Exception {
+				// outside the try, so a rejected task does not reset the active task's state
+				if ( !activeSingletonTask.compareAndSet(null, task) ) {
+					throw new IllegalStateException("Another task is active; cannot start task " + task);
+				}
 				try {
-					if ( !activeSingletonTask.compareAndSet(null, task) ) {
-						throw new IllegalStateException(
-								"Another task is active; cannot start task " + task);
-					}
 					updatePlatformState(state);
 					return task.call();
 				} finally {
