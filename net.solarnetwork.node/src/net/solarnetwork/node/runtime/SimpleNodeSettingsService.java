@@ -64,6 +64,7 @@ import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.TextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ObjectUtils;
 
@@ -212,7 +213,7 @@ import net.solarnetwork.util.ObjectUtils;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.3
  */
 public class SimpleNodeSettingsService extends BaseIdentifiable implements InstructionHandler {
@@ -477,7 +478,8 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			Map<String, Object> props = new LinkedHashMap<>(4);
 			props.put("key", keyedSpec.getKey());
 			Setting setting = settingsMap.get(keyedSpec.getKey());
-			props.put("value", setting != null ? settingValue(setting) : keyedSpec.getDefaultValue());
+			props.put("value",
+					setting != null ? settingValue(setting, keyedSpec) : keyedSpec.getDefaultValue());
 			if ( setting == null ) {
 				props.put("default", true);
 			}
@@ -490,10 +492,12 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 		}
 	}
 
-	private static @Nullable String settingValue(Setting setting) {
+	private static @Nullable String settingValue(Setting setting, KeyedSettingSpecifier<?> spec) {
 		String key = setting.getType();
 		String value = setting.getValue();
-		if ( value != null && key != null && SENSITVE_PATTERN.matcher(key).find() ) {
+		final boolean secure = (spec instanceof TextFieldSettingSpecifier
+				&& ((TextFieldSettingSpecifier) spec).isSecureTextEntry());
+		if ( value != null && (secure || (key != null && SENSITVE_PATTERN.matcher(key).find())) ) {
 			value = REDACTED_VALUE;
 		}
 		return value;
