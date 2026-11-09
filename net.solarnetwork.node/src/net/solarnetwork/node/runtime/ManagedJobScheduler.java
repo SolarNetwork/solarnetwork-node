@@ -461,6 +461,11 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	}
 
 	private void scheduleJob(final ScheduledJob sj) {
+		if ( sj.isScheduled() ) {
+			// already scheduled, e.g. registered after the start delay elapsed but before the
+			// startup task ran; scheduling again would orphan the existing future
+			return;
+		}
 		String expr = sj.job.getSchedule();
 		Trigger trigger = triggerForSchedule(expr);
 		if ( expr != null && trigger != null ) {

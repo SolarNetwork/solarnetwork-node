@@ -278,6 +278,58 @@ public class ManagedJobSchedulerTests {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
+	public void register_basic_startupTaskAfterRegister() {
+		// GIVEN
+		// schedule startup task
+		Capture<Runnable> startupTaskCaptor = Capture.newInstance();
+		TestScheduledFuture startupTaskFuture = new TestScheduledFuture();
+		expect(taskScheduler.schedule(capture(startupTaskCaptor), anyObject(Instant.class)))
+				.andReturn((ScheduledFuture) startupTaskFuture);
+
+		final String settingPid = "foo.bar";
+		JobService job = EasyMock.createMock(JobService.class);
+		expect(job.getSettingUid()).andReturn(settingPid).anyTimes();
+		expect(job.getDisplayName()).andReturn(null).anyTimes();
+
+		// register ConfigurationListener first time
+		ServiceRegistration<ConfigurationListener> configurationListenerReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(ConfigurationListener.class, service, null))
+				.andReturn(configurationListenerReg);
+
+		// register SettingSpecifierProvider for job
+		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
+				anyObject(SettingSpecifierProvider.class), anyObject(Dictionary.class)))
+						.andReturn(settingProviderReg);
+
+		// schedule the actual job, just once
+		Capture<Trigger> trigCaptor = Capture.newInstance();
+		TestScheduledFuture future = new TestScheduledFuture();
+		expect(taskScheduler.schedule(anyObject(Runnable.class), capture(trigCaptor)))
+				.andReturn((ScheduledFuture) future);
+
+		// WHEN
+		replayAll(job, configurationListenerReg, settingProviderReg);
+		service.serviceDidStartup();
+
+		// with no start delay the job is scheduled when registered, before the startup task runs
+		SimpleManagedJob managedJob = new SimpleManagedJob(job);
+		managedJob.setSchedule("0 * * * * ?");
+		service.registerJob(managedJob, Collections.emptyMap());
+
+		// run the startup task, which must not schedule the job again
+		startupTaskCaptor.getValue().run();
+
+		// THEN
+		assertThat("Scheduled trigger is cron", trigCaptor.getValue(),
+				is(new CronTrigger(managedJob.getSchedule())));
+		assertThat("Scheduled task active", future.isDone(), is(false));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
 	public void register_basic_shutdown() {
 		// GIVEN
 		final String settingPid = "foo.bar";
