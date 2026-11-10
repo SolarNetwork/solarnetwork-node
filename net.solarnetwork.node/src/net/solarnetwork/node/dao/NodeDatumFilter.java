@@ -23,7 +23,7 @@
 package net.solarnetwork.node.dao;
 
 import net.solarnetwork.dao.DateRangeCriteria;
-import net.solarnetwork.dao.LocationCriteria;
+import net.solarnetwork.dao.DatumObjectCriteria;
 import net.solarnetwork.dao.OptimizedQueryCriteria;
 import net.solarnetwork.dao.PaginationCriteria;
 import net.solarnetwork.dao.RecentCriteria;
@@ -37,7 +37,7 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * @author matt
  * @version 1.0
  */
-public interface NodeDatumFilter extends DateRangeCriteria, SourceCriteria, LocationCriteria,
+public interface NodeDatumFilter extends DateRangeCriteria, DatumObjectCriteria, SourceCriteria,
 		TypeCriteria, PaginationCriteria, OptimizedQueryCriteria, RecentCriteria {
 
 }
