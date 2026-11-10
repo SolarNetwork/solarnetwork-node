@@ -503,15 +503,39 @@
 		</bean>
 	</osgix:managed-service-factory>
 
+	<bean id="datumServicePathMatcher" class="org.springframework.util.AntPathMatcher">
+		<property name="cachePatterns" value="true"/>
+		<property name="caseSensitive" value="false"/>
+	</bean>
+
 	<bean id="datumService" class="net.solarnetwork.node.runtime.DefaultDatumService">
-		<argument>
-			<bean class="org.springframework.util.AntPathMatcher" >
-				<property name="cachePatterns" value="true"/>
-				<property name="caseSensitive" value="false"/>
-			</bean>
-		</argument>
+		<argument ref="datumServicePathMatcher"/>
 		<argument ref="objectMapper"/>
 		<argument ref="datumMetadataService"/>
+		<argument>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.AppendableDatumHistorian"/>
+				<property name="serviceFilter" value="(!(role=unfiltered))"/>
+				<property name="fallbackService">
+					<bean class="net.solarnetwork.node.runtime.DefaultDatumService.InMemoryHistorian">
+						<argument ref="datumServicePathMatcher"/>
+					</bean>
+				</property>
+			</bean>
+		</argument>
+		<argument>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.AppendableDatumHistorian"/>
+				<property name="serviceFilter" value="(role=unfiltered)"/>
+				<property name="fallbackService">
+					<bean class="net.solarnetwork.node.runtime.DefaultDatumService.InMemoryHistorian">
+						<argument ref="datumServicePathMatcher"/>
+					</bean>
+				</property>
+			</bean>
+		</argument>
 	</bean>
 	
 	<service ref="datumService">

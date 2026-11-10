@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+		http://www.springframework.org/schema/util
+		http://www.springframework.org/schema/util/spring-util-4.2.xsd">
+	
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-datum-history)"/>
+	
+	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
+		<property name="sticky" value="true"/>
+	</bean>	
+	
+	<!-- Internal beans -->
+
+	<bean id="jdbcOperations" class="org.springframework.jdbc.core.JdbcTemplate">
+		<argument ref="dataSource"/>
+	</bean>
+	
+	<bean id="filteredHistorian" class="net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian"
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<argument ref="jdbcOperations"/>
+		<argument value="solarhist"/>
+		<argument ref="identityService"/>
+	</bean>
+
+	<bean id="unfilteredHistorian" class="net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian"
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<argument ref="jdbcOperations"/>
+		<argument value="solaruhist"/>
+		<argument ref="identityService"/>
+	</bean>
+
+	<!-- Published Services -->
+	
+	<service ref="filteredHistorian">
+		<interfaces>
+			<value>net.solarnetwork.node.service.AppendableDatumHistorian</value>
+		</interfaces>
+		<service-properties>
+			<entry key="role" value="filtered"/>
+		</service-properties>
+	</service>
+	
+	<service ref="unfilteredHistorian">
+		<interfaces>
+			<value>net.solarnetwork.node.service.AppendableDatumHistorian</value>
+		</interfaces>
+		<service-properties>
+			<entry key="role" value="unfiltered"/>
+		</service-properties>
+	</service>
+	
+</blueprint>

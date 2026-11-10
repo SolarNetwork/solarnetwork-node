@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: JDBC DatumHistorian Tests
+Bundle-SymbolicName: net.solarnetwork.node.datumhistorian.jdbc.test
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Fragment-Host: net.solarnetwork.node.datumhistorian.jdbc;bundle-version="[1.0.0,2.0.0)"
+Automatic-Module-Name: net.solarnetwork.node.datumhistorian.jdbc.test
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: 
+ net.bytebuddy;version="[1.18,2.0)",
+ net.bytebuddy.agent;version="[1.18,2.0)",
+ net.solarnetwork.node.test;version="[2.0,3.0)",
+ org.assertj.core.api;version="[3.27,4.0)",
+ org.assertj.core.groups;version="[3.27,4.0)",
+ org.junit;version="[4.12,5.0)",
+ org.junit.runner;version="[4.12,5.0)",
+ org.junit.runners;version="[4.12,5.0)",
+ org.mockito;version="[5.0,6.0)",
+ org.mockito.invocation;version="[5.0,6.0)",
+ org.mockito.junit;version="[5.0,6.0)",
+ org.mockito.stubbing;version="[5.0,6.0)",
+ org.mockito.verification;version="[5.0,6.0)",
+ org.postgresql.ds;version="[42,43)",
+ org.springframework.transaction;version="[6.2,7.0)",
+ org.springframework.transaction.support;version="[6.2,7.0)"

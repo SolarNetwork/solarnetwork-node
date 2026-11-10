@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.time.Instant;
@@ -44,14 +46,15 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.AppendableDatumHistorian;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
-import net.solarnetwork.node.service.DatumHistorian;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.DatumQueueProcessObserver;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -63,7 +66,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class DefaultDatumService
 		implements DatumService, EventHandler, InstructionHandler, DatumQueueProcessObserver {
@@ -77,8 +80,8 @@ public class DefaultDatumService
 	private final PathMatcher pathMatcher;
 	private final ObjectMapper objectMapper;
 	private final OptionalService<DatumMetadataService> datumMetadataService;
-	private final InMemoryHistorian history = new InMemoryHistorian();
-	private final InMemoryHistorian unfiltered = new InMemoryHistorian();
+	private final OptionalService<AppendableDatumHistorian> history;
+	private final OptionalService<AppendableDatumHistorian> unfiltered;
 
 	/**
 	 * Constructor.
@@ -94,16 +97,61 @@ public class DefaultDatumService
 	 */
 	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper,
 			OptionalService<DatumMetadataService> datumMetadataService) {
+		this(pathMatcher, objectMapper, datumMetadataService,
+				new StaticOptionalService<>(new InMemoryHistorian(pathMatcher)),
+				new StaticOptionalService<>(new InMemoryHistorian(pathMatcher)));
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param pathMatcher
+	 *        the path matcher to use
+	 * @param objectMapper
+	 *        the object mapper to use
+	 * @param datumMetadataService
+	 *        the datum metadata service to use
+	 * @param history
+	 *        the filtered historian
+	 * @param unfiltered
+	 *        the unfiltered historian
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@code null}
+	 * @since 3.1
+	 */
+	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper,
+			OptionalService<DatumMetadataService> datumMetadataService,
+			OptionalService<AppendableDatumHistorian> history,
+			OptionalService<AppendableDatumHistorian> unfiltered) {
 		super();
 		this.pathMatcher = requireNonNullArgument(pathMatcher, "pathMatcher");
 		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
 		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
+		this.history = requireNonNullArgument(history, "history");
+		this.unfiltered = requireNonNullArgument(unfiltered, "unfiltered");
 	}
 
-	private class InMemoryHistorian implements DatumHistorian {
+	/**
+	 * A basic in-memory only historian.
+	 */
+	public static class InMemoryHistorian implements AppendableDatumHistorian {
 
+		private final PathMatcher pathMatcher;
 		private DatumHistory history = new DatumHistory(
 				new DatumHistory.Configuration(DEFAFULT_HISTORY_RAW_COUNT));
+
+		/**
+		 * Constructor.
+		 *
+		 * @param pathMatcher
+		 *        the path matcher to use
+		 * @throws IllegalArgumentException
+		 *         if any argument is {@code null}
+		 */
+		public InMemoryHistorian(PathMatcher pathMatcher) {
+			super();
+			this.pathMatcher = requireNonNullArgument(pathMatcher, "pathMatcher");
+		}
 
 		@Override
 		public <T extends NodeDatum> Collection<T> latest(@Nullable Set<String> sourceIdFilter,
@@ -208,13 +256,8 @@ public class DefaultDatumService
 			return result;
 		}
 
-		/**
-		 * Add a datum to the history.
-		 *
-		 * @param datum
-		 *        the datum
-		 */
-		private void add(NodeDatum datum) {
+		@Override
+		public void add(NodeDatum datum) {
 			history.add(datum);
 		}
 
@@ -236,17 +279,21 @@ public class DefaultDatumService
 		}
 	}
 
+	private AppendableDatumHistorian history() {
+		return nonnull(service(history), "Historian");
+	}
+
 	@Override
 	public void datumQueueWillProcess(DatumQueue queue, NodeDatum datum, Stage stage, boolean persist) {
 		assert datum != null;
 		assert stage != null;
 		switch (stage) {
 			case PreFilter:
-				unfiltered.add(datum);
+				unfiltered().add(datum);
 				break;
 
 			case PostFilter:
-				history.add(datum);
+				history().add(datum);
 				break;
 		}
 	}
@@ -259,7 +306,7 @@ public class DefaultDatumService
 		}
 		Object d = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( d instanceof NodeDatum ) {
-			history.add((NodeDatum) d);
+			history().add((NodeDatum) d);
 		}
 	}
 
@@ -299,53 +346,53 @@ public class DefaultDatumService
 	@Override
 	public <T extends NodeDatum> Collection<T> latest(@Nullable Set<String> sourceIdFilter,
 			@Nullable Class<T> type) {
-		return history.latest(sourceIdFilter, type);
+		return history().latest(sourceIdFilter, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> @Nullable T latest(String sourceId, @Nullable Class<T> type) {
-		return history.latest(sourceId, type);
+		return history().latest(sourceId, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> @Nullable T offset(String sourceId, int offset,
 			@Nullable Class<T> type) {
-		return history.offset(sourceId, offset, type);
+		return history().offset(sourceId, offset, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter, int offset,
 			@Nullable Class<T> type) {
-		return history.offset(sourceIdFilter, offset, type);
+		return history().offset(sourceIdFilter, offset, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> Collection<T> offset(@Nullable Set<String> sourceIdFilter,
 			Instant timestamp, int offset, @Nullable Class<T> type) {
-		return history.offset(sourceIdFilter, timestamp, offset, type);
+		return history().offset(sourceIdFilter, timestamp, offset, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> @Nullable T offset(String sourceId, Instant timestamp, int offset,
 			@Nullable Class<T> type) {
-		return history.offset(sourceId, timestamp, offset, type);
+		return history().offset(sourceId, timestamp, offset, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count,
 			@Nullable Class<T> type) {
-		return history.slice(sourceId, offset, count, type);
+		return history().slice(sourceId, offset, count, type);
 	}
 
 	@Override
 	public <T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset,
 			int count, @Nullable Class<T> type) {
-		return history.slice(sourceId, timestamp, offset, count, type);
+		return history().slice(sourceId, timestamp, offset, count, type);
 	}
 
 	@Override
-	public DatumHistorian unfiltered() {
-		return unfiltered;
+	public AppendableDatumHistorian unfiltered() {
+		return nonnull(service(unfiltered), "Unfiltered historian");
 	}
 
 	@Override
@@ -391,14 +438,17 @@ public class DefaultDatumService
 	 * Change the history raw count.
 	 *
 	 * <p>
-	 * Calling this resets the entire history.
+	 * Calling this resets the entire history. This only applies if the
+	 * configured {@code history} is the internal in-memory historian.
 	 * </p>
 	 *
 	 * @param rawCount
 	 *        the raw count to set
 	 */
 	public void setHistoryRawCount(int rawCount) {
-		history.setHistoryRawCount(rawCount);
+		if ( history() instanceof InMemoryHistorian h ) {
+			h.setHistoryRawCount(rawCount);
+		}
 	}
 
 }

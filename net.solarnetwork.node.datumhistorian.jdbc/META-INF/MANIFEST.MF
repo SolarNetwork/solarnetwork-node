@@ -1,0 +1,41 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: JDBC DatumHistorian
+Bundle-SymbolicName: net.solarnetwork.node.datumhistorian.jdbc
+Bundle-Description: JDBC implementation of the SolarNode Datum Historian.
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.datumhistorian.jdbc
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: 
+ com.fasterxml.jackson.core;version="[2.19,3.0)",
+ com.fasterxml.jackson.databind;version="[2.19,3.0)",
+ javax.sql,
+ net.solarnetwork.codec;version="[2.0,3.0)",
+ net.solarnetwork.common.osgi.service;version="[1.4,2.0)",
+ net.solarnetwork.dao;version="[3.3,4.0)",
+ net.solarnetwork.domain;version="[3.7,4.0)",
+ net.solarnetwork.domain.datum;version="[3.27,4.0)",
+ net.solarnetwork.node.dao;version="[3.2,4.0)",
+ net.solarnetwork.node.domain.datum;version="[1.4,2.0)",
+ net.solarnetwork.node.service;version="[1.17,2.0)",
+ net.solarnetwork.service;version="[1.7,2.0)",
+ net.solarnetwork.service.support;version="[1.2,2.0)",
+ net.solarnetwork.settings;version="[2.4,3.0)",
+ net.solarnetwork.settings.support;version="[3.1,4.0)",
+ net.solarnetwork.util;version="[2.28,3.0)",
+ org.jspecify.annotations;version="[1.0,2.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans.factory;version="[6.2,7.0)",
+ org.springframework.context;version="[6.2,7.0)",
+ org.springframework.context.support;version="[6.2,7.0)",
+ org.springframework.core;version="[6.2,7.0)",
+ org.springframework.core.io;version="[6.2,7.0)",
+ org.springframework.dao;version="[6.2,7.0)",
+ org.springframework.dao.support;version="[6.2,7.0)",
+ org.springframework.jdbc;version="[6.2,7.0)",
+ org.springframework.jdbc.core;version="[6.2,7.0)",
+ org.springframework.jdbc.core.support;version="[6.2,7.0)",
+ org.springframework.jdbc.datasource;version="[6.2,7.0)",
+ org.springframework.jdbc.support;version="[6.2,7.0)",
+ org.springframework.util;version="[6.2,7.0)"
