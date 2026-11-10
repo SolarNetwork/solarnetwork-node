@@ -70,7 +70,7 @@ import net.solarnetwork.node.metrics.domain.ParameterizedMetricAggregate;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
- * Test cases for the {@link
+ * Test cases for the {@link JdbcMetricDao}.
  *
  * @author matt
  * @version 1.2
