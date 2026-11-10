@@ -25,8 +25,6 @@ package net.solarnetwork.node.setup.web.thymeleaf;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
@@ -44,7 +42,7 @@ import net.solarnetwork.util.StringUtils;
  * Helper for SolarNode object utilities.
  *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public final class SolarNodeUtils {
 
@@ -54,13 +52,22 @@ public final class SolarNodeUtils {
 	private static final Pattern IndexKeysPattern = Pattern.compile("\\[\\d+\\]");
 
 	/**
-	 * A cache of datum type mappings.
+	 * A cache of setting type mappings.
 	 *
 	 * <p>
-	 * The {@link #settingTypes(Class)} method populates this cache.
+	 * The {@link #settingTypes(Class)} method populates this cache. A
+	 * {@link ClassValue} is used so the cache does not stop setting classes
+	 * from other bundles from being unloaded.
 	 * </p>
 	 */
-	private final ConcurrentMap<Class<?>, String[]> settingTypeCache = new ConcurrentHashMap<Class<?>, String[]>();
+	private final ClassValue<String[]> settingTypeCache = new ClassValue<>() {
+
+		@Override
+		protected String[] computeValue(Class<?> type) {
+			return settingTypes(type);
+		}
+
+	};
 
 	private SolarNodeUtils() {
 		super();
@@ -235,11 +242,18 @@ public final class SolarNodeUtils {
 	 */
 	public @Nullable String settingType(SettingSpecifier setting) {
 		String[] result = settingTypeCache.get(setting.getClass());
-		if ( result != null ) {
-			return (result.length > 0 ? result[0] : null);
-		}
+		return (result.length > 0 ? result[0] : null);
+	}
 
-		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(setting.getClass());
+	/**
+	 * Get the names of all setting types of a setting class.
+	 *
+	 * @param clazz
+	 *        the setting class to inspect
+	 * @return the setting type names, never {@code null}
+	 */
+	private static String[] settingTypes(Class<?> clazz) {
+		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
 
 		// remove all but SettingSpecifier extensions
 		for ( Iterator<Class<?>> itr = interfaces.iterator(); itr.hasNext(); ) {
@@ -249,14 +263,13 @@ public final class SolarNodeUtils {
 			}
 		}
 
-		result = new String[interfaces.size()];
+		String[] result = new String[interfaces.size()];
 		int i = 0;
 		for ( Class<?> intf : interfaces ) {
 			result[i] = intf.getName();
 			i++;
 		}
-		settingTypeCache.putIfAbsent(setting.getClass(), result);
-		return (result.length > 0 ? result[0] : null);
+		return result;
 	}
 
 }

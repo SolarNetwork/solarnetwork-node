@@ -28,8 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.slf4j.Logger;
@@ -43,7 +41,7 @@ import net.solarnetwork.util.ClassUtils;
  * Support for {@link NodeDatum} {@link Event} handling.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public final class DatumEvents {
@@ -179,10 +177,35 @@ public final class DatumEvents {
 	 * A cache of datum type mappings.
 	 *
 	 * <p>
-	 * The {@link #datumTypes(Class)} method populates this cache.
+	 * The {@link #datumTypes(Class)} method populates this cache. A
+	 * {@link ClassValue} is used so the cache does not stop datum classes from
+	 * other bundles from being unloaded.
 	 * </p>
 	 */
-	private static final ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
+	private static final ClassValue<String[]> DATUM_TYPE_CACHE = new ClassValue<>() {
+
+		@Override
+		protected String[] computeValue(Class<?> type) {
+			Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(type);
+
+			// remove all but Datum extensions, excluding MutableDatum
+			for ( Iterator<Class<?>> itr = interfaces.iterator(); itr.hasNext(); ) {
+				Class<?> c = itr.next();
+				if ( !Datum.class.isAssignableFrom(c) || MutableDatum.class.isAssignableFrom(c) ) {
+					itr.remove();
+				}
+			}
+
+			String[] result = new String[interfaces.size()];
+			int i = 0;
+			for ( Class<?> intf : interfaces ) {
+				result[i] = intf.getName();
+				i++;
+			}
+			return result;
+		}
+
+	};
 
 	/**
 	 * Get an array of datum types for a class.
@@ -196,28 +219,7 @@ public final class DatumEvents {
 	 * @return the types
 	 */
 	public static String[] datumTypes(Class<?> clazz) {
-		String[] result = DATUM_TYPE_CACHE.get(clazz);
-		if ( result != null ) {
-			return result;
-		}
-		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
-
-		// remove all but Datum extensions, excluding MutableDatum
-		for ( Iterator<Class<?>> itr = interfaces.iterator(); itr.hasNext(); ) {
-			Class<?> c = itr.next();
-			if ( !Datum.class.isAssignableFrom(c) || MutableDatum.class.isAssignableFrom(c) ) {
-				itr.remove();
-			}
-		}
-
-		result = new String[interfaces.size()];
-		int i = 0;
-		for ( Class<?> intf : interfaces ) {
-			result[i] = intf.getName();
-			i++;
-		}
-		DATUM_TYPE_CACHE.putIfAbsent(clazz, result);
-		return result;
+		return DATUM_TYPE_CACHE.get(clazz);
 	}
 
 }
