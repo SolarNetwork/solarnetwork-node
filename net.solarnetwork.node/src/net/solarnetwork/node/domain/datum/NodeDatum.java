@@ -26,6 +26,7 @@ package net.solarnetwork.node.domain.datum;
 
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
+import net.solarnetwork.domain.Unique;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -34,10 +35,10 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
  * Basic persistable domain object API.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
-public interface NodeDatum extends Datum, Cloneable {
+public interface NodeDatum extends Datum, Unique<DatumId>, Cloneable {
 
 	/**
 	 * A sample data key for a {@link NodeDatum#getUploaded()} value, as a
@@ -46,6 +47,16 @@ public interface NodeDatum extends Datum, Cloneable {
 	 * @since 1.4
 	 */
 	String TIMESTAMP_UPLOAD = "uploaded";
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since 1.1
+	 */
+	@Override
+	default @Nullable DatumId getId() {
+		return datumId();
+	}
 
 	/**
 	 * Get the date this object was uploaded to SolarNet.
