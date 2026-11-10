@@ -36,6 +36,8 @@
 		<argument ref="jdbcOperations"/>
 		<argument value="solarhist"/>
 		<argument ref="identityService"/>
+		<property name="uid" value="net.solarnetwork.node.datumhistorian.jdbc"/>
+		<property name="displayName" value="JDBC DatumHistorian"/>
 	</bean>
 
 	<bean id="unfilteredHistorian" class="net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian"
@@ -43,6 +45,8 @@
 		<argument ref="jdbcOperations"/>
 		<argument value="solaruhist"/>
 		<argument ref="identityService"/>
+		<property name="uid" value="net.solarnetwork.node.datumhistorian.jdbc.unfiltered"/>
+		<property name="displayName" value="JDBC DatumHistorian (unfiltered)"/>
 	</bean>
 
 	<!-- Published Services -->
@@ -50,6 +54,7 @@
 	<service ref="filteredHistorian">
 		<interfaces>
 			<value>net.solarnetwork.node.service.AppendableDatumHistorian</value>
+			<value>net.solarnetwork.node.service.FilterableDatumHistorian</value>
 		</interfaces>
 		<service-properties>
 			<entry key="role" value="filtered"/>
@@ -59,6 +64,7 @@
 	<service ref="unfilteredHistorian">
 		<interfaces>
 			<value>net.solarnetwork.node.service.AppendableDatumHistorian</value>
+			<value>net.solarnetwork.node.service.FilterableDatumHistorian</value>
 		</interfaces>
 		<service-properties>
 			<entry key="role" value="unfiltered"/>

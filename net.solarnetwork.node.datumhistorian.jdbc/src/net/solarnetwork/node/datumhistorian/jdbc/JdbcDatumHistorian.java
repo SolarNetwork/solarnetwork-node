@@ -46,16 +46,22 @@ import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.domain.SortDescriptor;
+import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.dao.NodeDatumFilter;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.AppendableDatumHistorian;
+import net.solarnetwork.node.service.FilterableDatumHistorian;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
  * JDBC implementation of {@link AppendableDatumHistorian}.
@@ -93,7 +99,8 @@ import net.solarnetwork.service.ServiceLifecycleObserver;
  * @author matt
  * @version 1.0
  */
-public class JdbcDatumHistorian implements AppendableDatumHistorian, ServiceLifecycleObserver {
+public class JdbcDatumHistorian extends BasicIdentifiable
+		implements AppendableDatumHistorian, FilterableDatumHistorian, ServiceLifecycleObserver {
 
 	/** The default schema name. */
 	public static final String DEFAULT_SCHEMA_NAME = "solarhist";
@@ -152,6 +159,8 @@ public class JdbcDatumHistorian implements AppendableDatumHistorian, ServiceLife
 		this.jdbcOps = requireNonNullArgument(jdbcOps, "jdbcOps");
 		this.schemaName = requireValidSchemaName(schemaName);
 		this.identityService = requireNonNullArgument(identityService, "identityService");
+		setUid("net.solarnetwork.node.datumhistorian.jdbc." + schemaName);
+		setDisplayName("JDBC DatumHistorian [" + schemaName + "]");
 	}
 
 	private static PathMatcher defaultPathMatcher() {
@@ -163,7 +172,7 @@ public class JdbcDatumHistorian implements AppendableDatumHistorian, ServiceLife
 
 	@Override
 	public void serviceDidStartup() {
-		log.info("JDBC datum historian using schema [{}]", schemaName);
+		log.info("JDBC datum historian [{}] using DB schema [{}]", getUid(), schemaName);
 	}
 
 	@Override
@@ -213,6 +222,12 @@ public class JdbcDatumHistorian implements AppendableDatumHistorian, ServiceLife
 			log.warn("Error adding datum {} to history [{}]: {}", datum.datumId(), schemaName,
 					e.toString());
 		}
+	}
+
+	@Override
+	public FilterResults<NodeDatum, DatumId> findFiltered(NodeDatumFilter filter,
+			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max) {
+		throw new UnsupportedOperationException();
 	}
 
 	private String samplesJson(NodeDatum datum) throws JsonProcessingException {
