@@ -24,11 +24,14 @@ package net.solarnetwork.node.control.demandbalancer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -43,9 +46,10 @@ import net.solarnetwork.util.ObjectUtils;
  * </p>
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class DemandBalancerJob extends BaseIdentifiable implements JobService {
+public class DemandBalancerJob extends BaseIdentifiable
+		implements JobService, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	private final DemandBalancer demandBalancer;
 
@@ -63,6 +67,21 @@ public class DemandBalancerJob extends BaseIdentifiable implements JobService {
 	@Override
 	public void executeJobService() throws Exception {
 		demandBalancer.evaluateBalance();
+	}
+
+	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		demandBalancer.configurationChanged(properties);
+	}
+
+	@Override
+	public void serviceDidStartup() {
+		demandBalancer.serviceDidStartup();
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		demandBalancer.serviceDidShutdown();
 	}
 
 	@Override

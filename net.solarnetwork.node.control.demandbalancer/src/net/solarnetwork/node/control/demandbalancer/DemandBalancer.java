@@ -26,20 +26,25 @@ import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -61,10 +66,12 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.OptionalServiceCollection.OptionalFilterableServiceCollection;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
@@ -75,10 +82,18 @@ import net.solarnetwork.util.StringUtils;
  * instructions to a specific control to limit generation to an amount that
  * keeps generation at or below current consumption levels.
  *
+ * <p>
+ * Normally an instruction is only sent when the desired limit differs from the
+ * current limit. If an {@code unchangedTimeout} is configured, along with a
+ * {@code taskScheduler}, then the desired limit will also be sent at least that
+ * often, even when it has not changed.
+ * </p>
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
-public class DemandBalancer implements SettingSpecifierProvider {
+public class DemandBalancer
+		implements SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	private static final String ERROR_NO_DATA_RETURNED = "No data returned.";
 
@@ -131,8 +146,17 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private MessageSource messageSource;
 	private boolean collectPower = DEFAULT_COLLECT_POWER;
 	private Set<AcPhase> acEnergyPhaseFilter;
+	private TaskScheduler taskScheduler;
+	private Duration unchangedTimeout;
 
-	final Map<String, Object> stats = new LinkedHashMap<>(8);
+	// the most recent limit returned by the strategy; guarded by this
+	private int lastDesiredLimit = -1;
+
+	// the pending unchanged timeout task, or null if none; guarded by this
+	private UnchangedTimeoutTask unchangedTimeoutTask;
+
+	// updated from both the job and unchanged timeout threads
+	final Map<String, Object> stats = new ConcurrentHashMap<>(8);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -151,6 +175,37 @@ public class DemandBalancer implements SettingSpecifierProvider {
 					"The instructionExecutionService argument must not be null.");
 		}
 		this.instructionExecutionService = instructionExecutionService;
+	}
+
+	/**
+	 * Handle a configuration change.
+	 *
+	 * <p>
+	 * This cancels any pending unchanged timeout, so the next evaluation that
+	 * finds the limit unchanged sends it immediately, using the updated
+	 * configuration.
+	 * </p>
+	 *
+	 * @since 2.3
+	 */
+	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		cancelUnchangedTimeout();
+	}
+
+	@Override
+	public void serviceDidStartup() {
+		// nothing to do: the first evaluation starts any unchanged timeout
+	}
+
+	/**
+	 * Cancel any pending unchanged timeout.
+	 *
+	 * @since 2.3
+	 */
+	@Override
+	public void serviceDidShutdown() {
+		cancelUnchangedTimeout();
 	}
 
 	/**
@@ -260,24 +315,34 @@ public class DemandBalancer implements SettingSpecifierProvider {
 					(demandWatts == null ? -1 : demandWatts.intValue()),
 					(generationWatts == null ? -1 : generationWatts.intValue()),
 					(generationLimitPercent == null ? -1 : generationLimitPercent.intValue()));
-			if ( result != null ) {
-				stats.put(STAT_LAST_POWER_CONTROL_MODIFY_DATE, System.currentTimeMillis());
-			}
-			if ( result == null || result == InstructionStatus.InstructionState.Completed ) {
-				stats.remove(STAT_LAST_POWER_CONTROL_MODIFY_ERROR);
-			} else {
-				stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR,
-						"Instruction result not Completed: " + result);
-			}
+			recordModifyResult(result);
 		} catch ( RuntimeException e ) {
 			log.error("Error modifying power control {}: {}", powerControlId, e.getMessage());
 			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, messageForException(e));
 		}
 	}
 
+	private void recordModifyResult(InstructionStatus.InstructionState result) {
+		if ( result != null ) {
+			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_DATE, System.currentTimeMillis());
+		}
+		if ( result == null || result == InstructionStatus.InstructionState.Completed ) {
+			stats.remove(STAT_LAST_POWER_CONTROL_MODIFY_ERROR);
+		} else {
+			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR,
+					"Instruction result not Completed: " + result);
+		}
+	}
+
 	/**
 	 * Evaluate current demand and generation conditions, and apply an
 	 * adjustment if necessary.
+	 *
+	 * <p>
+	 * If the desired limit is unchanged, it is still applied when an unchanged
+	 * timeout is configured and no unchanged timeout is pending, for example on
+	 * the first evaluation after startup.
+	 * </p>
 	 *
 	 * @param demandWatts
 	 *        the current demand, in watts
@@ -296,14 +361,117 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 		int desiredLimit = strategy.evaluateBalance(powerControlId, demandWatts, generationWatts,
 				powerMaximumWatts, currentLimit);
-		if ( desiredLimit > 0 && desiredLimit != currentLimit ) {
-			log.info("Demand of {} with generation {} (capacity {}) will be adjusted from {}% to {}%",
-					demandWatts, generationWatts, powerMaximumWatts, currentLimit, desiredLimit);
-			InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
-			log.info("Demand adjustment instruction result: {}", result);
-			return result;
+		synchronized ( this ) {
+			lastDesiredLimit = desiredLimit;
+			if ( desiredLimit < 1 ) {
+				// no limit to apply, so nothing to send again either
+				cancelUnchangedTimeout();
+				return null;
+			}
+			if ( desiredLimit != currentLimit ) {
+				log.info(
+						"Demand of {} with generation {} (capacity {}) will be adjusted from {}% to {}%",
+						demandWatts, generationWatts, powerMaximumWatts, currentLimit, desiredLimit);
+			} else if ( unchangedTimeoutTask == null && effectiveUnchangedTimeout() != null ) {
+				log.info(
+						"Demand of {} with generation {} (capacity {}) will be kept at unchanged limit {}%",
+						demandWatts, generationWatts, powerMaximumWatts, desiredLimit);
+			} else {
+				return null;
+			}
+			try {
+				InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
+				log.info("Demand adjustment instruction result: {}", result);
+				return result;
+			} finally {
+				scheduleUnchangedTimeout();
+			}
 		}
-		return null;
+	}
+
+	/**
+	 * Get the effective unchanged timeout.
+	 *
+	 * @return the timeout, or {@literal null} if not applicable
+	 */
+	private Duration effectiveUnchangedTimeout() {
+		final Duration timeout = getUnchangedTimeout();
+		if ( taskScheduler == null || timeout == null || timeout.compareTo(Duration.ZERO) <= 0 ) {
+			return null;
+		}
+		return timeout;
+	}
+
+	/**
+	 * Schedule (or re-schedule) the unchanged timeout, if one is configured.
+	 */
+	private synchronized void scheduleUnchangedTimeout() {
+		cancelUnchangedTimeout();
+		final Duration timeout = effectiveUnchangedTimeout();
+		if ( timeout == null ) {
+			return;
+		}
+		final UnchangedTimeoutTask task = new UnchangedTimeoutTask();
+		task.future = taskScheduler.schedule(task, Instant.now().plus(timeout));
+		unchangedTimeoutTask = task;
+	}
+
+	private synchronized void cancelUnchangedTimeout() {
+		final UnchangedTimeoutTask task = unchangedTimeoutTask;
+		unchangedTimeoutTask = null;
+		if ( task != null && task.future != null ) {
+			// don't interrupt, in case an instruction is executing
+			task.future.cancel(false);
+		}
+	}
+
+	/**
+	 * Send the most recent desired limit again, because it has not been sent
+	 * within the unchanged timeout.
+	 *
+	 * @param task
+	 *        the task that timed out; ignored unless it is still the pending
+	 *        task
+	 */
+	private synchronized void handleUnchangedTimeout(UnchangedTimeoutTask task) {
+		if ( task != unchangedTimeoutTask ) {
+			// cancelled or replaced while waiting to run
+			return;
+		}
+		unchangedTimeoutTask = null;
+		final int desiredLimit = lastDesiredLimit;
+		if ( desiredLimit < 1 ) {
+			return;
+		}
+		log.debug("Sending unchanged {} limit {}% after {} timeout", powerControlId, desiredLimit,
+				unchangedTimeout);
+		try {
+			InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
+			if ( result != InstructionState.Completed ) {
+				log.warn("Unchanged {} limit {}% instruction result: {}", powerControlId, desiredLimit,
+						result);
+			}
+			recordModifyResult(result);
+		} catch ( RuntimeException e ) {
+			log.error("Error sending unchanged limit to power control {}: {}", powerControlId,
+					e.getMessage());
+			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, messageForException(e));
+		} finally {
+			scheduleUnchangedTimeout();
+		}
+		postStatisticsEvent();
+	}
+
+	private final class UnchangedTimeoutTask implements Runnable {
+
+		// set after scheduling; read when run, under the DemandBalancer lock
+		private ScheduledFuture<?> future;
+
+		@Override
+		public void run() {
+			handleUnchangedTimeout(this);
+		}
+
 	}
 
 	/**
@@ -486,6 +654,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		results.add(new BasicTextFieldSettingSpecifier("powerControlId", null));
 		results.add(new BasicTextFieldSettingSpecifier("powerMaximumWatts",
 				String.valueOf(DEFAULT_POWER_MAXIMUM_WATTS)));
+		results.add(new BasicTextFieldSettingSpecifier("unchangedTimeoutValue", null));
 
 		DemandBalanceStrategy strategy = getDemandBalanceStrategy();
 		if ( strategy instanceof SettingSpecifierProvider ) {
@@ -786,6 +955,96 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			}
 		}
 		acEnergyPhaseFilter = EnumSet.copyOf(result);
+	}
+
+	/**
+	 * Get the task scheduler.
+	 *
+	 * @return the task scheduler
+	 * @since 2.3
+	 */
+	public TaskScheduler getTaskScheduler() {
+		return taskScheduler;
+	}
+
+	/**
+	 * Set the task scheduler.
+	 *
+	 * <p>
+	 * A scheduler is required for the {@code unchangedTimeout} to have any
+	 * effect.
+	 * </p>
+	 *
+	 * @param taskScheduler
+	 *        the task scheduler to set
+	 * @since 2.3
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get the unchanged timeout.
+	 *
+	 * @return the timeout, or {@literal null} to only send changed limits
+	 * @since 2.3
+	 */
+	public Duration getUnchangedTimeout() {
+		return unchangedTimeout;
+	}
+
+	/**
+	 * Set the unchanged timeout.
+	 *
+	 * <p>
+	 * When set to a positive duration, the desired limit will be sent at least
+	 * this often, even if it has not changed. The limit sent is the one most
+	 * recently returned by the {@link DemandBalanceStrategy}, so nothing is
+	 * sent while the strategy returns no limit.
+	 * </p>
+	 *
+	 * @param unchangedTimeout
+	 *        the timeout to set, or {@literal null} to only send changed limits
+	 * @since 2.3
+	 */
+	public void setUnchangedTimeout(Duration unchangedTimeout) {
+		this.unchangedTimeout = unchangedTimeout;
+	}
+
+	/**
+	 * Get the unchanged timeout as an ISO 8601 duration string.
+	 *
+	 * @return the timeout, for example {@code PT30S}, or {@literal null}
+	 * @since 2.3
+	 */
+	public String getUnchangedTimeoutValue() {
+		final Duration timeout = getUnchangedTimeout();
+		return (timeout != null ? timeout.toString() : null);
+	}
+
+	/**
+	 * Set the unchanged timeout as an ISO 8601 duration string.
+	 *
+	 * <p>
+	 * An empty or invalid value clears the timeout.
+	 * </p>
+	 *
+	 * @param value
+	 *        the timeout to set, for example {@code PT30S}
+	 * @see #setUnchangedTimeout(Duration)
+	 * @since 2.3
+	 */
+	public void setUnchangedTimeoutValue(String value) {
+		Duration timeout = null;
+		if ( value != null && !value.isBlank() ) {
+			try {
+				timeout = Duration.parse(value.trim());
+			} catch ( DateTimeParseException e ) {
+				log.warn("Ignoring invalid unchanged timeout [{}]; must be an ISO 8601 duration "
+						+ "like PT30S", value);
+			}
+		}
+		setUnchangedTimeout(timeout);
 	}
 
 }

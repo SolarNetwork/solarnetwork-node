@@ -20,6 +20,8 @@
 
 	<reference-list id="balanceStrategies" availability="optional"
 		interface="net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy"/>
+
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 		
 	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
@@ -123,6 +125,7 @@
 								</bean>	
 							</property>
 							<property name="eventAdmin" ref="eventAdmin"/>
+							<property name="taskScheduler" ref="taskScheduler"/>
 						</bean>
 					</argument>
 				</bean>
