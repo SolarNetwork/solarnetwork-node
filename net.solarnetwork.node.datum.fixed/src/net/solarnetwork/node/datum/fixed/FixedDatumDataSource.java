@@ -176,7 +176,7 @@ public class FixedDatumDataSource extends DatumDataSourceSupport
 		final MetadataService service = service(getMetadataService());
 		if ( service == null ) {
 			log.warn(
-					"No MetadataService available in mock energy meter [{}], unable to resolve TOU schedule.",
+					"No MetadataService available in fixed datum source [{}], unable to resolve TOU schedule.",
 					getUid());
 			return null;
 		}
@@ -187,7 +187,7 @@ public class FixedDatumDataSource extends DatumDataSourceSupport
 			Object o = service.metadataAtPath(metadataPath);
 			if ( o == null ) {
 				log.warn(
-						"No TOU schedule found in mock energy meter [{}] at metadata path [{}], unable to resolve TOU schedule.",
+						"No TOU schedule found in fixed datum source [{}] at metadata path [{}], unable to resolve TOU schedule.",
 						getUid(), metadataPath);
 				return null;
 			}
@@ -199,7 +199,7 @@ public class FixedDatumDataSource extends DatumDataSourceSupport
 				return new CachedResult<>(s, touScheduleCacheTtl.getSeconds(), TimeUnit.SECONDS);
 			} catch ( Exception e ) {
 				log.warn(
-						"Mock energy meter [{}] error parsing TOU schedule from metadata at path [{}]: {}",
+						"Fixed datum source [{}] error parsing TOU schedule from metadata at path [{}]: {}",
 						getUid(), touMetadataPath, e.getMessage(), e);
 				return null;
 			}
