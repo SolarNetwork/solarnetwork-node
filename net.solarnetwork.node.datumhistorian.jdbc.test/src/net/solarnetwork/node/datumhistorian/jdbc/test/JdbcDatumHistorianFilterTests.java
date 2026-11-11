@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.test;
 
+import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_NODE;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_SOURCE;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_TIME;
 import static org.assertj.core.api.BDDAssertions.and;
@@ -105,9 +106,15 @@ import net.solarnetwork.service.StaticOptionalService;
  * <td>weather</td>
  * <td>345</td>
  * <td>SimpleAtmosphericDatum</td>
- * <td>t0</td>
+ * <td>t0, t2</td>
  * </tr>
  * </table>
+ *
+ * <p>
+ * Each datum has a unique {@code i} property value, so the weather datum of
+ * each node can be told apart: node 123 stores 9 and 11, node 234 stores 13
+ * and 14.
+ * </p>
  *
  * @author matt
  * @version 1.0
@@ -164,6 +171,7 @@ public class JdbcDatumHistorianFilterTests extends AbstractPostgresHistorianTest
 			otherHistorian.add(SimpleDatum.nodeDatum("a/1", ts, samples(i++)));
 		}
 		otherHistorian.add(new SimpleAtmosphericDatum(TEST_LOC_ID, "weather", t0, samples(i++)));
+		otherHistorian.add(new SimpleAtmosphericDatum(TEST_LOC_ID, "weather", t2, samples(i++)));
 	}
 
 	private static DatumId node(Long nodeId, String sourceId, Instant ts) {
@@ -204,6 +212,14 @@ public class JdbcDatumHistorianFilterTests extends AbstractPostgresHistorianTest
 			ids.add(d.getId());
 		}
 		return ids;
+	}
+
+	private static List<Integer> values(FilterResults<NodeDatum, DatumId> results) {
+		final List<Integer> values = new ArrayList<>();
+		for ( NodeDatum d : results ) {
+			values.add(d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "i"));
+		}
+		return values;
 	}
 
 	private static void thenPage(FilterResults<NodeDatum, DatumId> result, Long totalResults,
@@ -398,17 +414,103 @@ public class JdbcDatumHistorianFilterTests extends AbstractPostgresHistorianTest
 		// @formatter:off
 		and.then(ids(result))
 			.as("Only location datum of running node returned")
-			.containsExactly(weather(t0))
+			.containsExactly(weather(t0), weather(t2))
+			;
+		and.then(values(result))
+			.as("Datum stored by running node returned")
+			.containsExactly(13, 14)
+			;
+		// @formatter:on
+	}
+
+	private static BasicNodeDatumFilter locationIdsFilter() {
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setObjectKind(ObjectDatumKind.Location);
+		filter.setObjectId(TEST_LOC_ID);
+		return filter;
+	}
+
+	@Test
+	public void locationIds() {
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(locationIdsFilter());
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Location datum of all nodes merged, one per timestamp")
+			.containsExactly(weather(t0), weather(t1), weather(t2))
+			;
+		and.then(values(result))
+			.as("Datum of running node preferred, other node's used where running node has none")
+			.containsExactly(9, 11, 14)
+			;
+		// @formatter:on
+		thenPage(result, 3L, 3, 0L);
+	}
+
+	@Test
+	public void locationIds_otherRunningNode() {
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = otherHistorian.findFiltered(locationIdsFilter());
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Location datum of all nodes merged, one per timestamp")
+			.containsExactly(weather(t0), weather(t1), weather(t2))
+			;
+		and.then(values(result))
+			.as("Datum of running node preferred, other node's used where running node has none")
+			.containsExactly(13, 11, 14)
 			;
 		// @formatter:on
 	}
 
 	@Test
-	public void locationIds() {
+	public void locationIds_runningNode_notAvailable() {
 		// GIVEN
-		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
-		filter.setObjectKind(ObjectDatumKind.Location);
-		filter.setObjectId(TEST_LOC_ID);
+		given(identityService2.getNodeId()).willReturn(null);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = otherHistorian.findFiltered(locationIdsFilter());
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Location datum of all nodes merged, one per timestamp")
+			.containsExactly(weather(t0), weather(t1), weather(t2))
+			;
+		and.then(values(result))
+			.as("Datum of lowest node ID preferred without running node ID")
+			.containsExactly(9, 11, 14)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void locationIds_nodeSortIgnored() {
+		// GIVEN
+		BasicNodeDatumFilter filter = locationIdsFilter();
+		filter.setSorts(List.of(desc(SORT_BY_NODE)));
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = otherHistorian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(values(result))
+			.as("Merged location datum sorted by time, not by the node that stored them")
+			.containsExactly(13, 11, 14)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void locationIds_mostRecent() {
+		// GIVEN
+		BasicNodeDatumFilter filter = locationIdsFilter();
+		filter.setMostRecent(true);
 
 		// WHEN
 		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
@@ -416,10 +518,58 @@ public class JdbcDatumHistorianFilterTests extends AbstractPostgresHistorianTest
 		// THEN
 		// @formatter:off
 		and.then(ids(result))
-			.as("Location datum stored by all nodes returned, by node and then time")
-			.containsExactly(weather(t0), weather(t1), weather(t0))
+			.as("Most recent merged location datum returned")
+			.containsExactly(weather(t2))
+			;
+		and.then(values(result))
+			.as("Other node's datum used as running node has none as recent")
+			.containsExactly(14)
 			;
 		// @formatter:on
+	}
+
+	@Test
+	public void locationIds_mostRecent_runningNodePreferred() {
+		// GIVEN
+		BasicNodeDatumFilter filter = locationIdsFilter();
+		filter.setMostRecent(true);
+		filter.setEndDate(t1);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = otherHistorian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Most recent merged location datum before end date returned")
+			.containsExactly(weather(t0))
+			;
+		and.then(values(result))
+			.as("Datum of running node preferred")
+			.containsExactly(13)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void locationIds_pagination_totalResults() {
+		// GIVEN
+		BasicNodeDatumFilter filter = locationIdsFilter();
+		filter.setSorts(List.of(desc(SORT_BY_TIME)));
+		filter.setWithoutTotalResultsCount(false);
+		filter.setMax(2);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Page of merged location datum returned")
+			.containsExactly(weather(t2), weather(t1))
+			;
+		// @formatter:on
+		thenPage(result, 3L, 2, 0L);
 	}
 
 	@Test

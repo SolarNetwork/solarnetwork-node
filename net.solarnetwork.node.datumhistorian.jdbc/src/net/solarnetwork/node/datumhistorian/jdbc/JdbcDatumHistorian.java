@@ -90,9 +90,11 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * query methods only return datum of the node given by the
  * {@link IdentityService}. The {@link #findFiltered(NodeDatumFilter, List, Long, Integer)}
  * method does the same when the filter has no object IDs, otherwise it returns
- * the datum of the nodes or locations given; see {@link SelectFilteredDatum}
- * for how each filter criteria is applied. The datum it returns have their node
- * ID set.
+ * the datum of the nodes or locations given. Location datum stored by more than
+ * one node are returned once, preferring the one stored by the
+ * {@code IdentityService} node; see {@link SelectFilteredDatum} for how each
+ * filter criteria is applied. The node datum it returns have their node ID
+ * set.
  * </p>
  *
  * <p>
@@ -279,7 +281,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		final long startingOffset = (f.hasOffset() ? f.offset() : 0L);
 
 		final Long[] objectIds = f.getObjectIds();
-		final Long nodeId = (objectIds != null && objectIds.length > 0 ? null : nodeId());
+		final Long nodeId = nodeId();
 		if ( nodeId == null && (objectIds == null || objectIds.length < 1) ) {
 			// node not set up, so there is no node to find the datum of
 			return new BasicFilterResults<>(List.of(), 0L, startingOffset, 0);

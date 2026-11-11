@@ -58,10 +58,13 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <dl>
  * <dt>object IDs</dt>
  * <dd>With a {@link ObjectDatumKind#Location} object kind, the location IDs of
- * location datum, from any node. Otherwise the node IDs of node datum. When no
- * object IDs are given, the results are limited to the streams of the
- * {@code nodeId} given to this class, and to either node or location datum
- * when an object kind is given.</dd>
+ * location datum. The location datum stored by all nodes are merged, keeping
+ * one datum per location, source, and timestamp: the one stored by the
+ * {@code nodeId} given to this class if there is one, otherwise the one stored
+ * by the lowest node ID. Otherwise the node IDs of node datum. When no object
+ * IDs are given, the results are limited to the streams of the {@code nodeId}
+ * given to this class, and to either node or location datum when an object
+ * kind is given.</dd>
  * <dt>source IDs</dt>
  * <dd>Ant-style patterns, matched case-insensitively with the
  * {@code ant_patterns_to_regexps()} database function.</dd>
@@ -72,11 +75,13 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <dd>The minimum (inclusive) and maximum (exclusive) datum timestamps.</dd>
  * <dt>most recent</dt>
  * <dd>Only the most recent datum of each stream that matches the date and type
- * criteria.</dd>
+ * criteria. For merged location datum, the most recent datum of each location
+ * and source.</dd>
  * <dt>sorts</dt>
  * <dd>The {@code SORT_BY_*} keys of {@code FilterableDatumHistorian}. Any
  * {@link net.solarnetwork.node.service.FilterableDatumHistorian#DEFAULT_SORTS}
- * keys not given are added, so the order is always the same.</dd>
+ * keys not given are added, so the order is always the same. The node key is
+ * ignored for merged location datum.</dd>
  * </dl>
  *
  * <p>
@@ -92,8 +97,11 @@ public final class SelectFilteredDatum
 	/** The default fetch size. */
 	public static final int DEFAULT_FETCH_SIZE = 100;
 
+	/** The node ID column. */
+	private static final String NODE_ID_COLUMN = "m.node_id";
+
 	/** The columns to sort by for each sort key. */
-	private static final Map<String, String> SORT_KEY_COLUMNS = Map.of(SORT_BY_NODE, "m.node_id",
+	private static final Map<String, String> SORT_KEY_COLUMNS = Map.of(SORT_BY_NODE, NODE_ID_COLUMN,
 			SORT_BY_LOCATION, "m.loc_id", SORT_BY_SOURCE, "m.source_id", SORT_BY_TIME, "d.ts");
 
 	private final String schemaName;
@@ -114,7 +122,8 @@ public final class SelectFilteredDatum
 	 *        the filter
 	 * @param nodeId
 	 *        the node ID to limit the results to when {@code filter} has no
-	 *        object IDs, or {@code null} for all nodes
+	 *        object IDs, and whose location datum to prefer when
+	 *        {@code filter} has location IDs; or {@code null} for all nodes
 	 * @throws IllegalArgumentException
 	 *         if {@code schemaName} is not valid or {@code filter} is
 	 *         {@code null}
@@ -132,7 +141,8 @@ public final class SelectFilteredDatum
 	 *        the filter
 	 * @param nodeId
 	 *        the node ID to limit the results to when {@code filter} has no
-	 *        object IDs, or {@code null} for all nodes
+	 *        object IDs, and whose location datum to prefer when
+	 *        {@code filter} has location IDs; or {@code null} for all nodes
 	 * @param fetchSize
 	 *        the fetch size, or {@literal 0} for the JDBC driver default
 	 * @throws IllegalArgumentException
@@ -157,6 +167,15 @@ public final class SelectFilteredDatum
 		return filter.getObjectKind() == ObjectDatumKind.Location;
 	}
 
+	/**
+	 * Test if the location datum stored by all nodes are merged.
+	 *
+	 * @return {@code true} if the filter has location IDs
+	 */
+	private boolean isMergedLocations() {
+		return hasObjectIds() && isLocationKind();
+	}
+
 	@Override
 	public String getSql() {
 		final StringBuilder buf = new StringBuilder(1024);
@@ -166,17 +185,85 @@ public final class SelectFilteredDatum
 					, d.data_i::TEXT[] AS data_i, d.data_a::TEXT[] AS data_a, d.data_s, d.data_t
 					, m.node_id
 				""");
-		sqlFromWhere(buf);
+		if ( isMergedLocations() ) {
+			sqlMergedLocationsFrom(buf);
+			buf.append("INNER JOIN ").append(schemaName)
+					.append(".dh_datum_meta m ON m.stream_id = k.stream_id\n");
+			buf.append("INNER JOIN ").append(schemaName)
+					.append(".dh_datum d ON d.stream_id = k.stream_id AND d.ts = k.ts\n");
+			sqlTypeJoin(buf);
+		} else {
+			sqlFromWhere(buf);
+		}
 		sqlOrderBy(buf);
 		sqlLimitOffset(buf);
 		return buf.toString();
 	}
 
 	private void sqlFromWhere(StringBuilder buf) {
+		sqlStreamFrom(buf, false);
+		sqlTypeJoin(buf);
+		sqlWhere(buf);
+	}
+
+	private void sqlTypeJoin(StringBuilder buf) {
+		buf.append("INNER JOIN ").append(schemaName)
+				.append(".dh_datum_type t ON t.type_id = d.type_id\n");
+	}
+
+	/**
+	 * Generate a {@code FROM} clause of the stream and datum keys of merged
+	 * location datum, as a {@code k} table.
+	 *
+	 * <p>
+	 * One datum is kept per location, source, and timestamp (or just per
+	 * location and source for the most recent datum), preferring the datum of
+	 * {@code nodeId} and then the lowest node ID.
+	 * </p>
+	 *
+	 * @param buf
+	 *        the buffer to append to
+	 */
+	private void sqlMergedLocationsFrom(StringBuilder buf) {
+		final boolean mostRecent = filter.isMostRecent();
+		final StringBuilder sub = new StringBuilder(512);
+		sub.append("SELECT DISTINCT ON (m.loc_id, m.source_id");
+		if ( !mostRecent ) {
+			sub.append(", d.ts");
+		}
+		sub.append(") m.stream_id, d.ts\n");
+		sqlStreamFrom(sub, true);
+		sqlWhere(sub);
+		sub.append("ORDER BY m.loc_id, m.source_id, d.ts");
+		if ( mostRecent ) {
+			sub.append(" DESC");
+		}
+		if ( nodeId != null ) {
+			sub.append(", CASE WHEN m.node_id = ? THEN 0 ELSE 1 END");
+		}
+		sub.append(", m.node_id\n");
+
+		buf.append("FROM (\n");
+		sub.toString().lines().forEach(l -> buf.append('\t').append(l).append('\n'));
+		buf.append(") k\n");
+	}
+
+	/**
+	 * Generate a {@code FROM} clause of the stream meta and datum tables, as
+	 * {@code m} and {@code d} tables.
+	 *
+	 * @param buf
+	 *        the buffer to append to
+	 * @param timestampOnly
+	 *        {@code true} to include only the timestamp column of the most
+	 *        recent datum
+	 */
+	private void sqlStreamFrom(StringBuilder buf, boolean timestampOnly) {
 		buf.append("FROM ").append(schemaName).append(".dh_datum_meta m\n");
 		if ( filter.isMostRecent() ) {
 			buf.append("INNER JOIN LATERAL (\n");
-			buf.append("\tSELECT d.ts, d.type_id, d.data_i, d.data_a, d.data_s, d.data_t\n");
+			buf.append(timestampOnly ? "\tSELECT d.ts\n"
+					: "\tSELECT d.ts, d.type_id, d.data_i, d.data_a, d.data_s, d.data_t\n");
 			buf.append("\tFROM ").append(schemaName).append(".dh_datum d\n");
 			buf.append("\tWHERE d.stream_id = m.stream_id\n");
 			sqlDatumWhere(buf, "\t\tAND ");
@@ -187,9 +274,9 @@ public final class SelectFilteredDatum
 			buf.append("INNER JOIN ").append(schemaName)
 					.append(".dh_datum d ON d.stream_id = m.stream_id\n");
 		}
-		buf.append("INNER JOIN ").append(schemaName)
-				.append(".dh_datum_type t ON t.type_id = d.type_id\n");
+	}
 
+	private void sqlWhere(StringBuilder buf) {
 		final StringBuilder where = new StringBuilder();
 		sqlMetaWhere(where);
 		if ( !filter.isMostRecent() ) {
@@ -252,6 +339,10 @@ public final class SelectFilteredDatum
 
 	private void sqlOrderBy(StringBuilder buf) {
 		final Set<String> columns = new HashSet<>(8);
+		if ( isMergedLocations() ) {
+			// merged location datum are not grouped by node, so skip the node column
+			columns.add(NODE_ID_COLUMN);
+		}
 		final StringBuilder order = new StringBuilder(64);
 		final List<SortDescriptor> sorts = filter.getSorts();
 		if ( sorts != null ) {
@@ -310,6 +401,9 @@ public final class SelectFilteredDatum
 		} else {
 			p = prepareMetaWhere(con, stmt, p);
 			p = prepareDatumWhere(con, stmt, p);
+		}
+		if ( isMergedLocations() && nodeId != null ) {
+			stmt.setLong(++p, nodeId);
 		}
 		return p;
 	}
@@ -373,7 +467,11 @@ public final class SelectFilteredDatum
 		public String getSql() {
 			final StringBuilder buf = new StringBuilder(512);
 			buf.append("SELECT COUNT(*)\n");
-			sqlFromWhere(buf);
+			if ( isMergedLocations() ) {
+				sqlMergedLocationsFrom(buf);
+			} else {
+				sqlFromWhere(buf);
+			}
 			return buf.toString();
 		}
 

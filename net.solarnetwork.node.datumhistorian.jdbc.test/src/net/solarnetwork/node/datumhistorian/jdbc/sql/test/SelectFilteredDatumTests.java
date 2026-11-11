@@ -241,12 +241,123 @@ public class SelectFilteredDatumTests {
 		// THEN
 		// @formatter:off
 		and.then(sqlCaptor.getValue())
-			.as("SQL generated, for locations of any node")
+			.as("SQL generated, merging the location datum of all nodes, preferring the given node")
 			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-03.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(sql.getSql())
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
 		then(stmt).should(ordered).setArray(1, array);
+		then(stmt).should(ordered).setLong(2, TEST_NODE_ID);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void locationIds_noNodeId() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setObjectKind(ObjectDatumKind.Location);
+		f.setObjectId(3L);
+		f.setStartDate(start);
+		given(conn.createArrayOf(eq("bigint"), aryEq(new Long[] { 3L }))).willReturn(array);
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, null);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, merging the location datum of all nodes, preferring the lowest node ID")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-08.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setArray(1, array);
+		then(stmt).should(ordered).setObject(2, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	private BasicNodeDatumFilter locationIdsMostRecentFilter() {
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setObjectKind(ObjectDatumKind.Location);
+		f.setObjectIds(new Long[] { 3L, 4L });
+		f.setSourceIds(new String[] { "a", "b/*" });
+		f.setType(AcEnergyDatum.class.getName());
+		f.setStartDate(start);
+		f.setEndDate(end);
+		f.setMostRecent(true);
+		f.setSorts(List.of(new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_NODE, true),
+				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME, true)));
+		f.setMax(10);
+		f.setOffset(20L);
+		return f;
+	}
+
+	@Test
+	public void locationIds_mostRecent() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = locationIdsMostRecentFilter();
+		givenAllCriteriaArrays(f);
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, TEST_NODE_ID);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with most recent merged location datum, without node sort")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-07.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setObject(2, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setArray(3, array3);
+		then(stmt).should(ordered).setArray(4, array);
+		then(stmt).should(ordered).setArray(5, array2);
+		then(stmt).should(ordered).setArray(6, array3);
+		then(stmt).should(ordered).setLong(7, TEST_NODE_ID);
+		then(stmt).should(ordered).setInt(8, 10);
+		then(stmt).should(ordered).setLong(9, 20L);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void locationIds_mostRecent_count() throws SQLException {
+		// GIVEN
+		givenPrepareCount();
+		final BasicNodeDatumFilter f = locationIdsMostRecentFilter();
+		givenAllCriteriaArrays(f);
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, TEST_NODE_ID);
+
+		// WHEN
+		PreparedStatementCreator count = sql.countPreparedStatementCreator();
+		count.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Count SQL generated, counting merged location datum")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-count-07.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(((SqlProvider) count).getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setObject(1, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setObject(2, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setArray(3, array3);
+		then(stmt).should(ordered).setArray(4, array);
+		then(stmt).should(ordered).setArray(5, array2);
+		then(stmt).should(ordered).setArray(6, array3);
+		then(stmt).should(ordered).setLong(7, TEST_NODE_ID);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}

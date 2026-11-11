@@ -89,8 +89,7 @@ public class StoredDatumRowMapperTests {
 			String[] dataA, String[] namesS, String dataS, String[] tags) throws SQLException {
 		given(rs.getInt(1)).willReturn(1);
 		given(rs.getString(2)).willReturn("a");
-		given(rs.getLong(3)).willReturn(locId != null ? locId : 0L);
-		given(rs.wasNull()).willReturn(locId == null);
+		given(rs.getObject(3, Long.class)).willReturn(locId);
 		given(rs.getTimestamp(4)).willReturn(Timestamp.from(ts));
 		given(rs.getString(5)).willReturn("foo.Bar");
 		Array typeNames = array("foo.Bar", "foo.Datum");
@@ -255,25 +254,23 @@ public class StoredDatumRowMapperTests {
 			.as("No node ID")
 			.returns(null, from(StoredDatum::nodeId))
 			;
-		then(rs).should(never()).getLong(14);
+		then(rs).should(never()).getObject(14, Long.class);
 		// @formatter:on
 	}
 
-	private void givenMinimalRow(long locId, boolean locIdNull, long nodeId, boolean nodeIdNull)
-			throws SQLException {
+	private void givenMinimalRow(Long locId, Long nodeId) throws SQLException {
 		given(rs.getInt(1)).willReturn(1);
 		given(rs.getString(2)).willReturn("a");
-		given(rs.getLong(3)).willReturn(locId);
+		given(rs.getObject(3, Long.class)).willReturn(locId);
 		given(rs.getTimestamp(4)).willReturn(Timestamp.from(ts));
 		given(rs.getString(5)).willReturn("foo.Bar");
-		given(rs.getLong(14)).willReturn(nodeId);
-		given(rs.wasNull()).willReturn(locIdNull, nodeIdNull);
+		given(rs.getObject(14, Long.class)).willReturn(nodeId);
 	}
 
 	@Test
 	public void map_withNodeId() throws SQLException {
 		// GIVEN
-		givenMinimalRow(0L, true, 234L, false);
+		givenMinimalRow(null, 234L);
 		StoredDatumRowMapper nodeMapper = new StoredDatumRowMapper(JsonUtils.newDatumObjectMapper(),
 				true);
 
@@ -296,7 +293,7 @@ public class StoredDatumRowMapperTests {
 	@Test
 	public void map_withNodeId_null() throws SQLException {
 		// GIVEN
-		givenMinimalRow(123L, false, 0L, true);
+		givenMinimalRow(123L, null);
 		StoredDatumRowMapper nodeMapper = new StoredDatumRowMapper(JsonUtils.newDatumObjectMapper(),
 				true);
 
