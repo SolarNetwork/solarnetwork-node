@@ -34,6 +34,8 @@ import net.solarnetwork.domain.datum.DatumSamples;
  *
  * @param streamId
  *        the stream ID
+ * @param nodeId
+ *        the node ID, or {@code null} if not known
  * @param sourceId
  *        the source ID
  * @param locationId
@@ -50,11 +52,45 @@ import net.solarnetwork.domain.datum.DatumSamples;
  * @author matt
  * @version 1.0
  */
-public record StoredDatum(int streamId, String sourceId, @Nullable Long locationId, Instant timestamp,
-		String className, Set<String> typeNames, DatumSamples samples) {
+public record StoredDatum(int streamId, @Nullable Long nodeId, String sourceId,
+		@Nullable Long locationId, Instant timestamp, String className, Set<String> typeNames,
+		DatumSamples samples) {
 
 	/**
 	 * Constructor.
+	 *
+	 * @param streamId
+	 *        the stream ID
+	 * @param nodeId
+	 *        the node ID, or {@code null} if not known
+	 * @param sourceId
+	 *        the source ID
+	 * @param locationId
+	 *        the location ID, for location datum, or {@code null} for node
+	 *        datum
+	 * @param timestamp
+	 *        the timestamp
+	 * @param className
+	 *        the name of the class of the stored datum
+	 * @param typeNames
+	 *        the names of all classes and interfaces the stored datum class can
+	 *        be assigned to
+	 * @param samples
+	 *        the samples
+	 * @throws IllegalArgumentException
+	 *         if any argument other than {@code nodeId} or {@code locationId}
+	 *         is {@code null}
+	 */
+	public StoredDatum {
+		requireNonNullArgument(sourceId, "sourceId");
+		requireNonNullArgument(timestamp, "timestamp");
+		requireNonNullArgument(className, "className");
+		requireNonNullArgument(typeNames, "typeNames");
+		requireNonNullArgument(samples, "samples");
+	}
+
+	/**
+	 * Constructor, without a node ID.
 	 *
 	 * @param streamId
 	 *        the stream ID
@@ -75,12 +111,9 @@ public record StoredDatum(int streamId, String sourceId, @Nullable Long location
 	 * @throws IllegalArgumentException
 	 *         if any argument other than {@code locationId} is {@code null}
 	 */
-	public StoredDatum {
-		requireNonNullArgument(sourceId, "sourceId");
-		requireNonNullArgument(timestamp, "timestamp");
-		requireNonNullArgument(className, "className");
-		requireNonNullArgument(typeNames, "typeNames");
-		requireNonNullArgument(samples, "samples");
+	public StoredDatum(int streamId, String sourceId, @Nullable Long locationId, Instant timestamp,
+			String className, Set<String> typeNames, DatumSamples samples) {
+		this(streamId, null, sourceId, locationId, timestamp, className, typeNames, samples);
 	}
 
 	/**
@@ -104,15 +137,16 @@ public record StoredDatum(int streamId, String sourceId, @Nullable Long location
 	 * Get a datum ID for this datum.
 	 *
 	 * <p>
-	 * Node datum get a {@code null} object ID, as datum captured by SolarNode
-	 * normally have.
+	 * Node datum get the {@code nodeId} as their object ID, which is
+	 * {@code null} when it is not known, as datum captured by SolarNode normally
+	 * have.
 	 * </p>
 	 *
 	 * @return the datum ID
 	 */
 	public DatumId datumId() {
 		return (locationId != null ? DatumId.locationId(locationId, sourceId, timestamp)
-				: DatumId.nodeId(null, sourceId, timestamp));
+				: DatumId.nodeId(nodeId, sourceId, timestamp));
 	}
 
 }

@@ -28,6 +28,7 @@ import static org.assertj.core.api.BDDAssertions.thenExceptionOfType;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.ResultSet;
@@ -235,6 +236,80 @@ public class StoredDatumRowMapperTests {
 		thenExceptionOfType(DataRetrievalFailureException.class)
 			.isThrownBy(() -> StoredDatumRowMapper.number("abc"))
 			.withMessageContaining("abc")
+			;
+		// @formatter:on
+	}
+
+
+	@Test
+	public void map_withoutNodeId() throws SQLException {
+		// GIVEN
+		givenRow(null, null, null, null, null, null, null, null);
+
+		// WHEN
+		StoredDatum result = mapper.mapRow(rs, 1);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("No node ID")
+			.returns(null, from(StoredDatum::nodeId))
+			;
+		then(rs).should(never()).getLong(14);
+		// @formatter:on
+	}
+
+	private void givenMinimalRow(long locId, boolean locIdNull, long nodeId, boolean nodeIdNull)
+			throws SQLException {
+		given(rs.getInt(1)).willReturn(1);
+		given(rs.getString(2)).willReturn("a");
+		given(rs.getLong(3)).willReturn(locId);
+		given(rs.getTimestamp(4)).willReturn(Timestamp.from(ts));
+		given(rs.getString(5)).willReturn("foo.Bar");
+		given(rs.getLong(14)).willReturn(nodeId);
+		given(rs.wasNull()).willReturn(locIdNull, nodeIdNull);
+	}
+
+	@Test
+	public void map_withNodeId() throws SQLException {
+		// GIVEN
+		givenMinimalRow(0L, true, 234L, false);
+		StoredDatumRowMapper nodeMapper = new StoredDatumRowMapper(JsonUtils.newDatumObjectMapper(),
+				true);
+
+		// WHEN
+		StoredDatum result = nodeMapper.mapRow(rs, 1);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Node ID mapped")
+			.returns(234L, from(StoredDatum::nodeId))
+			.as("No location ID")
+			.returns(null, from(StoredDatum::locationId))
+			.as("Node datum ID has node ID")
+			.returns(234L, from(d -> d.datumId().getObjectId()))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void map_withNodeId_null() throws SQLException {
+		// GIVEN
+		givenMinimalRow(123L, false, 0L, true);
+		StoredDatumRowMapper nodeMapper = new StoredDatumRowMapper(JsonUtils.newDatumObjectMapper(),
+				true);
+
+		// WHEN
+		StoredDatum result = nodeMapper.mapRow(rs, 1);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("NULL node ID mapped")
+			.returns(null, from(StoredDatum::nodeId))
+			.as("Location ID mapped")
+			.returns(123L, from(StoredDatum::locationId))
 			;
 		// @formatter:on
 	}

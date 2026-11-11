@@ -57,6 +57,7 @@ import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
 public class DefaultNodeDatumFactoryTests {
 
 	private static final Long TEST_LOC_ID = 123L;
+	private static final Long TEST_NODE_ID = 234L;
 
 	private final DefaultNodeDatumFactory factory = new DefaultNodeDatumFactory();
 	private final Instant ts = Instant.now().truncatedTo(ChronoUnit.MILLIS);
@@ -73,6 +74,12 @@ public class DefaultNodeDatumFactoryTests {
 		DatumSamples s = new DatumSamples();
 		s.putInstantaneousSampleValue("watts", 1);
 		return new StoredDatum(1, "a", locationId, ts, className, typeNames, s);
+	}
+
+	private StoredDatum storedWithNodeId(Class<?> type, Long locationId) {
+		final StoredDatum d = stored(type.getName(), locationId, factory.typeNames(type));
+		return new StoredDatum(d.streamId(), TEST_NODE_ID, d.sourceId(), d.locationId(), d.timestamp(),
+				d.className(), d.typeNames(), d.samples());
 	}
 
 	private String[] with(String className, Class<?> type) {
@@ -337,6 +344,85 @@ public class DefaultNodeDatumFactoryTests {
 	@Test
 	public void nullClassLoader() {
 		thenIllegalArgumentException().isThrownBy(() -> new DefaultNodeDatumFactory(null));
+	}
+
+
+	@Test
+	public void create_nodeId() {
+		// GIVEN
+		StoredDatum d = storedWithNodeId(SimpleAcEnergyDatum.class, null);
+
+		// WHEN
+		NodeDatum result = factory.createDatum(d, null);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Stored class created")
+			.isExactlyInstanceOf(SimpleAcEnergyDatum.class)
+			.as("Node ID set")
+			.returns(TEST_NODE_ID, from(NodeDatum::getObjectId))
+			.returns(ObjectDatumKind.Node, from(NodeDatum::getKind))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void create_nodeId_location() {
+		// GIVEN
+		StoredDatum d = storedWithNodeId(SimpleAtmosphericDatum.class, TEST_LOC_ID);
+
+		// WHEN
+		NodeDatum result = factory.createDatum(d, null);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Location ID set, not node ID")
+			.returns(TEST_LOC_ID, from(NodeDatum::getObjectId))
+			.returns(ObjectDatumKind.Location, from(NodeDatum::getKind))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void create_nodeConstructor_nodeIdCopied() {
+		// GIVEN
+		StoredDatum d = storedWithNodeId(TestDatum.NodeOnlyCopyable.class, null);
+
+		// WHEN
+		NodeDatum result = factory.createDatum(d, null);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Created with (String, Instant, DatumSamples) constructor and copied with node ID")
+			.isExactlyInstanceOf(TestDatum.NodeOnlyCopyable.class)
+			.returns(TEST_NODE_ID, from(NodeDatum::getObjectId))
+			.returns("a", from(NodeDatum::getSourceId))
+			.returns(ts, from(NodeDatum::getTimestamp))
+			.returns(1, from(r -> r.asSampleOperations().getSampleInteger(
+					DatumSamplesType.Instantaneous, "watts")))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void create_nodeConstructor_nodeIdNotCopiedWhenClassChanges() {
+		// GIVEN
+		StoredDatum d = storedWithNodeId(TestDatum.NodeOnly.class, null);
+
+		// WHEN
+		NodeDatum result = factory.createDatum(d, null);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Copy with ID returns a different class, so class kept without node ID")
+			.isExactlyInstanceOf(TestDatum.NodeOnly.class)
+			.returns(null, from(NodeDatum::getObjectId))
+			;
+		// @formatter:on
 	}
 
 }

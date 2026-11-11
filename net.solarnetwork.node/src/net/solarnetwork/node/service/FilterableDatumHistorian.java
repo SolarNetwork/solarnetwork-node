@@ -22,7 +22,10 @@
 
 package net.solarnetwork.node.service;
 
+import java.util.List;
 import net.solarnetwork.dao.FilterableDao;
+import net.solarnetwork.domain.SimpleSortDescriptor;
+import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.node.dao.NodeDatumFilter;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -30,10 +33,38 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 /**
  * Extension of {@link DatumHistorian} with DAO filtering support.
  *
+ * <p>
+ * The {@code SORT_BY_*} constants are the supported sort keys. Results are
+ * sorted by {@link #DEFAULT_SORTS} when no sorts are given.
+ * </p>
+ *
  * @author matt
  * @version 1.0
  */
 public interface FilterableDatumHistorian
 		extends DatumHistorian, FilterableDao<NodeDatum, DatumId, NodeDatumFilter> {
+
+	/** A sort key for the node ID. */
+	String SORT_BY_NODE = "node";
+
+	/** A sort key for the location ID. */
+	String SORT_BY_LOCATION = "loc";
+
+	/** A sort key for the source ID. */
+	String SORT_BY_SOURCE = "source";
+
+	/** A sort key for the datum timestamp. */
+	String SORT_BY_TIME = "time";
+
+	/**
+	 * The default sorts: by node, location, source, and then time.
+	 *
+	 * <p>
+	 * This keeps the datum of each stream together, oldest first.
+	 * </p>
+	 */
+	List<SortDescriptor> DEFAULT_SORTS = List.of(new SimpleSortDescriptor(SORT_BY_NODE),
+			new SimpleSortDescriptor(SORT_BY_LOCATION), new SimpleSortDescriptor(SORT_BY_SOURCE),
+			new SimpleSortDescriptor(SORT_BY_TIME));
 
 }

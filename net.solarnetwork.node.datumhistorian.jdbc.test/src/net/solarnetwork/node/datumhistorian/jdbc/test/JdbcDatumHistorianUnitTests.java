@@ -34,6 +34,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verifyNoInteractions;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -50,16 +51,21 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.AntPathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.dao.BasicNodeDatumFilter;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreamInfo;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian;
 import net.solarnetwork.node.datumhistorian.jdbc.DefaultNodeDatumFactory;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -546,6 +552,88 @@ public class JdbcDatumHistorianUnitTests {
 
 		// THEN
 		then(jdbcOps).shouldHaveNoInteractions();
+	}
+
+	/* ==================================================================
+	 * findFiltered
+	 * ==================================================================
+	 */
+
+	@Test
+	public void findFiltered_noNodeId_noQuery() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(null);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(new BasicNodeDatumFilter());
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("No results without node ID")
+			.isEmpty()
+			;
+		verifyNoInteractions(jdbcOps);
+		// @formatter:on
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void findFiltered_withoutTotalResultsCount_noCountQuery() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		given(jdbcOps.query(any(PreparedStatementCreator.class), any(RowMapper.class)))
+				.willReturn(List.of());
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setMax(1);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowMapper.class));
+		then(jdbcOps).should(never()).query(any(PreparedStatementCreator.class),
+				any(ResultSetExtractor.class));
+		and.then(sqlCaptor.getValue())
+			.as("Filtered datum query executed")
+			.isInstanceOf(SelectFilteredDatum.class)
+			;
+		and.then(result.getTotalResults())
+			.as("No total results")
+			.isNull()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void findFiltered_totalResultsCount() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		given(jdbcOps.query(any(PreparedStatementCreator.class), any(ResultSetExtractor.class)))
+				.willReturn(42L);
+		given(jdbcOps.query(any(PreparedStatementCreator.class), any(RowMapper.class)))
+				.willReturn(List.of());
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setMax(1);
+		filter.setOffset(2L);
+		filter.setWithoutTotalResultsCount(false);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(result.getTotalResults())
+			.as("Total results from count query")
+			.isEqualTo(42L)
+			;
+		and.then(result.getStartingOffset())
+			.as("Starting offset from filter")
+			.isEqualTo(2L)
+			;
+		// @formatter:on
 	}
 
 }

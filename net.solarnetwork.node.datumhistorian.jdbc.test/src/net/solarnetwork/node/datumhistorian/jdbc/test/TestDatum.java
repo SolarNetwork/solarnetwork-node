@@ -60,6 +60,39 @@ public final class TestDatum {
 
 	}
 
+	/**
+	 * A datum with only a node datum constructor, that keeps its class when
+	 * copied with a new ID.
+	 */
+	public static class NodeOnlyCopyable extends SimpleDatum {
+
+		private static final long serialVersionUID = 1L;
+
+		/**
+		 * Constructor.
+		 *
+		 * @param sourceId
+		 *        the source ID
+		 * @param timestamp
+		 *        the timestamp
+		 * @param samples
+		 *        the samples
+		 */
+		public NodeOnlyCopyable(String sourceId, Instant timestamp, DatumSamples samples) {
+			this(DatumId.nodeId(null, sourceId, timestamp), samples);
+		}
+
+		private NodeOnlyCopyable(DatumId id, DatumSamples samples) {
+			super(id, samples);
+		}
+
+		@Override
+		public NodeOnlyCopyable copyWithId(DatumId id) {
+			return new NodeOnlyCopyable(id, new DatumSamples(getSamples()));
+		}
+
+	}
+
 	/** A datum with node and location datum constructors. */
 	public static class NodeOrLocation extends SimpleDatum {
 

@@ -29,6 +29,7 @@ import static org.assertj.core.api.BDDAssertions.thenExceptionOfType;
 import static org.assertj.core.groups.Tuple.tuple;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.util.AntPathMatcher;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreamInfo;
@@ -811,6 +813,70 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		and.then(Arrays.asList(JdbcDatumHistorian.DEFAULT_SCHEMA_NAME, JdbcDatumHistorian.UNFILTERED_SCHEMA_NAME))
 			.as("Test schemas")
 			.contains(schema, other)
+			;
+		// @formatter:on
+	}
+
+	/* ==================================================================
+	 * ant_pattern_to_regexp
+	 * ==================================================================
+	 */
+
+	@Test
+	public void antPattern_matchesAntPathMatcher() {
+		// GIVEN
+		final AntPathMatcher matcher = new AntPathMatcher();
+		final List<String> patterns = List.of("a", "a/b", "a/*", "a/**", "**", "*", "**/c", "a/**/c",
+				"a/**/**/c", "a?c", "/a/*", "/**", "a.b", "a/b*", "*b*", "a**b", "(a)", "a+b",
+				"a[b]", "a|b", "^a$", "a\\b");
+		final List<String> paths = List.of("a", "a/b", "a/b/c", "a/x/y/c", "abc", "/a/b", "/a",
+				"a.b", "axb", "a/c", "b", "a/bb", "(a)", "a+b", "aab", "c", "x/c", "a[b]", "ab", "a|b",
+				"^a$", "a\\b");
+
+		// WHEN
+		final List<String> mismatches = new ArrayList<>();
+		for ( String pattern : patterns ) {
+			for ( String path : paths ) {
+				final boolean expected = matcher.match(pattern, path);
+				final Boolean result = jdbcTemplate.queryForObject(
+						"SELECT ? ~ %s.ant_pattern_to_regexp(?)".formatted(schema), Boolean.class,
+						path, pattern);
+				if ( result == null || result != expected ) {
+					mismatches.add("[%s] %s [%s]".formatted(pattern,
+							expected ? "should match" : "should not match", path));
+				}
+			}
+		}
+
+		// THEN
+		// @formatter:off
+		and.then(mismatches)
+			.as("Patterns matched the same as AntPathMatcher")
+			.isEmpty()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void antPatterns_array() {
+		// WHEN
+		final String[] result = jdbcTemplate.queryForObject(
+				"SELECT %s.ant_patterns_to_regexps(ARRAY['a/*', 'b.c'])".formatted(schema),
+				(rs, row) -> (String[]) rs.getArray(1).getArray());
+		final List<String> matched = jdbcTemplate.queryForList(("SELECT s"
+				+ " FROM unnest(ARRAY['a/x', 'A/Y', 'b.c', 'bxc', 'a/x/y']) s"
+				+ " WHERE s ~* ANY(%s.ant_patterns_to_regexps(ARRAY['a/*', 'b.c']))")
+				.formatted(schema), String.class);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Each pattern converted to a regular expression")
+			.containsExactly("^(?![/])a/[^/]*$", "^(?![/])b\\.c$")
+			;
+		and.then(matched)
+			.as("Regular expressions match case-insensitively with ~*")
+			.containsExactlyInAnyOrder("a/x", "A/Y", "b.c")
 			;
 		// @formatter:on
 	}

@@ -67,6 +67,12 @@ import net.solarnetwork.node.domain.datum.SimplePriceDatum;
  * </ol>
  *
  * <p>
+ * When a node datum with a node ID is created with the last constructor, the
+ * node ID is added with {@link NodeDatum#copyWithId(DatumId)} if that returns
+ * an instance of the same class.
+ * </p>
+ *
+ * <p>
  * The class is loaded first with the class loader given to this factory, and
  * then with the class loader of the type requested by the caller. When the
  * class cannot be created, the {@code Simple*} class from the
@@ -274,8 +280,8 @@ public class DefaultNodeDatumFactory implements NodeDatumFactory {
 							datum.timestamp(), datum.samples());
 				}
 				if ( nodeConstructor != null ) {
-					return nodeConstructor.newInstance(datum.sourceId(), datum.timestamp(),
-							datum.samples());
+					return withNodeId(nodeConstructor.newInstance(datum.sourceId(),
+							datum.timestamp(), datum.samples()), datum);
 				}
 			} catch ( InstantiationException | IllegalAccessException | InvocationTargetException
 					| IllegalArgumentException e ) {
@@ -283,6 +289,14 @@ public class DefaultNodeDatumFactory implements NodeDatumFactory {
 						datumClass.getName(), e.toString());
 			}
 			return null;
+		}
+
+		private NodeDatum withNodeId(NodeDatum result, StoredDatum datum) {
+			if ( datum.nodeId() == null || datum.locationId() != null ) {
+				return result;
+			}
+			final NodeDatum copy = result.copyWithId(datum.datumId());
+			return (copy != null && copy.getClass() == result.getClass() ? copy : result);
 		}
 
 	}

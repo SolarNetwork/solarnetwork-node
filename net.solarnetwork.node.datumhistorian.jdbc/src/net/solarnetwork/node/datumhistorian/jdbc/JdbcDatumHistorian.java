@@ -46,14 +46,17 @@ import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.dao.BasicNodeDatumFilter;
 import net.solarnetwork.node.dao.NodeDatumFilter;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.AppendableDatumHistorian;
@@ -64,7 +67,8 @@ import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
- * JDBC implementation of {@link AppendableDatumHistorian}.
+ * JDBC implementation of {@link AppendableDatumHistorian} and
+ * {@link FilterableDatumHistorian}.
  *
  * <p>
  * Datum are stored in the tables of a configurable schema, so more than one
@@ -79,6 +83,16 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * at the requested offset, the same way {@code DefaultDatumService} applies it
  * to its in-memory history: if the datum at that offset is not of the given
  * type, no datum is returned for that source.
+ * </p>
+ *
+ * <p>
+ * The database can be shared by more than one node. The {@code DatumHistorian}
+ * query methods only return datum of the node given by the
+ * {@link IdentityService}. The {@link #findFiltered(NodeDatumFilter, List, Long, Integer)}
+ * method does the same when the filter has no object IDs, otherwise it returns
+ * the datum of the nodes or locations given; see {@link SelectFilteredDatum}
+ * for how each filter criteria is applied. The datum it returns have their node
+ * ID set.
  * </p>
  *
  * <p>
@@ -116,6 +130,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	private PathMatcher pathMatcher = defaultPathMatcher();
 	private ObjectMapper objectMapper = JsonUtils.newDatumObjectMapper();
 	private RowMapper<StoredDatum> storedDatumMapper = new StoredDatumRowMapper(objectMapper);
+	private RowMapper<StoredDatum> filteredDatumMapper = new StoredDatumRowMapper(objectMapper, true);
 	private NodeDatumFactory datumFactory = new DefaultNodeDatumFactory();
 	private @Nullable ConcurrentMap<String, Integer> datumTypeCache = new ConcurrentHashMap<>(8, 0.9f,
 			2);
@@ -224,10 +239,63 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The pagination criteria of {@code filter} are normally used. Any
+	 * {@code sorts}, {@code offset}, or {@code max} argument that is not
+	 * {@code null} is used in place of the same {@code filter} criteria.
+	 * </p>
+	 *
+	 * <p>
+	 * The total result count is only counted when a maximum result count is
+	 * given and {@code filter} does not have
+	 * {@link NodeDatumFilter#isWithoutTotalResultsCount()} set. Without a
+	 * maximum result count, the total is the number of results returned.
+	 * </p>
+	 *
+	 * @throws IllegalArgumentException
+	 *         if {@code filter} is {@code null}
+	 */
 	@Override
 	public FilterResults<NodeDatum, DatumId> findFiltered(NodeDatumFilter filter,
 			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max) {
-		throw new UnsupportedOperationException();
+		requireNonNullArgument(filter, "filter");
+		NodeDatumFilter f = filter;
+		if ( sorts != null || offset != null || max != null ) {
+			final BasicNodeDatumFilter copy = BasicNodeDatumFilter.copyOf(filter);
+			if ( sorts != null ) {
+				copy.setSorts(sorts);
+			}
+			if ( offset != null ) {
+				copy.setOffset(offset);
+			}
+			if ( max != null ) {
+				copy.setMax(max);
+			}
+			f = copy;
+		}
+		final long startingOffset = (f.hasOffset() ? f.offset() : 0L);
+
+		final Long[] objectIds = f.getObjectIds();
+		final Long nodeId = (objectIds != null && objectIds.length > 0 ? null : nodeId());
+		if ( nodeId == null && (objectIds == null || objectIds.length < 1) ) {
+			// node not set up, so there is no node to find the datum of
+			return new BasicFilterResults<>(List.of(), 0L, startingOffset, 0);
+		}
+
+		final SelectFilteredDatum sql = new SelectFilteredDatum(schemaName, f, nodeId);
+		Long totalResults = null;
+		if ( f.getMax() != null && !f.isWithoutTotalResultsCount() ) {
+			totalResults = jdbcOps.query(sql.countPreparedStatementCreator(),
+					rs -> rs.next() ? rs.getLong(1) : null);
+		}
+		final List<NodeDatum> results = datum(jdbcOps.query(sql, filteredDatumMapper), null);
+		if ( f.getMax() == null ) {
+			totalResults = (long) results.size();
+		}
+		return new BasicFilterResults<>(results, totalResults, startingOffset, results.size());
 	}
 
 	private String samplesJson(NodeDatum datum) throws JsonProcessingException {
@@ -461,6 +529,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	public final void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
 		this.storedDatumMapper = new StoredDatumRowMapper(objectMapper);
+		this.filteredDatumMapper = new StoredDatumRowMapper(objectMapper, true);
 	}
 
 	/**

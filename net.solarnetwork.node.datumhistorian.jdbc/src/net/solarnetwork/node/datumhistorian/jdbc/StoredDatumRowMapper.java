@@ -39,6 +39,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
 
 /**
  * Row mapper for {@link StoredDatum} instances.
@@ -61,6 +62,8 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
  * <li>{@code data_a} (as text)</li>
  * <li>{@code data_s} (a JSON array)</li>
  * <li>{@code data_t}</li>
+ * <li>{@code node_id} (only when created to read node IDs, as returned by
+ * {@link SelectFilteredDatum})</li>
  * </ol>
  *
  * <p>
@@ -75,9 +78,14 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
 public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 
 	private final ObjectMapper objectMapper;
+	private final boolean withNodeId;
 
 	/**
 	 * Constructor.
+	 *
+	 * <p>
+	 * Node IDs will not be read.
+	 * </p>
 	 *
 	 * @param objectMapper
 	 *        the object mapper to parse status values with
@@ -85,16 +93,31 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 	 *         if any argument is {@code null}
 	 */
 	public StoredDatumRowMapper(ObjectMapper objectMapper) {
+		this(objectMapper, false);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param objectMapper
+	 *        the object mapper to parse status values with
+	 * @param withNodeId
+	 *        {@code true} to read the node ID from the {@code node_id} column
+	 *        that follows the {@code data_t} column
+	 * @throws IllegalArgumentException
+	 *         if {@code objectMapper} is {@code null}
+	 */
+	public StoredDatumRowMapper(ObjectMapper objectMapper, boolean withNodeId) {
 		super();
 		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
+		this.withNodeId = withNodeId;
 	}
 
 	@Override
 	public StoredDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
 		final int streamId = rs.getInt(1);
 		final String sourceId = rs.getString(2);
-		final long locId = rs.getLong(3);
-		final Long locationId = (rs.wasNull() ? null : locId);
+		final Long locationId = rs.getObject(3, Long.class);
 		final Timestamp ts = rs.getTimestamp(4);
 		final String className = rs.getString(5);
 		final String[] typeNames = stringArray(rs.getArray(6));
@@ -105,6 +128,10 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 		final String[] dataA = stringArray(rs.getArray(11));
 		final String dataS = rs.getString(12);
 		final String[] dataT = stringArray(rs.getArray(13));
+		Long nodeId = null;
+		if ( withNodeId ) {
+			nodeId = rs.getObject(14, Long.class);
+		}
 
 		final DatumSamples s = new DatumSamples();
 		for ( int i = 0, len = Math.min(namesI.length, dataI.length); i < len; i++ ) {
@@ -133,7 +160,8 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 		}
 
 		final Set<String> types = new LinkedHashSet<>(Arrays.asList(typeNames));
-		return new StoredDatum(streamId, sourceId, locationId, ts.toInstant(), className, types, s);
+		return new StoredDatum(streamId, nodeId, sourceId, locationId, ts.toInstant(), className, types,
+				s);
 	}
 
 	private static String[] stringArray(@Nullable Array array) throws SQLException {
