@@ -445,7 +445,7 @@ public class DemandBalancer
 		if ( desiredLimit < 0 ) {
 			return;
 		}
-		log.debug("Sending unchanged {} limit {}% after {} timeout", powerControlId, desiredLimit,
+		log.info("Setting unchanged {} limit {}% after {} timeout", powerControlId, desiredLimit,
 				unchangedTimeout);
 		try {
 			InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
