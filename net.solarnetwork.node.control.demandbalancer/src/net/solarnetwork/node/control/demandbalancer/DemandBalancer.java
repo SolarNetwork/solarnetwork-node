@@ -364,7 +364,7 @@ public class DemandBalancer
 				powerMaximumWatts, currentLimit);
 		synchronized ( this ) {
 			lastDesiredLimit = desiredLimit;
-			if ( desiredLimit < 1 ) {
+			if ( desiredLimit < 0 ) {
 				// no limit to apply, so nothing to send again either
 				cancelUnchangedTimeout();
 				return null;
@@ -442,7 +442,7 @@ public class DemandBalancer
 		}
 		unchangedTimeoutTask = null;
 		final int desiredLimit = lastDesiredLimit;
-		if ( desiredLimit < 1 ) {
+		if ( desiredLimit < 0 ) {
 			return;
 		}
 		log.debug("Sending unchanged {} limit {}% after {} timeout", powerControlId, desiredLimit,

@@ -253,6 +253,23 @@ public class DemandBalancer_UnchangedTimeoutTests {
 	}
 
 	@Test
+	public void timeout_zeroLimit() {
+		// GIVEN
+		// demand of 0 is a 0% limit, same as current limit
+		givenDemandAndLimit(0, "0");
+		givenInstructionsCompleted();
+		givenSchedules();
+
+		// WHEN
+		service.evaluateBalance();
+		then(taskScheduler).should().schedule(taskCaptor.capture(), any(Instant.class));
+		taskCaptor.getValue().run();
+
+		// THEN
+		thenInstructionsSent("0", "0");
+	}
+
+	@Test
 	public void timeout_afterUnchangedEvaluation() {
 		// GIVEN
 		givenDemandAndLimit(500, "50");

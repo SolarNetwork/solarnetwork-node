@@ -42,6 +42,7 @@ import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.control.demandbalancer.DemandBalancer;
+import net.solarnetwork.node.control.demandbalancer.SimpleDemandBalanceStrategy;
 import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -56,7 +57,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * control value.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @SuppressWarnings("static-access")
 @RunWith(MockitoJUnitRunner.class)
@@ -152,6 +153,76 @@ public class DemandBalancer_LimitTests {
 			.returns("60", from(i -> i.getParameterValue(TEST_CONTROL_ID)))
 			;
 		// @formatter:on
+	}
+
+	private void thenLimitSent(String limit) {
+		then(instructionService).should().executeInstruction(instructionCaptor.capture());
+		// @formatter:off
+		and.then(instructionCaptor.getValue())
+			.as("Demand balance instruction sent")
+			.returns(InstructionHandler.TOPIC_DEMAND_BALANCE, from(Instruction::getTopic))
+			.as("New limit")
+			.returns(limit, from(i -> i.getParameterValue(TEST_CONTROL_ID)))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void zeroLimit_adjusted() {
+		// GIVEN
+		// demand of 5 out of default 1000 W capacity is a 0% limit, after rounding down
+		givenDemandAndLimit(5, "50");
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		service.evaluateBalance();
+
+		// THEN
+		thenLimitSent("0");
+	}
+
+	@Test
+	public void zeroLimit_unchanged() {
+		// GIVEN
+		// demand of 0 is a 0% limit, same as current limit
+		givenDemandAndLimit(0, "0");
+
+		// WHEN
+		service.evaluateBalance();
+
+		// THEN
+		then(instructionService).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void zeroLimit_unknownDemand() {
+		// GIVEN
+		final SimpleDemandBalanceStrategy strategy = new SimpleDemandBalanceStrategy();
+		strategy.setUnknownDemandLimit(0);
+		service.setBalanceStrategy(new StaticOptionalService<>(strategy));
+
+		// no consumption datum available, so demand is unknown
+		given(consumptionDataSource.readCurrentDatum()).willReturn(null);
+
+		// @formatter:off
+		given(powerControl.getCurrentControlInfo(TEST_CONTROL_ID)).willReturn(
+				BasicNodeControlInfo.builder()
+					.withControlId(TEST_CONTROL_ID)
+					.withType(NodeControlPropertyType.Percent)
+					.withValue("50")
+					.build());
+		// @formatter:on
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		service.evaluateBalance();
+
+		// THEN
+		thenLimitSent("0");
 	}
 
 }
