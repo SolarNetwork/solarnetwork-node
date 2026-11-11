@@ -22,6 +22,15 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.sql;
 
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareArrayParameter;
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareDateRange;
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareLimitOffset;
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareOptimizedArrayParameter;
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareParameter;
+import static net.solarnetwork.dao.jdbc.CommonSqlUtils.limitOffset;
+import static net.solarnetwork.dao.jdbc.CommonSqlUtils.whereDateRange;
+import static net.solarnetwork.dao.jdbc.CommonSqlUtils.whereEqual;
+import static net.solarnetwork.dao.jdbc.CommonSqlUtils.whereOptimizedArrayContains;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.DEFAULT_SORTS;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_LOCATION;
@@ -31,11 +40,7 @@ import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_TIM
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +48,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.SqlProvider;
+import net.solarnetwork.dao.jdbc.CommonJdbcUtils;
 import net.solarnetwork.dao.jdbc.CountPreparedStatementCreatorProvider;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
@@ -196,7 +202,7 @@ public final class SelectFilteredDatum
 			sqlFromWhere(buf);
 		}
 		sqlOrderBy(buf);
-		sqlLimitOffset(buf);
+		limitOffset(filter, buf);
 		return buf.toString();
 	}
 
@@ -244,8 +250,12 @@ public final class SelectFilteredDatum
 		sub.append(", m.node_id\n");
 
 		buf.append("FROM (\n");
-		sub.toString().lines().forEach(l -> buf.append('\t').append(l).append('\n'));
+		appendIndented(buf, sub);
 		buf.append(") k\n");
+	}
+
+	private static void appendIndented(StringBuilder buf, CharSequence lines) {
+		lines.toString().lines().forEach(l -> buf.append('\t').append(l).append('\n'));
 	}
 
 	/**
@@ -266,7 +276,9 @@ public final class SelectFilteredDatum
 					: "\tSELECT d.ts, d.type_id, d.data_i, d.data_a, d.data_s, d.data_t\n");
 			buf.append("\tFROM ").append(schemaName).append(".dh_datum d\n");
 			buf.append("\tWHERE d.stream_id = m.stream_id\n");
-			sqlDatumWhere(buf, "\t\tAND ");
+			final StringBuilder where = new StringBuilder();
+			sqlDatumWhere(where);
+			appendIndented(buf, where);
 			buf.append("\tORDER BY d.ts DESC\n");
 			buf.append("\tLIMIT 1\n");
 			buf.append(") d ON TRUE\n");
@@ -280,7 +292,7 @@ public final class SelectFilteredDatum
 		final StringBuilder where = new StringBuilder();
 		sqlMetaWhere(where);
 		if ( !filter.isMostRecent() ) {
-			sqlDatumWhere(where, "\tAND ");
+			sqlDatumWhere(where);
 		}
 		if ( !where.isEmpty() ) {
 			// replace the leading tab and AND of the first criteria
@@ -291,15 +303,13 @@ public final class SelectFilteredDatum
 	private void sqlMetaWhere(StringBuilder buf) {
 		if ( hasObjectIds() ) {
 			if ( isLocationKind() ) {
-				buf.append("\tAND m.loc_id = ANY(?)\n");
+				whereOptimizedArrayContains(filter.getObjectIds(), "m.loc_id", buf);
 			} else {
-				buf.append("\tAND m.node_id = ANY(?)\n");
+				whereOptimizedArrayContains(filter.getObjectIds(), NODE_ID_COLUMN, buf);
 				buf.append("\tAND m.loc_id IS NULL\n");
 			}
 		} else {
-			if ( nodeId != null ) {
-				buf.append("\tAND m.node_id = ?\n");
-			}
+			whereEqual(nodeId, NODE_ID_COLUMN, buf);
 			if ( filter.getObjectKind() == ObjectDatumKind.Node ) {
 				buf.append("\tAND m.loc_id IS NULL\n");
 			} else if ( isLocationKind() ) {
@@ -318,15 +328,10 @@ public final class SelectFilteredDatum
 		}
 	}
 
-	private void sqlDatumWhere(StringBuilder buf, String and) {
-		if ( filter.hasStartDate() ) {
-			buf.append(and).append("d.ts >= ?\n");
-		}
-		if ( filter.hasEndDate() ) {
-			buf.append(and).append("d.ts < ?\n");
-		}
+	private void sqlDatumWhere(StringBuilder buf) {
+		whereDateRange(filter, "d.ts", buf);
 		if ( filter.hasTypeCriteria() ) {
-			buf.append(and).append("d.type_id = ANY(");
+			buf.append("\tAND d.type_id = ANY(");
 			sqlTypeIds(buf);
 			buf.append(")\n");
 		}
@@ -371,26 +376,14 @@ public final class SelectFilteredDatum
 		return (key != null ? SORT_KEY_COLUMNS.get(key) : null);
 	}
 
-	private void sqlLimitOffset(StringBuilder buf) {
-		final Integer max = filter.getMax();
-		if ( max != null && max > 0 ) {
-			buf.append("\nLIMIT ?");
-		}
-		final Long offset = filter.getOffset();
-		if ( offset != null && offset > 0 ) {
-			buf.append("\nOFFSET ?");
-		}
-	}
-
 	@Override
 	public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-		final PreparedStatement stmt = con.prepareStatement(getSql(), ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		final PreparedStatement stmt = CommonJdbcUtils.createPreparedStatement(con, getSql(), false);
 		if ( fetchSize > 0 ) {
 			stmt.setFetchSize(fetchSize);
 		}
 		int p = prepareFromWhere(con, stmt, 0);
-		prepareLimitOffset(stmt, p);
+		prepareLimitOffset(filter, stmt, p);
 		return stmt;
 	}
 
@@ -402,53 +395,31 @@ public final class SelectFilteredDatum
 			p = prepareMetaWhere(con, stmt, p);
 			p = prepareDatumWhere(con, stmt, p);
 		}
-		if ( isMergedLocations() && nodeId != null ) {
-			stmt.setLong(++p, nodeId);
+		if ( isMergedLocations() ) {
+			p = prepareParameter(stmt, p, nodeId);
 		}
 		return p;
 	}
 
 	private int prepareMetaWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
 		if ( hasObjectIds() ) {
-			stmt.setArray(++p, con.createArrayOf("bigint", filter.objectIds()));
-		} else if ( nodeId != null ) {
-			stmt.setLong(++p, nodeId);
+			p = prepareOptimizedArrayParameter(con, stmt, p, filter.getObjectIds());
+		} else {
+			p = prepareParameter(stmt, p, nodeId);
 		}
 		if ( filter.hasSourceCriteria() ) {
-			stmt.setArray(++p, con.createArrayOf("text", filter.sourceIds()));
+			p = prepareArrayParameter(con, stmt, p, filter.getSourceIds());
 		}
 		if ( filter.hasTypeCriteria() ) {
-			stmt.setArray(++p, con.createArrayOf("text", filter.types()));
+			p = prepareArrayParameter(con, stmt, p, filter.getTypes());
 		}
 		return p;
 	}
 
 	private int prepareDatumWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
-		if ( filter.hasStartDate() ) {
-			p = prepareTimestamp(stmt, p, filter.startDate());
-		}
-		if ( filter.hasEndDate() ) {
-			p = prepareTimestamp(stmt, p, filter.endDate());
-		}
+		p = prepareDateRange(filter, stmt, p);
 		if ( filter.hasTypeCriteria() ) {
-			stmt.setArray(++p, con.createArrayOf("text", filter.types()));
-		}
-		return p;
-	}
-
-	private static int prepareTimestamp(PreparedStatement stmt, int p, Instant ts) throws SQLException {
-		stmt.setObject(++p, ts.atOffset(ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		return p;
-	}
-
-	private int prepareLimitOffset(PreparedStatement stmt, int p) throws SQLException {
-		final Integer max = filter.getMax();
-		if ( max != null && max > 0 ) {
-			stmt.setInt(++p, max);
-		}
-		final Long offset = filter.getOffset();
-		if ( offset != null && offset > 0 ) {
-			stmt.setLong(++p, offset);
+			p = prepareArrayParameter(con, stmt, p, filter.getTypes());
 		}
 		return p;
 	}

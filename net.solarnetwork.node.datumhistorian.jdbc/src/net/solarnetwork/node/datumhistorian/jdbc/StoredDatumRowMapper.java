@@ -22,12 +22,13 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc;
 
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.timestampInstant;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -118,7 +119,7 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 		final int streamId = rs.getInt(1);
 		final String sourceId = rs.getString(2);
 		final Long locationId = rs.getObject(3, Long.class);
-		final Timestamp ts = rs.getTimestamp(4);
+		final Instant ts = timestampInstant(rs, 4);
 		final String className = rs.getString(5);
 		final String[] typeNames = stringArray(rs.getArray(6));
 		final String[] namesI = stringArray(rs.getArray(7));
@@ -160,8 +161,7 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 		}
 
 		final Set<String> types = new LinkedHashSet<>(Arrays.asList(typeNames));
-		return new StoredDatum(streamId, nodeId, sourceId, locationId, ts.toInstant(), className, types,
-				s);
+		return new StoredDatum(streamId, nodeId, sourceId, locationId, ts, className, types, s);
 	}
 
 	private static String[] stringArray(@Nullable Array array) throws SQLException {

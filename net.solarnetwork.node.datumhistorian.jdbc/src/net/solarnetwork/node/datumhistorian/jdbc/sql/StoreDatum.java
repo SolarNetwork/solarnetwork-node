@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.sql;
 
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareArrayParameter;
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareObjectParameter;
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareParameter;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
@@ -170,20 +173,13 @@ public final class StoreDatum implements PreparedStatementCreator, PreparedState
 		}
 
 		final Instant ts = datum.getTimestamp();
-		if ( ts != null ) {
-			ps.setObject(++p, ts.atOffset(ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		} else {
-			ps.setNull(++p, Types.TIMESTAMP_WITH_TIMEZONE);
-		}
+		p = prepareObjectParameter(ps, p, Types.TIMESTAMP_WITH_TIMEZONE,
+				ts != null ? ts.atOffset(ZoneOffset.UTC) : null, true);
 		ps.setObject(++p, nodeId);
 		ps.setString(++p, datum.getSourceId());
 
 		final Long locId = (datum.getKind() == ObjectDatumKind.Location ? datum.getObjectId() : null);
-		if ( locId != null ) {
-			ps.setObject(++p, locId);
-		} else {
-			ps.setNull(++p, Types.BIGINT);
-		}
+		p = prepareParameter(ps, p, locId, true);
 
 		if ( typeId != null ) {
 			ps.setInt(++p, typeId);
@@ -193,7 +189,7 @@ public final class StoreDatum implements PreparedStatementCreator, PreparedState
 		final Set<String> typeNames = this.typeNames;
 		if ( typeId == null && typeNames != null ) {
 			ps.setString(++p, typeNames.iterator().next());
-			ps.setArray(++p, ps.getConnection().createArrayOf("text", typeNames.toArray(String[]::new)));
+			prepareArrayParameter(ps.getConnection(), ps, p, typeNames.toArray(String[]::new));
 		}
 	}
 

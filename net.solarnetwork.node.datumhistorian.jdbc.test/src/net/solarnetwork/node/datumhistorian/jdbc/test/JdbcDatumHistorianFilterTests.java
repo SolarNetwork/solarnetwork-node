@@ -936,6 +936,45 @@ public class JdbcDatumHistorianFilterTests extends AbstractPostgresHistorianTest
 	}
 
 	@Test
+	public void pagination_offsetWithoutMax() {
+		// GIVEN
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setOffset(2L);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		final List<DatumId> all = allRunningNodeIds();
+		// @formatter:off
+		and.then(ids(result))
+			.as("All results from offset returned")
+			.containsExactlyElementsOf(all.subList(2, all.size()))
+			;
+		// @formatter:on
+		thenPage(result, (long) all.size(), all.size() - 2, 2L);
+	}
+
+	@Test
+	public void pagination_offsetWithoutMax_pastEnd() {
+		// GIVEN
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setOffset(100L);
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("No results past end")
+			.isEmpty()
+			;
+		// @formatter:on
+		thenPage(result, null, 0, 100L);
+	}
+
+	@Test
 	public void pagination_mostRecent_totalResults() {
 		// GIVEN
 		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();

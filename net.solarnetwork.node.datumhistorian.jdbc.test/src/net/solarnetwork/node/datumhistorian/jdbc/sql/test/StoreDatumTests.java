@@ -139,7 +139,7 @@ public class StoreDatumTests {
 		then(stmt).should(ordered).setObject(1, ts.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
 		then(stmt).should(ordered).setObject(2, TEST_NODE_ID);
 		then(stmt).should(ordered).setString(3, "a");
-		then(stmt).should(ordered).setObject(4, TEST_LOC_ID);
+		then(stmt).should(ordered).setObject(4, TEST_LOC_ID, Types.BIGINT);
 		then(stmt).should(ordered).setString(5, JDATA);
 		then(stmt).should(ordered).setString(6, "foo.Bar");
 		then(stmt).should(ordered).getConnection();

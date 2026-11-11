@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc;
 
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.executeCountQuery;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
@@ -290,12 +291,16 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		final SelectFilteredDatum sql = new SelectFilteredDatum(schemaName, f, nodeId);
 		Long totalResults = null;
 		if ( f.getMax() != null && !f.isWithoutTotalResultsCount() ) {
-			totalResults = jdbcOps.query(sql.countPreparedStatementCreator(),
-					rs -> rs.next() ? rs.getLong(1) : null);
+			totalResults = executeCountQuery(jdbcOps, sql.countPreparedStatementCreator());
 		}
 		final List<NodeDatum> results = datum(jdbcOps.query(sql, filteredDatumMapper), null);
 		if ( f.getMax() == null ) {
-			totalResults = (long) results.size();
+			// all results from the offset were returned; the same as CommonJdbcUtils.executeFilterQuery()
+			if ( startingOffset < 1 ) {
+				totalResults = (long) results.size();
+			} else if ( !results.isEmpty() ) {
+				totalResults = startingOffset + results.size();
+			}
 		}
 		return new BasicFilterResults<>(results, totalResults, startingOffset, results.size());
 	}

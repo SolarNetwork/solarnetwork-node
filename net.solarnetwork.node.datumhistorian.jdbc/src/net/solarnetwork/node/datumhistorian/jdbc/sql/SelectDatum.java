@@ -22,11 +22,11 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.sql;
 
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareArrayParameter;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.Instant;
@@ -36,6 +36,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.SqlProvider;
+import net.solarnetwork.dao.jdbc.CommonJdbcUtils;
 
 /**
  * Select datum offset from the most recent datum of each source.
@@ -219,8 +220,7 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 
 	@Override
 	public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-		PreparedStatement stmt = con.prepareStatement(getSql(), ResultSet.TYPE_FORWARD_ONLY,
-				ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+		PreparedStatement stmt = CommonJdbcUtils.createPreparedStatement(con, getSql(), false);
 		stmt.setFetchSize(DEFAULT_FETCH_SIZE);
 		setValues(stmt);
 		return stmt;
@@ -245,7 +245,7 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 		if ( sourceId != null ) {
 			ps.setString(++p, sourceId);
 		} else if ( streamIds != null ) {
-			ps.setArray(++p, ps.getConnection().createArrayOf("integer", streamIds));
+			p = prepareArrayParameter(ps.getConnection(), ps, p, streamIds);
 		}
 
 		final String typeName = this.typeName;

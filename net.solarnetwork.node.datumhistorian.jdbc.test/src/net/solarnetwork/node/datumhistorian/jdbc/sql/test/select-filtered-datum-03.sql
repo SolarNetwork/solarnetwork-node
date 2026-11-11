@@ -6,7 +6,7 @@ FROM (
 	SELECT DISTINCT ON (m.loc_id, m.source_id, d.ts) m.stream_id, d.ts
 	FROM solaruhist.dh_datum_meta m
 	INNER JOIN solaruhist.dh_datum d ON d.stream_id = m.stream_id
-	WHERE m.loc_id = ANY(?)
+	WHERE m.loc_id = ?
 	ORDER BY m.loc_id, m.source_id, d.ts, CASE WHEN m.node_id = ? THEN 0 ELSE 1 END, m.node_id
 ) k
 INNER JOIN solaruhist.dh_datum_meta m ON m.stream_id = k.stream_id

@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.sql.test;
 
-import static java.time.ZoneOffset.UTC;
 import static net.solarnetwork.node.test.NodeTestUtils.utf8StringResource;
 import static org.assertj.core.api.BDDAssertions.and;
 import static org.assertj.core.api.BDDAssertions.thenIllegalArgumentException;
@@ -35,6 +34,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -133,7 +133,7 @@ public class SelectFilteredDatumTests {
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
-		then(stmt).should(ordered).setLong(1, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}
@@ -181,8 +181,8 @@ public class SelectFilteredDatumTests {
 		then(stmt).should(ordered).setArray(1, array);
 		then(stmt).should(ordered).setArray(2, array2);
 		then(stmt).should(ordered).setArray(3, array3);
-		then(stmt).should(ordered).setObject(4, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		then(stmt).should(ordered).setObject(5, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setTimestamp(4, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(5, Timestamp.from(end));
 		then(stmt).should(ordered).setArray(6, array3);
 		then(stmt).should(ordered).setInt(7, 10);
 		then(stmt).should(ordered).setLong(8, 20L);
@@ -218,8 +218,8 @@ public class SelectFilteredDatumTests {
 		then(stmt).should(ordered).setArray(1, array);
 		then(stmt).should(ordered).setArray(2, array2);
 		then(stmt).should(ordered).setArray(3, array3);
-		then(stmt).should(ordered).setObject(4, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		then(stmt).should(ordered).setObject(5, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setTimestamp(4, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(5, Timestamp.from(end));
 		then(stmt).should(ordered).setArray(6, array3);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
@@ -232,7 +232,6 @@ public class SelectFilteredDatumTests {
 		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
 		f.setObjectKind(ObjectDatumKind.Location);
 		f.setObjectId(3L);
-		given(conn.createArrayOf(eq("bigint"), aryEq(new Long[] { 3L }))).willReturn(array);
 		SelectFilteredDatum sql = new SelectFilteredDatum("solaruhist", f, TEST_NODE_ID);
 
 		// WHEN
@@ -248,8 +247,8 @@ public class SelectFilteredDatumTests {
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
-		then(stmt).should(ordered).setArray(1, array);
-		then(stmt).should(ordered).setLong(2, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(1, 3L);
+		then(stmt).should(ordered).setObject(2, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}
@@ -262,7 +261,6 @@ public class SelectFilteredDatumTests {
 		f.setObjectKind(ObjectDatumKind.Location);
 		f.setObjectId(3L);
 		f.setStartDate(start);
-		given(conn.createArrayOf(eq("bigint"), aryEq(new Long[] { 3L }))).willReturn(array);
 		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, null);
 
 		// WHEN
@@ -276,8 +274,8 @@ public class SelectFilteredDatumTests {
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
-		then(stmt).should(ordered).setArray(1, array);
-		then(stmt).should(ordered).setObject(2, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setObject(1, 3L);
+		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(start));
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}
@@ -317,13 +315,13 @@ public class SelectFilteredDatumTests {
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
-		then(stmt).should(ordered).setObject(1, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		then(stmt).should(ordered).setObject(2, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setTimestamp(1, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(end));
 		then(stmt).should(ordered).setArray(3, array3);
 		then(stmt).should(ordered).setArray(4, array);
 		then(stmt).should(ordered).setArray(5, array2);
 		then(stmt).should(ordered).setArray(6, array3);
-		then(stmt).should(ordered).setLong(7, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(7, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).should(ordered).setInt(8, 10);
 		then(stmt).should(ordered).setLong(9, 20L);
 		then(stmt).shouldHaveNoMoreInteractions();
@@ -351,13 +349,13 @@ public class SelectFilteredDatumTests {
 			.isEqualTo(((SqlProvider) count).getSql())
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
-		then(stmt).should(ordered).setObject(1, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		then(stmt).should(ordered).setObject(2, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setTimestamp(1, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(end));
 		then(stmt).should(ordered).setArray(3, array3);
 		then(stmt).should(ordered).setArray(4, array);
 		then(stmt).should(ordered).setArray(5, array2);
 		then(stmt).should(ordered).setArray(6, array3);
-		then(stmt).should(ordered).setLong(7, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(7, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}
@@ -375,8 +373,8 @@ public class SelectFilteredDatumTests {
 		// THEN
 		// @formatter:off
 		and.then(result)
-			.as("Object IDs without kind treated as node IDs")
-			.contains("WHERE m.node_id = ANY(?)\n\tAND m.loc_id IS NULL\n")
+			.as("Object IDs without kind treated as node IDs, with single ID compared directly")
+			.contains("WHERE m.node_id = ?\n\tAND m.loc_id IS NULL\n")
 			;
 		// @formatter:on
 	}
@@ -410,10 +408,10 @@ public class SelectFilteredDatumTests {
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
-		then(stmt).should(ordered).setObject(1, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		then(stmt).should(ordered).setObject(2, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setTimestamp(1, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(end));
 		then(stmt).should(ordered).setArray(3, array);
-		then(stmt).should(ordered).setLong(4, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(4, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).should(ordered).setArray(5, array);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
@@ -437,10 +435,10 @@ public class SelectFilteredDatumTests {
 			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-count-04.sql", getClass()))
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
-		then(stmt).should(ordered).setObject(1, start.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-		then(stmt).should(ordered).setObject(2, end.atOffset(UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+		then(stmt).should(ordered).setTimestamp(1, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(end));
 		then(stmt).should(ordered).setArray(3, array);
-		then(stmt).should(ordered).setLong(4, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(4, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).should(ordered).setArray(5, array);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
@@ -559,7 +557,7 @@ public class SelectFilteredDatumTests {
 			;
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
-		then(stmt).should(ordered).setLong(1, TEST_NODE_ID);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}
