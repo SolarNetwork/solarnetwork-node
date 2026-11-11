@@ -25,6 +25,7 @@ package net.solarnetwork.node.control.demandbalancer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
@@ -70,7 +71,7 @@ public class DemandBalancerJob extends BaseIdentifiable
 	}
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		demandBalancer.configurationChanged(properties);
 	}
 
@@ -95,7 +96,7 @@ public class DemandBalancerJob extends BaseIdentifiable
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		return demandBalancer.getMessageSource();
 	}
 

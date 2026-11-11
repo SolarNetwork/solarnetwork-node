@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.control.demandbalancer;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * API for evaluating current demand balance conditions and producing a desired
  * generation limit.
@@ -45,7 +47,8 @@ public interface DemandBalanceStrategy {
 	 * adjustment if necessary.
 	 * 
 	 * @param powerControlId
-	 *        the ID if the control managing the generation limit
+	 *        the ID if the control managing the generation limit, or
+	 *        {@literal null} if not configured
 	 * @param demandWatts
 	 *        the current demand, in watts, or <b>-1</b> if unknown
 	 * @param generationWatts
@@ -58,7 +61,7 @@ public interface DemandBalanceStrategy {
 	 * @return the desired generation limit, as an integer percentage, or
 	 *         <b>-1</b> for no change
 	 */
-	int evaluateBalance(final String powerControlId, final int demandWatts, final int generationWatts,
-			final int generationCapacityWatts, final int currentLimit);
+	int evaluateBalance(final @Nullable String powerControlId, final int demandWatts,
+			final int generationWatts, final int generationCapacityWatts, final int currentLimit);
 
 }

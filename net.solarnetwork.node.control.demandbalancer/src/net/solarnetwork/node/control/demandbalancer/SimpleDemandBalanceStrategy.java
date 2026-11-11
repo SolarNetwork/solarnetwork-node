@@ -24,6 +24,7 @@ package net.solarnetwork.node.control.demandbalancer;
 
 import java.util.Collections;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.service.support.BasicIdentifiable;
@@ -58,7 +59,7 @@ public class SimpleDemandBalanceStrategy extends BasicIdentifiable
 	}
 
 	@Override
-	public int evaluateBalance(final String powerControlId, final int demandWatts,
+	public int evaluateBalance(final @Nullable String powerControlId, final int demandWatts,
 			final int generationWatts, final int generationCapacityWatts, final int currentLimit) {
 		int desiredLimit = currentLimit;
 		if ( demandWatts < 0 ) {

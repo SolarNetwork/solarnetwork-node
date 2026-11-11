@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
+import org.jspecify.annotations.Nullable;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -134,26 +135,26 @@ public class DemandBalancer
 	public static final int DEFAULT_POWER_MAXIMUM_WATTS = 1000;
 
 	private final OptionalService<InstructionExecutionService> instructionExecutionService;
-	private String powerControlId;
-	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalFilterableService<NodeControlProvider> powerControl;
-	private OptionalFilterableServiceCollection<DatumDataSource> powerDataSource;
+	private @Nullable String powerControlId;
+	private @Nullable OptionalService<EventAdmin> eventAdmin;
+	private @Nullable OptionalFilterableService<NodeControlProvider> powerControl;
+	private @Nullable OptionalFilterableServiceCollection<DatumDataSource> powerDataSource;
 	private int powerMaximumWatts = DEFAULT_POWER_MAXIMUM_WATTS;
-	private OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource;
+	private @Nullable OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource;
 	private OptionalFilterableService<DemandBalanceStrategy> balanceStrategy = new StaticOptionalService<>(
 			new SimpleDemandBalanceStrategy());
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
-	private MessageSource messageSource;
+	private @Nullable MessageSource messageSource;
 	private boolean collectPower = DEFAULT_COLLECT_POWER;
-	private Set<AcPhase> acEnergyPhaseFilter;
-	private TaskScheduler taskScheduler;
-	private Duration unchangedTimeout;
+	private @Nullable Set<AcPhase> acEnergyPhaseFilter;
+	private @Nullable TaskScheduler taskScheduler;
+	private @Nullable Duration unchangedTimeout;
 
 	// the most recent limit returned by the strategy; guarded by this
 	private int lastDesiredLimit = -1;
 
 	// the pending unchanged timeout task, or null if none; guarded by this
-	private UnchangedTimeoutTask unchangedTimeoutTask;
+	private @Nullable UnchangedTimeoutTask unchangedTimeoutTask;
 
 	// updated from both the job and unchanged timeout threads
 	final Map<String, Object> stats = new ConcurrentHashMap<>(8);
@@ -189,7 +190,7 @@ public class DemandBalancer
 	 * @since 2.3
 	 */
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public void configurationChanged(@Nullable Map<String, Object> properties) {
 		cancelUnchangedTimeout();
 	}
 
@@ -248,7 +249,7 @@ public class DemandBalancer
 		return msg;
 	}
 
-	private Integer collectDemandWatts() {
+	private @Nullable Integer collectDemandWatts() {
 		log.debug("Collecting current consumption data to inform demand balancer...");
 		Iterable<EnergyDatum> demand = null;
 		try {
@@ -266,7 +267,7 @@ public class DemandBalancer
 		return wattsForEnergyDatum(demand);
 	}
 
-	private Integer collectGenerationWatts() {
+	private @Nullable Integer collectGenerationWatts() {
 		final Integer generationWatts;
 		if ( collectPower ) {
 			log.debug("Collecting current generation data to inform demand balancer...");
@@ -290,7 +291,7 @@ public class DemandBalancer
 		return generationWatts;
 	}
 
-	private Integer readCurrentGenerationLimitPercent() {
+	private @Nullable Integer readCurrentGenerationLimitPercent() {
 		log.debug("Reading current {} value to inform demand balancer...", powerControlId);
 		NodeControlInfo generationLimit = null;
 		try {
@@ -308,8 +309,8 @@ public class DemandBalancer
 		return percentForLimit(generationLimit);
 	}
 
-	private void executeDemandBalanceStrategy(final Integer demandWatts, final Integer generationWatts,
-			final Integer generationLimitPercent) {
+	private void executeDemandBalanceStrategy(final @Nullable Integer demandWatts,
+			final @Nullable Integer generationWatts, final @Nullable Integer generationLimitPercent) {
 		try {
 			InstructionStatus.InstructionState result = evaluateBalance(
 					(demandWatts == null ? -1 : demandWatts.intValue()),
@@ -322,7 +323,7 @@ public class DemandBalancer
 		}
 	}
 
-	private void recordModifyResult(InstructionStatus.InstructionState result) {
+	private void recordModifyResult(@Nullable InstructionState result) {
 		if ( result != null ) {
 			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_DATE, System.currentTimeMillis());
 		}
@@ -353,8 +354,8 @@ public class DemandBalancer
 	 * @return the result of adjusting the generation limit, or {@literal null}
 	 *         if no adjustment was made
 	 */
-	private InstructionStatus.InstructionState evaluateBalance(final int demandWatts,
-			final int generationWatts, final int currentLimit) {
+	private @Nullable InstructionState evaluateBalance(final int demandWatts, final int generationWatts,
+			final int currentLimit) {
 		DemandBalanceStrategy strategy = getDemandBalanceStrategy();
 		if ( strategy == null ) {
 			throw new RuntimeException("No DemandBalanceStrategy configured.");
@@ -394,7 +395,7 @@ public class DemandBalancer
 	 *
 	 * @return the timeout, or {@literal null} if not applicable
 	 */
-	private Duration effectiveUnchangedTimeout() {
+	private @Nullable Duration effectiveUnchangedTimeout() {
 		final Duration timeout = getUnchangedTimeout();
 		if ( taskScheduler == null || timeout == null || timeout.compareTo(Duration.ZERO) <= 0 ) {
 			return null;
@@ -407,12 +408,13 @@ public class DemandBalancer
 	 */
 	private synchronized void scheduleUnchangedTimeout() {
 		cancelUnchangedTimeout();
+		final TaskScheduler scheduler = getTaskScheduler();
 		final Duration timeout = effectiveUnchangedTimeout();
-		if ( timeout == null ) {
+		if ( scheduler == null || timeout == null ) {
 			return;
 		}
 		final UnchangedTimeoutTask task = new UnchangedTimeoutTask();
-		task.future = taskScheduler.schedule(task, Instant.now().plus(timeout));
+		task.future = scheduler.schedule(task, Instant.now().plus(timeout));
 		unchangedTimeoutTask = task;
 	}
 
@@ -465,7 +467,7 @@ public class DemandBalancer
 	private final class UnchangedTimeoutTask implements Runnable {
 
 		// set after scheduling; read when run, under the DemandBalancer lock
-		private ScheduledFuture<?> future;
+		private @Nullable ScheduledFuture<?> future;
 
 		@Override
 		public void run() {
@@ -507,7 +509,7 @@ public class DemandBalancer
 		admin.postEvent(new Event(EVENT_TOPIC_STATISTICS, stats));
 	}
 
-	private Integer percentForLimit(NodeControlInfo limit) {
+	private @Nullable Integer percentForLimit(@Nullable NodeControlInfo limit) {
 		if ( limit == null || limit.getValue() == null ) {
 			return null;
 		}
@@ -520,7 +522,7 @@ public class DemandBalancer
 		return null;
 	}
 
-	private Integer wattsForEnergyDatum(EnergyDatum datum) {
+	private @Nullable Integer wattsForEnergyDatum(@Nullable EnergyDatum datum) {
 		if ( datum == null ) {
 			return null;
 		}
@@ -530,7 +532,7 @@ public class DemandBalancer
 		return null;
 	}
 
-	private Integer wattsForEnergyDatum(Iterable<? extends EnergyDatum> datums) {
+	private @Nullable Integer wattsForEnergyDatum(@Nullable Iterable<? extends EnergyDatum> datums) {
 		if ( datums == null ) {
 			return null;
 		}
@@ -555,9 +557,9 @@ public class DemandBalancer
 		return (total < 0 ? null : total);
 	}
 
-	private NodeControlInfo getCurrentControlValue(OptionalService<NodeControlProvider> service,
-			String controlId) {
-		if ( service == null ) {
+	private @Nullable NodeControlInfo getCurrentControlValue(
+			@Nullable OptionalService<NodeControlProvider> service, @Nullable String controlId) {
+		if ( service == null || controlId == null ) {
 			return null;
 		}
 		NodeControlProvider provider = service.service();
@@ -567,9 +569,10 @@ public class DemandBalancer
 		return provider.getCurrentControlInfo(controlId);
 	}
 
-	private Iterable<EnergyDatum> getCurrentDatum(OptionalServiceCollection<DatumDataSource> service) {
+	private Iterable<EnergyDatum> getCurrentDatum(
+			@Nullable OptionalServiceCollection<DatumDataSource> service) {
 		if ( service == null ) {
-			return null;
+			return Collections.emptyList();
 		}
 		Iterable<DatumDataSource> dataSources = service.services();
 		List<EnergyDatum> results = new ArrayList<>();
@@ -601,7 +604,7 @@ public class DemandBalancer
 
 	}
 
-	private DemandBalanceStrategy getDemandBalanceStrategy() {
+	private @Nullable DemandBalanceStrategy getDemandBalanceStrategy() {
 		if ( balanceStrategy == null ) {
 			return null;
 		}
@@ -613,7 +616,7 @@ public class DemandBalancer
 	 *
 	 * @return the strategy
 	 */
-	public DemandBalanceStrategy getStrategy() {
+	public @Nullable DemandBalanceStrategy getStrategy() {
 		return getDemandBalanceStrategy();
 	}
 
@@ -630,7 +633,7 @@ public class DemandBalancer
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
+	public @Nullable MessageSource getMessageSource() {
 		return messageSource;
 	}
 
@@ -682,7 +685,7 @@ public class DemandBalancer
 	 *
 	 * @return the power control ID
 	 */
-	public String getPowerControlId() {
+	public @Nullable String getPowerControlId() {
 		return powerControlId;
 	}
 
@@ -694,7 +697,7 @@ public class DemandBalancer
 	 * @param powerControlId
 	 *        the power control ID
 	 */
-	public void setPowerControlId(String powerControlId) {
+	public void setPowerControlId(@Nullable String powerControlId) {
 		this.powerControlId = powerControlId;
 		if ( this.powerControl != null ) {
 			// automatically enforce filter
@@ -707,7 +710,7 @@ public class DemandBalancer
 	 *
 	 * @return the power control
 	 */
-	public OptionalFilterableService<NodeControlProvider> getPowerControl() {
+	public @Nullable OptionalFilterableService<NodeControlProvider> getPowerControl() {
 		return powerControl;
 	}
 
@@ -738,7 +741,7 @@ public class DemandBalancer
 	 *
 	 * @return the collection
 	 */
-	public OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
+	public @Nullable OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
 		return powerDataSource;
 	}
 
@@ -755,7 +758,7 @@ public class DemandBalancer
 	 *        the power data sources
 	 */
 	public void setPowerDataSource(
-			OptionalFilterableServiceCollection<DatumDataSource> powerDataSource) {
+			@Nullable OptionalFilterableServiceCollection<DatumDataSource> powerDataSource) {
 		this.powerDataSource = powerDataSource;
 	}
 
@@ -793,7 +796,7 @@ public class DemandBalancer
 	 *
 	 * @return the consumption data sources
 	 */
-	public OptionalFilterableServiceCollection<DatumDataSource> getConsumptionDataSource() {
+	public @Nullable OptionalFilterableServiceCollection<DatumDataSource> getConsumptionDataSource() {
 		return consumptionDataSource;
 	}
 
@@ -810,7 +813,7 @@ public class DemandBalancer
 	 *        the consumption data sources
 	 */
 	public void setConsumptionDataSource(
-			OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource) {
+			@Nullable OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
 	}
 
@@ -841,7 +844,7 @@ public class DemandBalancer
 	 * @param messageSource
 	 *        the message source
 	 */
-	public void setMessageSource(MessageSource messageSource) {
+	public void setMessageSource(@Nullable MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
@@ -888,7 +891,7 @@ public class DemandBalancer
 	 *
 	 * @return the service
 	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
+	public @Nullable OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
@@ -898,7 +901,7 @@ public class DemandBalancer
 	 * @param eventAdmin
 	 *        the service to set
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+	public void setEventAdmin(@Nullable OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
@@ -907,7 +910,7 @@ public class DemandBalancer
 	 *
 	 * @return the filter
 	 */
-	public Set<AcPhase> getAcEnergyPhaseFilter() {
+	public @Nullable Set<AcPhase> getAcEnergyPhaseFilter() {
 		return acEnergyPhaseFilter;
 	}
 
@@ -917,7 +920,7 @@ public class DemandBalancer
 	 * @param acEnergyPhaseFilter
 	 *        the filter to set
 	 */
-	public void setAcEnergyPhaseFilter(Set<AcPhase> acEnergyPhaseFilter) {
+	public void setAcEnergyPhaseFilter(@Nullable Set<AcPhase> acEnergyPhaseFilter) {
 		this.acEnergyPhaseFilter = acEnergyPhaseFilter;
 	}
 
@@ -927,7 +930,7 @@ public class DemandBalancer
 	 *
 	 * @return the AC phase as a delimited string
 	 */
-	public String getAcEnergyPhaseFilterValue() {
+	public @Nullable String getAcEnergyPhaseFilterValue() {
 		return commaDelimitedStringFromCollection(acEnergyPhaseFilter);
 	}
 
@@ -939,7 +942,7 @@ public class DemandBalancer
 	 *        the comma delimited string
 	 * @see #getAcEnergyPhaseFilterValue()
 	 */
-	public void getAcEnergyPhaseFilterValue(String value) {
+	public void getAcEnergyPhaseFilterValue(@Nullable String value) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(value);
 		if ( set == null ) {
 			acEnergyPhaseFilter = null;
@@ -963,7 +966,7 @@ public class DemandBalancer
 	 * @return the task scheduler
 	 * @since 2.3
 	 */
-	public TaskScheduler getTaskScheduler() {
+	public @Nullable TaskScheduler getTaskScheduler() {
 		return taskScheduler;
 	}
 
@@ -979,7 +982,7 @@ public class DemandBalancer
 	 *        the task scheduler to set
 	 * @since 2.3
 	 */
-	public void setTaskScheduler(TaskScheduler taskScheduler) {
+	public void setTaskScheduler(@Nullable TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}
 
@@ -989,7 +992,7 @@ public class DemandBalancer
 	 * @return the timeout, or {@literal null} to only send changed limits
 	 * @since 2.3
 	 */
-	public Duration getUnchangedTimeout() {
+	public @Nullable Duration getUnchangedTimeout() {
 		return unchangedTimeout;
 	}
 
@@ -1007,7 +1010,7 @@ public class DemandBalancer
 	 *        the timeout to set, or {@literal null} to only send changed limits
 	 * @since 2.3
 	 */
-	public void setUnchangedTimeout(Duration unchangedTimeout) {
+	public void setUnchangedTimeout(@Nullable Duration unchangedTimeout) {
 		this.unchangedTimeout = unchangedTimeout;
 	}
 
@@ -1017,7 +1020,7 @@ public class DemandBalancer
 	 * @return the timeout, for example {@code PT30S}, or {@literal null}
 	 * @since 2.3
 	 */
-	public String getUnchangedTimeoutValue() {
+	public @Nullable String getUnchangedTimeoutValue() {
 		final Duration timeout = getUnchangedTimeout();
 		return (timeout != null ? timeout.toString() : null);
 	}
@@ -1034,7 +1037,7 @@ public class DemandBalancer
 	 * @see #setUnchangedTimeout(Duration)
 	 * @since 2.3
 	 */
-	public void setUnchangedTimeoutValue(String value) {
+	public void setUnchangedTimeoutValue(@Nullable String value) {
 		Duration timeout = null;
 		if ( value != null && !value.isBlank() ) {
 			try {
