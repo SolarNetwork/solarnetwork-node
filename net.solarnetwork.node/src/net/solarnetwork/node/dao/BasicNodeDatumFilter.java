@@ -22,15 +22,19 @@
 
 package net.solarnetwork.node.dao;
 
+import static net.solarnetwork.util.ArrayUtils.copyArray;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.SimplePagination;
 import net.solarnetwork.domain.SortDescriptor;
+import net.solarnetwork.domain.datum.Aggregation;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 
 /**
@@ -41,15 +45,20 @@ import net.solarnetwork.domain.datum.ObjectDatumKind;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumFilter {
 
 	private @Nullable Instant startDate;
 	private @Nullable Instant endDate;
+	private @Nullable LocalDateTime localStartDate;
+	private @Nullable LocalDateTime localEndDate;
+	private @Nullable Aggregation aggregation;
+	private @Nullable Aggregation partialAggregation;
 	private Long @Nullable [] objectIds;
 	private @Nullable ObjectDatumKind objectKind;
 	private String @Nullable [] sourceIds;
+	private UUID @Nullable [] streamIds;
 	private String @Nullable [] types;
 	private boolean withoutTotalResultsCount = true;
 	private boolean mostRecent;
@@ -80,10 +89,15 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
 		f.setStartDate(filter.getStartDate());
 		f.setEndDate(filter.getEndDate());
-		f.setObjectIds(copy(filter.getObjectIds()));
+		f.setLocalStartDate(filter.getLocalStartDate());
+		f.setLocalEndDate(filter.getLocalEndDate());
+		f.setAggregation(filter.getAggregation());
+		f.setPartialAggregation(filter.getPartialAggregation());
+		f.setObjectIds(copyArray(filter.getObjectIds()));
 		f.setObjectKind(filter.getObjectKind());
-		f.setSourceIds(copy(filter.getSourceIds()));
-		f.setTypes(copy(filter.getTypes()));
+		f.setSourceIds(copyArray(filter.getSourceIds()));
+		f.setStreamIds(copyArray(filter.getStreamIds()));
+		f.setTypes(copyArray(filter.getTypes()));
 		final List<SortDescriptor> sorts = filter.getSorts();
 		f.setSorts(sorts != null ? new ArrayList<>(sorts) : null);
 		f.setOffset(filter.getOffset());
@@ -91,10 +105,6 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		f.setWithoutTotalResultsCount(filter.isWithoutTotalResultsCount());
 		f.setMostRecent(filter.isMostRecent());
 		return f;
-	}
-
-	private static <T> T @Nullable [] copy(T @Nullable [] array) {
-		return (array != null ? array.clone() : null);
 	}
 
 	@Override
@@ -108,9 +118,10 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		int result = super.hashCode();
 		result = prime * result + Arrays.hashCode(objectIds);
 		result = prime * result + Arrays.hashCode(sourceIds);
+		result = prime * result + Arrays.hashCode(streamIds);
 		result = prime * result + Arrays.hashCode(types);
-		result = prime * result + Objects.hash(startDate, endDate, objectKind, withoutTotalResultsCount,
-				mostRecent);
+		result = prime * result + Objects.hash(startDate, endDate, localStartDate, localEndDate,
+				aggregation, partialAggregation, objectKind, withoutTotalResultsCount, mostRecent);
 		return result;
 	}
 
@@ -125,9 +136,14 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		// @formatter:off
 		return Objects.equals(startDate, other.startDate)
 				&& Objects.equals(endDate, other.endDate)
+				&& Objects.equals(localStartDate, other.localStartDate)
+				&& Objects.equals(localEndDate, other.localEndDate)
+				&& aggregation == other.aggregation
+				&& partialAggregation == other.partialAggregation
 				&& Arrays.equals(objectIds, other.objectIds)
 				&& objectKind == other.objectKind
 				&& Arrays.equals(sourceIds, other.sourceIds)
+				&& Arrays.equals(streamIds, other.streamIds)
 				&& Arrays.equals(types, other.types)
 				&& withoutTotalResultsCount == other.withoutTotalResultsCount
 				&& mostRecent == other.mostRecent;
@@ -146,6 +162,9 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		if ( sourceIds != null ) {
 			buf.append("sourceIds=").append(Arrays.toString(sourceIds)).append(", ");
 		}
+		if ( streamIds != null ) {
+			buf.append("streamIds=").append(Arrays.toString(streamIds)).append(", ");
+		}
 		if ( types != null ) {
 			buf.append("types=").append(Arrays.toString(types)).append(", ");
 		}
@@ -154,6 +173,18 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		}
 		if ( endDate != null ) {
 			buf.append("endDate=").append(endDate).append(", ");
+		}
+		if ( localStartDate != null ) {
+			buf.append("localStartDate=").append(localStartDate).append(", ");
+		}
+		if ( localEndDate != null ) {
+			buf.append("localEndDate=").append(localEndDate).append(", ");
+		}
+		if ( aggregation != null ) {
+			buf.append("aggregation=").append(aggregation).append(", ");
+		}
+		if ( partialAggregation != null ) {
+			buf.append("partialAggregation=").append(partialAggregation).append(", ");
 		}
 		if ( mostRecent ) {
 			buf.append("mostRecent=true, ");
@@ -200,6 +231,70 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 	 */
 	public final void setEndDate(@Nullable Instant endDate) {
 		this.endDate = endDate;
+	}
+
+	@Override
+	public final @Nullable LocalDateTime getLocalStartDate() {
+		return localStartDate;
+	}
+
+	/**
+	 * Set the local start date (inclusive).
+	 *
+	 * @param localStartDate
+	 *        the date to set
+	 * @since 1.1
+	 */
+	public final void setLocalStartDate(@Nullable LocalDateTime localStartDate) {
+		this.localStartDate = localStartDate;
+	}
+
+	@Override
+	public final @Nullable LocalDateTime getLocalEndDate() {
+		return localEndDate;
+	}
+
+	/**
+	 * Set the local end date (exclusive).
+	 *
+	 * @param localEndDate
+	 *        the date to set
+	 * @since 1.1
+	 */
+	public final void setLocalEndDate(@Nullable LocalDateTime localEndDate) {
+		this.localEndDate = localEndDate;
+	}
+
+	@Override
+	public final @Nullable Aggregation getAggregation() {
+		return aggregation;
+	}
+
+	/**
+	 * Set the aggregation.
+	 *
+	 * @param aggregation
+	 *        the aggregation to set
+	 * @since 1.1
+	 */
+	public final void setAggregation(@Nullable Aggregation aggregation) {
+		this.aggregation = aggregation;
+	}
+
+	@Override
+	public final @Nullable Aggregation getPartialAggregation() {
+		return partialAggregation;
+	}
+
+	/**
+	 * Set the partial aggregation.
+	 *
+	 * @param partialAggregation
+	 *        the partial aggregation to set
+	 * @since 1.1
+	 */
+	public final void setPartialAggregation(@Nullable Aggregation partialAggregation) {
+		this.partialAggregation = partialAggregation;
 	}
 
 	@Override
@@ -281,6 +376,37 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 	 */
 	public final void setSourceIds(String @Nullable [] sourceIds) {
 		this.sourceIds = sourceIds;
+	}
+
+	@Override
+	public final UUID @Nullable [] getStreamIds() {
+		return streamIds;
+	}
+
+	/**
+	 * Set the stream IDs.
+	 *
+	 * @param streamIds
+	 *        the stream IDs to set
+	 * @since 1.1
+	 */
+	public final void setStreamIds(UUID @Nullable [] streamIds) {
+		this.streamIds = streamIds;
+	}
+
+	/**
+	 * Set a single stream ID.
+	 *
+	 * <p>
+	 * This replaces any stream IDs already set.
+	 * </p>
+	 *
+	 * @param streamId
+	 *        the stream ID to set, or {@code null} to clear the stream IDs
+	 * @since 1.1
+	 */
+	public final void setStreamId(@Nullable UUID streamId) {
+		setStreamIds(streamId != null ? new UUID[] { streamId } : null);
 	}
 
 	@Override

@@ -22,22 +22,38 @@
 
 package net.solarnetwork.node.dao;
 
+import net.solarnetwork.dao.AggregationCriteria;
 import net.solarnetwork.dao.DateRangeCriteria;
 import net.solarnetwork.dao.DatumObjectCriteria;
+import net.solarnetwork.dao.LocalDateRangeCriteria;
 import net.solarnetwork.dao.OptimizedQueryCriteria;
 import net.solarnetwork.dao.PaginationCriteria;
 import net.solarnetwork.dao.RecentCriteria;
 import net.solarnetwork.dao.SourceCriteria;
+import net.solarnetwork.dao.StreamCriteria;
 import net.solarnetwork.dao.TypeCriteria;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * Filter API for {@link NodeDatum} related entities.
  *
+ * <p>
+ * The {@link AggregationCriteria} ask for aggregated results. A historian that
+ * does not support aggregation can ignore them and return datum that are not
+ * aggregated.
+ * </p>
+ *
+ * <p>
+ * The {@link StreamCriteria} stream IDs are those a historian gives its
+ * streams, such as in the stream metadata returned by
+ * {@link net.solarnetwork.node.service.FilterableDatumHistorian#findDatumStreamMetadata(NodeDatumFilter)}.
+ * </p>
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface NodeDatumFilter extends DateRangeCriteria, DatumObjectCriteria, SourceCriteria,
-		TypeCriteria, PaginationCriteria, OptimizedQueryCriteria, RecentCriteria {
+public interface NodeDatumFilter extends DateRangeCriteria, LocalDateRangeCriteria, AggregationCriteria,
+		DatumObjectCriteria, SourceCriteria, StreamCriteria, TypeCriteria, PaginationCriteria,
+		OptimizedQueryCriteria, RecentCriteria {
 
 }
