@@ -135,8 +135,7 @@ public class DatumFilterCommandTests {
 		then(result.getMax()).as("No max").isNull();
 		then(result.getOffset()).as("No offset").isNull();
 		then(result.isMostRecent()).as("Not most recent").isFalse();
-		then(result.isWithoutTotalResultsCount()).as("Total results counted, as in SolarQuery")
-				.isFalse();
+		then(result.isWithoutTotalResultsCount()).as("Total results not counted by default").isTrue();
 	}
 
 	@Test
@@ -148,7 +147,7 @@ public class DatumFilterCommandTests {
 		cmd.setMostRecent(true);
 		cmd.setMax(10);
 		cmd.setOffset(20L);
-		cmd.setWithoutTotalResultsCount(true);
+		cmd.setWithoutTotalResultsCount(false);
 		cmd.setAggregation(Aggregation.Hour);
 		cmd.setPartialAggregation(Aggregation.Day);
 
@@ -160,7 +159,7 @@ public class DatumFilterCommandTests {
 		then(result.isMostRecent()).as("Most recent copied").isTrue();
 		then(result.getMax()).as("Max copied").isEqualTo(10);
 		then(result.getOffset()).as("Offset copied").isEqualTo(20L);
-		then(result.isWithoutTotalResultsCount()).as("Without total results count copied").isTrue();
+		then(result.isWithoutTotalResultsCount()).as("Without total results count copied").isFalse();
 		then(result.getAggregation()).as("Aggregation copied").isEqualTo(Aggregation.Hour);
 		then(result.getPartialAggregation()).as("Partial aggregation copied")
 				.isEqualTo(Aggregation.Day);

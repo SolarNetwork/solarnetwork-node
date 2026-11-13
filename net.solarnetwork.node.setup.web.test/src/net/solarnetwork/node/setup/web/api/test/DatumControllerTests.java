@@ -441,7 +441,7 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 				.param("nodeId", NODE_ID.toString()).param("sourceIds", "a/*,b")
 				.param("startDate", "2026-11-01T00:00:00Z").param("endDate", "2026-11-02T00:00:00+13:00")
 				.param("aggregation", "Hour").param("mostRecent", "true").param("max", "10")
-				.param("offset", "5").param("withoutTotalResultsCount", "true")
+				.param("offset", "5").param("withoutTotalResultsCount", "false")
 				.param("sorts[0].sortKey", "created").param("sorts[0].descending", "true")
 				.param("sorts[1].sortKey", "source").accept(MediaType.APPLICATION_JSON)).andReturn()
 				.getResponse();
@@ -459,10 +459,28 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 		and.then(filter.isMostRecent()).as("Most recent parsed").isTrue();
 		and.then(filter.getMax()).as("Max parsed").isEqualTo(10);
 		and.then(filter.getOffset()).as("Offset parsed").isEqualTo(5L);
-		and.then(filter.isWithoutTotalResultsCount()).as("Without total results count parsed").isTrue();
+		and.then(filter.isWithoutTotalResultsCount()).as("Without total results count parsed").isFalse();
 		and.then(filter.getSorts()).as("Sorts mapped to historian sort keys").containsExactly(
 				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME, true),
 				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_SOURCE, false));
+	}
+
+	@Test
+	public void stream_max_totalResultsNotCountedByDefault() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		givenFixtureStream(filtered, fixtureMeta());
+
+		// WHEN
+		final MockHttpServletResponse res = mvc
+				.perform(get(STREAM_PATH).param("max", "10").accept(MediaType.APPLICATION_JSON))
+				.andReturn().getResponse();
+
+		// THEN
+		and.then(res.getStatus()).as("OK").isEqualTo(200);
+		and.then(filterCaptor.getValue().isWithoutTotalResultsCount())
+				.as("Total results not counted by default").isTrue();
 	}
 
 	@Test

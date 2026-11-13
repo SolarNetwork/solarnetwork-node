@@ -66,7 +66,7 @@ public class DatumFilterCommand {
 	private boolean mostRecent;
 	private @Nullable Integer max;
 	private @Nullable Long offset;
-	private boolean withoutTotalResultsCount;
+	private boolean withoutTotalResultsCount = true;
 	private @Nullable List<MutableSortDescriptor> sorts;
 	private @Nullable Aggregation aggregation;
 	private @Nullable Aggregation partialAggregation;
@@ -492,7 +492,9 @@ public class DatumFilterCommand {
 	 *
 	 * @param withoutTotalResultsCount
 	 *        {@code true} to not count the total results of a query with a
-	 *        maximum result count; defaults to {@code false}, as in SolarQuery
+	 *        maximum result count; defaults to {@code true}, unlike SolarQuery,
+	 *        as counting the total results queries all the matching datum, not
+	 *        only those returned
 	 */
 	public final void setWithoutTotalResultsCount(boolean withoutTotalResultsCount) {
 		this.withoutTotalResultsCount = withoutTotalResultsCount;
