@@ -62,6 +62,7 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.FilterableService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
@@ -91,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class DemandBalancer
 		implements SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -149,6 +150,8 @@ public class DemandBalancer
 	private @Nullable Set<AcPhase> acEnergyPhaseFilter;
 	private @Nullable TaskScheduler taskScheduler;
 	private @Nullable Duration unchangedTimeout;
+	private @Nullable OperationalModesService opModesService;
+	private @Nullable String requiredOperationalMode;
 
 	// the most recent limit returned by the strategy; guarded by this
 	private int lastDesiredLimit = -1;
@@ -212,8 +215,17 @@ public class DemandBalancer
 	/**
 	 * Evaluate current demand (consumption) and generation (power) and attempt
 	 * to maximize power generation up to the current demand level.
+	 *
+	 * <p>
+	 * If a required operational mode is not active then this method will
+	 * immediately return without collecting any data or issuing any
+	 * instruction.
+	 * </p>
 	 */
 	public void evaluateBalance() {
+		if ( !operationalModeMatches() ) {
+			return;
+		}
 		final Integer demandWatts = collectDemandWatts();
 		final Integer generationWatts = collectGenerationWatts();
 		final Integer generationLimitPercent = readCurrentGenerationLimitPercent();
@@ -223,6 +235,25 @@ public class DemandBalancer
 				(generationLimitPercent == null ? "N/A" : generationLimitPercent + "%"));
 		executeDemandBalanceStrategy(demandWatts, generationWatts, generationLimitPercent);
 		postStatisticsEvent();
+	}
+
+	private boolean operationalModeMatches() {
+		final String mode = getRequiredOperationalMode();
+		if ( mode == null ) {
+			// no mode required, so automatically matches
+			return true;
+		}
+		final OperationalModesService service = getOpModesService();
+		if ( service == null ) {
+			// service not available, so automatically does not match
+			return false;
+		}
+		boolean result = service.isOperationalModeActive(mode);
+		if ( !result && log.isTraceEnabled() ) {
+			log.trace("Demand Balancer [{}] required operational mode [{}] not active: not executing",
+					powerControlId, mode);
+		}
+		return result;
 	}
 
 	/**
@@ -658,6 +689,7 @@ public class DemandBalancer
 		results.add(new BasicTextFieldSettingSpecifier("powerMaximumWatts",
 				String.valueOf(DEFAULT_POWER_MAXIMUM_WATTS)));
 		results.add(new BasicTextFieldSettingSpecifier("unchangedTimeoutValue", null));
+		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
 
 		DemandBalanceStrategy strategy = getDemandBalanceStrategy();
 		if ( strategy instanceof SettingSpecifierProvider ) {
@@ -1048,6 +1080,52 @@ public class DemandBalancer
 			}
 		}
 		setUnchangedTimeout(timeout);
+	}
+
+	/**
+	 * Get the operational modes service to use.
+	 *
+	 * @return the service, or {@code null}
+	 * @since 2.4
+	 */
+	public final @Nullable OperationalModesService getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * Set the operational modes service to use.
+	 *
+	 * @param opModesService
+	 *        the service to use
+	 * @since 2.4
+	 */
+	public final void setOpModesService(@Nullable OperationalModesService opModesService) {
+		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Get an operational mode that is required by this service.
+	 *
+	 * @return the required operational mode, or {@code null} for none
+	 * @since 2.4
+	 */
+	public final @Nullable String getRequiredOperationalMode() {
+		return requiredOperationalMode;
+	}
+
+	/**
+	 * Set an operational mode that is required by this service.
+	 *
+	 * @param requiredOperationalMode
+	 *        the required operational mode, or {@code null} or an empty string
+	 *        that will be treated as {@code null}
+	 * @since 2.4
+	 */
+	public final void setRequiredOperationalMode(@Nullable String requiredOperationalMode) {
+		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
+			requiredOperationalMode = null;
+		}
+		this.requiredOperationalMode = requiredOperationalMode;
 	}
 
 }

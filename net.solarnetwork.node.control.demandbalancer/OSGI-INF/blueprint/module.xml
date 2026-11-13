@@ -18,6 +18,8 @@
 
 	<!-- Service references -->
 
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
 	<reference-list id="balanceStrategies" availability="optional"
 		interface="net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy"/>
 
@@ -126,6 +128,7 @@
 							</property>
 							<property name="eventAdmin" ref="eventAdmin"/>
 							<property name="taskScheduler" ref="taskScheduler"/>
+							<property name="opModesService" ref="opModesService"/>
 						</bean>
 					</argument>
 				</bean>

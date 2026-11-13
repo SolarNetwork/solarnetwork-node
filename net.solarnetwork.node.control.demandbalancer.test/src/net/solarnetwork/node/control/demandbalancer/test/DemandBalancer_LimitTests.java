@@ -49,6 +49,7 @@ import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.service.StaticOptionalServiceCollection;
 
@@ -73,6 +74,9 @@ public class DemandBalancer_LimitTests {
 
 	@Mock
 	private NodeControlProvider powerControl;
+
+	@Mock
+	private OperationalModesService opModesService;
 
 	@Captor
 	private ArgumentCaptor<Instruction> instructionCaptor;
@@ -223,6 +227,51 @@ public class DemandBalancer_LimitTests {
 
 		// THEN
 		thenLimitSent("0");
+	}
+
+	@Test
+	public void requireOpMode_adjusted() {
+		// GIVEN
+		service.setOpModesService(opModesService);
+		service.setRequiredOperationalMode("!manual-override");
+
+		given(opModesService.isOperationalModeActive("!manual-override")).willReturn(true);
+
+		// demand of 600 out of default 1000 W capacity is a 60% limit
+		givenDemandAndLimit(600, "50.9");
+
+		given(instructionService.executeInstruction(any()))
+				.willAnswer(invocation -> createStatus(invocation.getArgument(0), Completed));
+
+		// WHEN
+		service.evaluateBalance();
+
+		// THEN
+		// @formatter:off
+		then(instructionService).should().executeInstruction(instructionCaptor.capture());
+		and.then(instructionCaptor.getValue())
+			.as("Demand balance instruction sent")
+			.returns(InstructionHandler.TOPIC_DEMAND_BALANCE, from(Instruction::getTopic))
+			.as("New limit is whole percentage")
+			.returns("60", from(i -> i.getParameterValue(TEST_CONTROL_ID)))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void requireOpMode_notActive() {
+		// GIVEN
+		service.setOpModesService(opModesService);
+		service.setRequiredOperationalMode("!manual-override");
+
+		given(opModesService.isOperationalModeActive("!manual-override")).willReturn(false);
+
+		// WHEN
+		service.evaluateBalance();
+
+		// THEN
+		then(consumptionDataSource).shouldHaveNoInteractions();
+		then(instructionService).shouldHaveNoInteractions();
 	}
 
 }
