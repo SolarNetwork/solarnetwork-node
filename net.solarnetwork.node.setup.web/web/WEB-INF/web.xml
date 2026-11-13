@@ -37,6 +37,23 @@
 		</param-value>
 	</context-param>
 
+	<!--
+		Unfiltered datum historian selector, before every other filter so that request security,
+		request signature verification and request dispatching all see API requests under the
+		/unfiltered path prefix without that prefix. This order is required for security: after
+		springSecurityFilterChain, prefixed API requests would not match the API security chains,
+		and so would reach the API without authentication.
+	-->
+	<filter>
+		<filter-name>HistorianSelectorFilter</filter-name>
+		<filter-class>net.solarnetwork.node.setup.web.support.HistorianSelectorFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>HistorianSelectorFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<!-- Multipart filter before security filter, to support CSRF on multipart/form-data -->
 	<filter>
 		<filter-name>MultipartFilter</filter-name>

@@ -163,5 +163,19 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.metrics.dao.MetricDao"/>
 		<property name="sticky" value="true"/>
 	</bean>
+
+	<bean id="filteredDatumHistorian" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.FilterableDatumHistorian"/>
+		<property name="serviceFilter" value="(role=filtered)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="unfilteredDatumHistorian" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.FilterableDatumHistorian"/>
+		<property name="serviceFilter" value="(role=unfiltered)"/>
+		<property name="sticky" value="true"/>
+	</bean>
 	
 </beans>

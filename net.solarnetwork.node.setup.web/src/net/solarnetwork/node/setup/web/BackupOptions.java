@@ -86,8 +86,8 @@ public class BackupOptions {
 	 * {@link net.solarnetwork.node.backup.BackupResourceProvider} keys to limit
 	 * the backup to.
 	 *
-	 * @return The list of provider keys to limit the backup to, or
-	 *         {@code null} for all providers.
+	 * @return The list of provider keys to limit the backup to, or {@code null}
+	 *         for all providers.
 	 */
 	public String @Nullable [] getProviders() {
 		return providers;
@@ -99,8 +99,8 @@ public class BackupOptions {
 	 * the backup to.
 	 *
 	 * @param providers
-	 *        The list of provider keys to limit the backup to, or
-	 *        {@code null} for all providers.
+	 *        The list of provider keys to limit the backup to, or {@code null}
+	 *        for all providers.
 	 */
 	public void setProviders(String @Nullable [] providers) {
 		this.providers = providers;
