@@ -1,6 +1,6 @@
 /* ============================================================================
  * SQL script to create the tables and functions used by the JDBC
- * DatumHistorian. Requires Postgres 17 or later.
+ * DatumHistorian. Requires Postgres 17 or later, built with ICU support.
  *
  * Run this as the database role SolarNode connects with, or as a role that
  * role is a member of: solarhist.dh_store_datum() adds partitions to the
@@ -9,6 +9,10 @@
  */
 
 CREATE SCHEMA IF NOT EXISTS solarhist;
+
+-- natural sort order, so source ID "a2" sorts before "a10"; the same as the SolarNet
+-- solarcommon.naturalsort collation
+CREATE COLLATION IF NOT EXISTS solarhist.naturalsort (provider = icu, locale = 'und-u-kf-upper-kn');
 
 -- datum type registry: one row per datum class that has been stored
 CREATE TABLE solarhist.dh_datum_type (
@@ -26,7 +30,7 @@ CREATE TABLE solarhist.dh_datum_meta (
 	created		TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated		TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	node_id		BIGINT NOT NULL,
-	source_id	CHARACTER VARYING(64) NOT NULL,
+	source_id	CHARACTER VARYING(64) NOT NULL COLLATE solarhist.naturalsort,
 	loc_id		BIGINT,						-- location datum only; NULL for node datum
 	names_i		TEXT[],						-- property names; only ever appended to
 	names_a		TEXT[],
