@@ -1,6 +1,6 @@
 SELECT d.stream_id, d.source_id, d.loc_id, d.ts, t.class_name, t.type_names
 	, d.names_i, d.names_a, d.names_s
-	, d.data_i::TEXT[] AS data_i, d.data_a::TEXT[] AS data_a, d.data_s, d.data_t
+	, d.data_i, d.data_a, d.data_s, d.data_t
 FROM (
 	SELECT m.stream_id, m.source_id, m.loc_id, m.names_i, m.names_a, m.names_s
 		, d.ts, d.type_id, d.data_i, d.data_a, d.data_s, d.data_t

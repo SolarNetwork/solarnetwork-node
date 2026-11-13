@@ -19,6 +19,7 @@ Import-Package:
  org.mockito;version="[5.0,6.0)",
  org.mockito.invocation;version="[5.0,6.0)",
  org.mockito.junit;version="[5.0,6.0)",
+ org.mockito.quality;version="[5.0,6.0)",
  org.mockito.stubbing;version="[5.0,6.0)",
  org.mockito.verification;version="[5.0,6.0)",
  org.postgresql.ds;version="[42,43)",

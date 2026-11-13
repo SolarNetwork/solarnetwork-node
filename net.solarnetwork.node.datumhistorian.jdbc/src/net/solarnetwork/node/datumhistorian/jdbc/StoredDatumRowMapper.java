@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc;
 
+import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.getArray;
 import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.timestampInstant;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.math.BigDecimal;
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -59,8 +59,8 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
  * <li>{@code names_i}</li>
  * <li>{@code names_a}</li>
  * <li>{@code names_s}</li>
- * <li>{@code data_i} (as text)</li>
- * <li>{@code data_a} (as text)</li>
+ * <li>{@code data_i}</li>
+ * <li>{@code data_a}</li>
  * <li>{@code data_s} (a JSON array)</li>
  * <li>{@code data_t}</li>
  * <li>{@code node_id} (only when created to read node IDs, as returned by
@@ -69,8 +69,9 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
  *
  * <p>
  * Instantaneous and accumulating values are returned as {@link BigDecimal},
- * except {@code NaN} and infinite values, which are returned as {@link Double}.
- * Status values keep their JSON type: strings, numbers, and booleans.
+ * except {@code NaN} and infinite values, which a {@code BigDecimal} cannot
+ * hold, so are omitted. Status values keep their JSON type: strings, numbers,
+ * and booleans.
  * </p>
  *
  * @author matt
@@ -121,31 +122,35 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 		final Long locationId = rs.getObject(3, Long.class);
 		final Instant ts = timestampInstant(rs, 4);
 		final String className = rs.getString(5);
-		final String[] typeNames = stringArray(rs.getArray(6));
-		final String[] namesI = stringArray(rs.getArray(7));
-		final String[] namesA = stringArray(rs.getArray(8));
-		final String[] namesS = stringArray(rs.getArray(9));
-		final String[] dataI = stringArray(rs.getArray(10));
-		final String[] dataA = stringArray(rs.getArray(11));
+		final String @Nullable [] typeNames = getArray(rs, 6);
+		final String @Nullable [] namesI = getArray(rs, 7);
+		final String @Nullable [] namesA = getArray(rs, 8);
+		final String @Nullable [] namesS = getArray(rs, 9);
+		final BigDecimal @Nullable [] dataI = getArray(rs, 10);
+		final BigDecimal @Nullable [] dataA = getArray(rs, 11);
 		final String dataS = rs.getString(12);
-		final String[] dataT = stringArray(rs.getArray(13));
+		final String @Nullable [] dataT = getArray(rs, 13);
 		Long nodeId = null;
 		if ( withNodeId ) {
 			nodeId = rs.getObject(14, Long.class);
 		}
 
 		final DatumSamples s = new DatumSamples();
-		for ( int i = 0, len = Math.min(namesI.length, dataI.length); i < len; i++ ) {
-			if ( dataI[i] != null ) {
-				s.putInstantaneousSampleValue(namesI[i], number(dataI[i]));
+		if ( namesI != null && dataI != null ) {
+			for ( int i = 0, len = Math.min(namesI.length, dataI.length); i < len; i++ ) {
+				if ( dataI[i] != null ) {
+					s.putInstantaneousSampleValue(namesI[i], dataI[i]);
+				}
 			}
 		}
-		for ( int i = 0, len = Math.min(namesA.length, dataA.length); i < len; i++ ) {
-			if ( dataA[i] != null ) {
-				s.putAccumulatingSampleValue(namesA[i], number(dataA[i]));
+		if ( namesA != null && dataA != null ) {
+			for ( int i = 0, len = Math.min(namesA.length, dataA.length); i < len; i++ ) {
+				if ( dataA[i] != null ) {
+					s.putAccumulatingSampleValue(namesA[i], dataA[i]);
+				}
 			}
 		}
-		if ( dataS != null ) {
+		if ( namesS != null && dataS != null ) {
 			final JsonNode array = statusArray(dataS);
 			for ( int i = 0, len = Math.min(namesS.length, array.size()); i < len; i++ ) {
 				final Object v = statusValue(array.get(i));
@@ -154,50 +159,19 @@ public final class StoredDatumRowMapper implements RowMapper<StoredDatum> {
 				}
 			}
 		}
-		for ( String tag : dataT ) {
-			if ( tag != null ) {
-				s.addTag(tag);
-			}
-		}
-
-		final Set<String> types = new LinkedHashSet<>(Arrays.asList(typeNames));
-		return new StoredDatum(streamId, nodeId, sourceId, locationId, ts, className, types, s);
-	}
-
-	private static String[] stringArray(@Nullable Array array) throws SQLException {
-		if ( array == null ) {
-			return new String[0];
-		}
-		try {
-			return (String[]) array.getArray();
-		} finally {
-			array.free();
-		}
-	}
-
-	/**
-	 * Parse a number value.
-	 *
-	 * @param value
-	 *        the value to parse, in the text form of a Postgres {@code NUMERIC}
-	 * @return the number
-	 * @throws DataRetrievalFailureException
-	 *         if {@code value} is not a number
-	 */
-	public static Number number(String value) {
-		return switch (value) {
-			case "NaN" -> Double.NaN;
-			case "Infinity" -> Double.POSITIVE_INFINITY;
-			case "-Infinity" -> Double.NEGATIVE_INFINITY;
-			default -> {
-				try {
-					yield new BigDecimal(value);
-				} catch ( NumberFormatException e ) {
-					throw new DataRetrievalFailureException(
-							"Stored datum value [%s] is not a number.".formatted(value), e);
+		if ( dataT != null ) {
+			for ( String tag : dataT ) {
+				if ( tag != null ) {
+					s.addTag(tag);
 				}
 			}
-		};
+		}
+
+		final Set<String> types = new LinkedHashSet<>(8);
+		if ( typeNames != null ) {
+			types.addAll(Arrays.asList(typeNames));
+		}
+		return new StoredDatum(streamId, nodeId, sourceId, locationId, ts, className, types, s);
 	}
 
 	private JsonNode statusArray(String json) {

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.test;
 
+import static net.solarnetwork.node.datumhistorian.jdbc.test.PgArrayStubs.givenNumericArray;
 import static org.assertj.core.api.BDDAssertions.and;
 import static org.assertj.core.api.BDDAssertions.from;
 import static org.assertj.core.api.BDDAssertions.thenExceptionOfType;
@@ -85,6 +86,14 @@ public class StoredDatumRowMapperTests {
 		return a;
 	}
 
+	// the values are given as Postgres formats a NUMERIC, and read as the driver reads them
+	private Array numericArray(String... values) throws SQLException {
+		Array a = mock(Array.class);
+		givenNumericArray(a, values);
+		arrays.add(a);
+		return a;
+	}
+
 	private void givenRow(Long locId, String[] namesI, String[] dataI, String[] namesA,
 			String[] dataA, String[] namesS, String dataS, String[] tags) throws SQLException {
 		given(rs.getInt(1)).willReturn(1);
@@ -97,8 +106,8 @@ public class StoredDatumRowMapperTests {
 		Array ni = (namesI != null ? array(namesI) : null);
 		Array na = (namesA != null ? array(namesA) : null);
 		Array ns = (namesS != null ? array(namesS) : null);
-		Array di = (dataI != null ? array(dataI) : null);
-		Array da = (dataA != null ? array(dataA) : null);
+		Array di = (dataI != null ? numericArray(dataI) : null);
+		Array da = (dataA != null ? numericArray(dataA) : null);
 		Array dt = (tags != null ? array(tags) : null);
 		given(rs.getArray(7)).willReturn(ni);
 		given(rs.getArray(8)).willReturn(na);
@@ -113,7 +122,7 @@ public class StoredDatumRowMapperTests {
 	public void map_all() throws SQLException {
 		// GIVEN
 		givenRow(123L, new String[] { "a", "b", "c" }, new String[] { "1.5", null, "NaN" },
-				new String[] { "x", "y" }, new String[] { "Infinity", "-Infinity" },
+				new String[] { "x", "y", "z" }, new String[] { "Infinity", "-Infinity", "5000" },
 				new String[] { "s1", "s2", "s3", "s4" }, "[\"one\", 2, 3.25, true]",
 				new String[] { "t1", "t2" });
 
@@ -138,16 +147,14 @@ public class StoredDatumRowMapperTests {
 			;
 		DatumSamples s = result.samples();
 		and.then(s.getInstantaneous())
-			.as("Instantaneous values mapped by name, skipping NULL")
-			.containsOnlyKeys("a", "c")
+			.as("Instantaneous values mapped by name, skipping NULL and NaN")
+			.containsOnlyKeys("a")
 			.containsEntry("a", new BigDecimal("1.5"))
-			.containsEntry("c", Double.NaN)
 			;
 		and.then(s.getAccumulating())
-			.as("Accumulating values mapped by name")
-			.containsOnlyKeys("x", "y")
-			.containsEntry("x", Double.POSITIVE_INFINITY)
-			.containsEntry("y", Double.NEGATIVE_INFINITY)
+			.as("Accumulating values mapped by name, skipping infinite values")
+			.containsOnlyKeys("z")
+			.containsEntry("z", new BigDecimal("5000"))
 			;
 		and.then(s.getStatus())
 			.as("Status values mapped with JSON types")
@@ -222,23 +229,6 @@ public class StoredDatumRowMapperTests {
 		thenExceptionOfType(DataRetrievalFailureException.class).isThrownBy(() -> mapper.mapRow(rs, 1))
 				.withMessageContaining("not valid JSON");
 	}
-
-	@Test
-	public void number() {
-		// @formatter:off
-		and.then(StoredDatumRowMapper.number("123")).isEqualTo(new BigDecimal("123"));
-		and.then(StoredDatumRowMapper.number("-1.2300")).isEqualTo(new BigDecimal("-1.2300"));
-		and.then(StoredDatumRowMapper.number("1.5E+10")).isEqualTo(new BigDecimal("1.5E+10"));
-		and.then(StoredDatumRowMapper.number("NaN")).isEqualTo(Double.NaN);
-		and.then(StoredDatumRowMapper.number("Infinity")).isEqualTo(Double.POSITIVE_INFINITY);
-		and.then(StoredDatumRowMapper.number("-Infinity")).isEqualTo(Double.NEGATIVE_INFINITY);
-		thenExceptionOfType(DataRetrievalFailureException.class)
-			.isThrownBy(() -> StoredDatumRowMapper.number("abc"))
-			.withMessageContaining("abc")
-			;
-		// @formatter:on
-	}
-
 
 	@Test
 	public void map_withoutNodeId() throws SQLException {

@@ -531,7 +531,7 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 	public void select_mapsColumns() {
 		// GIVEN
 		StoreDatum.Result r = store(new SimpleAcEnergyDatum("a", START, null),
-				"{\"i\":{\"watts\":1.5},\"a\":{\"wattHours\":\"NaN\"},\"s\":{\"mode\":\"x\",\"n\":2},\"t\":[\"t1\",\"t2\"]}");
+				"{\"i\":{\"watts\":1.5},\"a\":{\"x\":\"NaN\",\"wattHours\":10},\"s\":{\"mode\":\"x\",\"n\":2},\"t\":[\"t1\",\"t2\"]}");
 
 		// WHEN
 		List<StoredDatum> result = select(
@@ -551,7 +551,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 			.returns(AC_TYPE_NAMES, from(StoredDatum::typeNames))
 			.extracting(StoredDatum::samples)
 			.returns(Map.of("watts", new BigDecimal("1.5")), from(DatumSamples::getInstantaneous))
-			.returns(Map.of("wattHours", Double.NaN), from(DatumSamples::getAccumulating))
+			// the NaN value is omitted, as a BigDecimal cannot hold it
+			.returns(Map.of("wattHours", new BigDecimal("10")), from(DatumSamples::getAccumulating))
 			.returns(Map.of("mode", "x", "n", 2), from(DatumSamples::getStatus))
 			.returns(Set.of("t1", "t2"), from(DatumSamples::getTags))
 			;

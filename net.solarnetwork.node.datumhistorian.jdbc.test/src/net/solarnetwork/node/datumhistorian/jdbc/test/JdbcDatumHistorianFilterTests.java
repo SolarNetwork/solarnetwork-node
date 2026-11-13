@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1042,6 +1043,95 @@ public class JdbcDatumHistorianFilterTests extends AbstractPostgresHistorianTest
 			.containsExactly(node("b/1", t1))
 			;
 		// @formatter:on
+	}
+
+	private UUID streamId(Long nodeId, Long locationId, String sourceId) {
+		return streamId(JdbcDatumHistorian.DEFAULT_SCHEMA_NAME,
+				JdbcDatumHistorian.DEFAULT_STREAM_ID_DOMAIN, nodeId, locationId, sourceId);
+	}
+
+	@Test
+	public void streamIds() {
+		// GIVEN
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setStreamIds(new UUID[] { streamId(TEST_NODE_ID, null, "b/1"),
+				streamId(TEST_NODE_ID, TEST_LOC_ID, "weather") });
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Datum of given streams of running node returned")
+			.containsExactly(weather(t0), weather(t1), node("b/1", t0), node("b/1", t1), node("b/1", t2))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void streamIds_nodeIds() {
+		// GIVEN
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setObjectKind(ObjectDatumKind.Node);
+		filter.setObjectIds(new Long[] { TEST_NODE_ID, TEST_NODE_ID_2 });
+		filter.setStreamIds(new UUID[] { streamId(TEST_NODE_ID_2, null, "a/1"),
+				streamId(TEST_NODE_ID, null, "a/2") });
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Datum of given streams of given nodes returned")
+			.containsExactly(
+					node("a/2", t0), node("a/2", t1), node("a/2", t2),
+					node(TEST_NODE_ID_2, "a/1", t0), node(TEST_NODE_ID_2, "a/1", t1))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void streamIds_locationIds_runningNodeStreamsOnly() {
+		// GIVEN
+		BasicNodeDatumFilter filter = locationIdsFilter();
+		filter.setStreamIds(new UUID[] { streamId(TEST_NODE_ID, TEST_LOC_ID, "weather"),
+				streamId(TEST_NODE_ID_2, TEST_LOC_ID, "weather") });
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(ids(result))
+			.as("Location datum of running node stream returned")
+			.containsExactly(weather(t0), weather(t1))
+			;
+		and.then(values(result))
+			.as("Other node stream ID not decoded, so its datum are not merged")
+			.containsExactly(9, 11)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void streamIds_notDecoded() {
+		// GIVEN
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setStreamIds(new UUID[] { streamId(TEST_NODE_ID_2, null, "a/1"), UUID.randomUUID() });
+
+		// WHEN
+		FilterResults<NodeDatum, DatumId> result = historian.findFiltered(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("No results for stream IDs not of running node")
+			.isEmpty()
+			;
+		// @formatter:on
+		thenPage(result, 0L, 0, 0L);
 	}
 
 }

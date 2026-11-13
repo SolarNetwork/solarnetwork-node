@@ -27,6 +27,7 @@ import static org.junit.Assume.assumeTrue;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.After;
 import org.junit.Before;
@@ -37,6 +38,7 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian;
+import net.solarnetwork.node.service.support.DatumStreamIdUtils;
 import net.solarnetwork.node.test.NodeTestUtils;
 
 /**
@@ -167,6 +169,29 @@ public abstract class AbstractPostgresHistorianTests {
 			String order) {
 		return jdbcTemplate.queryForList(
 				"SELECT %s FROM %s.%s ORDER BY %s".formatted(columns, schema, table, order));
+	}
+
+	/**
+	 * Get the UUID stream ID a historian gives a stream.
+	 *
+	 * @param schema
+	 *        the schema name
+	 * @param domain
+	 *        the stream ID domain of the historian
+	 * @param nodeId
+	 *        the node ID of the stream
+	 * @param locationId
+	 *        the location ID of the stream, or {@code null} for a node stream
+	 * @param sourceId
+	 *        the source ID of the stream
+	 * @return the stream ID
+	 */
+	protected UUID streamId(String schema, int domain, Long nodeId, Long locationId, String sourceId) {
+		final Integer localStreamId = jdbcTemplate.queryForObject("""
+				SELECT stream_id FROM %s.dh_datum_meta
+				WHERE node_id = ? AND source_id = ? AND loc_id IS NOT DISTINCT FROM ?::BIGINT
+				""".formatted(schema), Integer.class, nodeId, sourceId, locationId);
+		return DatumStreamIdUtils.encodeLocalStreamId(nodeId, domain, localStreamId);
 	}
 
 	/**

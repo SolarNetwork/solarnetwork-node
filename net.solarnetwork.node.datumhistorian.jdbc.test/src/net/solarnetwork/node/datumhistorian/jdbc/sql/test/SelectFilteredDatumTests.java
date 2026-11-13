@@ -85,6 +85,9 @@ public class SelectFilteredDatumTests {
 	@Mock
 	private Array array3;
 
+	@Mock
+	private Array array4;
+
 	@Captor
 	private ArgumentCaptor<String> sqlCaptor;
 
@@ -93,8 +96,7 @@ public class SelectFilteredDatumTests {
 
 	private void givenPrepare() throws SQLException {
 		given(conn.prepareStatement(sqlCaptor.capture(), eq(ResultSet.TYPE_FORWARD_ONLY),
-				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT)))
-				.willReturn(stmt);
+				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).willReturn(stmt);
 	}
 
 	private void givenPrepareCount() throws SQLException {
@@ -558,6 +560,217 @@ public class SelectFilteredDatumTests {
 		InOrder ordered = Mockito.inOrder(stmt);
 		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
 		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void streamIds() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final Integer[] streamIds = new Integer[] { 3, 4 };
+		given(conn.createArrayOf(eq("integer"), aryEq(streamIds))).willReturn(array4);
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", new BasicNodeDatumFilter(),
+				TEST_NODE_ID, streamIds, 0);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Stream IDs criteria follow the object criteria")
+			.contains("WHERE m.node_id = ?\n\tAND m.stream_id = ANY(?)\nORDER BY ")
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setArray(2, array4);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void streamIds_single() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", new BasicNodeDatumFilter(),
+				TEST_NODE_ID, new Integer[] { 3 }, 0);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Single stream ID compared directly")
+			.contains("WHERE m.node_id = ?\n\tAND m.stream_id = ?\nORDER BY ")
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setObject(2, 3);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void streamIds_empty() {
+		// GIVEN
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", new BasicNodeDatumFilter(),
+				TEST_NODE_ID, new Integer[0], 0);
+
+		// WHEN
+		String result = sql.getSql();
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("No stream IDs criteria for empty stream IDs")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-01.sql", getClass()))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void forStream_invalid() {
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		thenIllegalArgumentException()
+				.isThrownBy(() -> SelectFilteredDatum.forStream("solarhist", null, 1L, null, 0));
+		thenIllegalArgumentException()
+				.isThrownBy(() -> SelectFilteredDatum.forStream("solar.hist", f, 1L, null, 0));
+	}
+
+	@Test
+	public void forStream_defaultNode() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		SelectFilteredDatum sql = SelectFilteredDatum.forStream("solarhist", new BasicNodeDatumFilter(),
+				TEST_NODE_ID, null, SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+
+		// WHEN
+		PreparedStatement result = sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Statement created")
+			.isSameAs(stmt)
+			;
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with stream columns and without type join")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-stream-01.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(sql.getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	private Integer[] givenStreamIdsArray() throws SQLException {
+		final Integer[] streamIds = new Integer[] { 3, 4 };
+		given(conn.createArrayOf(eq("integer"), aryEq(streamIds))).willReturn(array4);
+		return streamIds;
+	}
+
+	@Test
+	public void forStream_allCriteria() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = allCriteriaFilter();
+		givenAllCriteriaArrays(f);
+		final Integer[] streamIds = givenStreamIdsArray();
+		SelectFilteredDatum sql = SelectFilteredDatum.forStream("solarhist", f, TEST_NODE_ID, streamIds,
+				SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with stream IDs criteria, and type criteria without type join")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-stream-02.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setArray(1, array);
+		then(stmt).should(ordered).setArray(2, array4);
+		then(stmt).should(ordered).setArray(3, array2);
+		then(stmt).should(ordered).setArray(4, array3);
+		then(stmt).should(ordered).setTimestamp(5, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(6, Timestamp.from(end));
+		then(stmt).should(ordered).setArray(7, array3);
+		then(stmt).should(ordered).setInt(8, 10);
+		then(stmt).should(ordered).setLong(9, 20L);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void forStream_allCriteria_count() throws SQLException {
+		// GIVEN
+		givenPrepareCount();
+		final BasicNodeDatumFilter f = allCriteriaFilter();
+		givenAllCriteriaArrays(f);
+		final Integer[] streamIds = givenStreamIdsArray();
+		SelectFilteredDatum sql = SelectFilteredDatum.forStream("solarhist", f, TEST_NODE_ID, streamIds,
+				SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+
+		// WHEN
+		PreparedStatementCreator count = sql.countPreparedStatementCreator();
+		count.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Count SQL generated, without type join, order, or pagination")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-stream-count-02.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(((SqlProvider) count).getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setArray(1, array);
+		then(stmt).should(ordered).setArray(2, array4);
+		then(stmt).should(ordered).setArray(3, array2);
+		then(stmt).should(ordered).setArray(4, array3);
+		then(stmt).should(ordered).setTimestamp(5, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(6, Timestamp.from(end));
+		then(stmt).should(ordered).setArray(7, array3);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void forStream_locationIds_mostRecent() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = locationIdsMostRecentFilter();
+		givenAllCriteriaArrays(f);
+		SelectFilteredDatum sql = SelectFilteredDatum.forStream("solarhist", f, TEST_NODE_ID, null,
+				SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with stream columns of most recent merged location datum, without type join")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-stream-07.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setTimestamp(1, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(end));
+		then(stmt).should(ordered).setArray(3, array3);
+		then(stmt).should(ordered).setArray(4, array);
+		then(stmt).should(ordered).setArray(5, array2);
+		then(stmt).should(ordered).setArray(6, array3);
+		then(stmt).should(ordered).setObject(7, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setInt(8, 10);
+		then(stmt).should(ordered).setLong(9, 20L);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}

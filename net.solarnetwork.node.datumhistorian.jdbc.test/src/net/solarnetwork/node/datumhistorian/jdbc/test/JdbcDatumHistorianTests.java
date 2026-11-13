@@ -1031,8 +1031,10 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		DatumSamples s = new DatumSamples();
 		s.putInstantaneousSampleValue("nan", Double.NaN);
 		s.putInstantaneousSampleValue("inf", Double.POSITIVE_INFINITY);
+		s.putInstantaneousSampleValue("watts", 1);
 		s.putAccumulatingSampleValue("ninf", Double.NEGATIVE_INFINITY);
 		s.putAccumulatingSampleValue("fnan", Float.NaN);
+		s.putAccumulatingSampleValue("wattHours", 2);
 
 		// WHEN
 		historian.add(SimpleDatum.nodeDatum("a", start, s));
@@ -1042,14 +1044,12 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		DatumSamples r = new DatumSamples(result.asSampleOperations());
 		// @formatter:off
 		and.then(r.getInstantaneous())
-			.as("Non-finite instantaneous values restored as Double")
-			.containsEntry("nan", Double.NaN)
-			.containsEntry("inf", Double.POSITIVE_INFINITY)
+			.as("Non-finite instantaneous values omitted, as a BigDecimal cannot hold them")
+			.containsOnlyKeys("watts")
 			;
 		and.then(r.getAccumulating())
-			.as("Non-finite accumulating values restored as Double")
-			.containsEntry("ninf", Double.NEGATIVE_INFINITY)
-			.containsEntry("fnan", Double.NaN)
+			.as("Non-finite accumulating values omitted, as a BigDecimal cannot hold them")
+			.containsOnlyKeys("wattHours")
 			;
 		// @formatter:on
 	}
