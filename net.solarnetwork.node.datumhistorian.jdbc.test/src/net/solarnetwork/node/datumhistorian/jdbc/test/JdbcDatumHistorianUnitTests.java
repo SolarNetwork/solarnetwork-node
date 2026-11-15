@@ -54,6 +54,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
@@ -85,7 +86,12 @@ import org.springframework.util.AntPathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.dao.StreamDatumFilteredResultsProcessor;
+import net.solarnetwork.domain.datum.AggregateStreamDatum;
+import net.solarnetwork.domain.datum.Aggregation;
+import net.solarnetwork.domain.datum.BasicAggregateStreamDatum;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.BasicReadingStreamDatum;
+import net.solarnetwork.domain.datum.BasicStreamDatum;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumReadingType;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -99,11 +105,15 @@ import net.solarnetwork.node.datumhistorian.jdbc.DatumStreamMetadataRowMapper;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.DefaultNodeDatumFactory;
 import net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectAggregateDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreamMetadata;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectHistorianFeatures;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectReadingDifference;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreNodeTimeZone;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.IdentityService;
@@ -618,12 +628,246 @@ public class JdbcDatumHistorianUnitTests {
 
 	@Test
 	public void lifecycle() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(null);
+
 		// WHEN
 		historian.serviceDidStartup();
 		historian.serviceDidShutdown();
 
 		// THEN
-		then(jdbcOps).shouldHaveNoInteractions();
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), same(SelectHistorianFeatures.RESULT_MAPPER));
+		and.then(sqlCaptor.getValue())
+			.as("Features of schema found at startup")
+			.asInstanceOf(type(SelectHistorianFeatures.class))
+			.as("Default schema used")
+			.returns(JdbcDatumHistorian.DEFAULT_SCHEMA_NAME, SelectHistorianFeatures::getSchemaName)
+			;
+		// No time zone stored without node ID or stored aggregates
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	/*
+	 * ==================================================================
+	 * Features and time zone
+	 * ==================================================================
+	 */
+
+	private void givenFeatures(boolean aggregates) {
+		given(jdbcOps.query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER)))
+				.willReturn(List.of(new SelectHistorianFeatures.Result(aggregates)));
+	}
+
+	private void givenStoreDatum() {
+		given(jdbcOps.query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER)))
+				.willReturn(List.of(new StoreDatum.Result(1, 2)));
+	}
+
+	@Test
+	public void startup_aggregates_timeZoneStored() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.update(any(StoreNodeTimeZone.class))).willReturn(1);
+		historian.setTimeZone(ZoneId.of("Pacific/Auckland"));
+
+		// WHEN
+		historian.serviceDidStartup();
+
+		// THEN
+		// @formatter:off
+		final InOrder ordered = inOrder(jdbcOps);
+		then(jdbcOps).should(ordered).query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).should(ordered).update(sqlCaptor.capture());
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		and.then(sqlCaptor.getValue())
+			.as("Time zone stored")
+			.asInstanceOf(type(StoreNodeTimeZone.class))
+			.as("Default schema used")
+			.returns(JdbcDatumHistorian.DEFAULT_SCHEMA_NAME, StoreNodeTimeZone::getSchemaName)
+			.as("Node ID of identity service")
+			.returns(TEST_NODE_ID, StoreNodeTimeZone::getNodeId)
+			.as("Configured time zone")
+			.returns(ZoneId.of("Pacific/Auckland"), StoreNodeTimeZone::getTimeZone)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void startup_aggregates_systemTimeZone() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.update(any(StoreNodeTimeZone.class))).willReturn(0);
+
+		// WHEN
+		historian.serviceDidStartup();
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().update(sqlCaptor.capture());
+		and.then(historian.getTimeZone())
+			.as("No time zone configured")
+			.isNull()
+			;
+		and.then(sqlCaptor.getValue())
+			.as("Time zone stored")
+			.asInstanceOf(type(StoreNodeTimeZone.class))
+			.as("System time zone used")
+			.returns(ZoneId.systemDefault(), StoreNodeTimeZone::getTimeZone)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void startup_noAggregates_timeZoneNotStored() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(false);
+		givenStoreDatum();
+
+		// WHEN
+		historian.serviceDidStartup();
+		historian.add(datum("a"));
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).should().query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER));
+		// No time zone stored without stored aggregates
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void startup_noNodeId_timeZoneStoredOnceWhenAdding() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(null, TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.update(any(StoreNodeTimeZone.class))).willReturn(1);
+		givenStoreDatum();
+		historian.setTimeZone(ZoneId.of("Pacific/Auckland"));
+
+		// WHEN
+		historian.serviceDidStartup();
+		historian.add(datum("a"));
+		historian.add(datum("b"));
+
+		// THEN
+		// @formatter:off
+		final InOrder ordered = inOrder(jdbcOps);
+		then(jdbcOps).should(ordered).query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).should(ordered).update(sqlCaptor.capture());
+		then(jdbcOps).should(ordered, times(2)).query(any(StoreDatum.class),
+				same(StoreDatum.RESULT_MAPPER));
+		// Time zone stored once, with first datum once node ID known
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		and.then(sqlCaptor.getValue())
+			.as("Time zone stored")
+			.asInstanceOf(type(StoreNodeTimeZone.class))
+			.as("Node ID of identity service when adding")
+			.returns(TEST_NODE_ID, StoreNodeTimeZone::getNodeId)
+			.as("Configured time zone")
+			.returns(ZoneId.of("Pacific/Auckland"), StoreNodeTimeZone::getTimeZone)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void startup_nodeIdChanged_timeZoneStoredWhenAdding() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID, TEST_NODE_ID_2);
+		givenFeatures(true);
+		given(jdbcOps.update(any(StoreNodeTimeZone.class))).willReturn(1);
+		givenStoreDatum();
+
+		// WHEN
+		historian.serviceDidStartup();
+		historian.add(datum("a"));
+		historian.add(datum("b"));
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should(times(2)).update(sqlCaptor.capture());
+		and.then(sqlCaptor.getAllValues())
+			.as("Time zone stored for node at startup, then for new node ID when adding")
+			.extracting(s -> ((StoreNodeTimeZone) s).getNodeId())
+			.containsExactly(TEST_NODE_ID, TEST_NODE_ID_2)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void add_featuresNotFound_noTimeZone() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenStoreDatum();
+
+		// WHEN
+		historian.add(datum("a"));
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER));
+		// Features not found by adding, so no time zone stored
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void startup_featuresError_ignored_foundWhenNeeded() throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		given(jdbcOps.query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER)))
+				.willThrow(new QueryTimeoutException("Too slow"))
+				.willReturn(List.of(new SelectHistorianFeatures.Result(true)));
+		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setAggregation(Aggregation.Hour);
+
+		// WHEN
+		historian.serviceDidStartup();
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should(times(2)).query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		// No time zone stored without features
+		then(jdbcOps).should(never()).update(any(PreparedStatementCreator.class));
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Stored aggregates queried once features found")
+			.isInstanceOf(SelectAggregateDatum.class)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void startup_timeZoneError_ignored() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.update(any(StoreNodeTimeZone.class)))
+				.willThrow(new QueryTimeoutException("Too slow"));
+		givenStoreDatum();
+
+		// WHEN
+		historian.serviceDidStartup();
+		historian.add(datum("a"));
+
+		// THEN
+		// @formatter:off
+		// Error not thrown, and storing not tried again when adding
+		then(jdbcOps).should(times(1)).update(any(PreparedStatementCreator.class));
+		then(jdbcOps).should().query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER));
+		// @formatter:on
 	}
 
 	/*
@@ -1027,18 +1271,44 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	@Test
-	public void findFilteredStreamReadings_notImplemented() {
+	public void findFilteredStreamReadings_noReadingType() {
 		// GIVEN
 		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
-		filter.setReadingType(DatumReadingType.Difference);
 
 		// WHEN
-		thenExceptionOfType(UnsupportedOperationException.class).as("Not implemented yet").isThrownBy(
+		thenIllegalArgumentException().as("Reading type required").isThrownBy(
 				() -> historian.findFilteredStreamReadings(filter, processor, null, null, null));
 
 		// THEN
 		then(processor).shouldHaveNoInteractions();
 		then(jdbcOps).shouldHaveNoInteractions();
+		then(identityService).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void findFilteredStreamReadings_unsupportedReadingType() {
+		for ( DatumReadingType type : DatumReadingType.values() ) {
+			if ( type == DatumReadingType.Difference ) {
+				continue;
+			}
+			// GIVEN
+			final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+			filter.setReadingType(type);
+
+			// WHEN
+			// @formatter:off
+			thenExceptionOfType(UnsupportedOperationException.class)
+				.as("Reading type %s not supported", type)
+				.isThrownBy(() -> historian.findFilteredStreamReadings(filter, processor, null, null, null))
+				.withMessageContaining(type.name())
+				;
+			// @formatter:on
+		}
+
+		// THEN
+		then(processor).shouldHaveNoInteractions();
+		then(jdbcOps).shouldHaveNoInteractions();
+		then(identityService).shouldHaveNoInteractions();
 	}
 
 	@Test
@@ -1368,6 +1638,307 @@ public class JdbcDatumHistorianUnitTests {
 		then(processor).should().start(isNull(), isNull(), isNull(), any());
 		// No transaction without queries
 		then(txManager).shouldHaveNoInteractions();
+		// @formatter:on
+	}
+
+	/*
+	 * ==================================================================
+	 * Stored aggregates and readings
+	 * ==================================================================
+	 */
+
+	private static BasicNodeDatumFilter aggregateFilter(Aggregation aggregation) {
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setAggregation(aggregation);
+		return f;
+	}
+
+	private static BasicNodeDatumFilter readingFilter(Aggregation aggregation) {
+		final BasicNodeDatumFilter f = aggregateFilter(aggregation);
+		f.setReadingType(DatumReadingType.Difference);
+		return f;
+	}
+
+	@Test
+	public void findFilteredStream_aggregates() throws IOException, SQLException {
+		// GIVEN
+		final ObjectDatumStreamMetadata meta = givenStreamQueries(3, 3);
+		givenFeatures(true);
+
+		// WHEN
+		historian.findFilteredStream(aggregateFilter(Aggregation.Hour), processor, null, null, null);
+
+		// THEN
+		final InOrder ordered = inOrder(jdbcOps, processor);
+		// @formatter:off
+		then(jdbcOps).should(ordered, times(2)).query(sqlCaptor.capture(), any(RowMapper.class));
+		then(processor).should(ordered).start(isNull(), isNull(), isNull(), attrsCaptor.capture());
+		then(jdbcOps).should(ordered).query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		then(processor).should(ordered, times(2)).handleResultItem(datumCaptor.capture());
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		then(processor).shouldHaveNoMoreInteractions();
+
+		and.then(sqlCaptor.getAllValues()).element(0)
+			.as("Features of schema found first")
+			.isInstanceOf(SelectHistorianFeatures.class)
+			;
+		and.then(sqlCaptor.getAllValues()).element(1)
+			.as("Metadata query executed")
+			.isInstanceOf(SelectDatumStreamMetadata.class)
+			;
+		and.then(sqlCaptor.getAllValues()).element(2)
+			.as("Stored aggregate query executed")
+			.asInstanceOf(type(SelectAggregateDatum.class))
+			.as("Hourly aggregates queried")
+			.returns("dh_agg_hourly", SelectAggregateDatum::getTableName)
+			;
+		and.then(startedProvider().metadataStreamIds())
+			.as("Metadata of streams given to processor")
+			.containsExactly(meta.getStreamId())
+			;
+		and.then(datumCaptor.getAllValues())
+			.as("Aggregate datum of each row given to processor")
+			.hasSize(2)
+			.allSatisfy(d -> and.then(d)
+				.isExactlyInstanceOf(BasicAggregateStreamDatum.class)
+				.returns(meta.getStreamId(), from(StreamDatum::getStreamId))
+				.returns(ts, from(StreamDatum::getTimestamp)))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_aggregates_featuresFoundOnce() throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		givenFeatures(true);
+
+		// WHEN
+		historian.findFilteredStream(aggregateFilter(Aggregation.Month), processor, null, null, null);
+		historian.findFilteredStream(aggregateFilter(Aggregation.Day), processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should(times(1)).query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).should(times(2)).query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getAllValues())
+			.as("Aggregate table of each aggregation queried")
+			.extracting(s -> ((SelectAggregateDatum) s).getTableName())
+			.containsExactly("dh_agg_monthly", "dh_agg_daily")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_aggregates_totalResultsCount() throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		givenFeatures(true);
+		given(jdbcOps.query(any(PreparedStatementCreator.class), any(ResultSetExtractor.class)))
+				.willReturn(42L);
+		final BasicNodeDatumFilter filter = aggregateFilter(Aggregation.Day);
+		filter.setWithoutTotalResultsCount(false);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, 2L, 5);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(ResultSetExtractor.class));
+		then(processor).should().start(eq(42L), eq(2), isNull(), any());
+		and.then(sqlCaptor.getValue())
+			.as("Count query executed")
+			.isInstanceOf(SqlProvider.class)
+			.extracting(sql -> ((SqlProvider) sql).getSql())
+			.asString()
+			.as("Stored aggregates counted")
+			.startsWith("SELECT COUNT(*)\nFROM solarhist.dh_datum_meta m\nINNER JOIN solarhist.dh_agg_daily d ")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_aggregationWithoutSetup_raw() throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		givenFeatures(false);
+
+		// WHEN
+		historian.findFilteredStream(aggregateFilter(Aggregation.Day), processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Aggregation treated as no aggregation without aggregate setup")
+			.isInstanceOf(SelectFilteredDatum.class)
+			;
+		then(processor).should().handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getValue())
+			.as("Raw datum given to processor")
+			.isExactlyInstanceOf(BasicStreamDatum.class)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_unsupportedAggregation_raw_noFeatures() throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+
+		// WHEN
+		historian.findFilteredStream(aggregateFilter(Aggregation.FiveMinute), processor, null, null,
+				null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should(never()).query(any(SelectHistorianFeatures.class), any(RowMapper.class));
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Aggregation without stored aggregates treated as no aggregation")
+			.isInstanceOf(SelectFilteredDatum.class)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStreamReadings_difference() throws IOException, SQLException {
+		// GIVEN
+		final ObjectDatumStreamMetadata meta = givenStreamQueries(3);
+		final Instant endTs = ts.plusSeconds(3600);
+		given(rs.getTimestamp(10)).willReturn(Timestamp.from(endTs));
+		final BasicNodeDatumFilter filter = readingFilter(null);
+		filter.setStartDate(ts);
+		filter.setEndDate(endTs);
+
+		// WHEN
+		historian.findFilteredStreamReadings(filter, processor, null, null, null);
+
+		// THEN
+		final InOrder ordered = inOrder(jdbcOps, processor);
+		// @formatter:off
+		then(jdbcOps).should(ordered).query(sqlCaptor.capture(), any(RowMapper.class));
+		then(processor).should(ordered).start(isNull(), isNull(), isNull(), attrsCaptor.capture());
+		then(jdbcOps).should(ordered).query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		then(processor).should(ordered).handleResultItem(datumCaptor.capture());
+		// features of schema not needed without aggregation
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		then(processor).shouldHaveNoMoreInteractions();
+
+		and.then(sqlCaptor.getAllValues()).element(0)
+			.as("Metadata query executed")
+			.isInstanceOf(SelectDatumStreamMetadata.class)
+			;
+		and.then(sqlCaptor.getAllValues()).element(1)
+			.as("Reading difference query executed")
+			.asInstanceOf(type(SelectReadingDifference.class))
+			.as("Readings found at filter start date")
+			.returns(ts, SelectReadingDifference::getStartDate)
+			.as("Readings found at filter end date")
+			.returns(endTs, SelectReadingDifference::getEndDate)
+			;
+		and.then(startedProvider().metadataStreamIds())
+			.as("Metadata of streams given to processor")
+			.containsExactly(meta.getStreamId())
+			;
+		and.then(datumCaptor.getValue())
+			.as("Reading datum given to processor")
+			.isExactlyInstanceOf(BasicReadingStreamDatum.class)
+			.returns(meta.getStreamId(), from(StreamDatum::getStreamId))
+			.as("Timestamp of starting reading")
+			.returns(ts, from(StreamDatum::getTimestamp))
+			;
+		and.then(((AggregateStreamDatum) datumCaptor.getValue()).getEndTimestamp())
+			.as("End timestamp of ending reading")
+			.isEqualTo(endTs)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStreamReadings_aggregates() throws IOException, SQLException {
+		// GIVEN
+		final ObjectDatumStreamMetadata meta = givenStreamQueries(3, 3);
+		givenFeatures(true);
+
+		// WHEN
+		historian.findFilteredStreamReadings(readingFilter(Aggregation.Day), processor, null, null,
+				null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Stored aggregates queried for readings")
+			.asInstanceOf(type(SelectAggregateDatum.class))
+			.as("Daily aggregates queried")
+			.returns("dh_agg_daily", SelectAggregateDatum::getTableName)
+			;
+		then(processor).should(times(2)).handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getAllValues())
+			.as("Reading datum of each row given to processor")
+			.allSatisfy(d -> and.then(d)
+				.isExactlyInstanceOf(BasicReadingStreamDatum.class)
+				.returns(meta.getStreamId(), from(StreamDatum::getStreamId))
+				.returns(ts, from(StreamDatum::getTimestamp)))
+			.extracting(d -> ((AggregateStreamDatum) d).getEndTimestamp())
+			.as("No end timestamp for stored aggregate readings")
+			.containsOnlyNulls()
+			;
+		then(rs).should(never()).getTimestamp(10);
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStreamReadings_aggregationWithoutSetup_difference()
+			throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		givenFeatures(false);
+		final Instant endTs = ts.plusSeconds(60);
+		given(rs.getTimestamp(10)).willReturn(Timestamp.from(endTs));
+
+		// WHEN
+		historian.findFilteredStreamReadings(readingFilter(Aggregation.Month), processor, null, null,
+				null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Aggregation treated as no aggregation without aggregate setup")
+			.isInstanceOf(SelectReadingDifference.class)
+			;
+		then(processor).should().handleResultItem(datumCaptor.capture());
+		and.then(((AggregateStreamDatum) datumCaptor.getValue()).getEndTimestamp())
+			.as("End timestamp of ending reading")
+			.isEqualTo(endTs)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStreamReadings_unsupportedAggregation_difference()
+			throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		given(rs.getTimestamp(10)).willReturn(Timestamp.from(ts));
+
+		// WHEN
+		historian.findFilteredStreamReadings(readingFilter(Aggregation.Week), processor, null, null,
+				null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should(never()).query(any(SelectHistorianFeatures.class), any(RowMapper.class));
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Aggregation without stored aggregates treated as no aggregation")
+			.isInstanceOf(SelectReadingDifference.class)
+			;
 		// @formatter:on
 	}
 

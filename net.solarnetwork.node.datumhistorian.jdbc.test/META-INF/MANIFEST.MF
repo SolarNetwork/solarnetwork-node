@@ -12,6 +12,7 @@ Import-Package:
  net.bytebuddy.agent;version="[1.18,2.0)",
  net.solarnetwork.node.test;version="[2.0,3.0)",
  org.assertj.core.api;version="[3.27,4.0)",
+ org.assertj.core.api.iterable;version="[3.27,4.0)",
  org.assertj.core.groups;version="[3.27,4.0)",
  org.junit;version="[4.12,5.0)",
  org.junit.runner;version="[4.12,5.0)",

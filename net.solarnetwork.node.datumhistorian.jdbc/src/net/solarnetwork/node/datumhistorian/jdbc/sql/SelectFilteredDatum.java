@@ -117,9 +117,9 @@ public final class SelectFilteredDatum
 	/** The default fetch size. */
 	public static final int DEFAULT_FETCH_SIZE = 100;
 
-	/** The columns to sort by for each sort key. */
+	/** The columns to sort by for each sort key other than the time key. */
 	private static final Map<String, String> SORT_KEY_COLUMNS = Map.of(SORT_BY_NODE, NODE_ID_COLUMN,
-			SORT_BY_LOCATION, "m.loc_id", SORT_BY_SOURCE, "m.source_id", SORT_BY_TIME, "d.ts");
+			SORT_BY_LOCATION, "m.loc_id", SORT_BY_SOURCE, "m.source_id");
 
 	private final String schemaName;
 	private final NodeDatumFilter filter;
@@ -328,7 +328,15 @@ public final class SelectFilteredDatum
 		buf.append(") k\n");
 	}
 
-	private static void appendIndented(StringBuilder buf, CharSequence lines) {
+	/**
+	 * Append lines, each indented by a tab.
+	 *
+	 * @param buf
+	 *        the buffer to append to
+	 * @param lines
+	 *        the lines to append
+	 */
+	static void appendIndented(StringBuilder buf, CharSequence lines) {
 		lines.toString().lines().forEach(l -> buf.append('\t').append(l).append('\n'));
 	}
 
@@ -381,16 +389,40 @@ public final class SelectFilteredDatum
 	}
 
 	private void sqlOrderBy(StringBuilder buf) {
+		// merged location datum are not grouped by node, so skip the node column
+		appendOrderBy(buf, filter.getSorts(), "d.ts", isMergedLocations());
+	}
+
+	/**
+	 * Append an {@code ORDER BY} clause for the sorts of a filter.
+	 *
+	 * <p>
+	 * The sorts are the {@code SORT_BY_*} keys of
+	 * {@code FilterableDatumHistorian}, applied to the {@code m} stream meta
+	 * table and the given time column. Any
+	 * {@link net.solarnetwork.node.service.FilterableDatumHistorian#DEFAULT_SORTS}
+	 * keys not given are added, so the order is always the same.
+	 * </p>
+	 *
+	 * @param buf
+	 *        the buffer to append to
+	 * @param sorts
+	 *        the sorts, or {@code null} for the default sorts
+	 * @param timeColumn
+	 *        the time column to sort by
+	 * @param withoutNode
+	 *        {@code true} to ignore the node sort key
+	 */
+	static void appendOrderBy(StringBuilder buf, @Nullable List<SortDescriptor> sorts,
+			String timeColumn, boolean withoutNode) {
 		final Set<String> columns = new HashSet<>(8);
-		if ( isMergedLocations() ) {
-			// merged location datum are not grouped by node, so skip the node column
+		if ( withoutNode ) {
 			columns.add(NODE_ID_COLUMN);
 		}
 		final StringBuilder order = new StringBuilder(64);
-		final List<SortDescriptor> sorts = filter.getSorts();
 		if ( sorts != null ) {
 			for ( SortDescriptor sort : sorts ) {
-				final String col = sortColumn(sort);
+				final String col = sortColumn(sort, timeColumn);
 				if ( col != null && columns.add(col) ) {
 					order.append(", ").append(col);
 					if ( sort.isDescending() ) {
@@ -401,7 +433,7 @@ public final class SelectFilteredDatum
 		}
 		// add the remaining default sorts so the order is always the same
 		for ( SortDescriptor sort : DEFAULT_SORTS ) {
-			final String col = sortColumn(sort);
+			final String col = sortColumn(sort, timeColumn);
 			if ( col != null && columns.add(col) ) {
 				order.append(", ").append(col);
 			}
@@ -409,9 +441,12 @@ public final class SelectFilteredDatum
 		buf.append("ORDER BY ").append(order, 2, order.length());
 	}
 
-	private static @Nullable String sortColumn(@Nullable SortDescriptor sort) {
+	private static @Nullable String sortColumn(@Nullable SortDescriptor sort, String timeColumn) {
 		final String key = (sort != null ? sort.getSortKey() : null);
-		return (key != null ? SORT_KEY_COLUMNS.get(key) : null);
+		if ( key == null ) {
+			return null;
+		}
+		return (SORT_BY_TIME.equals(key) ? timeColumn : SORT_KEY_COLUMNS.get(key));
 	}
 
 	@Override

@@ -126,11 +126,23 @@ public final class StreamDatumRowMapper implements RowMapper<StreamDatum> {
 		}
 		final Instant ts = timestampInstant(rs, 3);
 		final DatumProperties props = DatumProperties.propertiesOf(getArray(rs, 4), getArray(rs, 5),
-				statusArray(rs.getString(6)), getArray(rs, 7));
+				statusArray(objectMapper, rs.getString(6)), getArray(rs, 7));
 		return new BasicStreamDatum(streamId, ts, props);
 	}
 
-	private @Nullable String @Nullable [] statusArray(@Nullable String json) {
+	/**
+	 * Parse stored status values.
+	 *
+	 * @param objectMapper
+	 *        the object mapper to parse the values with
+	 * @param json
+	 *        the JSON array of status values, or {@code null}
+	 * @return the status values as strings, or {@code null} if {@code json} is
+	 *         {@code null}
+	 * @throws DataRetrievalFailureException
+	 *         if {@code json} is not a JSON array
+	 */
+	static @Nullable String @Nullable [] statusArray(ObjectMapper objectMapper, @Nullable String json) {
 		if ( json == null ) {
 			return null;
 		}

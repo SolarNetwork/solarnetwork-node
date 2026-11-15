@@ -5,6 +5,12 @@
  * Run this as the database role SolarNode connects with, or as a role that
  * role is a member of: solarhist.dh_store_datum() adds partitions to the
  * solarhist.dh_datum table as needed.
+ *
+ * Set jit = off for the historian database or role, as JIT compilation can
+ * take longer than the historian's queries themselves, such as the reading
+ * difference queries of solarhist.dh_find_datum_diff_rows():
+ *
+ *     ALTER DATABASE solarnode SET jit = off;
  * ============================================================================
  */
 
