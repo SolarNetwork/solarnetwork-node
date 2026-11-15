@@ -24,7 +24,6 @@ package net.solarnetwork.node.setup.web.domain;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,7 +45,7 @@ import net.solarnetwork.node.service.FilterableDatumHistorian;
  * <p>
  * This binds the SolarQuery request parameters that the node supports, and
  * turns them into a {@link BasicNodeDatumFilter} with
- * {@link #toNodeDatumFilter(long, ZoneId)}. Other SolarQuery parameters have no
+ * {@link #toNodeDatumFilter(long)}. Other SolarQuery parameters have no
  * property here, so they are ignored.
  * </p>
  *
@@ -110,27 +109,30 @@ public class DatumFilterCommand {
 	 * <p>
 	 * The filter is limited to node datum of {@code nodeId}, whatever node IDs
 	 * these criteria have; use {@link #includesNode(long)} to test those first.
-	 * A date is taken from the instant criteria when given, otherwise from the
-	 * local date criteria in the {@code zone} time zone. Sorts are mapped to
-	 * the {@link FilterableDatumHistorian} sort keys: {@code node},
-	 * {@code source}, and {@code created} or {@code time}, in any case; other
-	 * sorts are left out.
+	 * The instant and local date criteria are passed on as given, without
+	 * converting the local dates to instants here: the historian applies local
+	 * dates in the time zone of each stream's node. The JDBC historian does
+	 * this as SolarQuery does: list queries use the local dates in place of the
+	 * instants when either local date is given, and reading queries only when
+	 * both are given. Sorts are mapped to the {@link FilterableDatumHistorian}
+	 * sort keys: {@code node}, {@code source}, and {@code created} or
+	 * {@code time}, in any case; other sorts are left out.
 	 * </p>
 	 *
 	 * @param nodeId
 	 *        the ID of the node to limit the filter to
-	 * @param zone
-	 *        the time zone of the local date criteria
 	 * @return the filter
 	 */
-	public BasicNodeDatumFilter toNodeDatumFilter(long nodeId, ZoneId zone) {
+	public BasicNodeDatumFilter toNodeDatumFilter(long nodeId) {
 		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
 		f.setObjectKind(ObjectDatumKind.Node);
 		f.setObjectIds(new Long[] { nodeId });
 		f.setSourceIds(texts(sourceIds));
 		f.setStreamIds(streamIds(streamIds));
-		f.setStartDate(instant(startDate, localStartDate, zone));
-		f.setEndDate(instant(endDate, localEndDate, zone));
+		f.setStartDate(startDate);
+		f.setEndDate(endDate);
+		f.setLocalStartDate(localStartDate);
+		f.setLocalEndDate(localEndDate);
 		f.setMostRecent(mostRecent);
 		f.setAggregation(aggregation);
 		f.setPartialAggregation(partialAggregation);
@@ -156,14 +158,6 @@ public class DatumFilterCommand {
 			result.add(name);
 		}
 		return result;
-	}
-
-	private static @Nullable Instant instant(@Nullable Instant date, @Nullable LocalDateTime localDate,
-			ZoneId zone) {
-		if ( date != null ) {
-			return date;
-		}
-		return (localDate != null ? localDate.atZone(zone).toInstant() : null);
 	}
 
 	private static String @Nullable [] texts(String @Nullable [] values) {
@@ -387,7 +381,8 @@ public class DatumFilterCommand {
 	 * Set the local start date.
 	 *
 	 * <p>
-	 * This is only used when no start date is set.
+	 * This is passed to the historian as given, along with any start date, and
+	 * the historian applies it in the time zone of each stream's node.
 	 * </p>
 	 *
 	 * @param localStartDate
@@ -410,7 +405,8 @@ public class DatumFilterCommand {
 	 * Set the local end date.
 	 *
 	 * <p>
-	 * This is only used when no end date is set.
+	 * This is passed to the historian as given, along with any end date, and
+	 * the historian applies it in the time zone of each stream's node.
 	 * </p>
 	 *
 	 * @param localEndDate

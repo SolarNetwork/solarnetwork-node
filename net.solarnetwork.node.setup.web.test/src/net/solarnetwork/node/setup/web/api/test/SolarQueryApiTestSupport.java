@@ -23,6 +23,8 @@
 package net.solarnetwork.node.setup.web.api.test;
 
 import static net.solarnetwork.dao.StreamDatumFilteredResultsProcessor.METADATA_PROVIDER_ATTR;
+import static net.solarnetwork.domain.datum.DatumProperties.propertiesOf;
+import static net.solarnetwork.domain.datum.DatumPropertiesStatistics.statisticsOf;
 import static net.solarnetwork.domain.datum.ObjectDatumStreamMetadataProvider.staticProvider;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -49,11 +51,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.codec.jackson.CborUtils;
 import net.solarnetwork.dao.StreamDatumFilteredResultsProcessor;
+import net.solarnetwork.domain.datum.AggregateStreamDatum;
+import net.solarnetwork.domain.datum.BasicAggregateStreamDatum;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.BasicReadingStreamDatum;
 import net.solarnetwork.domain.datum.BasicStreamDatum;
 import net.solarnetwork.domain.datum.DatumProperties;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.ReadingStreamDatum;
 import net.solarnetwork.domain.datum.StreamDatum;
 import net.solarnetwork.node.service.FilterableDatumHistorian;
 import net.solarnetwork.node.service.IdentityService;
@@ -254,8 +260,182 @@ public abstract class SolarQueryApiTestSupport {
 	}
 
 	/**
+	 * Create the fixture aggregate datum of a stream.
+	 *
+	 * <p>
+	 * This is the datum of the Commons stream processor
+	 * {@code oneStream_aggregate} tests.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the stream metadata
+	 * @param ts
+	 *        the aggregate timestamp
+	 * @return the datum
+	 */
+	protected static AggregateStreamDatum fixtureAggregateDatum(ObjectDatumStreamMetadata meta,
+			Instant ts) {
+		// @formatter:off
+		return new BasicAggregateStreamDatum(meta.getStreamId(), ts,
+				propertiesOf(
+						decimalArray("1.23", "2.34"),
+						decimalArray("3"),
+						new String[] { "foo" },
+						new String[] { "wham", "bam" }),
+				null,
+				statisticsOf(new BigDecimal[][] {
+						decimalArray("10", "1.0", "2.0"),
+						decimalArray("10", "2.0", "3.0")
+					}, new BigDecimal[][] {
+						decimalArray("30", "100", "130")
+					}));
+		// @formatter:on
+	}
+
+	/**
+	 * Create the fixture reading datum of a stream.
+	 *
+	 * <p>
+	 * This is the datum of the Commons stream processor
+	 * {@code oneStream_reading} tests.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the stream metadata
+	 * @param ts
+	 *        the reading timestamp
+	 * @param endTs
+	 *        the reading end timestamp
+	 * @return the datum
+	 */
+	protected static ReadingStreamDatum fixtureReadingDatum(ObjectDatumStreamMetadata meta, Instant ts,
+			Instant endTs) {
+		// @formatter:off
+		return new BasicReadingStreamDatum(meta.getStreamId(), ts,
+				propertiesOf(
+						decimalArray("1.23", "2.34"),
+						decimalArray("3"), null, null),
+				endTs,
+				statisticsOf(new BigDecimal[][] {
+						decimalArray("10", "1.0", "2.0"),
+						decimalArray("10", "2.0", "3.0")
+					}, new BigDecimal[][] {
+						decimalArray("30", "100", "130")
+					}));
+		// @formatter:on
+	}
+
+	/**
+	 * Get the timestamp of the JSON and CBOR aggregate and reading fixtures.
+	 *
+	 * @return the timestamp
+	 */
+	protected static Instant fixtureAggregateJsonTimestamp() {
+		return LocalDateTime.of(2022, 4, 29, 13, 51).atZone(ZoneId.of(TZ)).toInstant();
+	}
+
+	/**
+	 * Get the timestamp of the CSV aggregate and reading fixtures.
+	 *
+	 * @return the timestamp
+	 */
+	protected static Instant fixtureAggregateCsvTimestamp() {
+		return LocalDateTime.of(2022, 4, 29, 13, 0).atZone(ZoneId.of(TZ)).toInstant();
+	}
+
+	/**
+	 * Get the expected JSON stream result of the fixture aggregate datum.
+	 *
+	 * <p>
+	 * This is the expected output of the Commons stream processor
+	 * {@code oneStream_aggregate} test, for JSON and CBOR.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the fixture stream metadata
+	 * @return the JSON
+	 */
+	protected static String fixtureAggregateStreamJson(ObjectDatumStreamMetadata meta) {
+		return """
+				{"success":true,"meta":[\
+				{"streamId":"%s","zone":"Pacific/Auckland","kind":"n","objectId":123,\
+				"sourceId":"test/source","i":["a","b"],"a":["c"],"s":["d"]}\
+				],"data":[\
+				[0,[1651197060000,null],[1.23,10,1.0,2.0],[2.34,10,2.0,3.0],[3,100,130],\
+				"foo","wham","bam"]\
+				]}""".formatted(meta.getStreamId());
+	}
+
+	/**
+	 * Get the expected CSV stream result of the fixture aggregate datum.
+	 *
+	 * <p>
+	 * This is the expected output of the Commons CSV stream processor
+	 * {@code oneStream_aggregate} test.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the fixture stream metadata
+	 * @return the CSV
+	 */
+	protected static String fixtureAggregateStreamCsv(ObjectDatumStreamMetadata meta) {
+		return """
+				ts_start,ts_end,streamId,objectId,sourceId,a,a_count,a_min,a_max,b,b_count,b_min,b_max,\
+				c,c_start,c_end,d,tags\r
+				2022-04-29T01:00:00Z,,%1$s,123,test/source,1.23,10,1.0,2.0,2.34,10,2.0,3.0,\
+				3,100,130,foo,"wham,bam"\r
+				""".formatted(meta.getStreamId());
+	}
+
+	/**
+	 * Get the expected JSON stream result of the fixture reading datum.
+	 *
+	 * <p>
+	 * This is the expected output of the Commons stream processor
+	 * {@code oneStream_reading} test, for JSON and CBOR.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the fixture stream metadata
+	 * @return the JSON
+	 */
+	protected static String fixtureReadingStreamJson(ObjectDatumStreamMetadata meta) {
+		return """
+				{"success":true,"meta":[\
+				{"streamId":"%s","zone":"Pacific/Auckland","kind":"n","objectId":123,\
+				"sourceId":"test/source","i":["a","b"],"a":["c"],"s":["d"]}\
+				],"data":[\
+				[0,[1651197060000,1651200660000],[1.23,10,1.0,2.0],[2.34,10,2.0,3.0],[30,100,130],\
+				null]\
+				]}""".formatted(meta.getStreamId());
+	}
+
+	/**
+	 * Get the expected CSV stream result of the fixture reading datum.
+	 *
+	 * <p>
+	 * This is the expected output of the Commons CSV stream processor
+	 * {@code oneStream_reading} test.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the fixture stream metadata
+	 * @return the CSV
+	 */
+	protected static String fixtureReadingStreamCsv(ObjectDatumStreamMetadata meta) {
+		return """
+				ts_start,ts_end,streamId,objectId,sourceId,a,a_count,a_min,a_max,b,b_count,b_min,b_max,\
+				c,c_start,c_end,d,tags\r
+				2022-04-29T01:00:00Z,2022-04-29T02:00:00Z,%1$s,123,test/source,1.23,10,1.0,2.0,\
+				2.34,10,2.0,3.0,30,100,130,,\r
+				""".formatted(meta.getStreamId());
+	}
+
+	/**
 	 * Create an answer for
 	 * {@link FilterableDatumHistorian#findFilteredStream(net.solarnetwork.node.dao.NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
+	 * or
+	 * {@link FilterableDatumHistorian#findFilteredStreamReadings(net.solarnetwork.node.dao.NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
 	 * that gives datum to the processor.
 	 *
 	 * @param metas

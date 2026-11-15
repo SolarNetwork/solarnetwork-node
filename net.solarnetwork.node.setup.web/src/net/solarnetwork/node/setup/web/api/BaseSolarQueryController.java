@@ -25,7 +25,6 @@ package net.solarnetwork.node.setup.web.api;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import org.jspecify.annotations.Nullable;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -110,8 +109,9 @@ public abstract class BaseSolarQueryController {
 	 * Get the historian query for a request.
 	 *
 	 * <p>
-	 * The query is limited to the node's own datum, using the time zone of
-	 * {@link #zone()} for any local dates.
+	 * The query is limited to the node's own datum. Any local dates are passed
+	 * on to the historian, which applies them in the time zone of each stream's
+	 * node.
 	 * </p>
 	 *
 	 * @param criteria
@@ -132,16 +132,7 @@ public abstract class BaseSolarQueryController {
 		if ( historian == null ) {
 			return null;
 		}
-		return new HistorianQuery(historian, criteria.toNodeDatumFilter(nodeId, zone()));
-	}
-
-	/**
-	 * Get the node's time zone.
-	 *
-	 * @return the system time zone
-	 */
-	protected ZoneId zone() {
-		return ZoneId.systemDefault();
+		return new HistorianQuery(historian, criteria.toNodeDatumFilter(nodeId));
 	}
 
 }

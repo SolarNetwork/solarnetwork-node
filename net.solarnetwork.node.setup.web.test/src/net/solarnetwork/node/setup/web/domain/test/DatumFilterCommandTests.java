@@ -25,7 +25,6 @@ package net.solarnetwork.node.setup.web.domain.test;
 import static org.assertj.core.api.BDDAssertions.then;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.UUID;
 import org.junit.Test;
@@ -46,7 +45,6 @@ import net.solarnetwork.node.setup.web.domain.DatumFilterCommand;
 public class DatumFilterCommandTests {
 
 	private static final long NODE_ID = 123L;
-	private static final ZoneId ZONE = ZoneId.of("Pacific/Auckland");
 
 	@Test
 	public void includesNode_none() {
@@ -122,7 +120,7 @@ public class DatumFilterCommandTests {
 		cmd.setSourceIds(new String[] { "a/**", "b" });
 
 		// WHEN
-		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID, ZONE);
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
 
 		// THEN
 		then(result.getObjectKind()).as("Node kind forced").isEqualTo(ObjectDatumKind.Node);
@@ -152,7 +150,7 @@ public class DatumFilterCommandTests {
 		cmd.setPartialAggregation(Aggregation.Day);
 
 		// WHEN
-		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID, ZONE);
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
 
 		// THEN
 		then(result.getStreamIds()).as("Stream IDs copied").containsExactly(streamId);
@@ -161,29 +159,69 @@ public class DatumFilterCommandTests {
 		then(result.getOffset()).as("Offset copied").isEqualTo(20L);
 		then(result.isWithoutTotalResultsCount()).as("Without total results count copied").isFalse();
 		then(result.getAggregation()).as("Aggregation copied").isEqualTo(Aggregation.Hour);
-		then(result.getPartialAggregation()).as("Partial aggregation copied")
-				.isEqualTo(Aggregation.Day);
+		then(result.getPartialAggregation()).as("Partial aggregation copied").isEqualTo(Aggregation.Day);
 	}
 
 	@Test
 	public void toNodeDatumFilter_dates() {
 		// GIVEN
 		final Instant start = Instant.parse("2026-11-01T00:00:00Z");
-		final LocalDateTime localEnd = LocalDateTime.of(2026, 11, 13, 0, 0);
+		final Instant end = Instant.parse("2026-11-02T00:00:00Z");
 		final DatumFilterCommand cmd = new DatumFilterCommand();
 		cmd.setStartDate(start);
-		cmd.setLocalStartDate(LocalDateTime.of(2020, 1, 1, 0, 0));
+		cmd.setEndDate(end);
+
+		// WHEN
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
+
+		// THEN
+		then(result.getStartDate()).as("Start date passed on").isEqualTo(start);
+		then(result.getEndDate()).as("End date passed on").isEqualTo(end);
+		then(result.getLocalStartDate()).as("No local start date").isNull();
+		then(result.getLocalEndDate()).as("No local end date").isNull();
+	}
+
+	@Test
+	public void toNodeDatumFilter_localDates() {
+		// GIVEN
+		final LocalDateTime localStart = LocalDateTime.of(2026, 1, 1, 0, 0);
+		final LocalDateTime localEnd = LocalDateTime.of(2026, 2, 1, 0, 0);
+		final DatumFilterCommand cmd = new DatumFilterCommand();
+		cmd.setLocalStartDate(localStart);
 		cmd.setLocalEndDate(localEnd);
 
 		// WHEN
-		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID, ZONE);
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
 
 		// THEN
-		then(result.getStartDate()).as("Start date used over local start date").isEqualTo(start);
-		then(result.getEndDate()).as("Local end date converted in time zone")
-				.isEqualTo(localEnd.atZone(ZONE).toInstant());
-		then(result.getLocalStartDate()).as("Local start date not used").isNull();
-		then(result.getLocalEndDate()).as("Local end date not used").isNull();
+		then(result.getLocalStartDate()).as("Local start date passed on, for the historian")
+				.isEqualTo(localStart);
+		then(result.getLocalEndDate()).as("Local end date passed on, for the historian")
+				.isEqualTo(localEnd);
+		then(result.getStartDate()).as("Local start date not converted to an instant").isNull();
+		then(result.getEndDate()).as("Local end date not converted to an instant").isNull();
+	}
+
+	@Test
+	public void toNodeDatumFilter_datesAndLocalDates() {
+		// GIVEN
+		final Instant start = Instant.parse("2026-11-01T00:00:00Z");
+		final LocalDateTime localStart = LocalDateTime.of(2020, 1, 1, 0, 0);
+		final LocalDateTime localEnd = LocalDateTime.of(2026, 11, 13, 0, 0);
+		final DatumFilterCommand cmd = new DatumFilterCommand();
+		cmd.setStartDate(start);
+		cmd.setLocalStartDate(localStart);
+		cmd.setLocalEndDate(localEnd);
+
+		// WHEN
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
+
+		// THEN
+		then(result.getStartDate()).as("Start date passed on").isEqualTo(start);
+		then(result.getEndDate()).as("No end date").isNull();
+		then(result.getLocalStartDate()).as("Local start date passed on with start date")
+				.isEqualTo(localStart);
+		then(result.getLocalEndDate()).as("Local end date passed on").isEqualTo(localEnd);
 	}
 
 	@Test
@@ -196,14 +234,14 @@ public class DatumFilterCommandTests {
 				new MutableSortDescriptor("time")));
 
 		// WHEN
-		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID, ZONE);
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
 
 		// THEN
-		then(result.getSorts()).as("Supported sorts mapped to historian sort keys")
-				.containsExactly(new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME, true),
-						new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_NODE),
-						new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_SOURCE),
-						new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME));
+		then(result.getSorts()).as("Supported sorts mapped to historian sort keys").containsExactly(
+				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME, true),
+				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_NODE),
+				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_SOURCE),
+				new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME));
 	}
 
 	@Test
@@ -213,7 +251,7 @@ public class DatumFilterCommandTests {
 		cmd.setSorts(Arrays.asList(new MutableSortDescriptor("foo")));
 
 		// WHEN
-		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID, ZONE);
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
 
 		// THEN
 		then(result.getSorts()).as("No sorts when none supported").isNull();
@@ -227,7 +265,7 @@ public class DatumFilterCommandTests {
 		cmd.setStreamIds(new UUID[0]);
 
 		// WHEN
-		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID, ZONE);
+		final BasicNodeDatumFilter result = cmd.toNodeDatumFilter(NODE_ID);
 
 		// THEN
 		then(result.getSourceIds()).as("Blank source IDs ignored").isNull();
