@@ -1,0 +1,36 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode Setup Web Tests
+Bundle-SymbolicName: net.solarnetwork.node.setup.web.test
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Fragment-Host: net.solarnetwork.node.setup.web;bundle-version="[5.4.0,6.0.0)"
+Automatic-Module-Name: net.solarnetwork.node.setup.web.test
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Import-Package: 
+ javax.xml.parsers,
+ net.bytebuddy;version="[1.18,2.0)",
+ net.bytebuddy.agent;version="[1.18,2.0)",
+ org.assertj.core.api;version="[3.27,4.0)",
+ org.junit;version="[4.12,5.0)",
+ org.junit.runner;version="[4.12,5.0)",
+ org.junit.runners;version="[4.12,5.0)",
+ org.mockito;version="[5.0,6.0)",
+ org.mockito.invocation;version="[5.0,6.0)",
+ org.mockito.junit;version="[5.0,6.0)",
+ org.mockito.quality;version="[5.0,6.0)",
+ org.mockito.stubbing;version="[5.0,6.0)",
+ org.mockito.verification;version="[5.0,6.0)",
+ org.springframework.beans.factory.support;version="[6.2,7.0)",
+ org.springframework.beans.factory.xml;version="[6.2,7.0)",
+ org.springframework.mock.web;version="[6.2,7.0)",
+ org.springframework.security.authorization;version="[6.4,7.0)",
+ org.springframework.security.web.access.intercept;version="[6.4,7.0)",
+ org.springframework.security.web.servlet.util.matcher;version="[6.4,7.0)",
+ org.springframework.test.web.servlet;version="[6.2,7.0)",
+ org.springframework.test.web.servlet.request;version="[6.2,7.0)",
+ org.springframework.test.web.servlet.setup;version="[6.2,7.0)",
+ org.springframework.web.cors;version="[6.2,7.0)",
+ org.springframework.web.method.annotation;version="[6.2,7.0)",
+ org.springframework.web.servlet.config.annotation;version="[6.2,7.0)",
+ org.w3c.dom

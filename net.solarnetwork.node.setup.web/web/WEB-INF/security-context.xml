@@ -27,7 +27,17 @@
 		<custom-filter position="PRE_AUTH_FILTER" ref="authTokenFilter"/>
 		<csrf disabled="true"/>
 	</http>
-	
+
+	<!-- The same realm for the SolarQuery compatible paths, as SolarQuery clients sign them. -->
+	<http pattern="/solarquery/api/v1/sec/**" create-session="stateless" entry-point-ref="authTokenEntryPoint" use-expressions="true">
+		<cors/>
+		<access-denied-handler ref="authTokenEntryPoint"/>
+		<intercept-url pattern='/**' method="OPTIONS" access="permitAll"/>
+		<intercept-url pattern='/**' access="hasRole('ROLE_USER')"/>
+		<custom-filter position="PRE_AUTH_FILTER" ref="authTokenFilter"/>
+		<csrf disabled="true"/>
+	</http>
+
 	<!-- Configure Spring Security -->
 	<http auto-config="true" use-expressions="true" use-authorization-manager="false">
 		<headers>

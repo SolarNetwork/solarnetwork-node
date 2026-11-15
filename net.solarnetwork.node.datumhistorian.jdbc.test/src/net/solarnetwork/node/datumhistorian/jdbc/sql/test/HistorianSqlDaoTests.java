@@ -144,7 +144,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		return SCHEMAS.stream().filter(s -> !s.equals(schema)).findFirst().get();
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * dh_store_datum_type
 	 * ==================================================================
 	 */
@@ -224,7 +225,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * StoreDatum / dh_store_datum
 	 * ==================================================================
 	 */
@@ -476,7 +478,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 				.isThrownBy(() -> store(sql)).withMessageContaining("does not exist");
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * SelectDatumStreams
 	 * ==================================================================
 	 */
@@ -506,7 +509,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * SelectDatum
 	 * ==================================================================
 	 */
@@ -531,7 +535,7 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 	public void select_mapsColumns() {
 		// GIVEN
 		StoreDatum.Result r = store(new SimpleAcEnergyDatum("a", START, null),
-				"{\"i\":{\"watts\":1.5},\"a\":{\"wattHours\":\"NaN\"},\"s\":{\"mode\":\"x\",\"n\":2},\"t\":[\"t1\",\"t2\"]}");
+				"{\"i\":{\"watts\":1.5},\"a\":{\"x\":\"NaN\",\"wattHours\":10},\"s\":{\"mode\":\"x\",\"n\":2},\"t\":[\"t1\",\"t2\"]}");
 
 		// WHEN
 		List<StoredDatum> result = select(
@@ -551,7 +555,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 			.returns(AC_TYPE_NAMES, from(StoredDatum::typeNames))
 			.extracting(StoredDatum::samples)
 			.returns(Map.of("watts", new BigDecimal("1.5")), from(DatumSamples::getInstantaneous))
-			.returns(Map.of("wattHours", Double.NaN), from(DatumSamples::getAccumulating))
+			// the NaN value is omitted, as a BigDecimal cannot hold it
+			.returns(Map.of("wattHours", new BigDecimal("10")), from(DatumSamples::getAccumulating))
 			.returns(Map.of("mode", "x", "n", 2), from(DatumSamples::getStatus))
 			.returns(Set.of("t1", "t2"), from(DatumSamples::getTags))
 			;
@@ -817,7 +822,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * ant_pattern_to_regexp
 	 * ==================================================================
 	 */
@@ -827,11 +833,11 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		// GIVEN
 		final AntPathMatcher matcher = new AntPathMatcher();
 		final List<String> patterns = List.of("a", "a/b", "a/*", "a/**", "**", "*", "**/c", "a/**/c",
-				"a/**/**/c", "a?c", "/a/*", "/**", "a.b", "a/b*", "*b*", "a**b", "(a)", "a+b",
-				"a[b]", "a|b", "^a$", "a\\b");
-		final List<String> paths = List.of("a", "a/b", "a/b/c", "a/x/y/c", "abc", "/a/b", "/a",
-				"a.b", "axb", "a/c", "b", "a/bb", "(a)", "a+b", "aab", "c", "x/c", "a[b]", "ab", "a|b",
-				"^a$", "a\\b");
+				"a/**/**/c", "a?c", "/a/*", "/**", "a.b", "a/b*", "*b*", "a**b", "(a)", "a+b", "a[b]",
+				"a|b", "^a$", "a\\b");
+		final List<String> paths = List.of("a", "a/b", "a/b/c", "a/x/y/c", "abc", "/a/b", "/a", "a.b",
+				"axb", "a/c", "b", "a/bb", "(a)", "a+b", "aab", "c", "x/c", "a[b]", "ab", "a|b", "^a$",
+				"a\\b");
 
 		// WHEN
 		final List<String> mismatches = new ArrayList<>();
@@ -839,8 +845,8 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 			for ( String path : paths ) {
 				final boolean expected = matcher.match(pattern, path);
 				final Boolean result = jdbcTemplate.queryForObject(
-						"SELECT ? ~ %s.ant_pattern_to_regexp(?)".formatted(schema), Boolean.class,
-						path, pattern);
+						"SELECT ? ~ %s.ant_pattern_to_regexp(?)".formatted(schema), Boolean.class, path,
+						pattern);
 				if ( result == null || result != expected ) {
 					mismatches.add("[%s] %s [%s]".formatted(pattern,
 							expected ? "should match" : "should not match", path));
@@ -863,10 +869,11 @@ public class HistorianSqlDaoTests extends AbstractPostgresHistorianTests {
 		final String[] result = jdbcTemplate.queryForObject(
 				"SELECT %s.ant_patterns_to_regexps(ARRAY['a/*', 'b.c'])".formatted(schema),
 				(rs, row) -> (String[]) rs.getArray(1).getArray());
-		final List<String> matched = jdbcTemplate.queryForList(("SELECT s"
-				+ " FROM unnest(ARRAY['a/x', 'A/Y', 'b.c', 'bxc', 'a/x/y']) s"
-				+ " WHERE s ~* ANY(%s.ant_patterns_to_regexps(ARRAY['a/*', 'b.c']))")
-				.formatted(schema), String.class);
+		final List<String> matched = jdbcTemplate
+				.queryForList(("SELECT s" + " FROM unnest(ARRAY['a/x', 'A/Y', 'b.c', 'bxc', 'a/x/y']) s"
+						+ " WHERE s ~* ANY(%s.ant_patterns_to_regexps(ARRAY['a/*', 'b.c']))")
+								.formatted(schema),
+						String.class);
 
 		// THEN
 		// @formatter:off

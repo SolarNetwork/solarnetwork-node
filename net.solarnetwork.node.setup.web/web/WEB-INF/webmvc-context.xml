@@ -29,6 +29,7 @@
 		<mvc:async-support default-timeout="30000" task-executor="taskExecutor"/>
 		<mvc:message-converters register-defaults="true">
 			<ref bean="mappingJackson2HttpMessageConverter"/>
+			<ref bean="mappingJackson2CborHttpMessageConverter"/>
 			<ref bean="simpleCsvHttpMessageConverter"/>
 		</mvc:message-converters>
 		<mvc:argument-resolvers>
@@ -46,11 +47,19 @@
 			allowed-headers="Content-MD5, Content-Type, Digest, X-SN-Date"
 			allow-credentials="false"
 			max-age="86400"/>
+		<!--
+			Allow cross-origin access to the APIs without credentials, as API requests are
+			authenticated with the Authorization header rather than cookies.
+		-->
 		<mvc:mapping path="/api/**"
-			allowed-origin-patterns="*"
+			allowed-origins="*"
 			allowed-methods="GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH"
 			allowed-headers="Authorization, Content-MD5, Content-Type, Digest, X-SN-Date"
-			allow-credentials="true"
+			max-age="86400"/>
+		<mvc:mapping path="/solarquery/api/**"
+			allowed-origins="*"
+			allowed-methods="GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH"
+			allowed-headers="Authorization, Content-MD5, Content-Type, Digest, X-SN-Date"
 			max-age="86400"/>
 	</mvc:cors>
 
@@ -69,6 +78,15 @@
 
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"
 		factory-bean="webObjectMapperService" factory-method="getObjectMapper"/>
+
+	<bean id="cborObjectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"
+		factory-bean="webObjectMapperService" factory-method="getCborObjectMapper"/>
+
+	<!-- Choose the datum historian of a request, from the unfiltered path prefix -->
+	<bean id="datumHistorianSelector" class="net.solarnetwork.node.setup.web.support.DatumHistorianSelector">
+		<constructor-arg ref="filteredDatumHistorian"/>
+		<constructor-arg ref="unfilteredDatumHistorian"/>
+	</bean>
 
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 
@@ -127,6 +145,9 @@
 		<property name="supportedMediaTypes" value="application/json" />
 		<property name="objectMapper" ref="objectMapper"/>
 	</bean>
+	<bean id="mappingJackson2CborHttpMessageConverter" class="org.springframework.http.converter.cbor.MappingJackson2CborHttpMessageConverter">
+		<constructor-arg ref="cborObjectMapper"/>
+	</bean>
 	<bean id="simpleCsvHttpMessageConverter" class="net.solarnetwork.web.jakarta.support.SimpleCsvHttpMessageConverter">
 		<property name="propertySerializerRegistrar" ref="propertySerializerRegistrar"/>
 	</bean>
@@ -137,6 +158,7 @@
 		<property name="messageConverters">
 			<list>
 				<ref bean="mappingJackson2HttpMessageConverter"/>
+				<ref bean="mappingJackson2CborHttpMessageConverter"/>
 				<ref bean="simpleCsvHttpMessageConverter"/>
 				<bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>
 				<bean class="org.springframework.http.converter.StringHttpMessageConverter">

@@ -44,10 +44,10 @@ import net.solarnetwork.dao.jdbc.CommonJdbcUtils;
  * <p>
  * The history of a source is made up of all the datum streams with that source
  * ID, ordered by timestamp, newest first. For each matching source this
- * statement returns up to {@code count} datum starting at {@code offset}
- * within that history, optionally limited to datum with timestamps at or
- * before a given timestamp. Rows are ordered by source ID and then newest
- * first, with these columns:
+ * statement returns up to {@code count} datum starting at {@code offset} within
+ * that history, optionally limited to datum with timestamps at or before a
+ * given timestamp. Rows are ordered by source ID and then newest first, with
+ * these columns:
  * </p>
  *
  * <ol>
@@ -60,23 +60,24 @@ import net.solarnetwork.dao.jdbc.CommonJdbcUtils;
  * <li>{@code names_i}</li>
  * <li>{@code names_a}</li>
  * <li>{@code names_s}</li>
- * <li>{@code data_i} (as {@code TEXT[]} so {@code NaN} values can be read)</li>
- * <li>{@code data_a} (as {@code TEXT[]})</li>
+ * <li>{@code data_i}</li>
+ * <li>{@code data_a}</li>
  * <li>{@code data_s}</li>
  * <li>{@code data_t}</li>
  * </ol>
  *
  * <p>
  * When a type name is given, sources that have never stored a datum of that
- * type are skipped, using the {@code type_ids} of their streams. Datum of
- * other types are still returned for the remaining sources, so the caller can
- * apply the type filter to the datum found at the offset.
+ * type are skipped, using the {@code type_ids} of their streams. Datum of other
+ * types are still returned for the remaining sources, so the caller can apply
+ * the type filter to the datum found at the offset.
  * </p>
  *
  * @author matt
  * @version 1.0
  */
-public final class SelectDatum implements PreparedStatementCreator, PreparedStatementSetter, SqlProvider {
+public final class SelectDatum
+		implements PreparedStatementCreator, PreparedStatementSetter, SqlProvider {
 
 	/** The default fetch size. */
 	public static final int DEFAULT_FETCH_SIZE = 100;
@@ -89,10 +90,11 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 	private final int offset;
 	private final int count;
 	private final @Nullable String typeName;
+	private final int fetchSize;
 
 	private SelectDatum(String schemaName, long nodeId, @Nullable String sourceId,
 			Integer @Nullable [] streamIds, @Nullable Instant timestamp, int offset, int count,
-			@Nullable String typeName) {
+			@Nullable String typeName, int fetchSize) {
 		super();
 		this.schemaName = requireValidSchemaName(schemaName);
 		this.nodeId = nodeId;
@@ -108,6 +110,42 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 		}
 		this.count = count;
 		this.typeName = typeName;
+		this.fetchSize = fetchSize;
+	}
+
+	/**
+	 * Select datum for a single source.
+	 *
+	 * <p>
+	 * The {@link #DEFAULT_FETCH_SIZE} will be used.
+	 * </p>
+	 *
+	 * @param schemaName
+	 *        the schema name
+	 * @param nodeId
+	 *        the node ID
+	 * @param sourceId
+	 *        the source ID
+	 * @param timestamp
+	 *        an optional maximum timestamp (inclusive)
+	 * @param offset
+	 *        the offset from the most recent datum, {@literal 0} being the most
+	 *        recent
+	 * @param count
+	 *        the maximum number of datum to return
+	 * @param typeName
+	 *        an optional datum type name; sources that never stored a datum of
+	 *        this type are skipped
+	 * @return the new instance
+	 * @throws IllegalArgumentException
+	 *         if {@code schemaName} is not valid, {@code sourceId} is
+	 *         {@code null}, {@code offset} is negative, or {@code count} is
+	 *         less than {@literal 1}
+	 */
+	public static SelectDatum forSource(String schemaName, long nodeId, String sourceId,
+			@Nullable Instant timestamp, int offset, int count, @Nullable String typeName) {
+		return forSource(schemaName, nodeId, sourceId, timestamp, offset, count, typeName,
+				DEFAULT_FETCH_SIZE);
 	}
 
 	/**
@@ -129,20 +167,27 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 	 * @param typeName
 	 *        an optional datum type name; sources that never stored a datum of
 	 *        this type are skipped
+	 * @param fetchSize
+	 *        the fetch size, or {@literal 0} for the JDBC driver default
 	 * @return the new instance
 	 * @throws IllegalArgumentException
 	 *         if {@code schemaName} is not valid, {@code sourceId} is
-	 *         {@code null}, {@code offset} is negative, or {@code count} is less
-	 *         than {@literal 1}
+	 *         {@code null}, {@code offset} is negative, or {@code count} is
+	 *         less than {@literal 1}
 	 */
 	public static SelectDatum forSource(String schemaName, long nodeId, String sourceId,
-			@Nullable Instant timestamp, int offset, int count, @Nullable String typeName) {
+			@Nullable Instant timestamp, int offset, int count, @Nullable String typeName,
+			int fetchSize) {
 		return new SelectDatum(schemaName, nodeId, requireNonNullArgument(sourceId, "sourceId"), null,
-				timestamp, offset, count, typeName);
+				timestamp, offset, count, typeName, fetchSize);
 	}
 
 	/**
 	 * Select one datum for each source of a set of streams.
+	 *
+	 * <p>
+	 * The {@link #DEFAULT_FETCH_SIZE} will be used.
+	 * </p>
 	 *
 	 * @param schemaName
 	 *        the schema name
@@ -166,9 +211,40 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 	public static SelectDatum forStreams(String schemaName, long nodeId,
 			@Nullable Collection<Integer> streamIds, @Nullable Instant timestamp, int offset,
 			@Nullable String typeName) {
+		return forStreams(schemaName, nodeId, streamIds, timestamp, offset, typeName,
+				DEFAULT_FETCH_SIZE);
+	}
+
+	/**
+	 * Select one datum for each source of a set of streams.
+	 *
+	 * @param schemaName
+	 *        the schema name
+	 * @param nodeId
+	 *        the node ID
+	 * @param streamIds
+	 *        the stream IDs to limit the results to, or {@code null} for all
+	 *        streams of the node
+	 * @param timestamp
+	 *        an optional maximum timestamp (inclusive)
+	 * @param offset
+	 *        the offset from the most recent datum, {@literal 0} being the most
+	 *        recent
+	 * @param typeName
+	 *        an optional datum type name; sources that never stored a datum of
+	 *        this type are skipped
+	 * @param fetchSize
+	 *        the fetch size, or {@literal 0} for the JDBC driver default
+	 * @return the new instance
+	 * @throws IllegalArgumentException
+	 *         if {@code schemaName} is not valid or {@code offset} is negative
+	 */
+	public static SelectDatum forStreams(String schemaName, long nodeId,
+			@Nullable Collection<Integer> streamIds, @Nullable Instant timestamp, int offset,
+			@Nullable String typeName, int fetchSize) {
 		return new SelectDatum(schemaName, nodeId, null,
 				(streamIds != null ? streamIds.toArray(Integer[]::new) : null), timestamp, offset, 1,
-				typeName);
+				typeName, fetchSize);
 	}
 
 	@Override
@@ -176,7 +252,7 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 		final StringBuilder buf = new StringBuilder(1536);
 		buf.append("SELECT d.stream_id, d.source_id, d.loc_id, d.ts, t.class_name, t.type_names\n");
 		buf.append("\t, d.names_i, d.names_a, d.names_s\n");
-		buf.append("\t, d.data_i::TEXT[] AS data_i, d.data_a::TEXT[] AS data_a, d.data_s, d.data_t\n");
+		buf.append("\t, d.data_i, d.data_a, d.data_s, d.data_t\n");
 		buf.append("FROM (\n");
 		buf.append("\tSELECT m.stream_id, m.source_id, m.loc_id, m.names_i, m.names_a, m.names_s\n");
 		buf.append("\t\t, d.ts, d.type_id, d.data_i, d.data_a, d.data_s, d.data_t\n");
@@ -212,7 +288,8 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 			buf.append("\t\t)\n");
 		}
 		buf.append(") d\n");
-		buf.append("INNER JOIN ").append(schemaName).append(".dh_datum_type t ON t.type_id = d.type_id\n");
+		buf.append("INNER JOIN ").append(schemaName)
+				.append(".dh_datum_type t ON t.type_id = d.type_id\n");
 		buf.append("WHERE d.rn BETWEEN ? AND ?\n");
 		buf.append("ORDER BY d.source_id, d.rn");
 		return buf.toString();
@@ -221,7 +298,9 @@ public final class SelectDatum implements PreparedStatementCreator, PreparedStat
 	@Override
 	public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 		PreparedStatement stmt = CommonJdbcUtils.createPreparedStatement(con, getSql(), false);
-		stmt.setFetchSize(DEFAULT_FETCH_SIZE);
+		if ( fetchSize > 0 ) {
+			stmt.setFetchSize(fetchSize);
+		}
 		setValues(stmt);
 		return stmt;
 	}

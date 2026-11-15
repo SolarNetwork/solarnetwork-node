@@ -280,8 +280,8 @@ public class DefaultNodeDatumFactory implements NodeDatumFactory {
 							datum.timestamp(), datum.samples());
 				}
 				if ( nodeConstructor != null ) {
-					return withNodeId(nodeConstructor.newInstance(datum.sourceId(),
-							datum.timestamp(), datum.samples()), datum);
+					return withNodeId(nodeConstructor.newInstance(datum.sourceId(), datum.timestamp(),
+							datum.samples()), datum);
 				}
 			} catch ( InstantiationException | IllegalAccessException | InvocationTargetException
 					| IllegalArgumentException e ) {

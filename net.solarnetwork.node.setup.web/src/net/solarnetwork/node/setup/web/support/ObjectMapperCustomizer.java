@@ -24,18 +24,25 @@ package net.solarnetwork.node.setup.web.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import net.solarnetwork.codec.CborUtils;
 import net.solarnetwork.service.ObjectMapperService;
 
 /**
  * Customize the web {@link ObjectMapper}.
  * 
+ * <p>
+ * A CBOR copy of the customized mapper is also provided, so CBOR responses have
+ * the same shape as JSON responses.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.3
  */
 public class ObjectMapperCustomizer implements ObjectMapperService {
 
 	private final ObjectMapper mapper;
+	private final ObjectMapper cborMapper;
 
 	/**
 	 * Constructor.
@@ -53,11 +60,27 @@ public class ObjectMapperCustomizer implements ObjectMapperService {
 		mapper.registerModule(m);
 
 		this.mapper = mapper;
+		this.cborMapper = mapper.copyWith(CborUtils.cborFactory());
 	}
 
 	@Override
 	public ObjectMapper getObjectMapper() {
 		return mapper;
+	}
+
+	/**
+	 * Get the CBOR mapper.
+	 * 
+	 * <p>
+	 * This mapper has the same configuration and modules as
+	 * {@link #getObjectMapper()}, using a CBOR factory.
+	 * </p>
+	 * 
+	 * @return the CBOR mapper
+	 * @since 1.1
+	 */
+	public ObjectMapper getCborObjectMapper() {
+		return cborMapper;
 	}
 
 }

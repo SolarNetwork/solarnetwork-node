@@ -22,18 +22,25 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc;
 
+import static net.solarnetwork.dao.StreamDatumFilteredResultsProcessor.METADATA_PROVIDER_ATTR;
 import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.executeCountQuery;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
+import static net.solarnetwork.node.service.support.DatumStreamIdUtils.decodeLocalStreamId;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jspecify.annotations.Nullable;
@@ -41,7 +48,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,20 +59,33 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.dao.BasicFilterResults;
 import net.solarnetwork.dao.FilterResults;
+import net.solarnetwork.dao.StreamDatumFilteredResultsProcessor;
+import net.solarnetwork.dao.jdbc.CountPreparedStatementCreatorProvider;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumReadingType;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.StreamDatum;
 import net.solarnetwork.node.dao.BasicNodeDatumFilter;
 import net.solarnetwork.node.dao.NodeDatumFilter;
+import net.solarnetwork.node.datumhistorian.jdbc.AggregateStreamDatumRowMapper.Style;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectAggregateDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreamMetadata;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectHistorianFeatures;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectReadingDifference;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreNodeTimeZone;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.AppendableDatumHistorian;
 import net.solarnetwork.node.service.FilterableDatumHistorian;
 import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.support.DatumStreamIdUtils;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.service.support.BasicIdentifiable;
@@ -89,13 +112,57 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * <p>
  * The database can be shared by more than one node. The {@code DatumHistorian}
  * query methods only return datum of the node given by the
- * {@link IdentityService}. The {@link #findFiltered(NodeDatumFilter, List, Long, Integer)}
- * method does the same when the filter has no object IDs, otherwise it returns
- * the datum of the nodes or locations given. Location datum stored by more than
- * one node are returned once, preferring the one stored by the
- * {@code IdentityService} node; see {@link SelectFilteredDatum} for how each
- * filter criteria is applied. The node datum it returns have their node ID
- * set.
+ * {@link IdentityService}. The
+ * {@link #findFiltered(NodeDatumFilter, List, Long, Integer)} method does the
+ * same when the filter has no object IDs, otherwise it returns the datum of the
+ * nodes or locations given. Location datum stored by more than one node are
+ * returned once, preferring the one stored by the {@code IdentityService} node;
+ * see {@link SelectFilteredDatum} for how each filter criteria is applied. The
+ * node datum it returns have their node ID set.
+ * </p>
+ *
+ * <p>
+ * Each stream is given the UUID stream ID that {@link DatumStreamIdUtils}
+ * encodes from the node ID of the stream, the {@code streamIdDomain} of this
+ * historian, and the {@code stream_id} of the stream, so each historian of a
+ * node needs a different domain. The stream criteria of a filter are decoded
+ * with the node IDs the filter is limited to: its node IDs, or otherwise the
+ * {@code IdentityService} node ID. A stream ID that does not decode matches
+ * nothing, so with location IDs only the location streams stored by the
+ * {@code IdentityService} node can be found by stream ID.
+ * </p>
+ *
+ * <p>
+ * A JDBC driver may read a large result a page of {@code fetchSize} rows at a
+ * time only within a transaction, so the queries of
+ * {@link #findFilteredStream(NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
+ * and
+ * {@link #findFilteredStreamReadings(NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
+ * run within a transaction of the {@code transactionTemplate}, when one is
+ * configured.
+ * </p>
+ *
+ * <p>
+ * A schema may have the aggregate setup that {@link SelectHistorianFeatures}
+ * looks for, which stores {@code Hour}, {@code Day}, and {@code Month}
+ * aggregates. Whether it does is found once, when the historian starts or else
+ * when first needed. With the setup, the stream queries of those aggregations
+ * read the stored aggregates. Without the setup, those aggregations are treated
+ * as no aggregation.
+ * </p>
+ *
+ * <p>
+ * The historian stores the time zone of the {@code IdentityService} node with
+ * {@link StoreNodeTimeZone} when it starts, or else with the first datum added
+ * once the node ID is known. The zone is the configured {@code timeZone}, or
+ * the system time zone, and is only stored when it differs from the stored
+ * zone, because with the aggregate setup a change has the node's days and
+ * months computed again. Each datum stream is in the time zone stored for its
+ * node, or UTC if there is none, as SolarNet does: the metadata of each stream
+ * has its zone, and the local date criteria of a filter are taken to be in the
+ * zone of each stream, so a local date range of a month gives the datum of that
+ * month in the zone of each stream. With the aggregate setup, the days and
+ * months of the aggregates are in the same zone.
  * </p>
  *
  * <p>
@@ -125,7 +192,20 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	/** The schema name conventionally used for unfiltered datum. */
 	public static final String UNFILTERED_SCHEMA_NAME = "solaruhist";
 
+	/** The default stream ID domain. */
+	public static final int DEFAULT_STREAM_ID_DOMAIN = 1;
+
+	/** The stream ID domain conventionally used for unfiltered datum. */
+	public static final int UNFILTERED_STREAM_ID_DOMAIN = 2;
+
+	/** The default JDBC fetch size. */
+	public static final int DEFAULT_FETCH_SIZE = 100;
+
 	private static final Logger log = LoggerFactory.getLogger(JdbcDatumHistorian.class);
+
+	/** The features of a schema without a features row. */
+	private static final SelectHistorianFeatures.Result NO_FEATURES = new SelectHistorianFeatures.Result(
+			false);
 
 	private final JdbcOperations jdbcOps;
 	private final String schemaName;
@@ -139,6 +219,16 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			2);
 	private @Nullable ConcurrentMap<Long, DatumStreams> datumStreamsCache = new ConcurrentHashMap<>(2,
 			0.9f, 2);
+	private int streamIdDomain = DEFAULT_STREAM_ID_DOMAIN;
+	private @Nullable TransactionTemplate transactionTemplate;
+	private int fetchSize = DEFAULT_FETCH_SIZE;
+	private @Nullable ZoneId timeZone;
+
+	/** The features of the schema, once found. */
+	private volatile SelectHistorianFeatures.@Nullable Result features;
+
+	/** The node ID whose time zone has been stored, or tried to be. */
+	private volatile @Nullable Long timeZoneNodeId;
 
 	/**
 	 * Constructor.
@@ -188,9 +278,33 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		return m;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * This finds the features of the schema, and stores the time zone of the
+	 * node if its ID is known. Errors are logged and otherwise ignored. If the
+	 * features cannot be found, they are found again when first needed, and the
+	 * zone is stored with the first datum added instead.
+	 * </p>
+	 */
 	@Override
 	public void serviceDidStartup() {
 		log.info("JDBC datum historian [{}] using DB schema [{}]", getUid(), schemaName);
+		final SelectHistorianFeatures.Result f;
+		try {
+			f = features();
+		} catch ( DataAccessException e ) {
+			log.warn("Unable to find the features of JDBC datum historian [{}] DB schema [{}]: {}",
+					getUid(), schemaName, e.toString());
+			return;
+		}
+		log.info("JDBC datum historian [{}] DB schema [{}] {} stored aggregates", getUid(), schemaName,
+				(f.aggregates() ? "has" : "does not have"));
+		final Long nodeId = nodeId();
+		if ( nodeId != null ) {
+			storeTimeZone(nodeId);
+		}
 	}
 
 	@Override
@@ -203,6 +317,64 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		return (ident != null ? ident.getNodeId() : null);
 	}
 
+	/**
+	 * Get the features of the schema, finding them if not already found.
+	 *
+	 * @return the features
+	 * @throws DataAccessException
+	 *         if the features cannot be found
+	 */
+	private SelectHistorianFeatures.Result features() {
+		SelectHistorianFeatures.Result f = this.features;
+		if ( f == null ) {
+			final List<SelectHistorianFeatures.Result> rows = jdbcOps.query(
+					new SelectHistorianFeatures(schemaName), SelectHistorianFeatures.RESULT_MAPPER);
+			f = (rows.isEmpty() ? NO_FEATURES : rows.get(0));
+			this.features = f;
+		}
+		return f;
+	}
+
+	/**
+	 * Store the time zone of a node.
+	 *
+	 * <p>
+	 * This is only tried once for each node ID. Errors are logged and otherwise
+	 * ignored, leaving the node's streams in the previously stored zone, or in
+	 * UTC.
+	 * </p>
+	 *
+	 * @param nodeId
+	 *        the node ID
+	 */
+	private void storeTimeZone(Long nodeId) {
+		timeZoneNodeId = nodeId;
+		final StoreNodeTimeZone sql = new StoreNodeTimeZone(schemaName, nodeId, zone());
+		try {
+			if ( jdbcOps.update(sql) > 0 ) {
+				final SelectHistorianFeatures.Result f = this.features;
+				log.info("Stored node {} time zone [{}] in DB schema [{}]{}", nodeId,
+						sql.getTimeZoneName(), schemaName,
+						(f != null && f.aggregates()
+								? "; its daily and monthly aggregates will be computed again"
+								: ""));
+			}
+		} catch ( DataAccessException e ) {
+			log.warn("Error storing node {} time zone [{}] in DB schema [{}]: {}", nodeId,
+					sql.getTimeZoneName(), schemaName, e.toString());
+		}
+	}
+
+	/**
+	 * Get the time zone of the node.
+	 *
+	 * @return the configured time zone, or the system time zone
+	 */
+	private ZoneId zone() {
+		final ZoneId zone = this.timeZone;
+		return (zone != null ? zone : ZoneId.systemDefault());
+	}
+
 	@Override
 	public void add(NodeDatum datum) {
 		final Long nodeId = nodeId();
@@ -212,6 +384,10 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		}
 		if ( datum == null || datum.getSourceId() == null || datum.getTimestamp() == null ) {
 			return;
+		}
+		if ( !nodeId.equals(timeZoneNodeId) ) {
+			// the node ID was not known when the historian started, or has changed
+			storeTimeZone(nodeId);
 		}
 		final Class<?> datumClass = datum.getClass();
 		final String className = datumClass.getName();
@@ -265,32 +441,18 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	public FilterResults<NodeDatum, DatumId> findFiltered(NodeDatumFilter filter,
 			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max) {
 		requireNonNullArgument(filter, "filter");
-		NodeDatumFilter f = filter;
-		if ( sorts != null || offset != null || max != null ) {
-			final BasicNodeDatumFilter copy = BasicNodeDatumFilter.copyOf(filter);
-			if ( sorts != null ) {
-				copy.setSorts(sorts);
-			}
-			if ( offset != null ) {
-				copy.setOffset(offset);
-			}
-			if ( max != null ) {
-				copy.setMax(max);
-			}
-			f = copy;
-		}
+		final NodeDatumFilter f = paginated(filter, sorts, offset, max);
 		final long startingOffset = (f.hasOffset() ? f.offset() : 0L);
-
-		final Long[] objectIds = f.getObjectIds();
 		final Long nodeId = nodeId();
-		if ( nodeId == null && (objectIds == null || objectIds.length < 1) ) {
-			// node not set up, so there is no node to find the datum of
+		final Integer[] streamIds = localStreamIds(f, nodeId);
+		if ( !canMatch(f, nodeId, streamIds) ) {
 			return new BasicFilterResults<>(List.of(), 0L, startingOffset, 0);
 		}
 
-		final SelectFilteredDatum sql = new SelectFilteredDatum(schemaName, f, nodeId);
+		final SelectFilteredDatum sql = new SelectFilteredDatum(schemaName, f, nodeId, streamIds,
+				fetchSize);
 		Long totalResults = null;
-		if ( f.getMax() != null && !f.isWithoutTotalResultsCount() ) {
+		if ( isTotalResultsCounted(f) ) {
 			totalResults = executeCountQuery(jdbcOps, sql.countPreparedStatementCreator());
 		}
 		final List<NodeDatum> results = datum(jdbcOps.query(sql, filteredDatumMapper), null);
@@ -303,6 +465,399 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			}
 		}
 		return new BasicFilterResults<>(results, totalResults, startingOffset, results.size());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The object, stream, source, and type criteria of {@code filter} are
+	 * applied as by
+	 * {@link #findFiltered(NodeDatumFilter, List, Long, Integer)}, and its
+	 * other criteria are ignored. With location IDs, the metadata of the
+	 * streams of every node that stored datum for those locations is returned,
+	 * as {@code findFiltered()} merges their datum. The metadata is ordered by
+	 * node ID, location ID, and source ID, and each stream has the time zone
+	 * stored for its node, or UTC, as described in {@link JdbcDatumHistorian}.
+	 * </p>
+	 *
+	 * @throws IllegalArgumentException
+	 *         if {@code filter} is {@code null}
+	 */
+	@Override
+	public Collection<ObjectDatumStreamMetadata> findDatumStreamMetadata(NodeDatumFilter filter) {
+		requireNonNullArgument(filter, "filter");
+		final Long nodeId = nodeId();
+		final Integer[] streamIds = localStreamIds(filter, nodeId);
+		if ( !canMatch(filter, nodeId, streamIds) ) {
+			return List.of();
+		}
+		return streamMetadata(filter, nodeId, streamIds);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The criteria and pagination are applied as by
+	 * {@link #findFiltered(NodeDatumFilter, List, Long, Integer)}, and the
+	 * processor is given the metadata of
+	 * {@link #findDatumStreamMetadata(NodeDatumFilter)}. The results depend on
+	 * the aggregation:
+	 * </p>
+	 *
+	 * <dl>
+	 * <dt>{@code Hour}, {@code Day}, or {@code Month}, with the aggregate
+	 * setup</dt>
+	 * <dd>A {@link net.solarnetwork.domain.datum.BasicAggregateStreamDatum} for
+	 * each stored aggregate, as {@link SelectAggregateDatum} selects them: the
+	 * date and local date criteria apply to the period start, location datum
+	 * stored by more than one node are not merged, the type criteria only
+	 * select streams that have stored a datum of a matching type, and with the
+	 * most recent criteria the most recent aggregate of each stream is
+	 * given.</dd>
+	 * <dt>otherwise</dt>
+	 * <dd>The aggregation is ignored, so each result is a
+	 * {@link net.solarnetwork.domain.datum.BasicStreamDatum}; merged location
+	 * datum have the stream ID of the stream each was read from.</dd>
+	 * </dl>
+	 *
+	 * <p>
+	 * {@code NaN} and infinite property values are given as {@code null}, and
+	 * status values are given as strings.
+	 * </p>
+	 *
+	 * <p>
+	 * When a maximum result count is given, the processor is given the starting
+	 * offset, and the total result count unless {@code filter} has
+	 * {@link NodeDatumFilter#isWithoutTotalResultsCount()} set.
+	 * </p>
+	 *
+	 * @throws IllegalArgumentException
+	 *         if {@code filter} or {@code processor} is {@code null}
+	 */
+	@Override
+	public void findFilteredStream(NodeDatumFilter filter, StreamDatumFilteredResultsProcessor processor,
+			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max)
+			throws IOException {
+		requireNonNullArgument(filter, "filter");
+		requireNonNullArgument(processor, "processor");
+		stream(filter, processor, sorts, offset, max, false);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The criteria and pagination are applied as by
+	 * {@link #findFilteredStream(NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)},
+	 * and each result is a
+	 * {@link net.solarnetwork.domain.datum.BasicReadingStreamDatum}. They
+	 * depend on the aggregation:
+	 * </p>
+	 *
+	 * <dl>
+	 * <dt>{@code Hour}, {@code Day}, or {@code Month}, with the aggregate
+	 * setup</dt>
+	 * <dd>One result for each stored aggregate, the same aggregates
+	 * {@code findFilteredStream()} gives, with no end timestamp. With the most
+	 * recent criteria, the most recent aggregate of each stream is given, as
+	 * SolarNet does.</dd>
+	 * <dt>otherwise</dt>
+	 * <dd>One result for each stream with readings, as
+	 * {@link SelectReadingDifference} selects them, whose timestamp and end
+	 * timestamp are the times of the starting and ending readings. The local
+	 * date criteria are only used when both are given, and the most recent
+	 * criteria is ignored, as SolarNet does for these results. The type
+	 * criteria only select streams that have stored a datum of a matching
+	 * type.</dd>
+	 * </dl>
+	 *
+	 * @throws IllegalArgumentException
+	 *         if {@code filter} or {@code processor} is {@code null}, or
+	 *         {@code filter} has no reading type
+	 * @throws UnsupportedOperationException
+	 *         if the reading type is not {@link DatumReadingType#Difference},
+	 *         before the processor is started
+	 */
+	@Override
+	public void findFilteredStreamReadings(NodeDatumFilter filter,
+			StreamDatumFilteredResultsProcessor processor, @Nullable List<SortDescriptor> sorts,
+			@Nullable Long offset, @Nullable Integer max) throws IOException {
+		requireNonNullArgument(filter, "filter");
+		requireNonNullArgument(processor, "processor");
+		final DatumReadingType readingType = filter.getReadingType();
+		if ( readingType == null ) {
+			throw new IllegalArgumentException("The filter reading type is required.");
+		}
+		if ( readingType != DatumReadingType.Difference ) {
+			throw new UnsupportedOperationException(
+					"The %s reading type is not supported.".formatted(readingType));
+		}
+		stream(filter, processor, sorts, offset, max, true);
+	}
+
+	/**
+	 * Find the results of a stream query and pass them to a processor.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @param processor
+	 *        the processor
+	 * @param sorts
+	 *        the sorts to use in place of the filter sorts, or {@code null}
+	 * @param offset
+	 *        the offset to use in place of the filter offset, or {@code null}
+	 * @param max
+	 *        the maximum to use in place of the filter maximum, or {@code null}
+	 * @param readings
+	 *        {@code true} for reading results
+	 * @throws IOException
+	 *         if the processor throws one
+	 */
+	private void stream(NodeDatumFilter filter, StreamDatumFilteredResultsProcessor processor,
+			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max,
+			boolean readings) throws IOException {
+		final NodeDatumFilter f = paginated(filter, sorts, offset, max);
+		final Long nodeId = nodeId();
+		final Integer[] streamIds = localStreamIds(f, nodeId);
+		final TransactionTemplate tt = this.transactionTemplate;
+		try {
+			if ( !canMatch(f, nodeId, streamIds) ) {
+				startStream(processor, f, List.of(), isTotalResultsCounted(f) ? 0L : null);
+			} else if ( tt != null ) {
+				tt.executeWithoutResult(
+						status -> streamDatum(f, nodeId, streamIds, processor, readings));
+			} else {
+				streamDatum(f, nodeId, streamIds, processor, readings);
+			}
+		} catch ( UncheckedIOException e ) {
+			throw e.getCause();
+		}
+	}
+
+	/**
+	 * Find the results matching a filter and pass them to a processor.
+	 *
+	 * <p>
+	 * The features of the schema are only needed, and so only found, for an
+	 * aggregation of the aggregate setup.
+	 * </p>
+	 *
+	 * @param f
+	 *        the filter
+	 * @param nodeId
+	 *        the {@code IdentityService} node ID, or {@code null}
+	 * @param streamIds
+	 *        the local stream IDs of the stream criteria, or {@code null}
+	 * @param processor
+	 *        the processor
+	 * @param readings
+	 *        {@code true} for reading results
+	 * @throws UncheckedIOException
+	 *         if the processor throws an {@link IOException}
+	 */
+	private void streamDatum(NodeDatumFilter f, @Nullable Long nodeId, Integer @Nullable [] streamIds,
+			StreamDatumFilteredResultsProcessor processor, boolean readings) {
+		final boolean aggregate = SelectAggregateDatum.isSupportedAggregation(f.getAggregation());
+		final boolean stored = (aggregate && features().aggregates());
+		if ( aggregate && !stored ) {
+			log.debug("DB schema [{}] has no stored aggregates, so {} is treated as no aggregation",
+					schemaName, f.getAggregation());
+		}
+		final PreparedStatementCreator sql;
+		final CountPreparedStatementCreatorProvider countSql;
+		if ( stored ) {
+			final SelectAggregateDatum s = new SelectAggregateDatum(schemaName, f, nodeId, streamIds,
+					fetchSize);
+			sql = s;
+			countSql = s;
+		} else if ( readings ) {
+			final SelectReadingDifference s = new SelectReadingDifference(schemaName, f, nodeId,
+					streamIds, fetchSize);
+			sql = s;
+			countSql = s;
+		} else {
+			final SelectFilteredDatum s = SelectFilteredDatum.forStream(schemaName, f, nodeId, streamIds,
+					fetchSize);
+			sql = s;
+			countSql = s;
+		}
+		final List<ObjectDatumStreamMetadata> metadata = streamMetadata(f, nodeId, streamIds);
+		Long totalResults = null;
+		if ( isTotalResultsCounted(f) ) {
+			totalResults = (metadata.isEmpty() ? 0L
+					: executeCountQuery(jdbcOps, countSql.countPreparedStatementCreator()));
+		}
+		final DatumStreamMetadataProvider provider = startStream(processor, f, metadata, totalResults);
+		if ( metadata.isEmpty() ) {
+			// no streams, so no datum
+			return;
+		}
+		final RowMapper<? extends StreamDatum> mapper;
+		if ( stored ) {
+			mapper = new AggregateStreamDatumRowMapper(provider, streamIdDomain, objectMapper,
+					readings ? Style.Reading : Style.Aggregate);
+		} else if ( readings ) {
+			mapper = new AggregateStreamDatumRowMapper(provider, streamIdDomain, objectMapper,
+					Style.ReadingDifference);
+		} else {
+			mapper = new StreamDatumRowMapper(provider, streamIdDomain, objectMapper);
+		}
+		jdbcOps.query(sql, (RowCallbackHandler) rs -> {
+			final StreamDatum d = mapper.mapRow(rs, 0);
+			if ( d != null ) {
+				try {
+					processor.handleResultItem(d);
+				} catch ( IOException e ) {
+					throw new UncheckedIOException(e);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Start a stream processor.
+	 *
+	 * @param processor
+	 *        the processor
+	 * @param f
+	 *        the filter
+	 * @param metadata
+	 *        the metadata of the streams of the datum to process
+	 * @param totalResults
+	 *        the total result count, or {@code null}
+	 * @return the metadata provider given to the processor
+	 * @throws UncheckedIOException
+	 *         if the processor throws an {@link IOException}
+	 */
+	private static DatumStreamMetadataProvider startStream(StreamDatumFilteredResultsProcessor processor,
+			NodeDatumFilter f, List<ObjectDatumStreamMetadata> metadata, @Nullable Long totalResults) {
+		final DatumStreamMetadataProvider provider = new DatumStreamMetadataProvider(metadata);
+		Integer startingOffset = null;
+		if ( f.getMax() != null ) {
+			final long offset = (f.hasOffset() ? f.offset() : 0L);
+			// the processor takes an int offset, so a larger one is not given
+			startingOffset = (offset <= Integer.MAX_VALUE ? (int) offset : null);
+		}
+		try {
+			processor.start(totalResults, startingOffset, null,
+					Map.of(METADATA_PROVIDER_ATTR, provider));
+		} catch ( IOException e ) {
+			throw new UncheckedIOException(e);
+		}
+		return provider;
+	}
+
+	private List<ObjectDatumStreamMetadata> streamMetadata(NodeDatumFilter f, @Nullable Long nodeId,
+			Integer @Nullable [] streamIds) {
+		return jdbcOps.query(new SelectDatumStreamMetadata(schemaName, f, nodeId, streamIds),
+				new DatumStreamMetadataRowMapper(streamIdDomain));
+	}
+
+	/**
+	 * Get a filter with pagination arguments applied.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @param sorts
+	 *        the sorts to use in place of the filter sorts, or {@code null}
+	 * @param offset
+	 *        the offset to use in place of the filter offset, or {@code null}
+	 * @param max
+	 *        the maximum to use in place of the filter maximum, or {@code null}
+	 * @return {@code filter} if all arguments are {@code null}, otherwise a
+	 *         copy of it with the arguments applied
+	 */
+	private static NodeDatumFilter paginated(NodeDatumFilter filter,
+			@Nullable List<SortDescriptor> sorts, @Nullable Long offset, @Nullable Integer max) {
+		if ( sorts == null && offset == null && max == null ) {
+			return filter;
+		}
+		final BasicNodeDatumFilter copy = BasicNodeDatumFilter.copyOf(filter);
+		if ( sorts != null ) {
+			copy.setSorts(sorts);
+		}
+		if ( offset != null ) {
+			copy.setOffset(offset);
+		}
+		if ( max != null ) {
+			copy.setMax(max);
+		}
+		return copy;
+	}
+
+	private static boolean isTotalResultsCounted(NodeDatumFilter f) {
+		return (f.getMax() != null && !f.isWithoutTotalResultsCount());
+	}
+
+	private static boolean hasObjectIds(NodeDatumFilter f) {
+		final Long[] objectIds = f.getObjectIds();
+		return (objectIds != null && objectIds.length > 0);
+	}
+
+	/**
+	 * Decode the stream criteria of a filter into local stream IDs.
+	 *
+	 * <p>
+	 * Each stream ID is decoded with the node IDs the filter is limited to: its
+	 * node IDs, or otherwise {@code nodeId}.
+	 * </p>
+	 *
+	 * @param f
+	 *        the filter
+	 * @param nodeId
+	 *        the {@code IdentityService} node ID, or {@code null}
+	 * @return the local stream IDs, which is empty if no stream ID decodes, or
+	 *         {@code null} if the filter has no stream criteria
+	 */
+	private Integer @Nullable [] localStreamIds(NodeDatumFilter f, @Nullable Long nodeId) {
+		final UUID[] streamIds = f.getStreamIds();
+		if ( streamIds == null || streamIds.length < 1 ) {
+			return null;
+		}
+		final Long[] nodeIds;
+		if ( hasObjectIds(f) && f.getObjectKind() != ObjectDatumKind.Location ) {
+			nodeIds = f.objectIds();
+		} else if ( nodeId != null ) {
+			nodeIds = new Long[] { nodeId };
+		} else {
+			nodeIds = new Long[0];
+		}
+		final Set<Integer> result = new LinkedHashSet<>(streamIds.length);
+		for ( UUID streamId : streamIds ) {
+			for ( Long id : nodeIds ) {
+				final Integer localStreamId = (id != null
+						? decodeLocalStreamId(streamId, id, streamIdDomain)
+						: null);
+				if ( localStreamId != null ) {
+					result.add(localStreamId);
+					break;
+				}
+			}
+		}
+		return result.toArray(Integer[]::new);
+	}
+
+	/**
+	 * Test if a query might match any datum.
+	 *
+	 * @param f
+	 *        the filter
+	 * @param nodeId
+	 *        the {@code IdentityService} node ID, or {@code null}
+	 * @param streamIds
+	 *        the local stream IDs of the stream criteria, or {@code null}
+	 * @return {@code false} if the query cannot match anything
+	 */
+	private static boolean canMatch(NodeDatumFilter f, @Nullable Long nodeId,
+			Integer @Nullable [] streamIds) {
+		if ( nodeId == null && !hasObjectIds(f) ) {
+			// node not set up, so there is no node to find the datum of
+			return false;
+		}
+		// with stream criteria, at least one stream ID must decode
+		return (streamIds == null || streamIds.length > 0);
 	}
 
 	private String samplesJson(NodeDatum datum) throws JsonProcessingException {
@@ -431,7 +986,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			return new ArrayList<>(0);
 		}
 		return datum(jdbcOps.query(SelectDatum.forSource(schemaName, nodeId, sourceId, timestamp, offset,
-				count, typeNameFilter(type)), storedDatumMapper), type);
+				count, typeNameFilter(type), fetchSize), storedDatumMapper), type);
 	}
 
 	/**
@@ -451,7 +1006,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			}
 		}
 		return datum(jdbcOps.query(SelectDatum.forStreams(schemaName, nodeId, streamIds, timestamp,
-				offset, typeNameFilter(type)), storedDatumMapper), type);
+				offset, typeNameFilter(type), fetchSize), storedDatumMapper), type);
 	}
 
 	private List<Integer> matchingStreamIds(long nodeId, Set<String> sourceIdFilter) {
@@ -609,6 +1164,128 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	public final void setDatumStreamsCache(
 			@Nullable ConcurrentMap<Long, DatumStreams> datumStreamsCache) {
 		this.datumStreamsCache = datumStreamsCache;
+	}
+
+	/**
+	 * Get the stream ID domain.
+	 *
+	 * @return the domain
+	 */
+	public final int getStreamIdDomain() {
+		return streamIdDomain;
+	}
+
+	/**
+	 * Set the historian domain to encode stream IDs with.
+	 *
+	 * <p>
+	 * Each historian numbers its streams independently, so each historian of a
+	 * node must have a different domain. The default is
+	 * {@link #DEFAULT_STREAM_ID_DOMAIN}.
+	 * </p>
+	 *
+	 * @param streamIdDomain
+	 *        the domain to set, from 1 to 255
+	 * @throws IllegalArgumentException
+	 *         if {@code streamIdDomain} is not between 1 and 255
+	 * @see DatumStreamIdUtils
+	 */
+	public final void setStreamIdDomain(int streamIdDomain) {
+		if ( streamIdDomain < 1 || streamIdDomain > 255 ) {
+			throw new IllegalArgumentException(
+					"The stream ID domain %d is not between 1 and 255.".formatted(streamIdDomain));
+		}
+		this.streamIdDomain = streamIdDomain;
+	}
+
+	/**
+	 * Get the transaction template.
+	 *
+	 * @return the transaction template, or {@code null}
+	 */
+	public final @Nullable TransactionTemplate getTransactionTemplate() {
+		return transactionTemplate;
+	}
+
+	/**
+	 * Set the transaction template to run the queries of
+	 * {@link #findFilteredStream(NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
+	 * and
+	 * {@link #findFilteredStreamReadings(NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
+	 * within.
+	 *
+	 * <p>
+	 * The template should be read-only, and use a transaction manager of the
+	 * data source of the JDBC operations. Without one, a JDBC driver may read
+	 * all the datum of a query into memory at once.
+	 * </p>
+	 *
+	 * @param transactionTemplate
+	 *        the template to set, or {@code null} to run the queries without a
+	 *        transaction
+	 */
+	public final void setTransactionTemplate(@Nullable TransactionTemplate transactionTemplate) {
+		this.transactionTemplate = transactionTemplate;
+	}
+
+	/**
+	 * Get the JDBC fetch size.
+	 *
+	 * @return the fetch size
+	 */
+	public final int getFetchSize() {
+		return fetchSize;
+	}
+
+	/**
+	 * Set the JDBC fetch size of the datum queries.
+	 *
+	 * <p>
+	 * This is the number of rows the JDBC driver reads at a time from the
+	 * results of a datum query. A JDBC driver may only read results a page at a
+	 * time within a transaction; see
+	 * {@link #setTransactionTemplate(TransactionTemplate)}. The default is
+	 * {@link #DEFAULT_FETCH_SIZE}.
+	 * </p>
+	 *
+	 * @param fetchSize
+	 *        the fetch size to set, or {@literal 0} for the JDBC driver default
+	 * @throws IllegalArgumentException
+	 *         if {@code fetchSize} is negative
+	 */
+	public final void setFetchSize(int fetchSize) {
+		if ( fetchSize < 0 ) {
+			throw new IllegalArgumentException(
+					"The fetch size %d must not be negative.".formatted(fetchSize));
+		}
+		this.fetchSize = fetchSize;
+	}
+
+	/**
+	 * Get the time zone of the node.
+	 *
+	 * @return the time zone, or {@code null} for the system time zone
+	 */
+	public final @Nullable ZoneId getTimeZone() {
+		return timeZone;
+	}
+
+	/**
+	 * Set the time zone of the node.
+	 *
+	 * <p>
+	 * This is the time zone of the node's datum streams, stored when the
+	 * historian starts, so should be set before then. It is given in the
+	 * metadata of the streams and used for their local date criteria, and with
+	 * the aggregate setup the days and months of the node's aggregates are
+	 * computed in it. The system time zone is used by default.
+	 * </p>
+	 *
+	 * @param timeZone
+	 *        the time zone to set, or {@code null} for the system time zone
+	 */
+	public final void setTimeZone(@Nullable ZoneId timeZone) {
+		this.timeZone = timeZone;
 	}
 
 }
