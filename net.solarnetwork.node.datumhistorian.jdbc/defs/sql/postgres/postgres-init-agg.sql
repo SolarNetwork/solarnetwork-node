@@ -21,8 +21,8 @@
  *   then the days they are in, then the months. The postgres-init-agg-cron.sql
  *   script schedules it with pg_cron.
  * - Hours are UTC-aligned. Days and months start at midnight in the time zone
- *   of the stream's node, from the dh_node_time_zone table, falling back to the
- *   TimeZone setting of the session processing the queue.
+ *   of the stream's node, from the dh_node_time_zone table, falling back to
+ *   UTC.
  * - Raw datum partitions may be dropped while the aggregates are kept: an hour
  *   that starts before the oldest solarhist.dh_datum partition is never
  *   recomputed. Drop a partition with DROP TABLE, or detach it without
@@ -130,8 +130,8 @@ CREATE TABLE solarhist.dh_agg_stale (
 );
 
 -- time zone of each node, for the days and months of its streams, including location streams
--- stored by the node; a node without a row uses the TimeZone setting of the session that
--- processes the stale queue
+-- stored by the node; a node without a row uses UTC, as SolarNet does, so the result never
+-- depends on the session that processes the stale queue
 --
 -- Adding, changing or removing a row marks the days of the node's streams stale, so they and
 -- their months are computed again from the hourly rows. An invalid zone is rejected.
@@ -192,8 +192,7 @@ $$;
 
 
 /**
- * Get the time zone of a stream: that of its node, from `solarhist.dh_node_time_zone`, or the
- * TimeZone setting of the current session.
+ * Get the time zone of a stream: that of its node, from `solarhist.dh_node_time_zone`, or UTC.
  *
  * @param sid the stream ID
  * @returns the time zone name
@@ -208,7 +207,7 @@ $$
 			INNER JOIN solarhist.dh_node_time_zone z ON z.node_id = m.node_id
 			WHERE m.stream_id = sid
 		),
-		current_setting('TimeZone')
+		'UTC'
 	)
 $$;
 
@@ -367,7 +366,7 @@ CREATE OR REPLACE FUNCTION solarhist.dh_node_time_zone_mark_stale()
 $$
 DECLARE
 	node	BIGINT	:= CASE TG_OP WHEN 'DELETE' THEN OLD.node_id ELSE NEW.node_id END;
-	tz		TEXT	:= CASE TG_OP WHEN 'DELETE' THEN current_setting('TimeZone') ELSE NEW.time_zone END;
+	tz		TEXT	:= CASE TG_OP WHEN 'DELETE' THEN 'UTC' ELSE NEW.time_zone END;
 BEGIN
 	-- reject an invalid zone
 	PERFORM CURRENT_TIMESTAMP AT TIME ZONE tz;
