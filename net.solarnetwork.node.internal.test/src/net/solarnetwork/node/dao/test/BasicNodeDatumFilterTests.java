@@ -34,6 +34,7 @@ import org.junit.Test;
 import net.solarnetwork.domain.SimpleSortDescriptor;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.domain.datum.Aggregation;
+import net.solarnetwork.domain.datum.DatumReadingType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.dao.BasicNodeDatumFilter;
 
@@ -57,6 +58,7 @@ public class BasicNodeDatumFilterTests {
 		f.setLocalEndDate(LocalDateTime.of(2026, 11, 2, 0, 0));
 		f.setAggregation(Aggregation.Hour);
 		f.setPartialAggregation(Aggregation.FifteenMinute);
+		f.setReadingType(DatumReadingType.Difference);
 		f.setObjectKind(ObjectDatumKind.Location);
 		f.setObjectIds(new Long[] { 1L, 2L });
 		f.setSourceIds(new String[] { "a", "b/*" });
@@ -86,6 +88,7 @@ public class BasicNodeDatumFilterTests {
 		then(f.hasLocalDate()).as("No local date criteria").isFalse();
 		then(f.getAggregation()).as("No aggregation").isNull();
 		then(f.getPartialAggregation()).as("No partial aggregation").isNull();
+		then(f.getReadingType()).as("No reading type").isNull();
 	}
 
 	@Test
@@ -244,6 +247,13 @@ public class BasicNodeDatumFilterTests {
 
 		// THEN
 		then(other).as("Different partial aggregation not equal").isNotEqualTo(f);
+
+		// WHEN
+		other = BasicNodeDatumFilter.copyOf(f);
+		other.setReadingType(DatumReadingType.NearestDifference);
+
+		// THEN
+		then(other).as("Different reading type not equal").isNotEqualTo(f);
 	}
 
 	@Test
@@ -279,6 +289,21 @@ public class BasicNodeDatumFilterTests {
 		// THEN
 		then(result).as("Stream, local date and aggregation criteria included").isEqualTo(
 				"BasicNodeDatumFilter{streamIds=[00000000-0000-0000-0000-000000000001], localStartDate=2026-11-01T00:00, localEndDate=2026-11-02T00:00, aggregation=Hour, partialAggregation=FifteenMinute, withoutTotalResultsCount=true}");
+	}
+
+	@Test
+	public void string_readingType() {
+		// GIVEN
+		BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setAggregation(Aggregation.Hour);
+		f.setReadingType(DatumReadingType.Difference);
+
+		// WHEN
+		String result = f.toString();
+
+		// THEN
+		then(result).as("Reading type included").isEqualTo(
+				"BasicNodeDatumFilter{aggregation=Hour, readingType=Difference, withoutTotalResultsCount=true}");
 	}
 
 }

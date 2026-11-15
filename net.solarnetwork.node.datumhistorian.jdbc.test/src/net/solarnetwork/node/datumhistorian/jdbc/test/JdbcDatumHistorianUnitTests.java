@@ -87,6 +87,7 @@ import net.solarnetwork.dao.FilterResults;
 import net.solarnetwork.dao.StreamDatumFilteredResultsProcessor;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
 import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumReadingType;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
@@ -96,8 +97,8 @@ import net.solarnetwork.node.dao.BasicNodeDatumFilter;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreamInfo;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreamMetadataRowMapper;
 import net.solarnetwork.node.datumhistorian.jdbc.DatumStreams;
-import net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian;
 import net.solarnetwork.node.datumhistorian.jdbc.DefaultNodeDatumFactory;
+import net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreamMetadata;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
@@ -625,7 +626,8 @@ public class JdbcDatumHistorianUnitTests {
 		then(jdbcOps).shouldHaveNoInteractions();
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * findFiltered
 	 * ==================================================================
 	 */
@@ -649,7 +651,6 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void findFiltered_withoutTotalResultsCount_noCountQuery() {
 		// GIVEN
 		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
@@ -678,7 +679,6 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	@Test
-	@SuppressWarnings("unchecked")
 	public void findFiltered_totalResultsCount() {
 		// GIVEN
 		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
@@ -707,8 +707,9 @@ public class JdbcDatumHistorianUnitTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Stream settings
+	/*
+	 * ================================================================== Stream
+	 * settings
 	 * ==================================================================
 	 */
 
@@ -764,7 +765,8 @@ public class JdbcDatumHistorianUnitTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * findDatumStreamMetadata
 	 * ==================================================================
 	 */
@@ -945,7 +947,8 @@ public class JdbcDatumHistorianUnitTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * findFilteredStream
 	 * ==================================================================
 	 */
@@ -1008,6 +1011,32 @@ public class JdbcDatumHistorianUnitTests {
 				.isThrownBy(() -> historian.findFilteredStream(null, processor, null, null, null));
 		thenIllegalArgumentException()
 				.isThrownBy(() -> historian.findFilteredStream(filter, null, null, null, null));
+		then(processor).shouldHaveNoInteractions();
+		then(jdbcOps).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void findFilteredStreamReadings_invalidArguments() {
+		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		thenIllegalArgumentException().isThrownBy(
+				() -> historian.findFilteredStreamReadings(null, processor, null, null, null));
+		thenIllegalArgumentException()
+				.isThrownBy(() -> historian.findFilteredStreamReadings(filter, null, null, null, null));
+		then(processor).shouldHaveNoInteractions();
+		then(jdbcOps).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void findFilteredStreamReadings_notImplemented() {
+		// GIVEN
+		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setReadingType(DatumReadingType.Difference);
+
+		// WHEN
+		thenExceptionOfType(UnsupportedOperationException.class).as("Not implemented yet").isThrownBy(
+				() -> historian.findFilteredStreamReadings(filter, processor, null, null, null));
+
+		// THEN
 		then(processor).shouldHaveNoInteractions();
 		then(jdbcOps).shouldHaveNoInteractions();
 	}
@@ -1342,9 +1371,9 @@ public class JdbcDatumHistorianUnitTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Fetch size
-	 * ==================================================================
+	/*
+	 * ================================================================== Fetch
+	 * size ==================================================================
 	 */
 
 	@Test

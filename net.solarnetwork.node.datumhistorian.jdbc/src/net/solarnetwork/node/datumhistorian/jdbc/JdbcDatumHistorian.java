@@ -412,6 +412,29 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * <b>Not implemented yet:</b> this always throws
+	 * {@link UnsupportedOperationException}, without starting the processor.
+	 * </p>
+	 *
+	 * @throws IllegalArgumentException
+	 *         if {@code filter} or {@code processor} is {@code null}
+	 * @throws UnsupportedOperationException
+	 *         always, as reading queries are not implemented yet
+	 */
+	@Override
+	public void findFilteredStreamReadings(NodeDatumFilter filter,
+			StreamDatumFilteredResultsProcessor processor, @Nullable List<SortDescriptor> sorts,
+			@Nullable Long offset, @Nullable Integer max) throws IOException {
+		requireNonNullArgument(filter, "filter");
+		requireNonNullArgument(processor, "processor");
+		// TODO: implement reading queries (historian aggregates work item C)
+		throw new UnsupportedOperationException("Reading queries are not implemented yet.");
+	}
+
+	/**
 	 * Find the datum matching a filter and pass them to a processor.
 	 *
 	 * @param f

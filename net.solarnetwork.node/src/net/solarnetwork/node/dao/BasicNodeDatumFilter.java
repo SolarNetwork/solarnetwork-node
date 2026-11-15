@@ -35,6 +35,7 @@ import org.jspecify.annotations.Nullable;
 import net.solarnetwork.domain.SimplePagination;
 import net.solarnetwork.domain.SortDescriptor;
 import net.solarnetwork.domain.datum.Aggregation;
+import net.solarnetwork.domain.datum.DatumReadingType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 
 /**
@@ -55,6 +56,7 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 	private @Nullable LocalDateTime localEndDate;
 	private @Nullable Aggregation aggregation;
 	private @Nullable Aggregation partialAggregation;
+	private @Nullable DatumReadingType readingType;
 	private Long @Nullable [] objectIds;
 	private @Nullable ObjectDatumKind objectKind;
 	private String @Nullable [] sourceIds;
@@ -93,6 +95,7 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		f.setLocalEndDate(filter.getLocalEndDate());
 		f.setAggregation(filter.getAggregation());
 		f.setPartialAggregation(filter.getPartialAggregation());
+		f.setReadingType(filter.getReadingType());
 		f.setObjectIds(copyArray(filter.getObjectIds()));
 		f.setObjectKind(filter.getObjectKind());
 		f.setSourceIds(copyArray(filter.getSourceIds()));
@@ -121,7 +124,8 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		result = prime * result + Arrays.hashCode(streamIds);
 		result = prime * result + Arrays.hashCode(types);
 		result = prime * result + Objects.hash(startDate, endDate, localStartDate, localEndDate,
-				aggregation, partialAggregation, objectKind, withoutTotalResultsCount, mostRecent);
+				aggregation, partialAggregation, readingType, objectKind, withoutTotalResultsCount,
+				mostRecent);
 		return result;
 	}
 
@@ -140,6 +144,7 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 				&& Objects.equals(localEndDate, other.localEndDate)
 				&& aggregation == other.aggregation
 				&& partialAggregation == other.partialAggregation
+				&& readingType == other.readingType
 				&& Arrays.equals(objectIds, other.objectIds)
 				&& objectKind == other.objectKind
 				&& Arrays.equals(sourceIds, other.sourceIds)
@@ -185,6 +190,9 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 		}
 		if ( partialAggregation != null ) {
 			buf.append("partialAggregation=").append(partialAggregation).append(", ");
+		}
+		if ( readingType != null ) {
+			buf.append("readingType=").append(readingType).append(", ");
 		}
 		if ( mostRecent ) {
 			buf.append("mostRecent=true, ");
@@ -295,6 +303,22 @@ public class BasicNodeDatumFilter extends SimplePagination implements NodeDatumF
 	 */
 	public final void setPartialAggregation(@Nullable Aggregation partialAggregation) {
 		this.partialAggregation = partialAggregation;
+	}
+
+	@Override
+	public final @Nullable DatumReadingType getReadingType() {
+		return readingType;
+	}
+
+	/**
+	 * Set the reading type.
+	 *
+	 * @param readingType
+	 *        the reading type to set
+	 * @since 1.1
+	 */
+	public final void setReadingType(@Nullable DatumReadingType readingType) {
+		this.readingType = readingType;
 	}
 
 	@Override

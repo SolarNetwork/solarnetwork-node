@@ -28,6 +28,7 @@ import net.solarnetwork.dao.DatumObjectCriteria;
 import net.solarnetwork.dao.LocalDateRangeCriteria;
 import net.solarnetwork.dao.OptimizedQueryCriteria;
 import net.solarnetwork.dao.PaginationCriteria;
+import net.solarnetwork.dao.ReadingTypeCriteria;
 import net.solarnetwork.dao.RecentCriteria;
 import net.solarnetwork.dao.SourceCriteria;
 import net.solarnetwork.dao.StreamCriteria;
@@ -44,6 +45,13 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * </p>
  *
  * <p>
+ * The {@link ReadingTypeCriteria} ask for "reading" style results. They apply
+ * only to
+ * {@link net.solarnetwork.node.service.FilterableDatumHistorian#findFilteredStreamReadings(NodeDatumFilter, net.solarnetwork.dao.StreamDatumFilteredResultsProcessor, java.util.List, Long, Integer)},
+ * and other queries ignore them.
+ * </p>
+ *
+ * <p>
  * The {@link StreamCriteria} stream IDs are those a historian gives its
  * streams, such as in the stream metadata returned by
  * {@link net.solarnetwork.node.service.FilterableDatumHistorian#findDatumStreamMetadata(NodeDatumFilter)}.
@@ -54,6 +62,6 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  */
 public interface NodeDatumFilter extends DateRangeCriteria, LocalDateRangeCriteria, AggregationCriteria,
 		DatumObjectCriteria, SourceCriteria, StreamCriteria, TypeCriteria, PaginationCriteria,
-		OptimizedQueryCriteria, RecentCriteria {
+		OptimizedQueryCriteria, RecentCriteria, ReadingTypeCriteria {
 
 }
