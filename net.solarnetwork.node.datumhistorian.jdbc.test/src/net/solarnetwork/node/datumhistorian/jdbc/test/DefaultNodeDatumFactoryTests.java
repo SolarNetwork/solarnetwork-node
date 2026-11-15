@@ -346,7 +346,6 @@ public class DefaultNodeDatumFactoryTests {
 		thenIllegalArgumentException().isThrownBy(() -> new DefaultNodeDatumFactory(null));
 	}
 
-
 	@Test
 	public void create_nodeId() {
 		// GIVEN

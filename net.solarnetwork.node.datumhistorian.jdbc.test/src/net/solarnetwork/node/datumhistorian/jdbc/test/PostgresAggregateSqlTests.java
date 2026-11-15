@@ -82,12 +82,13 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 	 *        the accumulating value, or {@code null} for none
 	 */
 	private void datum(int streamId, String ts, int i, Integer val) {
-		jdbcTemplate.queryForList(sql("SELECT solarhist.dh_datum_ensure_partition(?::TIMESTAMPTZ)"),
-				ts);
-		jdbcTemplate.update(sql("""
-				INSERT INTO solarhist.dh_datum (ts, stream_id, type_id, data_i, data_a)
-				VALUES (?::TIMESTAMPTZ, ?, 1, ARRAY[?]::NUMERIC[], CASE WHEN ?::NUMERIC IS NOT NULL THEN ARRAY[?]::NUMERIC[] END)
-				"""), ts, streamId, i, val, val);
+		jdbcTemplate.queryForList(sql("SELECT solarhist.dh_datum_ensure_partition(?::TIMESTAMPTZ)"), ts);
+		jdbcTemplate.update(
+				sql("""
+						INSERT INTO solarhist.dh_datum (ts, stream_id, type_id, data_i, data_a)
+						VALUES (?::TIMESTAMPTZ, ?, 1, ARRAY[?]::NUMERIC[], CASE WHEN ?::NUMERIC IS NOT NULL THEN ARRAY[?]::NUMERIC[] END)
+						"""),
+				ts, streamId, i, val, val);
 	}
 
 	/** Process the stale queue of one kind until it is empty. */
@@ -253,8 +254,9 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 		processAll();
 
 		// WHEN
-		jdbcTemplate.update(sql("DELETE FROM solarhist.dh_datum WHERE stream_id = ? AND ts = ?::TIMESTAMPTZ"),
-				sid, "2026-01-01T10:30:00Z");
+		jdbcTemplate.update(
+				sql("DELETE FROM solarhist.dh_datum WHERE stream_id = ? AND ts = ?::TIMESTAMPTZ"), sid,
+				"2026-01-01T10:30:00Z");
 
 		// THEN
 		// @formatter:off
@@ -283,9 +285,11 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 	@Test
 	public void daily_timeZoneWithDaylightSavingEnd() {
 		// GIVEN
-		jdbcTemplate.update(sql("""
-				INSERT INTO solarhist.dh_node_time_zone (node_id, time_zone) VALUES (?, 'Pacific/Auckland')
-				"""), TEST_NODE_ID);
+		jdbcTemplate.update(
+				sql("""
+						INSERT INTO solarhist.dh_node_time_zone (node_id, time_zone) VALUES (?, 'Pacific/Auckland')
+						"""),
+				TEST_NODE_ID);
 		final int sid = stream("A");
 		// one datum at half past every hour, from 09:30 on 5 April to 13:30 on 6 April; the local
 		// day of 6 April 2025 is from 11:00 on 5 April to 12:00 on 6 April, 25 hours
@@ -321,16 +325,19 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 	@Test
 	public void daily_timeZoneChange() {
 		// GIVEN
-		jdbcTemplate.update(sql("""
-				INSERT INTO solarhist.dh_node_time_zone (node_id, time_zone) VALUES (?, 'Pacific/Auckland')
-				"""), TEST_NODE_ID);
+		jdbcTemplate.update(
+				sql("""
+						INSERT INTO solarhist.dh_node_time_zone (node_id, time_zone) VALUES (?, 'Pacific/Auckland')
+						"""),
+				TEST_NODE_ID);
 		final int sid = stream("A");
 		datum(sid, "2026-01-01T20:00:00Z", 1, 100);
 		datum(sid, "2026-01-01T20:30:00Z", 1, 110);
 		processAll();
 
 		// WHEN
-		jdbcTemplate.update(sql("UPDATE solarhist.dh_node_time_zone SET time_zone = 'UTC' WHERE node_id = ?"),
+		jdbcTemplate.update(
+				sql("UPDATE solarhist.dh_node_time_zone SET time_zone = 'UTC' WHERE node_id = ?"),
 				TEST_NODE_ID);
 		processAll();
 
@@ -359,18 +366,22 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 		final int sid = stream("A");
 		datum(sid, "2026-01-01T10:30:00Z", 1, 100);
 		// an hour kept from a dropped partition, older than the oldest partition
-		final String hour = jdbcTemplate.queryForObject(sql("""
-				SELECT to_char((solarhist.dh_datum_oldest_partition_start() - INTERVAL 'PT1H') AT TIME ZONE 'UTC'
-					, 'YYYY-MM-DD"T"HH24:MI"Z"')
-				"""), String.class);
+		final String hour = jdbcTemplate.queryForObject(
+				sql("""
+						SELECT to_char((solarhist.dh_datum_oldest_partition_start() - INTERVAL 'PT1H') AT TIME ZONE 'UTC'
+							, 'YYYY-MM-DD"T"HH24:MI"Z"')
+						"""),
+				String.class);
 		jdbcTemplate.update(sql("""
 				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a)
 				VALUES (?, ?::TIMESTAMPTZ, '{1}', '{{1,1,2}}')
 				"""), sid, hour);
 		jdbcTemplate.update(sql("DELETE FROM solarhist.dh_agg_stale"));
-		jdbcTemplate.update(sql("""
-				INSERT INTO solarhist.dh_agg_stale (stream_id, ts_start, agg_kind) VALUES (?, ?::TIMESTAMPTZ, 'h')
-				"""), sid, hour);
+		jdbcTemplate.update(
+				sql("""
+						INSERT INTO solarhist.dh_agg_stale (stream_id, ts_start, agg_kind) VALUES (?, ?::TIMESTAMPTZ, 'h')
+						"""),
+				sid, hour);
 
 		// WHEN
 		final int count = process("h");

@@ -67,9 +67,9 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectReadingDifference;
  * </ol>
  *
  * <p>
- * Stream IDs, rows of streams without metadata, and property values are
- * handled as {@link StreamDatumRowMapper} handles them. The {@code stat_i}
- * values become the instantaneous statistics and the {@code read_a} values the
+ * Stream IDs, rows of streams without metadata, and property values are handled
+ * as {@link StreamDatumRowMapper} handles them. The {@code stat_i} values
+ * become the instantaneous statistics and the {@code read_a} values the
  * accumulating statistics, as SolarNet maps them.
  * </p>
  *

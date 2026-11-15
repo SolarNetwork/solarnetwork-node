@@ -196,7 +196,8 @@ public final class SelectAggregateDatum
 		}
 		if ( filter.isMostRecent() ) {
 			buf.append("INNER JOIN LATERAL (\n");
-			buf.append("\tSELECT d.ts_start, d.data_i, d.data_a, d.data_s, d.data_t, d.stat_i, d.read_a\n");
+			buf.append(
+					"\tSELECT d.ts_start, d.data_i, d.data_a, d.data_s, d.data_t, d.stat_i, d.read_a\n");
 			buf.append("\tFROM ").append(schemaName).append('.').append(tableName).append(" d\n");
 			buf.append("\tWHERE d.stream_id = m.stream_id\n");
 			final StringBuilder where = new StringBuilder();

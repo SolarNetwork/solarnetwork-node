@@ -658,7 +658,7 @@ public class JdbcDatumHistorianUnitTests {
 	private void givenFeatures(boolean aggregates) {
 		given(jdbcOps.query(any(SelectHistorianFeatures.class),
 				same(SelectHistorianFeatures.RESULT_MAPPER)))
-				.willReturn(List.of(new SelectHistorianFeatures.Result(aggregates)));
+						.willReturn(List.of(new SelectHistorianFeatures.Result(aggregates)));
 	}
 
 	private void givenStoreDatum() {
@@ -850,8 +850,8 @@ public class JdbcDatumHistorianUnitTests {
 		givenStreamQueries(3);
 		given(jdbcOps.query(any(SelectHistorianFeatures.class),
 				same(SelectHistorianFeatures.RESULT_MAPPER)))
-				.willThrow(new QueryTimeoutException("Too slow"))
-				.willReturn(List.of(new SelectHistorianFeatures.Result(true)));
+						.willThrow(new QueryTimeoutException("Too slow"))
+						.willReturn(List.of(new SelectHistorianFeatures.Result(true)));
 		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
 		filter.setAggregation(Aggregation.Hour);
 
@@ -1666,8 +1666,8 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	/*
-	 * ==================================================================
-	 * Stored aggregates and readings
+	 * ================================================================== Stored
+	 * aggregates and readings
 	 * ==================================================================
 	 */
 
@@ -1809,7 +1809,8 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	@Test
-	public void findFilteredStream_unsupportedAggregation_raw_noFeatures() throws IOException, SQLException {
+	public void findFilteredStream_unsupportedAggregation_raw_noFeatures()
+			throws IOException, SQLException {
 		// GIVEN
 		givenStreamQueries(3);
 

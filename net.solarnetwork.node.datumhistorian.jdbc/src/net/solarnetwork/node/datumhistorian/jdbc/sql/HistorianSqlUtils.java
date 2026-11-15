@@ -44,8 +44,8 @@ public final class HistorianSqlUtils {
 	 * A regular expression for a valid schema name.
 	 *
 	 * <p>
-	 * Only unquoted lower-case Postgres identifiers are allowed, so the name can
-	 * be included in SQL as-is.
+	 * Only unquoted lower-case Postgres identifiers are allowed, so the name
+	 * can be included in SQL as-is.
 	 * </p>
 	 */
 	public static final Pattern SCHEMA_NAME_PATTERN = Pattern.compile("[a-z_][a-z0-9_]{0,62}");
@@ -150,16 +150,15 @@ public final class HistorianSqlUtils {
 	 * Get the Java zone ID of a Postgres time zone name.
 	 *
 	 * <p>
-	 * This reverses {@link #timeZoneName(ZoneId)}: a POSIX zone name of a
-	 * fixed offset, like {@code <+1200>-12:00}, is given as the Java offset ID,
-	 * like {@code +12:00}. Any other name, such as a region zone ID or
-	 * {@code UTC}, is given as it is.
+	 * This reverses {@link #timeZoneName(ZoneId)}: a POSIX zone name of a fixed
+	 * offset, like {@code <+1200>-12:00}, is given as the Java offset ID, like
+	 * {@code +12:00}. Any other name, such as a region zone ID or {@code UTC},
+	 * is given as it is.
 	 * </p>
 	 *
 	 * @param name
 	 *        the Postgres zone name
-	 * @return the Java zone ID, or {@code null} if {@code name} is
-	 *         {@code null}
+	 * @return the Java zone ID, or {@code null} if {@code name} is {@code null}
 	 * @see #timeZoneName(ZoneId)
 	 */
 	public static @Nullable String timeZoneId(@Nullable String name) {
@@ -234,8 +233,8 @@ public final class HistorianSqlUtils {
 	 * @see #whereLocalDateRange(LocalDateRangeCriteria, String, String,
 	 *      StringBuilder)
 	 */
-	public static int prepareLocalDateRange(LocalDateRangeCriteria filter, PreparedStatement stmt,
-			int p) throws SQLException {
+	public static int prepareLocalDateRange(LocalDateRangeCriteria filter, PreparedStatement stmt, int p)
+			throws SQLException {
 		if ( filter.getLocalStartDate() != null ) {
 			stmt.setObject(++p, filter.getLocalStartDate(), Types.TIMESTAMP);
 		}

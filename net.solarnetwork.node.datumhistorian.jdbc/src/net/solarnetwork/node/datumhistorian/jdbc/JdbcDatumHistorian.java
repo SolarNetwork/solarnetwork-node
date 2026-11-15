@@ -112,13 +112,13 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * <p>
  * The database can be shared by more than one node. The {@code DatumHistorian}
  * query methods only return datum of the node given by the
- * {@link IdentityService}. The {@link #findFiltered(NodeDatumFilter, List, Long, Integer)}
- * method does the same when the filter has no object IDs, otherwise it returns
- * the datum of the nodes or locations given. Location datum stored by more than
- * one node are returned once, preferring the one stored by the
- * {@code IdentityService} node; see {@link SelectFilteredDatum} for how each
- * filter criteria is applied. The node datum it returns have their node ID
- * set.
+ * {@link IdentityService}. The
+ * {@link #findFiltered(NodeDatumFilter, List, Long, Integer)} method does the
+ * same when the filter has no object IDs, otherwise it returns the datum of the
+ * nodes or locations given. Location datum stored by more than one node are
+ * returned once, preferring the one stored by the {@code IdentityService} node;
+ * see {@link SelectFilteredDatum} for how each filter criteria is applied. The
+ * node datum it returns have their node ID set.
  * </p>
  *
  * <p>
@@ -327,8 +327,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	private SelectHistorianFeatures.Result features() {
 		SelectHistorianFeatures.Result f = this.features;
 		if ( f == null ) {
-			final List<SelectHistorianFeatures.Result> rows = jdbcOps
-					.query(new SelectHistorianFeatures(schemaName), SelectHistorianFeatures.RESULT_MAPPER);
+			final List<SelectHistorianFeatures.Result> rows = jdbcOps.query(
+					new SelectHistorianFeatures(schemaName), SelectHistorianFeatures.RESULT_MAPPER);
 			f = (rows.isEmpty() ? NO_FEATURES : rows.get(0));
 			this.features = f;
 		}
@@ -577,9 +577,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 *         if {@code filter} or {@code processor} is {@code null}, or
 	 *         {@code filter} has no reading type
 	 * @throws UnsupportedOperationException
-	 *         if the reading type is not
-	 *         {@link DatumReadingType#Difference}, before the processor is
-	 *         started
+	 *         if the reading type is not {@link DatumReadingType#Difference},
+	 *         before the processor is started
 	 */
 	@Override
 	public void findFilteredStreamReadings(NodeDatumFilter filter,
@@ -679,8 +678,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			sql = s;
 			countSql = s;
 		} else {
-			final SelectFilteredDatum s = SelectFilteredDatum.forStream(schemaName, f, nodeId,
-					streamIds, fetchSize);
+			final SelectFilteredDatum s = SelectFilteredDatum.forStream(schemaName, f, nodeId, streamIds,
+					fetchSize);
 			sql = s;
 			countSql = s;
 		}
@@ -1243,8 +1242,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 *
 	 * <p>
 	 * This is the number of rows the JDBC driver reads at a time from the
-	 * results of a datum query. A JDBC driver may only read results a page at
-	 * a time within a transaction; see
+	 * results of a datum query. A JDBC driver may only read results a page at a
+	 * time within a transaction; see
 	 * {@link #setTransactionTemplate(TransactionTemplate)}. The default is
 	 * {@link #DEFAULT_FETCH_SIZE}.
 	 * </p>

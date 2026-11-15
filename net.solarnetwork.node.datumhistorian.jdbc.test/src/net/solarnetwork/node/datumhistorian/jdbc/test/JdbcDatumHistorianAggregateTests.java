@@ -93,14 +93,14 @@ import net.solarnetwork.service.StaticOptionalService;
  * {@code postgres-init-agg.sql} in the {@code solarhist} schema, tests named
  * {@code noAgg_} need a schema without it, and the reading tests need the
  * reading functions of {@code postgres-init.sql}. Each test is skipped
- * otherwise, so running the tests against a database with the setup and
- * against one without it covers them all.
+ * otherwise, so running the tests against a database with the setup and against
+ * one without it covers them all.
  * </p>
  *
  * <p>
- * The aggregate and reading values expected are those SolarNet's functions
- * give for the same datum, apart from an hour SolarNet's stale processing does
- * not compute either: the one that ends at a stream's first datum.
+ * The aggregate and reading values expected are those SolarNet's functions give
+ * for the same datum, apart from an hour SolarNet's stale processing does not
+ * compute either: the one that ends at a stream's first datum.
  * </p>
  *
  * @author matt
@@ -148,8 +148,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 			"{{3,6,8}}", "{{30,160,190}}");
 	private static final Tuple H_A1_01 = tuple(Node, TEST_NODE_ID, "a/1", T01, "{10}", "{20}",
 			"{{3,9,11}}", "{{20,190,210}}");
-	private static final Tuple H_A2_22 = tuple(Node, TEST_NODE_ID, "a/2", T22, "{5}", "{0}",
-			"{{1,5,5}}", "{{0,1000,1000}}");
+	private static final Tuple H_A2_22 = tuple(Node, TEST_NODE_ID, "a/2", T22, "{5}", "{0}", "{{1,5,5}}",
+			"{{0,1000,1000}}");
 
 	// the hourly aggregates of the other node's streams
 	private static final Tuple H_O_W22 = tuple(Location, TEST_LOC_ID, "weather", T22, "{12}", null,
@@ -166,8 +166,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 			"{{6,0,5}}", "{{60,100,160}}");
 	private static final Tuple D_A1_01 = tuple(Node, TEST_NODE_ID, "a/1", FEB_1, "{8.5}", "{50}",
 			"{{6,6,11}}", "{{50,160,210}}");
-	private static final Tuple D_A2 = tuple(Node, TEST_NODE_ID, "a/2", JAN_31, "{5}", "{0}",
-			"{{1,5,5}}", "{{0,1000,1000}}");
+	private static final Tuple D_A2 = tuple(Node, TEST_NODE_ID, "a/2", JAN_31, "{5}", "{0}", "{{1,5,5}}",
+			"{{0,1000,1000}}");
 
 	// the monthly aggregates of the running node's streams, in UTC
 	private static final Tuple M_W = tuple(Location, TEST_LOC_ID, "weather", JAN, "{12}", null,
@@ -176,14 +176,14 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 			"{{6,0,5}}", "{{60,100,160}}");
 	private static final Tuple M_A1_FEB = tuple(Node, TEST_NODE_ID, "a/1", FEB_1, "{8.5}", "{50}",
 			"{{6,6,11}}", "{{50,160,210}}");
-	private static final Tuple M_A2 = tuple(Node, TEST_NODE_ID, "a/2", JAN, "{5}", "{0}",
-			"{{1,5,5}}", "{{0,1000,1000}}");
+	private static final Tuple M_A2 = tuple(Node, TEST_NODE_ID, "a/2", JAN, "{5}", "{0}", "{{1,5,5}}",
+			"{{0,1000,1000}}");
 
 	// the daily and monthly aggregates of the running node's streams, in Auckland
 	private static final Tuple NZ_W = tuple(Location, TEST_LOC_ID, "weather", FEB_1_AUCKLAND, "{12}",
 			null, "{{2,10,14}}", null);
-	private static final Tuple NZ_A1 = tuple(Node, TEST_NODE_ID, "a/1", FEB_1_AUCKLAND, "{5.5}",
-			"{110}", "{{12,0,11}}", "{{110,100,210}}");
+	private static final Tuple NZ_A1 = tuple(Node, TEST_NODE_ID, "a/1", FEB_1_AUCKLAND, "{5.5}", "{110}",
+			"{{12,0,11}}", "{{110,100,210}}");
 	private static final Tuple NZ_A2 = tuple(Node, TEST_NODE_ID, "a/2", FEB_1_AUCKLAND, "{5}", "{0}",
 			"{{1,5,5}}", "{{0,1000,1000}}");
 
@@ -279,8 +279,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	 */
 	private void populate() {
 		for ( int k = 0; k < 12; k++ ) {
-			historian.add(new SimpleAcEnergyDatum("a/1", T22.plus(20L * k, MINUTES),
-					energy(k, 100 + 10 * k)));
+			historian.add(
+					new SimpleAcEnergyDatum("a/1", T22.plus(20L * k, MINUTES), energy(k, 100 + 10 * k)));
 		}
 		historian.add(new SimpleAcEnergyDatum("a/2", T22_30, energy(5, 1000)));
 		historian.add(new SimpleAtmosphericDatum(TEST_LOC_ID, "weather", T22, temperature(10)));
@@ -288,8 +288,7 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		otherHistorian.add(new SimpleAcEnergyDatum("a/1", T22, energy(1, 10)));
 		otherHistorian.add(new SimpleAcEnergyDatum("a/1", T23, energy(3, 30)));
 		otherHistorian.add(new SimpleAtmosphericDatum(TEST_LOC_ID, "weather", T22, temperature(11)));
-		otherHistorian
-				.add(new SimpleAtmosphericDatum(TEST_LOC_ID, "weather", T22_30, temperature(13)));
+		otherHistorian.add(new SimpleAtmosphericDatum(TEST_LOC_ID, "weather", T22_30, temperature(13)));
 		if ( aggregates ) {
 			processAll(SCHEMA);
 		}
@@ -312,8 +311,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	/**
-	 * Get the stale aggregates of a schema, as kind, node ID, location ID, source
-	 * ID, and time.
+	 * Get the stale aggregates of a schema, as kind, node ID, location ID,
+	 * source ID, and time.
 	 */
 	private List<Tuple> stale(String schema) {
 		return jdbcTemplate.query("""
@@ -492,8 +491,7 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		return result;
 	}
 
-	private Streamed thenReadingsStreamed(Long totalResults, Integer startingOffset)
-			throws IOException {
+	private Streamed thenReadingsStreamed(Long totalResults, Integer startingOffset) throws IOException {
 		final Streamed result = thenStreamed(totalResults, startingOffset);
 		// @formatter:off
 		and.then(result.datum())
@@ -505,9 +503,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	/*
-	 * ==================================================================
-	 * Time zone
-	 * ==================================================================
+	 * ================================================================== Time
+	 * zone ==================================================================
 	 */
 
 	@Test
@@ -1205,9 +1202,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	/*
-	 * ==================================================================
-	 * Local dates
-	 * ==================================================================
+	 * ================================================================== Local
+	 * dates ==================================================================
 	 */
 
 	/**
@@ -1227,8 +1223,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	 * Get a filter of the node streams of both nodes, within a local date
 	 * range.
 	 */
-	private static BasicNodeDatumFilter localDatesFilter(Aggregation aggregation,
-			LocalDateTime start, LocalDateTime end) {
+	private static BasicNodeDatumFilter localDatesFilter(Aggregation aggregation, LocalDateTime start,
+			LocalDateTime end) {
 		final BasicNodeDatumFilter f = filter(aggregation);
 		f.setObjectKind(Node);
 		f.setObjectIds(new Long[] { TEST_NODE_ID, TEST_NODE_ID_2 });
@@ -1243,8 +1239,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		populateOtherNodeInAuckland();
 
 		// WHEN
-		historian.findFilteredStream(localDatesFilter(null, LOCAL_JAN, LOCAL_FEB), processor, null,
-				null, null);
+		historian.findFilteredStream(localDatesFilter(null, LOCAL_JAN, LOCAL_FEB), processor, null, null,
+				null);
 
 		// THEN
 		// @formatter:off
@@ -1269,8 +1265,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		populateOtherNodeInAuckland();
 
 		// WHEN
-		historian.findFilteredStream(localDatesFilter(null, LOCAL_FEB, LOCAL_MAR), processor, null,
-				null, null);
+		historian.findFilteredStream(localDatesFilter(null, LOCAL_FEB, LOCAL_MAR), processor, null, null,
+				null);
 
 		// THEN
 		// @formatter:off
@@ -1297,8 +1293,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		populateOtherNodeInAuckland();
 
 		// WHEN
-		historian.findFilteredStream(localDatesFilter(Aggregation.Day, LOCAL_JAN, LOCAL_FEB),
-				processor, null, null, null);
+		historian.findFilteredStream(localDatesFilter(Aggregation.Day, LOCAL_JAN, LOCAL_FEB), processor,
+				null, null, null);
 
 		// THEN
 		// @formatter:off

@@ -137,8 +137,8 @@ public class AggregateStreamDatumRowMapperTests {
 		given(rs.getArray(7)).willReturn(dataT);
 		given(dataT.getArray()).willReturn(new String[] { "t" });
 		given(rs.getArray(8)).willReturn(statI);
-		given(statI.getArray()).willReturn(new BigDecimal[][] { decimals("60", "1", "2"),
-				decimals("60", "10", "30") });
+		given(statI.getArray())
+				.willReturn(new BigDecimal[][] { decimals("60", "1", "2"), decimals("60", "10", "30") });
 		given(rs.getArray(9)).willReturn(readA);
 		given(readA.getArray()).willReturn(new BigDecimal[][] { decimals("310", "1000", "1310") });
 	}
@@ -187,8 +187,8 @@ public class AggregateStreamDatumRowMapperTests {
 
 	@Test
 	public void construct_invalid() {
-		thenIllegalArgumentException().isThrownBy(
-				() -> new AggregateStreamDatumRowMapper(null, TEST_DOMAIN, objectMapper, Style.Aggregate));
+		thenIllegalArgumentException().isThrownBy(() -> new AggregateStreamDatumRowMapper(null,
+				TEST_DOMAIN, objectMapper, Style.Aggregate));
 		thenIllegalArgumentException().isThrownBy(
 				() -> new AggregateStreamDatumRowMapper(provider, TEST_DOMAIN, null, Style.Aggregate));
 		thenIllegalArgumentException().isThrownBy(

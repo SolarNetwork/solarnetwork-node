@@ -327,7 +327,8 @@ public class JdbcDatumHistorianStreamTests extends AbstractPostgresHistorianTest
 				datumCaptor.getAllValues());
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * findDatumStreamMetadata
 	 * ==================================================================
 	 */
@@ -587,7 +588,8 @@ public class JdbcDatumHistorianStreamTests extends AbstractPostgresHistorianTest
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * findFilteredStream
 	 * ==================================================================
 	 */

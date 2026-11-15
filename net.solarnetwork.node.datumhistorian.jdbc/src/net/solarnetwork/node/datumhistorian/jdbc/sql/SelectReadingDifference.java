@@ -246,8 +246,8 @@ public final class SelectReadingDifference
 	}
 
 	/**
-	 * Get the time the starting readings are found at, when the filter does
-	 * not have a local date range.
+	 * Get the time the starting readings are found at, when the filter does not
+	 * have a local date range.
 	 *
 	 * @return the filter start date, or the time this instance was created if
 	 *         the filter has none
@@ -260,8 +260,8 @@ public final class SelectReadingDifference
 	 * Get the time the ending readings are found at, when the filter does not
 	 * have a local date range.
 	 *
-	 * @return the filter end date, or the time this instance was created if
-	 *         the filter has none
+	 * @return the filter end date, or the time this instance was created if the
+	 *         filter has none
 	 */
 	public Instant getEndDate() {
 		return endDate;

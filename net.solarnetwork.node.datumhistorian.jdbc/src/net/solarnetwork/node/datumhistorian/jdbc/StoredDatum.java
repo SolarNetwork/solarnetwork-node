@@ -138,8 +138,8 @@ public record StoredDatum(int streamId, @Nullable Long nodeId, String sourceId,
 	 *
 	 * <p>
 	 * Node datum get the {@code nodeId} as their object ID, which is
-	 * {@code null} when it is not known, as datum captured by SolarNode normally
-	 * have.
+	 * {@code null} when it is not known, as datum captured by SolarNode
+	 * normally have.
 	 * </p>
 	 *
 	 * @return the datum ID

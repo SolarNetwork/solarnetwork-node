@@ -94,8 +94,8 @@ public class StoredDatumRowMapperTests {
 		return a;
 	}
 
-	private void givenRow(Long locId, String[] namesI, String[] dataI, String[] namesA,
-			String[] dataA, String[] namesS, String dataS, String[] tags) throws SQLException {
+	private void givenRow(Long locId, String[] namesI, String[] dataI, String[] namesA, String[] dataA,
+			String[] namesS, String dataS, String[] tags) throws SQLException {
 		given(rs.getInt(1)).willReturn(1);
 		given(rs.getString(2)).willReturn("a");
 		given(rs.getObject(3, Long.class)).willReturn(locId);

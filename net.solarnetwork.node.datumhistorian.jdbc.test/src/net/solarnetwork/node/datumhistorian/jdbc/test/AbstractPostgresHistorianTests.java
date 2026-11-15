@@ -165,8 +165,7 @@ public abstract class AbstractPostgresHistorianTests {
 	 *        the column(s) to order by
 	 * @return the rows
 	 */
-	protected List<Map<String, Object>> rows(String schema, String table, String columns,
-			String order) {
+	protected List<Map<String, Object>> rows(String schema, String table, String columns, String order) {
 		return jdbcTemplate.queryForList(
 				"SELECT %s FROM %s.%s ORDER BY %s".formatted(columns, schema, table, order));
 	}

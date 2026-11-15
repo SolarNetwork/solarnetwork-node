@@ -113,8 +113,8 @@ import net.solarnetwork.service.StaticOptionalService;
  *
  * <p>
  * Each datum has a unique {@code i} property value, so the weather datum of
- * each node can be told apart: node 123 stores 9 and 11, node 234 stores 13
- * and 14.
+ * each node can be told apart: node 123 stores 9 and 11, node 234 stores 13 and
+ * 14.
  * </p>
  *
  * @author matt

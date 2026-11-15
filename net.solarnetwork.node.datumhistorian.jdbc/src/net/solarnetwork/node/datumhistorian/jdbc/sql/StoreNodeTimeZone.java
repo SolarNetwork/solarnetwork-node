@@ -38,9 +38,9 @@ import org.springframework.jdbc.core.SqlProvider;
  *
  * <p>
  * The zone is stored by the name that
- * {@link HistorianSqlUtils#timeZoneName(ZoneId)} gives, which Postgres reads
- * as the same zone: a fixed-offset zone like {@code +12:00} is stored as the
- * POSIX zone {@code <+1200>-12:00}, for example.
+ * {@link HistorianSqlUtils#timeZoneName(ZoneId)} gives, which Postgres reads as
+ * the same zone: a fixed-offset zone like {@code +12:00} is stored as the POSIX
+ * zone {@code <+1200>-12:00}, for example.
  * </p>
  *
  * <p>

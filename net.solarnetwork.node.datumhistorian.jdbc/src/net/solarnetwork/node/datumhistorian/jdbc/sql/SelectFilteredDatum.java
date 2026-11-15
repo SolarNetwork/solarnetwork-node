@@ -430,8 +430,8 @@ public final class SelectFilteredDatum
 	 * @param withoutNode
 	 *        {@code true} to ignore the node sort key
 	 */
-	static void appendOrderBy(StringBuilder buf, @Nullable List<SortDescriptor> sorts,
-			String timeColumn, boolean withoutNode) {
+	static void appendOrderBy(StringBuilder buf, @Nullable List<SortDescriptor> sorts, String timeColumn,
+			boolean withoutNode) {
 		final Set<String> columns = new HashSet<>(8);
 		if ( withoutNode ) {
 			columns.add(NODE_ID_COLUMN);

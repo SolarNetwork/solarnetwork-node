@@ -150,8 +150,9 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		return all;
 	}
 
-	/* ==================================================================
-	 * Tests ported from DefaultDatumServiceTests
+	/*
+	 * ================================================================== Tests
+	 * ported from DefaultDatumServiceTests
 	 * ==================================================================
 	 */
 
@@ -365,8 +366,9 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Source ID filters
+	/*
+	 * ================================================================== Source
+	 * ID filters
 	 * ==================================================================
 	 */
 
@@ -479,8 +481,9 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Single source queries
+	/*
+	 * ================================================================== Single
+	 * source queries
 	 * ==================================================================
 	 */
 
@@ -760,9 +763,9 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Adding datum
-	 * ==================================================================
+	/*
+	 * ================================================================== Adding
+	 * datum ==================================================================
 	 */
 
 	@Test
@@ -939,7 +942,8 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// no exception thrown
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * Samples
 	 * ==================================================================
 	 */
@@ -1141,9 +1145,9 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Datum types
-	 * ==================================================================
+	/*
+	 * ================================================================== Datum
+	 * types ==================================================================
 	 */
 
 	@Test
@@ -1294,7 +1298,8 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
+	/*
+	 * ==================================================================
 	 * Location datum
 	 * ==================================================================
 	 */
@@ -1372,8 +1377,8 @@ public class JdbcDatumHistorianTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
-	/* ==================================================================
-	 * Caches
+	/*
+	 * ================================================================== Caches
 	 * ==================================================================
 	 */
 

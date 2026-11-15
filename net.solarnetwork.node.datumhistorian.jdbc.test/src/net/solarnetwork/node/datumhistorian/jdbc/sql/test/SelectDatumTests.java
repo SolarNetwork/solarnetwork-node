@@ -78,8 +78,7 @@ public class SelectDatumTests {
 
 	private PreparedStatement givenPrepare() throws SQLException {
 		given(conn.prepareStatement(sqlCaptor.capture(), eq(ResultSet.TYPE_FORWARD_ONLY),
-				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT)))
-				.willReturn(stmt);
+				eq(ResultSet.CONCUR_READ_ONLY), eq(ResultSet.CLOSE_CURSORS_AT_COMMIT))).willReturn(stmt);
 		return stmt;
 	}
 
@@ -180,8 +179,7 @@ public class SelectDatumTests {
 
 		final Instant ts = Instant.now().truncatedTo(ChronoUnit.MILLIS);
 		final String type = AcEnergyDatum.class.getName();
-		SelectDatum sql = SelectDatum.forStreams("solaruhist", TEST_NODE_ID, List.of(1, 2), ts, 2,
-				type);
+		SelectDatum sql = SelectDatum.forStreams("solaruhist", TEST_NODE_ID, List.of(1, 2), ts, 2, type);
 
 		// WHEN
 		sql.createPreparedStatement(conn);
@@ -234,8 +232,8 @@ public class SelectDatumTests {
 	@Test
 	public void maxRow_noOverflow() throws SQLException {
 		// GIVEN
-		SelectDatum sql = SelectDatum.forSource("solarhist", TEST_NODE_ID, "a", null,
-				Integer.MAX_VALUE, Integer.MAX_VALUE, null);
+		SelectDatum sql = SelectDatum.forSource("solarhist", TEST_NODE_ID, "a", null, Integer.MAX_VALUE,
+				Integer.MAX_VALUE, null);
 
 		// WHEN
 		sql.setValues(stmt);
@@ -251,8 +249,7 @@ public class SelectDatumTests {
 	public void source_fetchSize() throws SQLException {
 		// GIVEN
 		givenPrepare();
-		SelectDatum sql = SelectDatum.forSource("solarhist", TEST_NODE_ID, "a", null, 0, 1, null,
-				5);
+		SelectDatum sql = SelectDatum.forSource("solarhist", TEST_NODE_ID, "a", null, 0, 1, null, 5);
 
 		// WHEN
 		sql.createPreparedStatement(conn);
@@ -278,8 +275,8 @@ public class SelectDatumTests {
 	@Test
 	public void invalidSchema() {
 		thenIllegalArgumentException()
-				.isThrownBy(() -> SelectDatum.forSource("bad; DROP", TEST_NODE_ID, "a", null, 0, 1,
-						null))
+				.isThrownBy(
+						() -> SelectDatum.forSource("bad; DROP", TEST_NODE_ID, "a", null, 0, 1, null))
 				.withMessageContaining("bad; DROP");
 		thenIllegalArgumentException()
 				.isThrownBy(() -> SelectDatum.forStreams(null, TEST_NODE_ID, null, null, 0, null));
