@@ -386,3 +386,630 @@ BEGIN
 	RETURN sid;
 END
 $$;
+
+
+/* ============================================================================
+ * Reading difference support.
+ *
+ * Ported from the SolarNet solardatm schema, without SolarNet's Reset
+ * auxiliary records. These need no extension, so a `Difference` reading query
+ * without aggregation works on every deployment. The aggregate setup script,
+ * postgres-init-agg.sql, replaces solarhist.dh_find_datum_diff_near_rows() with
+ * a version that falls back to hourly readings where raw datum have been
+ * dropped.
+ * ============================================================================
+ */
+
+-- datum row type used by the functions below regardless of physical table; like the SolarNet
+-- solardatm.datm_rec type, without the rtype column used for Reset records
+CREATE TYPE solarhist.dh_datum_rec AS (
+	stream_id	INTEGER,
+	ts			TIMESTAMP WITH TIME ZONE,
+	data_i		NUMERIC[],
+	data_a		NUMERIC[],
+	data_s		JSONB,
+	data_t		TEXT[]
+);
+
+-- the state and result of the solarhist.dh_diff_datum() aggregate; like the SolarNet
+-- solardatm.agg_datm_diff type
+CREATE TYPE solarhist.dh_agg_datum_diff AS (
+	stream_id	INTEGER,
+	ts_start	TIMESTAMP WITH TIME ZONE,
+	ts_end		TIMESTAMP WITH TIME ZONE,
+	data_i		NUMERIC[],
+	data_a		NUMERIC[],
+	data_s		JSONB,
+	data_t		TEXT[],
+	stat_i		NUMERIC[][],
+	read_a		NUMERIC[][]
+);
+
+
+/**
+ * Reduce a two-dimensional array into a set of one-dimensional arrays.
+ *
+ * Copied from the SolarNet solarcommon.reduce_dim() function.
+ *
+ * @param the two-dimensional array
+ * @returns each slice of the first dimension
+ */
+CREATE OR REPLACE FUNCTION solarhist.reduce_dim(anyarray)
+	RETURNS SETOF anyarray LANGUAGE plpgsql IMMUTABLE STRICT ROWS 20 AS
+$$
+DECLARE
+	s $1%TYPE;
+BEGIN
+	FOREACH s SLICE 1 IN ARRAY $1 LOOP
+		RETURN NEXT s;
+	END LOOP;
+	RETURN;
+END
+$$;
+
+
+/**
+ * Find the time of the datum immediately before a given time, within a cutoff.
+ *
+ * This function exists so that the planner is given a full date constraint on
+ * `solarhist.dh_datum`. Ported from the SolarNet solardatm.find_time_before_ts() function.
+ *
+ * @param sid 		the stream ID
+ * @param ts_at		the time to look before (exclusive)
+ * @param cutoff 	the earliest time to consider (inclusive)
+ * @param must_a	if `TRUE` then only consider datum with accumulating values
+ * @param has_no_a	`TRUE` if the stream can be assumed to have no accumulating properties
+ * @returns the time of the datum found, or no row
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_time_before_ts(
+		sid 		INTEGER,
+		ts_at 		TIMESTAMP WITH TIME ZONE,
+		cutoff 		TIMESTAMP WITH TIME ZONE,
+		must_a		BOOLEAN DEFAULT FALSE,
+		has_no_a 	BOOLEAN DEFAULT FALSE
+	) RETURNS SETOF TIMESTAMP WITH TIME ZONE LANGUAGE plpgsql STRICT STABLE ROWS 1 AS
+$$
+BEGIN
+	RETURN QUERY
+	SELECT ts
+	FROM solarhist.dh_datum
+	WHERE stream_id = sid
+		AND ts < ts_at
+		AND ts >= cutoff
+		AND NOT(must_a AND (has_no_a OR data_a IS NULL))
+	ORDER BY ts DESC
+	LIMIT 1;
+END
+$$;
+
+
+/**
+ * Find the time of the datum immediately after a given time, within a cutoff.
+ *
+ * This function exists so that the planner is given a full date constraint on
+ * `solarhist.dh_datum`. Ported from the SolarNet solardatm.find_time_after_ts() function.
+ *
+ * @param sid 		the stream ID
+ * @param ts_at		the time to look after (exclusive)
+ * @param cutoff 	the latest time to consider (inclusive)
+ * @param must_a	if `TRUE` then only consider datum with accumulating values
+ * @param has_no_a	`TRUE` if the stream can be assumed to have no accumulating properties
+ * @returns the time of the datum found, or no row
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_time_after_ts(
+		sid 		INTEGER,
+		ts_at 		TIMESTAMP WITH TIME ZONE,
+		cutoff 		TIMESTAMP WITH TIME ZONE,
+		must_a		BOOLEAN DEFAULT FALSE,
+		has_no_a 	BOOLEAN DEFAULT FALSE
+	) RETURNS SETOF TIMESTAMP WITH TIME ZONE LANGUAGE plpgsql STRICT STABLE ROWS 1 AS
+$$
+BEGIN
+	RETURN QUERY
+	SELECT ts
+	FROM solarhist.dh_datum
+	WHERE stream_id = sid
+		AND ts > ts_at
+		AND ts <= cutoff
+		AND NOT(must_a AND (has_no_a OR data_a IS NULL))
+	ORDER BY ts
+	LIMIT 1;
+END
+$$;
+
+
+/**
+ * Find if the datum at a given time has accumulating values.
+ *
+ * Ported from the SolarNet solardatm.datm_has_accumulating_at() function.
+ *
+ * @param sid 		the stream ID
+ * @param ts_at		the datum time
+ * @returns the datum time and whether it has accumulating values, or no row if there is no
+ *          datum at that time
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_datum_has_accumulating_at(
+		sid 		INTEGER,
+		ts_at 		TIMESTAMP WITH TIME ZONE
+	) RETURNS TABLE (
+		ts 			TIMESTAMP WITH TIME ZONE,
+		has_a 		BOOLEAN
+	) LANGUAGE plpgsql STRICT STABLE ROWS 1 AS
+$$
+BEGIN
+	RETURN QUERY
+	SELECT d.ts, COALESCE(CARDINALITY(d.data_a) > 0, FALSE) AS has_a
+	FROM solarhist.dh_datum d
+	WHERE d.stream_id = sid
+		AND d.ts = ts_at;
+END
+$$;
+
+
+/**
+ * Find datum between two times, inclusive at both ends.
+ *
+ * This function exists so that the planner is given a full date constraint on
+ * `solarhist.dh_datum`: its query is planned with the times as values, so only the partitions
+ * they fall in are scanned. The SQL functions that the planner inlines into the calling query
+ * use it to look up datum by times found while that query runs, as a join on such times would
+ * be planned over every partition. Ported from the SolarNet solardatm.find_datm_between()
+ * function.
+ *
+ * @param sid 		the stream ID
+ * @param start_ts	the minimum time (inclusive)
+ * @param end_ts 	the maximum time (inclusive)
+ * @returns the datum
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_datum_between(
+		sid 		INTEGER,
+		start_ts 	TIMESTAMP WITH TIME ZONE,
+		end_ts 		TIMESTAMP WITH TIME ZONE
+	) RETURNS SETOF solarhist.dh_datum_rec LANGUAGE plpgsql STRICT STABLE ROWS 500 AS
+$$
+BEGIN
+	RETURN QUERY
+	SELECT stream_id, ts, data_i, data_a, data_s, data_t
+	FROM solarhist.dh_datum
+	WHERE stream_id = sid
+		AND ts >= start_ts
+		AND ts <= end_ts;
+END
+$$;
+
+
+/**
+ * Find the datum immediately before and after a point in time, within a tolerance.
+ *
+ * If a datum exists exactly at the given time, that datum alone is returned. Otherwise up to
+ * two datum are returned, one before and one after the given time.
+ *
+ * Looking for a datum with accumulating values is slow when there is none, so the search
+ * before is first made over at most 14 days. If nothing is found there, the latest datum
+ * before those 14 days and within the tolerance is used, unless `must_a` is `TRUE` and it has
+ * no accumulating values: then the latest datum with accumulating values within the 14 days
+ * before it, and within the tolerance, is used instead. Ported from the SolarNet
+ * solardatm.find_datm_around_ts() function, with its NET-538 changes.
+ *
+ * It is not declared STRICT, so the planner can inline it into the calling query and prune the
+ * `solarhist.dh_datum` partitions while planning. A NULL argument still gives no rows. For the
+ * same reason it looks up the datum at the times it finds with
+ * `solarhist.dh_find_datum_between()`, which plans its query with the time as a value: a join
+ * on a time found while the query runs would be planned over every partition.
+ *
+ * @param sid 		the stream ID
+ * @param ts_at		the time to find the datum around
+ * @param tolerance the maximum time to look before and after `ts_at`
+ * @param must_a	if `TRUE` then only consider datum with accumulating values
+ * @param has_no_a	`TRUE` if the stream can be assumed to have no accumulating properties
+ * @returns the datum found
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_datum_around_ts(
+		sid 		INTEGER,
+		ts_at 		TIMESTAMP WITH TIME ZONE,
+		tolerance 	INTERVAL DEFAULT INTERVAL 'P1M',
+		must_a		BOOLEAN DEFAULT FALSE,
+		has_no_a 	BOOLEAN DEFAULT FALSE
+	) RETURNS SETOF solarhist.dh_datum_rec LANGUAGE SQL STABLE ROWS 2 AS
+$$
+	-- find if the stream has accumulating properties at all, to avoid a costly scan
+	WITH meta AS (
+		SELECT COALESCE(CARDINALITY(names_a) = 0, TRUE) AS has_no_a
+		FROM solarhist.dh_datum_meta
+		WHERE stream_id = sid
+	)
+	, exact AS (
+		SELECT d.stream_id, d.ts, d.data_i, d.data_a, d.data_s, d.data_t
+		FROM solarhist.dh_datum d
+		WHERE d.stream_id = sid
+			AND d.ts = ts_at
+			AND NOT(must_a AND (has_no_a OR d.data_a IS NULL))
+	)
+	, srange AS (
+		SELECT COALESCE(
+			(
+				-- the datum before, requiring accumulating values, within at most 14 days
+				SELECT d.ts
+				FROM meta, solarhist.dh_find_time_before_ts(sid, ts_at, ts_at - LEAST(tolerance, INTERVAL 'P14D'), must_a, meta.has_no_a) AS d(ts)
+			),
+			(
+				-- then the datum before over the full tolerance, not requiring accumulating
+				-- values, which an index-only scan can find quickly
+				WITH way_back AS (
+					SELECT d.ts
+					FROM meta, solarhist.dh_find_time_before_ts(
+						  sid
+						, ts_at - LEAST(tolerance, INTERVAL 'P14D')
+						, ts_at - tolerance
+						, FALSE
+						, meta.has_no_a
+						) AS d(ts)
+				)
+				, way_back_d AS (
+					SELECT d.ts, d.has_a
+					FROM way_back, solarhist.dh_datum_has_accumulating_at(sid, way_back.ts) AS d
+				)
+				, t AS (
+					SELECT COALESCE(
+						(
+							-- if the way-back datum has accumulating values, or they are not
+							-- required, use it
+							SELECT ts
+							FROM way_back_d
+							WHERE has_a OR NOT must_a
+						),
+						(
+							-- otherwise a short search before it, requiring accumulating values,
+							-- within the tolerance, unless the stream has none (NET-538)
+							SELECT d.ts
+							FROM meta, way_back_d, solarhist.dh_find_time_before_ts(
+								  sid
+								, way_back_d.ts
+								, GREATEST(way_back_d.ts - LEAST(tolerance, INTERVAL 'P14D'), ts_at - tolerance)
+								, TRUE
+								, meta.has_no_a
+							) AS d(ts)
+							WHERE NOT meta.has_no_a
+						)
+					) AS ts
+				)
+				-- a lookup rather than a join, so it is not planned over every partition
+				SELECT d.ts
+				FROM t, solarhist.dh_find_datum_between(sid, t.ts, t.ts) d
+				WHERE (NOT must_a OR d.data_a IS NOT NULL)
+			)
+		) AS ts
+
+		UNION ALL
+
+		SELECT COALESCE(
+			(
+				-- the datum after, requiring accumulating values, within at most 14 days
+				SELECT d.ts
+				FROM meta, solarhist.dh_find_time_after_ts(sid, ts_at, ts_at + LEAST(tolerance, INTERVAL 'P14D'), must_a, meta.has_no_a) AS d(ts)
+			),
+			(
+				-- then the datum after over the full tolerance, not requiring accumulating values
+				WITH t AS (
+					SELECT d.ts
+					FROM meta, solarhist.dh_find_time_after_ts(sid, ts_at, ts_at + tolerance, FALSE, meta.has_no_a) AS d(ts)
+				)
+				-- a lookup rather than a join, so it is not planned over every partition
+				SELECT d.ts
+				FROM t, solarhist.dh_find_datum_between(sid, t.ts, t.ts) d
+				WHERE (NOT must_a OR d.data_a IS NOT NULL)
+			)
+		) AS ts
+	)
+	, b AS (
+		SELECT d.*, 0 AS rtype
+		FROM exact d
+
+		UNION ALL
+
+		-- a lookup rather than a join, so it is not planned over every partition
+		SELECT d.stream_id, d.ts, d.data_i, d.data_a, d.data_s, d.data_t, 1 AS rtype
+		FROM srange, solarhist.dh_find_datum_between(sid, srange.ts, srange.ts) d
+	)
+	, d AS (
+		-- the exact datum if there is one, otherwise the datum before and after
+		SELECT b.*
+			, CASE
+				WHEN rtype = 0 THEN TRUE
+				WHEN rtype = 1 AND rank() OVER (ORDER BY rtype) = 1 THEN TRUE
+				ELSE FALSE
+				END AS inc
+		FROM b
+	)
+	SELECT stream_id, ts, data_i, data_a, data_s, data_t
+	FROM d
+	WHERE inc
+		-- a NULL argument gives no rows, as for a STRICT function
+		AND num_nulls(sid, ts_at, tolerance, must_a, has_no_a) = 0
+$$;
+
+
+/**
+ * Find the datum for calculating the reading difference between two times, within a
+ * tolerance.
+ *
+ * For each of the two times this finds the datum at that time, or the one before it, or
+ * failing both the one after it, considering only datum with accumulating values. Pass the
+ * results, ordered by time, to the `solarhist.dh_diff_datum()` aggregate. Ported from the
+ * SolarNet solardatm.find_datm_diff_near_rows() function, without Reset records.
+ *
+ * @param sid 		the stream ID
+ * @param start_ts	the starting time
+ * @param end_ts 	the ending time
+ * @param tolerance the maximum time to look before and after each time
+ * @returns up to two datum rows, with only the accumulating values
+ * @see solarhist.dh_find_datum_diff_rows()
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_datum_diff_near_rows(
+		sid 			INTEGER,
+		start_ts 		TIMESTAMP WITH TIME ZONE,
+		end_ts 			TIMESTAMP WITH TIME ZONE,
+		tolerance 		INTERVAL DEFAULT INTERVAL 'P3M'
+	) RETURNS SETOF solarhist.dh_datum_rec LANGUAGE SQL STABLE ROWS 10 AS
+$$
+	-- find if the stream has accumulating properties at all, to avoid a costly scan
+	WITH meta AS (
+		SELECT COALESCE(CARDINALITY(names_a) = 0, TRUE) AS has_no_a
+		FROM solarhist.dh_datum_meta
+		WHERE stream_id = sid
+	)
+	-- the earliest of the datum around each time, which may be an exact match
+	, d AS (
+		(
+		SELECT d.*
+		FROM meta, solarhist.dh_find_datum_around_ts(sid, start_ts, tolerance, TRUE, meta.has_no_a) AS d
+		ORDER BY d.ts
+		LIMIT 1
+		)
+		UNION
+		(
+		SELECT d.*
+		FROM meta, solarhist.dh_find_datum_around_ts(sid, end_ts, tolerance, TRUE, meta.has_no_a) AS d
+		ORDER BY d.ts
+		LIMIT 1
+		)
+	)
+	-- drop any leading row before the last one at or before the start, and any trailing row
+	-- after the last one at or before the end
+	, ts_range AS (
+		SELECT COALESCE(max(ts) FILTER (WHERE ts <= start_ts), start_ts) AS min_ts
+			, COALESCE(max(ts) FILTER (WHERE ts <= end_ts), end_ts) AS max_ts
+		FROM d
+	)
+	SELECT d.stream_id
+		, d.ts
+		, NULL::NUMERIC[] AS data_i
+		, d.data_a
+		, NULL::JSONB AS data_s
+		, NULL::TEXT[] AS data_t
+	FROM d, ts_range
+	WHERE d.ts >= ts_range.min_ts AND d.ts <= ts_range.max_ts
+$$;
+
+
+/**
+ * Find the datum for calculating the reading difference between two times, looking up to one
+ * year before and after each time.
+ *
+ * Ported from the SolarNet solardatm.find_datm_diff_rows() function.
+ *
+ * @param sid 		the stream ID
+ * @param start_ts	the starting time
+ * @param end_ts 	the ending time
+ * @returns up to two datum rows, with only the accumulating values
+ * @see solarhist.dh_find_datum_diff_near_rows()
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_datum_diff_rows(
+		sid 			INTEGER,
+		start_ts 		TIMESTAMP WITH TIME ZONE,
+		end_ts 			TIMESTAMP WITH TIME ZONE
+	) RETURNS SETOF solarhist.dh_datum_rec LANGUAGE SQL STABLE ROWS 10 AS
+$$
+	SELECT * FROM solarhist.dh_find_datum_diff_near_rows(sid, start_ts, end_ts, INTERVAL 'P1Y')
+$$;
+
+
+/**
+ * State transition function of the `solarhist.dh_diff_datum()` aggregate.
+ *
+ * Ported from the SolarNet solardatm.diff_datm_sfunc() function, without Reset records.
+ *
+ * @see solarhist.dh_diff_datum_ffunc()
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_diff_datum_sfunc(
+		agg_state 	solarhist.dh_agg_datum_diff,
+		el 			solarhist.dh_datum_rec
+	) RETURNS solarhist.dh_agg_datum_diff LANGUAGE plpgsql IMMUTABLE AS
+$$
+BEGIN
+	WITH wi AS (
+		SELECT
+			  p.idx
+			, p.val AS val
+			, s.stat[1] AS cnt
+			, s.stat[2] AS val_min
+			, s.stat[3] AS val_max
+		FROM unnest(agg_state.data_i) WITH ORDINALITY AS p(val, idx)
+		INNER JOIN solarhist.reduce_dim(agg_state.stat_i) WITH ORDINALITY AS s(stat, idx) ON s.idx = p.idx
+		UNION ALL
+		SELECT
+			  p.idx
+			, p.val
+			, 1 AS cnt
+			, p.val AS val_min
+			, p.val AS val_max
+		FROM unnest(el.data_i) WITH ORDINALITY AS p(val, idx)
+	)
+	, di AS (
+		SELECT
+			idx
+			, sum(val) AS val
+			, sum(cnt) AS cnt
+			, min(val_min) AS val_min
+			, max(val_max) AS val_max
+		FROM wi
+		GROUP BY idx
+	)
+	, di_ary AS (
+		SELECT
+			  array_agg(val ORDER BY idx) AS data_i
+			, array_agg(
+				ARRAY[cnt, val_min, val_max] ORDER BY idx
+			) AS stat_i
+		FROM di
+	)
+	-- accumulating values per property: rtype 0 is the state so far, 1 the new row
+	, wa AS (
+		SELECT
+			  p.idx
+			, p.val
+			, s.stat[2] AS val_start
+			, s.stat[3] AS val_end
+			, 0 AS rtype
+		FROM unnest(agg_state.data_a) WITH ORDINALITY AS p(val, idx)
+		INNER JOIN solarhist.reduce_dim(agg_state.read_a) WITH ORDINALITY AS s(stat, idx) ON s.idx = p.idx
+		UNION ALL
+		SELECT
+			  p.idx
+			, p.val
+			, NULL::NUMERIC AS val_start
+			, NULL::NUMERIC AS val_end
+			, 1 AS rtype
+		FROM unnest(el.data_a) WITH ORDINALITY AS p(val, idx)
+	)
+	, da AS (
+		SELECT
+			idx
+			-- previous difference + (current value - previous end)
+			, COALESCE(min(val) FILTER (WHERE rtype = 0), 0)
+				+ min(val) FILTER (WHERE rtype = 1)
+				- COALESCE(min(val_end) FILTER (WHERE rtype = 0), min(val) FILTER (WHERE rtype = 1))
+				AS val
+
+			-- start value as the first value
+			, COALESCE(min(val_start) FILTER (WHERE rtype = 0), min(val) FILTER (WHERE rtype = 1)) AS val_start
+
+			-- end value as the current value, falling back to the previous end
+			, COALESCE(min(val) FILTER (WHERE rtype = 1), min(val_end) FILTER (WHERE rtype = 0)) AS val_end
+		FROM wa
+		GROUP BY idx
+	)
+	, da_ary AS (
+		SELECT
+			  array_agg(val ORDER BY idx) AS data_a
+			, array_agg(
+				ARRAY[val, val_start, val_end] ORDER BY idx
+			) AS read_a
+		FROM da
+	)
+	-- status values are not supported, as SolarNet does not support them here either
+	, dt_ary AS (
+		SELECT array_agg(DISTINCT val) AS data_t
+		FROM (
+			SELECT val
+			FROM unnest(agg_state.data_t) t(val)
+			UNION ALL
+			SELECT val
+			FROM unnest(el.data_t) t(val)
+		) t
+		WHERE val IS NOT NULL
+	)
+	SELECT
+		  COALESCE(agg_state.stream_id, el.stream_id)
+		, COALESCE(agg_state.ts_start, el.ts)
+		, el.ts AS ts_end
+		, di_ary.data_i
+		, da_ary.data_a
+		, NULL::JSONB AS data_s
+		, dt_ary.data_t
+		, di_ary.stat_i
+		, da_ary.read_a
+	FROM di_ary, da_ary, dt_ary
+	INTO agg_state;
+
+	RETURN agg_state;
+END
+$$;
+
+
+/**
+ * Final function of the `solarhist.dh_diff_datum()` aggregate.
+ *
+ * Ported from the SolarNet solardatm.diff_datm_ffunc() function.
+ *
+ * @see solarhist.dh_diff_datum_sfunc()
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_diff_datum_ffunc(
+		agg_state 	solarhist.dh_agg_datum_diff
+	) RETURNS solarhist.dh_agg_datum_diff LANGUAGE plpgsql STRICT IMMUTABLE AS
+$$
+BEGIN
+	WITH di AS (
+		SELECT
+			  p.idx
+			, to_char(p.val / s.stat[1], 'FM999999999999999999999999999999999999990.999999999')::NUMERIC AS val
+			, s.stat[1] AS cnt
+			, s.stat[2] AS val_min
+			, s.stat[3] AS val_max
+		FROM unnest(agg_state.data_i) WITH ORDINALITY AS p(val, idx)
+		INNER JOIN solarhist.reduce_dim(agg_state.stat_i) WITH ORDINALITY AS s(stat, idx) ON s.idx = p.idx
+	)
+	, di_ary AS (
+		SELECT
+			  array_agg(val ORDER BY idx) AS data_i
+			, array_agg(
+				ARRAY[cnt, val_min, val_max] ORDER BY idx
+			) AS stat_i
+		FROM di
+	)
+	, da AS (
+		SELECT
+			  p.idx
+			, to_char(p.val, 'FM999999999999999999999999999999999999990.999999999')::NUMERIC AS val
+		FROM unnest(agg_state.data_a) WITH ORDINALITY AS p(val, idx)
+	)
+	, da_ary AS (
+		SELECT
+			  array_agg(val ORDER BY idx) AS data_a
+		FROM da
+	)
+	SELECT
+		  agg_state.stream_id
+		, agg_state.ts_start
+		, agg_state.ts_end
+		, di_ary.data_i
+		, da_ary.data_a
+		, agg_state.data_s
+		, agg_state.data_t
+		, di_ary.stat_i
+		, agg_state.read_a
+	FROM di_ary, da_ary
+	INTO agg_state;
+
+	RETURN agg_state;
+END
+$$;
+
+
+/**
+ * Reading difference aggregate, over datum rows ordered by time.
+ *
+ * The result holds, for each accumulating property, the difference in `data_a` and the
+ * difference, starting reading, and ending reading in `read_a`. For example, for the
+ * `Difference` reading type without aggregation:
+ *
+ * 	SELECT (solarhist.dh_diff_datum(d ORDER BY d.ts)).*
+ * 	FROM solarhist.dh_find_datum_diff_rows(1, '2026-11-01Z', '2026-11-02Z') d
+ *
+ * Ported from the SolarNet solardatm.diff_datm() aggregate.
+ */
+CREATE AGGREGATE solarhist.dh_diff_datum(solarhist.dh_datum_rec) (
+	stype 		= solarhist.dh_agg_datum_diff,
+	sfunc 		= solarhist.dh_diff_datum_sfunc,
+	finalfunc 	= solarhist.dh_diff_datum_ffunc
+);
