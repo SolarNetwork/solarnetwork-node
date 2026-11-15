@@ -34,13 +34,17 @@ import org.springframework.jdbc.core.SqlProvider;
  * Select the features of a historian schema.
  *
  * <p>
- * The single row has this column, mapped by {@link #RESULT_MAPPER}:
+ * The single row has these columns, mapped by {@link #RESULT_MAPPER}:
  * </p>
  *
  * <ol>
  * <li>{@code agg}: {@code true} if the schema has the aggregate setup of
  * {@code postgres-init-agg.sql}, that is its {@code dh_agg_hourly},
  * {@code dh_agg_daily}, and {@code dh_agg_monthly} tables</li>
+ * <li>{@code agg_slots}: {@code true} if the schema has the sub-hour rollup
+ * functions of {@code postgres-init-agg.sql},
+ * {@code dh_rollup_datum_for_time_span_slots()} and
+ * {@code dh_count_datum_time_span_slots()}</li>
  * </ol>
  *
  * @author matt
@@ -53,17 +57,27 @@ public final class SelectHistorianFeatures implements PreparedStatementCreator, 
 	 *
 	 * @param aggregates
 	 *        {@code true} if the schema has the aggregate setup
+	 * @param minuteAggregates
+	 *        {@code true} if the schema has the sub-hour rollup functions
 	 */
-	public record Result(boolean aggregates) {
+	public record Result(boolean aggregates, boolean minuteAggregates) {
 
 	}
 
 	/** A row mapper for the {@link Result} of this statement. */
-	public static final RowMapper<Result> RESULT_MAPPER = (rs, rowNum) -> new Result(rs.getBoolean(1));
+	public static final RowMapper<Result> RESULT_MAPPER = (rs, rowNum) -> new Result(rs.getBoolean(1),
+			rs.getBoolean(2));
 
 	/** The aggregate setup tables. */
 	private static final String[] AGGREGATE_TABLES = new String[] { "dh_agg_hourly", "dh_agg_daily",
 			"dh_agg_monthly" };
+
+	/** The sub-hour rollup functions, with their argument types. */
+	private static final String[] MINUTE_AGGREGATE_FUNCTIONS = new String[] {
+			"dh_rollup_datum_for_time_span_slots(integer"
+					+ ",timestamp with time zone,timestamp with time zone,integer,interval)",
+			"dh_count_datum_time_span_slots(integer"
+					+ ",timestamp with time zone,timestamp with time zone,integer)" };
 
 	private final String schemaName;
 
@@ -92,7 +106,15 @@ public final class SelectHistorianFeatures implements PreparedStatementCreator, 
 			buf.append("to_regclass('").append(schemaName).append('.').append(AGGREGATE_TABLES[i])
 					.append("') IS NOT NULL");
 		}
-		buf.append(" AS agg");
+		buf.append(" AS agg\n\t, ");
+		for ( int i = 0; i < MINUTE_AGGREGATE_FUNCTIONS.length; i++ ) {
+			if ( i > 0 ) {
+				buf.append("\n\tAND ");
+			}
+			buf.append("to_regprocedure('").append(schemaName).append('.')
+					.append(MINUTE_AGGREGATE_FUNCTIONS[i]).append("') IS NOT NULL");
+		}
+		buf.append(" AS agg_slots");
 		return buf.toString();
 	}
 

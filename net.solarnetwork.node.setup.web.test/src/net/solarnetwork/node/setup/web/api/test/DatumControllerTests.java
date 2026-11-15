@@ -595,6 +595,107 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 	}
 
 	@Test
+	public void stream_minuteAggregate_json() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		final ObjectDatumStreamMetadata meta = fixtureMeta();
+		givenAggregateStream(filtered, meta, fixtureAggregateJsonTimestamp());
+
+		// WHEN
+		final MockHttpServletResponse res = mvc
+				.perform(get(STREAM_PATH).param("aggregation", "15m").accept(MediaType.APPLICATION_JSON))
+				.andReturn().getResponse();
+
+		// THEN
+		and.then(res.getStatus()).as("OK").isEqualTo(200);
+		and.then(res.getContentAsString(StandardCharsets.UTF_8))
+				.as("Sub-hour aggregate datum stream provided as JSON in aggregate form")
+				.isEqualTo(fixtureAggregateStreamJson(meta));
+		and.then(filterCaptor.getValue().getAggregation())
+				.as("Aggregation key passed to historian as aggregation")
+				.isEqualTo(Aggregation.FifteenMinute);
+	}
+
+	/**
+	 * Stub the filtered historian to refuse a stream query, as it refuses a
+	 * sub-hour aggregation over too long a time span.
+	 */
+	private void givenStreamRefused(String message) throws IOException {
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		willThrow(new IllegalArgumentException(message)).given(filtered)
+				.findFilteredStream(filterCaptor.capture(), any(), isNull(), isNull(), isNull());
+	}
+
+	private static final String RANGE_REFUSED_MESSAGE = "Minute level aggregation time span must be at most 840 hours.";
+
+	private static final String RANGE_REFUSED_JSON = """
+			{"success":false,"message":"Illegal argument: \
+			Minute level aggregation time span must be at most 840 hours."}""";
+
+	@Test
+	public void stream_minuteAggregate_rangeRefused() throws Exception {
+		// GIVEN
+		givenStreamRefused(RANGE_REFUSED_MESSAGE);
+
+		// WHEN
+		final MockHttpServletResponse res = mvc
+				.perform(get(STREAM_PATH).param("aggregation", "FiveMinute")
+						.param("startDate", "2026-01-01").param("endDate", "2026-03-01")
+						.accept(MediaType.APPLICATION_JSON).header(HttpHeaders.ACCEPT_ENCODING, "gzip"))
+				.andReturn().getResponse();
+
+		// THEN
+		and.then(res.getStatus()).as("Refused range can not be processed, as in SolarQuery")
+				.isEqualTo(422);
+		and.then(res.getContentType()).as("JSON content").isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+		and.then(res.getHeader(HttpHeaders.CONTENT_ENCODING)).as("Error result not compressed").isNull();
+		and.then(res.getContentAsString()).as("Error result provided, as in SolarQuery")
+				.isEqualTo(RANGE_REFUSED_JSON);
+		and.then(filterCaptor.getValue().getAggregation()).as("Aggregation passed to historian")
+				.isEqualTo(Aggregation.FiveMinute);
+	}
+
+	@Test
+	public void stream_minuteAggregate_rangeRefused_cbor() throws Exception {
+		// GIVEN
+		givenStreamRefused(RANGE_REFUSED_MESSAGE);
+
+		// WHEN
+		final MockHttpServletResponse res = mvc.perform(
+				get(STREAM_PATH).param("aggregation", "FiveMinute").param("startDate", "2026-01-01")
+						.param("endDate", "2026-03-01").accept(MediaType.APPLICATION_CBOR))
+				.andReturn().getResponse();
+
+		// THEN
+		and.then(res.getStatus()).as("Refused range can not be processed").isEqualTo(422);
+		and.then(res.getContentType()).as("CBOR content").isEqualTo(MediaType.APPLICATION_CBOR_VALUE);
+		and.then(cborJson(res.getContentAsByteArray())).as("Error result provided as CBOR")
+				.isEqualTo(RANGE_REFUSED_JSON);
+	}
+
+	@Test
+	public void stream_minuteAggregate_rangeRefused_csv() throws Exception {
+		// GIVEN
+		givenStreamRefused(RANGE_REFUSED_MESSAGE);
+
+		// WHEN
+		final MockHttpServletResponse res = mvc.perform(
+				get(STREAM_PATH).param("aggregation", "FiveMinute").param("startDate", "2026-01-01")
+						.param("endDate", "2026-03-01").accept(TEXT_CSV))
+				.andReturn().getResponse();
+
+		// THEN
+		and.then(res.getStatus()).as("Refused range can not be processed").isEqualTo(422);
+		and.then(res.getContentType()).as("CSV content").startsWith(TEXT_CSV.toString());
+		and.then(res.getContentAsString()).as("Error result provided as CSV").isEqualTo("""
+				message,success\r
+				Illegal argument: Minute level aggregation time span must be at most 840 hours.,false\r
+				""");
+	}
+
+	@Test
 	public void stream_propertyNames() throws Exception {
 		// GIVEN
 		given(identityService.getNodeId()).willReturn(NODE_ID);
@@ -1159,6 +1260,35 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 				"message":"The NearestDifference reading type is not supported."}""");
 		and.then(filterCaptor.getValue().getReadingType()).as("Reading type passed to historian")
 				.isEqualTo(DatumReadingType.NearestDifference);
+	}
+
+	@Test
+	public void reading_minuteAggregate_refused() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		willThrow(new IllegalArgumentException(
+				"Only Hour/Day/Month aggregation is supported for reading queries.")).given(filtered)
+						.findFilteredStreamReadings(filterCaptor.capture(), any(), isNull(), isNull(),
+								isNull());
+
+		// WHEN
+		final MockHttpServletResponse res = mvc
+				.perform(get(READING_PATH).param("readingType", "Difference").param("aggregation", "5m")
+						.param("startDate", "2026-01-01").param("endDate", "2026-01-02")
+						.accept(MediaType.APPLICATION_JSON))
+				.andReturn().getResponse();
+
+		// THEN
+		and.then(res.getStatus())
+				.as("Sub-hour aggregation reading query can not be processed, as in SolarQuery")
+				.isEqualTo(422);
+		and.then(res.getContentType()).as("JSON content").isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+		and.then(res.getContentAsString()).as("Error result provided").isEqualTo("""
+				{"success":false,"message":"Illegal argument: \
+				Only Hour/Day/Month aggregation is supported for reading queries."}""");
+		and.then(filterCaptor.getValue().getAggregation()).as("Aggregation passed to historian")
+				.isEqualTo(Aggregation.FiveMinute);
 	}
 
 	@Test

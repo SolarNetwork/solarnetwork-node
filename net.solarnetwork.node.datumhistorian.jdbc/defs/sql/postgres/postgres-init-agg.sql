@@ -28,6 +28,11 @@
  *   that starts before the oldest solarhist.dh_datum partition is never
  *   recomputed. Drop a partition with DROP TABLE, or detach it without
  *   CONCURRENTLY: either waits for an hour being computed to commit.
+ * - Sub-hour aggregates (5, 10, 15 and 30 minute slots) are not stored: the
+ *   solarhist.dh_rollup_datum_for_time_span_slots() function computes them
+ *   from raw datum when queried, and solarhist.dh_count_datum_time_span_slots()
+ *   counts them, like SolarNet's functions of the same purpose. Slots are
+ *   bucketed with date_bin(), so TimescaleDB is not needed.
  * - It replaces solarhist.dh_find_datum_diff_near_rows() from postgres-init.sql
  *   with a version that falls back to hourly readings where raw datum have
  *   been dropped, for Difference reading queries without aggregation.
@@ -712,6 +717,270 @@ $$
 		, di_ary.stat_i
 		, da_ary.read_a
 	FROM di_ary, da_ary, ds_ary, dt_ary
+	WHERE data_i IS NOT NULL OR data_a IS NOT NULL OR data_s IS NOT NULL OR data_t IS NOT NULL
+$$;
+
+
+/* ============================================================================
+ * Sub-hour rollup
+ * ============================================================================
+ */
+
+/**
+ * Return a valid sub-hour slot length for an arbitrary number of seconds.
+ *
+ * A slot length must be between 60 and 1800 seconds and divide evenly into 1800, so the slots
+ * of every length start on the hour. Any other value gives 600.
+ *
+ * Copied from the SolarNet solardatm.slot_seconds() function.
+ *
+ * @param secs the seconds to validate
+ * @returns `secs`, or 600 if it is not a valid slot length
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_slot_seconds(secs INTEGER DEFAULT 600)
+	RETURNS INTEGER LANGUAGE SQL IMMUTABLE AS
+$$
+	SELECT CASE
+		WHEN secs < 60 OR secs > 1800 OR 1800 % secs <> 0 THEN 600
+	ELSE
+		secs
+	END
+$$;
+
+
+/**
+ * Return the start of the sub-hour slot of a timestamp.
+ *
+ * For example a `secs` of 600 gives the timestamp truncated to `:00`, `:10`, `:20`, `:30`,
+ * `:40` or `:50` minutes. The timestamp is first rounded up to a whole second, so a timestamp
+ * less than a second before the end of a slot is given the next slot. That differs from the
+ * slots of `solarhist.dh_rollup_datum_for_time_span_slots()`, as it does in SolarNet. The result
+ * does not depend on the session time zone, as the hour truncated to cancels out.
+ *
+ * Copied from the SolarNet solardatm.minute_time_slot() function.
+ *
+ * @param ts 	the timestamp
+ * @param secs 	the slot length, in seconds
+ * @returns the slot start
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_minute_time_slot(ts TIMESTAMP WITH TIME ZONE, secs INTEGER DEFAULT 600)
+	RETURNS TIMESTAMP WITH TIME ZONE LANGUAGE SQL IMMUTABLE AS
+$$
+	SELECT date_trunc('hour', ts) + (
+		ceil(extract('epoch' from ts) - extract('epoch' from date_trunc('hour', ts)))
+		- ceil(extract('epoch' from ts))::bigint % secs
+	) * interval '1 second'
+$$;
+
+
+/**
+ * Count the sub-hour slots of a time span that have datum.
+ *
+ * This complements `solarhist.dh_rollup_datum_for_time_span_slots()`, to count its results
+ * much faster than computing them. The slots are those of `solarhist.dh_minute_time_slot()`.
+ *
+ * Ported from the SolarNet solardatm.count_datm_time_span_slots() function.
+ *
+ * @param sid 		the stream ID
+ * @param start_ts	the minimum time (inclusive)
+ * @param end_ts 	the maximum time (exclusive)
+ * @param secs		the slot length, in seconds, as for `solarhist.dh_slot_seconds()`
+ * @returns the slot count
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_count_datum_time_span_slots(
+		sid 			INTEGER,
+		start_ts 		TIMESTAMP WITH TIME ZONE,
+		end_ts 			TIMESTAMP WITH TIME ZONE,
+		secs			INTEGER DEFAULT 600
+	) RETURNS BIGINT LANGUAGE SQL STABLE AS
+$$
+	SELECT count(*) FROM (
+		SELECT DISTINCT solarhist.dh_minute_time_slot(ts, solarhist.dh_slot_seconds(secs))
+		FROM solarhist.dh_datum
+		WHERE stream_id = sid
+			AND ts >= start_ts
+			AND ts < end_ts
+	) slots
+$$;
+
+
+/**
+ * Compute the aggregates of the sub-hour slots of a time span from raw datum.
+ *
+ * Nothing is stored: sub-hour aggregates are computed when queried. One row is returned for
+ * each slot within the span that has datum, as for `solarhist.dh_rollup_datum_for_time_span()`
+ * but for each slot:
+ *
+ * - `data_i`: the mean of each instantaneous property within the slot
+ * - `stat_i`: [count, minimum, maximum] of each instantaneous property within the slot
+ * - `data_a`: the clock accumulation of each accumulating property: the differences between
+ * 			consecutive readings, a difference whose readings are in different slots split by
+ * 			time between the slot of the earlier reading, up to the start of the slot of the
+ * 			later one, and the slot of the later one; slots between them without datum get
+ * 			nothing. Unlike the hourly rollup, a difference between readings more than
+ * 			`tolerance_clock` apart is not ignored, as in SolarNet
+ * - `read_a`: NULL, as reading statistics are not computed for slots
+ * - `data_s`: the most frequent value of each status property, as a JSON array
+ * - `data_t`: the distinct tags
+ *
+ * Slots start at multiples of `secs` seconds from 2000-01-03 00:00 UTC, the origin SolarNet's
+ * TimescaleDB time_bucket() function uses. `date_bin()` is used instead, so TimescaleDB is not
+ * needed; for every slot length `solarhist.dh_slot_seconds()` allows, the slots start on the
+ * hour in UTC.
+ *
+ * Ported from the SolarNet solardatm.rollup_datm_for_time_span_slots() function, without Reset
+ * records.
+ *
+ * @param sid 				the stream ID
+ * @param start_ts			the start of the span (inclusive)
+ * @param end_ts 			the end of the span (exclusive)
+ * @param secs				the slot length, in seconds; must be between 60 and 1800 and divide
+ *                          evenly into 1800
+ * @param tolerance_clock 	the maximum time to look back for the datum before the span, and
+ * 							forward for the datum after it (at most an hour)
+ * @returns the slot aggregates
+ * @see solarhist.dh_count_datum_time_span_slots()
+ * @see solarhist.dh_find_datum_for_time_slot()
+ * @see solarhist.dh_slot_seconds()
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_rollup_datum_for_time_span_slots(
+		sid 			INTEGER,
+		start_ts 		TIMESTAMP WITH TIME ZONE,
+		end_ts 			TIMESTAMP WITH TIME ZONE,
+		secs			INTEGER DEFAULT 600,
+		tolerance_clock INTERVAL DEFAULT INTERVAL 'PT1H'
+	) RETURNS SETOF solarhist.dh_agg_datum LANGUAGE SQL STABLE ROWS 500 AS
+$$
+	WITH m AS (
+		SELECT COALESCE(array_length(names_i, 1), 0) AS len_i
+			 , COALESCE(array_length(names_a, 1), 0) AS len_a
+		FROM solarhist.dh_datum_meta
+		WHERE stream_id = sid
+	)
+	-- the datum, with value arrays padded to the stream's property count, and their slot
+	, d AS (
+		SELECT
+			  stream_id
+			, ts
+			, date_bin(secs * INTERVAL '1 second', ts, TIMESTAMPTZ '2000-01-03 00:00:00+00') AS ts_start
+			, pad_vec(data_i, len_i) AS data_i
+			, pad_vec(data_a, len_a) AS data_a
+			, data_s
+			, data_t
+			, (ts >= start_ts AND ts < end_ts) AS inc
+		FROM m, solarhist.dh_find_datum_for_time_slot(
+			sid,
+			start_ts,
+			end_ts,
+			tolerance_clock
+		)
+	)
+	-- instantaneous statistics per slot and property
+	, di_ary AS (
+		SELECT
+			  d.ts_start
+			, vec_trim_scale(vec_agg_mean(d.data_i)) AS data_i
+			, solarhist.array_transpose2d(ARRAY[
+				  vec_agg_count(d.data_i)::NUMERIC[]
+				, vec_agg_min(d.data_i)
+				, vec_agg_max(d.data_i)
+			  ]) AS stat_i
+		FROM d
+		GROUP BY d.ts_start
+	)
+	-- clock accumulation per slot, for all properties at once
+	, wa AS (
+		SELECT
+			  d.ts_start
+			, d.data_a
+			, COALESCE(vec_sub(d.data_a, lag(d.data_a) OVER win), array_fill(0, ARRAY[m.len_a])) AS diff_before
+			, COALESCE(vec_sub(lead(d.data_a) OVER win, d.data_a), array_fill(0, ARRAY[m.len_a])) AS diff_after
+			, CASE
+				-- start of slot; allocate only end portion of accumulation within this slot
+				WHEN rank() OVER slot = 1
+					THEN COALESCE(EXTRACT('epoch' FROM d.ts - d.ts_start) / EXTRACT('epoch' FROM d.ts - lag(d.ts) OVER win), 0)
+
+				ELSE 1
+				END AS portion_before
+			, CASE
+				-- end of slot; allocate only start portion of accumulation within this slot
+				WHEN rank() OVER rslot = 1
+					THEN COALESCE(EXTRACT('epoch' FROM lead(d.ts_start) OVER win - d.ts) / EXTRACT('epoch' FROM lead(d.ts) OVER win - d.ts), 0)
+
+				ELSE 0
+				END AS portion_after
+		FROM d, m
+		WINDOW slot AS (PARTITION BY d.ts_start ORDER BY CASE WHEN d.data_a IS NULL THEN 1 ELSE 0 END, d.ts
+						RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+			, rslot AS (PARTITION BY d.ts_start ORDER BY CASE WHEN d.data_a IS NULL THEN 1 ELSE 0 END DESC, d.ts DESC
+						RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+			, win AS (ORDER BY CASE WHEN d.data_a IS NULL THEN 1 ELSE 0 END, d.ts
+						RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+	)
+	-- accumulating statistics per slot
+	, da_ary AS (
+		SELECT
+			  ts_start
+			, vec_trim_scale(vec_to_sum(vec_add(vec_mul(diff_before, portion_before::NUMERIC), vec_mul(diff_after, portion_after::NUMERIC)))) AS data_a
+		FROM wa
+		GROUP BY ts_start
+	)
+	-- status values per slot and property; JSON null counts as no value
+	, ws AS (
+		SELECT
+			  p.idx AS idx
+			, NULLIF(d.data_s->(p.idx - 1), 'null'::JSONB) AS val
+			, d.ts_start
+		FROM d
+		INNER JOIN generate_series(1, jsonb_array_length(d.data_s)) AS p(idx) ON TRUE
+		WHERE d.data_s IS NOT NULL AND d.inc
+	)
+	-- the most frequent value of each status property per slot
+	, ds AS (
+		SELECT
+			  ws.idx
+			, ws.ts_start
+			, mode() WITHIN GROUP (ORDER BY ws.val) AS val
+		FROM ws
+		GROUP BY ws.idx, ws.ts_start
+	)
+	, ds_ary AS (
+		SELECT
+			  ts_start
+			, jsonb_agg(val ORDER BY idx) AS data_s
+		FROM ds
+		GROUP BY ts_start
+	)
+	-- the distinct tags per slot
+	, dt_ary AS (
+		SELECT
+			  d.ts_start
+			, array_agg(DISTINCT p.val) AS data_t
+		FROM d
+		INNER JOIN unnest(d.data_t) AS p(val) ON TRUE
+		WHERE d.data_t IS NOT NULL AND d.inc
+		GROUP BY d.ts_start
+	)
+	-- the slots within the span
+	, slots AS (
+		SELECT DISTINCT d.ts_start
+		FROM d
+		WHERE d.inc
+	)
+	SELECT
+		  sid AS stream_id
+		, slots.ts_start
+		, di_ary.data_i
+		, da_ary.data_a
+		, ds_ary.data_s
+		, dt_ary.data_t
+		, di_ary.stat_i
+		, NULL::NUMERIC[][] AS read_a
+	FROM slots
+	LEFT OUTER JOIN di_ary ON di_ary.ts_start = slots.ts_start
+	LEFT OUTER JOIN da_ary ON da_ary.ts_start = slots.ts_start
+	LEFT OUTER JOIN ds_ary ON ds_ary.ts_start = slots.ts_start
+	LEFT OUTER JOIN dt_ary ON dt_ary.ts_start = slots.ts_start
 	WHERE data_i IS NOT NULL OR data_a IS NOT NULL OR data_s IS NOT NULL OR data_t IS NOT NULL
 $$;
 

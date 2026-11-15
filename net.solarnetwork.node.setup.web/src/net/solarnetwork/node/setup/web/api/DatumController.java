@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.web.api;
 
 import static net.solarnetwork.dao.StreamDatumFilteredResultsProcessor.METADATA_PROVIDER_ATTR;
 import static net.solarnetwork.domain.datum.ObjectDatumStreamMetadataProvider.staticProvider;
+import static net.solarnetwork.node.setup.web.support.WebServiceControllerSupport.requestDescription;
 import static org.springframework.http.MediaType.APPLICATION_CBOR_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import java.io.IOException;
@@ -40,17 +41,14 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.ServletWebRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.codec.CsvStreamDatumFilteredResultsProcessor;
@@ -67,7 +65,6 @@ import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.web.domain.DatumFilterCommand;
 import net.solarnetwork.node.setup.web.support.DatumHistorianSelector;
 import net.solarnetwork.node.setup.web.support.GlobalExceptionRestController;
-import net.solarnetwork.web.jakarta.domain.Response;
 import tools.jackson.core.StreamWriteFeature;
 import tools.jackson.databind.ObjectMapper;
 
@@ -146,8 +143,13 @@ public class DatumController extends BaseSolarQueryController {
 	 * <p>
 	 * With an {@code aggregation} of {@code Hour}, {@code Day} or
 	 * {@code Month}, a historian with stored aggregates provides aggregate
-	 * results, which are written in the SolarQuery aggregate form. Otherwise
-	 * the datum are provided as they are stored.
+	 * results, which are written in the SolarQuery aggregate form. With an
+	 * {@code aggregation} of {@code FiveMinute}, {@code TenMinute},
+	 * {@code FifteenMinute} or {@code ThirtyMinute}, a historian with the
+	 * aggregate setup computes the aggregates when queried, in the same form;
+	 * it may refuse the query, for example for a longer time span than it
+	 * allows, and the request then fails with a {@literal 422} status, as in
+	 * SolarQuery. Otherwise the datum are provided as they are stored.
 	 * </p>
 	 *
 	 * <p>
@@ -275,57 +277,6 @@ public class DatumController extends BaseSolarQueryController {
 		});
 	}
 
-	/**
-	 * Handle a missing required request parameter.
-	 *
-	 * <p>
-	 * The status is {@literal 400}, as in SolarQuery, with an error result in
-	 * the format of the request.
-	 * </p>
-	 *
-	 * @param e
-	 *        the exception
-	 * @param req
-	 *        the HTTP request
-	 * @return the error result
-	 */
-	@ExceptionHandler(MissingServletRequestParameterException.class)
-	@ResponseBody
-	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	public Response<?> handleMissingServletRequestParameterException(
-			MissingServletRequestParameterException e, HttpServletRequest req) {
-		log.debug("Missing parameter in request [{}]: {}", requestDescription(req), e.getMessage());
-		return new Response<Object>(Boolean.FALSE, null, e.getMessage(), null);
-	}
-
-	/**
-	 * A historian stream query.
-	 */
-	/**
-	 * Handle a query the historian does not support, such as a reading type
-	 * other than {@code Difference}.
-	 *
-	 * <p>
-	 * The status is {@literal 422}: the request is understood but can not be
-	 * processed. This overrides the {@literal 404} the web application gives an
-	 * {@link UnsupportedOperationException} elsewhere.
-	 * </p>
-	 *
-	 * @param e
-	 *        the exception
-	 * @param req
-	 *        the HTTP request
-	 * @return the error result
-	 */
-	@ExceptionHandler(UnsupportedOperationException.class)
-	@ResponseBody
-	@ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-	public Response<?> handleUnsupportedOperationException(UnsupportedOperationException e,
-			HttpServletRequest req) {
-		log.debug("Unsupported operation in request [{}]: {}", requestDescription(req), e.getMessage());
-		return new Response<Object>(Boolean.FALSE, "422", e.getMessage(), null);
-	}
-
 	@FunctionalInterface
 	private interface StreamQuery {
 
@@ -370,8 +321,6 @@ public class DatumController extends BaseSolarQueryController {
 				throw e;
 			}
 			if ( out.isFailed() ) {
-				log.debug("Datum stream response to [{}] failed; client probably disconnected: {}",
-						requestDescription(req), e.toString());
 				return;
 			}
 
@@ -380,7 +329,7 @@ public class DatumController extends BaseSolarQueryController {
 			// incomplete JSON or CBOR results can not be mistaken for complete ones
 			log.error(
 					"Datum stream query [{}] failed after the response started, results incomplete: {}",
-					requestDescription(req), e.toString(), e);
+					requestDescription(new ServletWebRequest(req, res)), e.toString(), e);
 		}
 	}
 
@@ -408,11 +357,6 @@ public class DatumController extends BaseSolarQueryController {
 			}
 		}
 		throw new HttpMediaTypeNotAcceptableException(STREAM_MEDIA_TYPES);
-	}
-
-	private static String requestDescription(HttpServletRequest req) {
-		final String query = req.getQueryString();
-		return (query != null ? req.getRequestURI() + '?' + query : req.getRequestURI());
 	}
 
 	/**

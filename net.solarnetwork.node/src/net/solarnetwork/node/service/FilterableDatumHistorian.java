@@ -118,6 +118,19 @@ public interface FilterableDatumHistorian
 	 * the same way as by {@code findFiltered()}.
 	 * </p>
 	 *
+	 * <p>
+	 * A historian may support the filter aggregation, giving one aggregate
+	 * result for each matching stream and aggregate period, in the form of
+	 * SolarQuery's aggregate results. Without support for an aggregation, for
+	 * example because the historian does not store aggregate results, it is
+	 * treated as no aggregation. A historian that supports the sub-hour
+	 * aggregations ({@link Aggregation#FiveMinute},
+	 * {@link Aggregation#TenMinute}, {@link Aggregation#FifteenMinute} and
+	 * {@link Aggregation#ThirtyMinute}) may refuse a query as SolarQuery does,
+	 * for example one without a date range, or over a longer time span than
+	 * it allows, before the processor is started.
+	 * </p>
+	 *
 	 * @param filter
 	 *        the search filter
 	 * @param processor
@@ -129,7 +142,9 @@ public interface FilterableDatumHistorian
 	 * @param max
 	 *        the optional maximum result count
 	 * @throws IllegalArgumentException
-	 *         if {@code filter} or {@code processor} is {@code null}
+	 *         if {@code filter} or {@code processor} is {@code null}, or the
+	 *         historian refuses the filter aggregation criteria, before the
+	 *         processor is started
 	 * @throws IOException
 	 *         if any IO error occurs
 	 * @since 1.1
@@ -178,6 +193,12 @@ public interface FilterableDatumHistorian
 	 * {@link #findFilteredStream(NodeDatumFilter, StreamDatumFilteredResultsProcessor, List, Long, Integer)}
 	 * with the same aggregation, and the accumulating statistics are the
 	 * readings at the start and end of the period and their difference.</dd>
+	 * <dt>{@link Aggregation#Minute}, {@link Aggregation#FiveMinute},
+	 * {@link Aggregation#TenMinute}, {@link Aggregation#FifteenMinute}, or
+	 * {@link Aggregation#ThirtyMinute}</dt>
+	 * <dd>Refused with an {@link IllegalArgumentException} before the
+	 * processor is started, as SolarQuery refuses reading queries with these
+	 * aggregations.</dd>
 	 * <dt>any other aggregation</dt>
 	 * <dd>Not supported: treated as no aggregation. A historian that does not
 	 * support an aggregation, for example because it does not store aggregate
@@ -206,8 +227,9 @@ public interface FilterableDatumHistorian
 	 * @param max
 	 *        the optional maximum result count
 	 * @throws IllegalArgumentException
-	 *         if {@code filter} or {@code processor} is {@code null}, or
-	 *         {@code filter} has no reading type
+	 *         if {@code filter} or {@code processor} is {@code null},
+	 *         {@code filter} has no reading type, or {@code filter} has a
+	 *         sub-hour aggregation
 	 * @throws UnsupportedOperationException
 	 *         if the reading type of {@code filter} is not supported, before
 	 *         the processor is started
