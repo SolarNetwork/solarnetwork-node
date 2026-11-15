@@ -95,8 +95,8 @@ public class HistorianSelectorFilterTests {
 				.isEqualTo("solarquery/api/v1/sec/nodes/sources");
 		then(result.getHttpServletMapping().getPattern()).as("Servlet mapping pattern unchanged")
 				.isEqualTo("/*");
-		then(result.getHttpServletMapping().getMappingMatch())
-				.as("Servlet mapping match unchanged").isEqualTo(MappingMatch.PATH);
+		then(result.getHttpServletMapping().getMappingMatch()).as("Servlet mapping match unchanged")
+				.isEqualTo(MappingMatch.PATH);
 		then(result.getQueryString()).as("Query string unchanged").isEqualTo("nodeIds=123");
 		then(historianRole(result)).as("Unfiltered historian selected").isEqualTo(UNFILTERED_ROLE);
 	}

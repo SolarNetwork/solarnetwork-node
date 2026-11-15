@@ -94,8 +94,8 @@ public class TemporalFormatterTests {
 
 	@Test
 	public void instant_print() {
-		then(SOLARNET_INSTANT_FORMATTER.print(Instant.parse("2026-11-13T12:34:56.789Z"),
-				Locale.ENGLISH)).as("Printed with first formatter").isEqualTo("2026-11-13T12:34:56.789");
+		then(SOLARNET_INSTANT_FORMATTER.print(Instant.parse("2026-11-13T12:34:56.789Z"), Locale.ENGLISH))
+				.as("Printed with first formatter").isEqualTo("2026-11-13T12:34:56.789");
 	}
 
 	@Test

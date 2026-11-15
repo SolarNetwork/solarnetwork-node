@@ -32,6 +32,7 @@ import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_SOU
 import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_TIME;
 import static org.assertj.core.api.BDDAssertions.and;
 import static org.assertj.core.api.BDDAssertions.fail;
+import static org.assertj.core.api.BDDAssertions.thenIllegalArgumentException;
 import static org.assertj.core.api.BDDAssertions.tuple;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
@@ -78,6 +79,7 @@ import net.solarnetwork.node.dao.BasicNodeDatumFilter;
 import net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian;
 import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
+import net.solarnetwork.node.service.FilterableDatumHistorian;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.service.StaticOptionalService;
 
@@ -867,16 +869,206 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		populate();
 
 		// WHEN
-		historian.findFilteredStream(filter(Aggregation.FiveMinute), processor, null, null, null);
+		historian.findFilteredStream(filter(Aggregation.Week), processor, null, null, null);
 
 		// THEN
 		final Streamed result = thenStreamed(null, null);
 		// @formatter:off
 		and.then(result.datum())
-			.as("Raw datum of running node for aggregation without stored aggregates")
+			.as("Raw datum of running node for aggregation without stored or computed aggregates")
 			.hasSize(15)
 			.allSatisfy(d -> and.then(d).isExactlyInstanceOf(BasicStreamDatum.class))
 			;
+		// @formatter:on
+	}
+
+	/*
+	 * ==================================================================
+	 * Sub-hour aggregates
+	 * ==================================================================
+	 */
+
+	private boolean minuteAggregates() {
+		return jdbcTemplate.queryForObject("SELECT to_regproc(?) IS NOT NULL", Boolean.class,
+				SCHEMA + ".dh_rollup_datum_for_time_span_slots");
+	}
+
+	private void assumeMinuteAggregates() {
+		assumeTrue("The %s schema does not have the sub-hour functions.".formatted(SCHEMA),
+				minuteAggregates());
+	}
+
+	private static BasicNodeDatumFilter minuteFilter(Aggregation aggregation, Instant start,
+			Instant end) {
+		final BasicNodeDatumFilter f = filter(aggregation);
+		f.setStartDate(start);
+		f.setEndDate(end);
+		return f;
+	}
+
+	@Test
+	public void agg_thirtyMinute_list() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populate();
+
+		// WHEN
+		historian.findFilteredStream(minuteFilter(Aggregation.ThirtyMinute, T22, T01), processor, null,
+				null, null);
+
+		// THEN
+		final Streamed result = thenAggregatesStreamed(null, null);
+		// @formatter:off
+		and.then(result.aggregates())
+			.as("Slots of running node's streams with datum, computed from raw datum, without readings, in default order")
+			.containsExactly(
+				  tuple(Location, TEST_LOC_ID, "weather", T22, "{10}", null, "{{1,10,10}}", null)
+				, tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
+				// a/1 grows 10 every 20 minutes, so 15 every 30 minutes: a datum's difference that
+				// crosses a slot boundary is split by time between the slots
+				, tuple(Node, TEST_NODE_ID, "a/1", T22, "{0.5}", "{15}", "{{2,0,1}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T22_30, "{2}", "{15}", "{{1,2,2}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T23, "{3.5}", "{15}", "{{2,3,4}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T23.plus(30, MINUTES), "{5}", "{15}", "{{1,5,5}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T00, "{6.5}", "{15}", "{{2,6,7}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T00.plus(30, MINUTES), "{8}", "{15}", "{{1,8,8}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/2", T22_30, "{5}", "{0}", "{{1,5,5}}", null)
+			)
+			;
+		and.then(result.provider().metadataStreamIds())
+			.as("Metadata of running node's streams given")
+			.containsExactlyInAnyOrder(streamId(TEST_NODE_ID, TEST_LOC_ID, "weather"),
+					streamId(TEST_NODE_ID, null, "a/1"), streamId(TEST_NODE_ID, null, "a/2"))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fifteenMinute_list_pagination() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populate();
+		final BasicNodeDatumFilter f = minuteFilter(Aggregation.FifteenMinute, T22, T01);
+		f.setWithoutTotalResultsCount(false);
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, 1L, 3);
+
+		// THEN
+		// 12 slots: 2 of weather, 9 of a/1, and 1 of a/2, counted by the slot count function
+		final Streamed result = thenAggregatesStreamed(12L, 1);
+		// @formatter:off
+		and.then(result.aggregates())
+			.as("Page of slots in default order")
+			.containsExactly(
+				  tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T22, "{0}", "{7.5}", "{{1,0,0}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T22.plus(15, MINUTES), "{1}", "{7.5}", "{{1,1,1}}", null)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fiveMinute_list_sorts_sourcePattern() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populate();
+		final BasicNodeDatumFilter f = minuteFilter(Aggregation.FiveMinute, T23, T00);
+		f.setSourceIds(new String[] { "a/*" });
+		f.setSorts(List.of(new SimpleSortDescriptor(FilterableDatumHistorian.SORT_BY_TIME, true)));
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).ids())
+			.as("Slots of matching sources, newest first")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", T23.plus(40, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T23.plus(20, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T23)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_tenMinute_list_localDates() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populateOtherNodeInAuckland();
+
+		// WHEN
+		historian.findFilteredStream(localDatesFilter(Aggregation.TenMinute, LOCAL_FEB.plusHours(11),
+				LOCAL_FEB.plusHours(13)), processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).ids())
+			.as("Slots of 11:00 to 13:00 on 1 February in the zone of each node: none of the running node in UTC, those of the other node in Auckland")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID_2, "a/1", T22)
+				, tuple(Node, TEST_NODE_ID_2, "a/1", T23)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fiveMinute_list_rangeLimit() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populate();
+		historian.setMaxMinuteAggregationHours(2);
+
+		// WHEN
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Span of 3 hours refused")
+			.isThrownBy(() -> historian.findFilteredStream(minuteFilter(Aggregation.FiveMinute, T22, T01),
+					processor, null, null, null))
+			.withMessage("Minute level aggregation time span must be at most 2 hours.")
+			;
+		then(processor).shouldHaveNoInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_minute_list_refused() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populate();
+
+		// WHEN
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Minute aggregation refused, as in SolarNet")
+			.isThrownBy(() -> historian.findFilteredStream(minuteFilter(Aggregation.Minute, T22, T01),
+					processor, null, null, null))
+			.withMessageStartingWith("The Minute aggregation is not supported")
+			;
+		then(processor).shouldHaveNoInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void fiveMinute_readings_refused() throws IOException {
+		// GIVEN
+		populate();
+		final BasicNodeDatumFilter f = readingFilter(Aggregation.FiveMinute);
+		f.setStartDate(T22);
+		f.setEndDate(T01);
+
+		// WHEN
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Sub-hour aggregation refused for readings, with or without aggregate setup, as in SolarQuery")
+			.isThrownBy(() -> historian.findFilteredStreamReadings(f, processor, null, null, null))
+			.withMessage("Only Hour/Day/Month aggregation is supported for reading queries.")
+			;
+		then(processor).shouldHaveNoInteractions();
 		// @formatter:on
 	}
 
@@ -1123,6 +1315,26 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 				  tuple(Node, TEST_NODE_ID, "a/1", T22.plus(220, MINUTES))
 				, tuple(Node, TEST_NODE_ID, "a/2", T22_30)
 			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void noAgg_fiveMinute_list_raw() throws IOException {
+		// GIVEN
+		assumeNoAggregates();
+		populate();
+
+		// WHEN
+		historian.findFilteredStream(filter(Aggregation.FiveMinute), processor, null, null, null);
+
+		// THEN
+		final Streamed result = thenStreamed(null, null);
+		// @formatter:off
+		and.then(result.datum())
+			.as("Raw datum without aggregate setup, without a date range being required")
+			.hasSize(15)
+			.allSatisfy(d -> and.then(d).isExactlyInstanceOf(BasicStreamDatum.class))
 			;
 		// @formatter:on
 	}

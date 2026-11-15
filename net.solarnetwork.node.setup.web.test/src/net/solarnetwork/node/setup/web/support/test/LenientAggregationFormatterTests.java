@@ -57,8 +57,41 @@ public class LenientAggregationFormatterTests {
 
 	@Test
 	public void parse_unknown() {
-		then(formatter.parse("Fortnightly", Locale.ENGLISH)).as("Unknown value parsed as null")
-				.isNull();
+		then(formatter.parse("Fortnightly", Locale.ENGLISH)).as("Unknown value parsed as null").isNull();
+	}
+
+	@Test
+	public void parse_subHourNames() {
+		for ( String name : new String[] { "Minute", "FiveMinute", "TenMinute", "FifteenMinute",
+				"ThirtyMinute" } ) {
+			then(formatter.parse(name, Locale.ENGLISH)).as("Sub-hour name %s parsed", name)
+					.isEqualTo(Aggregation.valueOf(name));
+		}
+	}
+
+	@Test
+	public void parse_subHourKeys() {
+		// @formatter:off
+		then(formatter.parse("m", Locale.ENGLISH)).as("Minute key parsed").isEqualTo(Aggregation.Minute);
+		then(formatter.parse("5m", Locale.ENGLISH)).as("FiveMinute key parsed").isEqualTo(Aggregation.FiveMinute);
+		then(formatter.parse("10m", Locale.ENGLISH)).as("TenMinute key parsed").isEqualTo(Aggregation.TenMinute);
+		then(formatter.parse("15m", Locale.ENGLISH)).as("FifteenMinute key parsed").isEqualTo(Aggregation.FifteenMinute);
+		then(formatter.parse("30m", Locale.ENGLISH)).as("ThirtyMinute key parsed").isEqualTo(Aggregation.ThirtyMinute);
+		// @formatter:on
+	}
+
+	@Test
+	public void parse_keyCase() {
+		then(formatter.parse("M", Locale.ENGLISH)).as("Keys are case sensitive: M is Month")
+				.isEqualTo(Aggregation.Month);
+	}
+
+	@Test
+	public void parse_unknownSubHour() {
+		for ( String text : new String[] { "2m", "20m", "TwentyMinute" } ) {
+			then(formatter.parse(text, Locale.ENGLISH)).as("Unknown value %s parsed as null", text)
+					.isNull();
+		}
 	}
 
 	@Test

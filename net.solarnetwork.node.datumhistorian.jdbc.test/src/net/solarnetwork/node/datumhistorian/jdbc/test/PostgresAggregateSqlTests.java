@@ -565,4 +565,279 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 		// @formatter:on
 	}
 
+	/*
+	 * ==================================================================
+	 * Sub-hour slots
+	 * ==================================================================
+	 */
+
+	/**
+	 * Skip a test when the schema has an aggregate setup from before the
+	 * sub-hour slot functions.
+	 */
+	private void assumeSlotFunctions() {
+		final Boolean slots = jdbcTemplate.queryForObject(
+				"SELECT to_regprocedure(?) IS NOT NULL AND to_regprocedure(?) IS NOT NULL",
+				Boolean.class,
+				SCHEMA + ".dh_rollup_datum_for_time_span_slots(integer"
+						+ ",timestamp with time zone,timestamp with time zone,integer,interval)",
+				SCHEMA + ".dh_count_datum_time_span_slots(integer"
+						+ ",timestamp with time zone,timestamp with time zone,integer)");
+		assumeTrue("The %s schema does not have the sub-hour slot functions.".formatted(SCHEMA),
+				Boolean.TRUE.equals(slots));
+	}
+
+	/**
+	 * Get the slot aggregates of a stream.
+	 */
+	private List<Map<String, Object>> slots(int streamId, String start, String end, int secs) {
+		return jdbcTemplate.queryForList(sql("""
+				SELECT to_char(ts_start AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI"Z"') AS ts
+					, data_i::TEXT AS data_i, stat_i::TEXT AS stat_i
+					, data_a::TEXT AS data_a, read_a::TEXT AS read_a
+				FROM solarhist.dh_rollup_datum_for_time_span_slots(?, ?::TIMESTAMPTZ, ?::TIMESTAMPTZ, ?)
+				ORDER BY ts_start
+				"""), streamId, start, end, secs);
+	}
+
+	private long slotCount(int streamId, String start, String end, int secs) {
+		return jdbcTemplate.queryForObject(sql("""
+				SELECT solarhist.dh_count_datum_time_span_slots(?, ?::TIMESTAMPTZ, ?::TIMESTAMPTZ, ?)
+				"""), Long.class, streamId, start, end, secs);
+	}
+
+	/**
+	 * The datum of SolarNet's {@code test-datum-31.txt}: an hour of datum at
+	 * irregular times, with a datum before and after it.
+	 */
+	private static final String[][] TEST_DATUM_31 = new String[][] {
+			{ "2020-06-01T11:59:10Z", "1.0", "2.0", "100" },
+			{ "2020-06-01T12:00:30Z", "1.1", "2.1", "105" },
+			{ "2020-06-01T12:02:00Z", "1.2", "2.2", "110" },
+			{ "2020-06-01T12:04:00Z", "1.3", "2.3", "115" },
+			{ "2020-06-01T12:05:10Z", "1.4", "2.4", "120" },
+			{ "2020-06-01T12:07:30Z", "1.5", "2.5", "125" },
+			{ "2020-06-01T12:09:50Z", "1.6", "2.6", "130" },
+			{ "2020-06-01T12:10:30Z", "1.7", "2.7", "135" },
+			{ "2020-06-01T12:13:00Z", "1.8", "2.8", "140" },
+			{ "2020-06-01T12:15:50Z", "1.9", "2.9", "145" },
+			{ "2020-06-01T12:16:30Z", "1.0", "2.0", "150" },
+			{ "2020-06-01T12:19:00Z", "1.1", "2.1", "155" },
+			{ "2020-06-01T12:20:10Z", "1.2", "2.2", "160" },
+			{ "2020-06-01T12:21:00Z", "1.3", "2.3", "165" },
+			{ "2020-06-01T12:22:00Z", "1.4", "2.4", "170" },
+			{ "2020-06-01T12:24:40Z", "1.5", "2.5", "175" },
+			{ "2020-06-01T12:28:00Z", "1.6", "2.6", "180" },
+			{ "2020-06-01T12:29:50Z", "1.7", "2.7", "185" },
+			{ "2020-06-01T12:30:10Z", "1.8", "2.8", "190" },
+			{ "2020-06-01T12:33:20Z", "1.9", "2.9", "195" },
+			{ "2020-06-01T12:33:30Z", "1.0", "2.0", "200" },
+			{ "2020-06-01T12:35:00Z", "1.1", "2.1", "205" },
+			{ "2020-06-01T12:38:10Z", "1.2", "2.2", "210" },
+			{ "2020-06-01T12:40:00Z", "1.3", "2.3", "215" },
+			{ "2020-06-01T12:41:00Z", "1.4", "2.4", "220" },
+			{ "2020-06-01T12:42:00Z", "1.5", "2.5", "225" },
+			{ "2020-06-01T12:43:40Z", "1.6", "2.6", "230" },
+			{ "2020-06-01T12:45:20Z", "1.7", "2.7", "235" },
+			{ "2020-06-01T12:47:00Z", "1.8", "2.8", "240" },
+			{ "2020-06-01T12:48:50Z", "1.9", "2.9", "245" },
+			{ "2020-06-01T12:49:20Z", "1.0", "2.0", "250" },
+			{ "2020-06-01T12:51:00Z", "1.1", "2.1", "255" },
+			{ "2020-06-01T12:52:10Z", "1.2", "2.2", "260" },
+			{ "2020-06-01T12:53:00Z", "1.3", "2.3", "265" },
+			{ "2020-06-01T12:54:30Z", "1.4", "2.4", "270" },
+			{ "2020-06-01T12:55:00Z", "1.5", "2.5", "275" },
+			{ "2020-06-01T12:56:40Z", "1.6", "2.6", "280" },
+			{ "2020-06-01T12:57:20Z", "1.7", "2.7", "285" },
+			{ "2020-06-01T12:58:50Z", "1.8", "2.8", "290" },
+			{ "2020-06-01T12:59:30Z", "1.9", "2.9", "295" },
+			{ "2020-06-01T13:02:20Z", "2.0", "3.0", "300" } };
+
+	@Test
+	public void slots_imperfectHour_10min() {
+		assumeSlotFunctions();
+
+		// GIVEN
+		final int sid = jdbcTemplate.queryForObject(sql("""
+				INSERT INTO solarhist.dh_datum_meta (node_id, source_id, names_i, names_a, type_ids)
+				VALUES (?, 'a', '{x,y}', '{w}', '{1}')
+				RETURNING stream_id
+				"""), Integer.class, TEST_NODE_ID);
+		jdbcTemplate.queryForList(sql("SELECT solarhist.dh_datum_ensure_partition(?::TIMESTAMPTZ)"),
+				"2020-06-01T12:00:00Z");
+		for ( String[] d : TEST_DATUM_31 ) {
+			jdbcTemplate.update(sql("""
+					INSERT INTO solarhist.dh_datum (ts, stream_id, type_id, data_i, data_a)
+					VALUES (?::TIMESTAMPTZ, ?, 1, ARRAY[?::NUMERIC, ?::NUMERIC], ARRAY[?::NUMERIC])
+					"""), d[0], sid, d[1], d[2], d[3]);
+		}
+
+		// WHEN
+		List<Map<String, Object>> result = slots(sid, "2020-06-01T12:00:00Z", "2020-06-01T13:00:00Z",
+				600);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("The values SolarNet's DbDatumRollupSlotsTests.imperfectHour_10min() expects")
+			.extracting("ts", "data_i", "stat_i", "data_a", "read_a")
+			.containsExactly(
+				  tuple("2020-06-01T12:00Z", "{1.35,2.35}", "{{6,1.1,1.6},{6,2.1,2.6}}", "{28.125}", null)
+				, tuple("2020-06-01T12:10Z", "{1.5,2.5}", "{{5,1.0,1.9},{5,2.0,2.9}}", "{28.0357142857142857143}", null)
+				, tuple("2020-06-01T12:20Z", "{1.45,2.45}", "{{6,1.2,1.7},{6,2.2,2.7}}", "{28.2142857142857142857}", null)
+				, tuple("2020-06-01T12:30Z", "{1.4,2.4}", "{{5,1.0,1.9},{5,2.0,2.9}}", "{27.5}", null)
+				, tuple("2020-06-01T12:40Z", "{1.525,2.525}", "{{8,1.0,1.9},{8,2.0,2.9}}", "{37}", null)
+				, tuple("2020-06-01T12:50Z", "{1.5,2.5}", "{{9,1.1,1.9},{9,2.1,2.9}}", "{43.88235294117647058825}", null)
+			)
+			;
+		then(slotCount(sid, "2020-06-01T12:00:00Z", "2020-06-01T13:00:00Z", 600))
+			.as("Slot count")
+			.isEqualTo(6L)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void slots_gapAcrossSlots() {
+		assumeSlotFunctions();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2025-01-01T10:05:00Z", 1, 100);
+		datum(sid, "2025-01-01T10:25:00Z", 2, 120);
+		datum(sid, "2025-01-01T13:15:00Z", 3, 290);
+		datum(sid, "2025-01-01T13:45:00Z", 4, 320);
+
+		// WHEN
+		List<Map<String, Object>> result = slots(sid, "2025-01-01T10:00:00Z", "2025-01-01T14:00:00Z",
+				1800);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Only slots with datum; the difference across the gap split at the start of the later slot, not ignored")
+			.extracting("ts", "data_i", "stat_i", "data_a", "read_a")
+			.containsExactly(
+				  tuple("2025-01-01T10:00Z", "{1.5}", "{{2,1,2}}", "{175.0000000000000000006}", null)
+				, tuple("2025-01-01T13:00Z", "{3}", "{{1,3,3}}", "{29.9999999999999999994}", null)
+				, tuple("2025-01-01T13:30Z", "{4}", "{{1,4,4}}", "{15}", null)
+			)
+			;
+		then(slotCount(sid, "2025-01-01T10:00:00Z", "2025-01-01T14:00:00Z", 1800))
+			.as("Slot count")
+			.isEqualTo(3L)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void slots_spanNotAligned() {
+		assumeSlotFunctions();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2025-01-01T10:00:00Z", 1, 100);
+		datum(sid, "2025-01-01T10:06:00Z", 2, 106);
+		datum(sid, "2025-01-01T10:12:00Z", 3, 112);
+		datum(sid, "2025-01-01T10:18:00Z", 4, 118);
+
+		// WHEN
+		List<Map<String, Object>> result = slots(sid, "2025-01-01T10:05:00Z", "2025-01-01T10:15:00Z",
+				600);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("""
+				Slots of the datum within the span, starting on slot boundaries; as in SolarNet, the \
+				datum before and after the span found for the clock accumulation count in the \
+				statistics of the slots they are in, and the accumulation covers whole slots""")
+			.extracting("ts", "data_i", "stat_i", "data_a")
+			.containsExactly(
+				  tuple("2025-01-01T10:00Z", "{1.5}", "{{2,1,2}}", "{10.00000000000000000002}")
+				, tuple("2025-01-01T10:10Z", "{3.5}", "{{2,3,4}}", "{7.99999999999999999998}")
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void slotCount_lastSecondOfSlot() {
+		assumeSlotFunctions();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2025-01-01T10:09:59.5Z", 1, 100);
+		datum(sid, "2025-01-01T10:10:30Z", 2, 101);
+
+		// WHEN
+		List<Map<String, Object>> result = slots(sid, "2025-01-01T10:00:00Z", "2025-01-01T11:00:00Z",
+				600);
+		long count = slotCount(sid, "2025-01-01T10:00:00Z", "2025-01-01T11:00:00Z", 600);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Each datum in its own slot")
+			.extracting("ts")
+			.containsExactly("2025-01-01T10:00Z", "2025-01-01T10:10Z")
+			;
+		then(count)
+			.as("The count rounds a time up to a whole second, so counts the first datum in the next slot, as SolarNet does")
+			.isEqualTo(1L)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void slotSeconds() {
+		assumeSlotFunctions();
+
+		// WHEN
+		List<Map<String, Object>> result = jdbcTemplate.queryForList(sql("""
+				SELECT s, solarhist.dh_slot_seconds(s) AS secs
+				FROM unnest(ARRAY[0, 59, 60, 300, 420, 600, 900, 1200, 1800, 3600]) s
+				ORDER BY s
+				"""));
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Slot lengths between 60 and 1800 that divide 1800, otherwise 600")
+			.extracting("secs")
+			.containsExactly(600, 600, 60, 300, 600, 600, 900, 600, 1800, 600)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void slots_nullArguments() {
+		assumeSlotFunctions();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2025-01-01T10:05:00Z", 1, 100);
+
+		// WHEN
+		List<Map<String, Object>> result = jdbcTemplate.queryForList(sql("""
+				SELECT n, (SELECT count(*) FROM solarhist.dh_rollup_datum_for_time_span_slots(
+					  CASE WHEN n = 1 THEN NULL ELSE ?::INTEGER END
+					, CASE WHEN n = 2 THEN NULL ELSE '2025-01-01T10:00:00Z'::TIMESTAMPTZ END
+					, CASE WHEN n = 3 THEN NULL ELSE '2025-01-01T11:00:00Z'::TIMESTAMPTZ END
+					, 600
+					, CASE WHEN n = 4 THEN NULL ELSE 'PT1H'::INTERVAL END)) AS count
+				FROM generate_series(0, 4) n
+				ORDER BY n
+				"""), sid);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("A NULL stream, start, end or tolerance gives no rows")
+			.extracting("count")
+			.containsExactly(1L, 0L, 0L, 0L, 0L)
+			;
+		// @formatter:on
+	}
+
 }

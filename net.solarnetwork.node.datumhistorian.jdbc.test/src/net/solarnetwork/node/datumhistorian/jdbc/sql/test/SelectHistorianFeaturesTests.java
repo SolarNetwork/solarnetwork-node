@@ -83,7 +83,7 @@ public class SelectHistorianFeaturesTests {
 			.isSameAs(stmt)
 			;
 		and.then(sqlCaptor.getValue())
-			.as("SQL generated, testing for each aggregate setup table")
+			.as("SQL generated, testing for each aggregate setup table and sub-hour function")
 			.isEqualToNormalizingWhitespace(utf8StringResource("select-historian-features-01.sql", getClass()))
 			.as("Same SQL from SqlProvider")
 			.isEqualTo(sql.getSql())
@@ -100,6 +100,7 @@ public class SelectHistorianFeaturesTests {
 	public void mapRow() throws SQLException {
 		// GIVEN
 		given(rs.getBoolean(1)).willReturn(true);
+		given(rs.getBoolean(2)).willReturn(true);
 
 		// WHEN
 		SelectHistorianFeatures.Result result = SelectHistorianFeatures.RESULT_MAPPER.mapRow(rs, 0);
@@ -109,6 +110,26 @@ public class SelectHistorianFeaturesTests {
 		and.then(result)
 			.as("Aggregates from first column")
 			.returns(true, SelectHistorianFeatures.Result::aggregates)
+			.as("Minute aggregates from second column")
+			.returns(true, SelectHistorianFeatures.Result::minuteAggregates)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void mapRow_aggregatesWithoutMinuteAggregates() throws SQLException {
+		// GIVEN
+		given(rs.getBoolean(1)).willReturn(true);
+		given(rs.getBoolean(2)).willReturn(false);
+
+		// WHEN
+		SelectHistorianFeatures.Result result = SelectHistorianFeatures.RESULT_MAPPER.mapRow(rs, 0);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.as("Result mapped, for an aggregate setup from before the sub-hour functions")
+			.isEqualTo(new SelectHistorianFeatures.Result(true, false))
 			;
 		// @formatter:on
 	}
@@ -117,6 +138,7 @@ public class SelectHistorianFeaturesTests {
 	public void mapRow_noAggregates() throws SQLException {
 		// GIVEN
 		given(rs.getBoolean(1)).willReturn(false);
+		given(rs.getBoolean(2)).willReturn(false);
 
 		// WHEN
 		SelectHistorianFeatures.Result result = SelectHistorianFeatures.RESULT_MAPPER.mapRow(rs, 0);
@@ -125,7 +147,7 @@ public class SelectHistorianFeaturesTests {
 		// @formatter:off
 		and.then(result)
 			.as("Result mapped")
-			.isEqualTo(new SelectHistorianFeatures.Result(false))
+			.isEqualTo(new SelectHistorianFeatures.Result(false, false))
 			;
 		// @formatter:on
 	}

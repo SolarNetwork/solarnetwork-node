@@ -24,6 +24,7 @@
 
 	<osgix:cm-properties id="historian.cfg" persistent-id="net.solarnetwork.node.datumhistorian.jdbc">
 		<beans:prop key="JdbcDatumHistorian.fetchSize">100</beans:prop>
+		<beans:prop key="JdbcDatumHistorian.maxMinuteAggregationHours">840</beans:prop>
 	</osgix:cm-properties>
 
 	<ctx:property-placeholder properties-ref="historian.cfg"/>
@@ -64,6 +65,7 @@
 		<property name="streamIdDomain" value="1"/>
 		<property name="transactionTemplate" ref="readOnlyTxTemplate"/>
 		<property name="fetchSize" value="${JdbcDatumHistorian.fetchSize}"/>
+		<property name="maxMinuteAggregationHours" value="${JdbcDatumHistorian.maxMinuteAggregationHours}"/>
 	</bean>
 
 	<bean id="unfilteredHistorian" class="net.solarnetwork.node.datumhistorian.jdbc.JdbcDatumHistorian"
@@ -76,6 +78,7 @@
 		<property name="streamIdDomain" value="2"/>
 		<property name="transactionTemplate" ref="readOnlyTxTemplate"/>
 		<property name="fetchSize" value="${JdbcDatumHistorian.fetchSize}"/>
+		<property name="maxMinuteAggregationHours" value="${JdbcDatumHistorian.maxMinuteAggregationHours}"/>
 	</bean>
 
 	<!-- Published Services -->

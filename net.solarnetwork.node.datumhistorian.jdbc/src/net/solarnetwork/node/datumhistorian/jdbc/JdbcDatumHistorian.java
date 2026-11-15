@@ -31,7 +31,10 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -78,6 +81,7 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreamMetadata;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectHistorianFeatures;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectMinuteAggregateDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectReadingDifference;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreNodeTimeZone;
@@ -145,10 +149,13 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * <p>
  * A schema may have the aggregate setup that {@link SelectHistorianFeatures}
  * looks for, which stores {@code Hour}, {@code Day}, and {@code Month}
- * aggregates. Whether it does is found once, when the historian starts or else
- * when first needed. With the setup, the stream queries of those aggregations
- * read the stored aggregates. Without the setup, those aggregations are treated
- * as no aggregation.
+ * aggregates, and computes the sub-hour {@code FiveMinute}, {@code TenMinute},
+ * {@code FifteenMinute}, and {@code ThirtyMinute} aggregates from raw datum
+ * when queried. Whether it does is found once, when the historian starts or
+ * else when first needed. With the setup, the stream queries of those
+ * aggregations read the stored aggregates or compute the sub-hour ones, as
+ * SolarNet does. Without the setup, those aggregations are treated as no
+ * aggregation.
  * </p>
  *
  * <p>
@@ -201,11 +208,21 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	/** The default JDBC fetch size. */
 	public static final int DEFAULT_FETCH_SIZE = 100;
 
+	/**
+	 * The default {@code maxMinuteAggregationHours} property value.
+	 *
+	 * <p>
+	 * This is five weeks, so that a whole month can be queried, the same as
+	 * SolarNet's default.
+	 * </p>
+	 */
+	public static final int DEFAULT_MAX_MINUTE_AGGREGATION_HOURS = (24 * 7 * 5);
+
 	private static final Logger log = LoggerFactory.getLogger(JdbcDatumHistorian.class);
 
 	/** The features of a schema without a features row. */
 	private static final SelectHistorianFeatures.Result NO_FEATURES = new SelectHistorianFeatures.Result(
-			false);
+			false, false);
 
 	private final JdbcOperations jdbcOps;
 	private final String schemaName;
@@ -223,6 +240,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	private @Nullable TransactionTemplate transactionTemplate;
 	private int fetchSize = DEFAULT_FETCH_SIZE;
 	private @Nullable ZoneId timeZone;
+	private int maxMinuteAggregationHours = DEFAULT_MAX_MINUTE_AGGREGATION_HOURS;
 
 	/** The features of the schema, once found. */
 	private volatile SelectHistorianFeatures.@Nullable Result features;
@@ -516,6 +534,21 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * select streams that have stored a datum of a matching type, and with the
 	 * most recent criteria the most recent aggregate of each stream is
 	 * given.</dd>
+	 * <dt>{@code FiveMinute}, {@code TenMinute}, {@code FifteenMinute}, or
+	 * {@code ThirtyMinute}, with the aggregate setup</dt>
+	 * <dd>A {@link net.solarnetwork.domain.datum.BasicAggregateStreamDatum} for
+	 * each slot of that length with datum, computed from the raw datum as
+	 * {@link SelectMinuteAggregateDatum} selects them, with no reading
+	 * statistics: location datum stored by more than one node are not merged,
+	 * and the type criteria only select streams that have stored a datum of a
+	 * matching type. As in SolarNet, a date range is required (both local
+	 * dates, or else both the start and end date), and the query is refused
+	 * with an {@link IllegalArgumentException} before the processor is started
+	 * when the range has more than {@code maxMinuteAggregationHours} hours,
+	 * when there is no date range, or with the most recent criteria.</dd>
+	 * <dt>{@code Minute}, with the aggregate setup</dt>
+	 * <dd>Refused with an {@link IllegalArgumentException} before the processor
+	 * is started, as SolarNet does: SolarNet does not support it.</dd>
 	 * <dt>otherwise</dt>
 	 * <dd>The aggregation is ignored, so each result is a
 	 * {@link net.solarnetwork.domain.datum.BasicStreamDatum}; merged location
@@ -534,7 +567,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * </p>
 	 *
 	 * @throws IllegalArgumentException
-	 *         if {@code filter} or {@code processor} is {@code null}
+	 *         if {@code filter} or {@code processor} is {@code null}, or a
+	 *         minute aggregation query is refused as described above
 	 */
 	@Override
 	public void findFilteredStream(NodeDatumFilter filter, StreamDatumFilteredResultsProcessor processor,
@@ -573,9 +607,17 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * type.</dd>
 	 * </dl>
 	 *
+	 * <p>
+	 * A sub-hour aggregation, {@code Minute} to {@code ThirtyMinute}, is
+	 * refused with an {@link IllegalArgumentException} before the processor is
+	 * started, with or without the aggregate setup, as SolarQuery refuses it
+	 * for reading queries.
+	 * </p>
+	 *
 	 * @throws IllegalArgumentException
-	 *         if {@code filter} or {@code processor} is {@code null}, or
-	 *         {@code filter} has no reading type
+	 *         if {@code filter} or {@code processor} is {@code null},
+	 *         {@code filter} has no reading type, or its aggregation is a
+	 *         sub-hour aggregation
 	 * @throws UnsupportedOperationException
 	 *         if the reading type is not {@link DatumReadingType#Difference},
 	 *         before the processor is started
@@ -589,6 +631,11 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		final DatumReadingType readingType = filter.getReadingType();
 		if ( readingType == null ) {
 			throw new IllegalArgumentException("The filter reading type is required.");
+		}
+		if ( SelectMinuteAggregateDatum.isMinuteAggregation(filter.getAggregation()) ) {
+			// the same message as the SolarQuery DatumCriteriaValidator
+			throw new IllegalArgumentException(
+					"Only Hour/Day/Month aggregation is supported for reading queries.");
 		}
 		if ( readingType != DatumReadingType.Difference ) {
 			throw new UnsupportedOperationException(
@@ -641,7 +688,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 *
 	 * <p>
 	 * The features of the schema are only needed, and so only found, for an
-	 * aggregation of the aggregate setup.
+	 * aggregation of the aggregate setup. A minute aggregation query is
+	 * validated before anything else is queried.
 	 * </p>
 	 *
 	 * @param f
@@ -661,13 +709,22 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			StreamDatumFilteredResultsProcessor processor, boolean readings) {
 		final boolean aggregate = SelectAggregateDatum.isSupportedAggregation(f.getAggregation());
 		final boolean stored = (aggregate && features().aggregates());
-		if ( aggregate && !stored ) {
-			log.debug("DB schema [{}] has no stored aggregates, so {} is treated as no aggregation",
-					schemaName, f.getAggregation());
+		final boolean minuteAggregate = SelectMinuteAggregateDatum
+				.isMinuteAggregation(f.getAggregation());
+		final boolean computed = (minuteAggregate && features().minuteAggregates());
+		if ( (aggregate && !stored) || (minuteAggregate && !computed) ) {
+			log.debug("DB schema [{}] has no {} aggregates, so {} is treated as no aggregation",
+					schemaName, (aggregate ? "stored" : "sub-hour"), f.getAggregation());
 		}
 		final PreparedStatementCreator sql;
 		final CountPreparedStatementCreatorProvider countSql;
-		if ( stored ) {
+		if ( computed ) {
+			validateMinuteAggregationRange(f);
+			final SelectMinuteAggregateDatum s = new SelectMinuteAggregateDatum(schemaName, f, nodeId,
+					streamIds, fetchSize);
+			sql = s;
+			countSql = s;
+		} else if ( stored ) {
 			final SelectAggregateDatum s = new SelectAggregateDatum(schemaName, f, nodeId, streamIds,
 					fetchSize);
 			sql = s;
@@ -695,7 +752,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 			return;
 		}
 		final RowMapper<? extends StreamDatum> mapper;
-		if ( stored ) {
+		if ( stored || computed ) {
 			mapper = new AggregateStreamDatumRowMapper(provider, streamIdDomain, objectMapper,
 					readings ? Style.Reading : Style.Aggregate);
 		} else if ( readings ) {
@@ -714,6 +771,50 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 				}
 			}
 		});
+	}
+
+	/**
+	 * Refuse a minute aggregation query over too long a time span.
+	 *
+	 * <p>
+	 * Ported from the SolarNet {@code JdbcDatumEntityDao.validateFilter()}
+	 * method. The span is the number of whole hours between the local dates
+	 * when both are given, otherwise between the start and end dates in UTC.
+	 * Without either, the span is not limited here.
+	 * </p>
+	 *
+	 * @param f
+	 *        the filter, with a minute aggregation
+	 * @throws IllegalArgumentException
+	 *         if the span is longer than {@code maxMinuteAggregationHours}
+	 *         hours, and that is greater than {@literal 0}
+	 */
+	private void validateMinuteAggregationRange(NodeDatumFilter f) {
+		final int maxHours = this.maxMinuteAggregationHours;
+		if ( maxHours < 1 ) {
+			return;
+		}
+		final LocalDateTime localStart = f.getLocalStartDate();
+		final LocalDateTime localEnd = f.getLocalEndDate();
+		final Instant start = f.getStartDate();
+		final Instant end = f.getEndDate();
+		final LocalDateTime s;
+		final LocalDateTime e;
+		if ( localStart != null && localEnd != null ) {
+			s = localStart;
+			e = localEnd;
+		} else if ( start != null && end != null ) {
+			s = start.atOffset(ZoneOffset.UTC).toLocalDateTime();
+			e = end.atOffset(ZoneOffset.UTC).toLocalDateTime();
+		} else {
+			return;
+		}
+		final long hours = ChronoUnit.HOURS.between(s, e);
+		if ( hours > maxHours ) {
+			// the same message as SolarNet
+			throw new IllegalArgumentException(
+					"Minute level aggregation time span must be at most " + maxHours + " hours.");
+		}
 	}
 
 	/**
@@ -1286,6 +1387,33 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 */
 	public final void setTimeZone(@Nullable ZoneId timeZone) {
 		this.timeZone = timeZone;
+	}
+
+	/**
+	 * Get the maximum time span of a minute aggregation query.
+	 *
+	 * @return the maximum number of hours, or {@literal 0} or less for no limit
+	 */
+	public final int getMaxMinuteAggregationHours() {
+		return maxMinuteAggregationHours;
+	}
+
+	/**
+	 * Set the maximum time span of a minute aggregation query.
+	 *
+	 * <p>
+	 * A {@code FiveMinute} to {@code ThirtyMinute} aggregation query over a
+	 * longer time span is refused, as SolarNet refuses it, because the
+	 * aggregates are computed from every raw datum of the span. The default is
+	 * {@link #DEFAULT_MAX_MINUTE_AGGREGATION_HOURS}.
+	 * </p>
+	 *
+	 * @param maxMinuteAggregationHours
+	 *        the maximum number of hours to set, or {@literal 0} or less for no
+	 *        limit
+	 */
+	public final void setMaxMinuteAggregationHours(int maxMinuteAggregationHours) {
+		this.maxMinuteAggregationHours = maxMinuteAggregationHours;
 	}
 
 }

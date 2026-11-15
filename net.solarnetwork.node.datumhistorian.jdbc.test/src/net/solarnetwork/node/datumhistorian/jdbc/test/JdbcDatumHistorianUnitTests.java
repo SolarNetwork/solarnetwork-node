@@ -54,6 +54,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -69,6 +70,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.dao.DataRetrievalFailureException;
@@ -656,9 +658,13 @@ public class JdbcDatumHistorianUnitTests {
 	 */
 
 	private void givenFeatures(boolean aggregates) {
+		givenFeatures(aggregates, aggregates);
+	}
+
+	private void givenFeatures(boolean aggregates, boolean minuteAggregates) {
 		given(jdbcOps.query(any(SelectHistorianFeatures.class),
-				same(SelectHistorianFeatures.RESULT_MAPPER)))
-						.willReturn(List.of(new SelectHistorianFeatures.Result(aggregates)));
+				same(SelectHistorianFeatures.RESULT_MAPPER))).willReturn(
+						List.of(new SelectHistorianFeatures.Result(aggregates, minuteAggregates)));
 	}
 
 	private void givenStoreDatum() {
@@ -851,7 +857,7 @@ public class JdbcDatumHistorianUnitTests {
 		given(jdbcOps.query(any(SelectHistorianFeatures.class),
 				same(SelectHistorianFeatures.RESULT_MAPPER)))
 						.willThrow(new QueryTimeoutException("Too slow"))
-						.willReturn(List.of(new SelectHistorianFeatures.Result(true)));
+						.willReturn(List.of(new SelectHistorianFeatures.Result(true, true)));
 		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
 		filter.setAggregation(Aggregation.Hour);
 
@@ -992,7 +998,21 @@ public class JdbcDatumHistorianUnitTests {
 			.as("No transaction template by default")
 			.isNull()
 			;
+		and.then(historian.getMaxMinuteAggregationHours())
+			.as("Default minute aggregation limit is five weeks, as in SolarNet")
+			.isEqualTo(JdbcDatumHistorian.DEFAULT_MAX_MINUTE_AGGREGATION_HOURS)
+			.isEqualTo(840)
+			;
 		// @formatter:on
+	}
+
+	@Test
+	public void maxMinuteAggregationHours_setter() {
+		// WHEN
+		historian.setMaxMinuteAggregationHours(24);
+
+		// THEN
+		and.then(historian.getMaxMinuteAggregationHours()).isEqualTo(24);
 	}
 
 	@Test
@@ -1333,6 +1353,227 @@ public class JdbcDatumHistorianUnitTests {
 		then(processor).shouldHaveNoInteractions();
 		then(jdbcOps).shouldHaveNoInteractions();
 		then(identityService).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void findFilteredStreamReadings_minuteAggregation() {
+		for ( Aggregation agg : List.of(Aggregation.Minute, Aggregation.FiveMinute,
+				Aggregation.TenMinute, Aggregation.FifteenMinute, Aggregation.ThirtyMinute) ) {
+			// GIVEN
+			final BasicNodeDatumFilter filter = minuteFilter(agg, 1);
+			filter.setReadingType(DatumReadingType.Difference);
+
+			// WHEN
+			// @formatter:off
+			thenIllegalArgumentException()
+				.as("Aggregation %s refused for readings, as in SolarQuery", agg)
+				.isThrownBy(() -> historian.findFilteredStreamReadings(filter, processor, null, null, null))
+				.withMessage("Only Hour/Day/Month aggregation is supported for reading queries.")
+				;
+			// @formatter:on
+		}
+
+		// THEN
+		then(processor).shouldHaveNoInteractions();
+		then(jdbcOps).shouldHaveNoInteractions();
+		then(identityService).shouldHaveNoInteractions();
+	}
+
+	/**
+	 * Get a filter with a minute aggregation over a number of hours.
+	 */
+	private static BasicNodeDatumFilter minuteFilter(Aggregation agg, int hours) {
+		final BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setAggregation(agg);
+		final Instant start = Instant.parse("2026-01-01T00:00:00Z");
+		filter.setStartDate(start);
+		filter.setEndDate(start.plus(hours, ChronoUnit.HOURS));
+		return filter;
+	}
+
+	private void thenMinuteAggregationRefused(BasicNodeDatumFilter filter, String message) {
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Minute aggregation query refused before processor started")
+			.isThrownBy(() -> historian.findFilteredStream(filter, processor, null, null, null))
+			.withMessage(message)
+			;
+		then(processor).shouldHaveNoInteractions();
+		then(jdbcOps).should().query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	private void thenStreamQueried() throws IOException {
+		then(jdbcOps).should().query(any(SelectDatumStreamMetadata.class), any(RowMapper.class));
+		then(processor).should().start(isNull(), isNull(), isNull(), attrsCaptor.capture());
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_rangeLimit() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FiveMinute, 841);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"Minute level aggregation time span must be at most 840 hours.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_atRangeLimit() throws IOException {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.query(any(SelectDatumStreamMetadata.class), any(RowMapper.class)))
+				.willReturn(List.of());
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.ThirtyMinute, 840);
+		// part of an hour more is not counted, as in SolarNet
+		filter.setEndDate(filter.getEndDate().plus(59, ChronoUnit.MINUTES));
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		thenStreamQueried();
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_rangeLimit_configured() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		historian.setMaxMinuteAggregationHours(24);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.TenMinute, 25);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"Minute level aggregation time span must be at most 24 hours.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_noRangeLimit() throws IOException {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.query(any(SelectDatumStreamMetadata.class), any(RowMapper.class)))
+				.willReturn(List.of());
+		historian.setMaxMinuteAggregationHours(0);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FiveMinute, 24 * 365);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		thenStreamQueried();
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_rangeLimit_localDates() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		// a short instant range, which the local date range is used in place of
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FifteenMinute, 1);
+		filter.setLocalStartDate(LocalDateTime.of(2026, 1, 1, 0, 0));
+		filter.setLocalEndDate(LocalDateTime.of(2026, 2, 5, 1, 0));
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"Minute level aggregation time span must be at most 840 hours.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_localDatesWithinRangeLimit() throws IOException {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		given(jdbcOps.query(any(SelectDatumStreamMetadata.class), any(RowMapper.class)))
+				.willReturn(List.of());
+		// a long instant range, which the local date range is used in place of
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FifteenMinute, 24 * 365);
+		filter.setLocalStartDate(LocalDateTime.of(2026, 1, 1, 0, 0));
+		filter.setLocalEndDate(LocalDateTime.of(2026, 2, 5, 0, 0));
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		thenStreamQueried();
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_minute() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.Minute, 1);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"The Minute aggregation is not supported; please query the data directly by "
+						+ "omitting the aggregation criteria or using None.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_minute_rangeLimitFirst() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.Minute, 841);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"Minute level aggregation time span must be at most 840 hours.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_noDateRange() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FiveMinute, 1);
+		filter.setEndDate(null);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"A date range must be specified for aggregation FiveMinute.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_mostRecent() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FiveMinute, 1);
+		filter.setMostRecent(true);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"The mostRecent flag cannot be used with aggregation FiveMinute.");
+	}
+
+	@Test
+	public void findFilteredStream_minuteAggregation_notSupported_noAggregation() throws IOException {
+		for ( boolean aggregates : new boolean[] { false, true } ) {
+			// GIVEN
+			Mockito.reset(jdbcOps, processor);
+			historian = new JdbcDatumHistorian(jdbcOps, new StaticOptionalService<>(identityService));
+			given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+			givenFeatures(aggregates, false);
+			given(jdbcOps.query(any(SelectDatumStreamMetadata.class), any(RowMapper.class)))
+					.willReturn(List.of());
+			// beyond the range limit, and Minute, which would otherwise be refused
+			final BasicNodeDatumFilter filter = minuteFilter(Aggregation.Minute, 841);
+
+			// WHEN
+			historian.findFilteredStream(filter, processor, null, null, null);
+
+			// THEN
+			thenStreamQueried();
+		}
 	}
 
 	@Test
@@ -1815,8 +2056,7 @@ public class JdbcDatumHistorianUnitTests {
 		givenStreamQueries(3);
 
 		// WHEN
-		historian.findFilteredStream(aggregateFilter(Aggregation.FiveMinute), processor, null, null,
-				null);
+		historian.findFilteredStream(aggregateFilter(Aggregation.Week), processor, null, null, null);
 
 		// THEN
 		// @formatter:off
