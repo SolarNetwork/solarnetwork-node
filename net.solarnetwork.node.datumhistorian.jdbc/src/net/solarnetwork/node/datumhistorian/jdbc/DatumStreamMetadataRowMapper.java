@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datumhistorian.jdbc;
 
 import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.getArray;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.timeZoneId;
 import static net.solarnetwork.node.service.support.DatumStreamIdUtils.encodeLocalStreamId;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -50,13 +51,16 @@ import net.solarnetwork.node.service.support.DatumStreamIdUtils;
  * <li>{@code names_i}</li>
  * <li>{@code names_a}</li>
  * <li>{@code names_s}</li>
+ * <li>{@code time_zone}</li>
  * </ol>
  *
  * <p>
  * A stream with a location ID is a location stream, with the location ID as its
  * object ID; any other stream is a node stream. Each stream is given the UUID
  * stream ID that {@link DatumStreamIdUtils} encodes from its node ID, a
- * historian domain, and its {@code stream_id}.
+ * historian domain, and its {@code stream_id}, and the Java zone ID that
+ * {@link net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils#timeZoneId(String)}
+ * gives for its time zone name.
  * </p>
  *
  * @author matt
@@ -65,20 +69,16 @@ import net.solarnetwork.node.service.support.DatumStreamIdUtils;
 public final class DatumStreamMetadataRowMapper implements RowMapper<ObjectDatumStreamMetadata> {
 
 	private final int streamIdDomain;
-	private final @Nullable String timeZoneId;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param streamIdDomain
 	 *        the historian domain to encode stream IDs with, from 1 to 255
-	 * @param timeZoneId
-	 *        the time zone ID to give each stream, or {@code null}
 	 */
-	public DatumStreamMetadataRowMapper(int streamIdDomain, @Nullable String timeZoneId) {
+	public DatumStreamMetadataRowMapper(int streamIdDomain) {
 		super();
 		this.streamIdDomain = streamIdDomain;
-		this.timeZoneId = timeZoneId;
 	}
 
 	@Override
@@ -90,6 +90,7 @@ public final class DatumStreamMetadataRowMapper implements RowMapper<ObjectDatum
 		final String @Nullable [] namesI = getArray(rs, 5);
 		final String @Nullable [] namesA = getArray(rs, 6);
 		final String @Nullable [] namesS = getArray(rs, 7);
+		final @Nullable String timeZoneId = timeZoneId(rs.getString(8));
 		final UUID uuid = encodeLocalStreamId(nodeId, streamIdDomain, streamId);
 		if ( locationId != null ) {
 			return new BasicObjectDatumStreamMetadata(uuid, timeZoneId, ObjectDatumKind.Location,

@@ -21,8 +21,9 @@
  *   then the days they are in, then the months. The postgres-init-agg-cron.sql
  *   script schedules it with pg_cron.
  * - Hours are UTC-aligned. Days and months start at midnight in the time zone
- *   of the stream's node, from the dh_node_time_zone table, falling back to
- *   UTC.
+ *   of the stream's node, from the dh_node_time_zone table of postgres-init.sql,
+ *   falling back to UTC. A trigger on that table has the days and months of a
+ *   node computed again when its zone changes.
  * - Raw datum partitions may be dropped while the aggregates are kept: an hour
  *   that starts before the oldest solarhist.dh_datum partition is never
  *   recomputed. Drop a partition with DROP TABLE, or detach it without
@@ -127,19 +128,6 @@ CREATE TABLE solarhist.dh_agg_stale (
 	agg_kind	CHARACTER NOT NULL,
 	created		TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	CONSTRAINT dh_agg_stale_pk PRIMARY KEY (agg_kind, ts_start, stream_id)
-);
-
--- time zone of each node, for the days and months of its streams, including location streams
--- stored by the node; a node without a row uses UTC, as SolarNet does, so the result never
--- depends on the session that processes the stale queue
---
--- Adding, changing or removing a row marks the days of the node's streams stale, so they and
--- their months are computed again from the hourly rows. An invalid zone is rejected.
-CREATE TABLE solarhist.dh_node_time_zone (
-	node_id		BIGINT NOT NULL,
-	time_zone	TEXT NOT NULL,
-	updated		TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	CONSTRAINT dh_node_time_zone_pk PRIMARY KEY (node_id)
 );
 
 
@@ -359,7 +347,8 @@ CREATE TRIGGER dh_datum_mark_stale
 /**
  * Trigger function that marks the days of a node's streams stale when its time zone is added,
  * changed or removed, so they are computed again from the hourly rows in the new zone. Days
- * and months in the old zone are deleted as the new ones are computed.
+ * and months in the old zone are deleted as the new ones are computed. An invalid zone is
+ * rejected.
  */
 CREATE OR REPLACE FUNCTION solarhist.dh_node_time_zone_mark_stale()
 	RETURNS TRIGGER LANGUAGE plpgsql VOLATILE AS

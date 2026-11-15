@@ -44,6 +44,7 @@ import static org.mockito.Mockito.inOrder;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Arrays;
@@ -83,8 +84,9 @@ import net.solarnetwork.service.StaticOptionalService;
 /**
  * Test cases for the stored aggregate and reading results of
  * {@link JdbcDatumHistorian#findFilteredStream} and
- * {@link JdbcDatumHistorian#findFilteredStreamReadings}, using the Postgres
- * test database.
+ * {@link JdbcDatumHistorian#findFilteredStreamReadings}, the time zones the
+ * historian stores, and the local date criteria in those zones, using the
+ * Postgres test database.
  *
  * <p>
  * Tests named {@code agg_} need the aggregate setup of
@@ -126,6 +128,11 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 
 	/** The start of 1 February, and of February, in Auckland. */
 	private static final Instant FEB_1_AUCKLAND = Instant.parse("2026-01-31T11:00:00Z");
+
+	// the local dates of the start of January, February, and March
+	private static final LocalDateTime LOCAL_JAN = LocalDateTime.of(2026, 1, 1, 0, 0);
+	private static final LocalDateTime LOCAL_FEB = LocalDateTime.of(2026, 2, 1, 0, 0);
+	private static final LocalDateTime LOCAL_MAR = LocalDateTime.of(2026, 3, 1, 0, 0);
 
 	// the hourly aggregates of the running node's streams, as kind, object ID, source ID,
 	// time, data_i, data_a, stat_i, and read_a
@@ -504,14 +511,11 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	 */
 
 	@Test
-	public void agg_timeZone_storedAtStartup() {
-		// GIVEN
-		assumeAggregates();
-
+	public void timeZone_storedAtStartup() {
 		// THEN
 		// @formatter:off
 		and.then(storedTimeZone(SCHEMA, TEST_NODE_ID))
-			.as("Time zone of running node stored at startup")
+			.as("Time zone of running node stored at startup, with or without aggregate setup")
 			.containsEntry("time_zone", "UTC")
 			;
 		and.then(storedTimeZone(SCHEMA, TEST_NODE_ID_2))
@@ -522,19 +526,16 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	@Test
-	public void agg_timeZone_storedOnlyWhenChanged() {
+	public void timeZone_storedOnlyWhenChanged() {
 		// GIVEN
-		assumeAggregates();
 		populate();
 		final Map<String, Object> stored = storedTimeZone(SCHEMA, TEST_NODE_ID);
 
 		// WHEN
 		historian(SCHEMA, identityService, ZoneOffset.UTC);
 		final Map<String, Object> storedSame = storedTimeZone(SCHEMA, TEST_NODE_ID);
-		final List<Tuple> staleSame = stale(SCHEMA);
 		final JdbcDatumHistorian changed = historian(SCHEMA, identityService, AUCKLAND);
 		final Map<String, Object> storedChanged = storedTimeZone(SCHEMA, TEST_NODE_ID);
-		final List<Tuple> staleChanged = stale(SCHEMA);
 
 		// THEN
 		// @formatter:off
@@ -542,13 +543,37 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 			.as("Same time zone not updated")
 			.isEqualTo(stored)
 			;
-		and.then(staleSame)
-			.as("Nothing stale for same time zone")
-			.isEmpty()
-			;
 		and.then(storedChanged)
 			.as("Changed time zone stored")
 			.containsEntry("time_zone", "Pacific/Auckland")
+			;
+		and.then(changed.findDatumStreamMetadata(new BasicNodeDatumFilter()))
+			.as("Stream metadata of the running node")
+			.hasSize(3)
+			.extracting(ObjectDatumStreamMetadata::getTimeZoneId)
+			.as("Stream metadata time zone is the zone stored")
+			.containsOnly("Pacific/Auckland")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_timeZone_changed_daysStale() {
+		// GIVEN
+		assumeAggregates();
+		populate();
+
+		// WHEN
+		historian(SCHEMA, identityService, ZoneOffset.UTC);
+		final List<Tuple> staleSame = stale(SCHEMA);
+		historian(SCHEMA, identityService, AUCKLAND);
+		final List<Tuple> staleChanged = stale(SCHEMA);
+
+		// THEN
+		// @formatter:off
+		and.then(staleSame)
+			.as("Nothing stale for same time zone")
+			.isEmpty()
 			;
 		and.then(staleChanged)
 			.as("Days of the node's streams in the changed zone stale")
@@ -557,13 +582,6 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 				, tuple("d", TEST_NODE_ID, null, "a/1", FEB_1_AUCKLAND)
 				, tuple("d", TEST_NODE_ID, null, "a/2", FEB_1_AUCKLAND)
 			)
-			;
-		and.then(changed.findDatumStreamMetadata(new BasicNodeDatumFilter()))
-			.as("Stream metadata of the running node")
-			.hasSize(3)
-			.extracting(ObjectDatumStreamMetadata::getTimeZoneId)
-			.as("Stream metadata time zone is the zone stored")
-			.containsOnly("Pacific/Auckland")
 			;
 		// @formatter:on
 	}
@@ -1170,9 +1188,8 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	@Test
-	public void agg_startup_noNodeId_timeZoneNotStored() {
+	public void startup_noNodeId_timeZoneNotStored() {
 		// GIVEN
-		assumeAggregates();
 		final Long count = storedTimeZoneCount();
 
 		// WHEN
@@ -1187,26 +1204,177 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		// @formatter:on
 	}
 
+	/*
+	 * ==================================================================
+	 * Local dates
+	 * ==================================================================
+	 */
+
+	/**
+	 * Add the datum of the tests, with the other node in Auckland.
+	 *
+	 * <p>
+	 * All the datum of the other node are then on 1 February in its zone, while
+	 * the datum of the running node are on 31 January and 1 February in UTC.
+	 * </p>
+	 */
+	private void populateOtherNodeInAuckland() {
+		otherHistorian = historian(SCHEMA, identityService2, AUCKLAND);
+		populate();
+	}
+
+	/**
+	 * Get a filter of the node streams of both nodes, within a local date
+	 * range.
+	 */
+	private static BasicNodeDatumFilter localDatesFilter(Aggregation aggregation,
+			LocalDateTime start, LocalDateTime end) {
+		final BasicNodeDatumFilter f = filter(aggregation);
+		f.setObjectKind(Node);
+		f.setObjectIds(new Long[] { TEST_NODE_ID, TEST_NODE_ID_2 });
+		f.setLocalStartDate(start);
+		f.setLocalEndDate(end);
+		return f;
+	}
+
 	@Test
-	public void noAgg_startup_timeZoneNotStored() throws IOException {
+	public void localDates_list_january() throws IOException {
 		// GIVEN
-		assumeNoAggregates();
+		populateOtherNodeInAuckland();
 
 		// WHEN
-		final JdbcDatumHistorian h = historian(SCHEMA, identityService, AUCKLAND);
-		h.add(new SimpleAcEnergyDatum("a/1", T22, energy(1, 100)));
-		h.findFilteredStream(new BasicNodeDatumFilter(), processor, null, null, null);
+		historian.findFilteredStream(localDatesFilter(null, LOCAL_JAN, LOCAL_FEB), processor, null,
+				null, null);
 
 		// THEN
 		// @formatter:off
-		and.then(jdbcTemplate.queryForObject("SELECT to_regclass(?) IS NULL", Boolean.class,
-				SCHEMA + ".dh_node_time_zone"))
-			.as("No time zone table without aggregate setup")
-			.isTrue()
-			;
 		and.then(thenStreamed(null, null).ids())
-			.as("Datum added and found in the same transaction, so the startup did not abort it")
-			.containsExactly(tuple(Node, TEST_NODE_ID, "a/1", T22))
+			.as("Datum of January in the zone of each node: those before midnight UTC of the running node, none of the other node")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", T22)
+				, tuple(Node, TEST_NODE_ID, "a/1", T22.plus(20, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T22.plus(40, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T23)
+				, tuple(Node, TEST_NODE_ID, "a/1", T23.plus(20, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T23.plus(40, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/2", T22_30)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void localDates_list_february() throws IOException {
+		// GIVEN
+		populateOtherNodeInAuckland();
+
+		// WHEN
+		historian.findFilteredStream(localDatesFilter(null, LOCAL_FEB, LOCAL_MAR), processor, null,
+				null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenStreamed(null, null).ids())
+			.as("Datum of February in the zone of each node: those from midnight UTC of the running node, all of the other node")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", T00)
+				, tuple(Node, TEST_NODE_ID, "a/1", T00.plus(20, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T00.plus(40, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T01)
+				, tuple(Node, TEST_NODE_ID, "a/1", T01.plus(20, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T01.plus(40, MINUTES))
+				, tuple(Node, TEST_NODE_ID_2, "a/1", T22)
+				, tuple(Node, TEST_NODE_ID_2, "a/1", T23)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_day_list_localDates_january() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populateOtherNodeInAuckland();
+
+		// WHEN
+		historian.findFilteredStream(localDatesFilter(Aggregation.Day, LOCAL_JAN, LOCAL_FEB),
+				processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).aggregates())
+			.as("Days of January in the zone of each node, without the other node's 1 February, which starts on 31 January in UTC")
+			.containsExactly(D_A1_31, D_A2)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_month_list_localDates_february() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populateOtherNodeInAuckland();
+
+		// WHEN
+		historian.findFilteredStream(localDatesFilter(Aggregation.Month, LOCAL_FEB, LOCAL_MAR),
+				processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).ids())
+			.as("Months of February in the zone of each node, each starting at midnight there")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", FEB_1)
+				, tuple(Node, TEST_NODE_ID_2, "a/1", FEB_1_AUCKLAND)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readings_difference_localDates_january() throws IOException {
+		// GIVEN
+		assumeReadings();
+		populateOtherNodeInAuckland();
+		final BasicNodeDatumFilter f = localDatesFilter(null, LOCAL_JAN, LOCAL_FEB);
+		f.setReadingType(DatumReadingType.Difference);
+
+		// WHEN
+		historian.findFilteredStreamReadings(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenReadingsStreamed(null, null).readings())
+			.as("Reading differences of January in the zone of each node, none for the other node, whose readings are all after")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", T22, T00, null, "{60}", "{{60,100,160}}")
+				, R_A2
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readings_difference_localDates_february() throws IOException {
+		// GIVEN
+		assumeReadings();
+		populateOtherNodeInAuckland();
+		final BasicNodeDatumFilter f = localDatesFilter(null, LOCAL_FEB, LOCAL_MAR);
+		f.setReadingType(DatumReadingType.Difference);
+
+		// WHEN
+		historian.findFilteredStreamReadings(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenReadingsStreamed(null, null).readings())
+			.as("Reading differences of February in the zone of each node")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", T00, T01.plus(40, MINUTES), null, "{50}",
+						  "{{50,160,210}}")
+				, R_A2
+				, R_O_A1
+			)
 			;
 		// @formatter:on
 	}

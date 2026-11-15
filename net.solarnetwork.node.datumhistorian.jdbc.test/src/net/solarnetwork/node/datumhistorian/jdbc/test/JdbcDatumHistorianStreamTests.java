@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,6 +100,10 @@ public class JdbcDatumHistorianStreamTests extends AbstractPostgresHistorianTest
 	private static final Long TEST_NODE_ID = 123L;
 	private static final Long TEST_NODE_ID_2 = 234L;
 	private static final Long TEST_LOC_ID = 345L;
+	private static final ZoneId TEST_ZONE = ZoneId.of("Pacific/Auckland");
+
+	/** A fixed-offset zone, which Postgres names with the opposite sign. */
+	private static final ZoneId TEST_ZONE_2 = ZoneOffset.ofHours(-5);
 
 	@Mock(strictness = Mock.Strictness.LENIENT)
 	private IdentityService identityService;
@@ -127,8 +132,10 @@ public class JdbcDatumHistorianStreamTests extends AbstractPostgresHistorianTest
 		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
 		given(identityService2.getNodeId()).willReturn(TEST_NODE_ID_2);
 		historian = new JdbcDatumHistorian(jdbcTemplate, new StaticOptionalService<>(identityService));
+		historian.setTimeZone(TEST_ZONE);
 		otherHistorian = new JdbcDatumHistorian(jdbcTemplate,
 				new StaticOptionalService<>(identityService2));
+		otherHistorian.setTimeZone(TEST_ZONE_2);
 		t0 = Instant.now().truncatedTo(ChronoUnit.MINUTES).minus(10, ChronoUnit.MINUTES);
 		t1 = t0.plus(1, ChronoUnit.MINUTES);
 		t2 = t1.plus(1, ChronoUnit.MINUTES);
@@ -348,8 +355,8 @@ public class JdbcDatumHistorianStreamTests extends AbstractPostgresHistorianTest
 			;
 		for ( ObjectDatumStreamMetadata meta : result ) {
 			and.then(meta)
-				.as("System time zone of stream %s", meta.getSourceId())
-				.returns(ZoneId.systemDefault().getId(), from(ObjectDatumStreamMetadata::getTimeZoneId))
+				.as("Time zone of stream %s is zone of running node, stored with its first datum", meta.getSourceId())
+				.returns(TEST_ZONE.getId(), from(ObjectDatumStreamMetadata::getTimeZoneId))
 				;
 			and.then(meta.propertyNamesForType(DatumSamplesType.Instantaneous))
 				.as("Instantaneous property names of stream %s", meta.getSourceId())
@@ -463,6 +470,54 @@ public class JdbcDatumHistorianStreamTests extends AbstractPostgresHistorianTest
 			.containsExactly(
 					meta(TEST_NODE_ID, TEST_LOC_ID, "weather"),
 					meta(TEST_NODE_ID_2, TEST_LOC_ID, "weather"))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void metadata_timeZones() {
+		// GIVEN
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setObjectKind(ObjectDatumKind.Location);
+		filter.setObjectId(TEST_LOC_ID);
+
+		// WHEN
+		Collection<ObjectDatumStreamMetadata> result = historian.findDatumStreamMetadata(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.extracting(ObjectDatumStreamMetadata::getStreamId, ObjectDatumStreamMetadata::getTimeZoneId)
+			.as("Time zone of each location stream is zone of node that stores it, a fixed offset as Java ID")
+			.containsExactly(
+					tuple(streamId(TEST_NODE_ID, TEST_LOC_ID, "weather"), TEST_ZONE.getId()),
+					tuple(streamId(TEST_NODE_ID_2, TEST_LOC_ID, "weather"), "-05:00"))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void metadata_timeZone_notStored() {
+		// GIVEN
+		jdbcTemplate.update("DELETE FROM %s.dh_node_time_zone WHERE node_id = ?"
+				.formatted(JdbcDatumHistorian.DEFAULT_SCHEMA_NAME), TEST_NODE_ID_2);
+		BasicNodeDatumFilter filter = new BasicNodeDatumFilter();
+		filter.setObjectKind(ObjectDatumKind.Node);
+		filter.setObjectIds(new Long[] { TEST_NODE_ID, TEST_NODE_ID_2 });
+
+		// WHEN
+		Collection<ObjectDatumStreamMetadata> result = historian.findDatumStreamMetadata(filter);
+
+		// THEN
+		// @formatter:off
+		and.then(result)
+			.extracting(ObjectDatumStreamMetadata::getObjectId, ObjectDatumStreamMetadata::getTimeZoneId)
+			.as("Time zone of streams of node without stored zone is UTC, as SolarNet does")
+			.containsExactly(
+					tuple(TEST_NODE_ID, TEST_ZONE.getId()),
+					tuple(TEST_NODE_ID, TEST_ZONE.getId()),
+					tuple(TEST_NODE_ID, TEST_ZONE.getId()),
+					tuple(TEST_NODE_ID_2, "UTC"))
 			;
 		// @formatter:on
 	}

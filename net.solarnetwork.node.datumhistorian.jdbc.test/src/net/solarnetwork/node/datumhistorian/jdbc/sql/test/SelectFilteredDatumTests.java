@@ -37,6 +37,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
@@ -69,6 +70,9 @@ import net.solarnetwork.node.service.FilterableDatumHistorian;
 public class SelectFilteredDatumTests {
 
 	private static final long TEST_NODE_ID = 123L;
+
+	private static final LocalDateTime LOCAL_START = LocalDateTime.of(2026, 1, 1, 0, 0);
+	private static final LocalDateTime LOCAL_END = LocalDateTime.of(2026, 2, 1, 0, 0);
 
 	@Mock
 	private Connection conn;
@@ -637,6 +641,124 @@ public class SelectFilteredDatumTests {
 				.isThrownBy(() -> SelectFilteredDatum.forStream("solarhist", null, 1L, null, 0));
 		thenIllegalArgumentException()
 				.isThrownBy(() -> SelectFilteredDatum.forStream("solar.hist", f, 1L, null, 0));
+	}
+
+	private BasicNodeDatumFilter localDatesFilter() {
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setStartDate(start);
+		f.setEndDate(end);
+		f.setLocalStartDate(LOCAL_START);
+		f.setLocalEndDate(LOCAL_END);
+		return f;
+	}
+
+	@Test
+	public void localDates() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = localDatesFilter();
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, TEST_NODE_ID);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with local dates in the zone of each node used in place of dates")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-09.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(sql.getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setObject(2, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(3, LOCAL_END, Types.TIMESTAMP);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void localDates_count() throws SQLException {
+		// GIVEN
+		givenPrepareCount();
+		final BasicNodeDatumFilter f = localDatesFilter();
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, TEST_NODE_ID);
+
+		// WHEN
+		PreparedStatementCreator count = sql.countPreparedStatementCreator();
+		count.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Count SQL generated, with local dates in the zone of each node")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-count-09.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(((SqlProvider) count).getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setObject(2, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(3, LOCAL_END, Types.TIMESTAMP);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void localEndDate_mostRecent() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setMostRecent(true);
+		f.setStartDate(start);
+		f.setLocalEndDate(LOCAL_END);
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, TEST_NODE_ID);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with local end date used in place of dates for most recent datum")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-10.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, LOCAL_END, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(2, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void localStartDate_locationIds() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = new BasicNodeDatumFilter();
+		f.setObjectKind(ObjectDatumKind.Location);
+		f.setObjectId(3L);
+		f.setLocalStartDate(LOCAL_START);
+		SelectFilteredDatum sql = new SelectFilteredDatum("solarhist", f, TEST_NODE_ID);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, merging location datum with local start date in zone of each storing node")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-filtered-datum-11.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(SelectFilteredDatum.DEFAULT_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, 3L);
+		then(stmt).should(ordered).setObject(2, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(3, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
 	}
 
 	@Test

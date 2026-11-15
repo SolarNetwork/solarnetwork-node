@@ -26,7 +26,11 @@ import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareDateRange;
 import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareLimitOffset;
 import static net.solarnetwork.dao.jdbc.CommonSqlUtils.limitOffset;
 import static net.solarnetwork.dao.jdbc.CommonSqlUtils.whereDateRange;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.STREAM_TIME_ZONE_SQL;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.appendNodeTimeZoneJoin;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.prepareLocalDateRange;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.whereLocalDateRange;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -71,9 +75,15 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <dt>start and end date</dt>
  * <dd>The minimum (inclusive) and maximum (exclusive) start of the aggregate
  * periods.</dd>
+ * <dt>local start and end date</dt>
+ * <dd>The minimum (inclusive) and maximum (exclusive) local start of the
+ * aggregate periods, in the time zone of the node of each stream, as described
+ * in {@link SelectFilteredDatum}. The days and months of a stream start at
+ * midnight in the same zone, so a local date range of whole days or months
+ * selects exactly those periods.</dd>
  * <dt>most recent</dt>
- * <dd>Only the most recent aggregate of each stream that matches the date
- * criteria, as SolarNet does for these aggregations.</dd>
+ * <dd>Only the most recent aggregate of each stream that matches the date or
+ * local date criteria, as SolarNet does for these aggregations.</dd>
  * <dt>sorts</dt>
  * <dd>As described in {@link SelectFilteredDatum}, with the time key sorting by
  * the period start. The node key is never ignored.</dd>
@@ -181,13 +191,16 @@ public final class SelectAggregateDatum
 
 	private void sqlFromWhere(StringBuilder buf) {
 		buf.append("FROM ").append(schemaName).append(".dh_datum_meta m\n");
+		if ( filter.hasLocalDate() ) {
+			appendNodeTimeZoneJoin(schemaName, buf);
+		}
 		if ( filter.isMostRecent() ) {
 			buf.append("INNER JOIN LATERAL (\n");
 			buf.append("\tSELECT d.ts_start, d.data_i, d.data_a, d.data_s, d.data_t, d.stat_i, d.read_a\n");
 			buf.append("\tFROM ").append(schemaName).append('.').append(tableName).append(" d\n");
 			buf.append("\tWHERE d.stream_id = m.stream_id\n");
 			final StringBuilder where = new StringBuilder();
-			whereDateRange(filter, "d.ts_start", where);
+			sqlDateWhere(where);
 			SelectFilteredDatum.appendIndented(buf, where);
 			buf.append("\tORDER BY d.ts_start DESC\n");
 			buf.append("\tLIMIT 1\n");
@@ -199,9 +212,17 @@ public final class SelectAggregateDatum
 		final StringBuilder where = new StringBuilder();
 		metaCriteria.appendSql(where);
 		if ( !filter.isMostRecent() ) {
-			whereDateRange(filter, "d.ts_start", where);
+			sqlDateWhere(where);
 		}
 		DatumMetaCriteria.appendWhere(buf, where);
+	}
+
+	private void sqlDateWhere(StringBuilder buf) {
+		if ( filter.hasLocalDate() ) {
+			whereLocalDateRange(filter, "d.ts_start", STREAM_TIME_ZONE_SQL, buf);
+		} else {
+			whereDateRange(filter, "d.ts_start", buf);
+		}
 	}
 
 	@Override
@@ -217,13 +238,18 @@ public final class SelectAggregateDatum
 
 	private int prepareFromWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
 		if ( filter.isMostRecent() ) {
-			p = prepareDateRange(filter, stmt, p);
+			p = prepareDates(stmt, p);
 			p = metaCriteria.prepare(con, stmt, p);
 		} else {
 			p = metaCriteria.prepare(con, stmt, p);
-			p = prepareDateRange(filter, stmt, p);
+			p = prepareDates(stmt, p);
 		}
 		return p;
+	}
+
+	private int prepareDates(PreparedStatement stmt, int p) throws SQLException {
+		return (filter.hasLocalDate() ? prepareLocalDateRange(filter, stmt, p)
+				: prepareDateRange(filter, stmt, p));
 	}
 
 	@Override

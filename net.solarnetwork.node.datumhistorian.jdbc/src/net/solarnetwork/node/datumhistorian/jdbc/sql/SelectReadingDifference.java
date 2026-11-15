@@ -24,12 +24,15 @@ package net.solarnetwork.node.datumhistorian.jdbc.sql;
 
 import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareLimitOffset;
 import static net.solarnetwork.dao.jdbc.CommonSqlUtils.limitOffset;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.STREAM_TIME_ZONE_SQL;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.appendNodeTimeZoneJoin;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -62,6 +65,11 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <dt>start and end date</dt>
  * <dd>The times to find the starting and ending readings at. A missing date is
  * taken to be the current time, as SolarNet does.</dd>
+ * <dt>local start and end date</dt>
+ * <dd>When both are given, the local times to find the starting and ending
+ * readings at, in the time zone of the node of each stream as described in
+ * {@link SelectFilteredDatum}, used in place of the start and end date. A
+ * single local date is ignored, as SolarNet does.</dd>
  * <dt>most recent</dt>
  * <dd>Ignored, as SolarNet ignores it for reading results: there is at most one
  * row per stream.</dd>
@@ -109,7 +117,8 @@ public final class SelectReadingDifference
 	 *
 	 * <p>
 	 * A missing start or end date of {@code filter} is taken to be the time
-	 * this instance is created.
+	 * this instance is created, for when {@code filter} does not have a local
+	 * date range.
 	 * </p>
 	 *
 	 * @param schemaName
@@ -157,10 +166,19 @@ public final class SelectReadingDifference
 
 	private void sqlFromWhere(StringBuilder buf) {
 		buf.append("FROM ").append(schemaName).append(".dh_datum_meta m\n");
+		if ( filter.hasLocalDateRange() ) {
+			appendNodeTimeZoneJoin(schemaName, buf);
+		}
 		buf.append("INNER JOIN LATERAL (\n");
 		buf.append("\tSELECT (").append(schemaName).append(".dh_diff_datum(r ORDER BY r.ts)).*\n");
-		buf.append("\tFROM ").append(schemaName)
-				.append(".dh_find_datum_diff_rows(m.stream_id, ?, ?) r\n");
+		buf.append("\tFROM ").append(schemaName).append(".dh_find_datum_diff_rows(m.stream_id");
+		if ( filter.hasLocalDateRange() ) {
+			buf.append("\n\t\t, ? AT TIME ZONE ").append(STREAM_TIME_ZONE_SQL);
+			buf.append("\n\t\t, ? AT TIME ZONE ").append(STREAM_TIME_ZONE_SQL);
+			buf.append("\n\t) r\n");
+		} else {
+			buf.append(", ?, ?) r\n");
+		}
 		// no row for a stream without readings, rather than one of NULL values
 		buf.append("\tHAVING COUNT(*) > 0\n");
 		buf.append(") d ON TRUE\n");
@@ -181,8 +199,13 @@ public final class SelectReadingDifference
 	}
 
 	private int prepareFromWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
-		stmt.setTimestamp(++p, Timestamp.from(startDate));
-		stmt.setTimestamp(++p, Timestamp.from(endDate));
+		if ( filter.hasLocalDateRange() ) {
+			stmt.setObject(++p, filter.getLocalStartDate(), Types.TIMESTAMP);
+			stmt.setObject(++p, filter.getLocalEndDate(), Types.TIMESTAMP);
+		} else {
+			stmt.setTimestamp(++p, Timestamp.from(startDate));
+			stmt.setTimestamp(++p, Timestamp.from(endDate));
+		}
 		return metaCriteria.prepare(con, stmt, p);
 	}
 
@@ -223,7 +246,8 @@ public final class SelectReadingDifference
 	}
 
 	/**
-	 * Get the time the starting readings are found at.
+	 * Get the time the starting readings are found at, when the filter does
+	 * not have a local date range.
 	 *
 	 * @return the filter start date, or the time this instance was created if
 	 *         the filter has none
@@ -233,7 +257,8 @@ public final class SelectReadingDifference
 	}
 
 	/**
-	 * Get the time the ending readings are found at.
+	 * Get the time the ending readings are found at, when the filter does not
+	 * have a local date range.
 	 *
 	 * @return the filter end date, or the time this instance was created if
 	 *         the filter has none

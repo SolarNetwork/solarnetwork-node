@@ -23,47 +23,38 @@
 package net.solarnetwork.node.datumhistorian.jdbc.sql;
 
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.timeZoneName;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.util.regex.Pattern;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.SqlProvider;
 
 /**
- * Store the time zone of a node in the {@code dh_node_time_zone} table of the
- * aggregate setup, if it differs from the stored zone.
+ * Store the time zone of a node in the {@code dh_node_time_zone} table, if it
+ * differs from the stored zone.
  *
  * <p>
- * The zone is stored by a name Postgres reads as the same zone: a region zone
- * by its ID, and a zone without an offset as {@code UTC}. Postgres reads a
- * fixed-offset zone such as {@code +12:00} or {@code GMT+12:00} as a POSIX
- * zone, whose offset has the opposite sign to the ISO 8601 offset Java gives,
- * so these are stored as a POSIX zone with the offset reversed, like
- * {@code <+1200>-12:00}.
+ * The zone is stored by the name that
+ * {@link HistorianSqlUtils#timeZoneName(ZoneId)} gives, which Postgres reads
+ * as the same zone: a fixed-offset zone like {@code +12:00} is stored as the
+ * POSIX zone {@code <+1200>-12:00}, for example.
  * </p>
  *
  * <p>
  * The update count is {@literal 1} if the zone was added or changed, and
- * {@literal 0} if the stored zone is the same. Adding or changing a zone marks
- * the daily aggregates of the node's streams stale, so they and their monthly
- * aggregates are computed again in the zone. The database rejects a zone it
- * does not know.
+ * {@literal 0} if the stored zone is the same. With the aggregate setup, adding
+ * or changing a zone marks the daily aggregates of the node's streams stale, so
+ * they and their monthly aggregates are computed again in the zone, and the
+ * database rejects a zone it does not know.
  * </p>
  *
  * @author matt
  * @version 1.0
  */
 public final class StoreNodeTimeZone implements PreparedStatementCreator, SqlProvider {
-
-	/**
-	 * The IDs of fixed-offset zones, such as {@code +12:00} or
-	 * {@code GMT+12:00}, which Postgres reads with the opposite sign.
-	 */
-	private static final Pattern OFFSET_ZONE_ID = Pattern.compile("(?:GMT|UTC|UT)?[+-].*");
 
 	private final String schemaName;
 	private final long nodeId;
@@ -89,27 +80,6 @@ public final class StoreNodeTimeZone implements PreparedStatementCreator, SqlPro
 		this.nodeId = nodeId;
 		this.timeZone = requireNonNullArgument(timeZone, "timeZone");
 		this.timeZoneName = timeZoneName(timeZone);
-	}
-
-	/**
-	 * Get a time zone name that Postgres reads as the same zone.
-	 *
-	 * @param zone
-	 *        the zone
-	 * @return the zone name
-	 */
-	private static String timeZoneName(ZoneId zone) {
-		if ( zone.normalized() instanceof ZoneOffset offset ) {
-			if ( offset.getTotalSeconds() == 0 ) {
-				return "UTC";
-			}
-			if ( OFFSET_ZONE_ID.matcher(zone.getId()).matches() ) {
-				final String id = offset.getId();
-				return "<" + id.replace(":", "") + ">" + (offset.getTotalSeconds() > 0 ? "-" : "+")
-						+ id.substring(1);
-			}
-		}
-		return zone.getId();
 	}
 
 	@Override

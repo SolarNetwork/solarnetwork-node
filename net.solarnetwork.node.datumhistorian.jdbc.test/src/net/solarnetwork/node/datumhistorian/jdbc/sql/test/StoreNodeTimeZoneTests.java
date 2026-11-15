@@ -32,8 +32,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -130,34 +128,6 @@ public class StoreNodeTimeZoneTests {
 		then(stmt).should(ordered).setLong(1, TEST_NODE_ID);
 		then(stmt).should(ordered).setString(2, "<+1200>-12:00");
 		then(stmt).shouldHaveNoMoreInteractions();
-		// @formatter:on
-	}
-
-	@Test
-	public void timeZoneNames() {
-		// GIVEN
-		final Map<ZoneId, String> zoneNames = new LinkedHashMap<>(8);
-		zoneNames.put(ZoneId.of("America/New_York"), "America/New_York");
-		zoneNames.put(ZoneOffset.UTC, "UTC");
-		zoneNames.put(ZoneId.of("Etc/UTC"), "UTC");
-		zoneNames.put(ZoneId.of("GMT"), "UTC");
-		zoneNames.put(ZoneOffset.ofHours(12), "<+1200>-12:00");
-		zoneNames.put(ZoneId.of("GMT-05:30"), "<-0530>+05:30");
-		zoneNames.put(ZoneId.of("UTC+01"), "<+0100>-01:00");
-		zoneNames.put(ZoneId.of("Etc/GMT-12"), "Etc/GMT-12");
-
-		// WHEN
-		final Map<ZoneId, String> result = new LinkedHashMap<>(8);
-		for ( ZoneId zone : zoneNames.keySet() ) {
-			result.put(zone, new StoreNodeTimeZone("solarhist", TEST_NODE_ID, zone).getTimeZoneName());
-		}
-
-		// THEN
-		// @formatter:off
-		and.then(result)
-			.as("Region zones stored as is, zones without offset as UTC, and fixed offset zones as POSIX zones with the offset reversed")
-			.containsExactlyEntriesOf(zoneNames)
-			;
 		// @formatter:on
 	}
 

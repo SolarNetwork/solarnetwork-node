@@ -147,13 +147,22 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * looks for, which stores {@code Hour}, {@code Day}, and {@code Month}
  * aggregates. Whether it does is found once, when the historian starts or else
  * when first needed. With the setup, the stream queries of those aggregations
- * read the stored aggregates, and the historian stores the time zone of the
- * {@code IdentityService} node with {@link StoreNodeTimeZone}, for the days and
- * months of its aggregates, when it starts or else with the first datum added
- * once the node ID is known. The zone is the one given in stream metadata, and
- * is only stored when it differs from the stored zone, because a change has the
- * node's days and months computed again. Without the setup, those aggregations
- * are treated as no aggregation.
+ * read the stored aggregates. Without the setup, those aggregations are treated
+ * as no aggregation.
+ * </p>
+ *
+ * <p>
+ * The historian stores the time zone of the {@code IdentityService} node with
+ * {@link StoreNodeTimeZone} when it starts, or else with the first datum added
+ * once the node ID is known. The zone is the configured {@code timeZone}, or
+ * the system time zone, and is only stored when it differs from the stored
+ * zone, because with the aggregate setup a change has the node's days and
+ * months computed again. Each datum stream is in the time zone stored for its
+ * node, or UTC if there is none, as SolarNet does: the metadata of each stream
+ * has its zone, and the local date criteria of a filter are taken to be in the
+ * zone of each stream, so a local date range of a month gives the datum of that
+ * month in the zone of each stream. With the aggregate setup, the days and
+ * months of the aggregates are in the same zone.
  * </p>
  *
  * <p>
@@ -273,9 +282,10 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * {@inheritDoc}
 	 *
 	 * <p>
-	 * This finds the features of the schema, and with the aggregate setup
-	 * stores the time zone of the node if its ID is known. Errors are logged and
-	 * otherwise ignored, so the features are found again when first needed.
+	 * This finds the features of the schema, and stores the time zone of the
+	 * node if its ID is known. Errors are logged and otherwise ignored. If the
+	 * features cannot be found, they are found again when first needed, and the
+	 * zone is stored with the first datum added instead.
 	 * </p>
 	 */
 	@Override
@@ -293,7 +303,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 				(f.aggregates() ? "has" : "does not have"));
 		final Long nodeId = nodeId();
 		if ( nodeId != null ) {
-			storeTimeZone(nodeId, f);
+			storeTimeZone(nodeId);
 		}
 	}
 
@@ -326,30 +336,28 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	}
 
 	/**
-	 * Store the time zone of a node, with the aggregate setup.
+	 * Store the time zone of a node.
 	 *
 	 * <p>
 	 * This is only tried once for each node ID. Errors are logged and otherwise
-	 * ignored, leaving the days and months of the node's aggregates in the
-	 * previously stored zone, or in UTC.
+	 * ignored, leaving the node's streams in the previously stored zone, or in
+	 * UTC.
 	 * </p>
 	 *
 	 * @param nodeId
 	 *        the node ID
-	 * @param f
-	 *        the features of the schema
 	 */
-	private void storeTimeZone(Long nodeId, SelectHistorianFeatures.Result f) {
+	private void storeTimeZone(Long nodeId) {
 		timeZoneNodeId = nodeId;
-		if ( !f.aggregates() ) {
-			return;
-		}
 		final StoreNodeTimeZone sql = new StoreNodeTimeZone(schemaName, nodeId, zone());
 		try {
 			if ( jdbcOps.update(sql) > 0 ) {
-				log.info(
-						"Stored node {} time zone [{}] in DB schema [{}]; its daily and monthly aggregates will be computed again",
-						nodeId, sql.getTimeZoneName(), schemaName);
+				final SelectHistorianFeatures.Result f = this.features;
+				log.info("Stored node {} time zone [{}] in DB schema [{}]{}", nodeId,
+						sql.getTimeZoneName(), schemaName,
+						(f != null && f.aggregates()
+								? "; its daily and monthly aggregates will be computed again"
+								: ""));
 			}
 		} catch ( DataAccessException e ) {
 			log.warn("Error storing node {} time zone [{}] in DB schema [{}]: {}", nodeId,
@@ -377,10 +385,9 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 		if ( datum == null || datum.getSourceId() == null || datum.getTimestamp() == null ) {
 			return;
 		}
-		final SelectHistorianFeatures.Result f = this.features;
-		if ( f != null && f.aggregates() && !nodeId.equals(timeZoneNodeId) ) {
+		if ( !nodeId.equals(timeZoneNodeId) ) {
 			// the node ID was not known when the historian started, or has changed
-			storeTimeZone(nodeId, f);
+			storeTimeZone(nodeId);
 		}
 		final Class<?> datumClass = datum.getClass();
 		final String className = datumClass.getName();
@@ -470,8 +477,8 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * other criteria are ignored. With location IDs, the metadata of the
 	 * streams of every node that stored datum for those locations is returned,
 	 * as {@code findFiltered()} merges their datum. The metadata is ordered by
-	 * node ID, location ID, and source ID, and has the time zone of
-	 * {@link #getTimeZone()}, or the system time zone if that is not set.
+	 * node ID, location ID, and source ID, and each stream has the time zone
+	 * stored for its node, or UTC, as described in {@link JdbcDatumHistorian}.
 	 * </p>
 	 *
 	 * @throws IllegalArgumentException
@@ -504,10 +511,11 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * setup</dt>
 	 * <dd>A {@link net.solarnetwork.domain.datum.BasicAggregateStreamDatum} for
 	 * each stored aggregate, as {@link SelectAggregateDatum} selects them: the
-	 * date criteria apply to the period start, location datum stored by more
-	 * than one node are not merged, the type criteria only select streams that
-	 * have stored a datum of a matching type, and with the most recent criteria
-	 * the most recent aggregate of each stream is given.</dd>
+	 * date and local date criteria apply to the period start, location datum
+	 * stored by more than one node are not merged, the type criteria only
+	 * select streams that have stored a datum of a matching type, and with the
+	 * most recent criteria the most recent aggregate of each stream is
+	 * given.</dd>
 	 * <dt>otherwise</dt>
 	 * <dd>The aggregation is ignored, so each result is a
 	 * {@link net.solarnetwork.domain.datum.BasicStreamDatum}; merged location
@@ -558,10 +566,11 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * <dt>otherwise</dt>
 	 * <dd>One result for each stream with readings, as
 	 * {@link SelectReadingDifference} selects them, whose timestamp and end
-	 * timestamp are the times of the starting and ending readings. The most
-	 * recent criteria is ignored, as SolarNet ignores it for these results, and
-	 * the type criteria only select streams that have stored a datum of a
-	 * matching type.</dd>
+	 * timestamp are the times of the starting and ending readings. The local
+	 * date criteria are only used when both are given, and the most recent
+	 * criteria is ignored, as SolarNet does for these results. The type
+	 * criteria only select streams that have stored a datum of a matching
+	 * type.</dd>
 	 * </dl>
 	 *
 	 * @throws IllegalArgumentException
@@ -744,7 +753,7 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	private List<ObjectDatumStreamMetadata> streamMetadata(NodeDatumFilter f, @Nullable Long nodeId,
 			Integer @Nullable [] streamIds) {
 		return jdbcOps.query(new SelectDatumStreamMetadata(schemaName, f, nodeId, streamIds),
-				new DatumStreamMetadataRowMapper(streamIdDomain, zone().getId()));
+				new DatumStreamMetadataRowMapper(streamIdDomain));
 	}
 
 	/**
@@ -1266,10 +1275,11 @@ public class JdbcDatumHistorian extends BasicIdentifiable
 	 * Set the time zone of the node.
 	 *
 	 * <p>
-	 * This is the time zone given in stream metadata, and with the aggregate
-	 * setup the zone the days and months of the node's aggregates are computed
-	 * in. It is stored when the historian starts, so should be set before
-	 * then. The system time zone is used by default.
+	 * This is the time zone of the node's datum streams, stored when the
+	 * historian starts, so should be set before then. It is given in the
+	 * metadata of the streams and used for their local date criteria, and with
+	 * the aggregate setup the days and months of the node's aggregates are
+	 * computed in it. The system time zone is used by default.
 	 * </p>
 	 *
 	 * @param timeZone

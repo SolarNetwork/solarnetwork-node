@@ -37,6 +37,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.Test;
@@ -69,6 +70,9 @@ public class SelectAggregateDatumTests {
 
 	private static final long TEST_NODE_ID = 123L;
 	private static final int TEST_FETCH_SIZE = 50;
+
+	private static final LocalDateTime LOCAL_START = LocalDateTime.of(2026, 1, 1, 0, 0);
+	private static final LocalDateTime LOCAL_END = LocalDateTime.of(2026, 2, 1, 0, 0);
 
 	@Mock
 	private Connection conn;
@@ -401,6 +405,97 @@ public class SelectAggregateDatumTests {
 		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
 		then(stmt).should(ordered).setObject(1, 3L);
 		then(stmt).should(ordered).setTimestamp(2, Timestamp.from(start));
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	private BasicNodeDatumFilter localDatesFilter() {
+		final BasicNodeDatumFilter f = filter(Aggregation.Day);
+		f.setStartDate(start);
+		f.setEndDate(end);
+		f.setLocalStartDate(LOCAL_START);
+		f.setLocalEndDate(LOCAL_END);
+		return f;
+	}
+
+	@Test
+	public void localDates() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", localDatesFilter(),
+				TEST_NODE_ID, null, TEST_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with local dates in the zone of each node used in place of dates")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-05.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(sql.getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setObject(2, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(3, LOCAL_END, Types.TIMESTAMP);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void localDates_count() throws SQLException {
+		// GIVEN
+		givenPrepareCount();
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", localDatesFilter(),
+				TEST_NODE_ID, null, TEST_FETCH_SIZE);
+
+		// WHEN
+		PreparedStatementCreator count = sql.countPreparedStatementCreator();
+		count.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Count SQL generated, with local dates in the zone of each node")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-count-05.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(((SqlProvider) count).getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setObject(2, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(3, LOCAL_END, Types.TIMESTAMP);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void localStartDate_mostRecent() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = filter(Aggregation.Month);
+		f.setMostRecent(true);
+		f.setEndDate(end);
+		f.setLocalStartDate(LOCAL_START);
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", f, TEST_NODE_ID, null,
+				TEST_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated, with local start date used in place of dates for most recent aggregate")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-06.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(2, TEST_NODE_ID, Types.BIGINT);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}

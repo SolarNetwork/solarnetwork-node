@@ -28,7 +28,11 @@ import static net.solarnetwork.dao.jdbc.CommonJdbcUtils.prepareParameter;
 import static net.solarnetwork.dao.jdbc.CommonSqlUtils.limitOffset;
 import static net.solarnetwork.dao.jdbc.CommonSqlUtils.whereDateRange;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.DatumMetaCriteria.NODE_ID_COLUMN;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.STREAM_TIME_ZONE_SQL;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.appendNodeTimeZoneJoin;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.prepareLocalDateRange;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.whereLocalDateRange;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.DEFAULT_SORTS;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_LOCATION;
 import static net.solarnetwork.node.service.FilterableDatumHistorian.SORT_BY_NODE;
@@ -80,10 +84,15 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * assigned to any of them.</dd>
  * <dt>start and end date</dt>
  * <dd>The minimum (inclusive) and maximum (exclusive) datum timestamps.</dd>
+ * <dt>local start and end date</dt>
+ * <dd>The minimum (inclusive) and maximum (exclusive) local datum timestamps,
+ * in the time zone of the node of each stream from the
+ * {@code dh_node_time_zone} table, or UTC, as SolarNet does. When either is
+ * given, they are used in place of the start and end date.</dd>
  * <dt>most recent</dt>
- * <dd>Only the most recent datum of each stream that matches the date and type
- * criteria. For merged location datum, the most recent datum of each location
- * and source.</dd>
+ * <dd>Only the most recent datum of each stream that matches the date, local
+ * date, and type criteria. For merged location datum, the most recent datum of
+ * each location and source.</dd>
  * <dt>sorts</dt>
  * <dd>The {@code SORT_BY_*} keys of {@code FilterableDatumHistorian}. Any
  * {@link net.solarnetwork.node.service.FilterableDatumHistorian#DEFAULT_SORTS}
@@ -342,7 +351,8 @@ public final class SelectFilteredDatum
 
 	/**
 	 * Generate a {@code FROM} clause of the stream meta and datum tables, as
-	 * {@code m} and {@code d} tables.
+	 * {@code m} and {@code d} tables, joined to the {@code z} node time zone
+	 * table for the local date criteria.
 	 *
 	 * @param buf
 	 *        the buffer to append to
@@ -352,6 +362,9 @@ public final class SelectFilteredDatum
 	 */
 	private void sqlStreamFrom(StringBuilder buf, boolean timestampOnly) {
 		buf.append("FROM ").append(schemaName).append(".dh_datum_meta m\n");
+		if ( filter.hasLocalDate() ) {
+			appendNodeTimeZoneJoin(schemaName, buf);
+		}
 		if ( filter.isMostRecent() ) {
 			buf.append("INNER JOIN LATERAL (\n");
 			buf.append(timestampOnly ? "\tSELECT d.ts\n"
@@ -380,7 +393,11 @@ public final class SelectFilteredDatum
 	}
 
 	private void sqlDatumWhere(StringBuilder buf) {
-		whereDateRange(filter, "d.ts", buf);
+		if ( filter.hasLocalDate() ) {
+			whereLocalDateRange(filter, "d.ts", STREAM_TIME_ZONE_SQL, buf);
+		} else {
+			whereDateRange(filter, "d.ts", buf);
+		}
 		if ( filter.hasTypeCriteria() ) {
 			buf.append("\tAND d.type_id = ANY(");
 			metaCriteria.appendTypeIdsSql(buf);
@@ -475,7 +492,11 @@ public final class SelectFilteredDatum
 	}
 
 	private int prepareDatumWhere(Connection con, PreparedStatement stmt, int p) throws SQLException {
-		p = prepareDateRange(filter, stmt, p);
+		if ( filter.hasLocalDate() ) {
+			p = prepareLocalDateRange(filter, stmt, p);
+		} else {
+			p = prepareDateRange(filter, stmt, p);
+		}
 		if ( filter.hasTypeCriteria() ) {
 			p = metaCriteria.prepareTypes(con, stmt, p);
 		}

@@ -83,9 +83,10 @@ public class DatumStreamMetadataRowMapperTests {
 		given(namesI.getArray()).willReturn(new String[] { "watts", "current" });
 		given(namesA.getArray()).willReturn(new String[] { "wattHours" });
 		given(namesS.getArray()).willReturn(new String[] { "mode" });
+		given(rs.getString(8)).willReturn(TEST_TZ);
 
 		// WHEN
-		ObjectDatumStreamMetadata result = new DatumStreamMetadataRowMapper(1, TEST_TZ).mapRow(rs, 0);
+		ObjectDatumStreamMetadata result = new DatumStreamMetadataRowMapper(1).mapRow(rs, 0);
 
 		// THEN
 		// @formatter:off
@@ -93,7 +94,7 @@ public class DatumStreamMetadataRowMapperTests {
 			.as("Stream ID encoded from node ID, domain, and stream ID")
 			.returns(encodeLocalStreamId(TEST_NODE_ID, 1, TEST_STREAM_ID),
 					from(ObjectDatumStreamMetadata::getStreamId))
-			.as("Time zone given")
+			.as("Time zone of row")
 			.returns(TEST_TZ, from(ObjectDatumStreamMetadata::getTimeZoneId))
 			.as("Node stream without location ID")
 			.returns(ObjectDatumKind.Node, from(ObjectDatumStreamMetadata::getKind))
@@ -124,9 +125,10 @@ public class DatumStreamMetadataRowMapperTests {
 	public void locationStream() throws SQLException {
 		// GIVEN
 		givenStream("weather", TEST_LOC_ID);
+		given(rs.getString(8)).willReturn("<+1200>-12:00");
 
 		// WHEN
-		ObjectDatumStreamMetadata result = new DatumStreamMetadataRowMapper(2, null).mapRow(rs, 0);
+		ObjectDatumStreamMetadata result = new DatumStreamMetadataRowMapper(2).mapRow(rs, 0);
 
 		// THEN
 		// @formatter:off
@@ -134,8 +136,8 @@ public class DatumStreamMetadataRowMapperTests {
 			.as("Stream ID encoded from node ID that stored stream, domain, and stream ID")
 			.returns(encodeLocalStreamId(TEST_NODE_ID, 2, TEST_STREAM_ID),
 					from(ObjectDatumStreamMetadata::getStreamId))
-			.as("No time zone")
-			.returns(null, from(ObjectDatumStreamMetadata::getTimeZoneId))
+			.as("Java offset ID of POSIX fixed-offset zone of row")
+			.returns("+12:00", from(ObjectDatumStreamMetadata::getTimeZoneId))
 			.as("Location stream with location ID")
 			.returns(ObjectDatumKind.Location, from(ObjectDatumStreamMetadata::getKind))
 			.as("Location ID is object ID")

@@ -1,4 +1,3 @@
 SELECT to_regclass('solarhist.dh_agg_hourly') IS NOT NULL
 	AND to_regclass('solarhist.dh_agg_daily') IS NOT NULL
-	AND to_regclass('solarhist.dh_agg_monthly') IS NOT NULL
-	AND to_regclass('solarhist.dh_node_time_zone') IS NOT NULL AS agg
+	AND to_regclass('solarhist.dh_agg_monthly') IS NOT NULL AS agg

@@ -116,7 +116,7 @@ public class SelectDatumStreamMetadataTests {
 			.isSameAs(stmt)
 			;
 		and.then(sqlCaptor.getValue())
-			.as("SQL generated, limited to node, by node, location, and source")
+			.as("SQL generated, limited to node, with the zone of each node, by node, location, and source")
 			.isEqualToNormalizingWhitespace(utf8StringResource("select-datum-stream-meta-01.sql", getClass()))
 			.as("Same SQL from SqlProvider")
 			.isEqualTo(sql.getSql())
@@ -236,7 +236,9 @@ public class SelectDatumStreamMetadataTests {
 			.as("SQL generated, without WHERE clause for no node ID and empty stream IDs")
 			.isEqualTo("""
 					SELECT m.stream_id, m.node_id, m.source_id, m.loc_id, m.names_i, m.names_a, m.names_s
+						, COALESCE(z.time_zone, 'UTC') AS time_zone
 					FROM solarhist.dh_datum_meta m
+					LEFT OUTER JOIN solarhist.dh_node_time_zone z ON z.node_id = m.node_id
 					ORDER BY m.node_id, m.loc_id, m.source_id""")
 			;
 		then(stmt).shouldHaveNoInteractions();

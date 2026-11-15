@@ -644,7 +644,7 @@ public class JdbcDatumHistorianUnitTests {
 			.as("Default schema used")
 			.returns(JdbcDatumHistorian.DEFAULT_SCHEMA_NAME, SelectHistorianFeatures::getSchemaName)
 			;
-		// No time zone stored without node ID or stored aggregates
+		// No time zone stored without node ID
 		then(jdbcOps).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}
@@ -724,11 +724,13 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	@Test
-	public void startup_noAggregates_timeZoneNotStored() {
+	public void startup_noAggregates_timeZoneStored() {
 		// GIVEN
 		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
 		givenFeatures(false);
+		given(jdbcOps.update(any(StoreNodeTimeZone.class))).willReturn(1);
 		givenStoreDatum();
+		historian.setTimeZone(ZoneId.of("Pacific/Auckland"));
 
 		// WHEN
 		historian.serviceDidStartup();
@@ -736,11 +738,21 @@ public class JdbcDatumHistorianUnitTests {
 
 		// THEN
 		// @formatter:off
-		then(jdbcOps).should().query(any(SelectHistorianFeatures.class),
+		final InOrder ordered = inOrder(jdbcOps);
+		then(jdbcOps).should(ordered).query(any(SelectHistorianFeatures.class),
 				same(SelectHistorianFeatures.RESULT_MAPPER));
-		then(jdbcOps).should().query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER));
-		// No time zone stored without stored aggregates
+		then(jdbcOps).should(ordered).update(sqlCaptor.capture());
+		then(jdbcOps).should(ordered).query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER));
+		// Time zone stored once without stored aggregates too
 		then(jdbcOps).shouldHaveNoMoreInteractions();
+		and.then(sqlCaptor.getValue())
+			.as("Time zone stored")
+			.asInstanceOf(type(StoreNodeTimeZone.class))
+			.as("Node ID of identity service")
+			.returns(TEST_NODE_ID, StoreNodeTimeZone::getNodeId)
+			.as("Configured time zone")
+			.returns(ZoneId.of("Pacific/Auckland"), StoreNodeTimeZone::getTimeZone)
+			;
 		// @formatter:on
 	}
 
@@ -804,19 +816,31 @@ public class JdbcDatumHistorianUnitTests {
 	}
 
 	@Test
-	public void add_featuresNotFound_noTimeZone() {
+	public void add_notStarted_timeZoneStoredOnce() {
 		// GIVEN
 		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
 		givenStoreDatum();
 
 		// WHEN
 		historian.add(datum("a"));
+		historian.add(datum("b"));
 
 		// THEN
 		// @formatter:off
-		then(jdbcOps).should().query(any(StoreDatum.class), same(StoreDatum.RESULT_MAPPER));
-		// Features not found by adding, so no time zone stored
+		final InOrder ordered = inOrder(jdbcOps);
+		then(jdbcOps).should(ordered).update(sqlCaptor.capture());
+		then(jdbcOps).should(ordered, times(2)).query(any(StoreDatum.class),
+				same(StoreDatum.RESULT_MAPPER));
+		// Time zone stored once, with first datum, without finding the features
 		then(jdbcOps).shouldHaveNoMoreInteractions();
+		and.then(sqlCaptor.getValue())
+			.as("Time zone stored")
+			.asInstanceOf(type(StoreNodeTimeZone.class))
+			.as("Node ID of identity service")
+			.returns(TEST_NODE_ID, StoreNodeTimeZone::getNodeId)
+			.as("System time zone")
+			.returns(ZoneId.systemDefault(), StoreNodeTimeZone::getTimeZone)
+			;
 		// @formatter:on
 	}
 
@@ -839,7 +863,7 @@ public class JdbcDatumHistorianUnitTests {
 		// @formatter:off
 		then(jdbcOps).should(times(2)).query(any(SelectHistorianFeatures.class),
 				same(SelectHistorianFeatures.RESULT_MAPPER));
-		// No time zone stored without features
+		// No time zone stored at startup without features, only with the first datum added
 		then(jdbcOps).should(never()).update(any(PreparedStatementCreator.class));
 		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
 		and.then(sqlCaptor.getValue())

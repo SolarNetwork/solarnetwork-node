@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.datumhistorian.jdbc.sql;
 
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.STREAM_TIME_ZONE_SQL;
+import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.appendNodeTimeZoneJoin;
 import static net.solarnetwork.node.datumhistorian.jdbc.sql.HistorianSqlUtils.requireValidSchemaName;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.sql.Connection;
@@ -43,7 +45,9 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * </p>
  *
  * <p>
- * Rows are ordered by node ID, location ID, and source ID, with these columns:
+ * Each stream has the time zone of its node, from the {@code dh_node_time_zone}
+ * table, or UTC. Rows are ordered by node ID, location ID, and source ID, with
+ * these columns:
  * </p>
  *
  * <ol>
@@ -54,6 +58,7 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <li>{@code names_i}</li>
  * <li>{@code names_a}</li>
  * <li>{@code names_s}</li>
+ * <li>{@code time_zone} (a Postgres zone name)</li>
  * </ol>
  *
  * @author matt
@@ -94,7 +99,9 @@ public final class SelectDatumStreamMetadata implements PreparedStatementCreator
 		final StringBuilder buf = new StringBuilder(512);
 		buf.append("SELECT m.stream_id, m.node_id, m.source_id, m.loc_id")
 				.append(", m.names_i, m.names_a, m.names_s\n");
+		buf.append("\t, ").append(STREAM_TIME_ZONE_SQL).append(" AS time_zone\n");
 		buf.append("FROM ").append(schemaName).append(".dh_datum_meta m\n");
+		appendNodeTimeZoneJoin(schemaName, buf);
 		final StringBuilder where = new StringBuilder();
 		criteria.appendSql(where);
 		DatumMetaCriteria.appendWhere(buf, where);

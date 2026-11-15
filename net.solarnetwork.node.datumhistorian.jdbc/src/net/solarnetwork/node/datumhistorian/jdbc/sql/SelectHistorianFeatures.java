@@ -40,8 +40,7 @@ import org.springframework.jdbc.core.SqlProvider;
  * <ol>
  * <li>{@code agg}: {@code true} if the schema has the aggregate setup of
  * {@code postgres-init-agg.sql}, that is its {@code dh_agg_hourly},
- * {@code dh_agg_daily}, {@code dh_agg_monthly}, and {@code dh_node_time_zone}
- * tables</li>
+ * {@code dh_agg_daily}, and {@code dh_agg_monthly} tables</li>
  * </ol>
  *
  * @author matt
@@ -64,7 +63,7 @@ public final class SelectHistorianFeatures implements PreparedStatementCreator, 
 
 	/** The aggregate setup tables. */
 	private static final String[] AGGREGATE_TABLES = new String[] { "dh_agg_hourly", "dh_agg_daily",
-			"dh_agg_monthly", "dh_node_time_zone" };
+			"dh_agg_monthly" };
 
 	private final String schemaName;
 

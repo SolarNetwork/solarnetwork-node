@@ -46,6 +46,20 @@ CREATE TABLE solarhist.dh_datum_meta (
 	CONSTRAINT dh_datum_meta_unq UNIQUE NULLS NOT DISTINCT (node_id, source_id, loc_id)
 );
 
+-- time zone of each node, for the local dates of its streams, including location streams
+-- stored by the node; the historian of each node stores its zone when it starts, and a node
+-- without a row uses UTC, as SolarNet does, so the result never depends on the session zone
+--
+-- With postgres-init-agg.sql the days and months of the node's aggregates are in this zone:
+-- adding, changing or removing a row marks the days of the node's streams stale, so they and
+-- their months are computed again from the hourly rows, and an invalid zone is rejected.
+CREATE TABLE solarhist.dh_node_time_zone (
+	node_id		BIGINT NOT NULL,
+	time_zone	TEXT NOT NULL,				-- a zone name Postgres knows, like Pacific/Auckland
+	updated		TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT dh_node_time_zone_pk PRIMARY KEY (node_id)
+);
+
 -- datum table, partitioned by UTC month; the data_i, data_a, and data_s values are in the same
 -- order as the names_i, names_a, and names_s property names of the stream
 --
