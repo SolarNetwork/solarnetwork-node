@@ -1151,11 +1151,11 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 				.andReturn().getResponse();
 
 		// THEN
-		and.then(res.getStatus()).as("Unsupported reading type not found").isEqualTo(404);
+		and.then(res.getStatus()).as("Unsupported reading type can not be processed").isEqualTo(422);
 		and.then(res.getContentType()).as("JSON content").isEqualTo(MediaType.APPLICATION_JSON_VALUE);
 		and.then(res.getHeader(HttpHeaders.CONTENT_ENCODING)).as("Error result not compressed").isNull();
 		and.then(res.getContentAsString()).as("Error result provided").isEqualTo("""
-				{"success":false,"code":"404",\
+				{"success":false,"code":"422",\
 				"message":"The NearestDifference reading type is not supported."}""");
 		and.then(filterCaptor.getValue().getReadingType()).as("Reading type passed to historian")
 				.isEqualTo(DatumReadingType.NearestDifference);

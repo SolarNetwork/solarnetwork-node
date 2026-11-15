@@ -216,10 +216,9 @@ public class DatumController extends BaseSolarQueryController {
 	 * with a {@literal 422} status, as in SolarQuery.</li>
 	 * <li>When it names a reading type the historian does not support (all but
 	 * {@link DatumReadingType#Difference}), the request fails with a
-	 * {@literal 404} status, which is how SolarQuery reports an unsupported
-	 * operation. It is not ignored like other unsupported parameters, as the
-	 * results of another reading type would be wrong rather than less
-	 * complete.</li>
+	 * {@literal 422} status. It is not ignored like other unsupported
+	 * parameters, as the results of another reading type would be wrong rather
+	 * than less complete.</li>
 	 * </ul>
 	 *
 	 * <p>
@@ -302,6 +301,31 @@ public class DatumController extends BaseSolarQueryController {
 	/**
 	 * A historian stream query.
 	 */
+	/**
+	 * Handle a query the historian does not support, such as a reading type
+	 * other than {@code Difference}.
+	 *
+	 * <p>
+	 * The status is {@literal 422}: the request is understood but can not be
+	 * processed. This overrides the {@literal 404} the web application gives an
+	 * {@link UnsupportedOperationException} elsewhere.
+	 * </p>
+	 *
+	 * @param e
+	 *        the exception
+	 * @param req
+	 *        the HTTP request
+	 * @return the error result
+	 */
+	@ExceptionHandler(UnsupportedOperationException.class)
+	@ResponseBody
+	@ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+	public Response<?> handleUnsupportedOperationException(UnsupportedOperationException e,
+			HttpServletRequest req) {
+		log.debug("Unsupported operation in request [{}]: {}", requestDescription(req), e.getMessage());
+		return new Response<Object>(Boolean.FALSE, "422", e.getMessage(), null);
+	}
+
 	@FunctionalInterface
 	private interface StreamQuery {
 
