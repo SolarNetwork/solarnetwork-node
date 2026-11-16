@@ -83,7 +83,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  *
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.0
  */
 public class DownsampleDatumFilterService extends DatumFilterSupport
@@ -176,7 +176,8 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 		DatumSamplesOperations out = null;
 		synchronized ( agg ) {
 			if ( dur != null ) {
-				Instant datumTs = (datum.getTimestamp() != null ? datum.getTimestamp() : Instant.now());
+				Instant datumTs = (datum.getTimestamp() != null ? datum.getTimestamp()
+						: getClock().instant());
 				Instant nextTimeSlotStart = agg.getTimestamp();
 				if ( datumTs.isAfter(nextTimeSlotStart) ) {
 					if ( agg.addedSampleCount() > 0 ) {
