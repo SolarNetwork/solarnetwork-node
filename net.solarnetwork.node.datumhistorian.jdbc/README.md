@@ -3,6 +3,22 @@
 This plugin provides a JDBC-based implementation of the `DatumHistorian` API, that also supports the
 `FilterableDatumHistorian` API that enables the SolarQuery-like API support in the SolarNode REST API.
 
+## Aggregates
+
+With the optional `postgres-init-agg.sql` script, the historian also stores `Hour`, `Day`, and
+`Month` aggregates of every stream, computed by the `pg_cron` job of `postgres-init-agg-cron.sql`
+from a queue of the hours that stored datum have changed. Aggregate support is chosen when the
+schema is set up: run the script then or not at all.
+
+- The hourly table, `dh_agg_hourly`, is partitioned by UTC year and manages its own partitions:
+  the job creates the partition of a year when it stores the first hour in it, which for a late
+  datum can be a past year. The raw `dh_datum` table is partitioned by UTC month in the same way,
+  as datum are stored.
+- A new hourly partition is given the table's owner, `solarnode` in the setup below, although the
+  job that creates it runs as `postgres`.
+- No partition is ever dropped or detached automatically. The daily and monthly tables are small
+  enough not to be partitioned.
+
 ## Postgres setup
 
 This plugin needs the Postgres tables and functions created by the SQL scripts in the

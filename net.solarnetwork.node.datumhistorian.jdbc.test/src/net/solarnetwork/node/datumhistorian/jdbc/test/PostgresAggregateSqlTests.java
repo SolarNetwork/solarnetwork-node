@@ -25,12 +25,24 @@ package net.solarnetwork.node.datumhistorian.jdbc.test;
 import static org.assertj.core.api.BDDAssertions.then;
 import static org.assertj.core.api.BDDAssertions.tuple;
 import static org.junit.Assume.assumeTrue;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.Statement;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.jdbc.core.PreparedStatementCallback;
 
 /**
  * Test cases for the SQL of the aggregate setup, {@code postgres-init-agg.sql},
@@ -138,6 +150,84 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 					FROM solarhist.dh_find_datum_diff_rows(?, ?::TIMESTAMPTZ, ?::TIMESTAMPTZ) r
 				) d
 				"""), streamId, start, end);
+	}
+
+	/**
+	 * Get the hourly reading for a time, from
+	 * {@code dh_find_hourly_reading_near_ts()}.
+	 */
+	private List<Map<String, Object>> hourlyReading(int streamId, String ts, String tolerance,
+			String nextTs) {
+		return jdbcTemplate.queryForList(sql("""
+				SELECT to_char(r.ts AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI"Z"') AS ts
+					, r.data_a::TEXT AS data_a
+				FROM solarhist.dh_find_hourly_reading_near_ts(?, ?::TIMESTAMPTZ, ?::INTERVAL, ?::TIMESTAMPTZ) r
+				"""), streamId, ts, tolerance, nextTs);
+	}
+
+	/**
+	 * Skip a test when the schema has an aggregate setup from before the
+	 * hourly reading function.
+	 */
+	private void assumeHourlyReadingFunction() {
+		final Boolean found = jdbcTemplate.queryForObject("SELECT to_regprocedure(?) IS NOT NULL",
+				Boolean.class, SCHEMA + ".dh_find_hourly_reading_near_ts(integer"
+						+ ",timestamp with time zone,interval,timestamp with time zone)");
+		assumeTrue("The %s schema does not have the hourly reading function.".formatted(SCHEMA),
+				Boolean.TRUE.equals(found));
+	}
+
+	/**
+	 * Test if the hourly table is partitioned, which it is not in an aggregate
+	 * setup from before the yearly partitions.
+	 */
+	private boolean hourlyPartitioned() {
+		return "p".equals(jdbcTemplate.queryForObject(
+				"SELECT relkind::TEXT FROM pg_class WHERE oid = ?::regclass", String.class,
+				SCHEMA + ".dh_agg_hourly"));
+	}
+
+	/**
+	 * Skip a test when the schema has an aggregate setup from before the yearly
+	 * hourly partitions.
+	 */
+	private void assumeHourlyPartitioned() {
+		assumeTrue("The %s schema's hourly table is not partitioned.".formatted(SCHEMA),
+				hourlyPartitioned());
+	}
+
+	/**
+	 * Create the yearly hourly partition that holds a time, if needed, before
+	 * hourly rows are inserted directly.
+	 */
+	private void hourlyPartition(String ts) {
+		if ( hourlyPartitioned() ) {
+			jdbcTemplate.queryForList(
+					sql("SELECT solarhist.dh_agg_hourly_ensure_partition(?::TIMESTAMPTZ)"), ts);
+		}
+	}
+
+	/** Get the name, bounds and owner of each hourly partition. */
+	private List<Map<String, Object>> hourlyPartitions() {
+		return jdbcTemplate.queryForList("""
+				SELECT c.relname::TEXT AS name, pg_get_expr(c.relpartbound, c.oid) AS bounds
+					, pg_get_userbyid(c.relowner)::TEXT AS owner
+				FROM pg_inherits i
+				INNER JOIN pg_class c ON c.oid = i.inhrelid
+				WHERE i.inhparent = ?::regclass
+				ORDER BY c.relname
+				""", SCHEMA + ".dh_agg_hourly");
+	}
+
+	/** Get the partition and hour of each hourly row of a stream. */
+	private List<Map<String, Object>> hourlyRows(int streamId) {
+		return jdbcTemplate.queryForList(sql("""
+				SELECT (SELECT c.relname::TEXT FROM pg_class c WHERE c.oid = h.tableoid) AS part
+					, to_char(h.ts_start AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI"Z"') AS ts
+				FROM solarhist.dh_agg_hourly h
+				WHERE h.stream_id = ?
+				ORDER BY h.ts_start
+				"""), streamId);
 	}
 
 	/**
@@ -372,6 +462,7 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 							, 'YYYY-MM-DD"T"HH24:MI"Z"')
 						"""),
 				String.class);
+		hourlyPartition(hour);
 		jdbcTemplate.update(sql("""
 				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a)
 				VALUES (?, ?::TIMESTAMPTZ, '{1}', '{{1,1,2}}')
@@ -427,6 +518,7 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 		// GIVEN
 		final int sid = stream("A");
 		// hourly rows kept from dropped raw datum, then raw datum
+		hourlyPartition("2026-01-01T00:00:00Z");
 		jdbcTemplate.update(sql("""
 				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a) VALUES
 					  (?, '2026-01-01T00:00:00Z', '{10}', '{{10,100,110}}')
@@ -459,6 +551,209 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 			.containsEntry("ts_start", "2026-01-01T00:00Z")
 			.containsEntry("ts_end", "2026-01-01T02:00Z")
 			.containsEntry("read_a", "{{20,100,120}}")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readingDifference_hourlyOnly() {
+		// GIVEN
+		final int sid = stream("A");
+		// hourly rows kept from dropped raw datum, and no raw datum at all
+		hourlyPartition("2026-01-01T00:00:00Z");
+		jdbcTemplate.update(sql("""
+				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a) VALUES
+					  (?, '2026-01-01T00:00:00Z', '{10}', '{{10,100,110}}')
+					, (?, '2026-01-01T01:00:00Z', '{10}', '{{10,110,120}}')
+					, (?, '2026-01-01T02:00:00Z', '{10}', '{{10,120,130}}')
+				"""), sid, sid, sid);
+
+		// WHEN
+		Map<String, Object> result = diff(sid, "2025-12-31T23:30:00Z", "2026-01-01T02:30:00Z");
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("""
+				Without raw datum, the starting reading of the first hour after the start, and the \
+				ending reading of the last complete hour before the end""")
+			.containsEntry("ts_start", "2026-01-01T00:00Z")
+			.containsEntry("ts_end", "2026-01-01T02:00Z")
+			.containsEntry("read_a", "{{20,100,120}}")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void readingDifference_rawBeforeHourEnd() {
+		// GIVEN
+		final int sid = stream("A");
+		hourlyPartition("2026-01-01T00:00:00Z");
+		jdbcTemplate.update(sql("""
+				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a) VALUES
+					  (?, '2026-01-01T00:00:00Z', '{10}', '{{10,100,110}}')
+				"""), sid);
+		datum(sid, "2026-01-01T00:20:00Z", 1, 105);
+		datum(sid, "2026-01-01T06:00:00Z", 1, 160);
+
+		// WHEN
+		Map<String, Object> result = diff(sid, "2025-12-31T23:30:00Z", "2026-01-01T06:00:00Z");
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("""
+				Nothing at or before the start, and the first hour after it ends after the first raw \
+				datum after it: that raw datum""")
+			.containsEntry("ts_start", "2026-01-01T00:20Z")
+			.containsEntry("ts_end", "2026-01-01T06:00Z")
+			.containsEntry("read_a", "{{55,105,160}}")
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void hourlyReading_before() {
+		assumeHourlyReadingFunction();
+
+		// GIVEN
+		final int sid = stream("A");
+		hourlyPartition("2026-01-01T00:00:00Z");
+		// two hours with readings, two without, and a later one with readings
+		jdbcTemplate.update(sql("""
+				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a) VALUES
+					  (?, '2026-01-01T00:00:00Z', '{10}', '{{10,100,110}}')
+					, (?, '2026-01-01T01:00:00Z', '{10}', '{{10,110,120}}')
+					, (?, '2026-01-01T02:00:00Z', '{10}', NULL)
+					, (?, '2026-01-01T03:00:00Z', '{10}', NULL)
+					, (?, '2026-01-01T05:00:00Z', '{10}', '{{10,150,160}}')
+				"""), sid, sid, sid, sid, sid);
+
+		// WHEN
+		final String none = "infinity";
+		List<Map<String, Object>> atHourEnd = hourlyReading(sid, "2026-01-01T02:00:00Z", "P1Y", none);
+		List<Map<String, Object>> inHour = hourlyReading(sid, "2026-01-01T01:59:00Z", "P1Y", none);
+		List<Map<String, Object>> noReadings = hourlyReading(sid, "2026-01-01T04:30:00Z", "P1Y", none);
+		List<Map<String, Object>> atTolerance = hourlyReading(sid, "2026-01-01T03:00:00Z", "PT1H", none);
+		List<Map<String, Object>> pastTolerance = hourlyReading(sid, "2026-01-01T03:00:00Z", "PT59M",
+				none);
+
+		// THEN
+		// @formatter:off
+		then(atHourEnd)
+			.as("The ending reading of the hour that ends at the time, at its end")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T02:00Z", "{120}"))
+			;
+		then(inHour)
+			.as("The hour the time is in is not complete: the hour before it")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T01:00Z", "{110}"))
+			;
+		then(noReadings)
+			.as("Hours without readings are skipped, and an hour before is chosen over one after")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T02:00Z", "{120}"))
+			;
+		then(atTolerance)
+			.as("An hour that ends the whole tolerance before the time is included")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T02:00Z", "{120}"))
+			;
+		then(pastTolerance)
+			.as("Nothing with readings within the tolerance, before or after")
+			.isEmpty()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void hourlyReading_after() {
+		assumeHourlyReadingFunction();
+
+		// GIVEN
+		final int sid = stream("A");
+		hourlyPartition("2026-01-01T00:00:00Z");
+		jdbcTemplate.update(sql("""
+				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a) VALUES
+					  (?, '2026-01-01T00:00:00Z', '{10}', '{{10,100,110}}')
+					, (?, '2026-01-01T01:00:00Z', '{10}', '{{10,110,120}}')
+				"""), sid, sid);
+
+		// WHEN
+		final String ts = "2025-12-31T23:30:00Z";
+		List<Map<String, Object>> first = hourlyReading(sid, ts, "P1Y", "infinity");
+		List<Map<String, Object>> atHourStart = hourlyReading(sid, "2026-01-01T00:00:00Z", "P1Y",
+				"infinity");
+		List<Map<String, Object>> nextAtHourEnd = hourlyReading(sid, ts, "P1Y", "2026-01-01T01:00:00Z");
+		List<Map<String, Object>> nextAfterHourEnd = hourlyReading(sid, ts, "P1Y",
+				"2026-01-01T01:00:01Z");
+		List<Map<String, Object>> atTolerance = hourlyReading(sid, ts, "PT30M", "infinity");
+		List<Map<String, Object>> pastTolerance = hourlyReading(sid, ts, "PT29M", "infinity");
+
+		// THEN
+		// @formatter:off
+		then(first)
+			.as("No hour before: the starting reading of the first hour after, at its start")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T00:00Z", "{100}"))
+			;
+		then(atHourStart)
+			.as("An hour that starts at the time")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T00:00Z", "{100}"))
+			;
+		then(nextAtHourEnd)
+			.as("No hour that ends before the next raw datum")
+			.isEmpty()
+			;
+		then(nextAfterHourEnd)
+			.as("The hour ends before the next raw datum")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T00:00Z", "{100}"))
+			;
+		then(atTolerance)
+			.as("An hour that starts the whole tolerance after the time is included")
+			.extracting("ts", "data_a")
+			.containsExactly(tuple("2026-01-01T00:00Z", "{100}"))
+			;
+		then(pastTolerance)
+			.as("No hour within the tolerance")
+			.isEmpty()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void hourlyReading_nullArguments() {
+		assumeHourlyReadingFunction();
+
+		// GIVEN
+		final int sid = stream("A");
+		hourlyPartition("2026-01-01T00:00:00Z");
+		jdbcTemplate.update(sql("""
+				INSERT INTO solarhist.dh_agg_hourly (stream_id, ts_start, data_a, read_a) VALUES
+					  (?, '2026-01-01T00:00:00Z', '{10}', '{{10,100,110}}')
+				"""), sid);
+
+		// WHEN
+		// the row count with a NULL in argument position n, or with none for n = 0
+		List<Map<String, Object>> result = jdbcTemplate.queryForList(sql("""
+				SELECT n, (SELECT count(*) FROM solarhist.dh_find_hourly_reading_near_ts(
+					  CASE WHEN n = 1 THEN NULL ELSE ?::INTEGER END
+					, CASE WHEN n = 2 THEN NULL ELSE '2026-01-01T02:00:00Z'::TIMESTAMPTZ END
+					, CASE WHEN n = 3 THEN NULL ELSE 'P1Y'::INTERVAL END
+					, CASE WHEN n = 4 THEN NULL ELSE 'infinity'::TIMESTAMPTZ END)) AS count
+				FROM generate_series(0, 4) n
+				ORDER BY n
+				"""), sid);
+
+		// THEN
+		// @formatter:off
+		then(result)
+			.as("Any NULL argument gives no rows; infinity, not NULL, means no next raw datum")
+			.extracting("count")
+			.containsExactly(1L, 0L, 0L, 0L, 0L)
 			;
 		// @formatter:on
 	}
@@ -563,6 +858,422 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 			.containsExactly(5L, 0L, 0L, 0L, 0L)
 			;
 		// @formatter:on
+	}
+
+	/*
+	 * ==================================================================
+	 * Hourly partitions
+	 * ==================================================================
+	 */
+
+	private static final String BOUNDS_2031 = "FOR VALUES FROM ('2031-01-01 00:00:00+00') TO ('2032-01-01 00:00:00+00')";
+
+	@Test
+	public void partition_createdOnFirstUse() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		then(hourlyPartitions()).as("No 2031 partition to start with").extracting("name")
+				.doesNotContain("dh_agg_hourly_2031");
+		final int sid = stream("A");
+		datum(sid, "2031-03-01T10:15:00Z", 1, 100);
+		datum(sid, "2031-03-01T10:45:00Z", 1, 110);
+
+		// WHEN
+		process("h");
+
+		// THEN
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("The partition of the hour's UTC year is created")
+			.filteredOn("name", "dh_agg_hourly_2031")
+			.extracting("bounds")
+			.containsExactly(BOUNDS_2031)
+			;
+		then(hourlyRows(sid))
+			.as("The hour is stored in it")
+			.extracting("part", "ts")
+			.containsExactly(
+				  tuple("dh_agg_hourly_2031", "2031-03-01T10:00Z")
+			)
+			;
+		// @formatter:on
+	}
+
+	/**
+	 * A new partition is owned by the table's owner. The tests' role owns the
+	 * table, so nothing more is done here; a partition created by another role,
+	 * such as the superuser the {@code pg_cron} job runs as, cannot be tested
+	 * without creating roles.
+	 */
+	@Test
+	public void partition_ownedByTableOwner() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		then(hourlyPartitions()).as("No 2031 partition to start with").extracting("name")
+				.doesNotContain("dh_agg_hourly_2031");
+		final String tableOwner = jdbcTemplate.queryForObject(
+				"SELECT pg_get_userbyid(relowner)::TEXT FROM pg_class WHERE oid = ?::regclass",
+				String.class, SCHEMA + ".dh_agg_hourly");
+
+		// WHEN
+		final List<String> warnings = jdbcTemplate.execute(
+				sql("SELECT solarhist.dh_agg_hourly_ensure_partition(?::TIMESTAMPTZ)"),
+				(PreparedStatementCallback<List<String>>) stmt -> {
+					stmt.setString(1, "2031-06-01T00:00:00Z");
+					stmt.execute();
+					final List<String> messages = new ArrayList<>();
+					for ( SQLWarning w = stmt.getWarnings(); w != null; w = w.getNextWarning() ) {
+						messages.add(w.getMessage());
+					}
+					return messages;
+				});
+
+		// THEN
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("The partition is owned by the table's owner")
+			.filteredOn("name", "dh_agg_hourly_2031")
+			.extracting("owner")
+			.containsExactly(tableOwner)
+			;
+		then(warnings)
+			.as("No warning that the partition has another owner")
+			.isEmpty()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void partition_boundsInUtc() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		jdbcTemplate.update("SET LOCAL TimeZone = 'Pacific/Auckland'");
+
+		// WHEN
+		// 1 January 2031 at 05:00 in Auckland is still 2030 in UTC
+		hourlyPartition("2031-01-01T05:00:00+13:00");
+		hourlyPartition("2031-01-01T14:00:00+13:00");
+
+		// THEN
+		jdbcTemplate.update("SET LOCAL TimeZone = 'UTC'");
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("Partitions are by UTC year, whatever the session's zone")
+			.filteredOn(p -> p.get("name").toString().matches("dh_agg_hourly_203[01]"))
+			.extracting("name", "bounds")
+			.containsExactly(
+				  tuple("dh_agg_hourly_2030", "FOR VALUES FROM ('2030-01-01 00:00:00+00') TO ('2031-01-01 00:00:00+00')")
+				, tuple("dh_agg_hourly_2031", BOUNDS_2031)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void partition_secondYear() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2031-06-01T10:15:00Z", 1, 100);
+		datum(sid, "2031-06-01T10:45:00Z", 1, 110);
+		process("h");
+
+		// WHEN
+		datum(sid, "2032-06-01T10:15:00Z", 1, 200);
+		datum(sid, "2032-06-01T10:45:00Z", 1, 210);
+		process("h");
+
+		// THEN
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("Each year has a partition of its own")
+			.extracting("name")
+			.contains("dh_agg_hourly_2031", "dh_agg_hourly_2032")
+			;
+		then(hourlyRows(sid))
+			.as("Each hour is stored in the partition of its year")
+			.extracting("part", "ts")
+			.containsExactly(
+				  tuple("dh_agg_hourly_2031", "2031-06-01T10:00Z")
+				, tuple("dh_agg_hourly_2032", "2032-06-01T10:00Z")
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void partition_lateDatumForEarlierYear() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2032-01-10T10:15:00Z", 1, 200);
+		datum(sid, "2032-01-10T10:45:00Z", 1, 210);
+		process("h");
+		then(hourlyPartitions()).as("No 2031 partition before the late datum").extracting("name")
+				.doesNotContain("dh_agg_hourly_2031");
+
+		// WHEN
+		datum(sid, "2031-06-01T10:30:00Z", 1, 100);
+		process("h");
+
+		// THEN
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("The late datum's hour creates the partition of its year")
+			.filteredOn("name", "dh_agg_hourly_2031")
+			.extracting("bounds")
+			.containsExactly(BOUNDS_2031)
+			;
+		then(hourlyRows(sid))
+			.as("The late hour is stored in the earlier year's partition")
+			.extracting("part", "ts")
+			.containsExactly(
+				  tuple("dh_agg_hourly_2031", "2031-06-01T10:00Z")
+				, tuple("dh_agg_hourly_2032", "2032-01-10T10:00Z")
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void partition_notCreatedForSkippedHour() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		final int sid = stream("A");
+		datum(sid, "2031-01-01T00:30:00Z", 1, 100);
+		// an hour before the oldest raw partition, in a year without an hourly partition
+		final String hour = jdbcTemplate.queryForObject(
+				sql("""
+						SELECT to_char((solarhist.dh_datum_oldest_partition_start() - INTERVAL 'PT1H') AT TIME ZONE 'UTC'
+							, 'YYYY-MM-DD"T"HH24:MI"Z"')
+						"""),
+				String.class);
+		final String part = "dh_agg_hourly_" + hour.substring(0, 4);
+		then(hourlyPartitions()).as("No partition for the year of the hour").extracting("name")
+				.doesNotContain(part);
+		jdbcTemplate.update(sql("DELETE FROM solarhist.dh_agg_stale"));
+		jdbcTemplate.update(
+				sql("""
+						INSERT INTO solarhist.dh_agg_stale (stream_id, ts_start, agg_kind) VALUES (?, ?::TIMESTAMPTZ, 'h')
+						"""),
+				sid, hour);
+
+		// WHEN
+		final int count = process("h");
+
+		// THEN
+		// @formatter:off
+		then(count).as("The stale hour is taken off the queue").isOne();
+		then(stale()).as("Nothing else is marked stale").isEmpty();
+		then(hourlyPartitions())
+			.as("The hour skipped by the retention guard creates no partition")
+			.extracting("name")
+			.doesNotContain(part)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void daily_acrossYearBoundary() {
+		assumeHourlyPartitioned();
+
+		// GIVEN
+		jdbcTemplate.update(
+				sql("""
+						INSERT INTO solarhist.dh_node_time_zone (node_id, time_zone) VALUES (?, 'Pacific/Auckland')
+						"""),
+				TEST_NODE_ID);
+		final int sid = stream("A");
+		// one datum at half past every hour, from 09:30 on 31 December 2031 to 12:30 on
+		// 1 January 2032; the local day of 1 January 2032 is from 11:00 on 31 December to
+		// 11:00 on 1 January, 13 hours in the 2031 partition and 11 in the 2032 one
+		final Instant start = Instant.parse("2031-12-31T09:30:00Z");
+		for ( int h = 0; h <= 27; h++ ) {
+			datum(sid, start.plus(h, ChronoUnit.HOURS).toString(), 1, 1000 + h * 10);
+		}
+
+		// WHEN
+		processAll();
+
+		// THEN
+		// @formatter:off
+		then(hourlyRows(sid))
+			.as("The hours are stored in the partitions of their UTC years")
+			.extracting("part")
+			.containsOnly("dh_agg_hourly_2031", "dh_agg_hourly_2032")
+			.containsSequence("dh_agg_hourly_2031", "dh_agg_hourly_2032")
+			.hasSize(28)
+			;
+		then(hourlyRows(sid))
+			.as("15 hours in 2031, from 09:00 to 23:00")
+			.filteredOn("part", "dh_agg_hourly_2031")
+			.hasSize(15)
+			;
+		then(agg("dh_agg_daily", sid))
+			.as("The local day across the year boundary rolls up the hours of both partitions")
+			.extracting("ts", "stat_i", "data_a", "read_a")
+			.containsExactly(
+				  tuple("2031-12-30T11:00Z", "{{2,1,1}}", "{15}", "{{10,1000,1010}}")
+				, tuple("2031-12-31T11:00Z", "{{24,1,1}}", "{240}", "{{240,1010,1250}}")
+				, tuple("2032-01-01T11:00Z", "{{2,1,1}}", "{15}", "{{20,1250,1270}}")
+			)
+			;
+		then(agg("dh_agg_monthly", sid))
+			.as("The local months on each side of the year boundary")
+			.extracting("ts", "stat_i", "data_a", "read_a")
+			.containsExactly(
+				  tuple("2031-11-30T11:00Z", "{{2,1,1}}", "{15}", "{{10,1000,1010}}")
+				, tuple("2031-12-31T11:00Z", "{{26,1,1}}", "{255}", "{{260,1010,1270}}")
+			)
+			;
+		// @formatter:on
+	}
+
+	/*
+	 * The concurrent tests use connections of their own, outside the test
+	 * transaction, so they commit and then drop the partition they create.
+	 */
+
+	private static final String FUTURE_TS = "2190-06-01T00:00:00Z";
+	private static final String FUTURE_PART = "dh_agg_hourly_2190";
+
+	private static void ensureHourlyPartition(Connection con, String ts) throws SQLException {
+		try (PreparedStatement stmt = con.prepareStatement(
+				"SELECT %s.dh_agg_hourly_ensure_partition(?::TIMESTAMPTZ)".formatted(SCHEMA))) {
+			stmt.setString(1, ts);
+			stmt.execute();
+		}
+	}
+
+	private static int backendPid(Connection con) throws SQLException {
+		try (Statement stmt = con.createStatement();
+				ResultSet rs = stmt.executeQuery("SELECT pg_backend_pid()")) {
+			rs.next();
+			return rs.getInt(1);
+		}
+	}
+
+	/** Count the committed hourly partitions with a given name. */
+	private static int hourlyPartitionCount(Connection con, String name) throws SQLException {
+		try (PreparedStatement stmt = con.prepareStatement("""
+				SELECT count(*)
+				FROM pg_inherits i
+				INNER JOIN pg_class c ON c.oid = i.inhrelid
+				WHERE i.inhparent = ?::regclass AND c.relname = ?
+				""")) {
+			stmt.setString(1, SCHEMA + ".dh_agg_hourly");
+			stmt.setString(2, name);
+			try (ResultSet rs = stmt.executeQuery()) {
+				rs.next();
+				return rs.getInt(1);
+			}
+		}
+	}
+
+	/** Wait until a backend waits for a lock, for up to 10 seconds. */
+	private static void awaitLockWait(Connection con, int pid) throws Exception {
+		final long end = System.currentTimeMillis() + 10_000L;
+		try (PreparedStatement stmt = con
+				.prepareStatement("SELECT wait_event_type = 'Lock' FROM pg_stat_activity WHERE pid = ?")) {
+			stmt.setInt(1, pid);
+			while ( System.currentTimeMillis() < end ) {
+				try (ResultSet rs = stmt.executeQuery()) {
+					if ( rs.next() && rs.getBoolean(1) ) {
+						return;
+					}
+				}
+				Thread.sleep(20L);
+			}
+		}
+		throw new AssertionError("Backend %d did not wait for a lock.".formatted(pid));
+	}
+
+	private static void dropFuturePartition() throws SQLException {
+		try (Connection con = dataSource().getConnection(); Statement stmt = con.createStatement()) {
+			stmt.execute("DROP TABLE IF EXISTS %s.%s".formatted(SCHEMA, FUTURE_PART));
+		}
+	}
+
+	/**
+	 * Create the partition in two transactions at once: the second waits for
+	 * the first, and then finds the partition the first committed.
+	 */
+	@Test
+	public void partition_concurrentFirstUse() throws Exception {
+		assumeHourlyPartitioned();
+		final ExecutorService executor = Executors.newSingleThreadExecutor();
+		try (Connection first = dataSource().getConnection();
+				Connection second = dataSource().getConnection();
+				Connection observer = dataSource().getConnection()) {
+			// GIVEN
+			then(hourlyPartitionCount(observer, FUTURE_PART)).as("No partition to start with").isZero();
+			first.setAutoCommit(false);
+			second.setAutoCommit(false);
+			final int secondPid = backendPid(second);
+
+			// WHEN
+			ensureHourlyPartition(first, FUTURE_TS);
+			final Future<?> secondCall = executor.submit(() -> {
+				ensureHourlyPartition(second, FUTURE_TS);
+				return null;
+			});
+			awaitLockWait(observer, secondPid);
+			first.commit();
+			secondCall.get(10L, TimeUnit.SECONDS);
+			second.commit();
+
+			// THEN
+			then(hourlyPartitionCount(observer, FUTURE_PART))
+					.as("The second caller finds the first one's partition, without an error").isOne();
+		} finally {
+			executor.shutdownNow();
+			dropFuturePartition();
+		}
+	}
+
+	/**
+	 * Create the partition in two transactions at once, rolling back the first:
+	 * the second waits for the first, and then creates the partition itself.
+	 */
+	@Test
+	public void partition_concurrentFirstUse_firstRolledBack() throws Exception {
+		assumeHourlyPartitioned();
+		final ExecutorService executor = Executors.newSingleThreadExecutor();
+		try (Connection first = dataSource().getConnection();
+				Connection second = dataSource().getConnection();
+				Connection observer = dataSource().getConnection()) {
+			// GIVEN
+			then(hourlyPartitionCount(observer, FUTURE_PART)).as("No partition to start with").isZero();
+			first.setAutoCommit(false);
+			second.setAutoCommit(false);
+			final int secondPid = backendPid(second);
+
+			// WHEN
+			ensureHourlyPartition(first, FUTURE_TS);
+			final Future<?> secondCall = executor.submit(() -> {
+				ensureHourlyPartition(second, FUTURE_TS);
+				return null;
+			});
+			awaitLockWait(observer, secondPid);
+			first.rollback();
+			secondCall.get(10L, TimeUnit.SECONDS);
+			final int beforeCommit = hourlyPartitionCount(observer, FUTURE_PART);
+			second.commit();
+
+			// THEN
+			then(beforeCommit).as("The first caller's partition is rolled back").isZero();
+			then(hourlyPartitionCount(observer, FUTURE_PART))
+					.as("The second caller creates the partition after waiting").isOne();
+		} finally {
+			executor.shutdownNow();
+			dropFuturePartition();
+		}
 	}
 
 	/*

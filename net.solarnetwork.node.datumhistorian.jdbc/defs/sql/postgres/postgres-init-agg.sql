@@ -15,6 +15,12 @@
  * - The dh_agg_hourly, dh_agg_daily and dh_agg_monthly tables have the same
  *   columns as SolarNet's agg_datm_hourly, agg_datm_daily and agg_datm_monthly
  *   tables, except that data_s is a JSON array, like solarhist.dh_datum.data_s.
+ * - The dh_agg_hourly table is partitioned by UTC year and manages its own
+ *   partitions: solarhist.dh_agg_hourly_ensure_partition() creates the
+ *   partition of a year when the first hour in it is stored, and gives it
+ *   the table's owner whichever role stored the hour. Partitions are never
+ *   dropped automatically. The daily and monthly tables are small enough not
+ *   to be partitioned.
  * - A trigger on solarhist.dh_datum adds the hours a stored, changed or
  *   deleted datum affects to the dh_agg_stale queue.
  * - The solarhist.dh_process_agg_stale() procedure drains the queue: hours,
@@ -86,6 +92,14 @@ CREATE TYPE solarhist.dh_agg_datum AS (
 -- 			before the end of the hour, minus the last reading at or before its start
 -- data_s	JSON array of the most frequent value of each status property
 -- data_t	the distinct tags
+--
+-- The table is partitioned by UTC year, so that each table and index stays bounded as history
+-- grows: only the current year's partition has the churn of the hours being computed again,
+-- and the partitions of past years become static. The yearly partitions are created by
+-- solarhist.dh_agg_hourly_ensure_partition() when an hour is first stored in them, and are
+-- never dropped or detached automatically. Each is given the table's owner, although the
+-- pg_cron job that creates it runs as a superuser. There is no DEFAULT partition, for the same
+-- reason as solarhist.dh_datum has none.
 CREATE TABLE solarhist.dh_agg_hourly (
 	stream_id	INTEGER NOT NULL,			-- dh_datum_meta.stream_id
 	ts_start	TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -96,7 +110,7 @@ CREATE TABLE solarhist.dh_agg_hourly (
 	stat_i		NUMERIC[][],
 	read_a		NUMERIC[][],
 	CONSTRAINT dh_agg_hourly_pk PRIMARY KEY (stream_id, ts_start)
-);
+) PARTITION BY RANGE (ts_start);
 
 -- daily aggregates, rolled up from the hourly rows, by day in the node's time zone
 CREATE TABLE solarhist.dh_agg_daily (
@@ -202,6 +216,78 @@ $$
 		),
 		'UTC'
 	)
+$$;
+
+
+/**
+ * Create the yearly `solarhist.dh_agg_hourly` partition that holds a given date, if it does
+ * not already exist.
+ *
+ * Partitions cover one UTC year and are named like `solarhist.dh_agg_hourly_2026`. The bounds
+ * are computed in UTC, so they do not depend on the session's `TimeZone`. As with
+ * `solarhist.dh_datum_ensure_partition()`, a new partition is created as a table of its own and
+ * then attached, because that does not block other transactions from reading and writing
+ * `solarhist.dh_agg_hourly` while it happens.
+ *
+ * A new partition is given the owner of `solarhist.dh_agg_hourly`, so it does not matter which
+ * role creates it. The `pg_cron` job of postgres-init-agg-cron.sql runs as a superuser such as
+ * `postgres`, and the table's owner could neither read a partition owned by that role directly
+ * nor alter the table in a way that recurses to its partitions, as adding a column does.
+ * Nothing more is done when the table's owner creates the partition. A role that can create a
+ * partition but not give it away, such as a member of the owning role without the SET option,
+ * keeps it as its own, with a warning, rather than failing. A partition needs no privileges of
+ * its own: reads and writes through `solarhist.dh_agg_hourly` are checked against the table's
+ * privileges only.
+ *
+ * `solarhist.dh_process_one_agg_stale()` calls this for each hour it stores, so the partition
+ * of a year is created, and committed, with the first hour stored in it, whether that year is
+ * the current one or a past one.
+ *
+ * @param ts_at the date to ensure a partition exists for
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_agg_hourly_ensure_partition(ts_at TIMESTAMP WITH TIME ZONE)
+	RETURNS VOID LANGUAGE plpgsql VOLATILE AS
+$$
+DECLARE
+	ts_start	CONSTANT TIMESTAMP WITH TIME ZONE := date_trunc('year', ts_at, 'UTC');
+	ts_end		CONSTANT TIMESTAMP WITH TIME ZONE := date_add(ts_start, INTERVAL 'P1Y', 'UTC');
+	part_name	CONSTANT TEXT := 'dh_agg_hourly_' || to_char(ts_start AT TIME ZONE 'UTC', 'YYYY');
+	table_owner	OID;
+	part_owner	OID;
+BEGIN
+	IF to_regclass('solarhist.' || part_name) IS NOT NULL THEN
+		RETURN;
+	END IF;
+
+	-- let one caller at a time past here; this is the same lock ATTACH PARTITION takes
+	LOCK TABLE ONLY solarhist.dh_agg_hourly IN SHARE UPDATE EXCLUSIVE MODE;
+
+	-- look again, as another caller could have created the partition while this one waited
+	IF to_regclass('solarhist.' || part_name) IS NULL THEN
+		EXECUTE format(
+			'CREATE TABLE solarhist.%I (LIKE solarhist.dh_agg_hourly INCLUDING DEFAULTS INCLUDING CONSTRAINTS)'
+			, part_name);
+		EXECUTE format(
+			'ALTER TABLE solarhist.dh_agg_hourly ATTACH PARTITION solarhist.%I FOR VALUES FROM (%L) TO (%L)'
+			, part_name, ts_start, ts_end);
+
+		-- give the partition the table's owner, when another role created it
+		SELECT t.relowner, p.relowner
+		FROM pg_class t, pg_class p
+		WHERE t.oid = 'solarhist.dh_agg_hourly'::regclass
+			AND p.oid = to_regclass('solarhist.' || part_name)
+		INTO table_owner, part_owner;
+
+		IF part_owner <> table_owner THEN
+			BEGIN
+				EXECUTE format('ALTER TABLE solarhist.%I OWNER TO %s', part_name, table_owner::regrole);
+			EXCEPTION WHEN insufficient_privilege THEN
+				RAISE WARNING 'Partition solarhist.% is owned by %, not by the table owner %: %'
+					, part_name, part_owner::regrole, table_owner::regrole, SQLERRM;
+			END;
+		END IF;
+	END IF;
+END
 $$;
 
 
@@ -1174,6 +1260,13 @@ $$;
  * looked at, so a partition dropped with `DROP TABLE`, or detached without `CONCURRENTLY`,
  * waits until the hour is computed. A concurrent detach does not wait, so is not safe to use.
  *
+ * The yearly `solarhist.dh_agg_hourly` partition of an hour that is computed is created first,
+ * if needed, by `solarhist.dh_agg_hourly_ensure_partition()`. That is the last lock the hour
+ * takes before it stores its row, after the queue row, the stream's advisory lock and
+ * `solarhist.dh_datum`, and no transaction that waits for one of those holds a lock that
+ * conflicts with it, so it cannot deadlock. It is only waited for when the partition does not
+ * exist yet, by another transaction creating the same partition.
+ *
  * Ported from the SolarNet solardatm.process_one_agg_stale_datm() function, without the audit
  * and SolarFlux parts.
  *
@@ -1267,6 +1360,10 @@ BEGIN
 	ts_prevstart   := CASE kind WHEN 'h' THEN stale_ts - agg_span ELSE (local_ts_start - agg_span) AT TIME ZONE tz END;
 
 	IF kind = 'h' THEN
+		-- the hour's yearly partition, created after the check above so that a skipped hour
+		-- creates none; this is the only place hourly rows are stored
+		PERFORM solarhist.dh_agg_hourly_ensure_partition(stale_ts);
+
 		EXECUTE format(
 				'INSERT INTO solarhist.%I (stream_id, ts_start, data_i, data_a, data_s, data_t, stat_i, read_a) '
 				'SELECT stream_id, ts_start, data_i, data_a, data_s, data_t, stat_i, read_a '
@@ -1381,6 +1478,87 @@ $$;
  */
 
 /**
+ * Find the hourly reading for a time that has no raw datum with accumulating values at or
+ * before it, as steps 2 and 3 of `solarhist.dh_find_datum_diff_near_rows()` choose it.
+ *
+ * It returns the ending readings (`read_a[n][3]`) of the latest complete hour that ends at or
+ * before the time, as a row at the end of that hour. Failing that, it returns the starting
+ * readings (`read_a[n][2]`) of the earliest complete hour that starts at or after the time and
+ * ends before `next_ts`, as a row at the start of that hour. Only hours with readings within
+ * the tolerance of the time are considered.
+ *
+ * This is a function, as `solarhist.dh_find_datum_between()` is for `solarhist.dh_datum`, so
+ * that the planner never plans the hourly partitions as part of the calling query. The hours
+ * are bounded by times computed with `TIMESTAMP WITH TIME ZONE` arithmetic, which is STABLE,
+ * so the planner cannot prune partitions with those bounds while planning. Looked up in the
+ * calling query, every yearly partition would be planned for each lookup whenever a reading
+ * difference is planned, even one that needs no hourly reading, and pruned only when the
+ * query starts: with 25 partitions, that adds up to 0.5 ms to a reading difference. Here the
+ * bounds are computed first, so each query compares `ts_start` with plain values. It is
+ * planned for just the partitions they fall in, or pruned to them when it starts if its plan
+ * is cached, and it runs only for a time that needs it.
+ *
+ * @param sid 		the stream ID
+ * @param ts_at 	the time
+ * @param tolerance the maximum time to look before and after `ts_at`
+ * @param next_ts	the time of the first raw datum after `ts_at`, or `infinity` if there is none
+ * @returns at most one row, with only the accumulating values
+ * @see solarhist.dh_find_datum_diff_near_rows()
+ */
+CREATE OR REPLACE FUNCTION solarhist.dh_find_hourly_reading_near_ts(
+		sid 		INTEGER,
+		ts_at 		TIMESTAMP WITH TIME ZONE,
+		tolerance 	INTERVAL,
+		next_ts		TIMESTAMP WITH TIME ZONE
+	) RETURNS SETOF solarhist.dh_datum_rec LANGUAGE plpgsql STRICT STABLE ROWS 1 AS
+$$
+DECLARE
+	-- the start of a complete hour that ends at or before ts_at, within the tolerance
+	before_min	CONSTANT TIMESTAMP WITH TIME ZONE := ts_at - INTERVAL 'PT1H' - tolerance;
+	before_max	CONSTANT TIMESTAMP WITH TIME ZONE := ts_at - INTERVAL 'PT1H';
+
+	-- the latest start of a complete hour at or after ts_at, within the tolerance
+	after_max	CONSTANT TIMESTAMP WITH TIME ZONE := ts_at + tolerance;
+BEGIN
+	RETURN QUERY
+	SELECT h.stream_id
+		, h.ts_start + INTERVAL 'PT1H'
+		, NULL::NUMERIC[]
+		, ARRAY(SELECT h.read_a[i][3] FROM generate_subscripts(h.read_a, 1) AS i ORDER BY i)
+		, NULL::JSONB
+		, NULL::TEXT[]
+	FROM solarhist.dh_agg_hourly h
+	WHERE h.stream_id = sid
+		AND h.ts_start >= before_min
+		AND h.ts_start <= before_max
+		AND h.read_a IS NOT NULL
+	ORDER BY h.ts_start DESC
+	LIMIT 1;
+
+	IF FOUND THEN
+		RETURN;
+	END IF;
+
+	RETURN QUERY
+	SELECT h.stream_id
+		, h.ts_start
+		, NULL::NUMERIC[]
+		, ARRAY(SELECT h.read_a[i][2] FROM generate_subscripts(h.read_a, 1) AS i ORDER BY i)
+		, NULL::JSONB
+		, NULL::TEXT[]
+	FROM solarhist.dh_agg_hourly h
+	WHERE h.stream_id = sid
+		AND h.ts_start >= ts_at
+		AND h.ts_start <= after_max
+		AND h.ts_start + INTERVAL 'PT1H' < next_ts
+		AND h.read_a IS NOT NULL
+	ORDER BY h.ts_start
+	LIMIT 1;
+END
+$$;
+
+
+/**
  * Find the datum for calculating the reading difference between two times, within a
  * tolerance, falling back to hourly readings where the raw datum have been dropped.
  *
@@ -1410,12 +1588,19 @@ $$;
  * used is the one at the hour boundary before it (step 2), or after it when no hour before it
  * is kept (step 3), and the row's time is that boundary.
  *
+ * The hourly readings of steps 2 and 3 are looked up by
+ * `solarhist.dh_find_hourly_reading_near_ts()`, and only for a time without a raw datum at or
+ * before it. They are not looked up by this query itself, which the planner inlines into the
+ * calling query, because then every hourly partition would be planned with it; that function
+ * explains why.
+ *
  * @param sid 		the stream ID
  * @param start_ts	the starting time
  * @param end_ts 	the ending time
  * @param tolerance the maximum time to look before and after each time
  * @returns up to two datum rows, with only the accumulating values
  * @see solarhist.dh_find_datum_diff_rows()
+ * @see solarhist.dh_find_hourly_reading_near_ts()
  */
 CREATE OR REPLACE FUNCTION solarhist.dh_find_datum_diff_near_rows(
 		sid 			INTEGER,
@@ -1443,69 +1628,23 @@ $$
 		ORDER BY d.ts
 		LIMIT 1
 	)
-	-- the ending readings of the latest complete hour at or before each time, only when there is
-	-- no raw datum at or before that time
+	-- the hourly reading for each time, only when there is no raw datum at or before that time:
+	-- that of the latest complete hour before it, else that of the earliest one after it that
+	-- ends before the raw datum after it; looked up by a function, so that the planner of this
+	-- query never plans the hourly partitions
 	, hour_start AS (
-		SELECT h.stream_id
-			, h.ts_start + INTERVAL 'PT1H' AS ts
-			, ARRAY(SELECT h.read_a[i][3] FROM generate_subscripts(h.read_a, 1) AS i ORDER BY i) AS data_a
-		FROM meta, solarhist.dh_agg_hourly h
+		SELECT h.stream_id, h.ts, h.data_a
+		FROM meta, solarhist.dh_find_hourly_reading_near_ts(sid, start_ts, tolerance
+				, COALESCE((SELECT raw_start.ts FROM raw_start), 'infinity')) AS h
 		WHERE NOT meta.has_no_a
 			AND NOT EXISTS (SELECT 1 FROM raw_start WHERE raw_start.ts <= start_ts)
-			AND h.stream_id = sid
-			AND h.ts_start <= start_ts - INTERVAL 'PT1H'
-			AND h.ts_start >= start_ts - INTERVAL 'PT1H' - tolerance
-			AND h.read_a IS NOT NULL
-		ORDER BY h.ts_start DESC
-		LIMIT 1
 	)
 	, hour_end AS (
-		SELECT h.stream_id
-			, h.ts_start + INTERVAL 'PT1H' AS ts
-			, ARRAY(SELECT h.read_a[i][3] FROM generate_subscripts(h.read_a, 1) AS i ORDER BY i) AS data_a
-		FROM meta, solarhist.dh_agg_hourly h
+		SELECT h.stream_id, h.ts, h.data_a
+		FROM meta, solarhist.dh_find_hourly_reading_near_ts(sid, end_ts, tolerance
+				, COALESCE((SELECT raw_end.ts FROM raw_end), 'infinity')) AS h
 		WHERE NOT meta.has_no_a
 			AND NOT EXISTS (SELECT 1 FROM raw_end WHERE raw_end.ts <= end_ts)
-			AND h.stream_id = sid
-			AND h.ts_start <= end_ts - INTERVAL 'PT1H'
-			AND h.ts_start >= end_ts - INTERVAL 'PT1H' - tolerance
-			AND h.read_a IS NOT NULL
-		ORDER BY h.ts_start DESC
-		LIMIT 1
-	)
-	-- the starting readings of the earliest complete hour at or after each time that ends before
-	-- the raw datum after that time, only when there is no reading at or before that time
-	, hour_start_after AS (
-		SELECT h.stream_id
-			, h.ts_start AS ts
-			, ARRAY(SELECT h.read_a[i][2] FROM generate_subscripts(h.read_a, 1) AS i ORDER BY i) AS data_a
-		FROM meta, solarhist.dh_agg_hourly h
-		WHERE NOT meta.has_no_a
-			AND NOT EXISTS (SELECT 1 FROM raw_start WHERE raw_start.ts <= start_ts)
-			AND NOT EXISTS (SELECT 1 FROM hour_start)
-			AND h.stream_id = sid
-			AND h.ts_start >= start_ts
-			AND h.ts_start <= start_ts + tolerance
-			AND h.ts_start + INTERVAL 'PT1H' < COALESCE((SELECT ts FROM raw_start), 'infinity')
-			AND h.read_a IS NOT NULL
-		ORDER BY h.ts_start
-		LIMIT 1
-	)
-	, hour_end_after AS (
-		SELECT h.stream_id
-			, h.ts_start AS ts
-			, ARRAY(SELECT h.read_a[i][2] FROM generate_subscripts(h.read_a, 1) AS i ORDER BY i) AS data_a
-		FROM meta, solarhist.dh_agg_hourly h
-		WHERE NOT meta.has_no_a
-			AND NOT EXISTS (SELECT 1 FROM raw_end WHERE raw_end.ts <= end_ts)
-			AND NOT EXISTS (SELECT 1 FROM hour_end)
-			AND h.stream_id = sid
-			AND h.ts_start >= end_ts
-			AND h.ts_start <= end_ts + tolerance
-			AND h.ts_start + INTERVAL 'PT1H' < COALESCE((SELECT ts FROM raw_end), 'infinity')
-			AND h.read_a IS NOT NULL
-		ORDER BY h.ts_start
-		LIMIT 1
 	)
 	-- one reading for each time: raw at or before it, else an hourly row before it, else an
 	-- hourly row after it that is earlier than the raw datum after it, else that raw datum
@@ -1515,11 +1654,8 @@ $$
 			UNION ALL
 			SELECT * FROM hour_start
 			UNION ALL
-			SELECT * FROM hour_start_after
-			UNION ALL
 			SELECT * FROM raw_start WHERE ts > start_ts
 				AND NOT EXISTS (SELECT 1 FROM hour_start)
-				AND NOT EXISTS (SELECT 1 FROM hour_start_after)
 		)
 		UNION
 		(
@@ -1527,11 +1663,8 @@ $$
 			UNION ALL
 			SELECT * FROM hour_end
 			UNION ALL
-			SELECT * FROM hour_end_after
-			UNION ALL
 			SELECT * FROM raw_end WHERE ts > end_ts
 				AND NOT EXISTS (SELECT 1 FROM hour_end)
-				AND NOT EXISTS (SELECT 1 FROM hour_end_after)
 		)
 	)
 	-- drop any leading row before the last one at or before the start, and any trailing row
