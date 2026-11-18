@@ -1,5 +1,5 @@
 /* ==================================================================
- * SettingsController.java - Mar 12, 2012 1:31:40 PM
+ * SettingsSharedController.java - Mar 12, 2012 1:31:40 PM
  *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
  *
@@ -25,23 +25,12 @@ package net.solarnetwork.node.setup.web;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.sort;
-import static java.util.Objects.requireNonNullElse;
-import static net.solarnetwork.domain.Result.success;
 import static net.solarnetwork.node.setup.web.WebConstants.setupSessionError;
-import static net.solarnetwork.node.setup.web.support.WebServiceControllerSupport.responseOutputStream;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.ObjectUtils.nonnull;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import static net.solarnetwork.util.StringUtils.naturalSortCompare;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,13 +43,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,13 +51,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
-import org.springframework.util.FileCopyUtils;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -83,16 +60,11 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
-import net.solarnetwork.node.backup.BackupServiceSupport;
-import net.solarnetwork.node.domain.SettingNote;
 import net.solarnetwork.node.service.CsvConfigurableBackupService;
-import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMessageComparator;
@@ -100,14 +72,10 @@ import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageCom
 import net.solarnetwork.node.setup.web.support.IteratorStatus;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
-import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.service.ServiceRegistry;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
-import net.solarnetwork.settings.SettingSpecifierProviderInfo;
-import net.solarnetwork.settings.support.BasicSettingSpecifierProviderInfo;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.util.StringNaturalSortComparator;
@@ -118,7 +86,7 @@ import net.solarnetwork.web.jakarta.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 3.3
+ * @version 3.4
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -147,8 +115,6 @@ public class SettingsController {
 			SearchFilter.forLDAPSearchFilterString("(&(role=datum-filter)(role=user))"),
 			"USER_DATUM_FILTER");
 
-	private static final String ZIP_ARCHIVE_CONTENT_TYPE = "application/zip";
-
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
@@ -164,13 +130,7 @@ public class SettingsController {
 	private Collection<CsvConfigurableBackupService> csvBackupServices;
 
 	@Autowired
-	private IdentityService identityService;
-
-	@Autowired
 	private MessageSource messageSource;
-
-	@Autowired
-	private ServiceRegistry serviceRegistry;
 
 	/**
 	 * Default constructor.
@@ -424,97 +384,6 @@ public class SettingsController {
 	}
 
 	/**
-	 * Get a list of setting specifier provider infos for a given service
-	 * filter.
-	 *
-	 * @param serviceFilter
-	 *        the LDAP search filter of the providers to get info for
-	 * @param locale
-	 *        the desired locale
-	 * @return the result list
-	 * @since 2.9
-	 */
-	@RequestMapping(value = "/providerInfo", method = RequestMethod.GET)
-	@ResponseBody
-	public Result<List<SettingSpecifierProviderInfo>> providerInfos(
-			@RequestParam("filter") String serviceFilter, Locale locale) {
-		if ( serviceRegistry == null ) {
-			return success();
-		}
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service == null ) {
-			return success();
-		}
-		final List<SettingSpecifierProviderInfo> results = serviceRegistry.services(serviceFilter)
-				.stream().filter((p) -> {
-					if ( p == null || !(p instanceof Identifiable ip) ) {
-						return false;
-					}
-					String uid = ip.getUid();
-					if ( uid == null || uid.isEmpty() ) {
-						return false;
-					}
-					return true;
-				}).map((p) -> {
-					Identifiable ip = (Identifiable) p;
-					String uid = requireNonNullElse(ip.getUid(), "");
-					String groupUid = ip.getGroupUid();
-					if ( p instanceof SettingSpecifierProvider ssp ) {
-						return ssp.localizedInfo(locale, uid, groupUid);
-					}
-					return new BasicSettingSpecifierProviderInfo("", ip.getDisplayName(), uid, groupUid);
-				}).sorted((l, r) -> {
-					int result = naturalSortCompare(l.getDisplayName(), r.getDisplayName(), true);
-					if ( result == 0 ) {
-						result = naturalSortCompare(l.getUid(), r.getUid(), true);
-					}
-					return result;
-				}).collect(Collectors.toList());
-		return success(results);
-	}
-
-	/**
-	 * Find available notes for a given key.
-	 *
-	 * @param key
-	 *        the setting key to get notes for
-	 * @return the notes
-	 * @since 2.12
-	 */
-	@RequestMapping(value = "/notes", method = RequestMethod.GET)
-	@ResponseBody
-	public Result<List<SettingNote>> notesForKey(@RequestParam("key") String key) {
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service == null ) {
-			return success();
-		}
-		List<SettingNote> results = service.notesForKey(key);
-		Collections.sort(results, (l, r) -> {
-			return naturalSortCompare(l.getType(), r.getType(), false);
-		});
-		return success(results);
-	}
-
-	/**
-	 * Find available notes for a given key.
-	 *
-	 * @param command
-	 *        the setting notes to save
-	 * @return success result
-	 * @since 2.12
-	 */
-	@RequestMapping(value = "/notes", method = RequestMethod.POST)
-	@ResponseBody
-	public Result<Void> saveNotes(SettingsCommand command) {
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service == null ) {
-			return success();
-		}
-		service.saveNotes(command);
-		return success();
-	}
-
-	/**
 	 * Manage a specific settings factory.
 	 *
 	 * @param factoryUid
@@ -563,312 +432,6 @@ public class SettingsController {
 	}
 
 	/**
-	 * Add a new factory instance.
-	 *
-	 * @param factoryUid
-	 *        the factory to create a new instance for
-	 * @param instanceUid
-	 *        the instance ID, or {@code null} to auto-assign one
-	 * @return the new instance ID
-	 */
-	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
-	@ResponseBody
-	public Result<String> addConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUid,
-			@RequestParam(value = "name", required = false) String instanceUid) {
-		final SettingsService service = service(settingsServiceTracker);
-		String result = null;
-		if ( service != null ) {
-			result = service.addProviderFactoryInstance(factoryUid, instanceUid);
-		}
-		return success(result);
-	}
-
-	/**
-	 * Delete a setting.
-	 *
-	 * @param factoryUid
-	 *        the factory UID
-	 * @param instanceUid
-	 *        the instance UID
-	 * @return the result
-	 */
-	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
-	@ResponseBody
-	public Result<Object> deleteConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUid,
-			@RequestParam(value = "instance", required = true) String instanceUid) {
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service != null ) {
-			service.deleteProviderFactoryInstance(factoryUid, instanceUid);
-		}
-		return success(null);
-	}
-
-	/**
-	 * Reset settings to default values.
-	 *
-	 * @param factoryUid
-	 *        the factory UID
-	 * @param instanceUid
-	 *        the instance UID
-	 * @return the result
-	 */
-	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
-	@ResponseBody
-	public Result<Object> resetConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUid,
-			@RequestParam(value = "instance", required = true) String instanceUid) {
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service != null ) {
-			service.resetProviderFactoryInstance(factoryUid, instanceUid);
-		}
-		return success(null);
-	}
-
-	/**
-	 * Remove all settings for a factory.
-	 *
-	 * @param factoryUid
-	 *        the factory UID
-	 * @return the result
-	 */
-	@RequestMapping(value = "/manage/removeall", method = RequestMethod.POST)
-	@ResponseBody
-	public Result<Object> removeAllConfigurations(
-			@RequestParam(value = "uid", required = true) String factoryUid) {
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service != null ) {
-			Map<String, FactorySettingSpecifierProvider> instances = service
-					.getProvidersForFactory(factoryUid);
-			service.removeProviderFactoryInstances(factoryUid, instances.keySet());
-		}
-		return success(null);
-	}
-
-	/**
-	 * Save settings.
-	 *
-	 * @param command
-	 *        the settings to save
-	 * @return the result
-	 */
-	@RequestMapping(value = "/save", method = RequestMethod.POST)
-	@ResponseBody
-	public Result<Void> saveSettings(CleanSupportSettingsCommand command) {
-		final SettingsService service = service(settingsServiceTracker);
-		SettingsCommand cmd = command;
-		if ( service != null ) {
-			if ( command.getSettingKeyPrefixToClean() != null ) {
-				String prefix = command.getSettingKeyPrefixToClean();
-				try {
-					Pattern pat = Pattern.compile(Pattern.quote(prefix) + ".*");
-					cmd = new SettingsCommand(command.getValues(), Collections.singleton(pat));
-				} catch ( PatternSyntaxException e ) {
-					throw new IllegalArgumentException(
-							"The settingKeyPrefixToClean expression is invlalid.");
-				}
-			}
-			service.updateSettings(cmd);
-		}
-		return success(null);
-	}
-
-	/**
-	 * Export settings to CSV.
-	 *
-	 * @param backupKey
-	 *        the backup key
-	 * @param response
-	 *        the response
-	 * @param acceptEncoding
-	 *        the Accept-Encoding header value
-	 * @throws IOException
-	 *         if an IO error occurs
-	 */
-	@RequestMapping(value = "/export", method = RequestMethod.GET)
-	@ResponseBody
-	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
-			HttpServletResponse response, @RequestHeader(name = HttpHeaders.ACCEPT_ENCODING,
-					required = false) final String acceptEncoding)
-			throws IOException {
-		final SettingsService service = service(settingsServiceTracker);
-		final Long nodeId = identityService.getNodeId();
-		if ( service != null ) {
-			response.setContentType("text/csv;charset=UTF-8");
-			response.setHeader("Content-Disposition",
-					"attachment; filename=solarnode-settings" + (nodeId == null ? "" : "-" + nodeId)
-							+ "_"
-							+ (backupKey == null
-									? (DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
-											.format(ZonedDateTime.now()))
-									: backupKey)
-							+ ".csv");
-			if ( backupKey != null ) {
-				@SuppressWarnings("deprecation")
-				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
-				if ( r != null ) {
-					try (Writer out = new OutputStreamWriter(
-							responseOutputStream(response, acceptEncoding), StandardCharsets.UTF_8)) {
-						FileCopyUtils.copy(r, out);
-					}
-				}
-			} else {
-				try (Writer out = new OutputStreamWriter(responseOutputStream(response, acceptEncoding),
-						StandardCharsets.UTF_8)) {
-					service.exportSettingsCSV(out);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Export settings to CSV.
-	 *
-	 * @param factoryUid
-	 *        the UID of the factory to export the settings of
-	 * @param response
-	 *        the response
-	 * @param locale
-	 *        the desired locale
-	 * @throws IOException
-	 *         if an IO error occurs
-	 */
-	@RequestMapping(value = "/exportFactory", method = RequestMethod.GET)
-	@ResponseBody
-	public void exportFactorySettings(@RequestParam("uid") String factoryUid,
-			HttpServletResponse response, Locale locale) throws IOException {
-		final SettingsService service = service(settingsServiceTracker);
-		final Long nodeId = identityService.getNodeId();
-		if ( service != null ) {
-			SettingSpecifierProviderFactory factory = service.getProviderFactory(factoryUid);
-			String name = factoryUid;
-			if ( factory != null ) {
-				String desc = null;
-				if ( factory.getMessageSource() != null ) {
-					desc = factory.getMessageSource().getMessage("title", null, null, locale);
-				}
-				if ( desc == null ) {
-					desc = factory.getDisplayName();
-				}
-				if ( desc != null ) {
-					name = desc;
-				}
-			}
-			response.setContentType("text/csv;charset=UTF-8");
-			response.setHeader("Content-Disposition", "attachment; filename=solarnode-settings"
-					+ (nodeId == null ? "" : "-" + nodeId) + "_" + name + ".csv");
-
-			SettingsCommand filter = new SettingsCommand();
-			filter.setProviderKey(factoryUid);
-			service.exportSettingsCSV(filter, response.getWriter());
-		}
-	}
-
-	/**
-	 * Export settings resources.
-	 *
-	 * @param handlerKey
-	 *        the {@link SettingResourceHandler} ID to import with
-	 * @param instanceKey
-	 *        the optional factory instance ID, or {@code null}
-	 * @param key
-	 *        the resource setting key
-	 * @param response
-	 *        the HTTP response
-	 * @param acceptEncoding
-	 *        the Accept-Encoding header value
-	 * @throws IOException
-	 *         if any IO error occurs
-	 * @since 2.1
-	 */
-	@RequestMapping(value = "/exportResources", method = RequestMethod.GET)
-	@ResponseBody
-	public void exportSettingsResources(@RequestParam("handlerKey") String handlerKey,
-			@RequestParam(name = "instanceKey", required = false) String instanceKey,
-			@RequestParam("key") String key, HttpServletResponse response,
-			@RequestHeader(name = HttpHeaders.ACCEPT_ENCODING,
-					required = false) final String acceptEncoding)
-			throws IOException {
-		final SettingsService service = service(settingsServiceTracker);
-		if ( service != null ) {
-			SettingResourceHandler handler = service.getSettingResourceHandler(handlerKey, instanceKey);
-			if ( handler != null ) {
-				Iterable<Resource> rItr = handler.currentSettingResources(key);
-				if ( rItr != null ) {
-					List<Resource> rList = StreamSupport.stream(rItr.spliterator(), false)
-							.collect(Collectors.toList());
-					if ( !rList.isEmpty() ) {
-						int idx = 1;
-						if ( rList.size() == 1 ) {
-							// return resource directly
-							Resource r = rList.get(0);
-							String rName = filenameForSettingsResource(r, key, idx);
-							String contentType = contentTypeForSettingsResource(r, rName);
-							response.setContentType(contentType);
-							response.setHeader("Content-Disposition",
-									format("attachment; filename=%s", rName));
-							try (OutputStream out = (contentType.startsWith("text")
-									? responseOutputStream(response, acceptEncoding)
-									: response.getOutputStream())) {
-								FileCopyUtils.copy(r.getInputStream(), out);
-							}
-						} else {
-							// zip up into a single archive
-							response.setContentType(ZIP_ARCHIVE_CONTENT_TYPE);
-							try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream())) {
-								for ( Resource r : rList ) {
-									String rName = filenameForSettingsResource(r, key, idx);
-									zos.putNextEntry(new ZipEntry(rName));
-									StreamUtils.copy(r.getInputStream(), zos);
-									idx++;
-								}
-							}
-						}
-						return;
-					}
-				}
-			}
-		}
-		response.sendError(HttpServletResponse.SC_NOT_FOUND);
-	}
-
-	private String contentTypeForSettingsResource(Resource r, String rName) {
-		int idx = rName.lastIndexOf('.');
-		String ext = null;
-		if ( idx > 0 ) {
-			ext = rName.substring(idx + 1).toLowerCase();
-		}
-		if ( ext != null ) {
-			switch (ext) {
-				case "csv":
-					return "text/csv; charset=utf-8";
-
-				case "txt":
-					return MediaType.TEXT_PLAIN + "; charset=utf-8";
-
-				case "xml":
-					return MediaType.TEXT_XML_VALUE;
-
-				default:
-					// don't know
-			}
-		}
-		return MediaType.APPLICATION_OCTET_STREAM_VALUE;
-	}
-
-	private static String filenameForSettingsResource(Resource r, String key, int idx) {
-		String name = r.getFilename();
-		if ( name == null ) {
-			name = r.getDescription();
-			if ( name == null ) {
-				name = key + "-" + idx;
-			}
-		}
-		return name;
-	}
-
-	/**
 	 * Import settings.
 	 *
 	 * @param file
@@ -904,50 +467,6 @@ public class SettingsController {
 			result = true;
 		}
 		return new Response<Object>(result, null, null, null);
-	}
-
-	private String backupExportFileNameForBackupKey(String backupKey) {
-		// look if already has node ID + date in key
-		Matcher m = BackupServiceSupport.NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(backupKey);
-		String nodeId = null;
-		String key = null;
-		if ( m.find() ) {
-			nodeId = m.group(1);
-			key = m.group(2);
-		} else {
-			Long id = (identityService != null ? identityService.getNodeId() : null);
-			nodeId = (id != null ? id.toString() : null);
-			key = backupKey;
-		}
-		return "node-" + (nodeId != null ? nodeId : "UNKNOWN") + "-backup"
-				+ (key == null ? "" : "-" + key) + ".zip";
-	}
-
-	/**
-	 * Export a backup.
-	 *
-	 * @param backupKey
-	 *        the backup to export
-	 * @param response
-	 *        the response
-	 * @throws IOException
-	 *         if an IO error occurs
-	 */
-	@RequestMapping(value = "/exportBackup", method = RequestMethod.GET)
-	@ResponseBody
-	public void exportBackup(@RequestParam(required = false, value = "backup") String backupKey,
-			HttpServletResponse response) throws IOException {
-		final BackupManager manager = service(backupManagerTracker);
-		if ( manager == null ) {
-			return;
-		}
-
-		final String exportFileName = backupExportFileNameForBackupKey(backupKey);
-
-		// create the zip archive for the backup files
-		response.setContentType(ZIP_ARCHIVE_CONTENT_TYPE);
-		response.setHeader("Content-Disposition", "attachment; filename=" + exportFileName);
-		manager.exportBackupArchive(backupKey, response.getOutputStream());
 	}
 
 	/**

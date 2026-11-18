@@ -76,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * A base class to support web service style controllers.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 3.3
  */
 @RestControllerAdvice(annotations = GlobalExceptionRestController.class)
@@ -136,6 +136,13 @@ public final class WebServiceControllerSupport {
 	 * A value to use for anonymous users in log messages.
 	 */
 	public static final String ANONYMOUS_USER_PRINCIPAL = "anonymous";
+
+	/**
+	 * A content type for a zip archive.
+	 *
+	 * @since 1.3
+	 */
+	public static final String ZIP_ARCHIVE_CONTENT_TYPE = "application/zip";
 
 	/** A class-level logger. */
 	private static final Logger log = LoggerFactory.getLogger(WebServiceControllerSupport.class);

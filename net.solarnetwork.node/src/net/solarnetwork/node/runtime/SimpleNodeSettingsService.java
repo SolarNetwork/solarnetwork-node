@@ -33,39 +33,25 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.codec.JsonUtils;
-import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.ExtendedSettingSpecifierProviderFactory;
-import net.solarnetwork.node.settings.FileSettingSpecifier;
-import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingsService;
-import net.solarnetwork.node.settings.SetupResourceSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtils;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
-import net.solarnetwork.settings.GroupSettingSpecifier;
-import net.solarnetwork.settings.KeyedSettingSpecifier;
-import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
-import net.solarnetwork.settings.TextFieldSettingSpecifier;
-import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -267,9 +253,6 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 	/** A redacted setting value. */
 	public static final String REDACTED_VALUE = "*****";
 
-	private static Pattern SENSITVE_PATTERN = Pattern.compile("(apikey|password|secret)",
-			Pattern.CASE_INSENSITIVE);
-
 	private final OptionalService<SettingsService> settingsService;
 
 	/**
@@ -383,10 +366,8 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			return createStatus(instruction, Declined, createErrorResultParameters(
 					"Factory instance provider not available.", "SNS.00004"));
 		}
-		List<Map<String, Object>> result = parseBoolean(
-				instruction.getParameterValue(PARAM_SPECIFICATION))
-						? resultSpecification(service, provider)
-						: resultSettings(service, provider);
+		List<Map<String, Object>> result = SettingsUtils.factoryInstanceSettingInfos(service, provider,
+				parseBoolean(instruction.getParameterValue(PARAM_SPECIFICATION)), null);
 		return createStatus(instruction, Completed,
 				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, result, "[]")));
 	}
@@ -399,10 +380,8 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			return createStatus(instruction, Declined,
 					createErrorResultParameters("Provider not available.", "SNS.00005"));
 		}
-		List<Map<String, Object>> result = parseBoolean(
-				instruction.getParameterValue(PARAM_SPECIFICATION))
-						? resultSpecification(service, provider)
-						: resultSettings(service, provider);
+		List<Map<String, Object>> result = SettingsUtils.providerSettingInfos(service, provider,
+				parseBoolean(instruction.getParameterValue(PARAM_SPECIFICATION)), null);
 		return createStatus(instruction, Completed,
 				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, result, "[]")));
 	}
@@ -410,116 +389,16 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 	private InstructionStatus generateFactoryList(Instruction instruction,
 			final SettingsService service) {
 		List<SettingSpecifierProviderFactory> factories = service.getProviderFactories();
-		List<Map<String, Object>> results = new ArrayList<>(factories.size());
-		for ( SettingSpecifierProviderFactory f : factories ) {
-			Map<String, Object> props = new LinkedHashMap<>(2);
-			props.put("id", f.getFactoryUid());
-			String title = f.getDisplayName();
-			if ( f.getMessageSource() != null ) {
-				title = f.getMessageSource().getMessage("title", null, title, Locale.getDefault());
-			}
-			props.put("title", title);
-			results.add(props);
-		}
+		List<Map<String, Object>> results = SettingsUtils.factoryInfos(factories, null);
 		return createStatus(instruction, Completed,
 				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, results, "[]")));
 	}
 
 	private InstructionStatus generateProviderList(Instruction instruction, SettingsService service) {
 		List<SettingSpecifierProvider> providers = service.getProviders();
-		List<Map<String, Object>> results = new ArrayList<>(providers.size());
-		for ( SettingSpecifierProvider p : providers ) {
-			Map<String, Object> props = new LinkedHashMap<>(2);
-			props.put("id", p.getSettingUid());
-			String title = p.getDisplayName();
-			if ( p.getMessageSource() != null ) {
-				title = p.getMessageSource().getMessage("title", null, title, Locale.getDefault());
-			}
-			props.put("title", title);
-			results.add(props);
-		}
+		List<Map<String, Object>> results = SettingsUtils.providerInfos(providers, null);
 		return createStatus(instruction, Completed,
 				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, results, "[]")));
-	}
-
-	private List<Map<String, Object>> resultSettings(SettingsService service,
-			SettingSpecifierProvider provider) {
-		String instanceId = provider instanceof FactorySettingSpecifierProvider
-				? ((FactorySettingSpecifierProvider) provider).getFactoryInstanceUID()
-				: null;
-		List<SettingSpecifier> specs = provider.getSettingSpecifiers();
-		List<Setting> settings = service.getSettings(
-				instanceId != null ? provider.getSettingUid() : null,
-				instanceId != null ? instanceId : provider.getSettingUid());
-		Map<String, Setting> settingsMap;
-		if ( settings != null && !settings.isEmpty() ) {
-			settingsMap = new HashMap<>(settings.size());
-			for ( Setting s : settings ) {
-				// in a Setting, the key is the UID and type is the setting key
-				settingsMap.put(s.getType(), s);
-			}
-		} else {
-			settingsMap = Collections.emptyMap();
-		}
-		List<Map<String, Object>> resultSettings = new ArrayList<>(specs.size());
-		for ( SettingSpecifier spec : specs ) {
-			generateResultSetting(resultSettings, settingsMap, spec);
-		}
-		return resultSettings;
-	}
-
-	private void generateResultSetting(final List<Map<String, Object>> resultSettings,
-			final Map<String, Setting> settingsMap, final SettingSpecifier spec) {
-		if ( spec instanceof KeyedSettingSpecifier<?> ) {
-			KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-			if ( keyedSpec.isTransient() ) {
-				return;
-			}
-			Map<String, Object> props = new LinkedHashMap<>(4);
-			props.put("key", keyedSpec.getKey());
-			Setting setting = settingsMap.get(keyedSpec.getKey());
-			props.put("value",
-					setting != null ? settingValue(setting, keyedSpec) : keyedSpec.getDefaultValue());
-			if ( setting == null ) {
-				props.put("default", true);
-			}
-			resultSettings.add(props);
-		} else if ( spec instanceof GroupSettingSpecifier ) {
-			GroupSettingSpecifier group = (GroupSettingSpecifier) spec;
-			for ( SettingSpecifier groupSpec : group.getGroupSettings() ) {
-				generateResultSetting(resultSettings, settingsMap, groupSpec);
-			}
-		}
-	}
-
-	private static @Nullable String settingValue(Setting setting, KeyedSettingSpecifier<?> spec) {
-		String key = setting.getType();
-		String value = setting.getValue();
-		final boolean secure = (spec instanceof TextFieldSettingSpecifier
-				&& ((TextFieldSettingSpecifier) spec).isSecureTextEntry());
-		if ( value != null && (secure || (key != null && SENSITVE_PATTERN.matcher(key).find())) ) {
-			value = REDACTED_VALUE;
-		}
-		return value;
-	}
-
-	private List<Map<String, Object>> resultSpecification(SettingsService service,
-			SettingSpecifierProvider provider) {
-		return SettingUtils.templateSpecification(provider, (spec, props) -> {
-			if ( spec instanceof FileSettingSpecifier ) {
-				FileSettingSpecifier file = (FileSettingSpecifier) spec;
-				props.put("acceptableFileTypeSpecifiers", file.getAcceptableFileTypeSpecifiers());
-				if ( file.isMultiple() ) {
-					props.put("multiple", file.isMultiple());
-				}
-			} else if ( spec instanceof LocationLookupSettingSpecifier ) {
-				LocationLookupSettingSpecifier look = (LocationLookupSettingSpecifier) spec;
-				props.put("locationTypeKey", look.getLocationTypeKey());
-			} else if ( spec instanceof SetupResourceSettingSpecifier ) {
-				SetupResourceSettingSpecifier setup = (SetupResourceSettingSpecifier) spec;
-				props.put("setupResourceProperties", setup.getSetupResourceProperties());
-			}
-		});
 	}
 
 }
