@@ -59,11 +59,11 @@ import net.solarnetwork.service.OptionalService;
  * API controller for local instruction handling.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.3
  */
 @GlobalExceptionRestController
-@RequestMapping("/api/v1/sec/instr")
+@RequestMapping({ "/api/v1/sec/instr", "/solaruser/api/v1/sec/instr" })
 public class InstructionController {
 
 	private final IdentityService identityService;
