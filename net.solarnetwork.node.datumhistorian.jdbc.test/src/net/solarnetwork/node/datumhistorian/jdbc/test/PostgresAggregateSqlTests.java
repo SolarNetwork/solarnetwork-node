@@ -960,9 +960,9 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 
 	/**
 	 * New partitions are created in the tablespace of their table, as
-	 * {@code CREATE TABLE ... PARTITION OF} would do, for both the datum and the
-	 * hourly table. Skipped unless the test database has a tablespace other than
-	 * the default ones that the tests' role can create tables in.
+	 * {@code CREATE TABLE ... PARTITION OF} would do, for both the datum and
+	 * the hourly table. Skipped unless the test database has a tablespace other
+	 * than the default ones that the tests' role can create tables in.
 	 */
 	@Test
 	public void partition_inTableTablespace() {
@@ -984,10 +984,10 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 		// only sets the tablespace of new partitions: nothing is moved
 		final String spaceIdent = jdbcTemplate.queryForObject("SELECT quote_ident(?)", String.class,
 				space);
-		jdbcTemplate.update(sql("ALTER TABLE ONLY solarhist.dh_datum SET TABLESPACE %s")
-				.formatted(spaceIdent));
-		jdbcTemplate.update(sql("ALTER TABLE ONLY solarhist.dh_agg_hourly SET TABLESPACE %s")
-				.formatted(spaceIdent));
+		jdbcTemplate.update(
+				sql("ALTER TABLE ONLY solarhist.dh_datum SET TABLESPACE %s").formatted(spaceIdent));
+		jdbcTemplate.update(
+				sql("ALTER TABLE ONLY solarhist.dh_agg_hourly SET TABLESPACE %s").formatted(spaceIdent));
 
 		// WHEN
 		jdbcTemplate.queryForList(sql("SELECT solarhist.dh_datum_ensure_partition(?::TIMESTAMPTZ)"),
