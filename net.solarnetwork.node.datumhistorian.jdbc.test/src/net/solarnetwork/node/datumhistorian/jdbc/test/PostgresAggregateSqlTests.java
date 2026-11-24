@@ -219,6 +219,47 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 				""", SCHEMA + ".dh_agg_hourly");
 	}
 
+	/**
+	 * Get the tablespace of a relation, or {@code null} for the database
+	 * default.
+	 */
+	private String tablespaceOf(String relation) {
+		return jdbcTemplate.queryForObject("""
+				SELECT s.spcname::TEXT
+				FROM pg_class c
+				LEFT OUTER JOIN pg_tablespace s ON s.oid = c.reltablespace
+				WHERE c.oid = ?::regclass
+				""", String.class, relation);
+	}
+
+	/**
+	 * Get a tablespace other than the database default that the tests' role can
+	 * create tables in, skipping the test when there is none.
+	 */
+	private String assumeTablespace() {
+		final List<String> spaces = jdbcTemplate.queryForList("""
+				SELECT spcname::TEXT FROM pg_tablespace
+				WHERE spcname NOT IN ('pg_default', 'pg_global')
+					AND oid <> (SELECT dattablespace FROM pg_database WHERE datname = current_database())
+					AND has_tablespace_privilege(spcname, 'CREATE')
+				ORDER BY spcname
+				LIMIT 1
+				""", String.class);
+		assumeTrue("No tablespace the tests' role can create tables in.", !spaces.isEmpty());
+		return spaces.get(0);
+	}
+
+	/**
+	 * Set the tablespace of a table, which only sets the tablespace of its new
+	 * partitions: nothing is moved.
+	 */
+	private void tableTablespace(String table, String space) {
+		final String spaceIdent = jdbcTemplate.queryForObject("SELECT quote_ident(?)", String.class,
+				space);
+		final String alter = "ALTER TABLE ONLY %s.%s SET TABLESPACE %s";
+		jdbcTemplate.update(alter.formatted(SCHEMA, table, spaceIdent));
+	}
+
 	/** Get the partition and hour of each hourly row of a stream. */
 	private List<Map<String, Object>> hourlyRows(int streamId) {
 		return jdbcTemplate.queryForList(sql("""
@@ -941,6 +982,85 @@ public class PostgresAggregateSqlTests extends AbstractPostgresHistorianTests {
 		then(warnings)
 			.as("No warning that the partition has another owner")
 			.isEmpty()
+			;
+		// @formatter:on
+	}
+
+	/**
+	 * New partitions are created in the tablespace of their table, as
+	 * {@code CREATE TABLE ... PARTITION OF} would do, for both the datum and
+	 * the hourly table. Skipped unless the test database has a tablespace other
+	 * than the default ones that the tests' role can create tables in.
+	 */
+	@Test
+	public void partition_inTableTablespace() {
+		assumeHourlyPartitioned();
+		final String space = assumeTablespace();
+
+		// GIVEN
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("No 2031 partition to start with")
+			.extracting("name")
+			.doesNotContain("dh_agg_hourly_2031")
+			;
+		// @formatter:on
+		tableTablespace("dh_datum", space);
+		tableTablespace("dh_agg_hourly", space);
+
+		// WHEN
+		jdbcTemplate.queryForList(sql("SELECT solarhist.dh_datum_ensure_partition(?::TIMESTAMPTZ)"),
+				"2031-06-01T00:00:00Z");
+		hourlyPartition("2031-06-01T00:00:00Z");
+
+		// THEN
+		// @formatter:off
+		then(tablespaceOf(SCHEMA + ".dh_datum_2031_06"))
+			.as("The new datum partition is in the datum table's tablespace")
+			.isEqualTo(space)
+			;
+		then(tablespaceOf(SCHEMA + ".dh_agg_hourly_2031"))
+			.as("The new hourly partition is in the hourly table's tablespace")
+			.isEqualTo(space)
+			;
+		// @formatter:on
+	}
+
+	/**
+	 * Without a tablespace on the table, new partitions are created in the
+	 * database default, as before.
+	 */
+	@Test
+	public void partition_inDefaultTablespace() {
+		assumeHourlyPartitioned();
+		assumeTrue("The %s.dh_datum table has a tablespace.".formatted(SCHEMA),
+				tablespaceOf(SCHEMA + ".dh_datum") == null);
+		assumeTrue("The %s.dh_agg_hourly table has a tablespace.".formatted(SCHEMA),
+				tablespaceOf(SCHEMA + ".dh_agg_hourly") == null);
+
+		// GIVEN
+		// @formatter:off
+		then(hourlyPartitions())
+			.as("No 2031 partition to start with")
+			.extracting("name")
+			.doesNotContain("dh_agg_hourly_2031")
+			;
+		// @formatter:on
+
+		// WHEN
+		jdbcTemplate.queryForList(sql("SELECT solarhist.dh_datum_ensure_partition(?::TIMESTAMPTZ)"),
+				"2031-06-01T00:00:00Z");
+		hourlyPartition("2031-06-01T00:00:00Z");
+
+		// THEN
+		// @formatter:off
+		then(tablespaceOf(SCHEMA + ".dh_datum_2031_06"))
+			.as("The new datum partition is in the database default tablespace")
+			.isNull()
+			;
+		then(tablespaceOf(SCHEMA + ".dh_agg_hourly_2031"))
+			.as("The new hourly partition is in the database default tablespace")
+			.isNull()
 			;
 		// @formatter:on
 	}

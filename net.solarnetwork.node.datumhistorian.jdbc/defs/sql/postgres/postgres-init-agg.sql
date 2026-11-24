@@ -227,7 +227,8 @@ $$;
  * are computed in UTC, so they do not depend on the session's `TimeZone`. As with
  * `solarhist.dh_datum_ensure_partition()`, a new partition is created as a table of its own and
  * then attached, because that does not block other transactions from reading and writing
- * `solarhist.dh_agg_hourly` while it happens.
+ * `solarhist.dh_agg_hourly` while it happens. Also as there, a new partition is created in the
+ * tablespace of `solarhist.dh_agg_hourly`, if it has one.
  *
  * A new partition is given the owner of `solarhist.dh_agg_hourly`, so it does not matter which
  * role creates it. The `pg_cron` job of postgres-init-agg-cron.sql runs as a superuser such as
@@ -254,6 +255,7 @@ DECLARE
 	part_name	CONSTANT TEXT := 'dh_agg_hourly_' || to_char(ts_start AT TIME ZONE 'UTC', 'YYYY');
 	table_owner	OID;
 	part_owner	OID;
+	part_space	TEXT;
 BEGIN
 	IF to_regclass('solarhist.' || part_name) IS NOT NULL THEN
 		RETURN;
@@ -264,9 +266,15 @@ BEGIN
 
 	-- look again, as another caller could have created the partition while this one waited
 	IF to_regclass('solarhist.' || part_name) IS NULL THEN
+		-- use the tablespace of the table, like CREATE TABLE ... PARTITION OF does; NULL
+		-- (the database default) unless the table was given one
+		SELECT s.spcname FROM pg_class c JOIN pg_tablespace s ON s.oid = c.reltablespace
+		WHERE c.oid = 'solarhist.dh_agg_hourly'::regclass
+		INTO part_space;
+
 		EXECUTE format(
-			'CREATE TABLE solarhist.%I (LIKE solarhist.dh_agg_hourly INCLUDING DEFAULTS INCLUDING CONSTRAINTS)'
-			, part_name);
+			'CREATE TABLE solarhist.%I (LIKE solarhist.dh_agg_hourly INCLUDING DEFAULTS INCLUDING CONSTRAINTS)%s'
+			, part_name, CASE WHEN part_space IS NULL THEN '' ELSE format(' TABLESPACE %I', part_space) END);
 		EXECUTE format(
 			'ALTER TABLE solarhist.dh_agg_hourly ATTACH PARTITION solarhist.%I FOR VALUES FROM (%L) TO (%L)'
 			, part_name, ts_start, ts_end);

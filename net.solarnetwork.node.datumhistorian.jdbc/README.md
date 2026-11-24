@@ -81,3 +81,11 @@ sudo -u postgres psql -c "SELECT cron.schedule('cron-job-run-details-cleanup', '
 sudo sed -Ei '/^serviceProperty\.db\s*=/{/node-datum-history/b;s/$/, node-datum-history/}' \
 /etc/solarnode/services/net.solarnetwork.jdbc.pool.hikari-solarnode-postgres.cfg
 ```
+
+### Tablespace
+
+The history schemas can be kept in a tablespace of their own, for example on an attached drive.
+
+Create the tablespace first, let the `solarnode` role create tables in it, and run the init
+scripts with `default_tablespace` set to it. New partitions are then created in the same
+tablespace, as each partitioned table has it.

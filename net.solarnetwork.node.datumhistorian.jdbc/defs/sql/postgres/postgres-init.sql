@@ -170,6 +170,12 @@ $$;
  * partition is created as a table of its own and then attached, because that does not block
  * other transactions from reading and writing `solarhist.dh_datum` while it happens.
  *
+ * A new partition is created in the tablespace of `solarhist.dh_datum`, as
+ * `CREATE TABLE ... PARTITION OF` would do (a table created with `LIKE` does not get it), and
+ * its indexes in the tablespaces of the table's indexes. The table and its indexes have a
+ * tablespace when they were created with `default_tablespace` set; the role that stores datum
+ * then needs the `CREATE` privilege on that tablespace.
+ *
  * @param ts_at the date to ensure a partition exists for
  */
 CREATE OR REPLACE FUNCTION solarhist.dh_datum_ensure_partition(ts_at TIMESTAMP WITH TIME ZONE)
@@ -179,6 +185,7 @@ DECLARE
 	ts_start	CONSTANT TIMESTAMP WITH TIME ZONE := date_trunc('month', ts_at, 'UTC');
 	ts_end		CONSTANT TIMESTAMP WITH TIME ZONE := date_add(ts_start, INTERVAL 'P1M', 'UTC');
 	part_name	CONSTANT TEXT := 'dh_datum_' || to_char(ts_start AT TIME ZONE 'UTC', 'YYYY_MM');
+	part_space	TEXT;
 BEGIN
 	IF to_regclass('solarhist.' || part_name) IS NOT NULL THEN
 		RETURN;
@@ -189,9 +196,15 @@ BEGIN
 
 	-- look again, as another caller could have created the partition while this one waited
 	IF to_regclass('solarhist.' || part_name) IS NULL THEN
+		-- use the tablespace of the table, like CREATE TABLE ... PARTITION OF does; NULL
+		-- (the database default) unless the table was given one
+		SELECT s.spcname FROM pg_class c JOIN pg_tablespace s ON s.oid = c.reltablespace
+		WHERE c.oid = 'solarhist.dh_datum'::regclass
+		INTO part_space;
+
 		EXECUTE format(
-			'CREATE TABLE solarhist.%I (LIKE solarhist.dh_datum INCLUDING DEFAULTS INCLUDING CONSTRAINTS)'
-			, part_name);
+			'CREATE TABLE solarhist.%I (LIKE solarhist.dh_datum INCLUDING DEFAULTS INCLUDING CONSTRAINTS)%s'
+			, part_name, CASE WHEN part_space IS NULL THEN '' ELSE format(' TABLESPACE %I', part_space) END);
 		EXECUTE format(
 			'ALTER TABLE solarhist.dh_datum ATTACH PARTITION solarhist.%I FOR VALUES FROM (%L) TO (%L)'
 			, part_name, ts_start, ts_end);
