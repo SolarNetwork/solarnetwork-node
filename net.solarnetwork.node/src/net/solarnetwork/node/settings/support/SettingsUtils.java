@@ -200,8 +200,8 @@ public final class SettingsUtils {
 
 	private static final Pattern INDEX_KEYS_PATTERN = Pattern.compile("\\[\\d+\\]");
 
-	private static String settingMessage(final MessageSource msg, final KeyedSettingSpecifier<?> k,
-			String suffix, Locale locale) {
+	private static @Nullable String settingMessage(final MessageSource msg,
+			final KeyedSettingSpecifier<?> k, String suffix, Locale locale) {
 		final String key = k.getKey() + suffix;
 
 		String result = msg.getMessage(key, null, null, locale);
