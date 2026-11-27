@@ -44,8 +44,8 @@
  * 3. Run it as a superuser: pg_cron lets only superusers call
  *    cron.schedule_in_database(), and setting the job's nodename (step 4) is a
  *    direct update of cron.job. The job runs as the role that runs this script;
- *    the yearly solarhist.dh_agg_hourly partitions it creates are still given
- *    that table's owner.
+ *    the yearly solarhist.dh_agg_hourly and solarhist.dh_agg_15m partitions it
+ *    creates are still given their table's owner.
  *
  * 4. Job connections. The simplest setup is to have pg_cron run jobs in
  *    background workers, with a restart:

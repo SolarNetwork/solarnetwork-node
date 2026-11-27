@@ -141,15 +141,20 @@ public class DatumController extends BaseSolarQueryController {
 	 * Find datum in stream (array) form.
 	 *
 	 * <p>
-	 * With an {@code aggregation} of {@code Hour}, {@code Day} or
-	 * {@code Month}, a historian with stored aggregates provides aggregate
-	 * results, which are written in the SolarQuery aggregate form. With an
-	 * {@code aggregation} of {@code FiveMinute}, {@code TenMinute},
-	 * {@code FifteenMinute} or {@code ThirtyMinute}, a historian with the
-	 * aggregate setup computes the aggregates when queried, in the same form;
-	 * it may refuse the query, for example for a longer time span than it
-	 * allows, and the request then fails with a {@literal 422} status, as in
-	 * SolarQuery. Otherwise the datum are provided as they are stored.
+	 * With an {@code aggregation} of {@code FifteenMinute}, {@code Hour},
+	 * {@code Day} or {@code Month}, a historian with stored aggregates provides
+	 * the stored aggregates, and with {@code ThirtyMinute} it combines each
+	 * half hour from the stored 15 minute aggregates. These results are written
+	 * in the SolarQuery aggregate form, with the starting and ending readings
+	 * of the accumulating properties. With an {@code aggregation} of
+	 * {@code FiveMinute} or {@code TenMinute}, a historian with the aggregate
+	 * setup computes the aggregates from the raw datum when queried, in the
+	 * same form but without readings. A historian may refuse a query, for
+	 * example a {@code FiveMinute} or {@code TenMinute} query over a longer
+	 * time span than it allows, or a {@code ThirtyMinute} query for the most
+	 * recent aggregates, and the request then fails with a {@literal 422}
+	 * status, as in SolarQuery. Otherwise the datum are provided as they are
+	 * stored.
 	 * </p>
 	 *
 	 * <p>
@@ -228,6 +233,16 @@ public class DatumController extends BaseSolarQueryController {
 	 * {@code Difference} reading type does not use it. The other parameters are
 	 * those of {@code /stream/datum}, and the results are written in the same
 	 * way, in the SolarQuery reading form.
+	 * </p>
+	 *
+	 * <p>
+	 * With an {@code aggregation} of {@code FifteenMinute}, {@code Hour},
+	 * {@code Day} or {@code Month}, a historian with stored aggregates provides
+	 * a reading of each stored aggregate, without an end timestamp. The
+	 * historian refuses the other sub-hour aggregations, {@code Minute},
+	 * {@code FiveMinute}, {@code TenMinute} and {@code ThirtyMinute}, and
+	 * {@code FifteenMinute} when it does not store 15 minute aggregates, and
+	 * the request then fails with a {@literal 422} status, as in SolarQuery.
 	 * </p>
 	 *
 	 * <p>

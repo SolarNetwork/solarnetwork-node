@@ -39,8 +39,9 @@ import org.springframework.jdbc.core.SqlProvider;
  *
  * <ol>
  * <li>{@code agg}: {@code true} if the schema has the aggregate setup of
- * {@code postgres-init-agg.sql}, that is its {@code dh_agg_hourly},
- * {@code dh_agg_daily}, and {@code dh_agg_monthly} tables</li>
+ * {@code postgres-init-agg.sql}, that is its {@code dh_agg_15m},
+ * {@code dh_agg_hourly}, {@code dh_agg_daily}, and {@code dh_agg_monthly}
+ * tables</li>
  * <li>{@code agg_slots}: {@code true} if the schema has the sub-hour rollup
  * functions of {@code postgres-init-agg.sql},
  * {@code dh_rollup_datum_for_time_span_slots()} and
@@ -69,8 +70,8 @@ public final class SelectHistorianFeatures implements PreparedStatementCreator, 
 			rs.getBoolean(2));
 
 	/** The aggregate setup tables. */
-	private static final String[] AGGREGATE_TABLES = new String[] { "dh_agg_hourly", "dh_agg_daily",
-			"dh_agg_monthly" };
+	private static final String[] AGGREGATE_TABLES = new String[] { "dh_agg_15m", "dh_agg_hourly",
+			"dh_agg_daily", "dh_agg_monthly" };
 
 	/** The sub-hour rollup functions, with their argument types. */
 	private static final String[] MINUTE_AGGREGATE_FUNCTIONS = new String[] {

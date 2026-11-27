@@ -137,6 +137,18 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 	}
 
 	/**
+	 * Stub a historian to give a reading of a stored aggregate, which has no
+	 * end timestamp, as for a {@code FifteenMinute} or {@code Hour} reading
+	 * query.
+	 */
+	private void givenAggregateReadingStream(FilterableDatumHistorian historian,
+			ObjectDatumStreamMetadata meta, Instant ts) throws IOException {
+		willAnswer(streamAnswer(List.of(meta), List.of(fixtureReadingDatum(meta, ts, null))))
+				.given(historian)
+				.findFilteredStreamReadings(filterCaptor.capture(), any(), isNull(), isNull(), isNull());
+	}
+
+	/**
 	 * Create an answer that gives the processor enough datum for it to write to
 	 * the response, and then throws an exception.
 	 */
@@ -693,6 +705,98 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 				message,success\r
 				Illegal argument: Minute level aggregation time span must be at most 840 hours.,false\r
 				""");
+	}
+
+	/** The FifteenMinute and ThirtyMinute names and keys. */
+	private static final List<String> STORED_SUB_HOUR_AGGREGATIONS = List.of("FifteenMinute", "15m",
+			"ThirtyMinute", "30m");
+
+	@Test
+	public void stream_storedMinuteAggregate_noDateRange() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		final ObjectDatumStreamMetadata meta = fixtureMeta();
+		givenAggregateStream(filtered, meta, fixtureAggregateJsonTimestamp());
+
+		for ( String agg : STORED_SUB_HOUR_AGGREGATIONS ) {
+			// WHEN
+			final MockHttpServletResponse res = mvc.perform(
+					get(STREAM_PATH).param("aggregation", agg).accept(MediaType.APPLICATION_JSON))
+					.andReturn().getResponse();
+
+			// THEN
+			and.then(res.getStatus()).as("OK without a date range for %s", agg).isEqualTo(200);
+			and.then(res.getContentAsString(StandardCharsets.UTF_8))
+					.as("Aggregates of %s provided in aggregate form, with reading statistics", agg)
+					.isEqualTo(fixtureAggregateStreamJson(meta));
+		}
+		and.then(filterCaptor.getAllValues()).extracting(NodeDatumFilter::getAggregation)
+				.as("Aggregations passed to historian").containsExactly(Aggregation.FifteenMinute,
+						Aggregation.FifteenMinute, Aggregation.ThirtyMinute, Aggregation.ThirtyMinute);
+		and.then(filterCaptor.getAllValues()).allSatisfy(f -> {
+			and.then(f.getStartDate()).as("No start date").isNull();
+			and.then(f.getEndDate()).as("No end date").isNull();
+			and.then(f.getLocalStartDate()).as("No local start date").isNull();
+			and.then(f.getLocalEndDate()).as("No local end date").isNull();
+		});
+	}
+
+	@Test
+	public void stream_storedMinuteAggregate_longSpan() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		final ObjectDatumStreamMetadata meta = fixtureMeta();
+		givenAggregateStream(filtered, meta, fixtureAggregateCsvTimestamp());
+
+		for ( String agg : STORED_SUB_HOUR_AGGREGATIONS ) {
+			// WHEN
+			// a year, 8760 hours, more than the 840 hours computed sub-hour aggregates allow
+			final MockHttpServletResponse res = mvc.perform(get(STREAM_PATH).param("aggregation", agg)
+					.param("startDate", "2025-01-01").param("endDate", "2026-01-01").accept(TEXT_CSV))
+					.andReturn().getResponse();
+
+			// THEN
+			and.then(res.getStatus()).as("OK over more than 840 hours for %s", agg).isEqualTo(200);
+			and.then(res.getContentType()).as("CSV content").isEqualTo(TEXT_CSV.toString());
+			and.then(res.getContentAsString(StandardCharsets.UTF_8))
+					.as("Aggregates of %s provided as CSV in aggregate form, with reading columns", agg)
+					.isEqualTo(fixtureAggregateStreamCsv(meta));
+		}
+		and.then(filterCaptor.getAllValues()).extracting(NodeDatumFilter::getAggregation)
+				.as("Aggregations passed to historian").containsExactly(Aggregation.FifteenMinute,
+						Aggregation.FifteenMinute, Aggregation.ThirtyMinute, Aggregation.ThirtyMinute);
+		and.then(filterCaptor.getAllValues()).allSatisfy(f -> {
+			and.then(f.getStartDate()).as("Start date passed to historian")
+					.isEqualTo(Instant.parse("2025-01-01T00:00:00Z"));
+			and.then(f.getEndDate()).as("End date passed to historian")
+					.isEqualTo(Instant.parse("2026-01-01T00:00:00Z"));
+		});
+	}
+
+	@Test
+	public void stream_thirtyMinute_mostRecent_refused() throws Exception {
+		// GIVEN
+		givenStreamRefused("The mostRecent flag cannot be used with aggregation ThirtyMinute.");
+
+		// WHEN
+		final MockHttpServletResponse res = mvc.perform(get(STREAM_PATH).param("aggregation", "30m")
+				.param("mostRecent", "true").accept(MediaType.APPLICATION_JSON)).andReturn()
+				.getResponse();
+
+		// THEN
+		and.then(res.getStatus()).as("Most recent ThirtyMinute query can not be processed")
+				.isEqualTo(422);
+		and.then(res.getContentType()).as("JSON content").isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+		and.then(res.getContentAsString()).as("Error result provided with the historian's message")
+				.isEqualTo("""
+						{"success":false,"message":"Illegal argument: \
+						The mostRecent flag cannot be used with aggregation ThirtyMinute."}""");
+		final NodeDatumFilter filter = filterCaptor.getValue();
+		and.then(filter.getAggregation()).as("Aggregation passed to historian")
+				.isEqualTo(Aggregation.ThirtyMinute);
+		and.then(filter.isMostRecent()).as("Most recent passed to historian").isTrue();
 	}
 
 	@Test
@@ -1263,32 +1367,158 @@ public class DatumControllerTests extends SolarQueryApiTestSupport {
 	}
 
 	@Test
-	public void reading_minuteAggregate_refused() throws Exception {
+	public void reading_fifteenMinute_json() throws Exception {
 		// GIVEN
 		given(identityService.getNodeId()).willReturn(NODE_ID);
 		given(filteredService.service()).willReturn(filtered);
-		willThrow(new IllegalArgumentException(
-				"Only Hour/Day/Month aggregation is supported for reading queries.")).given(filtered)
-						.findFilteredStreamReadings(filterCaptor.capture(), any(), isNull(), isNull(),
-								isNull());
+		final ObjectDatumStreamMetadata meta = fixtureMeta();
+		givenAggregateReadingStream(filtered, meta, fixtureAggregateJsonTimestamp());
+
+		for ( String agg : List.of("FifteenMinute", "15m") ) {
+			// WHEN
+			final MockHttpServletResponse res = mvc
+					.perform(get(READING_PATH).param("readingType", "Difference")
+							.param("aggregation", agg).accept(MediaType.APPLICATION_JSON))
+					.andReturn().getResponse();
+
+			// THEN
+			and.then(res.getStatus()).as("OK for %s", agg).isEqualTo(200);
+			and.then(res.getContentType()).as("JSON content")
+					.isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+			and.then(res.getContentAsString(StandardCharsets.UTF_8))
+					.as("Readings of %s provided as JSON in reading form, without end", agg)
+					.isEqualTo(fixtureAggregateReadingStreamJson(meta));
+		}
+		and.then(filterCaptor.getAllValues()).as("Reading query of each request").hasSize(2)
+				.allSatisfy(f -> {
+					and.then(f.getAggregation()).as("Aggregation passed to historian")
+							.isEqualTo(Aggregation.FifteenMinute);
+					and.then(f.getReadingType()).as("Reading type passed to historian")
+							.isEqualTo(DatumReadingType.Difference);
+				});
+	}
+
+	@Test
+	public void reading_fifteenMinute_cbor() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		final ObjectDatumStreamMetadata meta = fixtureMeta();
+		givenAggregateReadingStream(filtered, meta, fixtureAggregateJsonTimestamp());
+
+		for ( String agg : List.of("FifteenMinute", "15m") ) {
+			// WHEN
+			final MockHttpServletResponse res = mvc
+					.perform(get(READING_PATH).param("readingType", "Difference")
+							.param("aggregation", agg).accept(MediaType.APPLICATION_CBOR))
+					.andReturn().getResponse();
+
+			// THEN
+			and.then(res.getStatus()).as("OK for %s", agg).isEqualTo(200);
+			and.then(res.getContentType()).as("CBOR content")
+					.isEqualTo(MediaType.APPLICATION_CBOR_VALUE);
+			and.then(cborJson(res.getContentAsByteArray()))
+					.as("Readings of %s provided as CBOR in reading form, without end", agg)
+					.isEqualTo(fixtureAggregateReadingStreamJson(meta));
+		}
+		and.then(filterCaptor.getAllValues()).extracting(NodeDatumFilter::getAggregation)
+				.as("Aggregation passed to historian")
+				.containsExactly(Aggregation.FifteenMinute, Aggregation.FifteenMinute);
+	}
+
+	@Test
+	public void reading_fifteenMinute_csv() throws Exception {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		final ObjectDatumStreamMetadata meta = fixtureMeta();
+		givenAggregateReadingStream(filtered, meta, fixtureAggregateCsvTimestamp());
+
+		for ( String agg : List.of("FifteenMinute", "15m") ) {
+			// WHEN
+			final MockHttpServletResponse res = mvc.perform(get(READING_PATH)
+					.param("readingType", "Difference").param("aggregation", agg).accept(TEXT_CSV))
+					.andReturn().getResponse();
+
+			// THEN
+			and.then(res.getStatus()).as("OK for %s", agg).isEqualTo(200);
+			and.then(res.getContentType()).as("CSV content").isEqualTo(TEXT_CSV.toString());
+			and.then(res.getContentAsString(StandardCharsets.UTF_8))
+					.as("Readings of %s provided as CSV in reading form, without end", agg)
+					.isEqualTo(fixtureAggregateReadingStreamCsv(meta));
+		}
+		and.then(filterCaptor.getAllValues()).extracting(NodeDatumFilter::getAggregation)
+				.as("Aggregation passed to historian")
+				.containsExactly(Aggregation.FifteenMinute, Aggregation.FifteenMinute);
+	}
+
+	/**
+	 * Stub the filtered historian to refuse a reading query, as it refuses a
+	 * sub-hour aggregation other than a stored one.
+	 */
+	private void givenReadingRefused(String message) throws IOException {
+		given(identityService.getNodeId()).willReturn(NODE_ID);
+		given(filteredService.service()).willReturn(filtered);
+		willThrow(new IllegalArgumentException(message)).given(filtered)
+				.findFilteredStreamReadings(filterCaptor.capture(), any(), isNull(), isNull(), isNull());
+	}
+
+	@Test
+	public void reading_minuteAggregate_refused() throws Exception {
+		// GIVEN
+		givenReadingRefused(
+				"Only FifteenMinute/Hour/Day/Month aggregation is supported for reading queries.");
+
+		final Map<String, Aggregation> refused = Map.of("m", Aggregation.Minute, "Minute",
+				Aggregation.Minute, "5m", Aggregation.FiveMinute, "10m", Aggregation.TenMinute, "30m",
+				Aggregation.ThirtyMinute, "ThirtyMinute", Aggregation.ThirtyMinute);
+		for ( Map.Entry<String, Aggregation> e : refused.entrySet() ) {
+			// WHEN
+			final MockHttpServletResponse res = mvc
+					.perform(get(READING_PATH).param("readingType", "Difference")
+							.param("aggregation", e.getKey()).param("startDate", "2026-01-01")
+							.param("endDate", "2026-01-02").accept(MediaType.APPLICATION_JSON))
+					.andReturn().getResponse();
+
+			// THEN
+			and.then(res.getStatus())
+					.as("Sub-hour aggregation %s reading query can not be processed, as in SolarQuery",
+							e.getKey())
+					.isEqualTo(422);
+			and.then(res.getContentType()).as("JSON content")
+					.isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+			and.then(res.getContentAsString())
+					.as("Error result provided with the historian's message for %s", e.getKey())
+					.isEqualTo("""
+							{"success":false,"message":"Illegal argument: \
+							Only FifteenMinute/Hour/Day/Month aggregation is supported for reading \
+							queries."}""");
+			and.then(filterCaptor.getValue().getAggregation())
+					.as("Aggregation %s passed to historian", e.getKey()).isEqualTo(e.getValue());
+		}
+	}
+
+	@Test
+	public void reading_fifteenMinute_refusedWithoutAggregates() throws Exception {
+		// GIVEN
+		givenReadingRefused("Only Hour/Day/Month aggregation is supported for reading queries.");
 
 		// WHEN
 		final MockHttpServletResponse res = mvc
-				.perform(get(READING_PATH).param("readingType", "Difference").param("aggregation", "5m")
-						.param("startDate", "2026-01-01").param("endDate", "2026-01-02")
+				.perform(get(READING_PATH).param("readingType", "Difference").param("aggregation", "15m")
 						.accept(MediaType.APPLICATION_JSON))
 				.andReturn().getResponse();
 
 		// THEN
 		and.then(res.getStatus())
-				.as("Sub-hour aggregation reading query can not be processed, as in SolarQuery")
+				.as("FifteenMinute reading query can not be processed without the aggregate setup")
 				.isEqualTo(422);
-		and.then(res.getContentType()).as("JSON content").isEqualTo(MediaType.APPLICATION_JSON_VALUE);
-		and.then(res.getContentAsString()).as("Error result provided").isEqualTo("""
-				{"success":false,"message":"Illegal argument: \
-				Only Hour/Day/Month aggregation is supported for reading queries."}""");
+		and.then(res.getContentAsString()).as("Error result provided with the historian's message")
+				.isEqualTo("""
+						{"success":false,"message":"Illegal argument: \
+						Only Hour/Day/Month aggregation is supported for reading queries."}""");
 		and.then(filterCaptor.getValue().getAggregation()).as("Aggregation passed to historian")
-				.isEqualTo(Aggregation.FiveMinute);
+				.isEqualTo(Aggregation.FifteenMinute);
 	}
 
 	@Test

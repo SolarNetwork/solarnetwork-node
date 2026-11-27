@@ -113,7 +113,9 @@ import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreamMetadata;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectDatumStreams;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectFilteredDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectHistorianFeatures;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectMinuteAggregateDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectReadingDifference;
+import net.solarnetwork.node.datumhistorian.jdbc.sql.SelectThirtyMinuteAggregateDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreDatum;
 import net.solarnetwork.node.datumhistorian.jdbc.sql.StoreNodeTimeZone;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -1357,16 +1359,48 @@ public class JdbcDatumHistorianUnitTests {
 
 	@Test
 	public void findFilteredStreamReadings_minuteAggregation() {
+		// GIVEN
+		givenFeatures(true);
+
 		for ( Aggregation agg : List.of(Aggregation.Minute, Aggregation.FiveMinute,
-				Aggregation.TenMinute, Aggregation.FifteenMinute, Aggregation.ThirtyMinute) ) {
-			// GIVEN
+				Aggregation.TenMinute, Aggregation.ThirtyMinute) ) {
 			final BasicNodeDatumFilter filter = minuteFilter(agg, 1);
 			filter.setReadingType(DatumReadingType.Difference);
 
 			// WHEN
 			// @formatter:off
 			thenIllegalArgumentException()
-				.as("Aggregation %s refused for readings, as in SolarQuery", agg)
+				.as("Aggregation %s refused for readings with aggregate setup, as in SolarQuery", agg)
+				.isThrownBy(() -> historian.findFilteredStreamReadings(filter, processor, null, null, null))
+				.withMessage("Only FifteenMinute/Hour/Day/Month aggregation is supported for reading queries.")
+				;
+			// @formatter:on
+		}
+
+		// THEN
+		// @formatter:off
+		then(processor).shouldHaveNoInteractions();
+		then(jdbcOps).should().query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).shouldHaveNoMoreInteractions();
+		then(identityService).shouldHaveNoInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStreamReadings_minuteAggregation_noAggregates() {
+		// GIVEN
+		givenFeatures(false);
+
+		for ( Aggregation agg : List.of(Aggregation.Minute, Aggregation.FiveMinute,
+				Aggregation.TenMinute, Aggregation.FifteenMinute, Aggregation.ThirtyMinute) ) {
+			final BasicNodeDatumFilter filter = minuteFilter(agg, 1);
+			filter.setReadingType(DatumReadingType.Difference);
+
+			// WHEN
+			// @formatter:off
+			thenIllegalArgumentException()
+				.as("Aggregation %s refused for readings without aggregate setup", agg)
 				.isThrownBy(() -> historian.findFilteredStreamReadings(filter, processor, null, null, null))
 				.withMessage("Only Hour/Day/Month aggregation is supported for reading queries.")
 				;
@@ -1374,9 +1408,13 @@ public class JdbcDatumHistorianUnitTests {
 		}
 
 		// THEN
+		// @formatter:off
 		then(processor).shouldHaveNoInteractions();
-		then(jdbcOps).shouldHaveNoInteractions();
+		then(jdbcOps).should().query(any(SelectHistorianFeatures.class),
+				same(SelectHistorianFeatures.RESULT_MAPPER));
+		then(jdbcOps).shouldHaveNoMoreInteractions();
 		then(identityService).shouldHaveNoInteractions();
+		// @formatter:on
 	}
 
 	/**
@@ -1429,7 +1467,7 @@ public class JdbcDatumHistorianUnitTests {
 		givenFeatures(true);
 		given(jdbcOps.query(any(SelectDatumStreamMetadata.class), any(RowMapper.class)))
 				.willReturn(List.of());
-		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.ThirtyMinute, 840);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.TenMinute, 840);
 		// part of an hour more is not counted, as in SolarNet
 		filter.setEndDate(filter.getEndDate().plus(59, ChronoUnit.MINUTES));
 
@@ -1476,7 +1514,7 @@ public class JdbcDatumHistorianUnitTests {
 		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
 		givenFeatures(true);
 		// a short instant range, which the local date range is used in place of
-		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FifteenMinute, 1);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.TenMinute, 1);
 		filter.setLocalStartDate(LocalDateTime.of(2026, 1, 1, 0, 0));
 		filter.setLocalEndDate(LocalDateTime.of(2026, 2, 5, 1, 0));
 
@@ -1493,7 +1531,7 @@ public class JdbcDatumHistorianUnitTests {
 		given(jdbcOps.query(any(SelectDatumStreamMetadata.class), any(RowMapper.class)))
 				.willReturn(List.of());
 		// a long instant range, which the local date range is used in place of
-		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FifteenMinute, 24 * 365);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FiveMinute, 24 * 365);
 		filter.setLocalStartDate(LocalDateTime.of(2026, 1, 1, 0, 0));
 		filter.setLocalEndDate(LocalDateTime.of(2026, 2, 5, 0, 0));
 
@@ -1574,6 +1612,192 @@ public class JdbcDatumHistorianUnitTests {
 			// THEN
 			thenStreamQueried();
 		}
+	}
+
+	private void thenMinuteAggregationComputed(Aggregation agg) throws IOException, SQLException {
+		// GIVEN
+		Mockito.reset(jdbcOps, processor);
+		historian = new JdbcDatumHistorian(jdbcOps, new StaticOptionalService<>(identityService));
+		givenStreamQueries(3);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(agg, 840);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Aggregation %s computed from raw datum", agg)
+			.isInstanceOf(SelectMinuteAggregateDatum.class)
+			;
+		then(processor).should().handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getValue())
+			.as("Aggregate datum given to processor")
+			.isExactlyInstanceOf(BasicAggregateStreamDatum.class)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_fiveTenMinute_computed() throws IOException, SQLException {
+		thenMinuteAggregationComputed(Aggregation.FiveMinute);
+		thenMinuteAggregationComputed(Aggregation.TenMinute);
+	}
+
+	@Test
+	public void findFilteredStream_fifteenMinute_stored_noRangeLimit() throws IOException, SQLException {
+		// GIVEN
+		final ObjectDatumStreamMetadata meta = givenStreamQueries(3, 3);
+		givenFeatures(true);
+		// a year, beyond the range limit of the minute aggregations computed from raw datum
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FifteenMinute, 24 * 365);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Stored 15 minute aggregates queried, with no range limit")
+			.asInstanceOf(type(SelectAggregateDatum.class))
+			.returns("dh_agg_15m", SelectAggregateDatum::getTableName)
+			;
+		then(processor).should(times(2)).handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getAllValues())
+			.as("Aggregate datum of each row given to processor")
+			.hasSize(2)
+			.allSatisfy(d -> and.then(d)
+				.isExactlyInstanceOf(BasicAggregateStreamDatum.class)
+				.returns(meta.getStreamId(), from(StreamDatum::getStreamId))
+				.returns(ts, from(StreamDatum::getTimestamp)))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_fifteenMinute_mostRecent() throws IOException, SQLException {
+		// GIVEN
+		givenStreamQueries(3);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = aggregateFilter(Aggregation.FifteenMinute);
+		filter.setMostRecent(true);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Most recent stored 15 minute aggregate of each stream queried, as for Hour")
+			.asInstanceOf(type(SelectAggregateDatum.class))
+			.returns("dh_agg_15m", SelectAggregateDatum::getTableName)
+			.extracting(SelectAggregateDatum::getSql)
+			.asString()
+			.contains("INNER JOIN LATERAL")
+			;
+		then(processor).should().handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getValue())
+			.as("Aggregate datum given to processor")
+			.isExactlyInstanceOf(BasicAggregateStreamDatum.class)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_thirtyMinute_combined_noRangeLimit()
+			throws IOException, SQLException {
+		// GIVEN
+		final ObjectDatumStreamMetadata meta = givenStreamQueries(3, 3);
+		givenFeatures(true);
+		given(jdbcOps.query(any(PreparedStatementCreator.class), any(ResultSetExtractor.class)))
+				.willReturn(42L);
+		// a year, beyond the range limit of the minute aggregations computed from raw datum
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.ThirtyMinute, 24 * 365);
+		filter.setWithoutTotalResultsCount(false);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, 2L, 5);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(ResultSetExtractor.class));
+		and.then(sqlCaptor.getValue())
+			.as("Count query executed")
+			.isInstanceOf(SqlProvider.class)
+			.extracting(sql -> ((SqlProvider) sql).getSql())
+			.asString()
+			.as("Half hours of stored 15 minute aggregates counted")
+			.startsWith("SELECT COUNT(*)\nFROM (\n\tSELECT DISTINCT d.stream_id, date_bin(INTERVAL 'PT30M', d.ts_start, ")
+			.contains("INNER JOIN solarhist.dh_agg_15m d ")
+			;
+		then(processor).should().start(eq(42L), eq(2), isNull(), any());
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Stored 15 minute aggregates combined into half hours, with no range limit")
+			.asInstanceOf(type(SelectThirtyMinuteAggregateDatum.class))
+			.returns("solarhist", SelectThirtyMinuteAggregateDatum::getSchemaName)
+			;
+		then(processor).should(times(2)).handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getAllValues())
+			.as("Aggregate datum of each row given to processor")
+			.hasSize(2)
+			.allSatisfy(d -> and.then(d)
+				.isExactlyInstanceOf(BasicAggregateStreamDatum.class)
+				.returns(meta.getStreamId(), from(StreamDatum::getStreamId))
+				.returns(ts, from(StreamDatum::getTimestamp)))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_thirtyMinute_mostRecent() {
+		// GIVEN
+		given(identityService.getNodeId()).willReturn(TEST_NODE_ID);
+		givenFeatures(true);
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.ThirtyMinute, 1);
+		filter.setMostRecent(true);
+
+		// THEN
+		thenMinuteAggregationRefused(filter,
+				"The mostRecent flag cannot be used with aggregation ThirtyMinute.");
+	}
+
+	private void thenStoredMinuteAggregationRaw(Aggregation agg) throws IOException, SQLException {
+		// GIVEN
+		Mockito.reset(jdbcOps, processor);
+		historian = new JdbcDatumHistorian(jdbcOps, new StaticOptionalService<>(identityService));
+		givenStreamQueries(3);
+		givenFeatures(false);
+		// beyond the range limit of the minute aggregations computed from raw datum
+		final BasicNodeDatumFilter filter = minuteFilter(agg, 841);
+
+		// WHEN
+		historian.findFilteredStream(filter, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Aggregation %s treated as no aggregation without aggregate setup", agg)
+			.isInstanceOf(SelectFilteredDatum.class)
+			;
+		then(processor).should().handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getValue())
+			.as("Raw datum given to processor")
+			.isExactlyInstanceOf(BasicStreamDatum.class)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStream_fifteenThirtyMinute_withoutSetup_raw()
+			throws IOException, SQLException {
+		thenStoredMinuteAggregationRaw(Aggregation.FifteenMinute);
+		thenStoredMinuteAggregationRaw(Aggregation.ThirtyMinute);
 	}
 
 	@Test
@@ -2141,6 +2365,41 @@ public class JdbcDatumHistorianUnitTests {
 			.asInstanceOf(type(SelectAggregateDatum.class))
 			.as("Daily aggregates queried")
 			.returns("dh_agg_daily", SelectAggregateDatum::getTableName)
+			;
+		then(processor).should(times(2)).handleResultItem(datumCaptor.capture());
+		and.then(datumCaptor.getAllValues())
+			.as("Reading datum of each row given to processor")
+			.allSatisfy(d -> and.then(d)
+				.isExactlyInstanceOf(BasicReadingStreamDatum.class)
+				.returns(meta.getStreamId(), from(StreamDatum::getStreamId))
+				.returns(ts, from(StreamDatum::getTimestamp)))
+			.extracting(d -> ((AggregateStreamDatum) d).getEndTimestamp())
+			.as("No end timestamp for stored aggregate readings")
+			.containsOnlyNulls()
+			;
+		then(rs).should(never()).getTimestamp(10);
+		// @formatter:on
+	}
+
+	@Test
+	public void findFilteredStreamReadings_fifteenMinute() throws IOException, SQLException {
+		// GIVEN
+		final ObjectDatumStreamMetadata meta = givenStreamQueries(3, 3);
+		givenFeatures(true);
+		// beyond the range limit of the minute aggregations computed from raw datum
+		final BasicNodeDatumFilter filter = minuteFilter(Aggregation.FifteenMinute, 841);
+		filter.setReadingType(DatumReadingType.Difference);
+
+		// WHEN
+		historian.findFilteredStreamReadings(filter, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		then(jdbcOps).should().query(sqlCaptor.capture(), any(RowCallbackHandler.class));
+		and.then(sqlCaptor.getValue())
+			.as("Stored 15 minute aggregates queried for readings, as for Hour")
+			.asInstanceOf(type(SelectAggregateDatum.class))
+			.returns("dh_agg_15m", SelectAggregateDatum::getTableName)
 			;
 		then(processor).should(times(2)).handleResultItem(datumCaptor.capture());
 		and.then(datumCaptor.getAllValues())

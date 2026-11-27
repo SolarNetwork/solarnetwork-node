@@ -119,7 +119,8 @@ public class SelectAggregateDatumTests {
 			// @formatter:off
 			and.then(SelectAggregateDatum.isSupportedAggregation(agg))
 				.as("Aggregation %s supported only if stored", agg)
-				.isEqualTo(agg == Aggregation.Hour || agg == Aggregation.Day || agg == Aggregation.Month)
+				.isEqualTo(agg == Aggregation.FifteenMinute || agg == Aggregation.Hour
+						|| agg == Aggregation.Day || agg == Aggregation.Month)
 				;
 			// @formatter:on
 		}
@@ -149,6 +150,9 @@ public class SelectAggregateDatumTests {
 		and.then(new SelectAggregateDatum("solarhist", filter(Aggregation.Hour), 1L, null, 0))
 			.returns("dh_agg_hourly", SelectAggregateDatum::getTableName)
 			.returns("solarhist", SelectAggregateDatum::getSchemaName)
+			;
+		and.then(new SelectAggregateDatum("solarhist", filter(Aggregation.FifteenMinute), 1L, null, 0))
+			.returns("dh_agg_15m", SelectAggregateDatum::getTableName)
 			;
 		and.then(new SelectAggregateDatum("solarhist", filter(Aggregation.Day), 1L, null, 0))
 			.returns("dh_agg_daily", SelectAggregateDatum::getTableName)
@@ -496,6 +500,134 @@ public class SelectAggregateDatumTests {
 		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
 		then(stmt).should(ordered).setObject(1, LOCAL_START, Types.TIMESTAMP);
 		then(stmt).should(ordered).setObject(2, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	private BasicNodeDatumFilter fifteenMinuteAllCriteriaFilter() {
+		final BasicNodeDatumFilter f = allCriteriaFilter();
+		f.setAggregation(Aggregation.FifteenMinute);
+		return f;
+	}
+
+	@Test
+	public void fifteenMinute_allCriteria() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = fifteenMinuteAllCriteriaFilter();
+		givenAllCriteriaArrays(f);
+		final Integer[] streamIds = givenStreamIdsArray();
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", f, TEST_NODE_ID,
+				streamIds, TEST_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated for 15 minute table, read like the other tables, with dates on slot start")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-07.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(sql.getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
+		then(stmt).should(ordered).setArray(1, array);
+		then(stmt).should(ordered).setArray(2, array4);
+		then(stmt).should(ordered).setArray(3, array2);
+		then(stmt).should(ordered).setArray(4, array3);
+		then(stmt).should(ordered).setTimestamp(5, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(6, Timestamp.from(end));
+		then(stmt).should(ordered).setInt(7, 10);
+		then(stmt).should(ordered).setLong(8, 20L);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void fifteenMinute_allCriteria_count() throws SQLException {
+		// GIVEN
+		givenPrepareCount();
+		final BasicNodeDatumFilter f = fifteenMinuteAllCriteriaFilter();
+		givenAllCriteriaArrays(f);
+		final Integer[] streamIds = givenStreamIdsArray();
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", f, TEST_NODE_ID,
+				streamIds, TEST_FETCH_SIZE);
+
+		// WHEN
+		PreparedStatementCreator count = sql.countPreparedStatementCreator();
+		count.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("Count SQL generated for 15 minute table, without order or pagination")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-count-07.sql", getClass()))
+			.as("Same SQL from SqlProvider")
+			.isEqualTo(((SqlProvider) count).getSql())
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setArray(1, array);
+		then(stmt).should(ordered).setArray(2, array4);
+		then(stmt).should(ordered).setArray(3, array2);
+		then(stmt).should(ordered).setArray(4, array3);
+		then(stmt).should(ordered).setTimestamp(5, Timestamp.from(start));
+		then(stmt).should(ordered).setTimestamp(6, Timestamp.from(end));
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void fifteenMinute_mostRecent() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = filter(Aggregation.FifteenMinute);
+		f.setMostRecent(true);
+		f.setStartDate(start);
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", f, TEST_NODE_ID, null,
+				TEST_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated for most recent 15 minute slot of each stream, as for the other tables")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-08.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
+		then(stmt).should(ordered).setTimestamp(1, Timestamp.from(start));
+		then(stmt).should(ordered).setObject(2, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).shouldHaveNoMoreInteractions();
+		// @formatter:on
+	}
+
+	@Test
+	public void fifteenMinute_localDates() throws SQLException {
+		// GIVEN
+		givenPrepare();
+		final BasicNodeDatumFilter f = localDatesFilter();
+		f.setAggregation(Aggregation.FifteenMinute);
+		final SelectAggregateDatum sql = new SelectAggregateDatum("solarhist", f, TEST_NODE_ID, null,
+				TEST_FETCH_SIZE);
+
+		// WHEN
+		sql.createPreparedStatement(conn);
+
+		// THEN
+		// @formatter:off
+		and.then(sqlCaptor.getValue())
+			.as("SQL generated for 15 minute table, with local dates in the zone of each node used in place of dates")
+			.isEqualToNormalizingWhitespace(utf8StringResource("select-aggregate-datum-09.sql", getClass()))
+			;
+		InOrder ordered = Mockito.inOrder(stmt);
+		then(stmt).should(ordered).setFetchSize(TEST_FETCH_SIZE);
+		then(stmt).should(ordered).setObject(1, TEST_NODE_ID, Types.BIGINT);
+		then(stmt).should(ordered).setObject(2, LOCAL_START, Types.TIMESTAMP);
+		then(stmt).should(ordered).setObject(3, LOCAL_END, Types.TIMESTAMP);
 		then(stmt).shouldHaveNoMoreInteractions();
 		// @formatter:on
 	}

@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 import org.springframework.context.support.StaticMessageSource;
@@ -305,11 +306,12 @@ public abstract class SolarQueryApiTestSupport {
 	 * @param ts
 	 *        the reading timestamp
 	 * @param endTs
-	 *        the reading end timestamp
+	 *        the reading end timestamp, or {@code null} for a reading of a
+	 *        stored aggregate
 	 * @return the datum
 	 */
 	protected static ReadingStreamDatum fixtureReadingDatum(ObjectDatumStreamMetadata meta, Instant ts,
-			Instant endTs) {
+			@Nullable Instant endTs) {
 		// @formatter:off
 		return new BasicReadingStreamDatum(meta.getStreamId(), ts,
 				propertiesOf(
@@ -427,6 +429,48 @@ public abstract class SolarQueryApiTestSupport {
 				ts_start,ts_end,streamId,objectId,sourceId,a,a_count,a_min,a_max,b,b_count,b_min,b_max,\
 				c,c_start,c_end,d,tags\r
 				2022-04-29T01:00:00Z,2022-04-29T02:00:00Z,%1$s,123,test/source,1.23,10,1.0,2.0,\
+				2.34,10,2.0,3.0,30,100,130,,\r
+				""".formatted(meta.getStreamId());
+	}
+
+	/**
+	 * Get the expected JSON stream result of the fixture reading datum without
+	 * an end timestamp.
+	 *
+	 * <p>
+	 * A historian gives a reading of a stored aggregate, such as an hour or 15
+	 * minutes, without an end timestamp, so its end is {@code null}.
+	 * </p>
+	 *
+	 * @param meta
+	 *        the fixture stream metadata
+	 * @return the JSON
+	 */
+	protected static String fixtureAggregateReadingStreamJson(ObjectDatumStreamMetadata meta) {
+		return """
+				{"success":true,"meta":[\
+				{"streamId":"%s","zone":"Pacific/Auckland","kind":"n","objectId":123,\
+				"sourceId":"test/source","i":["a","b"],"a":["c"],"s":["d"]}\
+				],"data":[\
+				[0,[1651197060000,null],[1.23,10,1.0,2.0],[2.34,10,2.0,3.0],[30,100,130],\
+				null]\
+				]}""".formatted(meta.getStreamId());
+	}
+
+	/**
+	 * Get the expected CSV stream result of the fixture reading datum without
+	 * an end timestamp.
+	 *
+	 * @param meta
+	 *        the fixture stream metadata
+	 * @return the CSV
+	 * @see #fixtureAggregateReadingStreamJson(ObjectDatumStreamMetadata)
+	 */
+	protected static String fixtureAggregateReadingStreamCsv(ObjectDatumStreamMetadata meta) {
+		return """
+				ts_start,ts_end,streamId,objectId,sourceId,a,a_count,a_min,a_max,b,b_count,b_min,b_max,\
+				c,c_start,c_end,d,tags\r
+				2022-04-29T01:00:00Z,,%1$s,123,test/source,1.23,10,1.0,2.0,\
 				2.34,10,2.0,3.0,30,100,130,,\r
 				""".formatted(meta.getStreamId());
 	}

@@ -42,13 +42,17 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -62,6 +66,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import net.solarnetwork.dao.StreamDatumFilteredResultsProcessor;
+import net.solarnetwork.dao.jdbc.CommonJdbcUtils;
 import net.solarnetwork.domain.SimpleSortDescriptor;
 import net.solarnetwork.domain.datum.AggregateStreamDatum;
 import net.solarnetwork.domain.datum.Aggregation;
@@ -189,6 +194,35 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	private static final Tuple NZ_A2 = tuple(Node, TEST_NODE_ID, "a/2", FEB_1_AUCKLAND, "{5}", "{0}",
 			"{{1,5,5}}", "{{0,1000,1000}}");
 
+	// the 15 minute aggregates of the running node's a/1 stream in the 22:00 hour, as stored
+	private static final Tuple S_A1_22 = tuple(Node, TEST_NODE_ID, "a/1", T22, "{0}", "{7.5}",
+			"{{1,0,0}}", "{{0,100,100}}");
+	private static final Tuple S_A1_22_15 = tuple(Node, TEST_NODE_ID, "a/1", T22.plus(15, MINUTES),
+			"{1}", "{7.5}", "{{1,1,1}}", "{{10,100,110}}");
+	private static final Tuple S_A1_22_30 = tuple(Node, TEST_NODE_ID, "a/1", T22_30, "{2}", "{15}",
+			"{{1,2,2}}", "{{20,110,130}}");
+
+	// the 30 minute aggregates of the running node's a/1 and a/2 streams, combined from the
+	// 15 minute aggregates: no datum fall in the slots from 22:45, 23:45, or 00:45, so the half
+	// hours from 22:30, 23:30, and 00:30 have only the values of their first slot
+	private static final Tuple T_A1_22 = tuple(Node, TEST_NODE_ID, "a/1", T22, "{0.5}", "{15}",
+			"{{2,0,1}}", "{{10,100,110}}");
+	private static final Tuple T_A1_22_30 = tuple(Node, TEST_NODE_ID, "a/1", T22_30, "{2}", "{15}",
+			"{{1,2,2}}", "{{20,110,130}}");
+	private static final Tuple T_A1_23 = tuple(Node, TEST_NODE_ID, "a/1", T23, "{3.5}", "{15}",
+			"{{2,3,4}}", "{{10,130,140}}");
+	private static final Tuple T_A1_23_30 = tuple(Node, TEST_NODE_ID, "a/1", T23.plus(30, MINUTES),
+			"{5}", "{15}", "{{1,5,5}}", "{{20,140,160}}");
+	private static final Tuple T_A1_00 = tuple(Node, TEST_NODE_ID, "a/1", T00, "{6.5}", "{15}",
+			"{{2,6,7}}", "{{10,160,170}}");
+	private static final Tuple T_A1_00_30 = tuple(Node, TEST_NODE_ID, "a/1", T00.plus(30, MINUTES),
+			"{8}", "{15}", "{{1,8,8}}", "{{20,170,190}}");
+	private static final Tuple T_A2_22_30 = tuple(Node, TEST_NODE_ID, "a/2", T22_30, "{5}", "{0}",
+			"{{1,5,5}}", "{{0,1000,1000}}");
+
+	/** The start of the hour of the slot edge cases, on 2 March. */
+	private static final Instant MAR_2_10 = Instant.parse("2026-03-02T10:00:00Z");
+
 	// the reading differences from 22:10 to 01:10, as kind, object ID, source ID, time, end
 	// time, data_i, data_a, and read_a
 	private static final Instant READING_START = T22.plus(10, MINUTES);
@@ -297,6 +331,36 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	/**
+	 * Add datum whose 15 minute slots combine into half hours in the less
+	 * common ways, and with the aggregate setup compute their aggregates.
+	 *
+	 * <p>
+	 * On 2 March the running node stores {@code b/1} at 10:05 and 10:20, the
+	 * second datum with an instantaneous property, a status property, and a tag
+	 * the first does not have, and a different status; so the two slots of the
+	 * half hour have property arrays of different lengths, and statuses that
+	 * are each as frequent. It stores {@code b/2} once, at 10:20, so only the
+	 * second slot of its half hour has a row.
+	 * </p>
+	 */
+	private void populateSlotEdgeCases() {
+		final DatumSamples s1 = energy(1, 100);
+		s1.putStatusSampleValue("mode", "on");
+		s1.addTag("x");
+		historian.add(new SimpleAcEnergyDatum("b/1", MAR_2_10.plus(5, MINUTES), s1));
+		final DatumSamples s2 = energy(3, 110);
+		s2.putInstantaneousSampleValue("temp", 20);
+		s2.putStatusSampleValue("mode", "idle");
+		s2.putStatusSampleValue("op", "y");
+		s2.addTag("y");
+		historian.add(new SimpleAcEnergyDatum("b/1", MAR_2_10.plus(20, MINUTES), s2));
+		historian.add(new SimpleAcEnergyDatum("b/2", MAR_2_10.plus(20, MINUTES), energy(7, 500)));
+		if ( aggregates ) {
+			processAll(SCHEMA);
+		}
+	}
+
+	/**
 	 * Process the stale aggregates of a schema: hours, then days, then months.
 	 */
 	private void processAll(String schema) {
@@ -380,6 +444,141 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	/**
+	 * Get the stored aggregates of the running node's streams in a table of the
+	 * aggregate setup, as {@link Streamed#aggregates()} gives aggregate datum,
+	 * in the default order of the historian.
+	 */
+	private List<Tuple> storedAggregates(String table) {
+		return jdbcTemplate.query("""
+				SELECT m.node_id, m.loc_id, m.source_id, d.ts_start
+					, d.data_i, d.data_a, d.stat_i, d.read_a
+				FROM %s.dh_datum_meta m
+				INNER JOIN %s.%s d ON d.stream_id = m.stream_id
+				WHERE m.node_id = ?
+				ORDER BY m.node_id, m.loc_id, m.source_id, d.ts_start
+				""".formatted(SCHEMA, SCHEMA, table), (rs, i) -> {
+			final Long locId = rs.getObject(2, Long.class);
+			final BigDecimal[] dataI = CommonJdbcUtils.getArray(rs, 5);
+			final BigDecimal[] dataA = CommonJdbcUtils.getArray(rs, 6);
+			final BigDecimal[][] statI = CommonJdbcUtils.getArray(rs, 7);
+			final BigDecimal[][] readA = CommonJdbcUtils.getArray(rs, 8);
+			return tuple(locId != null ? Location : Node, locId != null ? locId : rs.getLong(1),
+					rs.getString(3), rs.getTimestamp(4).toInstant(), pg(dataI), pg(dataA), pg(statI),
+					pg(readA));
+		}, TEST_NODE_ID);
+	}
+
+	/**
+	 * The values of one period that aggregate datum are rolled up into.
+	 */
+	private static final class Rollup {
+
+		// for each instantaneous property: the sum of mean times count, count, min, max
+		private final List<BigDecimal[]> inst = new ArrayList<>();
+
+		// for each accumulating property: the sum, reading difference, start, end
+		private final List<BigDecimal[]> acc = new ArrayList<>();
+
+		private static BigDecimal[] row(List<BigDecimal[]> rows, int idx) {
+			while ( rows.size() <= idx ) {
+				rows.add(new BigDecimal[4]);
+			}
+			return rows.get(idx);
+		}
+
+		private static BigDecimal sum(BigDecimal a, BigDecimal b) {
+			return (a == null ? b : b == null ? a : a.add(b));
+		}
+
+		private static BigDecimal min(BigDecimal a, BigDecimal b) {
+			return (a == null ? b : b == null ? a : a.min(b));
+		}
+
+		private static BigDecimal max(BigDecimal a, BigDecimal b) {
+			return (a == null ? b : b == null ? a : a.max(b));
+		}
+
+		private void add(AggregateStreamDatum d) {
+			final BigDecimal[] i = d.getProperties().getInstantaneous();
+			final BigDecimal[][] is = d.getStatistics().getInstantaneous();
+			for ( int k = 0; i != null && k < i.length; k++ ) {
+				final BigDecimal[] r = row(inst, k);
+				final BigDecimal count = is[k][0];
+				r[0] = sum(r[0], i[k] != null && count != null ? i[k].multiply(count) : null);
+				r[1] = sum(r[1], count);
+				r[2] = min(r[2], is[k][1]);
+				r[3] = max(r[3], is[k][2]);
+			}
+			final BigDecimal[] a = d.getProperties().getAccumulating();
+			final BigDecimal[][] as = d.getStatistics().getAccumulating();
+			for ( int k = 0; a != null && k < a.length; k++ ) {
+				final BigDecimal[] r = row(acc, k);
+				r[0] = sum(r[0], a[k]);
+				r[1] = sum(r[1], as[k][0]);
+				if ( r[2] == null ) {
+					r[2] = as[k][1];
+				}
+				if ( as[k][2] != null ) {
+					r[3] = as[k][2];
+				}
+			}
+		}
+
+		private Tuple toTuple(List<Object> key) {
+			final BigDecimal[] dataI = (inst.isEmpty() ? null
+					: inst.stream()
+							.map(r -> r[0] != null && r[1] != null && r[1].signum() != 0
+									? r[0].divide(r[1], MathContext.DECIMAL128)
+									: null)
+							.toArray(BigDecimal[]::new));
+			final BigDecimal[][] statI = (inst.isEmpty() ? null
+					: inst.stream().map(r -> new BigDecimal[] { r[1], r[2], r[3] })
+							.toArray(BigDecimal[][]::new));
+			final BigDecimal[] dataA = (acc.isEmpty() ? null
+					: acc.stream().map(r -> r[0]).toArray(BigDecimal[]::new));
+			final BigDecimal[][] readA = (acc.isEmpty() ? null
+					: acc.stream().map(r -> new BigDecimal[] { r[1], r[2], r[3] })
+							.toArray(BigDecimal[][]::new));
+			return tuple(key.get(0), key.get(1), key.get(2), key.get(3), pg(dataI), pg(dataA), pg(statI),
+					pg(readA));
+		}
+
+	}
+
+	/**
+	 * Roll aggregate datum up into longer periods, by the rules the aggregate
+	 * setup rolls hours up into days with: means weighted by count; counts,
+	 * accumulations, and reading differences added; the least minimum and
+	 * greatest maximum taken; the starting reading of the first datum that has
+	 * one, and the ending reading of the last.
+	 *
+	 * <p>
+	 * The status and tag properties are not rolled up. The means are divided to
+	 * 34 digits, so are only exact for datum whose means divide exactly, as
+	 * those of these tests do.
+	 * </p>
+	 *
+	 * @param streamed
+	 *        the aggregate datum, in time order within each stream
+	 * @param periodSeconds
+	 *        the length of the periods, which start at UTC multiples of it
+	 * @return the rolled up aggregates, as {@link Streamed#aggregates()} gives
+	 *         aggregate datum, in the order of their first datum
+	 */
+	private static List<Tuple> rollUp(Streamed streamed, long periodSeconds) {
+		final Map<List<Object>, Rollup> periods = new LinkedHashMap<>();
+		for ( StreamDatum d : streamed.datum() ) {
+			final ObjectDatumStreamMetadata meta = streamed.meta(d);
+			final long secs = d.getTimestamp().getEpochSecond();
+			final Instant start = Instant.ofEpochSecond(secs - Math.floorMod(secs, periodSeconds));
+			periods.computeIfAbsent(
+					List.of(meta.getKind(), meta.getObjectId(), meta.getSourceId(), start),
+					k -> new Rollup()).add((AggregateStreamDatum) d);
+		}
+		return periods.entrySet().stream().map(e -> e.getValue().toTuple(e.getKey())).toList();
+	}
+
+	/**
 	 * The results given to the processor.
 	 *
 	 * @param provider
@@ -407,6 +606,21 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 			return datum.stream().map(d -> {
 				final ObjectDatumStreamMetadata meta = meta(d);
 				return tuple(meta.getKind(), meta.getObjectId(), meta.getSourceId(), d.getTimestamp());
+			}).toList();
+		}
+
+		/**
+		 * Get the kind, object ID, source ID, time, status values, and tags of
+		 * the datum.
+		 */
+		private List<Tuple> statusesAndTags() {
+			return datum.stream().map(d -> {
+				final ObjectDatumStreamMetadata meta = meta(d);
+				final String[] status = d.getProperties().getStatus();
+				final String[] tags = d.getProperties().getTags();
+				return tuple(meta.getKind(), meta.getObjectId(), meta.getSourceId(), d.getTimestamp(),
+						status != null ? Arrays.asList(status) : null,
+						tags != null ? Arrays.asList(tags) : null);
 			}).toList();
 		}
 
@@ -499,6 +713,83 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		and.then(result.datum())
 			.as("Reading datum given")
 			.allSatisfy(d -> and.then(d).isExactlyInstanceOf(BasicReadingStreamDatum.class))
+			;
+		// @formatter:on
+		return result;
+	}
+
+	/**
+	 * Query the datum of a filter with a processor of its own.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @return what the processor was given
+	 */
+	private Streamed streamedOf(BasicNodeDatumFilter filter) throws IOException {
+		return streamedOf(filter, null, null);
+	}
+
+	/**
+	 * Query a page of the datum of a filter with a processor of its own.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @param offset
+	 *        the offset, or {@code null}
+	 * @param max
+	 *        the page size, or {@code null}
+	 * @return what the processor was given
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Streamed streamedOf(BasicNodeDatumFilter filter, Long offset, Integer max)
+			throws IOException {
+		final StreamDatumFilteredResultsProcessor p = mock(StreamDatumFilteredResultsProcessor.class);
+		historian.findFilteredStream(filter, p, null, offset, max);
+		final ArgumentCaptor<Map<String, ?>> attrs = (ArgumentCaptor) ArgumentCaptor.forClass(Map.class);
+		final ArgumentCaptor<StreamDatum> datum = ArgumentCaptor.forClass(StreamDatum.class);
+		// the starting offset is given only for a page
+		final Integer startingOffset = (max != null ? (offset != null ? offset.intValue() : 0) : null);
+		then(p).should().start(isNull(), eq(startingOffset), isNull(), attrs.capture());
+		then(p).should(atLeast(0)).handleResultItem(datum.capture());
+		then(p).shouldHaveNoMoreInteractions();
+		return new Streamed(
+				(ObjectDatumStreamMetadataProvider) attrs.getValue().get(METADATA_PROVIDER_ATTR),
+				datum.getAllValues());
+	}
+
+	/**
+	 * Query the aggregates of a filter with a processor of its own.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @return what the processor was given
+	 */
+	private Streamed aggregatesOf(BasicNodeDatumFilter filter) throws IOException {
+		return aggregatesOf(filter, null, null);
+	}
+
+	/**
+	 * Query a page of the aggregates of a filter with a processor of its own.
+	 *
+	 * @param filter
+	 *        the filter
+	 * @param offset
+	 *        the offset, or {@code null}
+	 * @param max
+	 *        the page size, or {@code null}
+	 * @return what the processor was given
+	 */
+	private Streamed aggregatesOf(BasicNodeDatumFilter filter, Long offset, Integer max)
+			throws IOException {
+		final Streamed result = streamedOf(filter, offset, max);
+		// @formatter:off
+		and.then(result.datum())
+			.as("Aggregate datum given")
+			.allSatisfy(d -> and.then(d).isExactlyInstanceOf(BasicAggregateStreamDatum.class))
+			;
+		and.then(result.endTimestamps())
+			.as("No end timestamps")
+			.containsOnlyNulls()
 			;
 		// @formatter:on
 		return result;
@@ -909,7 +1200,7 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	@Test
 	public void agg_thirtyMinute_list() throws IOException {
 		// GIVEN
-		assumeMinuteAggregates();
+		assumeAggregates();
 		populate();
 
 		// WHEN
@@ -920,19 +1211,20 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		final Streamed result = thenAggregatesStreamed(null, null);
 		// @formatter:off
 		and.then(result.aggregates())
-			.as("Slots of running node's streams with datum, computed from raw datum, without readings, in default order")
+			.as("Half hours of running node's streams with stored 15 minute aggregates, combined from them, with readings, in default order")
 			.containsExactly(
 				  tuple(Location, TEST_LOC_ID, "weather", T22, "{10}", null, "{{1,10,10}}", null)
 				, tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
 				// a/1 grows 10 every 20 minutes, so 15 every 30 minutes: a datum's difference that
-				// crosses a slot boundary is split by time between the slots
-				, tuple(Node, TEST_NODE_ID, "a/1", T22, "{0.5}", "{15}", "{{2,0,1}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T22_30, "{2}", "{15}", "{{1,2,2}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T23, "{3.5}", "{15}", "{{2,3,4}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T23.plus(30, MINUTES), "{5}", "{15}", "{{1,5,5}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T00, "{6.5}", "{15}", "{{2,6,7}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T00.plus(30, MINUTES), "{8}", "{15}", "{{1,8,8}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/2", T22_30, "{5}", "{0}", "{{1,5,5}}", null)
+				// crosses a slot boundary is split by time between the slots, while the readings
+				// are those at the start of the first slot and the end of the last
+				, T_A1_22
+				, T_A1_22_30
+				, T_A1_23
+				, T_A1_23_30
+				, T_A1_00
+				, T_A1_00_30
+				, T_A2_22_30
 			)
 			;
 		and.then(result.provider().metadataStreamIds())
@@ -946,7 +1238,7 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	@Test
 	public void agg_fifteenMinute_list_pagination() throws IOException {
 		// GIVEN
-		assumeMinuteAggregates();
+		assumeAggregates();
 		populate();
 		final BasicNodeDatumFilter f = minuteFilter(Aggregation.FifteenMinute, T22, T01);
 		f.setWithoutTotalResultsCount(false);
@@ -955,17 +1247,365 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		historian.findFilteredStream(f, processor, null, 1L, 3);
 
 		// THEN
-		// 12 slots: 2 of weather, 9 of a/1, and 1 of a/2, counted by the slot count function
+		// 12 stored slots: 2 of weather, 9 of a/1, and 1 of a/2
 		final Streamed result = thenAggregatesStreamed(12L, 1);
 		// @formatter:off
 		and.then(result.aggregates())
-			.as("Page of slots in default order")
+			.as("Page of stored slots in default order, with readings")
 			.containsExactly(
 				  tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T22, "{0}", "{7.5}", "{{1,0,0}}", null)
-				, tuple(Node, TEST_NODE_ID, "a/1", T22.plus(15, MINUTES), "{1}", "{7.5}", "{{1,1,1}}", null)
+				, S_A1_22
+				, S_A1_22_15
 			)
 			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fifteenMinute_list_storedRows() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		populateSlotEdgeCases();
+
+		// WHEN
+		historian.findFilteredStream(filter(Aggregation.FifteenMinute), processor, null, null, null);
+
+		// THEN
+		final Streamed result = thenAggregatesStreamed(null, null);
+		// @formatter:off
+		and.then(result.aggregates())
+			.as("Stored 15 minute aggregates of running node's streams, with readings, without a date range")
+			.hasSize(18)
+			.containsExactlyElementsOf(storedAggregates("dh_agg_15m"))
+			.contains(S_A1_22, S_A1_22_15, S_A1_22_30)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_combinesSlotPairs() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		populateSlotEdgeCases();
+
+		// WHEN
+		final Streamed slots = aggregatesOf(filter(Aggregation.FifteenMinute));
+		final Streamed halfHours = aggregatesOf(filter(Aggregation.ThirtyMinute));
+
+		// THEN
+		// @formatter:off
+		and.then(halfHours.aggregates())
+			.as("Each half hour combines the stored 15 minute aggregates of its two slots")
+			.hasSize(13)
+			.containsExactlyElementsOf(rollUp(slots, 1800))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_addUpToHours() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		populateSlotEdgeCases();
+
+		// WHEN
+		final Streamed halfHours = aggregatesOf(filter(Aggregation.ThirtyMinute));
+		final Streamed hours = aggregatesOf(filter(Aggregation.Hour));
+
+		// THEN
+		// @formatter:off
+		and.then(rollUp(halfHours, 3600))
+			.as("The half hours of each hour, rolled up, give the stored hour")
+			.containsExactlyElementsOf(hours.aggregates())
+			.contains(H_W22, H_W23, H_A1_22, H_A1_23, H_A1_00, H_A1_01, H_A2_22)
+			;
+		and.then(hours.aggregates())
+			.as("The hours are those stored")
+			.containsExactlyElementsOf(storedAggregates("dh_agg_hourly"))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_slotEdgeCases() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populateSlotEdgeCases();
+		final BasicNodeDatumFilter f = filter(Aggregation.ThirtyMinute);
+		f.setSourceIds(new String[] { "b/*" });
+
+		// WHEN
+		final Streamed result = aggregatesOf(f);
+
+		// THEN
+		// @formatter:off
+		and.then(result.aggregates())
+			.as("Half hours combined from slots with different properties, and from only the second slot")
+			.containsExactly(
+				  // watts from both slots, temp from the second only; the accumulation split
+				  // 6.666... and 3.333... between the slots adds up again
+				  tuple(Node, TEST_NODE_ID, "b/1", MAR_2_10, "{2,20}", "{10}", "{{2,1,3},{1,20,20}}",
+						  "{{10,100,110}}")
+				, tuple(Node, TEST_NODE_ID, "b/2", MAR_2_10, "{7}", "{0}", "{{1,7,7}}", "{{0,500,500}}")
+			)
+			;
+		and.then(result.datum()).element(0)
+			.as("Status of each property the more frequent of the two slots, the one that sorts first when each is as frequent")
+			.returns(new String[] { "idle", "y" }, d -> d.getProperties().getStatus())
+			.as("Tags of both slots")
+			.returns(new String[] { "x", "y" }, d -> d.getProperties().getTags())
+			;
+		and.then(result.datum()).element(1)
+			.as("No status or tags")
+			.returns(null, d -> d.getProperties().getStatus())
+			.returns(null, d -> d.getProperties().getTags())
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_sorts_pagination() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		final BasicNodeDatumFilter f = minuteFilter(Aggregation.ThirtyMinute, T22, T01);
+		f.setSorts(List.of(new SimpleSortDescriptor(SORT_BY_TIME, true),
+				new SimpleSortDescriptor(SORT_BY_SOURCE)));
+		f.setWithoutTotalResultsCount(false);
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, 2L, 3);
+
+		// THEN
+		// 9 half hours: 2 of weather, 6 of a/1, and 1 of a/2
+		// @formatter:off
+		and.then(thenAggregatesStreamed(9L, 2).ids())
+			.as("Page of half hours, newest first, then by source")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID, "a/1", T23.plus(30, MINUTES))
+				, tuple(Node, TEST_NODE_ID, "a/1", T23)
+				, tuple(Location, TEST_LOC_ID, "weather", T23)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_sorts() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		final BasicNodeDatumFilter f = minuteFilter(Aggregation.ThirtyMinute, T22, T01);
+		f.setSorts(List.of(new SimpleSortDescriptor(SORT_BY_TIME, true),
+				new SimpleSortDescriptor(SORT_BY_SOURCE)));
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).aggregates())
+			.as("All half hours, newest first, then by source, without a page")
+			.containsExactly(
+				  T_A1_00_30
+				, T_A1_00
+				, T_A1_23_30
+				, T_A1_23
+				, tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
+				, T_A1_22_30
+				, T_A2_22_30
+				, T_A1_22
+				, tuple(Location, TEST_LOC_ID, "weather", T22, "{10}", null, "{{1,10,10}}", null)
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_pages() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		populateSlotEdgeCases();
+		final BasicNodeDatumFilter f = filter(Aggregation.ThirtyMinute);
+		f.setSorts(List.of(new SimpleSortDescriptor(SORT_BY_TIME, true),
+				new SimpleSortDescriptor(SORT_BY_SOURCE)));
+		final Streamed all = aggregatesOf(f);
+
+		// WHEN
+		// pages of 2, which split the streams' half hours of 23:00, of 22:30, and of 22:00
+		// between pages
+		final List<Tuple> pages = new ArrayList<>();
+		final List<Tuple> pagesStatusesAndTags = new ArrayList<>();
+		for ( long offset = 0; offset < all.datum().size(); offset += 2 ) {
+			final Streamed page = aggregatesOf(f, offset, 2);
+			pages.addAll(page.aggregates());
+			pagesStatusesAndTags.addAll(page.statusesAndTags());
+		}
+
+		// THEN
+		// @formatter:off
+		and.then(all.aggregates())
+			.as("All half hours, newest first, then by source, the first combined from slots with different properties")
+			.hasSize(13)
+			.startsWith(
+				  tuple(Node, TEST_NODE_ID, "b/1", MAR_2_10, "{2,20}", "{10}", "{{2,1,3},{1,20,20}}",
+						  "{{10,100,110}}")
+				, tuple(Node, TEST_NODE_ID, "b/2", MAR_2_10, "{7}", "{0}", "{{1,7,7}}", "{{0,500,500}}")
+			)
+			;
+		and.then(pages)
+			.as("Pages, combined after the page is taken, give the half hours of the whole, in the same order")
+			.containsExactlyElementsOf(all.aggregates())
+			;
+		and.then(pagesStatusesAndTags)
+			.as("Pages give the statuses and tags of the whole")
+			.containsExactlyElementsOf(all.statusesAndTags())
+			.contains(tuple(Node, TEST_NODE_ID, "b/1", MAR_2_10, List.of("idle", "y"), List.of("x", "y")))
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_datesNotOnHalfHour() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		final BasicNodeDatumFilter f = minuteFilter(Aggregation.ThirtyMinute, T22.plus(10, MINUTES),
+				T23.plus(40, MINUTES));
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).aggregates())
+			.as("Whole half hours that start from 22:10 and before 23:40, not the 22:00 half hour from its 22:15 slot")
+			.containsExactly(
+				  tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
+				, T_A1_22_30
+				, T_A1_23
+				, T_A1_23_30
+				, T_A2_22_30
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_localDates() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populateOtherNodeInAuckland();
+		final BasicNodeDatumFilter f = localDatesFilter(Aggregation.ThirtyMinute,
+				LOCAL_FEB.plusHours(11).plusMinutes(10), LOCAL_FEB.plusHours(13));
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).aggregates())
+			.as("Half hours that start from 11:10 and before 13:00 on 1 February in the zone of each node: none of the running node in UTC, and of the other node in Auckland the 23:00 UTC half hour, not the 22:00 one")
+			.containsExactly(
+				  tuple(Node, TEST_NODE_ID_2, "a/1", T23, "{3}", "{0}", "{{1,3,3}}", "{{0,30,30}}")
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fifteenThirtyMinute_list_noRangeLimit() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		// more than the default 840 hours either side
+		final Instant start = T22.minus(900, HOURS);
+		final Instant end = T01.plus(900, HOURS);
+
+		// WHEN
+		final Streamed slots = aggregatesOf(minuteFilter(Aggregation.FifteenMinute, start, end));
+		final Streamed halfHours = aggregatesOf(minuteFilter(Aggregation.ThirtyMinute, start, end));
+
+		// THEN
+		// @formatter:off
+		and.then(slots.aggregates())
+			.as("All stored slots of running node, the time span not limited")
+			.containsExactlyElementsOf(storedAggregates("dh_agg_15m"))
+			;
+		and.then(halfHours.ids())
+			.as("All half hours of running node, the time span not limited")
+			.hasSize(11)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fiveTenMinute_list_defaultRangeLimit() throws IOException {
+		// GIVEN
+		assumeMinuteAggregates();
+		populate();
+
+		for ( Aggregation agg : List.of(Aggregation.FiveMinute, Aggregation.TenMinute) ) {
+			// WHEN
+			// @formatter:off
+			thenIllegalArgumentException()
+				.as("Span of 841 hours refused for %s, computed from raw datum", agg)
+				.isThrownBy(() -> historian.findFilteredStream(minuteFilter(agg, T22, T22.plus(841, HOURS)),
+						processor, null, null, null))
+				.withMessage("Minute level aggregation time span must be at most 840 hours.")
+				;
+			// @formatter:on
+		}
+
+		// THEN
+		then(processor).shouldHaveNoInteractions();
+	}
+
+	@Test
+	public void agg_fifteenMinute_list_mostRecent() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		final BasicNodeDatumFilter f = filter(Aggregation.FifteenMinute);
+		f.setMostRecent(true);
+
+		// WHEN
+		historian.findFilteredStream(f, processor, null, null, null);
+
+		// THEN
+		// @formatter:off
+		and.then(thenAggregatesStreamed(null, null).aggregates())
+			.as("Most recent stored slot of each stream of the running node, as for Hour")
+			.containsExactly(
+				  tuple(Location, TEST_LOC_ID, "weather", T23, "{14}", null, "{{1,14,14}}", null)
+				, tuple(Node, TEST_NODE_ID, "a/1", T01.plus(30, MINUTES), "{11}", "{5}", "{{1,11,11}}",
+						"{{10,200,210}}")
+				, T_A2_22_30
+			)
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_thirtyMinute_list_mostRecent_refused() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		final BasicNodeDatumFilter f = filter(Aggregation.ThirtyMinute);
+		f.setMostRecent(true);
+
+		// WHEN
+		// @formatter:off
+		thenIllegalArgumentException()
+			.as("Most recent refused for ThirtyMinute, as in SolarNet")
+			.isThrownBy(() -> historian.findFilteredStream(f, processor, null, null, null))
+			.withMessage("The mostRecent flag cannot be used with aggregation ThirtyMinute.")
+			;
+		then(processor).shouldHaveNoInteractions();
 		// @formatter:on
 	}
 
@@ -1054,22 +1694,35 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 	}
 
 	@Test
-	public void fiveMinute_readings_refused() throws IOException {
+	public void subHour_readings_refused() throws IOException {
 		// GIVEN
 		populate();
-		final BasicNodeDatumFilter f = readingFilter(Aggregation.FiveMinute);
-		f.setStartDate(T22);
-		f.setEndDate(T01);
+		final List<Aggregation> refused = new ArrayList<>(List.of(Aggregation.Minute,
+				Aggregation.FiveMinute, Aggregation.TenMinute, Aggregation.ThirtyMinute));
+		if ( !aggregates ) {
+			refused.add(Aggregation.FifteenMinute);
+		}
+		final String message = (aggregates
+				? "Only FifteenMinute/Hour/Day/Month aggregation is supported for reading queries."
+				: "Only Hour/Day/Month aggregation is supported for reading queries.");
 
-		// WHEN
-		// @formatter:off
-		thenIllegalArgumentException()
-			.as("Sub-hour aggregation refused for readings, with or without aggregate setup, as in SolarQuery")
-			.isThrownBy(() -> historian.findFilteredStreamReadings(f, processor, null, null, null))
-			.withMessage("Only Hour/Day/Month aggregation is supported for reading queries.")
-			;
+		for ( Aggregation agg : refused ) {
+			final BasicNodeDatumFilter f = readingFilter(agg);
+			f.setStartDate(T22);
+			f.setEndDate(T01);
+
+			// WHEN
+			// @formatter:off
+			thenIllegalArgumentException()
+				.as("Sub-hour aggregation %s refused for readings, as in SolarQuery, naming the aggregations supported with or without aggregate setup", agg)
+				.isThrownBy(() -> historian.findFilteredStreamReadings(f, processor, null, null, null))
+				.withMessage(message)
+				;
+			// @formatter:on
+		}
+
+		// THEN
 		then(processor).shouldHaveNoInteractions();
-		// @formatter:on
 	}
 
 	@Test
@@ -1127,6 +1780,38 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 		and.then(result.aggregates())
 			.as("Hourly aggregates of running node's streams, with read_a as accumulating statistics")
 			.containsExactly(H_W22, H_W23, H_A1_22, H_A1_23, H_A1_00, H_A1_01, H_A2_22)
+			;
+		and.then(result.endTimestamps())
+			.as("No end timestamps for aggregate readings")
+			.containsOnlyNulls()
+			;
+		// @formatter:on
+	}
+
+	@Test
+	public void agg_fifteenMinute_readings() throws IOException {
+		// GIVEN
+		assumeAggregates();
+		populate();
+		final BasicNodeDatumFilter f = readingFilter(Aggregation.FifteenMinute);
+		f.setStartDate(T22);
+		f.setEndDate(T23);
+
+		// WHEN
+		historian.findFilteredStreamReadings(f, processor, null, null, null);
+
+		// THEN
+		final Streamed result = thenReadingsStreamed(null, null);
+		// @formatter:off
+		and.then(result.aggregates())
+			.as("Stored 15 minute aggregates of running node's streams in the 22:00 hour, with read_a as accumulating statistics, as for Hour")
+			.containsExactly(
+				  tuple(Location, TEST_LOC_ID, "weather", T22, "{10}", null, "{{1,10,10}}", null)
+				, S_A1_22
+				, S_A1_22_15
+				, S_A1_22_30
+				, T_A2_22_30
+			)
 			;
 		and.then(result.endTimestamps())
 			.as("No end timestamps for aggregate readings")
@@ -1337,6 +2022,29 @@ public class JdbcDatumHistorianAggregateTests extends AbstractPostgresHistorianT
 			.allSatisfy(d -> and.then(d).isExactlyInstanceOf(BasicStreamDatum.class))
 			;
 		// @formatter:on
+	}
+
+	@Test
+	public void noAgg_fifteenThirtyMinute_list_raw() throws IOException {
+		// GIVEN
+		assumeNoAggregates();
+		populate();
+
+		for ( Aggregation agg : List.of(Aggregation.FifteenMinute, Aggregation.ThirtyMinute) ) {
+			// WHEN
+			// beyond the range limit of the minute aggregations computed from raw datum
+			final Streamed result = streamedOf(
+					minuteFilter(agg, T22.minus(841, HOURS), T01.plus(1, HOURS)));
+
+			// THEN
+			// @formatter:off
+			and.then(result.datum())
+				.as("Raw datum for %s without aggregate setup, the time span not limited", agg)
+				.hasSize(15)
+				.allSatisfy(d -> and.then(d).isExactlyInstanceOf(BasicStreamDatum.class))
+				;
+			// @formatter:on
+		}
 	}
 
 	@Test

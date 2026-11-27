@@ -127,8 +127,12 @@ public interface FilterableDatumHistorian
 	 * aggregations ({@link Aggregation#FiveMinute},
 	 * {@link Aggregation#TenMinute}, {@link Aggregation#FifteenMinute} and
 	 * {@link Aggregation#ThirtyMinute}) may refuse a query as SolarQuery does,
-	 * for example one without a date range, or over a longer time span than
-	 * it allows, before the processor is started.
+	 * for example one without a date range, over a longer time span than it
+	 * allows, or with the most recent criteria, before the processor is
+	 * started. A sub-hour aggregation that a historian stores, such as
+	 * {@link Aggregation#FifteenMinute}, or combines from the aggregates it
+	 * stores, need not be limited that way: it may be supported over any time
+	 * span, as {@link Aggregation#Hour} is, and give reading statistics.
 	 * </p>
 	 *
 	 * @param filter
@@ -184,7 +188,8 @@ public interface FilterableDatumHistorian
 	 * longer has the raw datum at an end of the range may use readings from its
 	 * stored aggregate results instead.</dd>
 	 * <dt>{@link Aggregation#Hour}, {@link Aggregation#Day}, or
-	 * {@link Aggregation#Month}</dt>
+	 * {@link Aggregation#Month}, and {@link Aggregation#FifteenMinute} from a
+	 * historian that stores 15 minute aggregates</dt>
 	 * <dd>One result for each matching stream and aggregate period within the
 	 * date range, whose timestamp is the start of the period and whose end
 	 * timestamp is {@code null}, as the period end is implicit. The
@@ -194,11 +199,12 @@ public interface FilterableDatumHistorian
 	 * with the same aggregation, and the accumulating statistics are the
 	 * readings at the start and end of the period and their difference.</dd>
 	 * <dt>{@link Aggregation#Minute}, {@link Aggregation#FiveMinute},
-	 * {@link Aggregation#TenMinute}, {@link Aggregation#FifteenMinute}, or
-	 * {@link Aggregation#ThirtyMinute}</dt>
-	 * <dd>Refused with an {@link IllegalArgumentException} before the
-	 * processor is started, as SolarQuery refuses reading queries with these
-	 * aggregations.</dd>
+	 * {@link Aggregation#TenMinute}, or {@link Aggregation#ThirtyMinute}, and
+	 * {@link Aggregation#FifteenMinute} from a historian that does not store 15
+	 * minute aggregates</dt>
+	 * <dd>Refused with an {@link IllegalArgumentException} before the processor
+	 * is started, as SolarQuery refuses reading queries with the sub-hour
+	 * aggregations it does not store.</dd>
 	 * <dt>any other aggregation</dt>
 	 * <dd>Not supported: treated as no aggregation. A historian that does not
 	 * support an aggregation, for example because it does not store aggregate
@@ -229,7 +235,7 @@ public interface FilterableDatumHistorian
 	 * @throws IllegalArgumentException
 	 *         if {@code filter} or {@code processor} is {@code null},
 	 *         {@code filter} has no reading type, or {@code filter} has a
-	 *         sub-hour aggregation
+	 *         sub-hour aggregation that is refused as described above
 	 * @throws UnsupportedOperationException
 	 *         if the reading type of {@code filter} is not supported, before
 	 *         the processor is started

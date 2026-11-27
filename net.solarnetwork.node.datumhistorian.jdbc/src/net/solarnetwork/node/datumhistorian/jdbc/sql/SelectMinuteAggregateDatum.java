@@ -50,10 +50,13 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * aggregate setup for each matching stream, for the
  * {@link Aggregation#FiveMinute}, {@link Aggregation#TenMinute},
  * {@link Aggregation#FifteenMinute}, or {@link Aggregation#ThirtyMinute}
- * aggregation of the filter: one row for each slot of that length that has
- * datum, with no reading statistics. Nothing is stored. It is ported from the
- * SolarNet {@code SelectDatum} class, for those aggregations, including its
- * rules:
+ * aggregation of the filter, with no reading statistics. Nothing is stored. As
+ * that function describes, there is a row for each slot of that length that
+ * starts within the span and has datum, computed from all the datum of the
+ * slot, and for the last slot of an hour without datum but with a datum with
+ * accumulating values exactly at its end; the clock accumulation of each hour
+ * is split between the slots of the hour. It is ported from the SolarNet
+ * {@code SelectDatum} class, for those aggregations, including its rules:
  * </p>
  *
  * <ul>
@@ -63,6 +66,15 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * end date.</li>
  * <li>The most recent criteria can not be used.</li>
  * </ul>
+ *
+ * <p>
+ * The historian uses it only for {@link Aggregation#FiveMinute} and
+ * {@link Aggregation#TenMinute}, as the 15 minute aggregates are stored:
+ * {@link SelectAggregateDatum} reads them for
+ * {@link Aggregation#FifteenMinute}, and
+ * {@link SelectThirtyMinuteAggregateDatum} combines them for
+ * {@link Aggregation#ThirtyMinute}.
+ * </p>
  *
  * <p>
  * The filter criteria are applied as described in {@link SelectFilteredDatum},
@@ -84,7 +96,10 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <dt>local start and end date</dt>
  * <dd>The time span, in the time zone of the node of each stream, as described
  * in {@link SelectFilteredDatum}. Used only when both are given, as SolarNet
- * does; otherwise the start and end date are used.</dd>
+ * does; otherwise the start and end date are used. The slots are aligned to
+ * UTC, so in a time zone whose offset is not a multiple of the slot length,
+ * such as +05:45 for 10 minute slots, the slot holding the local start is not
+ * included.</dd>
  * <dt>sorts</dt>
  * <dd>As described in {@link SelectFilteredDatum}, with the time key sorting by
  * the slot start. The node key is never ignored.</dd>
@@ -93,7 +108,9 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * <p>
  * Rows have the columns of {@link SelectAggregateDatum}, with a {@code NULL}
  * {@code read_a}. The count query counts the slots with the faster
- * {@code dh_count_datum_time_span_slots()} function, as SolarNet does.
+ * {@code dh_count_datum_time_span_slots()} function, as SolarNet does. It reads
+ * only the times of the datum, so it can count a slot that has no row, as that
+ * function describes.
  * </p>
  *
  * @author matt

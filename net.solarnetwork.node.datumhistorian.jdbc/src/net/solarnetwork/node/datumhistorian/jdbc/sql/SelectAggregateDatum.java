@@ -47,14 +47,16 @@ import net.solarnetwork.node.dao.NodeDatumFilter;
  * Select the stored aggregate datum matching a {@link NodeDatumFilter}.
  *
  * <p>
- * This reads the {@code dh_agg_hourly}, {@code dh_agg_daily}, or
- * {@code dh_agg_monthly} table of the aggregate setup, for the
- * {@link Aggregation#Hour}, {@link Aggregation#Day}, or
- * {@link Aggregation#Month} aggregation of the filter. It is ported from the
- * SolarNet {@code SelectDatum} class, for those aggregations. The same rows
- * serve both list and reading results: the list results use the clock
- * accumulation in {@code data_a}, and the reading results the reading
- * difference, start, and end in {@code read_a}.
+ * This reads the {@code dh_agg_15m}, {@code dh_agg_hourly},
+ * {@code dh_agg_daily}, or {@code dh_agg_monthly} table of the aggregate setup,
+ * for the {@link Aggregation#FifteenMinute}, {@link Aggregation#Hour},
+ * {@link Aggregation#Day}, or {@link Aggregation#Month} aggregation of the
+ * filter. It is ported from the SolarNet {@code SelectDatum} class, for the
+ * hours, days, and months; the 15 minute slots are read the same way as the
+ * hours. The same rows serve both list and reading results: the list results
+ * use the clock accumulation in {@code data_a}, and both have the reading
+ * difference, start, and end in {@code read_a}. The 15 minute slots are UTC
+ * quarter hours, whatever the time zone of the stream.
  * </p>
  *
  * <p>
@@ -157,7 +159,8 @@ public final class SelectAggregateDatum
 	 *
 	 * @param aggregation
 	 *        the aggregation to test
-	 * @return {@code true} if {@code aggregation} is {@link Aggregation#Hour},
+	 * @return {@code true} if {@code aggregation} is
+	 *         {@link Aggregation#FifteenMinute}, {@link Aggregation#Hour},
 	 *         {@link Aggregation#Day}, or {@link Aggregation#Month}
 	 */
 	public static boolean isSupportedAggregation(@Nullable Aggregation aggregation) {
@@ -169,6 +172,7 @@ public final class SelectAggregateDatum
 			return null;
 		}
 		return switch (aggregation) {
+			case FifteenMinute -> "dh_agg_15m";
 			case Hour -> "dh_agg_hourly";
 			case Day -> "dh_agg_daily";
 			case Month -> "dh_agg_monthly";
