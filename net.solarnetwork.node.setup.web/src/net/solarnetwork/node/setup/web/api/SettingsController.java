@@ -243,6 +243,9 @@ public class SettingsController {
 		if ( service == null ) {
 			return success();
 		}
+		if ( locale == null ) {
+			locale = Locale.getDefault();
+		}
 		final Map<String, Object> result = new LinkedHashMap<>(2);
 
 		// services
